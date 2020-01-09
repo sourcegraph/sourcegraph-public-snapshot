@@ -18,6 +18,7 @@ describe('FileDiffTab', () => {
                         isLightTheme={true}
                         history={history}
                         location={location}
+                        persistLines={true}
                         queryChangesetsConnection={() =>
                             of({
                                 __typename: 'ChangesetPlanConnection' as const,

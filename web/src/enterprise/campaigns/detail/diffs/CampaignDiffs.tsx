@@ -6,12 +6,13 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../com
 import { FileDiffTabNodeProps, FileDiffTabNode } from '../FileDiffTabNode'
 import { Observable } from 'rxjs'
 import classNames from 'classnames'
+import { DEFAULT_LIST_COUNT } from '../presentation'
 
 interface Props extends ThemeProps {
     queryChangesetsConnection: (
         args: FilteredConnectionQueryArgs
     ) => Observable<GQL.IExternalChangesetConnection | GQL.IChangesetPlanConnection>
-    persistLines?: boolean
+    persistLines: boolean
     history: H.History
     location: H.Location
     className?: string
@@ -40,7 +41,7 @@ export const CampaignDiffs: React.FunctionComponent<Props> = ({
         }}
         queryConnection={queryChangesetsConnection}
         hideSearch={true}
-        defaultFirst={15} // DEFAULT_LIST_COUNT
+        defaultFirst={DEFAULT_LIST_COUNT}
         noun="changeset"
         pluralNoun="changesets"
         history={history}

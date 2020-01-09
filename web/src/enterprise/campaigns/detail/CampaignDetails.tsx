@@ -20,7 +20,6 @@ import {
     CampaignType,
     retryCampaign,
     closeCampaign,
-    queryChangesetPlans,
 } from './backend'
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -46,6 +45,7 @@ import {
 } from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
+import { DEFAULT_LIST_COUNT } from './presentation'
 
 interface Props extends ThemeProps {
     /**
@@ -198,7 +198,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     ),
                     tap(campaign => {
                         setCampaign(campaign)
-                        if (campaign && campaign.changesets.totalCount <= 15) { // DEFAULT_LIST_COUNT
+                        if (campaign && campaign.changesets.totalCount <= DEFAULT_LIST_COUNT) { 
                             nextChangesetUpdate()
                         }
                     })
