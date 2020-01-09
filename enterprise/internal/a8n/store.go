@@ -96,7 +96,7 @@ const getPendingCampaignJobQuery = `
 UPDATE campaign_jobs c SET started_at = now() WHERE id = (
 	SELECT id FROM campaign_jobs
 	WHERE started_at is null
-	ORDER BY created_at
+	ORDER BY id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
 RETURNING c.id,
