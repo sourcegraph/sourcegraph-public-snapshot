@@ -51,11 +51,7 @@ async function main(logger: Logger): Promise<void> {
     // Start metrics server
     startMetricsServer(logger)
 
-    const convert = async (
-        upload: pgModels.LsifUpload,
-        entityManager: EntityManager,
-        markComplete: () => Promise<void>
-    ): Promise<void> => {
+    const convert = async (upload: pgModels.LsifUpload, entityManager: EntityManager): Promise<void> => {
         logger.debug('Selected upload to convert', { uploadId: upload.id })
 
         let span: Span | undefined
@@ -79,7 +75,7 @@ async function main(logger: Logger): Promise<void> {
                     // Convert the database and populate the cross-dump package data
                     await convertDatabase(entityManager, dumpManager, dependencyManager, upload, ctx)
 
-                    // Remove overlapping dumps that will cause a unique index error once this upload has
+                    // Remove overlapping dumps that would cause a unique index error once this upload has
                     // transitioned into the completed state. As this is done in a transaction, we do not
                     // delete the files on disk right away. These files will be cleaned up by a worker in
                     // a future cleanup task.
@@ -95,7 +91,7 @@ async function main(logger: Logger): Promise<void> {
                     // next step assumes that the processed upload is present in the dumps views. The
                     // remainder of the task may still fail, in which case the entire transaction is
                     // rolled back, so we don't want to commit yet.
-                    await markComplete()
+                    await uploadManager.markComplete(upload, entityManager)
 
                     // Update visibility flag for this repository.
                     await updateCommitsAndDumpsVisibleFromTip(
