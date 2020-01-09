@@ -926,13 +926,16 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 }
 
 func testStoreListReposPagination(store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
 	github := repos.Repo{
 		Name:        "foo/bar",
 		URI:         "github.com/foo/bar",
 		Description: "The description",
 		Language:    "barlang",
 		Enabled:     true,
-		CreatedAt:   time.Now(),
+		CreatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAA==",
 			ServiceType: "github",
