@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
@@ -51,10 +50,10 @@ func (c *Client) GetUploads(ctx context.Context, args *struct {
 }
 
 func (c *Client) GetUpload(ctx context.Context, args *struct {
-	UploadID string
+	UploadID int64
 }) (*lsif.LSIFUpload, error) {
 	req := &lsifRequest{
-		path: fmt.Sprintf("/uploads/%s", url.PathEscape(args.UploadID)),
+		path: fmt.Sprintf("/uploads/%d", args.UploadID),
 	}
 
 	payload := &lsif.LSIFUpload{}
@@ -63,10 +62,10 @@ func (c *Client) GetUpload(ctx context.Context, args *struct {
 }
 
 func (c *Client) DeleteUpload(ctx context.Context, args *struct {
-	UploadID string
+	UploadID int64
 }) error {
 	req := &lsifRequest{
-		path:   fmt.Sprintf("/uploads/%s", url.PathEscape(args.UploadID)),
+		path:   fmt.Sprintf("/uploads/%d", args.UploadID),
 		method: "DELETE",
 	}
 
