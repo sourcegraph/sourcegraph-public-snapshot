@@ -7,7 +7,7 @@ import { of } from 'rxjs'
 
 jest.mock('mdi-react/SourcePullIcon', () => 'SourcePullIcon')
 
-describe('FileDiffTab', () => {
+describe('CampaignDiffs', () => {
     test('renders', () => {
         const history = H.createMemoryHistory({ keyLength: 0 })
         const location = H.createLocation('/campaigns/new')
