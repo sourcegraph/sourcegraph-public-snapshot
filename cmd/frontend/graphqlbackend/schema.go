@@ -1352,14 +1352,16 @@ type Query {
         after: String
     ): LSIFUploadConnection!
 
-    # A user’s repository permissions. This isn’t defined in the User type
-    # because we store permissions for users that don’t yet exist (i.e. late binding).
+    # The repositories a user is authorized to access with the given permission.
+    # This isn’t defined in the User type because we store permissions for users
+    # that don’t yet exist (i.e. late binding). Only `username` or `email` is
+    # required to identify a user according to site configuration `permissions.userMapping`.
     authorizedUserRepositories(
         # The username.
         username: String
         # One of the email addresses.
         email: String
-        # Permission that the user has on this repository.
+        # Permission that the user has on the repositories.
         perm: RepositoryPermission = READ
         # Number of repositories to return after the given cursor.
         first: Int!
