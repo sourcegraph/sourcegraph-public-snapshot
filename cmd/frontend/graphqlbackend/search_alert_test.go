@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
@@ -20,7 +21,7 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 			Alert: searchAlert{
 				title:       "An alert for regex",
 				description: "An alert for regex",
-				patternType: SearchTypeRegex,
+				patternType: search.SearchTypeRegex,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "Some query description",
@@ -35,7 +36,7 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 			Alert: searchAlert{
 				title:       "An alert for structural",
 				description: "An alert for structural",
-				patternType: SearchTypeStructural,
+				patternType: search.SearchTypeStructural,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "Some query description",

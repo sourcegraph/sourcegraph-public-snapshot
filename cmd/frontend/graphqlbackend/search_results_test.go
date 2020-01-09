@@ -1060,7 +1060,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	}
 	resolver := &searchResolver{
 		query:        q,
-		patternType:  SearchTypeStructural,
+		patternType:  search.SearchTypeStructural,
 		zoekt:        z,
 		searcherURLs: endpoint.Static("test"),
 	}

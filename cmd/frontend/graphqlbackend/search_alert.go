@@ -21,7 +21,7 @@ type searchAlert struct {
 	prometheusType  string
 	title           string
 	description     string
-	patternType     SearchType
+	patternType     search.SearchType
 	proposedQueries []*searchQueryDescription
 }
 
@@ -41,11 +41,11 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	for _, proposedQuery := range a.proposedQueries {
 		if proposedQuery.description != "Remove quotes" {
 			switch a.patternType {
-			case SearchTypeRegex:
+			case search.SearchTypeRegex:
 				proposedQuery.query = proposedQuery.query + " patternType:regexp"
-			case SearchTypeLiteral:
+			case search.SearchTypeLiteral:
 				proposedQuery.query = proposedQuery.query + " patternType:literal"
-			case SearchTypeStructural:
+			case search.SearchTypeStructural:
 				// Don't append patternType:structural, it is not erased from the query like
 				// patterntype:regexp and patterntype:literal.
 				// TODO(RVT): Making this consistent requires a change on the UI side.

@@ -9,6 +9,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+type SearchType int
+
+const (
+	SearchTypeRegex SearchType = iota
+	SearchTypeLiteral
+	SearchTypeStructural
+)
+
 type TypeParameters interface {
 	typeParametersValue()
 }
