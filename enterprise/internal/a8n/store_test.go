@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
@@ -2238,8 +2240,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 }
 
 func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
-	// TODO: Flesh out this test.
-	// Try and run from more than one goroutine to confirm locking
 	return func(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		s := NewStoreWithClock(db, func() time.Time {
@@ -2247,8 +2247,28 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 		ctx := context.Background()
 
+		// Create a test repo
+		reposStore := repos.NewDBStore(db, sql.TxOptions{})
+		repo := &repos.Repo{
+			Name:    fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
+			Enabled: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "external-id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:github:4": {
+					ID:       "extsvc:github:4",
+					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+				},
+			},
+		}
+		if err := reposStore.UpsertRepos(context.Background(), repo); err != nil {
+			t.Fatal(err)
+		}
+
 		t.Run("GetPendingCampaignJobsWhenNoneAvailable", func(t *testing.T) {
-			ran := false
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				return errors.New("rollback")
 			}
@@ -2259,6 +2279,92 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			if ran {
 				// We shouldn't have any pending jobs yet
 				t.Fatalf("process function should not have run")
+			}
+		})
+
+		t.Run("GetPendingCampaignJobsWhenAvailable", func(t *testing.T) {
+			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
+				return errors.New("rollback")
+			}
+			plan := &a8n.CampaignPlan{
+				CampaignType: "test",
+			}
+			err := s.CreateCampaignPlan(context.Background(), plan)
+			if err != nil {
+				t.Fatal(err)
+			}
+			job := &a8n.CampaignJob{
+				ID:             0,
+				CampaignPlanID: plan.ID,
+				RepoID:         int32(repo.ID),
+				Rev:            "",
+				BaseRef:        "abc",
+				Diff:           "",
+				Description:    "",
+				Error:          "",
+			}
+			err = s.CreateCampaignJob(context.Background(), job)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer s.DeleteCampaignJob(ctx, job.ID)
+			ran, err := s.ProcessPendingCampaignJob(ctx, process)
+			if err != nil && err.Error() != "rollback" {
+				t.Fatal(err)
+			}
+			if !ran {
+				// We shouldn't have any pending jobs yet
+				t.Fatalf("process function should have run")
+			}
+		})
+
+		t.Run("GetPendingCampaignJobsWhenAvailableLocking", func(t *testing.T) {
+			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
+				time.Sleep(100 * time.Millisecond)
+				return errors.New("rollback")
+			}
+			plan := &a8n.CampaignPlan{
+				CampaignType: "test",
+			}
+			err := s.CreateCampaignPlan(context.Background(), plan)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = s.CreateCampaignJob(context.Background(), &a8n.CampaignJob{
+				ID:             0,
+				CampaignPlanID: plan.ID,
+				RepoID:         int32(repo.ID),
+				Rev:            "",
+				BaseRef:        "abc",
+				Diff:           "",
+				Description:    "",
+				Error:          "",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var runCount int64
+			errChan := make(chan error, 2)
+
+			for i := 0; i < 2; i++ {
+				go func() {
+					ran, err := s.ProcessPendingCampaignJob(ctx, process)
+					errChan <- err
+					fmt.Println(time.Now(), ran)
+					if ran {
+						atomic.AddInt64(&runCount, 1)
+					}
+				}()
+			}
+			for i := 0; i < 2; i++ {
+				err := <-errChan
+				if err != nil && err.Error() != "rollback" {
+					t.Fatal(err)
+				}
+			}
+			if runCount != 1 {
+				t.Errorf("Want %d, got %d", 1, runCount)
 			}
 		})
 	}
