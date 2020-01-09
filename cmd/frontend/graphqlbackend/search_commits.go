@@ -90,17 +90,11 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRev
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
 
-	textSearchOptions := git.TextSearchOptions{
-		Pattern:         info.Pattern,
-		IsRegExp:        info.IsRegExp,
-		IsCaseSensitive: info.IsCaseSensitive,
-	}
 	return searchCommitsInRepo(ctx, search.CommitParameters{
-		RepoRevs:          repoRevs,
-		PatternInfo:       info,
-		Query:             query,
-		Diff:              true,
-		TextSearchOptions: textSearchOptions,
+		RepoRevs:    repoRevs,
+		PatternInfo: info,
+		Query:       query,
+		Diff:        true,
 	})
 }
 
@@ -120,7 +114,6 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevis
 		PatternInfo:        info,
 		Query:              query,
 		Diff:               false,
-		TextSearchOptions:  git.TextSearchOptions{},
 		ExtraMessageValues: terms,
 	})
 }
@@ -237,10 +230,15 @@ func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (resul
 		return nil, false, false, err
 	}
 
+	textSearchOptions := git.TextSearchOptions{
+		Pattern:         op.PatternInfo.Pattern,
+		IsRegExp:        op.PatternInfo.IsRegExp,
+		IsCaseSensitive: op.PatternInfo.IsCaseSensitive,
+	}
 	diffParameters := search.DiffParameters{
 		Repo: op.RepoRevs.GitserverRepo(),
 		Options: git.RawLogDiffSearchOptions{
-			Query: op.TextSearchOptions,
+			Query: textSearchOptions,
 			Paths: git.PathOptions{
 				IncludePatterns: op.PatternInfo.IncludePatterns,
 				ExcludePattern:  op.PatternInfo.ExcludePattern,
