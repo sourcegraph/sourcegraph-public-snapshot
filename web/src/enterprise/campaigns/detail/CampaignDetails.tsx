@@ -74,6 +74,9 @@ const defaultInputByType: { [K in CampaignType]: string } = {
 }`,
 }
 
+/* Max amount of elements shown in filtered connections by default */
+const DEFAULT_LIST_COUNT = 15
+
 /**
  * The area for a single campaign.
  */
@@ -218,7 +221,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     ),
                     tap(campaign => {
                         setCampaign(campaign)
-                        if (campaign && campaign.changesets.totalCount <= 15) {
+                        if (campaign && campaign.changesets.totalCount <= DEFAULT_LIST_COUNT) {
                             nextChangesetUpdate()
                         }
                     })
@@ -634,7 +637,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     nodeComponentProps={{ isLightTheme, history, location }}
                                     queryConnection={queryChangesetsConnection}
                                     hideSearch={true}
-                                    defaultFirst={15}
+                                    defaultFirst={DEFAULT_LIST_COUNT}
                                     noun="changeset"
                                     pluralNoun="changesets"
                                     history={history}
@@ -658,7 +661,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     }}
                                     queryConnection={queryChangesetsConnection}
                                     hideSearch={true}
-                                    defaultFirst={15}
+                                    defaultFirst={DEFAULT_LIST_COUNT}
                                     noun="changeset"
                                     pluralNoun="changesets"
                                     history={history}
