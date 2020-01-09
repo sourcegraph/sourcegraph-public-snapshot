@@ -161,8 +161,8 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 }
 
 // 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
-// is the site admin who is authorized to see the repositories returned even when enforcePermission=false.
-func (s *repos) getReposBySQL(ctx context.Context, enforcePermission, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+// is the site admin who is authorized to see the repositories returned even when authorize=false.
+func (s *repos) getReposBySQL(ctx context.Context, authorize, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	columns := getBySQLColumns
 	if minimal {
 		columns = columns[:5]
@@ -196,7 +196,7 @@ func (s *repos) getReposBySQL(ctx context.Context, enforcePermission, minimal bo
 		return nil, err
 	}
 
-	if !enforcePermission {
+	if !authorize {
 		return repos, nil
 	}
 	// 🚨 SECURITY: This enforces repository permissions
