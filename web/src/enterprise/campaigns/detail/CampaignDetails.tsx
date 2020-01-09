@@ -8,7 +8,6 @@ import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
-import { ChangesetNode, ChangesetNodeProps } from './changesets/ChangesetNode'
 import { isEqual, noop } from 'lodash'
 import { Form } from '../../../components/Form'
 import {
@@ -16,7 +15,6 @@ import {
     updateCampaign,
     deleteCampaign,
     createCampaign,
-    queryChangesets,
     previewCampaignPlan,
     fetchCampaignPlanById,
     CampaignType,
@@ -27,7 +25,6 @@ import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
 import { CampaignBurndownChart } from './BurndownChart'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { AddChangesetForm } from './AddChangesetForm'
 import { Subject, of, timer, merge, Observable } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
@@ -36,16 +33,18 @@ import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { Link } from '../../../../../shared/src/components/Link'
 import { switchMap, tap, catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { FileDiffTab } from './FileDiffTab'
 import classNames from 'classnames'
-import { CampaignNamespaceField } from './form/CampaignNamespaceField'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
-import { CampaignPlanSpecificationFields } from './form/CampaignPlanSpecificationFields'
+import {
+    CampaignPlanSpecificationFields,
+    CampaignPlanSpecificationFormData,
+    MANUAL_CAMPAIGN_TYPE,
+} from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
+import { CampaignTabs } from './CampaignTabs'
 
 interface Props extends ThemeProps {
     /**
@@ -53,24 +52,12 @@ interface Props extends ThemeProps {
      * If not given, will display a creation form.
      */
     campaignID?: GQL.ID
-    authenticatedUser: Pick<GQL.IUser, 'username' | 'avatarURL'>
+    authenticatedUser: Pick<GQL.IUser, 'id' | 'username' | 'avatarURL'>
     history: H.History
     location: H.Location
 
     /** For testing only. */
     _fetchCampaignById?: typeof fetchCampaignById
-}
-
-const defaultInputByType: { [K in CampaignType]: string } = {
-    comby: `{
-    "scopeQuery": "repo:github.com/foo/bar",
-    "matchTemplate": "",
-    "rewriteTemplate": ""
-}`,
-    credentials: `{
-    "scopeQuery": "repo:github.com/foo/bar",
-    "matchers": [{ "type": "npm" }]
-}`,
 }
 
 /**
@@ -87,9 +74,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
-    const [type, setType] = useState<CampaignType>()
-    const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>()
-    const [namespace, setNamespace] = useState<GQL.ID>()
+
+    const [campaignPlanSpec, setCampaignPlanSpec] = useState<CampaignPlanSpecificationFormData>()
 
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
 
@@ -140,19 +126,16 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
-                    setType(fetchedCampaign?.plan?.type as CampaignType | undefined)
-                    setCampaignPlanArguments(fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null)
+                    setCampaignPlanSpec({
+                        type: fetchedCampaign?.plan?.type as CampaignType,
+                        arguments: fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null,
+                    })
                     nextChangesetUpdate()
                 },
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError, nextChangesetUpdate, campaignUpdates, _fetchCampaignById])
-
-    const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) => queryChangesets(campaignID!, args),
-        [campaignID]
-    )
 
     const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'>(
         campaignID ? 'viewing' : 'editing'
@@ -242,7 +225,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 const createdCampaign = await createCampaign({
                     name,
                     description,
-                    namespace: namespace!,
+                    namespace: authenticatedUser.id,
                     plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
                 })
                 unblockHistoryRef.current()
@@ -256,22 +239,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onArgumentsChange = (newText: string | undefined): void => {
-        if (newText === undefined) {
-            return
-        }
-        setCampaignPlanArguments(newText)
-    }
-
-    const onTypeChange = (newType: CampaignType): void => {
-        const parsedContent = campaignPlanArguments && parseJSONC(campaignPlanArguments)
-        if ((newType && !parsedContent) || (type && isEqual(parsedContent, parseJSONC(defaultInputByType[type])))) {
-            setCampaignPlanArguments(defaultInputByType[newType])
-        }
-        setType(newType)
-        setCampaign(undefined)
-    }
-
     const discardChangesMessage = 'Do you want to discard your changes?'
 
     const onEdit: React.MouseEventHandler = event => {
@@ -282,8 +249,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setName(name)
             setDescription(description)
             setMode('editing')
-            setType(plan?.type as CampaignType | undefined)
-            setCampaignPlanArguments(plan ? plan.arguments : '')
+            setCampaignPlanSpec({ type: plan?.type as CampaignType, arguments: plan?.arguments || '' })
         }
     }
 
@@ -338,22 +304,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
 
-    const nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[] | undefined = campaign?.changesets.nodes
-
-    const calculateDiff = (field: 'added' | 'deleted'): number => {
-        if (!nodes) {
-            return 0
-        }
-        return nodes.reduce(
-            (prev, next) =>
-                prev + (next.diff ? next.diff.fileDiffs.diffStat[field] + next.diff.fileDiffs.diffStat.changed : 0),
-            0
-        )
-    }
-
-    const totalAdditions = calculateDiff('added')
-    const totalDeletions = calculateDiff('deleted')
-
     const status = campaign
         ? campaign.__typename === 'CampaignPlan'
             ? campaign.status
@@ -364,7 +314,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // Tracks if a refresh of the campaignPlan is required before the campaign can be created
     const previewRefreshNeeded =
         !currentSpec ||
-        (campaignPlanArguments && !isEqual(currentSpec, parseJSONC(campaignPlanArguments))) ||
+        (campaignPlanSpec?.arguments && !isEqual(currentSpec, parseJSONC(campaignPlanSpec.arguments))) ||
         (status && status.state !== GQL.BackgroundProcessState.COMPLETED)
 
     return (
@@ -386,18 +336,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <span>
                             <Link to="/campaigns">Campaigns</Link>
                         </span>
-                        <span className="text-muted d-inline-block mx-2">/</span>
-                        {/* The namespace of a campaign can only be set on creation */}
-                        {campaign && campaign.__typename === 'Campaign' ? (
-                            <span>{campaign.namespace.namespaceName}</span>
-                        ) : (
-                            <CampaignNamespaceField
-                                id="new-campaign-page__namespace"
-                                className="w-auto d-inline-block"
-                                value={namespace}
-                                onChange={setNamespace}
-                            />
-                        )}
                         <span className="text-muted d-inline-block mx-2">/</span>
                         {mode === 'editing' || mode === 'saving' ? (
                             <CampaignTitleField
@@ -489,17 +427,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 </div>
                 {alertError && <ErrorAlert error={alertError} />}
                 <div className="card">
-                    <div className="card-header">
-                        <strong>
-                            <UserAvatar user={author} className="icon-inline" /> {author.username}
-                        </strong>
-                        {campaign && campaign.__typename === 'Campaign' && (
-                            <>
-                                {' '}
-                                started <Timestamp date={campaign.createdAt} />
-                            </>
-                        )}
-                    </div>
+                    {campaign && campaign.__typename === 'Campaign' && (
+                        <div className="card-header">
+                            <strong>
+                                <UserAvatar user={author} className="icon-inline" /> {author.username}
+                            </strong>{' '}
+                            started <Timestamp date={campaign.createdAt} />
+                        </div>
+                    )}
                     {mode === 'editing' || mode === 'saving' ? (
                         <CampaignDescriptionField
                             value={description}
@@ -524,12 +459,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </small>
                     </p>
                 )}
-                {planID === null && (
+                {planID === null && (campaignID === undefined || campaignPlanSpec !== undefined) && (
                     <CampaignPlanSpecificationFields
-                        type={type}
-                        onTypeChange={onTypeChange}
-                        argumentsJSONC={campaignPlanArguments}
-                        onArgumentsJSONCChange={onArgumentsChange}
+                        value={campaignPlanSpec}
+                        onChange={setCampaignPlanSpec}
                         readOnly={Boolean(campaign && campaign.__typename === 'Campaign')}
                         className="container-fluid my-3"
                         isLightTheme={isLightTheme}
@@ -537,12 +470,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
-                        {type !== undefined && (
+                        {campaignPlanSpec !== undefined && campaignPlanSpec.type !== MANUAL_CAMPAIGN_TYPE && (
                             <button
                                 type="button"
                                 className="btn btn-primary mr-1 e2e-preview-campaign"
                                 disabled={!previewRefreshNeeded}
-                                onClick={() => nextPreviewCampaignPlan({ type, arguments: campaignPlanArguments })}
+                                onClick={() => nextPreviewCampaignPlan(campaignPlanSpec)}
                             >
                                 {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
                                 Preview changes
@@ -551,7 +484,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={(type !== undefined && previewRefreshNeeded) || mode !== 'editing'}
+                            disabled={previewRefreshNeeded || mode !== 'editing'}
                         >
                             Create
                         </button>
@@ -575,80 +508,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             )}
             {/* is already created or a preview is available */}
             {campaign && (
-                <>
-                    <TabsWithLocalStorageViewStatePersistence
-                        storageKey="campaignTab"
-                        className="mt-3"
-                        tabs={[
-                            {
-                                id: 'diff',
-                                label: (
-                                    <span className="e2e-campaign-diff-tab">
-                                        Diff <span className="text-success">+{totalAdditions}</span>{' '}
-                                        <span className="text-danger">-{totalDeletions}</span>
-                                    </span>
-                                ),
-                            },
-                            {
-                                id: 'changesets',
-                                label: (
-                                    <span className="e2e-campaign-changesets-tab">
-                                        Changesets{' '}
-                                        {campaign && (
-                                            <span className="badge badge-secondary badge-pill">
-                                                {campaign.changesets.totalCount}
-                                            </span>
-                                        )}
-                                    </span>
-                                ),
-                            },
-                        ]}
-                        tabClassName="tab-bar__tab--h5like"
-                    >
-                        <div className="list-group mt-3" key="changesets">
-                            {campaign && campaign.__typename === 'Campaign' && (
-                                <FilteredConnection<
-                                    GQL.IExternalChangeset | GQL.IChangesetPlan,
-                                    Omit<ChangesetNodeProps, 'node'>
-                                >
-                                    className="mt-2"
-                                    updates={changesetUpdates}
-                                    nodeComponent={ChangesetNode}
-                                    nodeComponentProps={{ isLightTheme, history, location }}
-                                    queryConnection={queryChangesetsConnection}
-                                    hideSearch={true}
-                                    defaultFirst={15}
-                                    noun="changeset"
-                                    pluralNoun="changesets"
-                                    history={history}
-                                    location={location}
-                                />
-                            )}
-                            {campaign &&
-                                campaign.__typename === 'CampaignPlan' &&
-                                campaign.changesets.nodes.map((changeset, i) => (
-                                    <ChangesetNode
-                                        node={changeset}
-                                        isLightTheme={isLightTheme}
-                                        key={i}
-                                        location={location}
-                                        history={history}
-                                    ></ChangesetNode>
-                                ))}
-                        </div>
-                        <div className="mt-3" key="diff">
-                            {nodes && (
-                                <FileDiffTab
-                                    nodes={nodes}
-                                    persistLines={campaign.__typename === 'Campaign'}
-                                    history={history}
-                                    location={location}
-                                    isLightTheme={isLightTheme}
-                                ></FileDiffTab>
-                            )}
-                        </div>
-                    </TabsWithLocalStorageViewStatePersistence>
-                </>
+                <CampaignTabs
+                    changesets={campaign.changesets}
+                    persistLines={campaign.__typename === 'Campaign'}
+                    history={history}
+                    location={location}
+                    className="mt-3"
+                    isLightTheme={isLightTheme}
+                />
             )}
         </>
     )

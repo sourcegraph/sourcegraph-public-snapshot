@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useCallback } from 'react'
+import TextareaAutosize from 'react-textarea-autosize'
 
 interface Props {
     value: string | undefined
@@ -13,16 +14,23 @@ interface Props {
  */
 export const CampaignDescriptionField: React.FunctionComponent<Props> = ({
     value,
-    onChange,
+    onChange: parentOnChange,
     className = '',
     disabled,
-}) => (
-    <textarea
-        className={`form-control ${className}`}
-        value={value}
-        onChange={event => onChange(event.target.value)}
-        placeholder="Describe the purpose of this campaign, link to relevant internal documentation, etc."
-        rows={8}
-        disabled={disabled}
-    />
-)
+}) => {
+    const onChange = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(
+        event => parentOnChange(event.target.value),
+        [parentOnChange]
+    )
+    return (
+        <TextareaAutosize
+            type="text"
+            className={`form-control ${className}`}
+            value={value}
+            onChange={onChange}
+            placeholder="Description (purpose of campaign, instructions for reviewers, links to relevant internal documentation, etc.)"
+            minRows={3}
+            disabled={disabled}
+        />
+    )
+}

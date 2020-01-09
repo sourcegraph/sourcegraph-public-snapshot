@@ -7,8 +7,6 @@ import {
     ICampaign,
     IUpdateCampaignInput,
     ICreateCampaignInput,
-    IExternalChangesetConnection,
-    IChangesetsOnCampaignArguments,
     ICampaignPlan,
     ICampaignPlanSpecification,
 } from '../../../../../shared/src/graphql/schema'
@@ -19,10 +17,6 @@ export type CampaignType = 'comby' | 'credentials'
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         id
-        namespace {
-            id
-            namespaceName
-        }
         author {
             username
             avatarURL
@@ -43,6 +37,7 @@ const campaignFragment = gql`
         changesets {
             totalCount
             nodes {
+                id
                 repository {
                     id
                     name
@@ -103,6 +98,7 @@ const campaignPlanFragment = gql`
             totalCount
             nodes {
                 __typename
+                id
                 repository {
                     id
                     name
@@ -276,72 +272,5 @@ export const fetchCampaignPlanById = (campaignPlan: ID): Observable<ICampaignPla
                 throw new Error(`The given ID is a ${node.__typename}, not a CampaignPlan`)
             }
             return node
-        })
-    )
-
-export const queryChangesets = (
-    campaign: ID,
-    { first }: IChangesetsOnCampaignArguments
-): Observable<IExternalChangesetConnection> =>
-    queryGraphQL(
-        gql`
-            query CampaignChangesets($campaign: ID!, $first: Int) {
-                node(id: $campaign) {
-                    __typename
-                    ... on Campaign {
-                        changesets(first: $first) {
-                            totalCount
-                            nodes {
-                                __typename
-                                id
-                                title
-                                body
-                                state
-                                reviewState
-                                repository {
-                                    name
-                                    url
-                                }
-                                externalURL {
-                                    url
-                                }
-                                createdAt
-                                diff {
-                                    fileDiffs {
-                                        nodes {
-                                            ...FileDiffFields
-                                        }
-                                        totalCount
-                                        pageInfo {
-                                            hasNextPage
-                                        }
-                                        diffStat {
-                                            ...DiffStatFields
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${FileDiffFields}
-
-            ${FileDiffHunkRangeFields}
-
-            ${DiffStatFields}
-        `,
-        { campaign, first }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`Campaign with ID ${campaign} does not exist`)
-            }
-            if (node.__typename !== 'Campaign') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
-            }
-            return node.changesets
         })
     )
