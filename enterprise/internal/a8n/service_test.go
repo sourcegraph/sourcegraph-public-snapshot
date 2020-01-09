@@ -289,6 +289,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 	tests := []struct {
 		name                                string
+		manualCampaign                      bool
 		args                                func(campaignID, newPlanID int64) UpdateCampaignArgs
 		oldCampaignJobs                     func(currentPlanID int64) []*a8n.CampaignJob
 		newCampaignJobs                     func(newPlanID int64, oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob
@@ -297,6 +298,20 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 		wantModifiedChangesetJobs           func(changesetJobs []*a8n.ChangesetJob, newCampaignJobs []*a8n.CampaignJob) (jobs []*a8n.ChangesetJob)
 		wantCreatedChangesetJobs            func(changesetJobs []*a8n.ChangesetJob, newCampaignJobs []*a8n.CampaignJob) (jobs []*a8n.ChangesetJob)
 	}{
+		{
+			name:           "manual campaign, no new plan, name update",
+			manualCampaign: true,
+			args: func(campaignID, planID int64) UpdateCampaignArgs {
+				newName := "this is a new name"
+				return UpdateCampaignArgs{Campaign: campaignID, Name: &newName}
+			},
+			oldCampaignJobs: func(plan int64) []*a8n.CampaignJob {
+				return []*a8n.CampaignJob{}
+			},
+			newCampaignJobs: func(plan int64, oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob {
+				return []*a8n.CampaignJob{}
+			},
+		},
 		{
 			name: "1 unmodified",
 			args: func(campaignID, planID int64) UpdateCampaignArgs {
@@ -458,40 +473,50 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			store := NewStoreWithClock(dbconn.Global, clock)
+			svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
 
-			// Setup old CampaignPlan and CampaignJobs
-			oldPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
-			err = store.CreateCampaignPlan(ctx, oldPlan)
-			if err != nil {
-				t.Fatal(err)
-			}
+			var (
+				campaign            *a8n.Campaign
+				oldCampaignJobs     []*a8n.CampaignJob
+				oldCampaignJobsByID map[int64]*a8n.CampaignJob
+			)
 
-			oldCampaignJobs := tt.oldCampaignJobs(oldPlan.ID)
-			oldCampaignJobsByID := make(map[int64]*a8n.CampaignJob)
-			for _, j := range oldCampaignJobs {
-				err := store.CreateCampaignJob(ctx, j)
+			if tt.manualCampaign {
+				campaign = testCampaign(u.ID, 0)
+			} else {
+				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{}`}
+				err = store.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
 				}
-				oldCampaignJobsByID[j.ID] = j
-			}
-			campaign := testCampaign(u.ID, oldPlan.ID)
 
-			// Create Campaign
-			svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+				oldCampaignJobs = tt.oldCampaignJobs(plan.ID)
+				oldCampaignJobsByID = make(map[int64]*a8n.CampaignJob)
+				for _, j := range oldCampaignJobs {
+					err := store.CreateCampaignJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+					oldCampaignJobsByID[j.ID] = j
+				}
+				campaign = testCampaign(u.ID, plan.ID)
+			}
+
 			err = svc.CreateCampaign(ctx, campaign, false)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			// Create Changesets and update ChangesetJobs to look like they ran
-			oldChangesets := fakeRunChangesetJobs(ctx, t, store, now, campaign, oldCampaignJobsByID)
+			var oldChangesets []*a8n.Changeset
+			if !tt.manualCampaign {
+				// Create Changesets and update ChangesetJobs to look like they ran
+				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, oldCampaignJobsByID)
+			}
 
 			oldTime := now
 			now = now.Add(5 * time.Second)
 
-			// Create a new CampaignPlan
-			newPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+			newPlan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{}`}
 			err = store.CreateCampaignPlan(ctx, newPlan)
 			if err != nil {
 				t.Fatal(err)
@@ -499,7 +524,6 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 			newCampaignJobs := tt.newCampaignJobs(newPlan.ID, oldCampaignJobs)
 
-			// Create new CampaignJobs
 			for _, j := range newCampaignJobs {
 				err := store.CreateCampaignJob(ctx, j)
 				if err != nil {
@@ -507,9 +531,8 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				}
 			}
 
-			// Update the Campaign to use the new plan
+			// Update the Campaign
 			args := tt.args(campaign.ID, newPlan.ID)
-
 			updatedCampaign, err := svc.UpdateCampaign(ctx, args)
 			if err != nil {
 				t.Fatal(err)

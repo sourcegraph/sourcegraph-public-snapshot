@@ -798,22 +798,28 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	// List new CampaignJobs attached to new CampaignPlanID
-	newCampaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
-		CampaignPlanID: campaign.CampaignPlanID,
-		Limit:          -1,
-		OnlyFinished:   true,
-		OnlyWithDiff:   true,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "listing new campaign jobs")
-	}
-	if len(newCampaignJobs) == 0 {
-		return nil, ErrNoCampaignJobs
-	}
+	var (
+		newCampaignJobs         []*a8n.CampaignJob
+		newCampaignJobsByRepoID map[int32]*a8n.CampaignJob
+	)
+	if updatePlanID {
+		newCampaignJobs, _, err = tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+			CampaignPlanID: campaign.CampaignPlanID,
+			Limit:          -1,
+			OnlyFinished:   true,
+			OnlyWithDiff:   true,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "listing new campaign jobs")
+		}
+		if len(newCampaignJobs) == 0 {
+			return nil, ErrNoCampaignJobs
+		}
 
-	newCampaignJobsByRepoID := make(map[int32]*a8n.CampaignJob, len(newCampaignJobs))
-	for _, j := range newCampaignJobs {
-		newCampaignJobsByRepoID[j.RepoID] = j
+		newCampaignJobsByRepoID = make(map[int32]*a8n.CampaignJob, len(newCampaignJobs))
+		for _, j := range newCampaignJobs {
+			newCampaignJobsByRepoID[j.RepoID] = j
+		}
 	}
 
 	// We need to determine which current ChangesetJobs we want to keep and
@@ -829,6 +835,16 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	)
 
 	for repoID, currentChangesetJob := range changesetJobByRepoID {
+		// Fast path: if we don't update the CampaignPlan, we only need to
+		// check whether name or description need to be updated.
+		if !updatePlanID && (updateName || updateDescription) {
+			currentChangesetJob.Error = ""
+			currentChangesetJob.StartedAt = time.Time{}
+			currentChangesetJob.FinishedAt = time.Time{}
+			toKeep = append(toKeep, currentChangesetJob)
+			continue
+		}
+
 		currentCampaignJob, ok := campaignJobsByID[currentChangesetJob.CampaignJobID]
 		if !ok {
 			return nil, fmt.Errorf("could not find campaign job with id %d", currentChangesetJob.CampaignJobID)
