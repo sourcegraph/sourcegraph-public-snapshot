@@ -228,7 +228,7 @@ export class UploadManager {
                 this.connection.getRepository(pgModels.LsifUpload).findOneOrFail({ id: uploadId })
             )
 
-            if (upload.state === 'errored' && upload.failureSummary && upload.failureStacktrace) {
+            if (upload.state === 'errored') {
                 const error = new Error(upload.failureSummary || '')
                 error.stack = upload.failureStacktrace || ''
                 throw new AbortError(error)
