@@ -31,7 +31,7 @@ type LSIFUploadStats struct {
 }
 
 type LSIFUpload struct {
-	ID                string     `json:"id"`
+	ID                int64      `json:"id"`
 	Repository        string     `json:"repository"`
 	Commit            string     `json:"commit"`
 	Root              string     `json:"root"`
