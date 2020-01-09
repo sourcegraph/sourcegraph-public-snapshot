@@ -5,7 +5,6 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { FileDiffTabNodeProps, FileDiffTabNode } from '../FileDiffTabNode'
 import { Observable } from 'rxjs'
-import classNames from 'classnames'
 import { DEFAULT_LIST_COUNT } from '../presentation'
 
 interface Props extends ThemeProps {
@@ -29,23 +28,25 @@ export const CampaignDiffs: React.FunctionComponent<Props> = ({
     location,
     className,
 }) => (
-    <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<FileDiffTabNodeProps, 'node'>>
-        className={classNames('mt-2', className)}
-        // updates={changesetUpdates}
-        nodeComponent={FileDiffTabNode}
-        nodeComponentProps={{
-            persistLines,
-            isLightTheme,
-            history,
-            location,
-        }}
-        queryConnection={queryChangesetsConnection}
-        hideSearch={true}
-        defaultFirst={DEFAULT_LIST_COUNT}
-        noun="changeset"
-        pluralNoun="changesets"
-        history={history}
-        location={location}
-        useURLQuery={false}
-    />
+    <div className={className}>
+        <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<FileDiffTabNodeProps, 'node'>>
+            className="mt-2"
+            // updates={changesetUpdates}
+            nodeComponent={FileDiffTabNode}
+            nodeComponentProps={{
+                persistLines,
+                isLightTheme,
+                history,
+                location,
+            }}
+            queryConnection={queryChangesetsConnection}
+            hideSearch={true}
+            defaultFirst={DEFAULT_LIST_COUNT}
+            noun="changeset"
+            pluralNoun="changesets"
+            history={history}
+            location={location}
+            useURLQuery={false}
+        />
+    </div>
 )
