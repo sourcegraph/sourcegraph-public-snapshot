@@ -76,7 +76,7 @@ type TotalCountArgs struct {
 
 type RepositoryConnectionResolver interface {
 	Nodes(ctx context.Context) ([]*RepositoryResolver, error)
-	TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error)
+	TotalCount(ctx context.Context, args *TotalCountArgs) (*int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
