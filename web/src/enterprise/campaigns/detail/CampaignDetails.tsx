@@ -198,7 +198,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     ),
                     tap(campaign => {
                         setCampaign(campaign)
-                        if (campaign && campaign.changesets.totalCount <= DEFAULT_LIST_COUNT) { 
+                        if (campaign && campaign.changesets.totalCount <= DEFAULT_LIST_COUNT) {
                             nextChangesetUpdate()
                         }
                     })

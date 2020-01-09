@@ -9,7 +9,7 @@ import { queryChangesets, queryChangesetPlans } from './backend'
 import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
 interface Props extends ThemeProps {
-    campaign: Pick<GQL.ICampaign | GQL.ICampaignPlan, '__typename' | 'id' |  'changesets'>
+    campaign: Pick<GQL.ICampaign | GQL.ICampaignPlan, '__typename' | 'id' | 'changesets'>
     persistLines: boolean
 
     history: H.History
@@ -65,7 +65,8 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                     id: 'changesets',
                     label: (
                         <span className="e2e-campaign-changesets-tab">
-                            Changesets <span className="badge badge-secondary badge-pill">{campaign.changesets.totalCount}</span>
+                            Changesets{' '}
+                            <span className="badge badge-secondary badge-pill">{campaign.changesets.totalCount}</span>
                         </span>
                     ),
                 },

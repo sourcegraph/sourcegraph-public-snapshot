@@ -14,7 +14,12 @@ describe('CampaignTabs', () => {
         expect(
             createRenderer().render(
                 <CampaignTabs
-                    campaign={{ id: '0', changesets: { nodes: [] as GQL.IExternalChangeset[] } as GQL.IExternalChangesetConnection } as GQL.ICampaign}
+                    campaign={
+                        {
+                            id: '0',
+                            changesets: { nodes: [] as GQL.IExternalChangeset[] } as GQL.IExternalChangesetConnection,
+                        } as GQL.ICampaign
+                    }
                     persistLines={true}
                     history={history}
                     location={history.location}
