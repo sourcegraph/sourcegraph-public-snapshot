@@ -11,6 +11,7 @@ import {
     createPR,
     CreateBranchWithChangesOptions,
 } from './github'
+// @ts-ignore
 import * as persistedConfig from './config.json'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
