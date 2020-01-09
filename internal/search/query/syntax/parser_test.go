@@ -1,7 +1,6 @@
 package syntax
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -155,23 +154,4 @@ func TestParseAllowingErrors(t *testing.T) {
 			}
 		})
 	}
-}
-
-func ExampleMaybeEscapeValue() {
-	values := []string{
-		"x",
-		"go",
-		"h i",
-		`"foo"`,
-		`'foo'`,
-	}
-	for _, v := range values {
-		fmt.Printf("%-10q -> %s\n", v, MaybeEscapeValue(v))
-	}
-	// Output:
-	// "x"        -> x
-	// "go"       -> go
-	// "h i"      -> "h i"
-	// "\"foo\""  -> "\"foo\""
-	// "'foo'"    -> "'foo'"
 }
