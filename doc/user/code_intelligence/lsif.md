@@ -20,9 +20,14 @@ Go to your global settings at https://sourcegraph.example.com/site-admin/global-
 
 After uploading LSIF files, your Sourcegraph instance will use these files to respond to code intelligence requests (such as for hovers, definitions, and references). When LSIF data does not exist for a particular file in a repository, Sourcegraph will fall back to built-in code intelligence.
 
-## Stale code intelligence
+## Why are my results sometimes incorrect?
 
-LSIF code intelligence will be out of sync when you're viewing a file that has changed since the LSIF data was uploaded.
+You may occasionally see results from [basic code intelligence](basic_code_intelligence.md) even when you have uploaded LSIF data. Such results are indicated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This can happen in the following scenarios:
+
+- The symbol has LSIF data, but it is defined in a repository which does not have LSIF data.
+- The nearest commit that has LSIF data is too far away from your browsing commit. [The limit is 100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) ahead/behind.
+- The current file doesn't exist in the nearest LSIF dump or has been changed between the LSIF dump and the browsing commit.
+- The _Find references_ panel will always include search-based results, but only after all of the precise results have been displayed. This ensures every symbol has code intelligence.
 
 ## Data retention policy
 

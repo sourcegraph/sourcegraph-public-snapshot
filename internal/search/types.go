@@ -23,7 +23,6 @@ type CommitParameters struct {
 	PatternInfo        *CommitPatternInfo
 	Query              *query.Query
 	Diff               bool
-	TextSearchOptions  git.TextSearchOptions
 	ExtraMessageValues []string
 }
 
@@ -98,7 +97,6 @@ type TextParameters struct {
 type TextParametersForCommitParameters struct {
 	PatternInfo *CommitPatternInfo
 	Repos       []*RepositoryRevisions
-	Query       *query.Query
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in

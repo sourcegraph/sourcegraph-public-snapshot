@@ -7,12 +7,12 @@ import {
     ICampaign,
     IUpdateCampaignInput,
     ICreateCampaignInput,
-    IExternalChangesetConnection,
-    IChangesetsOnCampaignArguments,
     ICampaignPlan,
     ICampaignPlanSpecification,
     IChangesetPlansOnCampaignArguments,
     IChangesetPlanConnection,
+    IChangesetsOnCampaignArguments,
+    IExternalChangesetConnection,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 
@@ -21,10 +21,6 @@ export type CampaignType = 'comby' | 'credentials'
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         id
-        namespace {
-            id
-            namespaceName
-        }
         author {
             username
             avatarURL
@@ -99,6 +95,7 @@ const campaignPlanFragment = gql`
             nodes {
                 id
                 __typename
+                id
                 repository {
                     id
                     name

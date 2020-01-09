@@ -5,7 +5,7 @@ exports[`CampaignTitleField renders 1`] = `
   autoFocus={true}
   className="form-control "
   onChange={[Function]}
-  placeholder="Campaign title"
+  placeholder="Title"
   required={true}
   value="a"
 />

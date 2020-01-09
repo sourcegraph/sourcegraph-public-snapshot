@@ -369,7 +369,7 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 	if len(args.ExternalRepos) > 0 {
 		er := make([]*sqlf.Query, 0, len(args.ExternalRepos))
 		for _, spec := range args.ExternalRepos {
-			er = append(er, sqlf.Sprintf("(external_id = NULLIF(BTRIM(%s), '') AND external_service_type = NULLIF(BTRIM(%s), '') AND external_service_id = NULLIF(BTRIM(%s), ''))", spec.ID, spec.ServiceType, spec.ServiceID))
+			er = append(er, sqlf.Sprintf("(external_id = %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
@@ -508,7 +508,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 			return errors.Wrap(err, op.name)
 		}
 
-		if op.name == "delete" {
+		if op.name != "insert" {
 			if err = rows.Close(); err != nil {
 				return errors.Wrap(err, op.name)
 			}
@@ -519,7 +519,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		i := -1
 		_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
 			i++
-			err = scanRepo(op.repos[i], sc)
+			err = sc.Scan(&(op.repos[i].ID))
 			return int64(op.repos[i].ID), 1, err
 		})
 
@@ -629,56 +629,32 @@ WITH batch AS (
   WITH ORDINALITY
 )`
 
-var updateReposQuery = batchReposQueryFmtstr + `,
-updated AS (
-  UPDATE repo
-  SET
-    name                  = batch.name,
-    uri                   = batch.uri,
-    description           = batch.description,
-    language              = batch.language,
-    created_at            = COALESCE(batch.created_at, repo.created_at),
-    updated_at            = COALESCE(batch.updated_at, repo.updated_at),
-    deleted_at            = batch.deleted_at,
-    external_service_type = COALESCE(NULLIF(BTRIM(batch.external_service_type), ''), repo.external_service_type),
-    external_service_id   = COALESCE(NULLIF(BTRIM(batch.external_service_id), ''), repo.external_service_id),
-    external_id           = COALESCE(NULLIF(BTRIM(batch.external_id), ''), repo.external_id),
-    enabled               = batch.enabled,
-    archived              = batch.archived,
-    fork                  = batch.fork,
-    sources               = batch.sources,
-    metadata              = batch.metadata
-  FROM batch
-  WHERE repo.id = batch.id
-  RETURNING repo.*
-)
-SELECT
-  updated.id,
-  updated.name,
-  updated.uri,
-  updated.description,
-  updated.language,
-  updated.created_at,
-  updated.updated_at,
-  updated.deleted_at,
-  updated.external_service_type,
-  updated.external_service_id,
-  updated.external_id,
-  updated.enabled,
-  updated.archived,
-  updated.fork,
-  updated.sources,
-  updated.metadata
-FROM updated
-LEFT JOIN batch ON batch.id = updated.id
-ORDER BY batch.ordinality
+var updateReposQuery = batchReposQueryFmtstr + `
+UPDATE repo
+SET
+  name                  = batch.name,
+  uri                   = batch.uri,
+  description           = batch.description,
+  language              = batch.language,
+  created_at            = batch.created_at,
+  updated_at            = batch.updated_at,
+  deleted_at            = batch.deleted_at,
+  external_service_type = batch.external_service_type,
+  external_service_id   = batch.external_service_id,
+  external_id           = batch.external_id,
+  enabled               = batch.enabled,
+  archived              = batch.archived,
+  fork                  = batch.fork,
+  sources               = batch.sources,
+  metadata              = batch.metadata
+FROM batch
+WHERE repo.id = batch.id
 `
 
 var deleteReposQuery = batchReposQueryFmtstr + `
 DELETE FROM repo USING batch
 WHERE batch.deleted_at IS NOT NULL
-AND repo.id = batch.ID
-RETURNING repo.*
+AND repo.id = batch.id
 `
 
 var insertReposQuery = batchReposQueryFmtstr + `,
@@ -708,9 +684,9 @@ inserted AS (
     created_at,
     updated_at,
     deleted_at,
-    NULLIF(BTRIM(external_service_type), ''),
-    NULLIF(BTRIM(external_service_id), ''),
-    NULLIF(BTRIM(external_id), ''),
+    external_service_type,
+    external_service_id,
+    external_id,
     enabled,
     archived,
     fork,
@@ -719,23 +695,7 @@ inserted AS (
   FROM batch
   RETURNING repo.*
 )
-SELECT
-  inserted.id,
-  inserted.name,
-  inserted.uri,
-  inserted.description,
-  inserted.language,
-  inserted.created_at,
-  inserted.updated_at,
-  inserted.deleted_at,
-  inserted.external_service_type,
-  inserted.external_service_id,
-  inserted.external_id,
-  inserted.enabled,
-  inserted.archived,
-  inserted.fork,
-  inserted.sources,
-  inserted.metadata
+SELECT inserted.id
 FROM inserted
 LEFT JOIN batch ON batch.name = inserted.name
 ORDER BY batch.ordinality
