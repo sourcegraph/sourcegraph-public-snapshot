@@ -2387,8 +2387,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if runCount != 1 {
-				t.Errorf("Want %d, got %d", 1, runCount)
+
+			rc := atomic.LoadInt64(&runCount)
+			if rc != 1 {
+				t.Errorf("Want %d, got %d", 1, rc)
 			}
 		})
 	}
