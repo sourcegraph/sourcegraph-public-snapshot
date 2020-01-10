@@ -7,9 +7,10 @@ const PROPS = {
     onRetry: () => undefined,
 }
 
-const CAMPAIGN: Pick<GQL.ICampaign, '__typename' | 'closedAt'> = {
+const CAMPAIGN: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt'> = {
     __typename: 'Campaign',
     closedAt: null,
+    publishedAt: null,
 }
 
 const CAMPAIGN_PLAN: Pick<GQL.ICampaignPlan, '__typename'> = {

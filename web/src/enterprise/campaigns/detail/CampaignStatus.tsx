@@ -7,9 +7,7 @@ import { ErrorAlert } from '../../../components/alerts'
 import { parseISO, addDays, isBefore } from 'date-fns'
 
 interface Props {
-    campaign:
-        | Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt' | 'createdAt'>
-        | Pick<GQL.ICampaignPlan, '__typename'>
+    campaign: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt'> | Pick<GQL.ICampaignPlan, '__typename'>
 
     /** The campaign status. */
     status: Omit<GQL.IBackgroundProcessStatus, '__typename'>
@@ -34,6 +32,8 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
             {status.state === GQL.BackgroundProcessState.PROCESSING && (
                 <div className="mt-3 e2e-preview-loading campaign-status__progress-indicator">
                     <div className="progress">
+                        {/* we need to set the width to control the progress bar, so: */}
+                        {/* eslint-disable-next-line react/forbid-dom-props */}
                         <div className="progress-bar" style={{ width: progress + '%' }}>
                             &nbsp;
                         </div>
