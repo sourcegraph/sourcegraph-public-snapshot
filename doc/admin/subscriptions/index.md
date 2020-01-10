@@ -35,3 +35,7 @@ This does not include:
 Some customers have contracts based on **total user accounts**, rather than on monthly active users. This count is maintained on your Sourcegraph instance, viewable and auditable on the **Site admin > Users** page, and is reported back in aggregate to Sourcegraph.com via [pings](https://docs.sourcegraph.com/admin/pings).
 
 A Sourcegraph user account is created when a user signs up or signs in for the first time. Sourcegraph user accounts can be deleted by administrators via the **Site admin > Users** page, or using the GraphQL API (including with the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli), if needed).
+
+## Updating your license key
+
+- Navigate to Site admin > Configuration and update the `licenseKey` field with the new value and save.
