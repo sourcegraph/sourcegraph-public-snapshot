@@ -214,8 +214,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }, [nextPreviewCampaignPlan, planID])
 
-    const status = campaign ? campaign.__typename === 'Campaign' ? campaign.changesetCreationStatus
-    :campaign.status : null
+    const status = campaign
+        ? campaign.__typename === 'Campaign'
+            ? campaign.changesetCreationStatus
+            : campaign.status
+        : null
 
     // Tracks if a refresh of the campaignPlan is required before the campaign can be created
     const previewRefreshNeeded = useMemo(() => {
@@ -529,13 +532,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
                     {campaign.changesets.totalCount > 0 ? (
                         <CampaignTabs
-                        campaign={campaign}
-                        persistLines={campaign.__typename === 'Campaign'}
-                        history={history}
-                        location={location}
-                        className="mt-3"
-                        isLightTheme={isLightTheme}
-                    />
+                            campaign={campaign}
+                            persistLines={campaign.__typename === 'Campaign'}
+                            history={history}
+                            location={location}
+                            className="mt-3"
+                            isLightTheme={isLightTheme}
+                        />
                     ) : (
                         <p className="mt-3 text-muted">No changesets</p>
                     )}
