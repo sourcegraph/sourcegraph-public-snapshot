@@ -158,11 +158,7 @@ func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pendi
 func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }
 func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
 func (b BackgroundProcessStatus) Finished() bool {
-	if b.ProcessState == BackgroundProcessStateCompleted ||
-		b.ProcessState == BackgroundProcessStateErrored {
-		return true
-	}
-	return false
+	return b.ProcessState != BackgroundProcessStateProcessing
 }
 
 // BackgroundProcessState defines the possible states of a background process.
@@ -174,6 +170,8 @@ const (
 	BackgroundProcessStateErrored    BackgroundProcessState = "ERRORED"
 	BackgroundProcessStateCompleted  BackgroundProcessState = "COMPLETED"
 	BackgroundProcessStateCanceled   BackgroundProcessState = "CANCELED"
+
+	// Remember to update Finished() above if a new state is added
 )
 
 // ChangesetReviewState defines the possible states of a Changeset's review.

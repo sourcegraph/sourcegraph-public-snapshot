@@ -94,9 +94,11 @@ func (s *Store) ProcessPendingCampaignJob(ctx context.Context, process func(ctx 
 
 const getPendingCampaignJobQuery = `
 UPDATE campaign_jobs c SET started_at = now() WHERE id = (
-	SELECT id FROM campaign_jobs
-	WHERE started_at is null
-	ORDER BY id ASC
+	SELECT c.id FROM campaign_jobs c
+	JOIN campaign_plans p on p.id = c.campaign_plan_id
+	WHERE c.started_at is null
+	AND p.canceled_at is null
+	ORDER BY c.id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
 RETURNING c.id,
