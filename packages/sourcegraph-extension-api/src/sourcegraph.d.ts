@@ -925,6 +925,43 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * A style for {@link BadgeAttachmentRenderOptions}.
+     */
+    export interface ThemableBadgeAttachmentStyle {
+        /** The icon (a base64-encoded PNG icon) to display next to the wrapped value. */
+        icon?: string
+
+        /** The CSS background-color property value for the attachment. */
+        backgroundColor?: string
+
+        /** The CSS color property value for the attachment. */
+        color?: string
+    }
+
+    /** An attachment adds content to a hover tooltip or result in a locations panel. */
+    export interface BadgeAttachmentRenderOptions extends ThemableBadgeAttachmentStyle {
+        /** Tooltip text to display when hovering over the attachment. */
+        hoverMessage?: string
+
+        /** If set, the attachment becomes a link with this destination URL. */
+        linkURL?: string
+
+        /** Overwrite style for light themes. */
+        light?: ThemableBadgeAttachmentStyle
+
+        /** Overwrite style for dark themes. */
+        dark?: ThemableBadgeAttachmentStyle
+    }
+
+    /**
+     * A wrapper around a providable type (currently hover and locations) with additional
+     * context to enable displaying badges next to the wrapped result value in the UI.
+     */
+    type Badged<T extends {}> = T & {
+        badge?: BadgeAttachmentRenderOptions
+    }
+
+    /**
      * A hover represents additional information for a symbol or word. Hovers are rendered in a tooltip-like
      * widget.
      */
@@ -945,14 +982,14 @@ declare module 'sourcegraph' {
     }
 
     export interface HoverProvider {
-        provideHover(document: TextDocument, position: Position): ProviderResult<Hover>
+        provideHover(document: TextDocument, position: Position): ProviderResult<Badged<Hover>>
     }
 
     /**
      * The definition of a symbol represented as one or many [locations](#Location). For most programming languages
      * there is only one location at which a symbol is defined. If no definition can be found `null` is returned.
      */
-    export type Definition = Location | Location[] | null
+    export type Definition = Badged<Location> | Badged<Location>[] | null
 
     /**
      * A definition provider implements the "go-to-definition" feature.
@@ -993,7 +1030,7 @@ declare module 'sourcegraph' {
             document: TextDocument,
             position: Position,
             context: ReferenceContext
-        ): ProviderResult<Location[]>
+        ): ProviderResult<Badged<Location>[]>
     }
 
     /**

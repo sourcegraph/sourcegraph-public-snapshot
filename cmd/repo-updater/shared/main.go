@@ -227,7 +227,6 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 }
 
 type scheduler interface {
-	Set(...*repos.Repo)
 	Update(...*repos.Repo)
 }
 
@@ -238,7 +237,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 		select {
 		case rs := <-syncer.Synced:
 			if !conf.Get().DisableAutoGitUpdates {
-				sched.Set(rs...)
+				sched.Update(rs...)
 			}
 
 			go func() {

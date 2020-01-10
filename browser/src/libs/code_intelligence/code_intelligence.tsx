@@ -98,6 +98,7 @@ import { observeStorageKey } from '../../browser/storage'
 import { SourcegraphIntegrationURLs } from '../../platform/context'
 import { requestGraphQLHelper } from '../../shared/backend/requestGraphQL'
 import { checkUserLoggedInAndFetchSettings } from '../../platform/settings'
+import { IS_LIGHT_THEME } from './consts'
 
 registerHighlightContributions()
 
@@ -403,6 +404,7 @@ export function initCodeIntelligence({
                     {...hoverOverlayProps}
                     {...codeHost.hoverOverlayClassProps}
                     telemetryService={telemetryService}
+                    isLightTheme={IS_LIGHT_THEME}
                     hoverRef={nextOverlayElement}
                     extensionsController={extensionsController}
                     platformContext={platformContext}

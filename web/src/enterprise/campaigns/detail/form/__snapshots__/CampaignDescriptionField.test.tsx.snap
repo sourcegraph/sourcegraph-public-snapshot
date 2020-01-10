@@ -4,8 +4,13 @@ exports[`CampaignDescriptionField renders 1`] = `
 <textarea
   className="form-control "
   onChange={[Function]}
-  placeholder="Describe the purpose of this campaign, link to relevant internal documentation, etc."
-  rows={8}
+  placeholder="Description (purpose of campaign, instructions for reviewers, links to relevant internal documentation, etc.)"
+  style={
+    Object {
+      "height": 0,
+    }
+  }
+  type="text"
   value="a"
 />
 `;

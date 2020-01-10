@@ -1,13 +1,12 @@
 import * as sharedMetrics from '../database/metrics'
 import * as pgModels from '../models/pg'
 import { addrFor, getCommitsNear, getHead } from '../gitserver/gitserver'
-import { MAX_TRAVERSAL_LIMIT } from '../constants'
 import { Brackets, Connection, EntityManager } from 'typeorm'
 import { dbFilename, tryDeleteFile } from '../paths'
 import { logAndTraceCall, TracingContext } from '../tracing'
 import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
 import { TableInserter } from '../database/inserter'
-import { visibleDumps } from '../models/queries'
+import { visibleDumps, lineageWithDumps, ancestorLineage, bidirectionalLineage } from '../models/queries'
 
 /**
  * The insertion metrics for Postgres.
@@ -163,13 +162,20 @@ export class DumpManager {
         }
 
         return logAndTraceCall(ctx, 'Finding closest dump', async () => {
+            const query = `
+                WITH
+                ${bidirectionalLineage()},
+                ${lineageWithDumps()}
+
+                SELECT * from lsif_dumps WHERE id IN (
+                    SELECT d.dump_id FROM lineage_with_dumps d
+                    WHERE $3 LIKE (d.root || '%')
+                    ORDER BY d.n LIMIT 1
+                );
+            `
+
             const results: pgModels.LsifDump[] = await instrumentQuery(() =>
-                this.connection.query('select * from closest_dump($1, $2, $3, $4)', [
-                    repository,
-                    commit,
-                    file,
-                    MAX_TRAVERSAL_LIMIT,
-                ])
+                this.connection.query(query, [repository, commit, file])
             )
 
             if (results.length === 0) {
@@ -195,12 +201,8 @@ export class DumpManager {
      */
     public updateDumpsVisibleFromTip(repository: string, commit: string, ctx: TracingContext = {}): Promise<void> {
         const query = `
-            -- Get all ancestors of the tip
-            WITH RECURSIVE lineage(id, repository, "commit", parent) AS (
-                SELECT c.* FROM lsif_commits c WHERE c.repository = $1 AND c."commit" = $2
-                UNION
-                SELECT c.* FROM lineage a JOIN lsif_commits c ON a.repository = c.repository AND a.parent = c."commit"
-            ),
+            WITH
+            ${ancestorLineage()},
             ${visibleDumps()}
 
             -- Update dump records by:

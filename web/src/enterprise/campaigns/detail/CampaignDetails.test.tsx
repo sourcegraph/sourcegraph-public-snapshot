@@ -9,11 +9,11 @@ import { of } from 'rxjs'
 jest.mock('./form/CampaignPlanSpecificationFields', () => ({
     CampaignPlanSpecificationFields: 'CampaignPlanSpecificationFields',
 }))
-jest.mock('./form/CampaignNamespaceField', () => ({ CampaignNamespaceField: 'CampaignNamespaceField' }))
 jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 jest.mock('./CampaignStatus', () => ({ CampaignStatus: (props: any) => `CampaignStatus(state=${props.status.state})` }))
+jest.mock('./CampaignTabs', () => ({ CampaignTabs: 'CampaignTabs' }))
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
 const history = H.createMemoryHistory()
@@ -26,7 +26,7 @@ describe('CampaignDetails', () => {
                     campaignID={undefined}
                     history={history}
                     location={history.location}
-                    authenticatedUser={{ username: 'alice', avatarURL: null }}
+                    authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
                     isLightTheme={true}
                 />
             )
@@ -37,7 +37,7 @@ describe('CampaignDetails', () => {
             campaignID="c"
             history={history}
             location={history.location}
-            authenticatedUser={{ username: 'alice', avatarURL: null }}
+            authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
             isLightTheme={true}
             _fetchCampaignById={() =>
                 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
@@ -45,7 +45,6 @@ describe('CampaignDetails', () => {
                     __typename: 'Campaign',
                     id: 'c',
                     description: 'd',
-                    namespace: { namespaceName: 'alice' },
                     author: { username: 'alice' },
                     plan: { type: 'comby', arguments: '{}' },
                     changesets: { nodes: [] as GQL.IExternalChangeset[], totalCount: 2 },

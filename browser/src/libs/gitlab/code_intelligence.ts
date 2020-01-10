@@ -145,11 +145,8 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         // Go to specific URL on this Gitlab instance.
         const url = new URL(`https://${target.rawRepoName}/blob/${target.rev}/${target.filePath}`)
         if (target.position) {
-            const { line, character } = target.position
+            const { line } = target.position
             url.hash = `#L${line}`
-            if (character) {
-                url.hash += `:${character}`
-            }
         }
         return url.href
     },

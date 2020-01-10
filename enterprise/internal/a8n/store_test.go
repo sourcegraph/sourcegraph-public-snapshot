@@ -328,7 +328,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignIDs:         []int64{int64(i) + 1},
 						ExternalID:          fmt.Sprintf("foobar-%d", i),
 						ExternalServiceType: "github",
-						ExternalDeletedAt:   now,
 					}
 
 					changesets = append(changesets, th)
@@ -342,6 +341,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, have := range changesets {
 					if have.ID == 0 {
 						t.Fatal("id should not be zero")
+					}
+
+					if have.IsDeleted() {
+						t.Fatal("changeset is deleted")
 					}
 
 					want := have.Clone()
@@ -523,8 +526,26 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatal(err)
 					}
 
+					if len(have) != len(changesets) {
+						t.Fatalf("have 0 changesets. want %d", len(changesets))
+					}
+
+					for _, c := range changesets {
+						c.SetDeleted()
+						c.UpdatedAt = now
+					}
+
+					if err := s.UpdateChangesets(ctx, changesets...); err != nil {
+						t.Fatal(err)
+					}
+
+					have, _, err = s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
+					if err != nil {
+						t.Fatal(err)
+					}
+
 					if len(have) != 0 {
-						t.Fatalf("have %d changesets. want 0", len(have))
+						t.Fatalf("have %d changesets. want 0", len(changesets))
 					}
 				}
 
@@ -593,7 +614,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, c := range changesets {
 					c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
 					c.ExternalServiceType = bitbucketserver.ServiceType
-					c.ExternalDeletedAt = c.ExternalDeletedAt.Add(time.Second)
 
 					if c.RepoID != 0 {
 						c.RepoID++
@@ -2181,18 +2201,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("ResetFailedChangesetJobs", func(t *testing.T) {
 				campaignID := 9999
 				jobs := []*a8n.ChangesetJob{
-					{StartedAt: now},
 					// completed, no errors
 					{StartedAt: now, FinishedAt: now, ChangesetID: 23},
-					// not completed, error
-					{StartedAt: now, Error: "error1"},
 					// completed, error
 					{StartedAt: now, FinishedAt: now, Error: "error1"},
 					// completed, another error
 					{StartedAt: now, FinishedAt: now, Error: "error2"},
 				}
 
-				mustReset := make(map[int64]bool)
 				for i, j := range jobs {
 					j.CampaignID = int64(campaignID)
 					j.CampaignJobID = int64(i)
@@ -2202,9 +2218,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatal(err)
 					}
 
-					if j.Error != "" && !j.StartedAt.IsZero() && !j.FinishedAt.IsZero() {
-						mustReset[j.ID] = true
-					}
+				}
+
+				mustReset := map[int64]bool{
+					jobs[1].ID: true,
+					jobs[2].ID: true,
 				}
 
 				err := s.ResetFailedChangesetJobs(ctx, int64(campaignID))
@@ -2231,6 +2249,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 						}
 						if !job.StartedAt.IsZero() {
 							t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
+						}
+					} else {
+						if job.StartedAt.IsZero() {
+							t.Errorf("job should not be reset but StartedAt is zero: %+v", job.StartedAt)
+						}
+						if job.FinishedAt.IsZero() {
+							t.Errorf("job should not be reset but FinishedAt is zero: %+v", job.FinishedAt)
 						}
 					}
 				}

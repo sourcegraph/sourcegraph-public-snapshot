@@ -1,5 +1,6 @@
 import * as React from 'react'
 import ReactDOM from 'react-dom'
+import isAbsoluteUrl from 'is-absolute-url'
 import { DecorationAttachmentRenderOptions } from 'sourcegraph'
 import { decorationAttachmentStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
@@ -53,12 +54,9 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
                 className="line-decoration-attachment"
                 to={this.props.attachment.linkURL}
                 data-tooltip={this.props.attachment.hoverMessage}
-                // Use target to open external URLs (or else react-router's Link will treat the URL as a URL path
-                // and navigation will fail).
+                // Use target to open external URLs
                 target={
-                    this.props.attachment.linkURL && /^https?:\/\//.test(this.props.attachment.linkURL)
-                        ? '_blank'
-                        : undefined
+                    this.props.attachment.linkURL && isAbsoluteUrl(this.props.attachment.linkURL) ? '_blank' : undefined
                 }
                 // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
                 rel="noreferrer noopener"

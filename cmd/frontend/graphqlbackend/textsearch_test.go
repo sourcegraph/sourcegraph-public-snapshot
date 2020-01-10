@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -23,17 +24,19 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
-		Pattern *search.PatternInfo
+		Pattern *search.TextPatternInfo
 		Query   string
 	}{
 		{
 			Name: "substr",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -46,7 +49,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "regex",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "(foo).*?(bar)",
@@ -59,7 +62,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -72,7 +75,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "case",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
 				Pattern:                      "foo",
@@ -85,7 +88,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "casepath",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
 				Pattern:                      "foo",
@@ -98,7 +101,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path matches only",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "test",
@@ -232,14 +235,14 @@ func queryEqual(a, b zoektquery.Q) bool {
 func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 	cases := []struct {
 		Name    string
-		Pattern *search.PatternInfo
+		Pattern *search.TextPatternInfo
 		Query   []string
 		// This should be the same value passed in to either FilePatternsReposMustInclude or FilePatternsReposMustExclude
 		ListOfFilePaths []string
 	}{
 		{
 			Name: "single repohasfile filter",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -254,7 +257,7 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 		},
 		{
 			Name: "multiple repohasfile filters",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -269,7 +272,7 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 		},
 		{
 			Name: "single negated repohasfile filter",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -284,7 +287,7 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 		},
 		{
 			Name: "multiple negated repohasfile filter",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -323,7 +326,7 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 }
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -363,7 +366,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 	args := &search.TextParameters{
-		PatternInfo: &search.PatternInfo{
+		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
@@ -393,7 +396,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
 	args = &search.TextParameters{
-		PatternInfo: &search.PatternInfo{
+		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
@@ -409,8 +412,71 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 }
 
+func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
+		switch repoName {
+		case "foo":
+			return []*FileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				},
+			}, false, nil
+		default:
+			panic("unexpected repo")
+		}
+	}
+	defer func() { mockSearchFilesInRepo = nil }()
+
+	trueVal := true
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{SearchMultipleRevisionsPerRepository: &trueVal},
+	}})
+	defer conf.Mock(nil)
+
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
+
+	q, err := query.ParseAndCheck("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	args := &search.TextParameters{
+		PatternInfo: &search.TextPatternInfo{
+			FileMatchLimit: defaultMaxSearchResults,
+			Pattern:        "foo",
+		},
+		Repos:        makeRepositoryRevisions("foo@master:mybranch:*refs/heads/"),
+		Query:        q,
+		Zoekt:        zoekt,
+		SearcherURLs: endpoint.Static("test"),
+	}
+	args.Repos[0].ListRefs = func(context.Context, gitserver.Repo) ([]git.Ref, error) {
+		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
+	}
+	results, _, err := searchFilesInRepos(context.Background(), args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resultURIs := make([]string, len(results))
+	for i, result := range results {
+		resultURIs[i] = result.uri
+	}
+	sort.Strings(resultURIs)
+
+	wantResultURIs := []string{
+		"git://foo?branch3#main.go",
+		"git://foo?branch4#main.go",
+		"git://foo?master#main.go",
+		"git://foo?mybranch#main.go",
+	}
+	if !reflect.DeepEqual(resultURIs, wantResultURIs) {
+		t.Errorf("got %v, want %v", resultURIs, wantResultURIs)
+	}
+}
+
 func TestRepoShouldBeSearched(t *testing.T) {
-	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -426,7 +492,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		}
 	}
 	defer func() { mockTextSearch = nil }()
-	info := &search.PatternInfo{
+	info := &search.TextPatternInfo{
 		FileMatchLimit:               defaultMaxSearchResults,
 		Pattern:                      "foo",
 		FilePatternsReposMustInclude: []string{"main"},
@@ -500,7 +566,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	defer cancel()
 	type args struct {
 		ctx             context.Context
-		query           *search.PatternInfo
+		query           *search.TextPatternInfo
 		repos           []*search.RepositoryRevisions
 		useFullDeadline bool
 		searcher        zoekt.Searcher
@@ -523,7 +589,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			name: "returns no error if search completed with no matches before timeout",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: false,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
@@ -538,7 +604,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			name: "returns error if max wall time is exceeded but no matches have been found yet",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: false,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
@@ -553,7 +619,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			name: "returns error if context timeout already passed",
 			args: args{
 				ctx:             zeroTimeoutCtx,
-				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: true,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
@@ -568,7 +634,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			name: "returns error if searcher returns an error",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: true,
 				searcher:        &errorSearcher{err: errors.New("womp womp")},
@@ -782,7 +848,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				repoSet.Set[r] = true
 			}
 
-			info := &search.PatternInfo{
+			info := &search.TextPatternInfo{
 				FilePatternsReposMustInclude: tt.include,
 				FilePatternsReposMustExclude: tt.exclude,
 				PathPatternsAreRegExps:       true,
@@ -814,6 +880,7 @@ func Test_zoektIndexedRepos(t *testing.T) {
 		"foo/indexed-three@",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
+		"foo/multi-rev@a:b",
 	)
 
 	zoektRepoList := &zoekt.RepoList{

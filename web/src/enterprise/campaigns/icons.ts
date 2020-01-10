@@ -1,6 +1,6 @@
-import ChartHistogramIcon from 'mdi-react/ChartHistogramIcon'
+import ImageAutoAdjustIcon from 'mdi-react/ImageAutoAdjustIcon'
 
 /**
  * The icon to use everywhere to represent a campaign
  */
-export const CampaignsIcon = ChartHistogramIcon
+export const CampaignsIcon = ImageAutoAdjustIcon

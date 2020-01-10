@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -313,9 +312,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
 	for _, r := range sourced {
-		if !r.ExternalRepo.IsSet() {
-			panic(fmt.Errorf("%s has no valid external repo spec: %s", r.Name, r.ExternalRepo))
-		} else if old := byID[r.ExternalRepo]; old != nil {
+		if old := byID[r.ExternalRepo]; old != nil {
 			merge(old, r)
 		} else {
 			byID[r.ExternalRepo] = r
@@ -341,19 +338,8 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
 	seenName := make(map[string]bool, len(stored))
 
-	// We are unsure if customer repositories can have ExternalRepo unset. We
-	// know it can be unset for Sourcegraph.com. As such, we want to fallback
-	// to associating stored repositories by name with the sourced
-	// repositories.
-	//
-	// We do not want a stored repository without an externalrepo to be set
-	sort.Stable(byExternalRepoSpecSet(stored))
-
 	for _, old := range stored {
 		src := byID[old.ExternalRepo]
-		if src == nil && old.ExternalRepo.ID == "" && !seenName[old.Name] {
-			src = byName[strings.ToLower(old.Name)]
-		}
 
 		if src == nil {
 			diff.Deleted = append(diff.Deleted, old)
@@ -498,19 +484,6 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 
 		tr.Finish()
 	}
-}
-
-type byExternalRepoSpecSet []*Repo
-
-func (rs byExternalRepoSpecSet) Len() int      { return len(rs) }
-func (rs byExternalRepoSpecSet) Swap(i, j int) { rs[i], rs[j] = rs[j], rs[i] }
-func (rs byExternalRepoSpecSet) Less(i, j int) bool {
-	iSet := rs[i].ExternalRepo.IsSet()
-	jSet := rs[j].ExternalRepo.IsSet()
-	if iSet == jSet {
-		return false
-	}
-	return iSet
 }
 
 type signal struct {
