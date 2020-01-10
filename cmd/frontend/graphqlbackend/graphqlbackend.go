@@ -217,16 +217,6 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFDump() (LSIFDumpResolver, bool) {
-	n, ok := r.Node.(LSIFDumpResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToLSIFUploadStats() (LSIFUploadStatsResolver, bool) {
-	n, ok := r.Node.(LSIFUploadStatsResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 	n, ok := r.Node.(LSIFUploadResolver)
 	return n, ok
@@ -318,16 +308,6 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return savedSearchByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
-	case "LSIFDump":
-		if EnterpriseResolvers.codeIntelResolver == nil {
-			return nil, codeIntelOnlyInEnterprise
-		}
-		return EnterpriseResolvers.codeIntelResolver.LSIFDumpByID(ctx, id)
-	case "LSIFUploadStats":
-		if EnterpriseResolvers.codeIntelResolver == nil {
-			return nil, codeIntelOnlyInEnterprise
-		}
-		return EnterpriseResolvers.codeIntelResolver.LSIFUploadStatsByID(ctx, id)
 	case "LSIFUpload":
 		if EnterpriseResolvers.codeIntelResolver == nil {
 			return nil, codeIntelOnlyInEnterprise
