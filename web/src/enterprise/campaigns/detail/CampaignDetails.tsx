@@ -110,8 +110,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             takeWhile(
                                                 () =>
                                                     !!currentCampaign &&
-                                                    !!currentCampaign.changesetCreationStatus &&
-                                                    currentCampaign.changesetCreationStatus.state ===
+                                                    !!currentCampaign.status &&
+                                                    currentCampaign.status.state ===
                                                         GQL.BackgroundProcessState.PROCESSING
                                             ),
                                             delay(2000)
@@ -307,7 +307,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const status = campaign
         ? campaign.__typename === 'CampaignPlan'
             ? campaign.status
-            : campaign.changesetCreationStatus
+            : campaign.status
         : null
 
     const currentSpec = campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined

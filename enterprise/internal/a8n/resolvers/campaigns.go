@@ -15,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 )
 
+var _ graphqlbackend.CampaignsConnectionResolver = &campaignsConnectionResolver{}
+
 type campaignsConnectionResolver struct {
 	store *ee.Store
 	opts  ee.ListCampaignsOpts
@@ -58,6 +60,8 @@ func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*a8n.Campa
 	})
 	return r.campaigns, r.next, r.err
 }
+
+var _ graphqlbackend.CampaignResolver = &campaignResolver{}
 
 type campaignResolver struct {
 	store *ee.Store
@@ -244,7 +248,7 @@ func (r *campaignResolver) RepositoryDiffs(
 	return &changesetDiffsConnectionResolver{changesetsConnection}, nil
 }
 
-func (r *campaignResolver) ChangesetCreationStatus(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
+func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
 	return r.store.GetCampaignStatus(ctx, r.Campaign.ID)
 }
 
