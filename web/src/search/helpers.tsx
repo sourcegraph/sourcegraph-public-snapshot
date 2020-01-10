@@ -381,4 +381,12 @@ export const formatInteractiveQueryForFuzzySearch = (
     fullQuery: string,
     filterType: SuggestionTypes,
     value: string = ''
-): string => (isolatedFuzzySearchFilters.includes(filterType) ? filterType + ':' + value : fullQuery)
+): string => {
+    // `repohasfile:` should be converted to `file:`
+    const filterSearchAlias = filterAliasForSearch[filterType]
+    if (filterSearchAlias) {
+        return `${filterSearchAlias}:${value}`
+    }
+
+    return isolatedFuzzySearchFilters.includes(filterType) ? filterType + ':' + value : fullQuery
+}

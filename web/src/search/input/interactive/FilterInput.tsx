@@ -15,13 +15,18 @@ import {
     share,
     delay,
 } from 'rxjs/operators'
-import { createSuggestion, Suggestion, SuggestionItem, FiltersSuggestionTypes } from '../Suggestion'
+import { createSuggestion, Suggestion, SuggestionItem, FiltersSuggestionTypes, fuzzySearchFilters } from '../Suggestion'
 import { fetchSuggestions } from '../../backend'
 import { ComponentSuggestions, noSuggestions, typingDebounceTime } from '../QueryInput'
 import { isDefined } from '../../../../../shared/src/util/types'
 import Downshift from 'downshift'
 import { generateFiltersQuery } from '../helpers'
-import { QueryState, formatInteractiveQueryForFuzzySearch } from '../../helpers'
+import {
+    QueryState,
+    formatInteractiveQueryForFuzzySearch,
+    validFilterAndValueBeforeCursor,
+    filterStaticSuggestions,
+} from '../../helpers'
 import { dedupeWhitespace } from '../../../../../shared/src/util/strings'
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
@@ -144,6 +149,32 @@ export class FilterInput extends React.Component<Props, State> {
                                 editable: true,
                             }
                         }
+                        const filterAndValue = `${filterType}:${inputValue}`
+                        const filterAndValueBeforeCursor = validFilterAndValueBeforeCursor({
+                            query: `${filterType}:${inputValue}`,
+                            cursorPosition: filterAndValue.length,
+                        })
+
+                        // First get static suggestions
+                        const staticSuggestions = {
+                            cursorPosition: filterAndValue.length,
+                            values: filterStaticSuggestions(
+                                {
+                                    query: `${filterType}:${inputValue}`,
+                                    cursorPosition: filterAndValue.length,
+                                },
+                                searchFilterSuggestions
+                            ),
+                        }
+
+                        // If a filter value is being typed but selected filter does not use
+                        // fuzzy-search suggestions, then return only static suggestions
+                        if (
+                            filterAndValueBeforeCursor &&
+                            !fuzzySearchFilters.includes(filterAndValueBeforeCursor.resolvedFilterType)
+                        ) {
+                            return [{ suggestions: staticSuggestions }]
+                        }
 
                         let fullQuery = `${props.navbarQuery.query} ${generateFiltersQuery(newFiltersQuery)}`
 
@@ -152,7 +183,18 @@ export class FilterInput extends React.Component<Props, State> {
                             map(createSuggestion),
                             filter(isDefined),
                             map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
-                            filter(suggestion => suggestion.type === filterType),
+                            filter(suggestion => {
+                                // Only show fuzzy-suggestions that are relevant to the typed filter
+                                if (filterAndValueBeforeCursor?.resolvedFilterType) {
+                                    switch (filterAndValueBeforeCursor.resolvedFilterType) {
+                                        case SuggestionTypes.repohasfile:
+                                            return suggestion.type === SuggestionTypes.file
+                                        default:
+                                            return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
+                                    }
+                                }
+                                return true
+                            }),
                             toArray(),
                             map(suggestions => ({
                                 suggestions: {
