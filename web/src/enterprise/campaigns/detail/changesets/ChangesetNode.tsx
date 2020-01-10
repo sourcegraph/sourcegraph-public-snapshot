@@ -7,7 +7,7 @@ import {
     IPreviewFileDiff,
     ChangesetState,
 } from '../../../../../../shared/src/graphql/schema'
-import React from 'react'
+import React, { useState } from 'react'
 import {
     changesetReviewStateColors,
     changesetReviewStateIcons,
@@ -23,19 +23,36 @@ import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { Markdown } from '../../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
+import { publishChangeset as _publishChangeset } from '../backend'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Subject } from 'rxjs'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
+    campaignUpdates: Subject<void>
     history: H.History
     location: H.Location
 }
 
 export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     node,
+    campaignUpdates,
     isLightTheme,
     history,
     location,
 }) => {
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const publishChangeset: React.MouseEventHandler = async () => {
+        try{
+            setIsLoading(true)
+            await _publishChangeset(node.id)
+            campaignUpdates.next()
+        } catch(error) {
+            // todo: handle error 
+        } finally {
+            setIsLoading(false)
+        }
+    }
     const fileDiffs = node.diff?.fileDiffs
     const fileDiffNodes: (IFileDiff | IPreviewFileDiff)[] | undefined = fileDiffs ? fileDiffs.nodes : undefined
     const ChangesetStateIcon =
@@ -72,6 +89,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <Link to={node.repository.url} className="text-muted" target="_blank" rel="noopener noreferrer">
                         {node.repository.name}
                     </Link>{' '}
+                    {node.__typename === 'ChangesetPlan' && (<span className="badge badge-light">Draft</span>)}
                     <span className="mx-1"></span>{' '}
                     {node.__typename === 'ExternalChangeset' && (
                         <>
@@ -102,6 +120,8 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <DiffStat {...fileDiffs.diffStat} expandedCounts={true}></DiffStat>
                 </span>
             )}
+            {/* todo: only when not in preview mode */}
+            {node.__typename === 'ChangesetPlan'&& (<button type="button" className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary" disabled={isLoading} onClick={publishChangeset}>{isLoading && (<LoadingSpinner className="mr-1 icon-inline"></LoadingSpinner>)}{' '}Publish</button>)}
         </div>
     )
     return (

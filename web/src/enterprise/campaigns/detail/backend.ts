@@ -13,6 +13,7 @@ import {
     IChangesetPlanConnection,
     IChangesetsOnCampaignArguments,
     IExternalChangesetConnection,
+    IEmptyResponse,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 
@@ -41,6 +42,27 @@ const campaignFragment = gql`
         changesets {
             totalCount
             nodes {
+                __typename
+                id
+                repository {
+                    id
+                    name
+                    url
+                }
+                diff {
+                    fileDiffs {
+                        totalCount
+                        diffStat {
+                            ...DiffStatFields
+                        }
+                    }
+                }
+            }
+        }
+        changesetPlans {
+            totalCount
+            nodes {
+                id
                 __typename
                 id
                 repository {
@@ -305,9 +327,37 @@ export const queryChangesets = (
                                 }
                             }
                         }
+                        changesetPlans(first: $first) {
+                            totalCount
+                            nodes {
+                                __typename
+                                id
+                                repository {
+                                    id
+                                    name
+                                    url
+                                }
+                                diff {
+                                    fileDiffs {
+                                        nodes {
+                                            ...PreviewFileDiffFields
+                                        }
+                                        totalCount
+                                        pageInfo {
+                                            hasNextPage
+                                        }
+                                        diffStat {
+                                            ...DiffStatFields
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+
+            ${PreviewFileDiffFields}
 
             ${FileDiffFields}
 
@@ -325,7 +375,7 @@ export const queryChangesets = (
             if (node.__typename !== 'Campaign') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return node.changesets
+            return node.changesetPlans as any
         })
     )
 
@@ -388,3 +438,32 @@ export const queryChangesetPlans = (
             return node.changesets
         })
     )
+
+export async function publishCampaign(campaign: ID): Promise<ICampaign> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation PublishCampaign($campaign: ID!) {
+                campaign(campaign: $campaign) {
+                    ...CampaignFields
+                }
+            }
+            ${campaignFragment}
+        `,
+        {campaign }
+    ).toPromise()
+    return dataOrThrowErrors(result).publishCampaign
+}
+
+export async function publishChangeset(changesetPlan: ID): Promise<IEmptyResponse> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation PublishChangeset($changesetPlan: ID!) {
+                publishChangeset(changesetPlan: $changesetPlan) {
+                    alwaysNil
+                }
+            }
+        `,
+        { changesetPlan }
+    ).toPromise()
+    return dataOrThrowErrors(result).publishChangeset
+}

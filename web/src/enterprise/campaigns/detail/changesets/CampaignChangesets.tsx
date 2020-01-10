@@ -4,7 +4,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
-import { Observable } from 'rxjs'
+import { Observable, Subject } from 'rxjs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 
 interface Props extends ThemeProps {
@@ -13,6 +13,8 @@ interface Props extends ThemeProps {
     ) => Observable<GQL.IExternalChangesetConnection | GQL.IChangesetPlanConnection>
     history: H.History
     location: H.Location
+    campaignUpdates: Subject<void>
+    changesetUpdates: Subject<void>
 
     className?: string
 }
@@ -26,13 +28,15 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     location,
     className = '',
     isLightTheme,
+    changesetUpdates,
+    campaignUpdates
 }) => (
     <div className={`list-group ${className}`}>
         <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<ChangesetNodeProps, 'node'>>
             className="mt-2"
-            // updates={changesetUpdates}
+            updates={changesetUpdates}
             nodeComponent={ChangesetNode}
-            nodeComponentProps={{ isLightTheme, history, location }}
+            nodeComponentProps={{ isLightTheme, history, location,campaignUpdates }}
             queryConnection={queryChangesetsConnection}
             hideSearch={true}
             defaultFirst={DEFAULT_CHANGESET_LIST_COUNT}

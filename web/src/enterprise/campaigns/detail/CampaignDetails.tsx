@@ -239,6 +239,27 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
 
+    const onDraft: React.MouseEventHandler = async event => {
+        event.preventDefault()
+        setMode('saving')
+        try {
+            const createdCampaign = await createCampaign({
+                    name,
+                    description,
+                    namespace: authenticatedUser.id,
+                    plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
+                    draft: true,
+                })
+                unblockHistoryRef.current()
+                history.push(`/campaigns/${createdCampaign.id}`)
+            setMode('viewing')
+            setAlertError(undefined)
+        } catch (err) {
+            setMode('editing')
+            setAlertError(asError(err))
+        }
+    }
+
     const onSubmit: React.FormEventHandler = async event => {
         event.preventDefault()
         setMode('saving')
@@ -483,6 +504,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
                         {campaignPlanSpec !== undefined && campaignPlanSpec.type !== MANUAL_CAMPAIGN_TYPE && (
+                            <>
                             <button
                                 type="button"
                                 className="btn btn-primary mr-1 e2e-preview-campaign"
@@ -492,6 +514,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
                                 Preview changes
                             </button>
+                        <button
+                            type="button"
+                            className="btn btn-secondary mr-1"
+                            disabled={previewRefreshNeeded || mode !== 'editing'}
+                            onClick={onDraft}
+                        >
+                            Create draft
+                        </button>
+                            </>
                         )}
                         <button
                             type="submit"
@@ -505,7 +536,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             </Form>
 
             {/* Status asserts on campaign being set, so `campaign` will never be null. */}
-            {status && <CampaignStatus campaign={campaign!} status={status} onRetry={onRetry} />}
+            {status && <CampaignStatus campaign={campaign!} status={status} onPublish={() => undefined} onRetry={onRetry} />}
 
             {campaign && campaign.__typename === 'Campaign' && (
                 <>
@@ -523,6 +554,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             {campaign && (
                 <CampaignTabs
                     campaign={campaign}
+                    changesetUpdates={changesetUpdates}
                     persistLines={campaign.__typename === 'Campaign'}
                     history={history}
                     location={location}

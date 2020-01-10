@@ -5,13 +5,16 @@ import WarningIcon from 'mdi-react/WarningIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { ErrorAlert } from '../../../components/alerts'
+import InformationIcon from 'mdi-react/InformationIcon'
 
 interface Props {
-    campaign: Pick<GQL.ICampaign, '__typename' | 'closedAt'> | Pick<GQL.ICampaignPlan, '__typename'>
+    campaign: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt'> | Pick<GQL.ICampaignPlan, '__typename'>
 
     /** The campaign status. */
     status: Omit<GQL.IBackgroundProcessStatus, '__typename'>
 
+    /** Called when the "Publish campaign" button is clicked. */
+    onPublish: () => void
     /** Called when the "Retry failed jobs" button is clicked. */
     onRetry: () => void
 }
@@ -19,7 +22,7 @@ interface Props {
 /**
  * The status of a campaign's jobs, plus its closed state and errors.
  */
-export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, status, onRetry }) => (
+export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, status, onPublish, onRetry }) => (
     <>
         {status.state === GQL.BackgroundProcessState.PROCESSING && (
             <div className="d-flex mt-3 e2e-preview-loading">
@@ -28,6 +31,16 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                     {status.completedCount} / {status.pendingCount + status.completedCount}
                 </span>
             </div>
+        )}
+        {campaign.__typename === 'Campaign' && !campaign.closedAt && !campaign.publishedAt && (
+            <>
+                <div className="d-flex my-3">
+                    <InformationIcon className="icon-inline text-info mr-1" /> Campaign is drafted
+                </div>
+                <button type="button" className="mb-3 btn btn-primary" onClick={onPublish}>
+                    Publish campaign
+                </button>
+            </>
         )}
         {campaign.__typename === 'Campaign' && campaign.closedAt ? (
             <div className="d-flex my-3">
