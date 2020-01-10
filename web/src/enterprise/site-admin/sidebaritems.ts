@@ -50,14 +50,6 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdmi
             ...enterpriseGroups,
             {
                 ...group,
-                // Add LSIF uploads page to end of primary group
-                items: [
-                    ...group.items,
-                    {
-                        label: 'LSIF uploads',
-                        to: '/site-admin/lsif-uploads',
-                    },
-                ],
             },
         ]
     }
