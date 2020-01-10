@@ -60,13 +60,14 @@ FROM lsif_dumps u;
 DELETE FROM lsif_dumps WHERE state != 'completed';
 
 -- Remove new columns
-ALTER TABLE lsif_dumps DROP filename;
-ALTER TABLE lsif_dumps DROP state;
-ALTER TABLE lsif_dumps DROP failure_summary;
-ALTER TABLE lsif_dumps DROP failure_stacktrace;
-ALTER TABLE lsif_dumps DROP started_at;
-ALTER TABLE lsif_dumps DROP finished_at;
-ALTER TABLE lsif_dumps DROP tracing_context;
+ALTER TABLE lsif_dumps
+    DROP filename,
+    DROP state,
+    DROP failure_summary,
+    DROP failure_stacktrace,
+    DROP started_at,
+    DROP finished_at,
+    DROP tracing_context;
 
 -- Restore original unique constraint
 ALTER TABLE lsif_dumps ADD CONSTRAINT lsif_dumps_repository_commit_root UNIQUE (repository, commit, root);

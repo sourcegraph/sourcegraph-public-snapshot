@@ -3,13 +3,14 @@
 BEGIN;
 
 -- Add lsif_upload columns to lsif_dumps
-ALTER TABLE lsif_dumps ADD filename TEXT;
-ALTER TABLE lsif_dumps ADD state lsif_upload_state NOT NULL DEFAULT 'queued';
-ALTER TABLE lsif_dumps ADD failure_summary TEXT;
-ALTER TABLE lsif_dumps ADD failure_stacktrace TEXT;
-ALTER TABLE lsif_dumps ADD started_at TIMESTAMP WITH TIME ZONE;
-ALTER TABLE lsif_dumps ADD finished_at TIMESTAMP WITH TIME ZONE;
-ALTER TABLE lsif_dumps ADD tracing_context TEXT;
+ALTER TABLE lsif_dumps
+    ADD filename TEXT,
+    ADD state lsif_upload_state NOT NULL DEFAULT 'queued',
+    ADD failure_summary TEXT,
+    ADD failure_stacktrace TEXT,
+    ADD started_at TIMESTAMP WITH TIME ZONE,
+    ADD finished_at TIMESTAMP WITH TIME ZONE,
+    ADD tracing_context TEXT;
 
 -- Transfer default value from field
 ALTER TABLE lsif_dumps ALTER COLUMN uploaded_at SET DEFAULT now();
