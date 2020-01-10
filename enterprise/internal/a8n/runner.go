@@ -44,9 +44,8 @@ type Runner struct {
 
 	ct CampaignType
 
-	// planID and jobCount are updated in Persist
-	planID   int64
-	jobCount int64
+	// planID is updated in Persist
+	planID int64
 
 	started bool
 }
@@ -205,7 +204,6 @@ func (r *Runner) createPlanAndJobs(
 		if err = tx.CreateCampaignJob(ctx, job); err != nil {
 			return err
 		}
-		r.jobCount++
 	}
 
 	return err
