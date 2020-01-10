@@ -14,32 +14,12 @@ describe('CampaignTabs', () => {
         expect(
             createRenderer().render(
                 <CampaignTabs
-                    changesets={{
-                        nodes: [
-                            {
-                                __typename: 'ChangesetPlan' as const,
-                                id: '0',
-                                repository: {
-                                    url: 'github.com/sourcegraph/sourcegraph',
-                                    name: 'sourcegraph/sourcegraph',
-                                } as GQL.IRepository,
-                                diff: {
-                                    __typename: 'PreviewRepositoryComparison',
-                                    fileDiffs: {
-                                        __typename: 'PreviewFileDiffConnection',
-                                        nodes: [] as GQL.IPreviewFileDiff[],
-                                        diffStat: {
-                                            __typename: 'DiffStat' as const,
-                                            added: 1,
-                                            changed: 2,
-                                            deleted: 3,
-                                        },
-                                    } as GQL.IPreviewFileDiffConnection,
-                                } as GQL.IPreviewRepositoryComparison,
-                            } as GQL.IChangesetPlan,
-                        ],
-                        totalCount: 1,
-                    }}
+                    campaign={
+                        {
+                            id: '0',
+                            changesets: { nodes: [] as GQL.IExternalChangeset[] } as GQL.IExternalChangesetConnection,
+                        } as GQL.ICampaign
+                    }
                     persistLines={true}
                     history={history}
                     location={history.location}

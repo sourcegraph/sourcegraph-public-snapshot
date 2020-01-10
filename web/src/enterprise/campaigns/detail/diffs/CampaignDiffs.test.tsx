@@ -1,21 +1,49 @@
-import React from 'react'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { CampaignDiffs } from './CampaignDiffs'
-import { createRenderer } from 'react-test-renderer/shallow'
 import * as H from 'history'
+import React from 'react'
+import renderer from 'react-test-renderer'
+import { CampaignDiffs } from './CampaignDiffs'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { of } from 'rxjs'
+
+jest.mock('mdi-react/SourcePullIcon', () => 'SourcePullIcon')
 
 describe('CampaignDiffs', () => {
-    const history = H.createMemoryHistory()
-    test('renders', () =>
+    test('renders', () => {
+        const history = H.createMemoryHistory({ keyLength: 0 })
+        const location = H.createLocation('/campaigns/new')
         expect(
-            createRenderer().render(
-                <CampaignDiffs
-                    changesets={{ nodes: [{ id: '0' } as GQL.IExternalChangeset] }}
-                    persistLines={true}
-                    history={history}
-                    location={history.location}
-                    isLightTheme={true}
-                />
-            )
-        ).toMatchSnapshot())
+            renderer
+                .create(
+                    <CampaignDiffs
+                        isLightTheme={true}
+                        history={history}
+                        location={location}
+                        persistLines={true}
+                        queryChangesetsConnection={() =>
+                            of({
+                                __typename: 'ChangesetPlanConnection' as const,
+                                totalCount: 1,
+                                nodes: [
+                                    {
+                                        __typename: 'ChangesetPlan' as const,
+                                        repository: {
+                                            url: 'github.com/sourcegraph/sourcegraph',
+                                            name: 'sourcegraph/sourcegraph',
+                                        } as GQL.IRepository,
+                                        diff: {
+                                            __typename: 'PreviewRepositoryComparison',
+                                            fileDiffs: {
+                                                __typename: 'PreviewFileDiffConnection',
+                                                nodes: [] as GQL.IPreviewFileDiff[],
+                                            } as GQL.IPreviewFileDiffConnection,
+                                        } as GQL.IPreviewRepositoryComparison,
+                                    } as GQL.IChangesetPlan,
+                                ],
+                            } as GQL.IChangesetPlanConnection)
+                        }
+                    />
+                )
+                .toJSON()
+        ).toMatchSnapshot()
+    })
 })

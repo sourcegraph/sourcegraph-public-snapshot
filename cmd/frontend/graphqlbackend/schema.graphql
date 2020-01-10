@@ -584,7 +584,7 @@ type Campaign implements Node {
     plan: CampaignPlan
 
     # The current status of creating the campaigns changesets on the code host.
-    changesetCreationStatus: BackgroundProcessStatus
+    changesetCreationStatus: BackgroundProcessStatus!
 
     # The namespace where this campaign is defined.
     namespace: Namespace!

@@ -4,7 +4,10 @@ exports[`CampaignChangesets renders 1`] = `
 <div
   className="list-group "
 >
-  <ChangesetNode
+  <FilteredConnection
+    className="mt-2"
+    defaultFirst={15}
+    hideSearch={true}
     history={
       Object {
         "action": "POP",
@@ -37,7 +40,6 @@ exports[`CampaignChangesets renders 1`] = `
         "replace": [Function],
       }
     }
-    isLightTheme={true}
     location={
       Object {
         "hash": "",
@@ -47,11 +49,53 @@ exports[`CampaignChangesets renders 1`] = `
         "state": undefined,
       }
     }
-    node={
+    nodeComponent={[Function]}
+    nodeComponentProps={
       Object {
-        "id": "0",
+        "history": Object {
+          "action": "POP",
+          "block": [Function],
+          "canGo": [Function],
+          "createHref": [Function],
+          "entries": Array [
+            Object {
+              "hash": "",
+              "key": undefined,
+              "pathname": "/",
+              "search": "",
+              "state": undefined,
+            },
+          ],
+          "go": [Function],
+          "goBack": [Function],
+          "goForward": [Function],
+          "index": 0,
+          "length": 1,
+          "listen": [Function],
+          "location": Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+          "push": [Function],
+          "replace": [Function],
+        },
+        "isLightTheme": true,
+        "location": Object {
+          "hash": "",
+          "key": undefined,
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        },
       }
     }
+    noun="changeset"
+    pluralNoun="changesets"
+    queryConnection={[Function]}
+    useURLQuery={false}
   />
 </div>
 `;

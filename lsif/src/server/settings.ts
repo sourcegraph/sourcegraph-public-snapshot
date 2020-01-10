@@ -16,6 +16,16 @@ export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 export const CLEAN_OLD_UPLOADS_INTERVAL = readEnvInt('CLEAN_OLD_UPLOADS_INTERVAL', 60 * 60 * 8)
 
 /**
+ * The interval (in seconds) to clean the dbs directory.
+ */
+export const PURGE_OLD_DUMPS_INTERVAL = readEnvInt('PURGE_OLD_DUMPS_INTERVAL', 60 * 30)
+
+/**
+ * How many uploads to query at once when determining if a db file is unreferenced.
+ */
+export const DEAD_DUMP_CHUNK_SIZE = readEnvInt('DEAD_DUMP_CHUNK_SIZE', 100)
+
+/**
  * The default number of remote dumps to open when performing a global find-reference operation.
  */
 export const DEFAULT_REFERENCES_NUM_REMOTE_DUMPS = readEnvInt('DEFAULT_REFERENCES_NUM_REMOTE_DUMPS', 10)
@@ -76,3 +86,8 @@ export const FAILED_UPLOAD_MAX_AGE = readEnvInt('FAILED_UPLOAD_MAX_AGE', 24 * 60
  * The maximum age (in seconds) that the an upload can be unlocked and in the `processing` state.
  */
 export const STALLED_UPLOAD_MAX_AGE = readEnvInt('STALLED_UPLOAD_MAX_AGE', 5)
+
+/**
+ * The maximum space (in bytes) that the dbs directory can use.
+ */
+export const DBS_DIR_MAXIMUM_SIZE_BYTES = readEnvInt('DBS_DIR_MAXIMUM_SIZE_BYTES', 1024 * 1024 * 1024 * 10)
