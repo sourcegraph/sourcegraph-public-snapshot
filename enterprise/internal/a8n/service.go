@@ -420,7 +420,7 @@ func (s *Service) RunChangesetJob(
 	// TODO: If we're updating the changeset, there's a race condition here.
 	// It's possible that `CreateChangeset` doesn't return the newest head ref
 	// commit yet, because the API of the codehost doesn't return it yet.
-	err, exists := ccs.CreateChangeset(ctx, &cs)
+	exists, err := ccs.CreateChangeset(ctx, &cs)
 	if err != nil {
 		return errors.Wrap(err, "creating changeset")
 	}

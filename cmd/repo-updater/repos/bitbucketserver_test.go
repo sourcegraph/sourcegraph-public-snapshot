@@ -334,7 +334,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 
 			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
 
-			err, exists := bbsSrc.CreateChangeset(ctx, tc.cs)
+			exists, err := bbsSrc.CreateChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
