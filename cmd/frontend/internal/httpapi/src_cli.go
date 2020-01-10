@@ -21,7 +21,7 @@ func srcCliVersionServe(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, &struct {
 		Version string `json:"version"`
 	}{
-		Version: srcCliVerison(),
+		Version: srcCliVersion(),
 	})
 }
 
@@ -32,12 +32,12 @@ func srcCliDownloadServe(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	target := path.Join(srcCliDownloadsURL, srcCliVerison(), filename)
+	target := path.Join(srcCliDownloadsURL, srcCliVersion(), filename)
 	http.Redirect(w, r, target, http.StatusFound)
 	return nil
 }
 
-func srcCliVerison() string {
+func srcCliVersion() string {
 	version, err := srccli.Version()
 	if err != nil {
 		// If we can't recommend a more specific version, just recommend the minimum version.
