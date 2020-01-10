@@ -47,7 +47,7 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 	baseURL = NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	var opts []httpcli.Opt

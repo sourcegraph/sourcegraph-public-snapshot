@@ -37,7 +37,7 @@ func TestService(t *testing.T) {
 	}
 
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
-	cf := httpcli.NewHTTPClientFactory()
+	cf := httpcli.NewExternalHTTPClientFactory()
 
 	u, err := db.Users.Create(ctx, db.NewUser{
 		Email:                 "thorsten@sourcegraph.com",

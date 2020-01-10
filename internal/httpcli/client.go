@@ -57,14 +57,18 @@ type Factory struct {
 	common []Opt
 }
 
-// NewHTTPClientFactory returns an httpcli.Factory with common
-// options and middleware pre-set.
-func NewHTTPClientFactory() *Factory {
+// NewExternalHTTPClientFactory returns an httpcli.Factory with common options
+// and middleware pre-set for communicating to external services.
+func NewExternalHTTPClientFactory() *Factory {
 	return NewFactory(
 		// TODO(tsenart): Use middle for Prometheus instrumentation later.
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
+		// ExternalTransportOpt needs to be before TracedTransportOpt and
+		// NewCachedTransportOpt since it wants to extract a http.Transport,
+		// not a generic http.RoundTripper.
+		ExternalTransportOpt,
 		TracedTransportOpt,
 		NewCachedTransportOpt(httputil.Cache, true),
 	)
