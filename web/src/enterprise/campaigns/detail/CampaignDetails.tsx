@@ -214,6 +214,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }, [nextPreviewCampaignPlan, planID])
 
+    const status = campaign ? campaign.__typename === 'Campaign' ? campaign.changesetCreationStatus
+    :campaign.status : null
+
     // Tracks if a refresh of the campaignPlan is required before the campaign can be created
     const previewRefreshNeeded = useMemo(() => {
         const currentSpec =
@@ -221,9 +224,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
         return (
             (campaignPlanSpec?.arguments && !isEqual(currentSpec, parseJSONC(campaignPlanSpec.arguments))) ||
-            (campaign &&campaign.status.state !== GQL.BackgroundProcessState.COMPLETED)
+            (status && status.state !== GQL.BackgroundProcessState.COMPLETED)
         )
-    }, [campaign, campaignPlanSpec])
+    }, [campaign, campaignPlanSpec, status])
 
     if (campaign === undefined && campaignID) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
