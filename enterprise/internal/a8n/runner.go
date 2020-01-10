@@ -236,8 +236,8 @@ func (r *Runner) Wait(ctx context.Context) error {
 
 // RunCampaignJobs should run in a background goroutine and is responsible for
 // finding pending campaign jobs and running them.
-// doneChan should be closed to terminate this function.
-func RunCampaignJobs(s *Store, clock func() time.Time, backoffDuration time.Duration, doneChan chan struct{}) {
+// ctx should be canceled to terminate this function.
+func RunCampaignJobs(ctx context.Context, s *Store, clock func() time.Time, backoffDuration time.Duration) {
 	workerCount, err := strconv.Atoi(maxWorkers)
 	if err != nil {
 		log15.Error("Parsing max worker count, falling back to default of 8", "err", err)
@@ -250,7 +250,7 @@ func RunCampaignJobs(s *Store, clock func() time.Time, backoffDuration time.Dura
 	worker := func() {
 		for {
 			select {
-			case <-doneChan:
+			case <-ctx.Done():
 				return
 			default:
 				didRun, err := s.ProcessPendingCampaignJob(context.Background(), process)

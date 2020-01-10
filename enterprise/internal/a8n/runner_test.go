@@ -86,9 +86,9 @@ func TestConsumePendingCampaignJobs(t *testing.T) {
 	}
 
 	// Launch background worker
-	doneChan := make(chan struct{})
-	defer func() { close(doneChan) }()
-	go RunCampaignJobs(store, clock, 100*time.Millisecond, doneChan)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go RunCampaignJobs(ctx, store, clock, 100*time.Millisecond)
 	waitRunner(t, runner)
 }
 
