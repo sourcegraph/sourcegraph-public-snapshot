@@ -102,6 +102,28 @@ export class DumpManager {
     }
 
     /**
+     * Return a map from upload ids to their state.
+     *
+     * @param ids The upload ids to fetch.
+     */
+    public async getUploadStates(ids: pgModels.DumpId[]): Promise<Map<pgModels.DumpId, pgModels.LsifUploadState>> {
+        if (ids.length === 0) {
+            return new Map()
+        }
+
+        const result: { id: pgModels.DumpId; state: pgModels.LsifUploadState }[] = await instrumentQuery(() =>
+            this.connection
+                .getRepository(pgModels.LsifUpload)
+                .createQueryBuilder()
+                .select(['id', 'state'])
+                .where('id IN (:...ids)', { ids })
+                .getRawMany()
+        )
+
+        return new Map<pgModels.DumpId, pgModels.LsifUploadState>(result.map(u => [u.id, u.state]))
+    }
+
+    /**
      * Find the visible dumps. This method is used for testing.
      *
      * @param repository The repository.
