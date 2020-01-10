@@ -2,9 +2,7 @@ package repos
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"reflect"
@@ -14,12 +12,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -42,9 +40,10 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name string
-		cs   *Changeset
-		err  string
+		name   string
+		cs     *Changeset
+		err    string
+		exists bool
 	}{
 		{
 			name: "success",
@@ -68,7 +67,8 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				Changeset: &a8n.Changeset{},
 			},
 			// If PR already exists we'll just return it, no error
-			err: "",
+			err:    "",
+			exists: true,
 		},
 	}
 
@@ -106,7 +106,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			err = githubSrc.CreateChangeset(ctx, tc.cs)
+			err, exists := githubSrc.CreateChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -115,32 +115,16 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				return
 			}
 
+			if have, want := exists, tc.exists; have != want {
+				t.Errorf("exists:\nhave: %t\nwant: %t", have, want)
+			}
+
 			pr, ok := tc.cs.Changeset.Metadata.(*github.PullRequest)
 			if !ok {
 				t.Fatal("Metadata does not contain PR")
 			}
-			data, err := json.MarshalIndent(pr, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
 
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
 		})
 	}
 }
@@ -207,28 +191,77 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			data, err := json.MarshalIndent(pr, " ", " ")
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+		})
+	}
+}
+
+func TestGithubSource_UpdateChangeset(t *testing.T) {
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "success",
+			cs: &Changeset{
+				Title:   "This is a new title",
+				Body:    "This is a new body",
+				BaseRef: "refs/heads/master",
+				Changeset: &a8n.Changeset{
+					Metadata: &github.PullRequest{
+						ID: "MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GithubSource_UpdateChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+
+		t.Run(tc.name, func(t *testing.T) {
+			// The GithubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &ExternalService{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_TOKEN"),
+				}),
+			}
+
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
+			ctx := context.Background()
+			if tc.err == "" {
+				tc.err = "<nil>"
 			}
 
-			golden, err := ioutil.ReadFile(path)
+			err = githubSrc.UpdateChangeset(ctx, tc.cs)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
 			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
+				return
 			}
 
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
 		})
 	}
 }
@@ -306,28 +339,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				meta = append(meta, cs.Changeset.Metadata.(*github.PullRequest))
 			}
 
-			data, err := json.MarshalIndent(meta, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
 		})
 	}
 }

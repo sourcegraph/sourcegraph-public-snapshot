@@ -106,6 +106,19 @@ func (c *Campaign) Clone() *Campaign {
 	return &cc
 }
 
+// Published returns whether the PublishedAt timestamp is non-zero.
+func (c *Campaign) Published() bool { return !c.PublishedAt.IsZero() }
+
+// RemoveChangesetID removes the given id from the Campaigns ChangesetIDs slice.
+// If the id is not in ChangesetIDs calling this method doesn't have an effect.
+func (c *Campaign) RemoveChangesetID(id int64) {
+	for i := len(c.ChangesetIDs) - 1; i >= 0; i-- {
+		if c.ChangesetIDs[i] == id {
+			c.ChangesetIDs = append(c.ChangesetIDs[:i], c.ChangesetIDs[i+1:]...)
+		}
+	}
+}
+
 // ChangesetState defines the possible states of a Changeset.
 type ChangesetState string
 

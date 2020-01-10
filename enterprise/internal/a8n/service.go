@@ -174,9 +174,10 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 	return s.createChangesetJobsWithStore(ctx, tx, c)
 }
 
-// ErrNoCampaignJobs is returned by CreateCampaign if a CampaignPlanID was
-// specified but the CampaignPlan does not have any (finished) CampaignJobs.
-var ErrNoCampaignJobs = errors.New("cannot create a Campaign without any changesets")
+// ErrNoCampaignJobs is returned by CreateCampaign or UpdateCampaign if a
+// CampaignPlanID was specified but the CampaignPlan does not have any
+// (finished) CampaignJobs.
+var ErrNoCampaignJobs = errors.New("cannot create or update a Campaign without any changesets")
 
 func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *a8n.Campaign) error {
 	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
@@ -314,7 +315,11 @@ func (s *Service) RunChangesetJob(
 	}
 	repo := rs[0]
 
-	headRefName := fmt.Sprintf("sourcegraph/%s-%d", git.HumanReadableBranchName(c.Name), c.CreatedAt.Unix())
+	// TODO: The "campaign" is just here so that updates don't create new
+	// branches and new changesets.
+	// We should probably persist the `headRefName` on `ChangesetJob` and keep
+	// it stable across retries and only set it the first time.
+	headRefName := fmt.Sprintf("sourcegraph/%s-%d", "campaign", c.CreatedAt.Unix())
 
 	_, err = s.git.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
@@ -412,24 +417,59 @@ func (s *Service) RunChangesetJob(
 		return errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
 	}
 
-	err = ccs.CreateChangeset(ctx, &cs)
+	// TODO: If we're updating the changeset, there's a race condition here.
+	// It's possible that `CreateChangeset` doesn't return the newest head ref
+	// commit yet, because the API of the codehost doesn't return it yet.
+	err, exists := ccs.CreateChangeset(ctx, &cs)
 	if err != nil {
 		return errors.Wrap(err, "creating changeset")
 	}
+	// If the Changeset already exists and our source can update it, we try to update it
+	if exists {
+		outdated, err := isOutdated(&cs)
+		if err != nil {
+			return errors.Wrap(err, "could not determine whether changeset needs update")
+		}
 
-	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
+		if outdated {
+			ucs, ok := src.(repos.UpdateChangesetSource)
+			if !ok {
+				return errors.Errorf("updating changesets on code host of repo %q is not implemented", repo.Name)
+			}
+
+			err := ucs.UpdateChangeset(ctx, &cs)
+			if err != nil {
+				return errors.Wrap(err, "updating changeset")
+			}
+		}
+	}
+
+	// We keep a clone because CreateChangesets might overwrite the changeset
+	// with outdated metadata.
+	clone := cs.Changeset.Clone()
+	if err = tx.CreateChangesets(ctx, clone); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
 		}
-		// Changeset already exists so continue
+
+		// Changeset already exists and the call to CreateChangesets overwrote
+		// the Metadata field with the metadata in the database that's possibly
+		// outdated.
+		// We restore the newest metadata returned by the
+		// `ccs.CreateChangesets` call above and then update the Changeset in
+		// the database.
+		clone.Metadata = cs.Changeset.Metadata
+		if err = tx.UpdateChangesets(ctx, clone); err != nil {
+			return err
+		}
 	}
 
-	c.ChangesetIDs = append(c.ChangesetIDs, cs.Changeset.ID)
+	c.ChangesetIDs = append(c.ChangesetIDs, clone.ID)
 	if err = tx.UpdateCampaign(ctx, c); err != nil {
 		return err
 	}
 
-	job.ChangesetID = cs.Changeset.ID
+	job.ChangesetID = clone.ID
 	runFinalUpdate(ctx, tx)
 	return
 }
@@ -512,7 +552,7 @@ func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.
 		return nil, errors.Wrap(err, "getting campaign")
 	}
 
-	if !campaign.PublishedAt.IsZero() {
+	if campaign.Published() {
 		return campaign, nil
 	}
 
@@ -674,6 +714,254 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64
 	return changesetJob, campaign, nil
 }
 
+// ErrUpdateProcessingCampaign is returned by UpdateCampaign if the Campaign
+// has been published at the time of update but its ChangesetJobs have not
+// finished execution.
+var ErrUpdateProcessingCampaign = errors.New("cannot update a Campaign while changesets are being created on codehosts")
+
+type UpdateCampaignArgs struct {
+	Campaign    int64
+	Name        *string
+	Description *string
+	Plan        *int64
+}
+
+// UpdateCampaign updates the Campaign with the given arguments.
+func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *a8n.Campaign, err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", args.Campaign)
+	tr, ctx := trace.New(ctx, "service.UpdateCampaign", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: args.Campaign})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting campaign")
+	}
+
+	var updateAttributes, updatePlanID bool
+
+	if args.Name != nil && campaign.Name != *args.Name {
+		campaign.Name = *args.Name
+		updateAttributes = true
+	}
+
+	if args.Description != nil && campaign.Description != *args.Description {
+		campaign.Description = *args.Description
+		updateAttributes = true
+	}
+
+	oldPlanID := campaign.CampaignPlanID
+	if args.Plan != nil && oldPlanID != *args.Plan {
+		campaign.CampaignPlanID = *args.Plan
+		updatePlanID = true
+	}
+
+	if !updateAttributes && !updatePlanID {
+		return campaign, nil
+	}
+
+	if !campaign.Published() {
+		// If the campaign hasn't been published yet, we can simply update the
+		// attributes because no ChangesetJobs have been created yet.
+		return campaign, tx.UpdateCampaign(ctx, campaign)
+	}
+
+	status, err := tx.GetCampaignStatus(ctx, campaign.ID)
+	if err != nil {
+		return nil, err
+	}
+	if !status.Finished() && !status.Canceled {
+		return nil, ErrUpdateProcessingCampaign
+	}
+
+	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPlanID, updateAttributes)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range diff.Update {
+		err := tx.UpdateChangesetJob(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, c := range diff.Create {
+		err := tx.CreateChangesetJob(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var changesetsToCloseAndDetach []int64
+	for _, j := range diff.Delete {
+		err := tx.DeleteChangesetJob(ctx, j.ID)
+		if err != nil {
+			return nil, err
+		}
+		changesetsToCloseAndDetach = append(changesetsToCloseAndDetach, j.ChangesetID)
+	}
+
+	if len(changesetsToCloseAndDetach) > 0 {
+		changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{
+			IDs: changesetsToCloseAndDetach,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "listing changesets to close and detach")
+		}
+
+		for _, c := range changesets {
+			c.RemoveCampaignID(campaign.ID)
+			campaign.RemoveChangesetID(c.ID)
+		}
+
+		if err = tx.UpdateChangesets(ctx, changesets...); err != nil {
+			return nil, err
+		}
+
+		// TODO: Close detached Changesets on codehost
+	}
+
+	return campaign, tx.UpdateCampaign(ctx, campaign)
+}
+
+type campaignUpdateDiff struct {
+	Delete []*a8n.ChangesetJob
+	Update []*a8n.ChangesetJob
+	Create []*a8n.ChangesetJob
+}
+
+// repoJobs is a triplet of jobs that are associated with the same repository.
+type repoJobs struct {
+	changesetJob   *a8n.ChangesetJob
+	campaignJob    *a8n.CampaignJob
+	newCampaignJob *a8n.CampaignJob
+}
+
+func computeCampaignUpdateDiff(
+	ctx context.Context,
+	tx *Store,
+	campaign *a8n.Campaign,
+	oldPlanID int64,
+	updateAttributes bool,
+) (*campaignUpdateDiff, error) {
+	diff := &campaignUpdateDiff{}
+
+	changesetJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+		CampaignID: campaign.ID,
+		Limit:      -1,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing changesets jobs")
+	}
+
+	// Fast path: if we don't update the CampaignPlan, we don't need to rewire
+	// ChangesetJobs, but only update name/description if they changed.
+	if campaign.CampaignPlanID == oldPlanID && updateAttributes {
+		for _, job := range changesetJobs {
+			job.Error = ""
+			job.StartedAt = time.Time{}
+			job.FinishedAt = time.Time{}
+			diff.Update = append(diff.Update, job)
+		}
+		return diff, nil
+	}
+
+	// We need OnlyFinished and OnlyWithDiff because we don't create
+	// ChangesetJobs for others.
+	campaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+		CampaignPlanID: oldPlanID,
+		Limit:          -1,
+		OnlyFinished:   true,
+		OnlyWithDiff:   true,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing campaign jobs")
+	}
+
+	newCampaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+		CampaignPlanID: campaign.CampaignPlanID,
+		Limit:          -1,
+		OnlyFinished:   true,
+		OnlyWithDiff:   true,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing new campaign jobs")
+	}
+
+	if len(newCampaignJobs) == 0 {
+		return nil, ErrNoCampaignJobs
+	}
+
+	// We need to determine which current ChangesetJobs we want to keep and
+	// which ones we want to delete.
+	// We can find out which ones we want to keep by looking at the RepoID of
+	// their CampaignJobs.
+
+	jobsByRepoID, err := mergeByRepoID(changesetJobs, campaignJobs)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, j := range newCampaignJobs {
+		if jobs, ok := jobsByRepoID[j.RepoID]; ok {
+			jobs.newCampaignJob = j
+		} else {
+			// If we have new CampaignJobs that don't match an existing
+			// ChangesetJob we need to create new ChangesetJobs.
+			diff.Create = append(diff.Create, &a8n.ChangesetJob{
+				CampaignID:    campaign.ID,
+				CampaignJobID: j.ID,
+			})
+		}
+	}
+
+	for _, jobs := range jobsByRepoID {
+		// Either we _don't_ have a matching _new_ CampaignJob, then we delete
+		// the ChangesetJob and detach & close Changeset.
+		if jobs.newCampaignJob == nil {
+			diff.Delete = append(diff.Delete, jobs.changesetJob)
+			continue
+		}
+
+		// Or we have a matching _new_ CampaignJob, then we keep the
+		// ChangesetJob around, but need to rewire it.
+		jobs.changesetJob.CampaignJobID = jobs.newCampaignJob.ID
+
+		//  And, if the {Diff,Rev,BaseRef,Description} are different, we  need to
+		// update the Changeset on the codehost...
+		if updateAttributes || campaignJobsDiffer(jobs.newCampaignJob, jobs.campaignJob) {
+			// ... to do that, we _reset_ the ChangesetJob, so it gets run again
+			// when RunChangesetJobs is called after UpdateCampaign.
+			jobs.changesetJob.Error = ""
+			jobs.changesetJob.StartedAt = time.Time{}
+			jobs.changesetJob.FinishedAt = time.Time{}
+		}
+
+		diff.Update = append(diff.Update, jobs.changesetJob)
+	}
+
+	return diff, nil
+}
+
+// campaignJobsDiffer returns true if the CampaignJobs differ in a way that
+// requires updating the Changeset on the codehost.
+func campaignJobsDiffer(a, b *a8n.CampaignJob) bool {
+	return a.Diff != b.Diff ||
+		a.Rev != b.Rev ||
+		a.BaseRef != b.BaseRef ||
+		a.Description != b.Description
+}
+
 func selectChangesets(cs []*a8n.Changeset, predicate func(*a8n.Changeset) bool) []*a8n.Changeset {
 	i := 0
 	for _, c := range cs {
@@ -684,4 +972,54 @@ func selectChangesets(cs []*a8n.Changeset, predicate func(*a8n.Changeset) bool) 
 	}
 
 	return cs[:i]
+}
+
+func isOutdated(c *repos.Changeset) (bool, error) {
+	currentTitle, err := c.Changeset.Title()
+	if err != nil {
+		return false, err
+	}
+
+	if currentTitle != c.Title {
+		return true, nil
+	}
+
+	currentBody, err := c.Changeset.Body()
+	if err != nil {
+		return false, err
+	}
+
+	if currentBody != c.Body {
+		return true, nil
+	}
+
+	currentBaseRef, err := c.Changeset.BaseRef()
+	if err != nil {
+		return false, err
+	}
+
+	if git.EnsureRefPrefix(currentBaseRef) != git.EnsureRefPrefix(c.BaseRef) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func mergeByRepoID(chs []*a8n.ChangesetJob, cas []*a8n.CampaignJob) (map[int32]*repoJobs, error) {
+	jobs := make(map[int32]*repoJobs, len(chs))
+
+	byID := make(map[int64]*a8n.CampaignJob, len(cas))
+	for _, j := range cas {
+		byID[j.ID] = j
+	}
+
+	for _, j := range chs {
+		caj, ok := byID[j.CampaignJobID]
+		if !ok {
+			return nil, fmt.Errorf("CampaignJob with ID %d cannot be found for ChangesetJob %d", j.CampaignJobID, j.ID)
+		}
+		jobs[caj.RepoID] = &repoJobs{changesetJob: j, campaignJob: caj}
+	}
+
+	return jobs, nil
 }

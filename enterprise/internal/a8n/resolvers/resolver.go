@@ -250,7 +250,13 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.UpdateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.UpdateCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.UpdateCampaign", fmt.Sprintf("Campaign: %q", args.Input.ID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -261,29 +267,37 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		return nil, err
 	}
 
-	tx, err := r.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer tx.Done(&err)
-
-	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		return nil, err
-	}
+	updateArgs := ee.UpdateCampaignArgs{Campaign: campaignID}
 
 	if args.Input.Name != nil {
-		campaign.Name = *args.Input.Name
+		updateArgs.Name = args.Input.Name
 	}
 
 	if args.Input.Description != nil {
-		campaign.Description = *args.Input.Description
+		updateArgs.Description = args.Input.Description
 	}
 
-	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
+	if args.Input.Plan != nil {
+		campaignPlanID, err := unmarshalCampaignPlanID(*args.Input.Plan)
+		if err != nil {
+			return nil, err
+		}
+		updateArgs.Plan = &campaignPlanID
+	}
+
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	campaign, err := svc.UpdateCampaign(ctx, updateArgs)
+	if err != nil {
 		return nil, err
 	}
+
+	go func() {
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.RunChangesetJobs(ctx, campaign)
+		if err != nil {
+			log15.Error("RunChangesetJobs", "err", err)
+		}
+	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }

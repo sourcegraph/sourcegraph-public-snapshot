@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -152,30 +151,8 @@ func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 			for _, r := range repos {
 				got = append(got, s.makeRepo(r))
 			}
-			actual, err := json.MarshalIndent(got, "", "  ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			golden := filepath.Join("testdata", "bitbucketcloud-repos-"+name+".golden")
-			if update(name) {
-				err := ioutil.WriteFile(golden, actual, 0644)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			expect, err := ioutil.ReadFile(golden)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !bytes.Equal(actual, expect) {
-				d, err := testutil.Diff(string(actual), string(expect))
-				if err != nil {
-					t.Fatal(err)
-				}
-				t.Error(d)
-			}
+			path := filepath.Join("testdata", "bitbucketcloud-repos-"+name+".golden")
+			testutil.AssertGolden(t, path, update(name), got)
 		})
 	}
 }
@@ -253,30 +230,9 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 					got.Include = append(got.Include, r.FullName)
 				}
 			}
-			actual, err := json.MarshalIndent(got, "", "  ")
-			if err != nil {
-				t.Fatal(err)
-			}
 
-			golden := filepath.Join("testdata", "bitbucketcloud-repos-exclude-"+name+".golden")
-			if update(name) {
-				err := ioutil.WriteFile(golden, actual, 0644)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			expect, err := ioutil.ReadFile(golden)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !bytes.Equal(actual, expect) {
-				d, err := testutil.Diff(string(actual), string(expect))
-				if err != nil {
-					t.Fatal(err)
-				}
-				t.Error(d)
-			}
+			path := filepath.Join("testdata", "bitbucketcloud-repos-exclude-"+name+".golden")
+			testutil.AssertGolden(t, path, update(name), got)
 		})
 	}
 }

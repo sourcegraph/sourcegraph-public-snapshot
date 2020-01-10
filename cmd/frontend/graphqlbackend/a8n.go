@@ -34,6 +34,7 @@ type UpdateCampaignArgs struct {
 		ID          graphql.ID
 		Name        *string
 		Description *string
+		Plan        *graphql.ID
 	}
 }
 
