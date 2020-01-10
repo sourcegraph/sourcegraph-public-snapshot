@@ -2198,18 +2198,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("ResetFailedChangesetJobs", func(t *testing.T) {
 				campaignID := 9999
 				jobs := []*a8n.ChangesetJob{
-					{StartedAt: now},
 					// completed, no errors
 					{StartedAt: now, FinishedAt: now, ChangesetID: 23},
-					// not completed, error
-					{StartedAt: now, Error: "error1"},
 					// completed, error
 					{StartedAt: now, FinishedAt: now, Error: "error1"},
 					// completed, another error
 					{StartedAt: now, FinishedAt: now, Error: "error2"},
 				}
 
-				mustReset := make(map[int64]bool)
 				for i, j := range jobs {
 					j.CampaignID = int64(campaignID)
 					j.CampaignJobID = int64(i)
@@ -2219,9 +2215,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatal(err)
 					}
 
-					if j.Error != "" && !j.StartedAt.IsZero() && !j.FinishedAt.IsZero() {
-						mustReset[j.ID] = true
-					}
+				}
+
+				mustReset := map[int64]bool{
+					jobs[1].ID: true,
+					jobs[2].ID: true,
 				}
 
 				err := s.ResetFailedChangesetJobs(ctx, int64(campaignID))
@@ -2248,6 +2246,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 						}
 						if !job.StartedAt.IsZero() {
 							t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
+						}
+					} else {
+						if job.StartedAt.IsZero() {
+							t.Errorf("job should not be reset but StartedAt is zero: %+v", job.StartedAt)
+						}
+						if job.FinishedAt.IsZero() {
+							t.Errorf("job should not be reset but FinishedAt is zero: %+v", job.FinishedAt)
 						}
 					}
 				}

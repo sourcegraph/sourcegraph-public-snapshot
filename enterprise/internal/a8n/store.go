@@ -2288,7 +2288,10 @@ SET
   error = '',
   started_at = NULL,
   finished_at = NULL
-WHERE campaign_id = %s
+WHERE
+  campaign_id = %s
+AND
+  error != '';
 `
 
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
