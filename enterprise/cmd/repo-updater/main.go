@@ -35,6 +35,11 @@ func main() {
 		ctx := context.Background()
 		store := a8n.NewStore(db)
 
+		clock := func() time.Time {
+			return time.Now().UTC().Truncate(time.Microsecond)
+		}
+		go a8n.RunCampaignJobs(store, clock, 5*time.Second, nil)
+
 		for {
 			err := store.DeleteExpiredCampaignPlans(ctx)
 			if err != nil {
