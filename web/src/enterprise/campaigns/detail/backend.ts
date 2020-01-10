@@ -31,6 +31,7 @@ const campaignFragment = gql`
         description
         createdAt
         updatedAt
+        publishedAt
         closedAt
         url
         __typename
