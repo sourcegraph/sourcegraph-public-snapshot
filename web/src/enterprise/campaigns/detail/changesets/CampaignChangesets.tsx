@@ -5,7 +5,7 @@ import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { Observable } from 'rxjs'
-import { DEFAULT_LIST_COUNT } from '../presentation'
+import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 
 interface Props extends ThemeProps {
     queryChangesetsConnection: (
@@ -35,7 +35,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             nodeComponentProps={{ isLightTheme, history, location }}
             queryConnection={queryChangesetsConnection}
             hideSearch={true}
-            defaultFirst={DEFAULT_LIST_COUNT}
+            defaultFirst={DEFAULT_CHANGESET_LIST_COUNT}
             noun="changeset"
             pluralNoun="changesets"
             history={history}
