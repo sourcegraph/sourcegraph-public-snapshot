@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -20,10 +19,10 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/pkg/errors"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestUnmarshal(t *testing.T) {
@@ -160,7 +159,7 @@ func TestClient_LoadPullRequests(t *testing.T) {
 				return
 			}
 
-			assertGolden(t,
+			testutil.AssertGolden(t,
 				"testdata/golden/LoadPullRequests-"+strconv.Itoa(i),
 				update("LoadPullRequests"),
 				tc.prs,
@@ -235,7 +234,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 				return
 			}
 
-			assertGolden(t,
+			testutil.AssertGolden(t,
 				"testdata/golden/CreatePullRequest-"+strconv.Itoa(i),
 				update("CreatePullRequest"),
 				pr,
@@ -290,7 +289,7 @@ func TestClient_ClosePullRequest(t *testing.T) {
 				return
 			}
 
-			assertGolden(t,
+			testutil.AssertGolden(t,
 				"testdata/golden/ClosePullRequest-"+strconv.Itoa(i),
 				update("ClosePullRequest"),
 				tc.pr,
@@ -309,36 +308,11 @@ func TestClient_GetAuthenticatedUserOrgs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assertGolden(t,
+	testutil.AssertGolden(t,
 		"testdata/golden/GetAuthenticatedUserOrgs",
 		update("GetAuthenticatedUserOrgs"),
 		orgs,
 	)
-}
-func assertGolden(t testing.TB, path string, update bool, want interface{}) {
-	t.Helper()
-
-	data, err := json.MarshalIndent(want, " ", " ")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if update {
-		if err = ioutil.WriteFile(path, data, 0640); err != nil {
-			t.Fatalf("failed to update golden file %q: %s", path, err)
-		}
-	}
-
-	golden, err := ioutil.ReadFile(path)
-	if err != nil {
-		t.Fatalf("failed to read golden file %q: %s", path, err)
-	}
-
-	if have, want := string(data), string(golden); have != want {
-		dmp := diffmatchpatch.New()
-		diffs := dmp.DiffMain(have, want, false)
-		t.Error(dmp.DiffPrettyText(diffs))
-	}
 }
 
 func newClient(t testing.TB, name string) (*Client, func()) {

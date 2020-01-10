@@ -282,28 +282,7 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 				meta = append(meta, cs.Changeset.Metadata.(*bitbucketserver.PullRequest))
 			}
 
-			data, err := json.MarshalIndent(meta, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
 		})
 	}
 }
@@ -413,28 +392,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest)
-			data, err := json.MarshalIndent(pr, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
 		})
 	}
 }
@@ -503,28 +461,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest)
-			data, err := json.MarshalIndent(pr, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
 		})
 	}
 }

@@ -2,9 +2,7 @@ package repos
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"reflect"
@@ -14,12 +12,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -125,28 +123,8 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			if !ok {
 				t.Fatal("Metadata does not contain PR")
 			}
-			data, err := json.MarshalIndent(pr, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
 
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
 		})
 	}
 }
@@ -213,28 +191,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			data, err := json.MarshalIndent(pr, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
 		})
 	}
 }
@@ -304,28 +261,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			data, err := json.MarshalIndent(pr, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
 		})
 	}
 }
@@ -403,28 +339,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				meta = append(meta, cs.Changeset.Metadata.(*github.PullRequest))
 			}
 
-			data, err := json.MarshalIndent(meta, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
 		})
 	}
 }
