@@ -2327,26 +2327,49 @@ func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
 }
 
 // ResetFailedChangesetJobs resets the Error, StartedAt and FinishedAt fields
-// of the ChangesetJobs belonging to the Campaign with the given ID.
+// of the ChangesetJobs belonging to the Campaign with the given ID that
+// resulted in an error.
 func (s *Store) ResetFailedChangesetJobs(ctx context.Context, campaignID int64) (err error) {
-	q := sqlf.Sprintf(resetFailedChangesetJobsQueryFmtstr, campaignID)
+	q := resetChangesetJobsQuery(campaignID, true)
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		return 0, 1, nil
 	})
 }
 
-var resetFailedChangesetJobsQueryFmtstr = `
--- source: internal/a8n/store.go:ResetFailedChangesetJobs
+// ResetChangesetJobs resets the Error, StartedAt and FinishedAt fields
+// of all ChangesetJobs belonging to the Campaign with the given ID.
+func (s *Store) ResetChangesetJobs(ctx context.Context, campaignID int64) (err error) {
+	q := resetChangesetJobsQuery(campaignID, false)
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		return 0, 1, nil
+	})
+}
+
+func resetChangesetJobsQuery(campaignID int64, onlyErrored bool) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("campaign_id = %s", campaignID),
+	}
+
+	if onlyErrored {
+		preds = append(preds, sqlf.Sprintf("error != ''"))
+	}
+
+	return sqlf.Sprintf(
+		resetChangesetJobsQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+	)
+}
+
+var resetChangesetJobsQueryFmtstr = `
+-- source: internal/a8n/store.go:resetChangesetJobsQuery
 UPDATE changeset_jobs
 SET
   error = '',
   started_at = NULL,
   finished_at = NULL
-WHERE
-  campaign_id = %s
-AND
-  error != '';
+WHERE %s
 `
 
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
