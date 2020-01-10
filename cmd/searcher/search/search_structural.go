@@ -158,7 +158,7 @@ func lookupMatcher(language string) string {
 	case "xml":
 		return ".xml"
 	}
-	return ""
+	return ".generic"
 }
 
 func structuralSearch(ctx context.Context, zipPath, pattern, rule string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
@@ -174,6 +174,8 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 		matcher = lookupMatcher(languages[0])
 		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
 	}
+
+	requestTotalStructuralSearch.WithLabelValues(matcher).Inc()
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
@@ -202,7 +204,7 @@ var requestTotalStructuralSearch = prometheus.NewCounterVec(prometheus.CounterOp
 	Subsystem: "service",
 	Name:      "request_total_structural_search",
 	Help:      "Number of returned structural search requests.",
-}, []string{"code"})
+}, []string{"language"})
 
 func init() {
 	prometheus.MustRegister(requestTotalStructuralSearch)
