@@ -403,8 +403,6 @@ describe('Search regression test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
 
-
-
         test(
             'Search timeout',
             async () => {
