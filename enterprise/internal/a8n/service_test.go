@@ -257,6 +257,87 @@ func TestService(t *testing.T) {
 			t.Errorf("wrong changesetJob: %d. want=%d", changesetJob2.ID, haveJob.ID)
 		}
 	})
+
+	t.Run("UpdateCampaignWithUnprocessedChangesetJobs", func(t *testing.T) {
+		subTests := []struct {
+			name  string
+			draft bool
+			err   string
+		}{
+			{
+				name:  "published campaign",
+				draft: false,
+				err:   ErrUpdateProcessingCampaign.Error(),
+			},
+			{
+				name:  "draft campaign",
+				draft: true,
+			},
+		}
+		for _, tc := range subTests {
+			t.Run(tc.name, func(t *testing.T) {
+				if tc.err == "" {
+					tc.err = "<nil>"
+				}
+
+				plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+				err = store.CreateCampaignPlan(ctx, plan)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				campaignJob := testCampaignJob(plan.ID, rs[0].ID, now)
+				err := store.CreateCampaignJob(ctx, campaignJob)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+				campaign := testCampaign(u.ID, plan.ID)
+
+				err = svc.CreateCampaign(ctx, campaign, tc.draft)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if !tc.draft {
+					haveJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+						CampaignID: campaign.ID,
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					// sanity checks
+					if len(haveJobs) != 1 {
+						t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), 1)
+					}
+
+					if !haveJobs[0].StartedAt.IsZero() {
+						t.Errorf("ChangesetJobs is not unprocessed. StartedAt=%v", haveJobs[0].StartedAt)
+					}
+				}
+
+				newName := "this is a new campaign name"
+				args := UpdateCampaignArgs{Campaign: campaign.ID, Name: &newName}
+
+				updatedCampaign, err := svc.UpdateCampaign(ctx, args)
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				}
+
+				fmt.Printf("tc.err=%q\n", tc.err)
+				if tc.err != "<nil>" {
+					return
+				}
+
+				fmt.Printf("updatedCampaign=%+v\n", updatedCampaign)
+				if updatedCampaign.Name != newName {
+					t.Errorf("Name not updated. want=%q, have=%q", newName, updatedCampaign.Name)
+				}
+			})
+		}
+	})
 }
 
 func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {

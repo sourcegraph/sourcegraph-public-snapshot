@@ -714,6 +714,11 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64
 	return changesetJob, campaign, nil
 }
 
+// ErrUpdateProcessingCampaign is returned by UpdateCampaign if the Campaign
+// has been published at the time of update but its ChangesetJobs have not
+// finished execution.
+var ErrUpdateProcessingCampaign = errors.New("cannot update a Campaign while changesets are being created on codehosts")
+
 type UpdateCampaignArgs struct {
 	Campaign    int64
 	Name        *string
@@ -768,6 +773,14 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		// If the campaign hasn't been published yet, we can simply update the
 		// attributes because no ChangesetJobs have been created yet.
 		return campaign, tx.UpdateCampaign(ctx, campaign)
+	}
+
+	status, err := tx.GetCampaignStatus(ctx, campaign.ID)
+	if err != nil {
+		return nil, err
+	}
+	if !status.Finished() && !status.Canceled {
+		return nil, ErrUpdateProcessingCampaign
 	}
 
 	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPlanID, updateAttributes)
