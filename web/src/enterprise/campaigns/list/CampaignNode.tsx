@@ -14,12 +14,14 @@ interface Props {
         GQL.ICampaign,
         'id' | 'plan' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt'
     >
+    /* Used for testing purposes. Sets the current date */
+    now?: Date
 }
 
 /**
  * An item in the list of campaigns.
  */
-export const CampaignNode: React.FunctionComponent<Props> = ({ node }) => {
+export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new Date() }) => {
     const campaignIconClass = node.closedAt ? 'text-danger' : 'text-success'
     const OpenChangesetIcon = changesetStateIcons[GQL.ChangesetState.OPEN]
     const MergedChangesetIcon = changesetStateIcons[GQL.ChangesetState.MERGED]
@@ -39,7 +41,7 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node }) => {
                         </h3>
                         <span className="badge badge-light ml-2">{node.plan?.type ?? 'manual'}</span>
                         <small className="ml-2 text-muted" data-tooltip={node.createdAt}>
-                            {formatDistance(parseISO(node.createdAt), new Date())} ago
+                            {formatDistance(parseISO(node.createdAt), now)} ago
                         </small>
                     </div>
                     <Markdown
