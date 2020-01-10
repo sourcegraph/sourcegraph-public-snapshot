@@ -47,8 +47,8 @@ export function bidirectionalLineage(): string {
 
 /**
  * Return a set of CTE definitions assuming the definition of a previous CTE named `lineage`.
- * This creates the CTE `lineage_with_dumps`, which gathers the set of LSIF dump identifiers whose
- * commit occurs in `lineage` (within the given traversal limit).
+ * This creates the CTE `lineage_with_dumps`, which gathers the set of LSIF dump identifiers
+ * whose commit occurs in `lineage` (within the given traversal limit).
  *
  * @param limit The maximum number of dumps that can be extracted from `lineage`.
  */

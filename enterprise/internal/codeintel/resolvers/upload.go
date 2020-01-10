@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"encoding/base64"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -177,11 +178,24 @@ func (r *lsifUploadStatsResolver) ErroredCount() int32    { return r.stats.Error
 func (r *lsifUploadStatsResolver) CompletedCount() int32  { return r.stats.CompletedCount }
 func (r *lsifUploadStatsResolver) QueuedCount() int32     { return r.stats.QueuedCount }
 
-func marshalLSIFUploadGQLID(lsifUploadID string) graphql.ID {
+func marshalLSIFUploadGQLID(lsifUploadID int64) graphql.ID {
 	return relay.MarshalID("LSIFUpload", lsifUploadID)
 }
 
-func unmarshalLSIFUploadGQLID(id graphql.ID) (lsifUploadID string, err error) {
+func unmarshalLSIFUploadGQLID(id graphql.ID) (lsifUploadID int64, err error) {
+	// First, try to unmarshal the ID as a string and then convert it to an
+	// integer. This is here to maintain backwards compatibility with the
+	// src-cli lsif upload command, which constructs its own relay identifier
+	// from a the string payload returned by the upload proxy.
+
+	var lsifUploadIDString string
+	err = relay.UnmarshalSpec(id, &lsifUploadIDString)
+	if err == nil {
+		lsifUploadID, err = strconv.ParseInt(lsifUploadIDString, 10, 64)
+		return
+	}
+
+	// If it wasn't unmarshal-able as a string, it's a new-style int identifier
 	err = relay.UnmarshalSpec(id, &lsifUploadID)
 	return
 }

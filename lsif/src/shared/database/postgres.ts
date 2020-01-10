@@ -16,7 +16,7 @@ import { TlsOptions } from 'tls'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395632
+const MINIMUM_MIGRATION_VERSION = 1528395634
 
 /**
  * How many times to try to check the current database migration version on startup.
@@ -186,4 +186,22 @@ export function withInstrumentedTransaction<T>(
     callback: (connection: EntityManager) => Promise<T>
 ): Promise<T> {
     return instrumentQuery(() => connection.transaction(callback))
+}
+
+/**
+ * Invokes the callback wrapped in instrumentQuery with the given entityManager, if  supplied,
+ * and runs the callback in a transaction with a fresh entityManager otherwise.
+ *
+ * @param connection The Postgres connection.
+ * @param entityManager The EntityManager to use as part of a transaction.
+ * @param callback The function invoke with the entity manager.
+ */
+export function instrumentQueryOrTransaction<T>(
+    connection: Connection,
+    entityManager: EntityManager | undefined,
+    callback: (connection: EntityManager) => Promise<T>
+): Promise<T> {
+    return entityManager
+        ? instrumentQuery(() => callback(entityManager))
+        : withInstrumentedTransaction(connection, callback)
 }

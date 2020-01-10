@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -36,7 +37,7 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 			return
 		}
 
-		jobID, queued, err := client.DefaultClient.Upload(ctx, &struct {
+		uploadID, queued, err := client.DefaultClient.Upload(ctx, &struct {
 			RepoName string
 			Commit   graphqlbackend.GitObjectID
 			Root     string
@@ -55,7 +56,8 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 			return
 		}
 
-		payload, err := json.Marshal(map[string]string{"id": jobID})
+		// Return id as a string to maintain backwards compatibility with src-cli
+		payload, err := json.Marshal(map[string]string{"id": strconv.FormatInt(uploadID, 10)})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
