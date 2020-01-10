@@ -117,11 +117,8 @@ const jobTimeout = 2 * time.Minute
 
 // Persist persists the CampaignPlan and associated CampaignJobs by searching for relevant repositories using
 // the CampaignType specific searchQuery.
-// What each CampaignJob then does in each repository depends on the
-// CampaignType set on CampaignPlan.
-// This is a non-blocking method that will possibly return before all
-// CampaignJobs are finished. CampaignJobs will be picked up by a background
-// process on one of our frontend instances.
+// CampaignJobs will be picked up by a background process
+// What each CampaignJob then does in each repository depends on the CampaignType set on CampaignPlan.
 func (r *Runner) Persist(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
 	tr, ctx := trace.New(ctx, "Runner.Persist", fmt.Sprintf("plan_id %d", plan.ID))
 	defer func() {
