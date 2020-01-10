@@ -163,7 +163,7 @@ func lookupMatcher(language string) string {
 func structuralSearch(ctx context.Context, zipPath, pattern, rule string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
-	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
+	// Cap the number of forked processes to limit the size of zip contents being mapped to memory.
 	numWorkers := 4
 
 	var matcher string
