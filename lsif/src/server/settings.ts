@@ -18,12 +18,12 @@ export const CLEAN_OLD_UPLOADS_INTERVAL = readEnvInt('CLEAN_OLD_UPLOADS_INTERVAL
 /**
  * The interval (in seconds) to clean the dbs directory.
  */
-export const PURGE_OLD_DUMPS_INTERVAL = readEnvInt('PURGE_OLD_DUMPS_INTERVAL', 60 * 60 * 8)
+export const PURGE_OLD_DUMPS_INTERVAL = readEnvInt('PURGE_OLD_DUMPS_INTERVAL', 60 * 30)
 
 /**
  * How many uploads to query at once when determining if a db file is unreferenced.
  */
-export const DEAD_DUMP_CHUNK_SIZE = readEnvInt('DEAD_DUMP_CHUNK_SIZE', 60 * 60 * 8)
+export const DEAD_DUMP_CHUNK_SIZE = readEnvInt('DEAD_DUMP_CHUNK_SIZE', 100)
 
 /**
  * The default number of remote dumps to open when performing a global find-reference operation.
