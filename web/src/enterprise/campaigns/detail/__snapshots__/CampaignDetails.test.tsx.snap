@@ -198,10 +198,34 @@ Array [
     Burndown chart will be shown when there is more than 1 day of data.
   </div>,
   <CampaignTabs
-    changesets={
+    campaign={
       Object {
-        "nodes": Array [],
-        "totalCount": 2,
+        "__typename": "Campaign",
+        "author": Object {
+          "username": "alice",
+        },
+        "changesetCountsOverTime": Array [],
+        "changesetCreationStatus": Object {
+          "__typename": "BackgroundProcessStatus",
+          "completedCount": 3,
+          "errors": Array [
+            "a",
+          ],
+          "pendingCount": 3,
+          "state": "PROCESSING",
+        },
+        "changesets": Object {
+          "nodes": Array [],
+          "totalCount": 2,
+        },
+        "createdAt": "2020-01-01",
+        "description": "d",
+        "id": "c",
+        "plan": Object {
+          "arguments": "{}",
+          "type": "comby",
+        },
+        "updatedAt": "2020-01-01",
       }
     }
     className="mt-3"
@@ -455,10 +479,34 @@ Array [
     Burndown chart will be shown when there is more than 1 day of data.
   </div>,
   <CampaignTabs
-    changesets={
+    campaign={
       Object {
-        "nodes": Array [],
-        "totalCount": 2,
+        "__typename": "Campaign",
+        "author": Object {
+          "username": "alice",
+        },
+        "changesetCountsOverTime": Array [],
+        "changesetCreationStatus": Object {
+          "__typename": "BackgroundProcessStatus",
+          "completedCount": 3,
+          "errors": Array [
+            "a",
+          ],
+          "pendingCount": 3,
+          "state": "PROCESSING",
+        },
+        "changesets": Object {
+          "nodes": Array [],
+          "totalCount": 2,
+        },
+        "createdAt": "2020-01-01",
+        "description": "d",
+        "id": "c",
+        "plan": Object {
+          "arguments": "{}",
+          "type": "comby",
+        },
+        "updatedAt": "2020-01-01",
       }
     }
     className="mt-3"

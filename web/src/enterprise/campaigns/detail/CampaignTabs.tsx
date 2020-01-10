@@ -1,13 +1,15 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import H from 'history'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import { CampaignDiffs } from './diffs/CampaignDiffs'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
+import { queryChangesets, queryChangesetPlans } from './backend'
+import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
 interface Props extends ThemeProps {
-    changesets: Pick<GQL.IExternalChangesetConnection | GQL.IChangesetPlanConnection, 'nodes' | 'totalCount'>
+    campaign: Pick<GQL.ICampaign | GQL.ICampaignPlan, '__typename' | 'id' | 'changesets'>
     persistLines: boolean
 
     history: H.History
@@ -27,15 +29,23 @@ const sumDiffStat = (nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[], fie
  * A tabbed view showing a campaign's or campaign plan's diffs and changesets.
  */
 export const CampaignTabs: React.FunctionComponent<Props> = ({
-    changesets,
+    campaign,
     persistLines,
     history,
     location,
     className = '',
     isLightTheme,
 }) => {
-    const totalAdditions = useMemo(() => sumDiffStat(changesets.nodes, 'added'), [changesets.nodes])
-    const totalDeletions = useMemo(() => sumDiffStat(changesets.nodes, 'deleted'), [changesets.nodes])
+    const queryChangesetsConnection = useCallback(
+        (args: FilteredConnectionQueryArgs) =>
+            campaign && campaign.__typename === 'CampaignPlan'
+                ? queryChangesetPlans(campaign.id, args)
+                : queryChangesets(campaign.id, args),
+        [campaign]
+    )
+
+    const totalAdditions = useMemo(() => sumDiffStat(campaign.changesets.nodes, 'added'), [campaign.changesets.nodes])
+    const totalDeletions = useMemo(() => sumDiffStat(campaign.changesets.nodes, 'deleted'), [campaign.changesets.nodes])
 
     return (
         <TabsWithLocalStorageViewStatePersistence
@@ -55,7 +65,8 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                     id: 'changesets',
                     label: (
                         <span className="e2e-campaign-changesets-tab">
-                            Changesets <span className="badge badge-secondary badge-pill">{changesets.totalCount}</span>
+                            Changesets{' '}
+                            <span className="badge badge-secondary badge-pill">{campaign.changesets.totalCount}</span>
                         </span>
                     ),
                 },
@@ -64,7 +75,7 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
         >
             <CampaignChangesets
                 key="changesets"
-                changesets={changesets}
+                queryChangesetsConnection={queryChangesetsConnection}
                 history={history}
                 location={location}
                 className="mt-3"
@@ -72,7 +83,7 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
             />
             <CampaignDiffs
                 key="diff"
-                changesets={changesets}
+                queryChangesetsConnection={queryChangesetsConnection}
                 persistLines={persistLines}
                 history={history}
                 location={location}
