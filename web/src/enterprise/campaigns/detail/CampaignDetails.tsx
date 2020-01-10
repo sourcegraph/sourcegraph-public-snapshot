@@ -304,18 +304,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
 
-    const status = campaign
-        ? campaign.__typename === 'CampaignPlan'
-            ? campaign.status
-            : campaign.status
-        : null
-
     const currentSpec = campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
     // Tracks if a refresh of the campaignPlan is required before the campaign can be created
     const previewRefreshNeeded =
         !currentSpec ||
         (campaignPlanSpec?.arguments && !isEqual(currentSpec, parseJSONC(campaignPlanSpec.arguments))) ||
-        (status && status.state !== GQL.BackgroundProcessState.COMPLETED)
+        (campaign && campaign.status.state !== GQL.BackgroundProcessState.COMPLETED)
 
     return (
         <>
@@ -492,8 +486,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
             </Form>
 
-            {/* Status asserts on campaign being set, so `campaign` will never be null. */}
-            {status && <CampaignStatus campaign={campaign!} status={status} onRetry={onRetry} />}
+            {campaign?.status && <CampaignStatus campaign={campaign} status={campaign.status} onRetry={onRetry} />}
 
             {campaign && campaign.__typename === 'Campaign' && (
                 <>
