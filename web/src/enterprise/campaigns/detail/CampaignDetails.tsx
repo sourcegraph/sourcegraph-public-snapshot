@@ -110,10 +110,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             // todo(a8n): why does this not unsubscribe when takeWhile is in outer pipe
                                             takeWhile(
                                                 () =>
-                                                    !!currentCampaign &&
-                                                    !!currentCampaign.status &&
-                                                    currentCampaign.status.state ===
-                                                        GQL.BackgroundProcessState.PROCESSING
+                                                    currentCampaign?.status?.state ===
+                                                    GQL.BackgroundProcessState.PROCESSING
                                             ),
                                             delay(2000)
                                         )
