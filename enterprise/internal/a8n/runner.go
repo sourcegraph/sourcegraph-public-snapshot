@@ -224,15 +224,12 @@ func (r *Runner) Wait(ctx context.Context) error {
 			return ctx.Err()
 		default:
 		}
-		count, err := r.store.CountCampaignJobs(ctx, CountCampaignJobsOpts{
-			CampaignPlanID: r.planID,
-			OnlyFinished:   true,
-		})
+		status, err := r.store.GetCampaignPlanStatus(ctx, r.planID)
 		if err != nil {
 			log15.Error("counting campaign jobs", "err", err)
 			// Most likely a transitive error so we'll continue
 		}
-		if count == r.jobCount {
+		if status.Finished() {
 			return nil
 		}
 		time.Sleep(1 * time.Second)
