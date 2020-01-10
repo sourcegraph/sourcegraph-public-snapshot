@@ -245,7 +245,7 @@ func (s *Service) RunChangesetJob(
 	c *a8n.Campaign,
 	job *a8n.ChangesetJob,
 ) (err error) {
-	tr, ctx := trace.New(ctx, "service.RunChangeSetJob", fmt.Sprintf("job_id: %d", job.ID))
+	tr, ctx := trace.New(ctx, "service.RunChangesetJob", fmt.Sprintf("job_id: %d", job.ID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
