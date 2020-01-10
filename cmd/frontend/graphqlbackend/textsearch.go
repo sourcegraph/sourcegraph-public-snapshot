@@ -181,11 +181,11 @@ func (lm *lineMatch) LimitHit() bool {
 	return lm.JLimitHit
 }
 
-var mockTextSearch func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
+var mockTextSearch func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
 
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
-func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 	if mockTextSearch != nil {
 		return mockTextSearch(ctx, repo, commit, p, fetchTimeout)
 	}
@@ -359,9 +359,9 @@ func (e *searcherError) Error() string {
 	return e.Message
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -398,7 +398,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 
 // repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
 // fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
-func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searchPattern *search.PatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
+func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searchPattern *search.TextPatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
 	shouldBeSearched = true
 	flagInQuery := len(searchPattern.FilePatternsReposMustInclude) > 0
 	if flagInQuery {
@@ -421,7 +421,7 @@ func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searc
 // whether or not the repoShouldBeSearched in or not, based on whether matches were returned.
 func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	for _, pattern := range repoHasFileFlag {
-		p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 		matches, _, err := textSearch(ctx, searcherURLs, gitserverRepo, commit, &p, fetchTimeout)
 		if err != nil {
 			return false, err
@@ -606,15 +606,17 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			if len(repoAllRevs.Revs) == 0 {
 				continue
 			}
-			if len(repoAllRevs.Revs) >= 2 && !conf.SearchMultipleRevisionsPerRepository() {
+
+			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx)
+			if err != nil {
+				return err
+			}
+
+			if len(revSpecs) >= 2 && !conf.SearchMultipleRevisionsPerRepository() {
 				return errMultipleRevsNotSupported
 			}
 
-			for _, rev := range repoAllRevs.Revs {
-				if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
-					return errors.New("searching multiple revisions in a repository using a glob (such as *refs/heads) is not supported; you must list all revspecs with colon separators (such as master:mybranch)")
-				}
-
+			for _, rev := range revSpecs {
 				// Only reason acquire can fail is if ctx is cancelled. So we can stop
 				// looping through searcherRepos.
 				limitCtx, limitDone, acquireErr := textSearchLimiter.Acquire(ctx)
@@ -623,7 +625,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 				}
 
 				// Make a new repoRev for just the operation of searching this revspec.
-				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{rev}}
+				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}}
 
 				args := *args
 				if args.PatternInfo.IsStructuralPat && searcherReposFilteredFiles != nil {

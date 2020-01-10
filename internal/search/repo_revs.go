@@ -1,6 +1,7 @@
 package search
 
 import (
+	"context"
 	"reflect"
 	"strings"
 	"sync"
@@ -8,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one
@@ -63,6 +65,10 @@ type RepositoryRevisions struct {
 	// rationale.
 	mu                sync.Mutex
 	indexedHEADCommit api.CommitID
+
+	// ListRefs is called to list all Git refs for a repository. It is intended to be mocked by
+	// tests. If nil, git.ListRefs is used.
+	ListRefs func(context.Context, gitserver.Repo) ([]git.Ref, error)
 }
 
 func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
@@ -152,10 +158,66 @@ func (r *RepositoryRevisions) String() string {
 	return string(r.Repo.Name) + "@" + strings.Join(parts, ":")
 }
 
+// RevSpecs returns a list of all explicitly listed Git revspecs. It does not expand ref globs to
+// their matching revspecs.
 func (r *RepositoryRevisions) RevSpecs() []string {
 	var revspecs []string
 	for _, rev := range r.Revs {
-		revspecs = append(revspecs, rev.RevSpec)
+		if rev.RefGlob == "" && rev.ExcludeRefGlob == "" {
+			revspecs = append(revspecs, rev.RevSpec)
+		}
 	}
 	return revspecs
+}
+
+// ExpandedRevSpecs evaluates all of r's ref glob expressions and returns the full, current list of
+// refs matched or resolved by them, plus the explicitly listed Git revspecs. See
+// git.CompileRefGlobs for information on how ref include/exclude globs are handled.
+//
+// Note that not all callers need to expand these. If a caller is passing the ref globs as
+// command-line args to `git` directly (e.g., to `git log --glob ... --exclude ...`), it does not
+// need to use this function.
+func (r *RepositoryRevisions) ExpandedRevSpecs(ctx context.Context) ([]string, error) {
+	listRefs := r.ListRefs
+	if listRefs == nil {
+		listRefs = git.ListRefs
+	}
+
+	var (
+		revSpecs = map[string]struct{}{}
+		globs    []git.RefGlob
+	)
+	for _, rev := range r.Revs {
+		switch {
+		case rev.RefGlob != "":
+			globs = append(globs, git.RefGlob{Include: rev.RefGlob})
+		case rev.ExcludeRefGlob != "":
+			globs = append(globs, git.RefGlob{Exclude: rev.ExcludeRefGlob})
+		default:
+			revSpecs[rev.RevSpec] = struct{}{}
+		}
+	}
+	if len(globs) > 0 {
+		allRefs, err := listRefs(ctx, r.GitserverRepo())
+		if err != nil {
+			return nil, err
+		}
+
+		rg, err := git.CompileRefGlobs(globs)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, ref := range allRefs {
+			if rg.Match(ref.Name) {
+				revSpecs[strings.TrimPrefix(ref.Name, "refs/heads/")] = struct{}{}
+			}
+		}
+	}
+
+	revSpecsList := make([]string, 0, len(revSpecs))
+	for revSpec := range revSpecs {
+		revSpecsList = append(revSpecsList, revSpec)
+	}
+	return revSpecsList, nil
 }

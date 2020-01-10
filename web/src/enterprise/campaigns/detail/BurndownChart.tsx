@@ -35,7 +35,7 @@ const commonAreaProps = {
     isAnimationActive: false,
     strokeWidth: 0,
     stackId: 'stack',
-    type: 'step',
+    type: 'stepBefore',
 } as const
 
 const tooltipItemOrder: Record<string, number> = {
@@ -51,10 +51,17 @@ const tooltipItemSorter = (item: TooltipPayload): number => tooltipItemOrder[ite
 /**
  * A burndown chart showing progress of the campaigns changesets.
  */
-export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime }) =>
-    changesetCountsOverTime.length <= 1 ? (
-        <div className="alert alert-info">Burndown chart will be shown when there is more than 1 day of data.</div>
-    ) : (
+export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime }) => {
+    if (changesetCountsOverTime.length <= 1) {
+        return (
+            <div className="alert alert-info">Burndown chart will be shown when there is more than 1 day of data.</div>
+        )
+    }
+    const hasEntries = changesetCountsOverTime.some(counts => counts.total > 0)
+    if (!hasEntries) {
+        return <div className="alert alert-info">Burndown chart will be shown when data is available.</div>
+    }
+    return (
         <ResponsiveContainer width="100%" height={300}>
             <ComposedChart
                 data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
@@ -69,6 +76,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
                     tickFormatter={dateTickFormatter}
                     type="number"
                     stroke="var(--text-muted)"
+                    scale="time"
                 />
                 <YAxis
                     tickFormatter={toLocaleString}
@@ -100,3 +108,4 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
             </ComposedChart>
         </ResponsiveContainer>
     )
+}

@@ -64,11 +64,15 @@ func main() {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
+	a8nStore := a8n.NewStoreWithClock(dbconn.Global, clock)
+
 	githubWebhook := &a8n.GitHubWebhook{
-		Store: a8n.NewStoreWithClock(dbconn.Global, clock),
+		Store: a8nStore,
 		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
 		Now:   clock,
 	}
+
+	go a8n.RunCampaignJobs(ctx, a8nStore, clock, 5*time.Second)
 
 	shared.Main(githubWebhook)
 }

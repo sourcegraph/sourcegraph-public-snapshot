@@ -697,7 +697,7 @@ type getPatternInfoOptions struct {
 }
 
 // getPatternInfo gets the search pattern info for the query in the resolver.
-func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.PatternInfo, error) {
+func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
 	var patternsToCombine []string
 	isRegExp := false
 	isStructuralPat := false
@@ -769,7 +769,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 
 	languages, _ := r.query.StringValues(query.FieldLang)
 
-	patternInfo := &search.PatternInfo{
+	patternInfo := &search.TextPatternInfo{
 		IsRegExp:                     isRegExp,
 		IsStructuralPat:              isStructuralPat,
 		IsCaseSensitive:              r.query.IsCaseSensitive(),
@@ -1135,6 +1135,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
+				old := args.PatternInfo
+				patternInfo := &search.CommitPatternInfo{
+					Pattern:                      old.Pattern,
+					IsRegExp:                     old.IsRegExp,
+					IsCaseSensitive:              old.IsCaseSensitive,
+					FileMatchLimit:               old.FileMatchLimit,
+					IncludePatterns:              old.IncludePatterns,
+					ExcludePattern:               old.ExcludePattern,
+					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+				}
+				args := search.TextParametersForCommitParameters{
+					PatternInfo: patternInfo,
+					Repos:       args.Repos,
+					Query:       args.Query,
+				}
 				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
@@ -1159,8 +1175,19 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
+				old := args.PatternInfo
+				patternInfo := &search.CommitPatternInfo{
+					Pattern:                      old.Pattern,
+					IsRegExp:                     old.IsRegExp,
+					IsCaseSensitive:              old.IsCaseSensitive,
+					FileMatchLimit:               old.FileMatchLimit,
+					IncludePatterns:              old.IncludePatterns,
+					ExcludePattern:               old.ExcludePattern,
+					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
+				}
 				args := search.TextParametersForCommitParameters{
-					PatternInfo: args.PatternInfo,
+					PatternInfo: patternInfo,
 					Repos:       args.Repos,
 					Query:       args.Query,
 				}

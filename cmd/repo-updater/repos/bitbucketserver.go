@@ -105,7 +105,9 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan Sourc
 }
 
 // CreateChangeset creates the given *Changeset in the code host.
-func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) error {
+func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (error, bool) {
+	var exists bool
+
 	repo := c.Repo.Metadata.(*bitbucketserver.Repo)
 
 	pr := &bitbucketserver.PullRequest{Title: c.Title, Description: c.Body}
@@ -122,12 +124,13 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	if err != nil {
 		if ae, ok := err.(*bitbucketserver.ErrAlreadyExists); ok && ae != nil {
 			if ae.Existing == nil {
-				return fmt.Errorf("existing PR is nil")
+				return fmt.Errorf("existing PR is nil"), exists
 			}
 			log15.Info("Existing PR extracted", "ID", ae.Existing.ID)
 			pr = ae.Existing
+			exists = true
 		} else {
-			return err
+			return err, exists
 		}
 	}
 
@@ -135,7 +138,7 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	c.Changeset.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
 	c.Changeset.ExternalServiceType = bitbucketserver.ServiceType
 
-	return nil
+	return nil, exists
 }
 
 // CloseChangeset closes the given *Changeset on the code host and updates the

@@ -31,16 +31,6 @@ exports[`CampaignDetails creation form 1`] = `
         >
           /
         </span>
-        <CampaignNamespaceField
-          className="w-auto d-inline-block"
-          id="new-campaign-page__namespace"
-          onChange={[Function]}
-        />
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
         <CampaignTitleField
           className="w-auto d-inline-block e2e-campaign-title"
           disabled={false}
@@ -55,23 +45,6 @@ exports[`CampaignDetails creation form 1`] = `
     <div
       className="card"
     >
-      <div
-        className="card-header"
-      >
-        <strong>
-          <UserAvatar
-            className="icon-inline"
-            user={
-              Object {
-                "avatarURL": null,
-                "username": "alice",
-              }
-            }
-          />
-           
-          alice
-        </strong>
-      </div>
       <CampaignDescriptionField
         disabled={false}
         onChange={[Function]}
@@ -94,14 +67,13 @@ exports[`CampaignDetails creation form 1`] = `
     <CampaignPlanSpecificationFields
       className="container-fluid my-3"
       isLightTheme={true}
-      onArgumentsJSONCChange={[Function]}
-      onTypeChange={[Function]}
+      onChange={[Function]}
       readOnly={false}
     />
     <React.Fragment>
       <button
         className="btn btn-primary"
-        disabled={false}
+        disabled={true}
         type="submit"
       >
         Create
@@ -134,14 +106,6 @@ Array [
           >
             Campaigns
           </a>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
-        <span>
-          alice
         </span>
         <span
           className="text-muted d-inline-block mx-2"
@@ -212,13 +176,16 @@ Array [
       </small>
     </p>
     <CampaignPlanSpecificationFields
-      argumentsJSONC="{}"
       className="container-fluid my-3"
       isLightTheme={true}
-      onArgumentsJSONCChange={[Function]}
-      onTypeChange={[Function]}
+      onChange={[Function]}
       readOnly={true}
-      type="comby"
+      value={
+        Object {
+          "arguments": "{}",
+          "type": "comby",
+        }
+      }
     />
   </form>,
   "CampaignStatus(state=PROCESSING)",
@@ -230,60 +197,58 @@ Array [
   >
     Burndown chart will be shown when there is more than 1 day of data.
   </div>,
-  <div
-    className="tabs mt-3"
-  >
-    <div
-      className="tab-bar "
-    >
-      <button
-        className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
-        data-e2e-tab="diff"
-        onClick={[Function]}
-        type="button"
-      >
-        <span
-          className="e2e-campaign-diff-tab"
-        >
-          Diff 
-          <span
-            className="text-success"
-          >
-            +
-            0
-          </span>
-           
-          <span
-            className="text-danger"
-          >
-            -
-            0
-          </span>
-        </span>
-      </button>
-      <button
-        className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-        data-e2e-tab="changesets"
-        onClick={[Function]}
-        type="button"
-      >
-        <span
-          className="e2e-campaign-changesets-tab"
-        >
-          Changesets
-           
-          <span
-            className="badge badge-secondary badge-pill"
-          >
-            2
-          </span>
-        </span>
-      </button>
-    </div>
-    <div
-      className="mt-3"
-    />
-  </div>,
+  <CampaignTabs
+    changesets={
+      Object {
+        "nodes": Array [],
+        "totalCount": 2,
+      }
+    }
+    className="mt-3"
+    history={
+      Object {
+        "action": "POP",
+        "block": [Function],
+        "canGo": [Function],
+        "createHref": [Function],
+        "entries": Array [
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+        ],
+        "go": [Function],
+        "goBack": [Function],
+        "goForward": [Function],
+        "index": 0,
+        "length": 1,
+        "listen": [Function],
+        "location": Object {
+          "hash": "",
+          "key": undefined,
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        },
+        "push": [Function],
+        "replace": [Function],
+      }
+    }
+    isLightTheme={true}
+    location={
+      Object {
+        "hash": "",
+        "key": undefined,
+        "pathname": "/",
+        "search": "",
+        "state": undefined,
+      }
+    }
+    persistLines={true}
+  />,
 ]
 `;
 
@@ -310,14 +275,6 @@ Array [
           >
             Campaigns
           </a>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
-        <span>
-          alice
         </span>
         <span
           className="text-muted d-inline-block mx-2"
@@ -476,13 +433,16 @@ Array [
       </div>
     </div>
     <CampaignPlanSpecificationFields
-      argumentsJSONC="{}"
       className="container-fluid my-3"
       isLightTheme={true}
-      onArgumentsJSONCChange={[Function]}
-      onTypeChange={[Function]}
+      onChange={[Function]}
       readOnly={true}
-      type="comby"
+      value={
+        Object {
+          "arguments": "{}",
+          "type": "comby",
+        }
+      }
     />
   </form>,
   "CampaignStatus(state=PROCESSING)",
@@ -494,59 +454,57 @@ Array [
   >
     Burndown chart will be shown when there is more than 1 day of data.
   </div>,
-  <div
-    className="tabs mt-3"
-  >
-    <div
-      className="tab-bar "
-    >
-      <button
-        className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
-        data-e2e-tab="diff"
-        onClick={[Function]}
-        type="button"
-      >
-        <span
-          className="e2e-campaign-diff-tab"
-        >
-          Diff 
-          <span
-            className="text-success"
-          >
-            +
-            0
-          </span>
-           
-          <span
-            className="text-danger"
-          >
-            -
-            0
-          </span>
-        </span>
-      </button>
-      <button
-        className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-        data-e2e-tab="changesets"
-        onClick={[Function]}
-        type="button"
-      >
-        <span
-          className="e2e-campaign-changesets-tab"
-        >
-          Changesets
-           
-          <span
-            className="badge badge-secondary badge-pill"
-          >
-            2
-          </span>
-        </span>
-      </button>
-    </div>
-    <div
-      className="mt-3"
-    />
-  </div>,
+  <CampaignTabs
+    changesets={
+      Object {
+        "nodes": Array [],
+        "totalCount": 2,
+      }
+    }
+    className="mt-3"
+    history={
+      Object {
+        "action": "POP",
+        "block": [Function],
+        "canGo": [Function],
+        "createHref": [Function],
+        "entries": Array [
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+        ],
+        "go": [Function],
+        "goBack": [Function],
+        "goForward": [Function],
+        "index": 0,
+        "length": 1,
+        "listen": [Function],
+        "location": Object {
+          "hash": "",
+          "key": undefined,
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        },
+        "push": [Function],
+        "replace": [Function],
+      }
+    }
+    isLightTheme={true}
+    location={
+      Object {
+        "hash": "",
+        "key": undefined,
+        "pathname": "/",
+        "search": "",
+        "state": undefined,
+      }
+    }
+    persistLines={true}
+  />,
 ]
 `;

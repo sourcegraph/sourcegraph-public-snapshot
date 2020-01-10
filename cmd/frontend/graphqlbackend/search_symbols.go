@@ -244,7 +244,7 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int) (res []*FileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, query *query.Query, limit int) (res []*FileMatchResolver, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {

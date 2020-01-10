@@ -16,7 +16,7 @@ export const CampaignTitleField: React.FunctionComponent<Props> = ({ value, onCh
         className={`form-control ${className}`}
         value={value}
         onChange={event => onChange(event.target.value)}
-        placeholder="Campaign title"
+        placeholder="Title"
         disabled={disabled}
         autoFocus={true}
         required={true}
