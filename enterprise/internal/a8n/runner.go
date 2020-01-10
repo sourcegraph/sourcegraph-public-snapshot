@@ -245,7 +245,7 @@ func RunCampaignJobs(ctx context.Context, s *Store, clock func() time.Time, back
 		workerCount = 8
 	}
 	process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
-		runJob(ctx, clock, s, nil, &job)
+		runCampaignJob(ctx, clock, s, nil, &job)
 		return nil
 	}
 	worker := func() {
@@ -270,11 +270,11 @@ func RunCampaignJobs(ctx context.Context, s *Store, clock func() time.Time, back
 	}
 }
 
-// runJob runs the supplied job
+// runCampaignJob runs the supplied job
 // if ct is nil, one will be created from the CampaignPlan
-func runJob(ctx context.Context, clock func() time.Time, store *Store, ct CampaignType, job *a8n.CampaignJob) {
+func runCampaignJob(ctx context.Context, clock func() time.Time, store *Store, ct CampaignType, job *a8n.CampaignJob) {
 	var err error
-	tr, ctx := trace.New(ctx, "Runner.runJob", fmt.Sprintf("job_id %d", job.ID))
+	tr, ctx := trace.New(ctx, "Runner.runCampaignJob", fmt.Sprintf("job_id %d", job.ID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
