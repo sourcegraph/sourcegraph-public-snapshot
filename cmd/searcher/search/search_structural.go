@@ -175,7 +175,11 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
 	}
 
-	requestTotalStructuralSearch.WithLabelValues(matcher).Inc()
+	if matcher == "" {
+		requestTotalStructuralSearch.WithLabelValues("inferred").Inc()
+	} else {
+		requestTotalStructuralSearch.WithLabelValues(matcher).Inc()
+	}
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
