@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
@@ -174,6 +175,12 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
 	}
 
+	if matcher == "" {
+		requestTotalStructuralSearch.WithLabelValues("inferred").Inc()
+	} else {
+		requestTotalStructuralSearch.WithLabelValues(matcher).Inc()
+	}
+
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
 		Matcher:       matcher,
@@ -194,4 +201,15 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 		return nil, false, err
 	}
 	return matches, false, err
+}
+
+var requestTotalStructuralSearch = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "searcher",
+	Subsystem: "service",
+	Name:      "request_total_structural_search",
+	Help:      "Number of returned structural search requests.",
+}, []string{"language"})
+
+func init() {
+	prometheus.MustRegister(requestTotalStructuralSearch)
 }
