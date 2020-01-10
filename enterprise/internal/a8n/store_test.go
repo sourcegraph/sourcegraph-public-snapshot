@@ -2351,7 +2351,6 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 				go func() {
 					ran, err := s.ProcessPendingCampaignJob(ctx, process)
 					errChan <- err
-					fmt.Println(time.Now(), ran)
 					if ran {
 						atomic.AddInt64(&runCount, 1)
 					}

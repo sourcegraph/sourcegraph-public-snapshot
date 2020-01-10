@@ -89,30 +89,7 @@ func TestConsumePendingCampaignJobs(t *testing.T) {
 	doneChan := make(chan struct{})
 	defer func() { close(doneChan) }()
 	go RunCampaignJobs(store, clock, 100*time.Millisecond, doneChan)
-
-	// After some time the job should be finished
-	timeout := time.After(2 * time.Second)
-	ticker := time.NewTicker(100 * time.Millisecond)
-	for {
-		select {
-		case <-timeout:
-			t.Fatal("timed out")
-		case <-ticker.C:
-			jobs, _, err = store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
-				CampaignPlanID: plan.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(jobs) != 1 {
-				t.Fatalf("expected 1 job, got %d", len(jobs))
-			}
-			if !jobs[0].FinishedAt.IsZero() {
-				// Job has run
-				return
-			}
-		}
-	}
+	waitRunner(t, runner)
 }
 
 func TestRunner(t *testing.T) {
@@ -424,18 +401,21 @@ const testDescription = `Added three important lines:
 func waitRunner(t *testing.T, r *Runner) {
 	t.Helper()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	done := make(chan struct{})
 	go func() {
 		defer func() { close(done) }()
-		err := r.Wait()
+		err := r.Wait(ctx)
 		if err != nil {
 			t.Errorf("runner.Wait failed: %s", err)
 		}
 	}()
 
 	select {
-	case <-time.After(1 * time.Second):
-		t.Fatalf("timeout reached")
+	case <-ctx.Done():
+		t.Fatal(ctx.Err())
 	case <-done:
 	}
 }

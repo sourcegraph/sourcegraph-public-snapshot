@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
@@ -45,8 +44,11 @@ type Runner struct {
 
 	ct CampaignType
 
+	// planID and jobCount are updated in Persist
+	planID   int64
+	jobCount int64
+
 	started bool
-	wg      sync.WaitGroup
 }
 
 // repoSearch takes in a raw search query and returns the list of repositories
@@ -149,6 +151,7 @@ func (r *Runner) Persist(ctx context.Context, plan *a8n.CampaignPlan) (err error
 	if err != nil {
 		return err
 	}
+	r.planID = plan.ID
 
 	return nil
 }
@@ -205,22 +208,38 @@ func (r *Runner) createPlanAndJobs(
 		if err = tx.CreateCampaignJob(ctx, job); err != nil {
 			return err
 		}
+		r.jobCount++
 	}
 
 	return err
 }
 
-// Wait blocks until all CampaignJobs created and started by Start have
+// Wait blocks until all CampaignJobs created and started by Persist have
 // finished.
-func (r *Runner) Wait() error {
+func (r *Runner) Wait(ctx context.Context) error {
 	if !r.started {
 		return errors.New("not started")
 	}
 
-	// TODO: We could implement this by polling for the jobs created by the runner
-	// but now that work is done in the background it is not as easy.
-	// For now we just return immediately as a resolver function depends on this
-	return nil
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		count, err := r.store.CountCampaignJobs(ctx, CountCampaignJobsOpts{
+			CampaignPlanID: r.planID,
+			OnlyFinished:   true,
+		})
+		if err != nil {
+			log15.Error("counting campaign jobs", "err", err)
+			// Most likely a transitive error so we'll continue
+		}
+		if count == r.jobCount {
+			return nil
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
 
 // RunCampaignJobs should run in a background goroutine and is responsible for
@@ -236,9 +255,6 @@ func RunCampaignJobs(s *Store, clock func() time.Time, backoffDuration time.Dura
 		runJob(ctx, clock, s, nil, &job)
 		return nil
 	}
-	worker := func() {
-
-	}()
 	for i := 0; i < workerCount; i++ {
 		go func() {
 			for {

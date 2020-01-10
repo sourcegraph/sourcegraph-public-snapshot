@@ -504,7 +504,7 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 		if err != nil {
 			return nil, err
 		}
-		err = runner.Wait()
+		err = runner.Wait(ctx)
 		if err != nil {
 			return nil, err
 		}

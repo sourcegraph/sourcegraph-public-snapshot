@@ -1809,7 +1809,7 @@ type CountCampaignJobsOpts struct {
 	OnlyUnpublishedInCampaign int64
 }
 
-// CountCampaignJobs returns the number of code mods in the database.
+// CountCampaignJobs returns the number of CampaignJobs in the database.
 func (s *Store) CountCampaignJobs(ctx context.Context, opts CountCampaignJobsOpts) (count int64, _ error) {
 	q := countCampaignJobsQuery(&opts)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
