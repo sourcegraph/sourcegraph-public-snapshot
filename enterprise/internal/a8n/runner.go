@@ -44,7 +44,8 @@ type Runner struct {
 
 	ct CampaignType
 
-	// planID is updated in Persist
+	// planID is set in Persist and used in Wait so that
+	// we know which plan to wait on
 	planID int64
 
 	started bool
