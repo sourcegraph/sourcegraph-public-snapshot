@@ -131,8 +131,8 @@ export function createLsifRouter(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit, path }: ExistsQueryArgs = req.query
                 const ctx = createTracingContext(req, { repository, commit })
-                const dump = await backend.exists(repository, commit, path, undefined, ctx)
-                res.json({ dump })
+                const upload = await backend.exists(repository, commit, path, undefined, ctx)
+                res.json({ upload })
             }
         )
     )
