@@ -158,7 +158,7 @@ func lookupMatcher(language string) string {
 	case "xml":
 		return ".xml"
 	}
-	return ".generic"
+	return ""
 }
 
 func structuralSearch(ctx context.Context, zipPath, pattern, rule string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
