@@ -500,7 +500,7 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	tr.LogFields(log.Int64("plan_id", plan.ID), log.Bool("Wait", args.Wait))
 
 	if args.Wait {
-		err := runner.Persist(ctx, plan)
+		err := runner.CreatePlanAndJobs(ctx, plan)
 		if err != nil {
 			return nil, err
 		}
@@ -512,7 +512,7 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 		act := actor.FromContext(ctx)
 		ctx := trace.ContextWithTrace(context.Background(), tr)
 		ctx = actor.WithActor(ctx, act)
-		err := runner.Persist(ctx, plan)
+		err := runner.CreatePlanAndJobs(ctx, plan)
 		if err != nil {
 			return nil, err
 		}

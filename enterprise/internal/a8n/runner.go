@@ -29,7 +29,7 @@ var maxRepositories = env.Get("A8N_MAX_REPOS", "200", "maximum number of reposit
 // executes CampaignJobs in parallel.
 var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories run campaigns over in parallel")
 
-// ErrTooManyResults is returned by the Runner's Persist method when the
+// ErrTooManyResults is returned by the Runner's CreatePlanAndJobs method when the
 // CampaignType's searchQuery produced more than maxRepositories number of
 // repositories.
 var ErrTooManyResults = errors.New("search yielded too many results. You can narrow down results using `scopeQuery`")
@@ -44,7 +44,7 @@ type Runner struct {
 
 	ct CampaignType
 
-	// planID is set in Persist and used in Wait so that
+	// planID is set in CreatePlanAndJobs and used in Wait so that
 	// we know which plan to wait on
 	planID int64
 
@@ -115,12 +115,12 @@ func NewRunnerWithClock(store *Store, ct CampaignType, search repoSearch, defaul
 // The time after which a CampaignJob's execution times out
 const jobTimeout = 2 * time.Minute
 
-// Persist persists the CampaignPlan and associated CampaignJobs by searching for relevant repositories using
+// CreatePlanAndJobs persists the CampaignPlan and associated CampaignJobs by searching for relevant repositories using
 // the CampaignType specific searchQuery.
 // CampaignJobs will be picked up by a background process
 // What each CampaignJob then does in each repository depends on the CampaignType set on CampaignPlan.
-func (r *Runner) Persist(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
-	tr, ctx := trace.New(ctx, "Runner.Persist", fmt.Sprintf("plan_id %d", plan.ID))
+func (r *Runner) CreatePlanAndJobs(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
+	tr, ctx := trace.New(ctx, "Runner.CreatePlanAndJobs", fmt.Sprintf("plan_id %d", plan.ID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -210,7 +210,7 @@ func (r *Runner) createPlanAndJobs(
 	return err
 }
 
-// Wait blocks until all CampaignJobs created and started by Persist have
+// Wait blocks until all CampaignJobs created and started by CreatePlanAndJobs have
 // finished.
 func (r *Runner) Wait(ctx context.Context) error {
 	if !r.started {
