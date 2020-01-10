@@ -727,7 +727,7 @@ type UpdateCampaignArgs struct {
 }
 
 // UpdateCampaign updates the Campaign with the given arguments.
-func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *a8n.Campaign, err error) {
+func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *a8n.Campaign, detachedChangesets []*a8n.Changeset, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", args.Campaign)
 	tr, ctx := trace.New(ctx, "service.UpdateCampaign", traceTitle)
 	defer func() {
@@ -737,14 +737,14 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	defer tx.Done(&err)
 
 	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: args.Campaign})
 	if err != nil {
-		return nil, errors.Wrap(err, "getting campaign")
+		return nil, nil, errors.Wrap(err, "getting campaign")
 	}
 
 	var updateAttributes, updatePlanID bool
@@ -766,39 +766,39 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	if !updateAttributes && !updatePlanID {
-		return campaign, nil
+		return campaign, nil, nil
 	}
 
 	if !campaign.Published() {
 		// If the campaign hasn't been published yet, we can simply update the
 		// attributes because no ChangesetJobs have been created yet.
-		return campaign, tx.UpdateCampaign(ctx, campaign)
+		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
 	}
 
 	status, err := tx.GetCampaignStatus(ctx, campaign.ID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if !status.Finished() && !status.Canceled {
-		return nil, ErrUpdateProcessingCampaign
+		return nil, nil, ErrUpdateProcessingCampaign
 	}
 
 	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPlanID, updateAttributes)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	for _, c := range diff.Update {
 		err := tx.UpdateChangesetJob(ctx, c)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	for _, c := range diff.Create {
 		err := tx.CreateChangesetJob(ctx, c)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -806,32 +806,32 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	for _, j := range diff.Delete {
 		err := tx.DeleteChangesetJob(ctx, j.ID)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		changesetsToCloseAndDetach = append(changesetsToCloseAndDetach, j.ChangesetID)
 	}
 
-	if len(changesetsToCloseAndDetach) > 0 {
-		changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{
-			IDs: changesetsToCloseAndDetach,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "listing changesets to close and detach")
-		}
-
-		for _, c := range changesets {
-			c.RemoveCampaignID(campaign.ID)
-			campaign.RemoveChangesetID(c.ID)
-		}
-
-		if err = tx.UpdateChangesets(ctx, changesets...); err != nil {
-			return nil, err
-		}
-
-		// TODO: Close detached Changesets on codehost
+	if len(changesetsToCloseAndDetach) == 0 {
+		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
 	}
 
-	return campaign, tx.UpdateCampaign(ctx, campaign)
+	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{
+		IDs: changesetsToCloseAndDetach,
+	})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "listing changesets to close and detach")
+	}
+
+	for _, c := range changesets {
+		c.RemoveCampaignID(campaign.ID)
+		campaign.RemoveChangesetID(c.ID)
+	}
+
+	if err = tx.UpdateChangesets(ctx, changesets...); err != nil {
+		return nil, nil, err
+	}
+
+	return campaign, changesets, tx.UpdateCampaign(ctx, campaign)
 }
 
 type campaignUpdateDiff struct {
