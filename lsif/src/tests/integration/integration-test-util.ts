@@ -209,7 +209,7 @@ export async function convertTestData(
 /**
  * A wrapper around tests for the Backend class. This abstracts a lot
  * of the common setup and teardown around creating a temporary Postgres
- * database, a storage root, a dump manager, a dependency manager, and a
+ * database, a storage root, a dumps manager, a dependency manager, and a
  * backend instance.
  */
 export class BackendTestContext {
@@ -244,7 +244,7 @@ export class BackendTestContext {
     public dependencyManager?: DependencyManager
 
     /**
-     * Create a backend, a dump manager, and a dependency manager instance.
+     * Create a backend, a dumps manager, and a dependency manager instance.
      * This will create temporary resources (database and temporary directory)
      * that should be cleaned up via the `teardown` method.
      *
