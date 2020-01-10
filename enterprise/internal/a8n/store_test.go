@@ -2332,7 +2332,12 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer s.DeleteCampaignJob(ctx, job.ID)
+			defer func() {
+				err := s.DeleteCampaignJob(ctx, job.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}()
 			ran, err := s.ProcessPendingCampaignJob(ctx, process)
 			if err != nil && err.Error() != "rollback" {
 				t.Fatal(err)
