@@ -137,7 +137,7 @@
     "@types/storybook__react": "4.0.2",
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "3.4.6",
-    "@types/webpack": "4.41.1",
+    "@types/webpack": "4.41.2",
     "@types/webpack-dev-server": "3.9.0",
     "@types/whatwg-url": "6.4.0",
     "abort-controller": "^3.0.0",
@@ -212,7 +212,7 @@
   },
   "dependencies": {
     "@hot-loader/react-dom": "^16.11.0",
-    "@sentry/browser": "^5.10.0",
+    "@sentry/browser": "^5.11.0",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^6.2.2",
     "@sourcegraph/comlink": "^3.1.1-fork.3",

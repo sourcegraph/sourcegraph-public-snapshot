@@ -585,7 +585,7 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 	unindexed = make([]*search.RepositoryRevisions, 0, len(revs)-count)
 
 	for _, rev := range revs {
-		if len(rev.RevSpecs()) >= 2 {
+		if len(rev.RevSpecs()) >= 2 || len(rev.RevSpecs()) != len(rev.Revs) {
 			// Zoekt only indexes 1 rev per repository, so it will not have the full results for the
 			// query on repositories for which multiple revs are searched.
 			unindexed = append(unindexed, rev)

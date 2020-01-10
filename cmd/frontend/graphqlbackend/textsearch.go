@@ -606,15 +606,17 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			if len(repoAllRevs.Revs) == 0 {
 				continue
 			}
-			if len(repoAllRevs.Revs) >= 2 && !conf.SearchMultipleRevisionsPerRepository() {
+
+			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx)
+			if err != nil {
+				return err
+			}
+
+			if len(revSpecs) >= 2 && !conf.SearchMultipleRevisionsPerRepository() {
 				return errMultipleRevsNotSupported
 			}
 
-			for _, rev := range repoAllRevs.Revs {
-				if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
-					return errors.New("searching multiple revisions in a repository using a glob (such as *refs/heads) is not supported; you must list all revspecs with colon separators (such as master:mybranch)")
-				}
-
+			for _, rev := range revSpecs {
 				// Only reason acquire can fail is if ctx is cancelled. So we can stop
 				// looping through searcherRepos.
 				limitCtx, limitDone, acquireErr := textSearchLimiter.Acquire(ctx)
@@ -623,7 +625,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 				}
 
 				// Make a new repoRev for just the operation of searching this revspec.
-				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{rev}}
+				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}}
 
 				args := *args
 				if args.PatternInfo.IsStructuralPat && searcherReposFilteredFiles != nil {

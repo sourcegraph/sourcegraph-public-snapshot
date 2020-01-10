@@ -24,6 +24,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -444,10 +445,13 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		Repos:        makeRepositoryRevisions("foo@master:mybranch"),
+		Repos:        makeRepositoryRevisions("foo@master:mybranch:*refs/heads/"),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
+	}
+	args.Repos[0].ListRefs = func(context.Context, gitserver.Repo) ([]git.Ref, error) {
+		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 	results, _, err := searchFilesInRepos(context.Background(), args)
 	if err != nil {
@@ -461,6 +465,8 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	sort.Strings(resultURIs)
 
 	wantResultURIs := []string{
+		"git://foo?branch3#main.go",
+		"git://foo?branch4#main.go",
 		"git://foo?master#main.go",
 		"git://foo?mybranch#main.go",
 	}

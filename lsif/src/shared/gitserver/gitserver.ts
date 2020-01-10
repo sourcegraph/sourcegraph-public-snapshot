@@ -137,7 +137,7 @@ export async function getHead(
  * @param gitserverUrl The url of the gitserver for this repository.
  * @param repository The repository name.
  * @param args The command to run in the repository's git directory.
- * * @param ctx The tracing context.
+ * @param ctx The tracing context.
  */
 export async function gitserverExecLines(
     gitserverUrl: string,

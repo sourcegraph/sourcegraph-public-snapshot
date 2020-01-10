@@ -4,7 +4,7 @@ import { addrFor, getCommitsNear, getHead } from '../gitserver/gitserver'
 import { Brackets, Connection, EntityManager } from 'typeorm'
 import { dbFilename, tryDeleteFile } from '../paths'
 import { logAndTraceCall, TracingContext } from '../tracing'
-import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
+import { instrumentQuery, instrumentQueryOrTransaction } from '../database/postgres'
 import { TableInserter } from '../database/inserter'
 import { visibleDumps, lineageWithDumps, ancestorLineage, bidirectionalLineage } from '../models/queries'
 
@@ -119,10 +119,14 @@ export class DumpManager {
 
     /**
      * Get the oldest dump that is not visible at the tip of its repository.
+     *
+     * @param entityManager The EntityManager to use as part of a transaction.
      */
-    public getOldestPrunableDump(): Promise<pgModels.LsifDump | undefined> {
+    public getOldestPrunableDump(
+        entityManager: EntityManager = this.connection.createEntityManager()
+    ): Promise<pgModels.LsifDump | undefined> {
         return instrumentQuery(() =>
-            this.connection
+            entityManager
                 .getRepository(pgModels.LsifDump)
                 .createQueryBuilder()
                 .select()
@@ -198,8 +202,14 @@ export class DumpManager {
      * @param repository The repository name.
      * @param commit The head of the default branch.
      * @param ctx The tracing context.
+     * @param entityManager The EntityManager to use as part of a transaction.
      */
-    public updateDumpsVisibleFromTip(repository: string, commit: string, ctx: TracingContext = {}): Promise<void> {
+    public updateDumpsVisibleFromTip(
+        repository: string,
+        commit: string,
+        ctx: TracingContext = {},
+        entityManager: EntityManager = this.connection.createEntityManager()
+    ): Promise<void> {
         const query = `
             WITH
             ${ancestorLineage()},
@@ -214,7 +224,7 @@ export class DumpManager {
         `
 
         return logAndTraceCall(ctx, 'Updating dumps visible from tip', () =>
-            instrumentQuery(() => this.connection.query(query, [repository, commit]))
+            instrumentQuery(() => entityManager.query(query, [repository, commit]))
         )
     }
 
@@ -226,16 +236,18 @@ export class DumpManager {
      * @param repository The repository name.
      * @param commits The commit parentage data.
      * @param ctx The tracing context.
+     * @param entityManager The EntityManager to use as part of a transaction.
      */
     public updateCommits(
         repository: string,
         commits: Map<string, Set<string>>,
-        ctx: TracingContext = {}
+        ctx: TracingContext = {},
+        entityManager?: EntityManager
     ): Promise<void> {
         return logAndTraceCall(ctx, 'Updating commits', () =>
-            withInstrumentedTransaction(this.connection, async entityManager => {
+            instrumentQueryOrTransaction(this.connection, entityManager, async definiteEntityManager => {
                 const commitInserter = new TableInserter(
-                    entityManager,
+                    definiteEntityManager,
                     pgModels.Commit,
                     pgModels.Commit.BatchSize,
                     insertionMetrics,
@@ -282,7 +294,7 @@ export class DumpManager {
         ctx?: TracingContext
     }): Promise<Map<string, Set<string>>> {
         const matchingRepos = await instrumentQuery(() =>
-            this.connection.getRepository(pgModels.LsifDump).count({ where: { repository } })
+            this.connection.getRepository(pgModels.LsifUpload).count({ where: { repository } })
         )
         if (matchingRepos === 0) {
             return new Map()
@@ -321,47 +333,37 @@ export class DumpManager {
     }
 
     /**
-     * Inserts the given repository and commit into the `lsif_dumps` table.
+     * Delete existing dumps from the same repo@commit that overlap with the current root
+     * (where the existing root is a prefix of the current root, or vice versa).
      *
      * @param repository The repository.
      * @param commit The commit.
      * @param root The root of all files that are in this dump.
-     * @param uploadedAt The time the dump was uploaded.
+     * @param ctx The tracing context.
      * @param entityManager The EntityManager to use as part of a transaction.
      */
-    public async insertDump(
+    public async deleteOverlappingDumps(
         repository: string,
         commit: string,
         root: string,
-        uploadedAt: Date = new Date(),
+        ctx: TracingContext = {},
         entityManager: EntityManager = this.connection.createEntityManager()
-    ): Promise<pgModels.LsifDump> {
-        // Get existing dumps from the same repo@commit that overlap with the current
-        // root (where the existing root is a prefix of the current root, or vice versa).
-
-        const dumps = await entityManager
-            .getRepository(pgModels.LsifDump)
-            .createQueryBuilder()
-            .select()
-            .where({ repository, commit })
-            .andWhere(
-                new Brackets(qb =>
-                    qb.where(":root LIKE (root || '%')", { root }).orWhere("root LIKE (:root || '%')", { root })
-                )
-            )
-            .getMany()
-
-        for (const dump of dumps) {
-            await this.deleteDump(dump, entityManager)
-        }
-
-        const dump = new pgModels.LsifDump()
-        dump.repository = repository
-        dump.commit = commit
-        dump.root = root
-        dump.uploadedAt = uploadedAt
-        await entityManager.save(dump)
-        return dump
+    ): Promise<void> {
+        return logAndTraceCall(ctx, 'Clearing overlapping dumps', () =>
+            instrumentQuery(async () => {
+                await entityManager
+                    .getRepository(pgModels.LsifUpload)
+                    .createQueryBuilder()
+                    .delete()
+                    .where({ repository, commit, state: 'completed' })
+                    .andWhere(
+                        new Brackets(qb =>
+                            qb.where(":root LIKE (root || '%')", { root }).orWhere("root LIKE (:root || '%')", { root })
+                        )
+                    )
+                    .execute()
+            })
+        )
     }
 
     /**
