@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import React from 'react'
-import CircularProgressbar from 'react-circular-progressbar'
+import { CircularProgressbar } from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { concat, of, Subject, Subscription } from 'rxjs'
@@ -113,7 +113,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         <CircularProgressbar
                             className="activation-dropdown-button__circular-progress-bar"
                             strokeWidth={12}
-                            percentage={percentageDone(this.props.activation.completed)}
+                            value={percentageDone(this.props.activation.completed)}
                         />
                     </span>
                 </DropdownToggle>
