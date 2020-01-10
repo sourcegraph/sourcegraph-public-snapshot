@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
@@ -17,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // maxRepositories defines the maximum number of repositories over which a
@@ -30,12 +29,12 @@ var maxRepositories = env.Get("A8N_MAX_REPOS", "200", "maximum number of reposit
 // executes CampaignJobs in parallel.
 var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories run campaigns over in parallel")
 
-// ErrTooManyResults is returned by the Runner's Run method when the
+// ErrTooManyResults is returned by the Runner's CreatePlanAndJobs method when the
 // CampaignType's searchQuery produced more than maxRepositories number of
 // repositories.
 var ErrTooManyResults = errors.New("search yielded too many results. You can narrow down results using `scopeQuery`")
 
-// A Runner executes a CampaignPlan by creating and running CampaignJobs
+// A Runner executes a CampaignPlan by creating and persisting CampaignJobs
 // according to the CampaignPlan's Arguments and CampaignType.
 type Runner struct {
 	store         *Store
@@ -45,8 +44,11 @@ type Runner struct {
 
 	ct CampaignType
 
+	// planID is set in CreatePlanAndJobs and used in Wait so that
+	// we know which plan to wait on
+	planID int64
+
 	started bool
-	wg      sync.WaitGroup
 }
 
 // repoSearch takes in a raw search query and returns the list of repositories
@@ -113,17 +115,12 @@ func NewRunnerWithClock(store *Store, ct CampaignType, search repoSearch, defaul
 // The time after which a CampaignJob's execution times out
 const jobTimeout = 2 * time.Minute
 
-// Run executes the CampaignPlan by searching for relevant repositories using
-// the CampaignType specific searchQuery and then executing CampaignJobs for
-// each repository.
-// Before it starts executing CampaignJobs it persists the CampaignPlan and the
-// new CampaignJobs in a transaction.
-// What each CampaignJob then does in each repository depends on the
-// CampaignType set on CampaignPlan.
-// This is a non-blocking method that will possibly return before all
-// CampaignJobs are finished.
-func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
-	tr, ctx := trace.New(ctx, "Runner.Run", fmt.Sprintf("plan_id %d", plan.ID))
+// CreatePlanAndJobs persists the CampaignPlan and associated CampaignJobs by searching for relevant repositories using
+// the CampaignType specific searchQuery.
+// CampaignJobs will be picked up by a background process
+// What each CampaignJob then does in each repository depends on the CampaignType set on CampaignPlan.
+func (r *Runner) CreatePlanAndJobs(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
+	tr, ctx := trace.New(ctx, "Runner.CreatePlanAndJobs", fmt.Sprintf("plan_id %d", plan.ID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -147,125 +144,35 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
 		return err
 	}
 
-	jobs, err := r.createPlanAndJobs(ctx, plan, rs)
+	err = r.createPlanAndJobs(ctx, plan, rs)
 	if err != nil {
 		return err
 	}
-
-	numWorkers, err := strconv.ParseInt(maxWorkers, 10, 64)
-	if err != nil {
-		return err
-	}
-	tr.LogFields(log.Int64("num_workers", numWorkers), log.Int("num_jobs", len(jobs)))
-
-	queue := make(chan *a8n.CampaignJob)
-	worker := func(queue chan *a8n.CampaignJob) {
-		for job := range queue {
-			r.runJob(ctx, job)
-		}
-	}
-
-	for i := 0; i < int(numWorkers); i++ {
-		go worker(queue)
-	}
-
-	r.wg.Add(len(jobs))
-
-	go func() {
-		for _, job := range jobs {
-			queue <- job
-		}
-
-		close(queue)
-	}()
+	r.planID = plan.ID
 
 	return nil
-}
-
-func (r *Runner) runJob(pctx context.Context, job *a8n.CampaignJob) {
-	var err error
-	tr, ctx := trace.New(pctx, "Runner.runJob", fmt.Sprintf("job_id %d", job.ID))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-	ctx, cancel := context.WithTimeout(ctx, jobTimeout)
-	defer cancel()
-
-	defer func() {
-		defer r.wg.Done()
-
-		job.FinishedAt = r.clock()
-
-		if ctx.Err() == context.DeadlineExceeded {
-			job.Error = "Generating diff took longer than expected. Aborted."
-		}
-
-		// We're passing a new context here because we want to persist the job
-		// even if we ran into a timeout earlier.
-		err := r.store.UpdateCampaignJob(context.Background(), job)
-		if err != nil {
-			log15.Error("UpdateCampaignJob failed", "err", err)
-		}
-	}()
-
-	// Check whether CampaignPlan has been canceled.
-	p, err := r.store.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: job.CampaignPlanID})
-	if err != nil {
-		job.Error = err.Error()
-		return
-	}
-	if !p.CanceledAt.IsZero() {
-		job.Error = "Campaign execution canceled."
-		return
-	}
-
-	job.StartedAt = r.clock()
-
-	// We load the repository here again so that we decouple the
-	// creation and running of jobs from the start.
-	reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
-	opts := repos.StoreListReposArgs{IDs: []uint32{uint32(job.RepoID)}}
-	rs, err := reposStore.ListRepos(ctx, opts)
-	if err != nil {
-		job.Error = err.Error()
-		return
-	}
-	if len(rs) != 1 {
-		job.Error = fmt.Sprintf("repository %d not found", job.RepoID)
-		return
-	}
-
-	diff, desc, err := r.ct.generateDiff(ctx, api.RepoName(rs[0].Name), api.CommitID(job.Rev))
-	if err != nil {
-		job.Error = err.Error()
-	}
-
-	job.Diff = diff
-	job.Description = desc
 }
 
 func (r *Runner) createPlanAndJobs(
 	ctx context.Context,
 	plan *a8n.CampaignPlan,
 	rs []*graphqlbackend.RepositoryResolver,
-) ([]*a8n.CampaignJob, error) {
+) error {
 	var (
 		err error
 		tx  *Store
 	)
 	tx, err = r.store.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer tx.Done(&err)
 
 	err = tx.CreateCampaignPlan(ctx, plan)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	jobs := make([]*a8n.CampaignJob, 0, len(rs))
 	for _, repo := range rs {
 		if !a8n.IsRepoSupported(repo.ExternalRepo()) {
 			continue
@@ -273,7 +180,7 @@ func (r *Runner) createPlanAndJobs(
 
 		var repoID int32
 		if err = relay.UnmarshalSpec(repo.ID(), &repoID); err != nil {
-			return jobs, err
+			return err
 		}
 
 		var (
@@ -286,7 +193,7 @@ func (r *Runner) createPlanAndJobs(
 			continue
 		}
 		if err != nil {
-			return jobs, err
+			return err
 		}
 
 		job := &a8n.CampaignJob{
@@ -296,22 +203,140 @@ func (r *Runner) createPlanAndJobs(
 			Rev:            rev,
 		}
 		if err = tx.CreateCampaignJob(ctx, job); err != nil {
-			return jobs, err
+			return err
 		}
-		jobs = append(jobs, job)
 	}
 
-	return jobs, err
+	return err
 }
 
-// Wait blocks until all CampaignJobs created and started by Start have
+// Wait blocks until all CampaignJobs created and started by CreatePlanAndJobs have
 // finished.
-func (r *Runner) Wait() error {
+func (r *Runner) Wait(ctx context.Context) error {
 	if !r.started {
 		return errors.New("not started")
 	}
 
-	r.wg.Wait()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		status, err := r.store.GetCampaignPlanStatus(ctx, r.planID)
+		if err != nil {
+			log15.Error("counting campaign jobs", "err", err)
+			// Most likely a transitive error so we'll continue
+		}
+		if status.Finished() {
+			return nil
+		}
+		time.Sleep(1 * time.Second)
+	}
+}
 
-	return nil
+// RunCampaignJobs should run in a background goroutine and is responsible for
+// finding pending campaign jobs and running them.
+// ctx should be canceled to terminate this function.
+func RunCampaignJobs(ctx context.Context, s *Store, clock func() time.Time, backoffDuration time.Duration) {
+	workerCount, err := strconv.Atoi(maxWorkers)
+	if err != nil {
+		log15.Error("Parsing max worker count, falling back to default of 8", "err", err)
+		workerCount = 8
+	}
+	process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
+		runJob(ctx, clock, s, nil, &job)
+		return nil
+	}
+	worker := func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				didRun, err := s.ProcessPendingCampaignJob(context.Background(), process)
+				if err != nil {
+					log15.Error("Running campaign job", "err", err)
+				}
+				if !didRun {
+					// No work available, backoff
+					time.Sleep(backoffDuration)
+				}
+			}
+		}
+	}
+	for i := 0; i < workerCount; i++ {
+		go worker()
+	}
+}
+
+// runJob runs the supplied job
+// if ct is nil, one will be created from the CampaignPlan
+func runJob(ctx context.Context, clock func() time.Time, store *Store, ct CampaignType, job *a8n.CampaignJob) {
+	var err error
+	tr, ctx := trace.New(ctx, "Runner.runJob", fmt.Sprintf("job_id %d", job.ID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	ctx, cancel := context.WithTimeout(ctx, jobTimeout)
+	defer cancel()
+
+	defer func() {
+		job.FinishedAt = clock()
+
+		if ctx.Err() == context.DeadlineExceeded {
+			job.Error = "Generating diff took longer than expected. Aborted."
+		}
+
+		// We're passing a new context here because we want to persist the job
+		// even if we ran into a timeout earlier.
+		err := store.UpdateCampaignJob(context.Background(), job)
+		if err != nil {
+			log15.Error("UpdateCampaignJob failed", "err", err)
+		}
+	}()
+
+	// Check whether CampaignPlan has been canceled.
+	p, err := store.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: job.CampaignPlanID})
+	if err != nil {
+		job.Error = err.Error()
+		return
+	}
+	if !p.CanceledAt.IsZero() {
+		job.Error = "Campaign execution canceled."
+		return
+	}
+
+	job.StartedAt = clock()
+
+	// We load the repository here again so that we decouple the
+	// creation and running of jobs from the start.
+	reposStore := repos.NewDBStore(store.DB(), sql.TxOptions{})
+	opts := repos.StoreListReposArgs{IDs: []uint32{uint32(job.RepoID)}}
+	rs, err := reposStore.ListRepos(ctx, opts)
+	if err != nil {
+		job.Error = err.Error()
+		return
+	}
+	if len(rs) != 1 {
+		job.Error = fmt.Sprintf("repository %d not found", job.RepoID)
+		return
+	}
+
+	if ct == nil {
+		ct, err = NewCampaignType(p.CampaignType, p.Arguments, nil)
+		if err != nil {
+			job.Error = err.Error()
+			return
+		}
+	}
+
+	diff, desc, err := ct.generateDiff(ctx, api.RepoName(rs[0].Name), job.Rev)
+	if err != nil {
+		job.Error = err.Error()
+	}
+
+	job.Diff = diff
+	job.Description = desc
 }

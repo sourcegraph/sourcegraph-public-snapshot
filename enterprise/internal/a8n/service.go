@@ -98,7 +98,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 	defer tx.Done(&err)
 
 	plan := &a8n.CampaignPlan{
-		CampaignType: patchCampaignType,
+		CampaignType: campaignTypePatch,
 		Arguments:    "", // intentionally empty to avoid needless duplication with CampaignJob diffs
 	}
 
