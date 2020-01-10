@@ -9,6 +9,10 @@ import {
     ICreateCampaignInput,
     ICampaignPlan,
     ICampaignPlanSpecification,
+    IChangesetPlansOnCampaignArguments,
+    IChangesetPlanConnection,
+    IChangesetsOnCampaignArguments,
+    IExternalChangesetConnection,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 
@@ -37,6 +41,7 @@ const campaignFragment = gql`
         changesets {
             totalCount
             nodes {
+                __typename
                 id
                 repository {
                     id
@@ -45,13 +50,7 @@ const campaignFragment = gql`
                 }
                 diff {
                     fileDiffs {
-                        nodes {
-                            ...FileDiffFields
-                        }
                         totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
                         diffStat {
                             ...DiffStatFields
                         }
@@ -76,15 +75,12 @@ const campaignFragment = gql`
         }
     }
 
-    ${FileDiffFields}
-
-    ${FileDiffHunkRangeFields}
-
     ${DiffStatFields}
 `
 
 const campaignPlanFragment = gql`
     fragment CampaignPlanFields on CampaignPlan {
+        __typename
         id
         type
         arguments
@@ -97,6 +93,7 @@ const campaignPlanFragment = gql`
         changesets {
             totalCount
             nodes {
+                id
                 __typename
                 id
                 repository {
@@ -106,13 +103,7 @@ const campaignPlanFragment = gql`
                 }
                 diff {
                     fileDiffs {
-                        nodes {
-                            ...PreviewFileDiffFields
-                        }
                         totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
                         diffStat {
                             ...DiffStatFields
                         }
@@ -121,10 +112,6 @@ const campaignPlanFragment = gql`
             }
         }
     }
-
-    ${PreviewFileDiffFields}
-
-    ${FileDiffHunkRangeFields}
 
     ${DiffStatFields}
 `
@@ -272,5 +259,132 @@ export const fetchCampaignPlanById = (campaignPlan: ID): Observable<ICampaignPla
                 throw new Error(`The given ID is a ${node.__typename}, not a CampaignPlan`)
             }
             return node
+        })
+    )
+
+export const queryChangesets = (
+    campaign: ID,
+    { first }: IChangesetsOnCampaignArguments
+): Observable<IExternalChangesetConnection> =>
+    queryGraphQL(
+        gql`
+            query CampaignChangesets($campaign: ID!, $first: Int) {
+                node(id: $campaign) {
+                    __typename
+                    ... on Campaign {
+                        changesets(first: $first) {
+                            totalCount
+                            nodes {
+                                __typename
+                                id
+                                title
+                                body
+                                state
+                                reviewState
+                                repository {
+                                    name
+                                    url
+                                }
+                                externalURL {
+                                    url
+                                }
+                                createdAt
+                                diff {
+                                    fileDiffs {
+                                        nodes {
+                                            ...FileDiffFields
+                                        }
+                                        totalCount
+                                        pageInfo {
+                                            hasNextPage
+                                        }
+                                        diffStat {
+                                            ...DiffStatFields
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ${FileDiffFields}
+
+            ${FileDiffHunkRangeFields}
+
+            ${DiffStatFields}
+        `,
+        { campaign, first }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Campaign with ID ${campaign} does not exist`)
+            }
+            if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node.changesets
+        })
+    )
+
+export const queryChangesetPlans = (
+    campaignPlan: ID,
+    { first }: IChangesetPlansOnCampaignArguments
+): Observable<IChangesetPlanConnection> =>
+    queryGraphQL(
+        gql`
+            query CampaignChangesets($campaignPlan: ID!, $first: Int) {
+                node(id: $campaignPlan) {
+                    __typename
+                    ... on CampaignPlan {
+                        changesets(first: $first) {
+                            totalCount
+                            nodes {
+                                __typename
+                                id
+                                repository {
+                                    id
+                                    name
+                                    url
+                                }
+                                diff {
+                                    fileDiffs {
+                                        nodes {
+                                            ...PreviewFileDiffFields
+                                        }
+                                        totalCount
+                                        pageInfo {
+                                            hasNextPage
+                                        }
+                                        diffStat {
+                                            ...DiffStatFields
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ${PreviewFileDiffFields}
+
+            ${FileDiffHunkRangeFields}
+
+            ${DiffStatFields}
+        `,
+        { campaignPlan, first }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`CampaignPlan with ID ${campaignPlan} does not exist`)
+            }
+            if (node.__typename !== 'CampaignPlan') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node.changesets
         })
     )

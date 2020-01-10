@@ -65,7 +65,7 @@ async function main(logger: Logger): Promise<void> {
     await ensureFilenamesAreIDs(connection) // TODO - remove after 3.10
 
     // Start background tasks
-    startTasks(connection, uploadManager, logger)
+    startTasks(connection, dumpManager, uploadManager, logger)
 
     const app = express()
 

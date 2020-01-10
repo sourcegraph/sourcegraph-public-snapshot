@@ -1,60 +1,43 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignDiffs renders 1`] = `
-<div
-  className=""
->
-  <FileDiffTab
-    history={
-      Object {
-        "action": "POP",
-        "block": [Function],
-        "canGo": [Function],
-        "createHref": [Function],
-        "entries": Array [
-          Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-        ],
-        "go": [Function],
-        "goBack": [Function],
-        "goForward": [Function],
-        "index": 0,
-        "length": 1,
-        "listen": [Function],
-        "location": Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-        "push": [Function],
-        "replace": [Function],
-      }
-    }
-    isLightTheme={true}
-    location={
-      Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      }
-    }
-    nodes={
-      Array [
-        Object {
-          "id": "0",
-        },
-      ]
-    }
-    persistLines={true}
-  />
+<div>
+  <div
+    className="filtered-connection e2e-filtered-connection filtered-connection--noncompact mt-2"
+  >
+    
+    <ul
+      className="filtered-connection__nodes "
+    >
+      <div>
+        <h3>
+          <SourcePullIcon
+            className="icon-inline mr-2"
+          />
+           
+          <a
+            className=""
+            href="github.com/sourcegraph/sourcegraph"
+          >
+            sourcegraph/sourcegraph
+          </a>
+        </h3>
+      </div>
+    </ul>
+    <p
+      className="filtered-connection__summary"
+    >
+      <small>
+        <span>
+          1
+           
+          changeset
+           
+          total
+        </span>
+         
+      </small>
+    </p>
+  </div>
 </div>
 `;
