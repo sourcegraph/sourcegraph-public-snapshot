@@ -5,24 +5,39 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../backend/graphql'
 
 /**
- * Fetch LSIF dumps for a repository.
+ * Fetch LSIF uploads for a repository.
  */
-export function fetchLsifDumps({
+export function fetchLsifUploads({
     repository,
+    query,
+    state,
+    isLatestForRepo,
     first,
     after,
-    query,
-    isLatestForRepo,
-}: { repository: string } & GQL.ILsifDumpsOnRepositoryArguments): Observable<GQL.ILSIFDumpConnection> {
+}: { repository: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<GQL.ILSIFUploadConnection> {
     return queryGraphQL(
         gql`
-            query LsifDumps($repository: ID!, $first: Int, $after: String, $query: String, $isLatestForRepo: Boolean) {
+            query LsifUploads(
+                $repository: ID!
+                $state: LSIFUploadState
+                $isLatestForRepo: Boolean
+                $first: Int
+                $after: String
+                $query: String
+            ) {
                 node(id: $repository) {
                     __typename
                     ... on Repository {
-                        lsifDumps(first: $first, after: $after, query: $query, isLatestForRepo: $isLatestForRepo) {
+                        lsifUploads(
+                            query: $query
+                            state: $state
+                            isLatestForRepo: $isLatestForRepo
+                            first: $first
+                            after: $after
+                        ) {
                             nodes {
                                 id
+                                state
                                 projectRoot {
                                     commit {
                                         abbreviatedOID
@@ -33,7 +48,9 @@ export function fetchLsifDumps({
                                 inputRepoName
                                 inputCommit
                                 inputRoot
-                                processedAt
+                                uploadedAt
+                                startedAt
+                                finishedAt
                             }
 
                             totalCount
@@ -46,7 +63,7 @@ export function fetchLsifDumps({
                 }
             }
         `,
-        { repository, first, after, query, isLatestForRepo }
+        { repository, query, state, isLatestForRepo, first, after }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -57,49 +74,7 @@ export function fetchLsifDumps({
                 throw new Error(`The given ID is a ${node.__typename}, not a Repository`)
             }
 
-            return node.lsifDumps
+            return node.lsifUploads
         })
-    )
-}
-
-/**
- * Fetch LSIF upload with the given state.
- */
-export function fetchLsifUploads({
-    state,
-    first,
-    query,
-}: GQL.ILsifUploadsOnQueryArguments): Observable<GQL.ILSIFUploadConnection> {
-    return queryGraphQL(
-        gql`
-            query LsifUploads($state: LSIFUploadState!, $first: Int, $query: String) {
-                lsifUploads(state: $state, first: $first, query: $query) {
-                    nodes {
-                        id
-                        projectRoot {
-                            commit {
-                                abbreviatedOID
-                            }
-                            path
-                            url
-                        }
-                        inputRepoName
-                        inputCommit
-                        inputRoot
-                        state
-                        uploadedAt
-                        startedAt
-                        finishedAt
-                    }
-                    pageInfo {
-                        hasNextPage
-                    }
-                }
-            }
-        `,
-        { state: state.toUpperCase(), first, query }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.lsifUploads)
     )
 }
