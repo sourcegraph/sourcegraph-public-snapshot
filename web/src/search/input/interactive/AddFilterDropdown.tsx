@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { suggestionTypeKeys, SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
+import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
 import { startCase } from 'lodash'
+import { filterTypeKeys, FilterTypes } from './filters'
 
 interface Props {
     onAddNewFilter: (filterType: SuggestionTypes) => void
@@ -18,19 +19,22 @@ export class AddFilterDropdown extends React.Component<Props, State> {
     }
 
     private onAddNewFilter = (e: React.ChangeEvent<HTMLSelectElement>): void => {
-        console.log('on add new filter')
         this.props.onAddNewFilter(e.target.value as SuggestionTypes)
         this.setState({ value: 'default' })
     }
 
     public render(): JSX.Element | null {
         return (
-            <select onChange={this.onAddNewFilter} value={this.state.value}>
+            <select
+                className="form-control add-filter-dropdown"
+                onChange={this.onAddNewFilter}
+                value={this.state.value}
+            >
                 <option value="default" disabled={true}>
                     Add filter…
                 </option>
-                {suggestionTypeKeys
-                    .filter(filter => filter !== 'repo' && filter !== 'file')
+                {filterTypeKeys
+                    .filter(filter => filter in FilterTypes)
                     .map(filter => (
                         <option key={filter} value={filter}>
                             {startCase(filter)}

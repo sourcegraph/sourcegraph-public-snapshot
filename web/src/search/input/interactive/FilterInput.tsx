@@ -34,6 +34,7 @@ import { startCase } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CheckButton } from './CheckButton'
+import { isTextFilter, finiteFilters, isFiniteFilter } from './filters'
 
 interface Props {
     /**
@@ -115,6 +116,8 @@ export class FilterInput extends React.Component<Props, State> {
     private inputEl = React.createRef<HTMLInputElement>()
     /** Emits when the suggestions are hidden */
     private suggestionsHidden = new Subject<void>()
+    /** Emits on mount to set the default value for finite-option filters */
+    private setFiniteFilterDefault = new Subject<void>()
 
     constructor(props: Props) {
         super(props)
@@ -219,12 +222,24 @@ export class FilterInput extends React.Component<Props, State> {
                 )
                 .subscribe(state => this.setState({ ...state, showSuggestions: true }))
         )
+
+        if (isFiniteFilter(this.props.filterType)) {
+            this.subscriptions.add(
+                this.setFiniteFilterDefault.subscribe(() => {
+                    if (isFiniteFilter(this.props.filterType)) {
+                        this.setState({ inputValue: finiteFilters[this.props.filterType].default })
+                    }
+                })
+            )
+        }
     }
 
     public componentDidMount(): void {
         if (this.inputEl.current) {
             this.inputEl.current.focus()
         }
+
+        this.setFiniteFilterDefault.next()
     }
 
     public componentWillUnmount(): void {
@@ -344,82 +359,120 @@ export class FilterInput extends React.Component<Props, State> {
             this.state.showSuggestions &&
             ((this.state.suggestions !== LOADING && this.state.suggestions.values.length > 0) || suggestionsAreLoading)
 
+        const isText = isTextFilter(this.props.filterType)
+
         return (
             <div
-                className={`filter-input ${this.props.editable ? 'filter-input--active' : ''} e2e-filter-input-${
-                    this.props.mapKey
-                }`}
+                className={`filter-input ${
+                    this.props.editable && isText ? 'filter-input--active' : ''
+                } e2e-filter-input-${this.props.mapKey}`}
                 onBlur={this.onInputBlur}
             >
                 {this.props.editable ? (
-                    <Form onSubmit={this.onSubmitInput}>
-                        <Downshift onSelect={this.onSuggestionSelect} itemToString={this.downshiftItemToString}>
-                            {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
-                                const { onKeyDown } = getInputProps()
-                                return (
-                                    <div>
-                                        <div className="filter-input__form">
-                                            <div className="filter-input__input-wrapper">
-                                                <input
-                                                    ref={this.inputEl}
-                                                    className={`form-control filter-input__input-field e2e-filter-input__input-field-${this.props.mapKey}`}
-                                                    value={this.state.inputValue}
-                                                    onChange={this.onInputUpdate}
-                                                    placeholder={`${startCase(this.props.filterType)} filter`}
-                                                    onKeyDown={event => {
-                                                        this.onInputKeyDown(event)
-                                                        onKeyDown(event)
-                                                    }}
-                                                    autoFocus={true}
-                                                />
-                                                {showSuggestions && (
-                                                    <ul
-                                                        className="filter-input__suggestions e2e-filter-input__suggestions"
-                                                        {...getMenuProps()}
-                                                    >
-                                                        {this.state.suggestions === LOADING ? (
-                                                            <li className="suggestion suggestion--selected">
-                                                                <LoadingSpinner className="icon-inline" />
-                                                                <div className="suggestion__description">Loading</div>
-                                                            </li>
-                                                        ) : (
-                                                            this.state.suggestions.values.map((suggestion, index) => {
-                                                                const isSelected = highlightedIndex === index
-                                                                const key = `${index}-${suggestion}`
-                                                                return (
-                                                                    <SuggestionItem
-                                                                        key={key}
-                                                                        {...getItemProps({
-                                                                            key,
-                                                                            index,
-                                                                            item: suggestion,
-                                                                        })}
-                                                                        suggestion={suggestion}
-                                                                        isSelected={isSelected}
-                                                                        showUrlLabel={false}
-                                                                    />
+                    isText ? (
+                        <Form onSubmit={this.onSubmitInput}>
+                            <Downshift onSelect={this.onSuggestionSelect} itemToString={this.downshiftItemToString}>
+                                {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
+                                    const { onKeyDown } = getInputProps()
+                                    return (
+                                        <div>
+                                            <div className="filter-input__form">
+                                                <div className="filter-input__input-wrapper">
+                                                    <input
+                                                        ref={this.inputEl}
+                                                        className={`form-control filter-input__input-field e2e-filter-input__input-field-${this.props.mapKey}`}
+                                                        value={this.state.inputValue}
+                                                        onChange={this.onInputUpdate}
+                                                        placeholder={`${startCase(this.props.filterType)} filter`}
+                                                        onKeyDown={event => {
+                                                            this.onInputKeyDown(event)
+                                                            onKeyDown(event)
+                                                        }}
+                                                        autoFocus={true}
+                                                    />
+                                                    {showSuggestions && (
+                                                        <ul
+                                                            className="filter-input__suggestions e2e-filter-input__suggestions"
+                                                            {...getMenuProps()}
+                                                        >
+                                                            {this.state.suggestions === LOADING ? (
+                                                                <li className="suggestion suggestion--selected">
+                                                                    <LoadingSpinner className="icon-inline" />
+                                                                    <div className="suggestion__description">
+                                                                        Loading
+                                                                    </div>
+                                                                </li>
+                                                            ) : (
+                                                                this.state.suggestions.values.map(
+                                                                    (suggestion, index) => {
+                                                                        const isSelected = highlightedIndex === index
+                                                                        const key = `${index}-${suggestion}`
+                                                                        return (
+                                                                            <SuggestionItem
+                                                                                key={key}
+                                                                                {...getItemProps({
+                                                                                    key,
+                                                                                    index,
+                                                                                    item: suggestion,
+                                                                                })}
+                                                                                suggestion={suggestion}
+                                                                                isSelected={isSelected}
+                                                                                showUrlLabel={false}
+                                                                            />
+                                                                        )
+                                                                    }
                                                                 )
-                                                            })
-                                                        )}
-                                                    </ul>
-                                                )}
+                                                            )}
+                                                        </ul>
+                                                    )}
+                                                </div>
+                                                <CheckButton />
+                                                <button
+                                                    type="button"
+                                                    onClick={this.handleDiscard}
+                                                    className={`btn btn-icon icon-inline e2e-filter-input__cancel-button-${this.props.mapKey}`}
+                                                    aria-label="Cancel"
+                                                    data-tooltip="Cancel"
+                                                >
+                                                    <CloseIcon />
+                                                </button>
                                             </div>
-                                            <CheckButton />
-                                            <button
-                                                type="button"
-                                                onClick={this.handleDiscard}
-                                                className={`btn btn-icon icon-inline e2e-filter-input__cancel-button-${this.props.mapKey}`}
-                                                aria-label="Cancel"
-                                                data-tooltip="Cancel"
-                                            >
-                                                <CloseIcon />
-                                            </button>
                                         </div>
-                                    </div>
-                                )
-                            }}
-                        </Downshift>
-                    </Form>
+                                    )
+                                }}
+                            </Downshift>
+                        </Form>
+                    ) : (
+                        <Form onSubmit={this.onSubmitInput}>
+                            <div className="filter-input__form">
+                                {isFiniteFilter(this.props.filterType) &&
+                                    finiteFilters[this.props.filterType].values.map(val => (
+                                        <div key={val.value} className="filter-input__radio">
+                                            <input
+                                                type="radio"
+                                                id={val.value}
+                                                name={val.value}
+                                                onChange={() => this.setState({ inputValue: val.value })}
+                                                checked={this.state.inputValue === val.value}
+                                            />
+                                            <label htmlFor={val.value} className="filter-input__radio-label">
+                                                {startCase(val.value)}
+                                            </label>
+                                        </div>
+                                    ))}
+                                <CheckButton />
+                                <button
+                                    type="button"
+                                    onClick={this.handleDiscard}
+                                    className={`btn btn-icon icon-inline e2e-filter-input__cancel-button-${this.props.mapKey}`}
+                                    aria-label="Cancel"
+                                    data-tooltip="Cancel"
+                                >
+                                    <CloseIcon />
+                                </button>
+                            </div>
+                        </Form>
+                    )
                 ) : (
                     <div className="filter-input--uneditable d-flex">
                         <button
