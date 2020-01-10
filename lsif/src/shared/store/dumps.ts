@@ -29,51 +29,6 @@ export class DumpManager {
     constructor(private connection: Connection, private storageRoot: string) {}
 
     /**
-     * Get the dumps for a repository.
-     *
-     * @param repository The repository.
-     * @param query A search query.
-     * @param visibleAtTip If true, only return dumps visible at tip.
-     * @param limit The maximum number of dumps to return.
-     * @param offset The number of dumps to skip.
-     */
-    public async getDumps(
-        repository: string,
-        query: string,
-        visibleAtTip: boolean,
-        limit: number,
-        offset: number
-    ): Promise<{ dumps: pgModels.LsifDump[]; totalCount: number }> {
-        const [dumps, totalCount] = await instrumentQuery(() => {
-            let queryBuilder = this.connection
-                .getRepository(pgModels.LsifDump)
-                .createQueryBuilder()
-                .where({ repository })
-                .orderBy('uploaded_at', 'DESC')
-                .limit(limit)
-                .offset(offset)
-
-            if (query) {
-                queryBuilder = queryBuilder.andWhere(
-                    new Brackets(qb =>
-                        qb
-                            .where("commit LIKE '%' || :query || '%'", { query })
-                            .orWhere("root LIKE '%' || :query || '%'", { query })
-                    )
-                )
-            }
-
-            if (visibleAtTip) {
-                queryBuilder = queryBuilder.andWhere('visible_at_tip = true')
-            }
-
-            return queryBuilder.getManyAndCount()
-        })
-
-        return { dumps, totalCount }
-    }
-
-    /**
      * Find the dump for the given repository and commit.
      *
      * @param repository The repository.
