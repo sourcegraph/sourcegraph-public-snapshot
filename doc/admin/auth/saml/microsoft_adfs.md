@@ -158,7 +158,7 @@ Certificate Authority). If this is the case, you have a few options:
     trust identifier, (including the URL scheme)
   * For the remaining pages in the wizard, follow the normal steps.
 * Fix the connectivity issue from ADFS to Sourcegraph by adding the appropriate firewall rule or by
-  authorizing Sourcegraph's TLS certificate on the Windows Server machine running ADFS.
+  authorizing Sourcegraph's TLS certificate on the Windows Server host running ADFS.
 
 ### Error prefetching SAML service provider metadata
 
@@ -168,15 +168,15 @@ field of the ADFS SAML auth provider config. Navigate to this URL in your web br
 check the URL for typos, or there might be an issue with the accessibility of ADFS.
 
 If it succeeds, it should download a `federationmetadata.xml` file. This indicates that ADFS is
-accessible from your browser, but not from the machine running Sourcegraph (probably due to a
-firewall rule or due to Sourcegraph's machine not respecting the TLS certificate of ADFS). You have
-two options:
+accessible from your browser, but not from the container running Sourcegraph (probably due to a
+firewall rule or due to Sourcegraph's host not respecting the TLS certificate of ADFS). You have two
+options:
 
 * Open the `federationmetadata.xml` file, transform it into a JSON string (using a tool like
   https://json-escape-text.now.sh), and set it in the `identityProviderMetadata` field of the
   `auth.provider` SAML config. You can then delete the `identityProviderMetadataURL` field.
 * Fix the connectivity issue from Sourcegraph to ADFS by adding the appropriate firewall rule, or
-  authorizing the ADFS TLS certificate on the machine running Sourcegraph.
+  authorizing the ADFS TLS certificate on the container running Sourcegraph.
 
 ### Error on ADFS login page
 
