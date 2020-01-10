@@ -9,6 +9,7 @@ import * as path from 'path'
 import puppeteer from 'puppeteer'
 import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
+import * as util from 'util'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 
 const BROWSER = process.env.E2E_BROWSER || 'chrome'
@@ -112,9 +113,17 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
         }
     )
 
-    // Open page.
     beforeEach(async () => {
         page = await browser.newPage()
+        page.on('console', message => {
+            if (message.text().includes('Download the React DevTools')) {
+                return
+            }
+            if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
+                return
+            }
+            console.log('Browser console:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))
+        })
     })
 
     // Take a screenshot when a test fails.
@@ -149,6 +158,7 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
     test('provides tooltips for single file', async () => {
         await page.goto('https://github.com/gorilla/mux/blob/master/mux.go')
 
+        await page.waitForSelector('.code-view-toolbar')
         const element = await getTokenWithSelector(page, 'NewRouter', 'span.pl-en')
 
         await clickElement(page, element)
