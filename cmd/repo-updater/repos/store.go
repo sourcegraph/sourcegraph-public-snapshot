@@ -485,6 +485,9 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		case r.ID != 0:
 			updates = append(updates, r)
 		default:
+			// We also update to un-delete soft-deleted repositories. The
+			// insert statement has an on conflict do nothing.
+			updates = append(updates, r)
 			inserts = append(inserts, r)
 		}
 	}
@@ -648,11 +651,21 @@ SET
   sources               = batch.sources,
   metadata              = batch.metadata
 FROM batch
-WHERE repo.id = batch.id
+WHERE repo.external_service_type = batch.external_service_type
+AND repo.external_service_id = batch.external_service_id
+AND repo.external_id = batch.external_id
 `
 
+// delete is a soft-delete. name is unique and the syncer ensures we respect
+// that constraint. However, the syncer is unaware of soft-deleted
+// repositories. So we update the name to something unique to prevent
+// violating this constraint between active and soft-deleted names.
 var deleteReposQuery = batchReposQueryFmtstr + `
-DELETE FROM repo USING batch
+UPDATE repo
+SET
+  name = 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || batch.name,
+  deleted_at = batch.deleted_at
+FROM batch
 WHERE batch.deleted_at IS NOT NULL
 AND repo.id = batch.id
 `
@@ -693,11 +706,12 @@ inserted AS (
     sources,
     metadata
   FROM batch
+  ON CONFLICT (external_service_type, external_service_id, external_id) DO NOTHING
   RETURNING repo.*
 )
 SELECT inserted.id
 FROM inserted
-LEFT JOIN batch ON batch.name = inserted.name
+LEFT JOIN batch USING (external_service_type, external_service_id, external_id)
 ORDER BY batch.ordinality
 `
 

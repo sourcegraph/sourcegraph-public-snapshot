@@ -58,6 +58,8 @@
 // 1528395631_reset_changeset_external_deleted_at.up.sql (105B)
 // 1528395632_drop_closest_dump.down.sql (1.791kB)
 // 1528395632_drop_closest_dump.up.sql (82B)
+// 1528395633_drop_repo_deleted_at_unused.down.sql (103B)
+// 1528395633_drop_repo_deleted_at_unused.up.sql (81B)
 
 package migrations
 
@@ -1286,6 +1288,46 @@ func _1528395632_drop_closest_dumpUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395633_drop_repo_deleted_at_unusedDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\xe7\x52\x00\x03\x47\x17\x17\x05\x67\x7f\xbf\xe0\x90\x20\x47\x4f\xbf\x10\x85\x94\xd4\x9c\xd4\x92\xd4\x94\xf8\xc4\x92\xf8\xd2\xbc\xd2\xe2\xd4\x14\x05\x67\x0f\x57\x67\x6f\x05\x0d\x0d\x84\x8c\x82\x67\xb0\x82\x5f\xa8\x8f\x8f\xa6\xa6\x35\x17\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xff\xfd\x7a\x6a\x67\x00\x00\x00")
+
+func _1528395633_drop_repo_deleted_at_unusedDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395633_drop_repo_deleted_at_unusedDownSql,
+		"1528395633_drop_repo_deleted_at_unused.down.sql",
+	)
+}
+
+func _1528395633_drop_repo_deleted_at_unusedDownSql() (*asset, error) {
+	bytes, err := _1528395633_drop_repo_deleted_at_unusedDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395633_drop_repo_deleted_at_unused.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x94, 0xfc, 0xc, 0x27, 0x3d, 0x2a, 0x9b, 0xda, 0xd7, 0xf7, 0xad, 0x81, 0x23, 0x70, 0x2, 0xe8, 0x84, 0x3c, 0xcb, 0xea, 0xcd, 0x6c, 0xdc, 0x77, 0x5e, 0xdf, 0x13, 0xde, 0xff, 0x83, 0x8, 0xa4}}
+	return a, nil
+}
+
+var __1528395633_drop_repo_deleted_at_unusedUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x3b\x0e\x02\x21\x10\x06\xe0\x7e\x4e\xf1\xdf\x83\x0a\x70\x34\x93\xf0\x30\x30\x85\x1d\x31\x61\x3a\xa3\x66\x17\xee\xbf\x5f\xe0\x87\x14\x47\xe4\x93\x72\x83\xfa\x90\x18\x87\xfd\x7f\x04\xdc\x5a\x7d\x22\xd6\xd2\xb5\x79\x29\x0a\xb9\x83\x5f\xd2\xb5\x63\xda\xc7\x96\xcd\xf1\x5e\x63\x7f\xf7\x69\xd3\x11\xc5\x9a\xb3\xa8\xa3\x2b\x00\x00\xff\xff\xfc\xa3\x7c\x44\x51\x00\x00\x00")
+
+func _1528395633_drop_repo_deleted_at_unusedUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395633_drop_repo_deleted_at_unusedUpSql,
+		"1528395633_drop_repo_deleted_at_unused.up.sql",
+	)
+}
+
+func _1528395633_drop_repo_deleted_at_unusedUpSql() (*asset, error) {
+	bytes, err := _1528395633_drop_repo_deleted_at_unusedUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395633_drop_repo_deleted_at_unused.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x35, 0xcb, 0xaa, 0xb6, 0x6f, 0x8a, 0x10, 0xb9, 0x75, 0x94, 0x59, 0xe6, 0x1c, 0x3a, 0x4e, 0xd5, 0x7c, 0x7b, 0x43, 0x16, 0xc, 0x63, 0x5d, 0x0, 0xea, 0xc6, 0xe1, 0x2d, 0x51, 0xf9, 0x4d, 0x9}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1435,6 +1477,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395631_reset_changeset_external_deleted_at.up.sql":              _1528395631_reset_changeset_external_deleted_atUpSql,
 	"1528395632_drop_closest_dump.down.sql":                              _1528395632_drop_closest_dumpDownSql,
 	"1528395632_drop_closest_dump.up.sql":                                _1528395632_drop_closest_dumpUpSql,
+	"1528395633_drop_repo_deleted_at_unused.down.sql":                    _1528395633_drop_repo_deleted_at_unusedDownSql,
+	"1528395633_drop_repo_deleted_at_unused.up.sql":                      _1528395633_drop_repo_deleted_at_unusedUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1536,6 +1580,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395631_reset_changeset_external_deleted_at.up.sql":              {_1528395631_reset_changeset_external_deleted_atUpSql, map[string]*bintree{}},
 	"1528395632_drop_closest_dump.down.sql":                              {_1528395632_drop_closest_dumpDownSql, map[string]*bintree{}},
 	"1528395632_drop_closest_dump.up.sql":                                {_1528395632_drop_closest_dumpUpSql, map[string]*bintree{}},
+	"1528395633_drop_repo_deleted_at_unused.down.sql":                    {_1528395633_drop_repo_deleted_at_unusedDownSql, map[string]*bintree{}},
+	"1528395633_drop_repo_deleted_at_unused.up.sql":                      {_1528395633_drop_repo_deleted_at_unusedUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
