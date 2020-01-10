@@ -1,6 +1,5 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import WarningIcon from 'mdi-react/WarningIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -29,14 +28,20 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
         campaign.__typename === 'Campaign' &&
         campaign.publishedAt &&
         isBefore(parseISO(campaign.publishedAt), addDays(new Date(), 1))
+    const progress = (status.completedCount / (status.pendingCount + status.completedCount)) * 100
     return (
         <>
             {status.state === GQL.BackgroundProcessState.PROCESSING && (
-                <div className="d-flex mt-3 e2e-preview-loading">
-                    <LoadingSpinner className="icon-inline" />{' '}
-                    <span data-tooltip="Computing changesets">
+                <div className="mt-3 e2e-preview-loading campaign-status__progress-indicator">
+                    <div className="progress">
+                        <div className="progress-bar" style={{ width: progress + '%' }}>
+                            &nbsp;
+                        </div>
+                    </div>
+                    <p>
+                        {campaign.__typename === 'CampaignPlan' ? 'Computing' : 'Creating'} changesets:{' '}
                         {status.completedCount} / {status.pendingCount + status.completedCount}
-                    </span>
+                    </p>
                 </div>
             )}
             {campaign.__typename === 'Campaign' && campaign.closedAt ? (
