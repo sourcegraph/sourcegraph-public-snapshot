@@ -247,24 +247,25 @@ func RunCampaignJobs(s *Store, clock func() time.Time, backoffDuration time.Dura
 		runJob(ctx, clock, s, nil, &job)
 		return nil
 	}
-	for i := 0; i < workerCount; i++ {
-		go func() {
-			for {
-				select {
-				case <-doneChan:
-					return
-				default:
-					didRun, err := s.ProcessPendingCampaignJob(context.Background(), process)
-					if err != nil {
-						log15.Error("Running campaign job", "err", err)
-					}
-					if !didRun {
-						// No work available, backoff
-						time.Sleep(backoffDuration)
-					}
+	worker := func() {
+		for {
+			select {
+			case <-doneChan:
+				return
+			default:
+				didRun, err := s.ProcessPendingCampaignJob(context.Background(), process)
+				if err != nil {
+					log15.Error("Running campaign job", "err", err)
+				}
+				if !didRun {
+					// No work available, backoff
+					time.Sleep(backoffDuration)
 				}
 			}
-		}()
+		}
+	}
+	for i := 0; i < workerCount; i++ {
+		go worker()
 	}
 }
 
