@@ -1,9 +1,9 @@
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { isProductLicenseExpired, formatRelativeExpirationDate } from '../enterprise/productSubscription/helpers'
+import { Link } from '../../../shared/src/components/Link'
 
 /**
  * A global alert that appears telling the site admin that their license key is about to expire. Even after being dismissed,
