@@ -10,15 +10,22 @@ if [ ! -d "$DEV_PRIVATE_PATH" ]; then
     exit 1
 fi
 
+# Warn if dev-private needs to be updated.
+if [ -f "$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json" ]; then
+    echo "Error: You need to update dev-private to a commit that incorporates https://github.com/sourcegraph/dev-private/pull/10."
+    echo
+    echo "Try running:"
+    echo
+    echo "    cd $DEV_PRIVATE_PATH && git pull"
+    echo
+    exit 1
+fi
+
 echo "Installing enterprise web dependencies..."
 [ -n "${OFFLINE-}" ] || yarn --check-files
 
 source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 
-# set to true if unset so set -u won't break us
-: ${SOURCEGRAPH_COMBINE_CONFIG:=false}
-
-export CRITICAL_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json
 export SITE_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json
 export EXTSVC_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
 export GLOBAL_SETTINGS_FILE=$PWD/../dev/global-settings.json
