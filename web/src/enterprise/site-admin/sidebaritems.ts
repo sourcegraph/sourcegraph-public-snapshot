@@ -46,12 +46,7 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdmi
     SiteAdminSideBarGroups
 >((enterpriseGroups, group) => {
     if (group === primaryGroup) {
-        return [
-            ...enterpriseGroups,
-            {
-                ...group,
-            },
-        ]
+        return [...enterpriseGroups, group]
     }
     if (group === authGroup) {
         return [
