@@ -11,6 +11,9 @@ const (
 	LSIFUpload = "lsif.upload"
 	GraphQL    = "graphql"
 
+	SrcCliVersion  = "src-cli.version"
+	SrcCliDownload = "src-cli.download"
+
 	Registry = "registry"
 
 	RepoShield  = "repo.shield"
@@ -61,6 +64,8 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/lsif/{rest:.*}").Methods("GET", "POST").Name(LSIF)
+	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
+	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
