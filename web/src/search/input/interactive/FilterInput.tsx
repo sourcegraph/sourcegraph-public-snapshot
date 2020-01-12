@@ -15,7 +15,7 @@ import {
     share,
     delay,
 } from 'rxjs/operators'
-import { createSuggestion, Suggestion, SuggestionItem, FiltersSuggestionTypes, fuzzySearchFilters } from '../Suggestion'
+import { createSuggestion, Suggestion, SuggestionItem, fuzzySearchFilters } from '../Suggestion'
 import { fetchSuggestions } from '../../backend'
 import { ComponentSuggestions, noSuggestions, typingDebounceTime } from '../QueryInput'
 import { isDefined } from '../../../../../shared/src/util/types'
@@ -28,7 +28,7 @@ import {
     filterStaticSuggestions,
 } from '../../helpers'
 import { dedupeWhitespace } from '../../../../../shared/src/util/strings'
-import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue, FilterTypes } from '../../../../../shared/src/search/interactive/util'
 import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
 import { startCase } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
@@ -60,7 +60,7 @@ interface Props {
     /**
      * The search filter type, as available in {@link SuggstionTypes}
      */
-    filterType: SuggestionTypes
+    filterType: FilterTypes
 
     /**
      * Whether or not this FilterInput is currently editable.
@@ -226,7 +226,7 @@ export class FilterInput extends React.Component<Props, State> {
         if (isFiniteFilter(this.props.filterType)) {
             this.subscriptions.add(
                 this.setFiniteFilterDefault.subscribe(() => {
-                    if (isFiniteFilter(this.props.filterType)) {
+                    if (isFiniteFilter(this.props.filterType) && this.state.inputValue === '') {
                         this.setState({ inputValue: finiteFilters[this.props.filterType].default })
                     }
                 })
@@ -335,16 +335,6 @@ export class FilterInput extends React.Component<Props, State> {
     }
 
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
-        // Ctrl+Space to show all available filter type suggestions
-        if (event.ctrlKey && event.key === ' ') {
-            this.setState({
-                suggestions: {
-                    cursorPosition: event.currentTarget.selectionStart ?? 0,
-                    values: searchFilterSuggestions[this.props.filterType as FiltersSuggestionTypes].values,
-                },
-            })
-        }
-
         // Escape to cancel editing a filter
         if (event.key === 'Escape' && this.props.editable) {
             this.handleDiscard()

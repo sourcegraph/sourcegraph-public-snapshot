@@ -9,7 +9,7 @@ import {
     interactiveBuildSearchURLQuery,
 } from './url'
 import { SearchPatternType } from '../graphql/schema'
-import { SuggestionTypes } from '../search/suggestions/util'
+import { FilterTypes } from '../search/interactive/util'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
@@ -437,7 +437,7 @@ describe('interactiveBuildSearchURLQuery', () => {
         const result = new URLSearchParams('repo=gorilla/mux')
         expect(
             interactiveBuildSearchURLQuery({
-                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
+                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
             }).toString()
         ).toBe(result.toString())
     })
@@ -446,8 +446,8 @@ describe('interactiveBuildSearchURLQuery', () => {
         const result = new URLSearchParams('repo=gorilla/mux&repo=gorilla/muxy')
         expect(
             interactiveBuildSearchURLQuery({
-                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
-                'repo 2': { type: SuggestionTypes.repo, value: 'gorilla/muxy', editable: false },
+                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
+                'repo 2': { type: FilterTypes.repo, value: 'gorilla/muxy', editable: false },
             }).toString()
         ).toBe(result.toString())
     })
@@ -456,8 +456,8 @@ describe('interactiveBuildSearchURLQuery', () => {
         const result = new URLSearchParams('repo=gorilla/mux&file=test')
         expect(
             interactiveBuildSearchURLQuery({
-                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
-                'file 2': { type: SuggestionTypes.file, value: 'test', editable: false },
+                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
+                'file 2': { type: FilterTypes.file, value: 'test', editable: false },
             }).toString()
         ).toBe(result.toString())
     })
@@ -466,8 +466,8 @@ describe('interactiveBuildSearchURLQuery', () => {
         const result = new URLSearchParams('repo=gorilla/mux&file=test')
         expect(
             interactiveBuildSearchURLQuery({
-                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
-                'file 2': { type: SuggestionTypes.file, value: 'test', editable: false },
+                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
+                'file 2': { type: FilterTypes.file, value: 'test', editable: false },
             }).toString()
         ).toBe(result.toString())
     })

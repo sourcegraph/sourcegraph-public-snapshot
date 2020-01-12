@@ -1,10 +1,9 @@
 import * as React from 'react'
-import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
 import { startCase } from 'lodash'
-import { filterTypeKeys, FilterTypes } from './filters'
+import { FilterTypes, filterTypeKeys } from '../../../../../shared/src/search/interactive/util'
 
 interface Props {
-    onAddNewFilter: (filterType: SuggestionTypes) => void
+    onAddNewFilter: (filterType: FilterTypes) => void
 }
 
 interface State {
@@ -19,7 +18,7 @@ export class AddFilterDropdown extends React.Component<Props, State> {
     }
 
     private onAddNewFilter = (e: React.ChangeEvent<HTMLSelectElement>): void => {
-        this.props.onAddNewFilter(e.target.value as SuggestionTypes)
+        this.props.onAddNewFilter(e.target.value as FilterTypes)
         this.setState({ value: 'default' })
     }
 

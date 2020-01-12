@@ -6,8 +6,9 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
 import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
-import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue, FilterTypes } from '../../../shared/src/search/interactive/util'
 import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
+import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -379,7 +380,7 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
  * */
 export const formatInteractiveQueryForFuzzySearch = (
     fullQuery: string,
-    filterType: SuggestionTypes,
+    filterType: FilterTypes,
     value: string = ''
 ): string => {
     // `repohasfile:` should be converted to `file:`
@@ -388,5 +389,5 @@ export const formatInteractiveQueryForFuzzySearch = (
         return `${filterSearchAlias}:${value}`
     }
 
-    return isolatedFuzzySearchFilters.includes(filterType) ? filterType + ':' + value : fullQuery
+    return isolatedFuzzySearchFiltersFilterType.includes(filterType) ? filterType + ':' + value : fullQuery
 }
