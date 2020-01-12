@@ -44,7 +44,7 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload }> = ({ node }) 
                 <span className="ml-2">
                     -
                     <span className="ml-2">
-                        <Link to={`/site-admin/lsif-uploads/${node.id}`}>
+                        <Link to={`./code-intelligence/lsif-uploads/${node.id}`}>
                             {node.state === GQL.LSIFUploadState.PROCESSING ? (
                                 <span>Processing</span>
                             ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
