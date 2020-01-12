@@ -16,42 +16,38 @@ If there is something you'd like to see Sourcegraph be able to do from the CLI, 
 
 ## Installation
 
-### From source:
-
-```
-go get -u github.com/sourcegraph/src-cli/cmd/src
-```
+**NOTE:** To get the best version for _your_ Sourcegraph instance, simply replace `sourcegraph.com` in the commands below with your own Sourcegraph URL and the latest version compatible with your instance will be provided.
 
 ### Mac OS:
 
 ```bash
-curl -L https://github.com/sourcegraph/src-cli/releases/download/latest/src_darwin_amd64 -o /usr/local/bin/src
+curl -L https://sourcegraph.com/.api/src-cli/src_darwin_amd64 -o /usr/local/bin/src
 chmod +x /usr/local/bin/src
 ```
 
 ### Linux:
 
 ```bash
-curl -L https://github.com/sourcegraph/src-cli/releases/download/latest/src_linux_amd64 -o /usr/local/bin/src
+curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
 chmod +x /usr/local/bin/src
 ```
 
 ### Windows:
 
-Note: Windows support is still rough around the edges, but is available. If you encounter issues, please let us know by filing an issue :)
+**NOTE:** Windows support is still rough around the edges, but is available. If you encounter issues, please let us know by filing an issue :)
 
 Run in PowerShell as administrator:
 
 ```powershell
 New-Item -ItemType Directory 'C:\Program Files\Sourcegraph'
-Invoke-WebRequest https://github.com/sourcegraph/src-cli/releases/download/latest/src_windows_amd64.exe -OutFile 'C:\Program Files\Sourcegraph\src.exe'
+Invoke-WebRequest https://sourcegraph.com/.api/src-cli/src_windows_amd64.exe -OutFile 'C:\Program Files\Sourcegraph\src.exe'
 [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', [EnvironmentVariableTarget]::Machine) + ';C:\Program Files\Sourcegraph', [EnvironmentVariableTarget]::Machine)
 $env:Path += ';C:\Program Files\Sourcegraph'
 ```
 
 Or manually:
 
-- [Download the latest src_windows_amd64.exe](https://github.com/sourcegraph/src-cli/releases/download/latest/src_windows_amd64.exe) and rename to `src.exe`.
+- Download the latest src_windows_amd64.exe: https://sourcegraph.com/.api/src-cli/src_windows_amd64.exe and rename to `src.exe`.
 - Place the file under e.g. `C:\Program Files\Sourcegraph\src.exe`
 - Add that directory to your system path to access it from any command prompt
 
@@ -100,3 +96,6 @@ go get -u github.com/sourcegraph/src-cli/cmd/src
 1.  Find the latest version (either via the releases tab on GitHub or via git tags) to determine which version you are releasing.
 2.  `VERSION=9.9.9 ./release.sh` (replace `9.9.9` with the version you are releasing)
 3.  Travis will automatically perform the release. Once it has finished, **confirm that the curl commands fetch the latest version above**.
+4.  Update the `MinimumVersion` constant in the [src-cli package](https://github.com/sourcegraph/sourcegraph/tree/master/internal/src-cli/consts.go).
+
+**Note**: The version recommended by a Sourcegraph instance will be the highest patch version with the same major and minor version as the set minimum. This means that patch versions are reserved solely for non-breaking changes and minor bug fixes. This allows us to dynamically release fixes for older versions of src-cli without having to update the instance.
