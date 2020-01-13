@@ -344,6 +344,8 @@ type ExperimentalFeatures struct {
 	SplitSearchModes string `json:"splitSearchModes,omitempty"`
 	// StructuralSearch description: Enables structural search.
 	StructuralSearch string `json:"structuralSearch,omitempty"`
+	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
+	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -914,8 +916,6 @@ type SiteConfiguration struct {
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
-	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UseJaeger description: Use local Jaeger instance for tracing. Kubernetes cluster deployments only.

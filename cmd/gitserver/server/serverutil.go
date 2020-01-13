@@ -65,7 +65,7 @@ func checkSpecArgSafety(spec string) error {
 // runWithRemoteOpts runs the command after applying the remote options.
 // If progress is not nil, all output is written to it in a separate goroutine.
 func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	configureRemoteGitCommand(cmd, conf.Get().TlsExternal)
+	configureRemoteGitCommand(cmd, conf.Get().ExperimentalFeatures.TlsExternal)
 
 	var b interface {
 		Bytes() []byte

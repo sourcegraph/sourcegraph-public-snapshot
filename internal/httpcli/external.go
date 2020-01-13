@@ -23,7 +23,7 @@ func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	config, effective := t.config, t.effective
 	t.mu.RUnlock()
 
-	if current := conf.Get().TlsExternal; current == nil {
+	if current := conf.Get().ExperimentalFeatures.TlsExternal; current == nil {
 		return t.base.RoundTrip(r)
 	} else if reflect.DeepEqual(config, current) {
 		return effective.RoundTrip(r)
@@ -37,7 +37,7 @@ func (t *externalTransport) update() *http.Transport {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	config := conf.Get().TlsExternal
+	config := conf.Get().ExperimentalFeatures.TlsExternal
 	effective := t.base.Clone()
 
 	if effective.TLSClientConfig == nil {
