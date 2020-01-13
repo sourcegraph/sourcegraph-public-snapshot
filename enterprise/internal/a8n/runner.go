@@ -3,13 +3,13 @@ package a8n
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
@@ -235,6 +235,46 @@ func (r *Runner) Wait(ctx context.Context) error {
 	}
 }
 
+// RunChangesetJobs should run in a background goroutine and is responsible
+// for finding pending jobs and running them.
+// ctx should be canceled to terminat the function
+func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, gitClient GitserverClient, backoffDuration time.Duration) {
+	workerCount, err := strconv.Atoi(maxWorkers)
+	if err != nil {
+		log15.Error("Parsing max worker count, falling back to default of 8", "err", err)
+		workerCount = 8
+	}
+	process := func(ctx context.Context, s *Store, job a8n.ChangesetJob) error {
+		c, err := s.GetCampaign(ctx, GetCampaignOpts{
+			ID: job.CampaignID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "getting campaign")
+		}
+		return RunChangesetJob(ctx, clock, s, gitClient, nil, c, &job)
+	}
+	worker := func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				didRun, err := s.ProcessPendingChangesetJobs(context.Background(), process)
+				if err != nil {
+					log15.Error("Running campaign job", "err", err)
+				}
+				// Back off on error or when no jobs available
+				if err != nil || !didRun {
+					time.Sleep(backoffDuration)
+				}
+			}
+		}
+	}
+	for i := 0; i < workerCount; i++ {
+		go worker()
+	}
+}
+
 // RunCampaignJobs should run in a background goroutine and is responsible for
 // finding pending campaign jobs and running them.
 // ctx should be canceled to terminate this function.
@@ -258,8 +298,8 @@ func RunCampaignJobs(ctx context.Context, s *Store, clock func() time.Time, back
 				if err != nil {
 					log15.Error("Running campaign job", "err", err)
 				}
-				if !didRun {
-					// No work available, backoff
+				// Back off on error or when no jobs available
+				if err != nil || !didRun {
 					time.Sleep(backoffDuration)
 				}
 			}

@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -73,6 +75,7 @@ func main() {
 	}
 
 	go a8n.RunCampaignJobs(ctx, a8nStore, clock, 5*time.Second)
+	go a8n.RunChangesetJobs(ctx, a8nStore, clock, gitserver.DefaultClient, 5*time.Second)
 
 	shared.Main(githubWebhook)
 }
