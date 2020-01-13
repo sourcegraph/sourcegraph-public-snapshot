@@ -73,9 +73,9 @@ func UserByIDInt32(ctx context.Context, id int32) (*UserResolver, error) {
 	return &UserResolver{user: user}, nil
 }
 
-func (r *UserResolver) ID() graphql.ID { return marshalUserID(r.user.ID) }
+func (r *UserResolver) ID() graphql.ID { return MarshalUserID(r.user.ID) }
 
-func marshalUserID(id int32) graphql.ID { return relay.MarshalID("User", id) }
+func MarshalUserID(id int32) graphql.ID { return relay.MarshalID("User", id) }
 
 func UnmarshalUserID(id graphql.ID) (userID int32, err error) {
 	err = relay.UnmarshalSpec(id, &userID)
