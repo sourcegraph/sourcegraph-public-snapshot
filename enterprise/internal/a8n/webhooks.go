@@ -12,7 +12,6 @@ import (
 	gh "github.com/google/go-github/v28/github"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
-	// "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -71,6 +70,11 @@ func (h Webhook) upsertChangesetEvent(
 	}
 
 	if existing != nil {
+		// Upsert is used to create or update the record in the database,
+		// but we're actually "patching" the record with specific merge semantics
+		// encoded in Update. This is because some webhooks payloads don't contain
+		// all the information that we can get from the API, so we only update the
+		// bits that we know are more up to date and leave the others as they were.
 		existing.Update(event)
 		event = existing
 	}
