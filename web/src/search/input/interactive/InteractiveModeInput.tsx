@@ -19,7 +19,7 @@ import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { FiltersToTypeAndValue, filterTypeKeys, FilterTypes } from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
-import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps } from '../..'
+import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
 
@@ -33,6 +33,7 @@ interface InteractiveModeProps
         EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
+        CaseSensitivityProps,
         Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'> {
     location: H.Location
     history: H.History
@@ -57,12 +58,12 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
         const searchParams = new URLSearchParams(props.location.search)
         const filtersInQuery: FiltersToTypeAndValue = {}
-        for (const t of filterTypeKeys) {
-            const itemsOfType = searchParams.getAll(t)
-            itemsOfType.map((item, i) => {
-                filtersInQuery[uniqueId(t)] = { type: t, value: item, editable: false }
+        filterTypeKeys.filter(key => key !== FilterTypes.case).map(filter => {
+            const itemsOfType = searchParams.getAll(filter)
+            itemsOfType.map(item => {
+                filtersInQuery[uniqueId(filter)] = { type: filter, value: item, editable: false }
             })
-        }
+        })
 
         this.props.onFiltersInQueryChange(filtersInQuery)
     }
@@ -102,6 +103,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
             this.props.navbarSearchState.query,
             'nav',
             this.props.patternType,
+            this.props.caseSensitive,
             undefined,
             newFiltersInQuery
         )
@@ -119,6 +121,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
             this.props.navbarSearchState.query,
             'nav',
             this.props.patternType,
+            this.props.caseSensitive,
             undefined,
             newFiltersInQuery
         )
@@ -147,6 +150,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
             this.props.navbarSearchState.query,
             'nav',
             this.props.patternType,
+            this.props.caseSensitive,
             undefined,
             this.props.filtersInQuery
         )
@@ -202,6 +206,8 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                                     onChange={this.props.onNavbarQueryChange}
                                     patternType={this.props.patternType}
                                     setPatternType={this.props.setPatternType}
+                                    caseSensitive={this.props.caseSensitive}
+                                    setCaseSensitivity={this.props.setCaseSensitivity}
                                     autoFocus={true}
                                     filterQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}

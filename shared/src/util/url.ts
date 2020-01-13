@@ -527,6 +527,7 @@ export function withWorkspaceRootInputRevision(
 export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
+    caseSensitive: boolean,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
     let searchParams = new URLSearchParams()
@@ -541,9 +542,22 @@ export function buildSearchURLQuery(
         const newQuery = query.replace(patternTypeRegexp, '')
         searchParams.set('q', newQuery)
         searchParams.set('patternType', patternTypeInQuery.toLowerCase())
+        query = newQuery
     } else {
         searchParams.set('q', query)
         searchParams.set('patternType', patternType)
+    }
+
+    const caseInQuery = parseCaseSensitivityFromQuery(query)
+    if (caseInQuery) {
+        const caseRegexp = /\bcase:(?<type>yes|no)\b/i
+        const newQuery = query.replace(caseRegexp, '')
+        searchParams.set('q', newQuery)
+        searchParams.set('case', caseInQuery)
+        query = newQuery
+    } else {
+        searchParams.set('q', query)
+        searchParams.set('case', caseSensitive ? 'yes' : 'no')
     }
 
     return searchParams
@@ -581,4 +595,11 @@ function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined
     }
 
     return undefined
+}
+
+function parseCaseSensitivityFromQuery(query: string): string | undefined {
+    const caseRegexp = /\bcase:(?<option>yes|no)\b/i
+    const matches = query.match(caseRegexp)
+
+    return matches?.groups?.option
 }

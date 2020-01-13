@@ -23,10 +23,11 @@ export enum FilterTypes {
     repohascommitafter = 'repohascommitafter',
     file = 'file',
     lang = 'lang',
-    fork = 'fork',
-    archived = 'archived',
     count = 'count',
     timeout = 'timeout',
+    fork = 'fork',
+    archived = 'archived',
+    case = 'case',
 }
 
 export const filterTypeKeys: FilterTypes[] = Object.keys(FilterTypes) as FilterTypes[]

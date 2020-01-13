@@ -33,7 +33,7 @@ export class AddFilterDropdown extends React.Component<Props, State> {
                     Add filter…
                 </option>
                 {filterTypeKeys
-                    .filter(filter => filter in FilterTypes)
+                    .filter(filter => filter in FilterTypes && filter !== FilterTypes.case)
                     .map(filter => (
                         <option key={filter} value={filter}>
                             {startCase(filter)}

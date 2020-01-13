@@ -1,21 +1,20 @@
 import React from 'react'
 import * as H from 'history'
-import RegexIcon from 'mdi-react/RegexIcon'
+import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import { submitSearch } from '../helpers'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { Subscription, fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { PatternTypeProps, CaseSensitivityProps } from '..'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
-interface RegexpToggleProps extends PatternTypeProps, CaseSensitivityProps {
+interface Props extends PatternTypeProps, CaseSensitivityProps {
     navbarSearchQuery: string
     history: H.History
     filtersInQuery?: FiltersToTypeAndValue
     hasGlobalQueryBehavior?: boolean
 }
 
-export class RegexpToggle extends React.Component<RegexpToggleProps> {
+export class CaseSensitivityToggle extends React.Component<Props> {
     private subscriptions = new Subscription()
     private toggleCheckbox = React.createRef<HTMLDivElement>()
 
@@ -41,32 +40,30 @@ export class RegexpToggle extends React.Component<RegexpToggleProps> {
     }
 
     public render(): JSX.Element | null {
-        const isRegexp = this.props.patternType === SearchPatternType.regexp
+        const isCaseSensitive = this.props.caseSensitive
         return (
             <div
                 ref={this.toggleCheckbox}
                 onClick={this.toggle}
-                className="btn btn-icon icon-inline query-input2__toggle e2e-regexp-toggle"
+                className="btn btn-icon icon-inline query-input2__toggle"
                 role="checkbox"
-                aria-checked={isRegexp}
-                aria-label="Regular expression toggle"
+                aria-checked={isCaseSensitive}
+                aria-label="Case sensitivity toggle"
                 tabIndex={0}
-                data-tooltip={`${isRegexp ? 'Disable' : 'Enable'} regular expressions`}
+                data-tooltip={`${isCaseSensitive ? 'Disable' : 'Enable'} case sensitivity`}
             >
-                <span className={`query-input2__toggle-icon ${isRegexp ? 'query-input2__toggle-icon--active e2e-regexp-toggle--active' : ''}`}>
-                    <RegexIcon />
+                <span className={`query-input__toggle-icon ${isCaseSensitive ? 'query-input2__toggle-icon--active' : ''}`}>
+                    <FormatLetterCaseIcon />
                 </span>
             </div>
         )
     }
 
     private toggle = (): void => {
-        const newPatternType =
-            this.props.patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.literal
-
-        this.props.setPatternType(newPatternType)
+        const newCaseSensitivity = !this.props.caseSensitive
+        this.props.setCaseSensitivity(newCaseSensitivity)
         if (this.props.hasGlobalQueryBehavior) {
-            // We only want the regexp toggle to submit searches if the query input it is in
+            // We only want the toggle to submit searches if the query input it is in
             // has global behavior (i.e. query inputs on the main search page or global navbar). Non-global inputs
             // don't have the canonical query, and are dependent on the page it's on for context, which makes the
             // submit on-toggle behavior undesirable.
@@ -74,8 +71,8 @@ export class RegexpToggle extends React.Component<RegexpToggleProps> {
                 this.props.history,
                 this.props.navbarSearchQuery,
                 'filter',
-                newPatternType,
-                this.props.caseSensitive,
+                this.props.patternType,
+                newCaseSensitivity,
                 undefined,
                 this.props.filtersInQuery
             )
