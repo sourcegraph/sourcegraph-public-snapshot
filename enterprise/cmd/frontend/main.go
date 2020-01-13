@@ -30,6 +30,7 @@ import (
 	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func main() {
@@ -73,6 +74,7 @@ func main() {
 	}
 
 	go a8n.RunCampaignJobs(ctx, a8nStore, clock, 5*time.Second)
+	go a8n.RunChangesetJobs(ctx, a8nStore, clock, gitserver.DefaultClient, 5*time.Second)
 
 	shared.Main(githubWebhook)
 }

@@ -3,13 +3,13 @@ package a8n
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
@@ -28,6 +28,8 @@ var maxRepositories = env.Get("A8N_MAX_REPOS", "200", "maximum number of reposit
 // maxWorkers defines the maximum number of repositories over which a Runner
 // executes CampaignJobs in parallel.
 var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories run campaigns over in parallel")
+
+const defaultWorkerCount = 8
 
 // ErrTooManyResults is returned by the Runner's CreatePlanAndJobs method when the
 // CampaignType's searchQuery produced more than maxRepositories number of
@@ -235,6 +237,46 @@ func (r *Runner) Wait(ctx context.Context) error {
 	}
 }
 
+// RunChangesetJobs should run in a background goroutine and is responsible
+// for finding pending jobs and running them.
+// ctx should be canceled to terminate the function
+func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, gitClient GitserverClient, backoffDuration time.Duration) {
+	workerCount, err := strconv.Atoi(maxWorkers)
+	if err != nil {
+		log15.Error("Parsing max worker count, falling back to default of 8", "err", err)
+		workerCount = defaultWorkerCount
+	}
+	process := func(ctx context.Context, s *Store, job a8n.ChangesetJob) error {
+		c, err := s.GetCampaign(ctx, GetCampaignOpts{
+			ID: job.CampaignID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "getting campaign")
+		}
+		return RunChangesetJob(ctx, clock, s, gitClient, nil, c, &job)
+	}
+	worker := func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				didRun, err := s.ProcessPendingChangesetJobs(context.Background(), process)
+				if err != nil {
+					log15.Error("Running campaign job", "err", err)
+				}
+				// Back off on error or when no jobs available
+				if err != nil || !didRun {
+					time.Sleep(backoffDuration)
+				}
+			}
+		}
+	}
+	for i := 0; i < workerCount; i++ {
+		go worker()
+	}
+}
+
 // RunCampaignJobs should run in a background goroutine and is responsible for
 // finding pending campaign jobs and running them.
 // ctx should be canceled to terminate this function.
@@ -242,10 +284,10 @@ func RunCampaignJobs(ctx context.Context, s *Store, clock func() time.Time, back
 	workerCount, err := strconv.Atoi(maxWorkers)
 	if err != nil {
 		log15.Error("Parsing max worker count, falling back to default of 8", "err", err)
-		workerCount = 8
+		workerCount = defaultWorkerCount
 	}
 	process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
-		runJob(ctx, clock, s, nil, &job)
+		runCampaignJob(ctx, clock, s, nil, &job)
 		return nil
 	}
 	worker := func() {
@@ -258,8 +300,8 @@ func RunCampaignJobs(ctx context.Context, s *Store, clock func() time.Time, back
 				if err != nil {
 					log15.Error("Running campaign job", "err", err)
 				}
-				if !didRun {
-					// No work available, backoff
+				// Back off on error or when no jobs available
+				if err != nil || !didRun {
 					time.Sleep(backoffDuration)
 				}
 			}
@@ -270,11 +312,11 @@ func RunCampaignJobs(ctx context.Context, s *Store, clock func() time.Time, back
 	}
 }
 
-// runJob runs the supplied job
+// runCampaignJob runs the supplied job
 // if ct is nil, one will be created from the CampaignPlan
-func runJob(ctx context.Context, clock func() time.Time, store *Store, ct CampaignType, job *a8n.CampaignJob) {
+func runCampaignJob(ctx context.Context, clock func() time.Time, store *Store, ct CampaignType, job *a8n.CampaignJob) {
 	var err error
-	tr, ctx := trace.New(ctx, "Runner.runJob", fmt.Sprintf("job_id %d", job.ID))
+	tr, ctx := trace.New(ctx, "Runner.runCampaignJob", fmt.Sprintf("job_id %d", job.ID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()

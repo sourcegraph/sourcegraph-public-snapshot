@@ -62,6 +62,59 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	return &Store{db: tx, now: s.now}, nil
 }
 
+// ProcessPendingChangesetJobs attempts to fetch one pending changeset job.
+// A pending job is one that has never been started, its campaign is published and its plan is not cancelled.
+// If found, 'process' is called. We guarantee that if process is called it will have exclusive global access to
+// the job. All operations on the job should be done using the supplied store as they will run in a transaction.
+// Returning an error will roll back the transaction.
+// NOTE: It should not be called from within an existing transaction
+func (s *Store) ProcessPendingChangesetJobs(ctx context.Context, process func(ctx context.Context, s *Store, job a8n.ChangesetJob) error) (didRun bool, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "starting transaction")
+	}
+	defer tx.Done(&err)
+	q := sqlf.Sprintf(getPendingChangesetJobQuery)
+	var job a8n.ChangesetJob
+	_, count, err := tx.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		err = scanChangesetJob(&job, sc)
+		if err != nil {
+			return 0, 0, errors.Wrap(err, "scanning campaign job row")
+		}
+		return job.ID, 1, nil
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "querying for pending campaign job")
+	}
+	if count == 0 {
+		return false, nil
+	}
+	err = process(ctx, tx, job)
+	return true, err
+}
+
+const getPendingChangesetJobQuery = `
+UPDATE changeset_jobs j SET started_at = now() WHERE id = (
+	SELECT j.id FROM changeset_jobs j
+	JOIN campaigns c ON c.id = j.campaign_id
+	JOIN campaign_plans p ON p.id = c.campaign_plan_id
+	WHERE j.started_at IS NULL
+	AND p.canceled_at IS NULL
+	AND c.published_at IS NOT NULL
+	ORDER BY j.id ASC
+	FOR UPDATE SKIP LOCKED LIMIT 1
+)
+RETURNING j.id,
+  j.campaign_id,
+  j.campaign_job_id,
+  j.changeset_id,
+  j.error,
+  j.started_at,
+  j.finished_at,
+  j.created_at,
+  j.updated_at
+`
+
 // ProcessPendingCampaignJob attempts to fetch one pending campaign job. If found, 'process'
 // is called. We guarantee that if process is called it will have exclusive global access to the job.
 // All operations on the job should be done using the supplied store as they will run in a transaction.
@@ -95,9 +148,9 @@ func (s *Store) ProcessPendingCampaignJob(ctx context.Context, process func(ctx 
 const getPendingCampaignJobQuery = `
 UPDATE campaign_jobs c SET started_at = now() WHERE id = (
 	SELECT c.id FROM campaign_jobs c
-	JOIN campaign_plans p on p.id = c.campaign_plan_id
-	WHERE c.started_at is null
-	AND p.canceled_at is null
+	JOIN campaign_plans p ON p.id = c.campaign_plan_id
+	WHERE c.started_at IS NULL
+	AND p.canceled_at IS NULL
 	ORDER BY c.id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )

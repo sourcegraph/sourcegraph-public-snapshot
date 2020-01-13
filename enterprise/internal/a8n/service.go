@@ -209,43 +209,24 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 	return nil
 }
 
-// RunChangesetJobs will run all the changeset jobs for the supplied campaign.
-// It is idempotent and jobs that have already completed will not be rerun.
-func (s *Service) RunChangesetJobs(ctx context.Context, c *a8n.Campaign) error {
-	var err error
-	tr, ctx := trace.New(ctx, "Service.RunChangesetJobs", fmt.Sprintf("Campaign: %q", c.Name))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-	jobs, _, err := s.store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-		CampaignID: c.ID,
-		Limit:      -1,
-	})
-	if err != nil {
-		return err
-	}
-
-	errs := &multierror.Error{}
-	for _, job := range jobs {
-		err := s.RunChangesetJob(ctx, c, job)
-		if err != nil {
-			err = errors.Wrapf(err, "ChangesetJob %d", job.ID)
-			errs = multierror.Append(errs, err)
-		}
-	}
-
-	return errs.ErrorOrNil()
-}
-
 // RunChangesetJob will run the given ChangesetJob for the given campaign. It
 // is idempotent and if the job has already been run it will not be rerun.
-func (s *Service) RunChangesetJob(
+func RunChangesetJob(
 	ctx context.Context,
+	clock func() time.Time,
+	store *Store,
+	gitClient GitserverClient,
+	cf *httpcli.Factory,
 	c *a8n.Campaign,
 	job *a8n.ChangesetJob,
 ) (err error) {
-	tr, ctx := trace.New(ctx, "service.RunChangeSetJob", fmt.Sprintf("job_id: %d", job.ID))
+	// Store should already have an open transaction but ensure here anyway
+	store, err = store.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "creating transaction")
+	}
+
+	tr, ctx := trace.New(ctx, "service.RunChangesetJob", fmt.Sprintf("job_id: %d", job.ID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -269,7 +250,7 @@ func (s *Service) RunChangesetJob(
 		if err != nil {
 			job.Error = err.Error()
 		}
-		job.FinishedAt = s.clock()
+		job.FinishedAt = clock()
 
 		if e := store.UpdateChangesetJob(ctx, job); e != nil {
 			if err == nil {
@@ -280,32 +261,16 @@ func (s *Service) RunChangesetJob(
 		}
 		changesetJobUpdated = true
 	}
-	defer runFinalUpdate(ctx, s.store)
+	defer runFinalUpdate(ctx, store)
 
-	// We start a transaction here so that we can grab a lock
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Done(&err)
+	job.StartedAt = clock()
 
-	lockKey := fmt.Sprintf("RunChangesetJob: %d", job.ID)
-	acquired, err := tx.TryAcquireAdvisoryLock(ctx, lockKey)
-	if err != nil {
-		return errors.Wrap(err, "acquiring lock")
-	}
-	if !acquired {
-		return errors.New("could not acquire lock")
-	}
-
-	job.StartedAt = s.clock()
-
-	campaignJob, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: job.CampaignJobID})
+	campaignJob, err := store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: job.CampaignJobID})
 	if err != nil {
 		return err
 	}
 
-	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
+	reposStore := repos.NewDBStore(store.DB(), sql.TxOptions{})
 	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []uint32{uint32(campaignJob.RepoID)}})
 	if err != nil {
 		return err
@@ -321,7 +286,7 @@ func (s *Service) RunChangesetJob(
 	// it stable across retries and only set it the first time.
 	headRefName := fmt.Sprintf("sourcegraph/%s-%d", "campaign", c.CreatedAt.Unix())
 
-	_, err = s.git.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	_, err = gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
 		BaseCommit: campaignJob.Rev,
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
@@ -385,7 +350,7 @@ func (s *Service) RunChangesetJob(
 		return errors.Errorf("no external services found for repo %q", repo.Name)
 	}
 
-	src, err := repos.NewSource(externalService, s.cf)
+	src, err := repos.NewSource(externalService, cf)
 	if err != nil {
 		return err
 	}
@@ -447,7 +412,7 @@ func (s *Service) RunChangesetJob(
 	// We keep a clone because CreateChangesets might overwrite the changeset
 	// with outdated metadata.
 	clone := cs.Changeset.Clone()
-	if err = tx.CreateChangesets(ctx, clone); err != nil {
+	if err = store.CreateChangesets(ctx, clone); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
 		}
@@ -459,18 +424,18 @@ func (s *Service) RunChangesetJob(
 		// `ccs.CreateChangesets` call above and then update the Changeset in
 		// the database.
 		clone.Metadata = cs.Changeset.Metadata
-		if err = tx.UpdateChangesets(ctx, clone); err != nil {
+		if err = store.UpdateChangesets(ctx, clone); err != nil {
 			return err
 		}
 	}
 
 	c.ChangesetIDs = append(c.ChangesetIDs, clone.ID)
-	if err = tx.UpdateCampaign(ctx, c); err != nil {
+	if err = store.UpdateCampaign(ctx, c); err != nil {
 		return err
 	}
 
 	job.ChangesetID = clone.ID
-	runFinalUpdate(ctx, tx)
+	runFinalUpdate(ctx, store)
 	return
 }
 
@@ -668,9 +633,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) 
 // CreateChangesetJob creates a ChangesetJob for the CampaignJob with the given
 // ID. The CampaignJob has to belong to a CampaignPlan that was attached to a
 // Campaign.
-// It returns the newly created ChangesetJob and its Campaign, which can then
-// be passed to RunChangesetJob.
-func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64) (_ *a8n.ChangesetJob, _ *a8n.Campaign, err error) {
+func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64) (err error) {
 	traceTitle := fmt.Sprintf("campaignJob: %d", id)
 	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForCampaignJob", traceTitle)
 	defer func() {
@@ -680,17 +643,17 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64
 
 	job, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: id})
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: job.CampaignPlanID})
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 	defer tx.Done(&err)
 
@@ -699,19 +662,19 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64
 		CampaignJobID: job.ID,
 	})
 	if existing != nil && err == nil {
-		return existing, campaign, nil
+		return nil
 	}
 	if err != nil && err != ErrNoResults {
-		return nil, nil, err
+		return err
 	}
 
 	changesetJob := &a8n.ChangesetJob{CampaignID: campaign.ID, CampaignJobID: job.ID}
 	err = tx.CreateChangesetJob(ctx, changesetJob)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	return changesetJob, campaign, nil
+	return nil
 }
 
 // ErrUpdateProcessingCampaign is returned by UpdateCampaign if the Campaign
