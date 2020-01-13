@@ -29,6 +29,8 @@ var maxRepositories = env.Get("A8N_MAX_REPOS", "200", "maximum number of reposit
 // executes CampaignJobs in parallel.
 var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories run campaigns over in parallel")
 
+const defaultWorkerCount = 8
+
 // ErrTooManyResults is returned by the Runner's CreatePlanAndJobs method when the
 // CampaignType's searchQuery produced more than maxRepositories number of
 // repositories.
@@ -242,7 +244,7 @@ func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, git
 	workerCount, err := strconv.Atoi(maxWorkers)
 	if err != nil {
 		log15.Error("Parsing max worker count, falling back to default of 8", "err", err)
-		workerCount = 8
+		workerCount = defaultWorkerCount
 	}
 	process := func(ctx context.Context, s *Store, job a8n.ChangesetJob) error {
 		c, err := s.GetCampaign(ctx, GetCampaignOpts{
@@ -282,7 +284,7 @@ func RunCampaignJobs(ctx context.Context, s *Store, clock func() time.Time, back
 	workerCount, err := strconv.Atoi(maxWorkers)
 	if err != nil {
 		log15.Error("Parsing max worker count, falling back to default of 8", "err", err)
-		workerCount = 8
+		workerCount = defaultWorkerCount
 	}
 	process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 		runCampaignJob(ctx, clock, s, nil, &job)
