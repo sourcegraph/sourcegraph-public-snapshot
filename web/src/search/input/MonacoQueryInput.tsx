@@ -107,6 +107,9 @@ function addSouregraphSearchCodeIntelligence(
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
  * syntax highlighting, hovers, completions and diagnostics for search queries.
+ * 
+ * This component should not be imported directly: use {@link LazyMonacoQueryInput} instead
+ * to avoid bundling the Monaco editor on every page.
  */
 export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps> {
     private componentUpdates = new Subject<MonacoQueryInputProps>()

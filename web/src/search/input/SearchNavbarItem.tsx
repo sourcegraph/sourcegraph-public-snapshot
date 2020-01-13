@@ -5,7 +5,7 @@ import { Form } from '../../components/Form'
 import { submitSearch, QueryState } from '../helpers'
 import { SearchButton } from './SearchButton'
 import { PatternTypeProps, CaseSensitivityProps, SmartSearchFieldProps } from '..'
-import { MonacoQueryInput } from './MonacoQueryInput'
+import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { QueryInput } from './QueryInput'
 import { ThemeProps } from '../../../../shared/src/theme'
 
@@ -37,12 +37,12 @@ export class SearchNavbarItem extends React.PureComponent<Props> {
                 onSubmit={this.onFormSubmit}
             >
                 {this.props.smartSearchField ? (
-                    <MonacoQueryInput
+                    <LazyMonacoQueryInput
                         {...this.props}
                         hasGlobalQueryBehavior={true}
                         queryState={this.props.navbarSearchState}
                         onSubmit={this.onSubmit}
-                    ></MonacoQueryInput>
+                    ></LazyMonacoQueryInput>
                 ) : (
                     <QueryInput
                         {...this.props}

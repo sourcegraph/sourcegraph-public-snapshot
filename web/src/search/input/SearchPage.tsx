@@ -21,7 +21,7 @@ import { limitString } from '../../util'
 import { submitSearch, QueryState } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 import { QueryInput } from './QueryInput'
-import { MonacoQueryInput } from './MonacoQueryInput'
+import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchScopes } from './SearchScopes'
 import { InteractiveModeInput } from './interactive/InteractiveModeInput'
@@ -122,7 +122,7 @@ export class SearchPage extends React.Component<Props, State> {
                                         )}
 
                                         {this.props.smartSearchField ? (
-                                            <MonacoQueryInput
+                                            <LazyMonacoQueryInput
                                                 {...this.props}
                                                 hasGlobalQueryBehavior={true}
                                                 queryState={this.state.userQueryState}
