@@ -406,7 +406,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
     private setCaseSensitivity = (caseSensitive: boolean): void => {
         this.setState({
-            searchCaseSensitivity: caseSensitive
+            searchCaseSensitivity: caseSensitive,
         })
     }
 }

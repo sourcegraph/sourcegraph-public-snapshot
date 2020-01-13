@@ -52,7 +52,9 @@ export class CaseSensitivityToggle extends React.Component<Props> {
                 tabIndex={0}
                 data-tooltip={`${isCaseSensitive ? 'Disable' : 'Enable'} case sensitivity`}
             >
-                <span className={`query-input__toggle-icon ${isCaseSensitive ? 'query-input2__toggle-icon--active' : ''}`}>
+                <span
+                    className={`query-input__toggle-icon ${isCaseSensitive ? 'query-input2__toggle-icon--active' : ''}`}
+                >
                     <FormatLetterCaseIcon />
                 </span>
             </div>

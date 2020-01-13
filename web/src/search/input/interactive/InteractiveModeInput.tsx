@@ -58,12 +58,14 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
         const searchParams = new URLSearchParams(props.location.search)
         const filtersInQuery: FiltersToTypeAndValue = {}
-        filterTypeKeys.filter(key => key !== FilterTypes.case).map(filter => {
-            const itemsOfType = searchParams.getAll(filter)
-            itemsOfType.map(item => {
-                filtersInQuery[uniqueId(filter)] = { type: filter, value: item, editable: false }
+        filterTypeKeys
+            .filter(key => key !== FilterTypes.case)
+            .map(filter => {
+                const itemsOfType = searchParams.getAll(filter)
+                itemsOfType.map(item => {
+                    filtersInQuery[uniqueId(filter)] = { type: filter, value: item, editable: false }
+                })
             })
-        })
 
         this.props.onFiltersInQueryChange(filtersInQuery)
     }
@@ -110,21 +112,25 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
     }
 
     private onFilterDeleted = (filterKey: string): void => {
+        const filterWasEmpty =
+            this.props.filtersInQuery[filterKey].value === '' || !this.props.filtersInQuery[filterKey]
         const newFiltersInQuery = { ...this.props.filtersInQuery }
         delete newFiltersInQuery[filterKey]
 
         this.props.onFiltersInQueryChange(newFiltersInQuery)
 
-        // Submit a search with the new values
-        submitSearch(
-            this.props.history,
-            this.props.navbarSearchState.query,
-            'nav',
-            this.props.patternType,
-            this.props.caseSensitive,
-            undefined,
-            newFiltersInQuery
-        )
+        if (!filterWasEmpty) {
+            // Submit a search with the new values
+            submitSearch(
+                this.props.history,
+                this.props.navbarSearchState.query,
+                'nav',
+                this.props.patternType,
+                this.props.caseSensitive,
+                undefined,
+                newFiltersInQuery
+            )
+        }
     }
 
     /**

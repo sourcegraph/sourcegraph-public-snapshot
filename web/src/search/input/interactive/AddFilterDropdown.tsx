@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { startCase } from 'lodash'
 import { FilterTypes, filterTypeKeys } from '../../../../../shared/src/search/interactive/util'
+import { defaultFilterTypes } from './AddFilterRow'
+import { FilterTypesToProseNames } from './filters'
 
 interface Props {
     onAddNewFilter: (filterType: FilterTypes) => void
@@ -33,10 +34,10 @@ export class AddFilterDropdown extends React.Component<Props, State> {
                     Add filter…
                 </option>
                 {filterTypeKeys
-                    .filter(filter => filter in FilterTypes && filter !== FilterTypes.case)
+                    .filter(filter => !defaultFilterTypes.includes(filter) && filter !== FilterTypes.case)
                     .map(filter => (
                         <option key={filter} value={filter}>
-                            {startCase(filter)}
+                            {FilterTypesToProseNames[filter]}
                         </option>
                     ))}
             </select>

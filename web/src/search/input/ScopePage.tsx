@@ -35,7 +35,11 @@ const ScopeNotFound: React.FunctionComponent = () => (
     />
 )
 
-interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }>, SettingsCascadeProps, PatternTypeProps, CaseSensitivityProps {
+interface ScopePageProps
+    extends RouteComponentProps<{ id: GQL.ID }>,
+        SettingsCascadeProps,
+        PatternTypeProps,
+        CaseSensitivityProps {
     authenticatedUser: GQL.IUser | null
 }
 

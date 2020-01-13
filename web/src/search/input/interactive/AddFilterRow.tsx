@@ -14,10 +14,8 @@ interface RowProps {
     onAddNewFilter: (filter: FilterTypes) => void
 }
 
-enum DefaultFilterTypes {
-    repo = 'repo',
-    file = 'file',
-}
+// Filters that are shown as buttons, and not in the dropdown menu.
+export const defaultFilterTypes = [FilterTypes.repo, FilterTypes.file]
 
 /**
  * The row containing the buttons to add new filters in interactive mode.
@@ -31,12 +29,12 @@ export const AddFilterRow: React.FunctionComponent<RowProps> = ({ isHomepage, on
 
     return (
         <div className={`add-filter-row ${isHomepage ? 'add-filter-row--homepage' : ''} e2e-add-filter-row`}>
-            {Object.keys(DefaultFilterTypes).map(filterType => (
+            {defaultFilterTypes.map(filterType => (
                 <button
                     key={filterType}
                     type="button"
                     className={`add-filter-row__button btn btn-outline-primary e2e-add-filter-button-${filterType}`}
-                    onClick={buildOnAddFilterHandler(filterType as FilterTypes)}
+                    onClick={buildOnAddFilterHandler(filterType)}
                 >
                     + {startCase(filterType)} filter
                 </button>

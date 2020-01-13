@@ -121,7 +121,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter(
-                        (queryAndPatternTypeAndCase): queryAndPatternTypeAndCase is [string, GQL.SearchPatternType, boolean] =>
+                        (
+                            queryAndPatternTypeAndCase
+                        ): queryAndPatternTypeAndCase is [string, GQL.SearchPatternType, boolean] =>
                             !!queryAndPatternTypeAndCase[0] && !!queryAndPatternTypeAndCase[1]
                     ),
                     tap(([query]) => {
@@ -138,20 +140,20 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         }
                     }),
                     switchMap(([query, patternType, caseSensitive]) =>
-                        {
-                            return concat(
-                                // Reset view state
-                                [
-                                    {
-                                        resultsOrError: undefined,
-                                        didSave: false,
-                                        activeType: getSearchTypeFromQuery(query),
-                                    },
-                                ],
-                                // Do async search request
-                                this.props.searchRequest(query, LATEST_VERSION, patternType, this.props).pipe(
-                                    // Log telemetry
-                                    tap(results => {
+                        concat(
+                            // Reset view state
+                            [
+                                {
+                                    resultsOrError: undefined,
+                                    didSave: false,
+                                    activeType: getSearchTypeFromQuery(query),
+                                },
+                            ],
+                            // Do async search request
+                            this.props.searchRequest(query, LATEST_VERSION, patternType, this.props).pipe(
+                                // Log telemetry
+                                tap(
+                                    results => {
                                         this.props.telemetryService.log('SearchResultsFetched', {
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
@@ -169,15 +171,19 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                         if (caseSensitive !== this.props.caseSensitive) {
                                             this.props.setCaseSensitivity(caseSensitive)
                                         }
-                                    }, error => {
+                                    },
+                                    error => {
                                         this.props.telemetryService.log('SearchResultsFetchFailed', {
                                             code_search: { error_message: error.message },
                                         })
                                         console.error(error)
-                                    }),
-                                    // Update view with results or error
-                                    map(resultsOrError => ({ resultsOrError })), catchError(error => [{ resultsOrError: error }])))
-                        }
+                                    }
+                                ),
+                                // Update view with results or error
+                                map(resultsOrError => ({ resultsOrError })),
+                                catchError(error => [{ resultsOrError: error }])
+                            )
+                        )
                     )
                 )
                 .subscribe(

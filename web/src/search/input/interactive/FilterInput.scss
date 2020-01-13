@@ -65,6 +65,11 @@ $filter-input-padding: 0.25rem;
     &__radio-label {
         padding: 0 0.25rem;
     }
+
+    &__radio-button-container {
+        display: flex;
+        align-self: flex-end;
+    }
 }
 
 .theme-light {

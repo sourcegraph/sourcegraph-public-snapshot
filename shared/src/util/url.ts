@@ -553,11 +553,29 @@ export function buildSearchURLQuery(
         const caseRegexp = /\bcase:(?<type>yes|no)\b/i
         const newQuery = query.replace(caseRegexp, '')
         searchParams.set('q', newQuery)
-        searchParams.set('case', caseInQuery)
+
+        if (caseInQuery === 'yes') {
+            searchParams.set('case', caseInQuery)
+        } else {
+            // For now, remove case when case:no, since it's the default behavior. Avoids
+            // queries breaking when only `repo:` filters are specified.
+            //
+            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
+            searchParams.delete('case')
+        }
+
         query = newQuery
     } else {
         searchParams.set('q', query)
-        searchParams.set('case', caseSensitive ? 'yes' : 'no')
+        if (caseSensitive) {
+            searchParams.set('case', 'yes')
+        } else {
+            // For now, remove case when case:no, since it's the default behavior. Avoids
+            // queries breaking when only `repo:` filters are specified.
+            //
+            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
+            searchParams.delete('case')
+        }
     }
 
     return searchParams

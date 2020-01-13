@@ -53,7 +53,11 @@ export class RegexpToggle extends React.Component<RegexpToggleProps> {
                 tabIndex={0}
                 data-tooltip={`${isRegexp ? 'Disable' : 'Enable'} regular expressions`}
             >
-                <span className={`query-input2__toggle-icon ${isRegexp ? 'query-input2__toggle-icon--active e2e-regexp-toggle--active' : ''}`}>
+                <span
+                    className={`query-input2__toggle-icon ${
+                        isRegexp ? 'query-input2__toggle-icon--active e2e-regexp-toggle--active' : ''
+                    }`}
+                >
                     <RegexIcon />
                 </span>
             </div>

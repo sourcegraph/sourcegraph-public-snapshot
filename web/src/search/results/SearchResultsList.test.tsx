@@ -113,6 +113,8 @@ describe('SearchResultsList', () => {
         telemetryService: NOOP_TELEMETRY_SERVICE,
         patternType: GQL.SearchPatternType.regexp,
         setPatternType: sinon.spy(),
+        caseSensitive: false,
+        setCaseSensitivity: sinon.spy(),
 
         interactiveSearchMode: false,
         filtersInQuery: {},
