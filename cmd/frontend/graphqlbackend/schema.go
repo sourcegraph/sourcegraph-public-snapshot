@@ -1926,6 +1926,16 @@ type Repository implements Node & GenericSearchResultInterface {
         # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
         after: String
     ): LSIFDumpConnection!
+
+    # A list of authorized users to access this repository with the given permission.
+    authorizedUsers(
+        # Permission that the user has on this repository.
+        perm: RepositoryPermission = READ
+        # Number of users to return after the given cursor.
+        first: Int!
+        # Opaque pagination cursor.
+        after: String
+    ): UserConnection!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.

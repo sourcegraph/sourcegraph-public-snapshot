@@ -53,6 +53,11 @@ type UserResolver struct {
 	user *types.User
 }
 
+// NewUserResolver returns a new UserResolver with given user object.
+func NewUserResolver(user *types.User) *UserResolver {
+	return &UserResolver{user: user}
+}
+
 // UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a
 // non-nil error.
 func UserByID(ctx context.Context, id graphql.ID) (*UserResolver, error) {

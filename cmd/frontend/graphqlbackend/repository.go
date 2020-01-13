@@ -274,6 +274,28 @@ func (r *RepositoryResolver) LSIFDumps(ctx context.Context, args *LSIFDumpsQuery
 	})
 }
 
+type AuthorizedUserArgs struct {
+	RepositoryID graphql.ID
+	Perm         string
+	First        int32
+	After        *string
+}
+
+type RepoAuthorizedUserArgs struct {
+	RepositoryID graphql.ID
+	*AuthorizedUserArgs
+}
+
+func (r *RepositoryResolver) AuthorizedUsers(ctx context.Context, args *AuthorizedUserArgs) (UserConnectionResolver, error) {
+	if EnterpriseResolvers.authzResolver == nil {
+		return nil, authzInEnterprise
+	}
+	return EnterpriseResolvers.authzResolver.AuthorizedUsers(ctx, &RepoAuthorizedUserArgs{
+		RepositoryID:       r.ID(),
+		AuthorizedUserArgs: args,
+	})
+}
+
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
 	Name     *string

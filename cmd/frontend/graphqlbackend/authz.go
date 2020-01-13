@@ -14,6 +14,7 @@ type AuthzResolver interface {
 	SetRepositoryPermissionsForUsers(ctx context.Context, args *RepoPermsArgs) (*EmptyResponse, error)
 	AuthorizedUserRepositories(ctx context.Context, args *AuthorizedRepoArgs) (RepositoryConnectionResolver, error)
 	UsersWithPendingPermissions(ctx context.Context) ([]string, error)
+	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
 }
 
 type RepoPermsArgs struct {
