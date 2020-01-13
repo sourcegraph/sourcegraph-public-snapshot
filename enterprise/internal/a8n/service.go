@@ -783,6 +783,12 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, ErrUpdateProcessingCampaign
 	}
 
+	// Fast path: if we don't update the CampaignPlan, we don't need to rewire
+	// ChangesetJobs, but only update name/description if they changed.
+	if !updatePlanID && updateAttributes {
+		return campaign, tx.ResetChangesetJobs(ctx, campaign.ID)
+	}
+
 	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPlanID, updateAttributes)
 	if err != nil {
 		return nil, nil, err
@@ -862,18 +868,6 @@ func computeCampaignUpdateDiff(
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changesets jobs")
-	}
-
-	// Fast path: if we don't update the CampaignPlan, we don't need to rewire
-	// ChangesetJobs, but only update name/description if they changed.
-	if campaign.CampaignPlanID == oldPlanID && updateAttributes {
-		for _, job := range changesetJobs {
-			job.Error = ""
-			job.StartedAt = time.Time{}
-			job.FinishedAt = time.Time{}
-			diff.Update = append(diff.Update, job)
-		}
-		return diff, nil
 	}
 
 	// We need OnlyFinished and OnlyWithDiff because we don't create

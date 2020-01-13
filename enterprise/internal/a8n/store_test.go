@@ -2260,6 +2260,53 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 			})
+
+			t.Run("ResetChangesetJobs", func(t *testing.T) {
+				campaignID := 12345
+				jobs := []*a8n.ChangesetJob{
+					// completed, no errors
+					{StartedAt: now, FinishedAt: now, ChangesetID: 12345},
+					// completed, error
+					{StartedAt: now, FinishedAt: now, Error: "error1"},
+				}
+
+				for i, j := range jobs {
+					j.CampaignID = int64(campaignID)
+					j.CampaignJobID = int64(i)
+
+					err := s.CreateChangesetJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+				}
+
+				err := s.ResetChangesetJobs(ctx, int64(campaignID))
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != len(jobs) {
+					t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
+				}
+
+				for _, job := range have {
+					if job.Error != "" {
+						t.Errorf("job should be reset but has error: %+v", job.Error)
+					}
+					if !job.FinishedAt.IsZero() {
+						t.Errorf("job should be reset but has FinishedAt: %+v", job.FinishedAt)
+					}
+					if !job.StartedAt.IsZero() {
+						t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
+					}
+				}
+			})
 		})
 	}
 }
