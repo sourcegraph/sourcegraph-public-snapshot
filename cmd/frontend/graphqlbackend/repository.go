@@ -264,13 +264,13 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RepositoryResolver) LSIFDumps(ctx context.Context, args *LSIFDumpsQueryArgs) (LSIFDumpConnectionResolver, error) {
+func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
 	if EnterpriseResolvers.codeIntelResolver == nil {
 		return nil, codeIntelOnlyInEnterprise
 	}
-	return EnterpriseResolvers.codeIntelResolver.LSIFDumps(ctx, &LSIFRepositoryDumpsQueryArgs{
-		LSIFDumpsQueryArgs: args,
-		RepositoryID:       r.ID(),
+	return EnterpriseResolvers.codeIntelResolver.LSIFUploads(ctx, &LSIFRepositoryUploadsQueryArgs{
+		LSIFUploadsQueryArgs: args,
+		RepositoryID:         r.ID(),
 	})
 }
 

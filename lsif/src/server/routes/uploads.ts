@@ -15,45 +15,11 @@ import { UploadManager } from '../../shared/store/uploads'
 export function createUploadRouter(uploadManager: UploadManager): express.Router {
     const router = express.Router()
 
-    router.get(
-        '/uploads/stats',
-        wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
-                res.send(await uploadManager.getCounts())
-            }
-        )
-    )
-
     interface UploadsQueryArgs {
         query: string
+        state?: pgModels.LsifUploadState
+        visibleAtTip?: boolean
     }
-
-    router.get(
-        '/uploads/:state(queued|completed|errored|processing)',
-        validation.validationMiddleware([
-            validation.validateQuery,
-            validation.validateLimit,
-            validation.validateOffset,
-        ]),
-        wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
-                const { query }: UploadsQueryArgs = req.query
-                const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_UPLOAD_PAGE_SIZE)
-                const { uploads, totalCount } = await uploadManager.getUploads(
-                    req.params.state as pgModels.LsifUploadState,
-                    query,
-                    limit,
-                    offset
-                )
-
-                if (offset + uploads.length < totalCount) {
-                    res.set('Link', nextLink(req, { limit, offset: offset + uploads.length }))
-                }
-
-                res.json({ uploads, totalCount })
-            }
-        )
-    )
 
     router.get(
         '/uploads/:id([0-9]+)',
@@ -84,6 +50,37 @@ export function createUploadRouter(uploadManager: UploadManager): express.Router
                 throw Object.assign(new Error('Upload not found'), {
                     status: 404,
                 })
+            }
+        )
+    )
+
+    router.get(
+        '/uploads/:repository',
+        validation.validationMiddleware([
+            validation.validateQuery,
+            validation.validateLsifUploadState,
+            validation.validateOptionalBoolean('visibleAtTip'),
+            validation.validateLimit,
+            validation.validateOffset,
+        ]),
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { query, state, visibleAtTip }: UploadsQueryArgs = req.query
+                const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_UPLOAD_PAGE_SIZE)
+                const { uploads, totalCount } = await uploadManager.getUploads(
+                    decodeURIComponent(req.params.repository),
+                    state,
+                    query,
+                    !!visibleAtTip,
+                    limit,
+                    offset
+                )
+
+                if (offset + uploads.length < totalCount) {
+                    res.set('Link', nextLink(req, { limit, offset: offset + uploads.length }))
+                }
+
+                res.json({ uploads, totalCount })
             }
         )
     )

@@ -13,13 +13,13 @@ type lsifQueryResolver struct {
 	repoName string
 	commit   graphqlbackend.GitObjectID
 	path     string
-	dump     *lsif.LSIFDump
+	upload   *lsif.LSIFUpload
 }
 
 var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
 
 func (r *lsifQueryResolver) Commit(ctx context.Context) (*graphqlbackend.GitCommitResolver, error) {
-	return resolveCommit(ctx, r.repoName, r.dump.Commit)
+	return resolveCommit(ctx, r.repoName, r.upload.Commit)
 }
 
 func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
@@ -29,14 +29,14 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 		Path      string
 		Line      int32
 		Character int32
-		DumpID    int64
+		UploadID  int64
 	}{
 		RepoName:  r.repoName,
 		Commit:    r.commit,
 		Path:      r.path,
 		Line:      args.Line,
 		Character: args.Character,
-		DumpID:    r.dump.ID,
+		UploadID:  r.upload.ID,
 	}
 
 	locations, nextURL, err := client.DefaultClient.Definitions(ctx, opts)
@@ -57,7 +57,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 		Path      string
 		Line      int32
 		Character int32
-		DumpID    int64
+		UploadID  int64
 		Limit     *int32
 		Cursor    *string
 	}{
@@ -66,7 +66,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 		Path:      r.path,
 		Line:      args.Line,
 		Character: args.Character,
-		DumpID:    r.dump.ID,
+		UploadID:  r.upload.ID,
 	}
 	if args.First != nil {
 		opts.Limit = args.First
@@ -98,14 +98,14 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 		Path      string
 		Line      int32
 		Character int32
-		DumpID    int64
+		UploadID  int64
 	}{
 		RepoName:  r.repoName,
 		Commit:    r.commit,
 		Path:      r.path,
 		Line:      args.Line,
 		Character: args.Character,
-		DumpID:    r.dump.ID,
+		UploadID:  r.upload.ID,
 	})
 	if err != nil {
 		return nil, err

@@ -12,8 +12,6 @@ servers:
 tags:
   - name: LSIF
     description: LSIF operations
-  - name: Dumps
-    description: Dump operations
   - name: Uploads
     description: Upload operations
 paths:
@@ -104,7 +102,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Dump'
+                  - $ref: '#/components/schemas/Upload'
                   - type: null
     post:
       description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return true if there is a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
@@ -136,7 +134,6 @@ paths:
             application/json:
               schema:
                 type: boolean
-
   /definitions:
     get:
       description: Get definitions for the symbol at a source position.
@@ -358,241 +355,41 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/Locations'
                   - $ref: '#/components/schemas/Hover'
-  /dumps/{repository}:
+  /uploads/{repository}:
     get:
-      description: Get the LSIF dumps uploaded for a repository ordered by their upload time (newest first).
+      description: Get LSIF uploads by state.
       tags:
-        - Dumps
+        - Uploads
       parameters:
         - name: repository
-          in: path
-          description: The url-encoded repository name.
+          in: query
+          description: The repository name.
           required: true
-          example: github.com%2Fsourcegraph%2Flsif-go
           schema:
             type: string
         - name: query
           in: query
-          description: A search query applied over the commit and root properties.
+          description: A search query applied over repository, commit, root, failure reason, and failure stacktrace properties.
           required: false
           schema:
             type: string
+        - name: state
+          in: query
+          description: The target upload state.
+          required: true
+          schema:
+            type: string
+            enum:
+              - processing
+              - errored
+              - completed
+              - queued
         - name: visibleAtTip
           in: query
           description: If true, only show dumps visible at tip.
           required: false
           schema:
             type: boolean
-        - name: limit
-          in: query
-          description: The maximum number of dumps to return in one page.
-          required: false
-          schema:
-            type: number
-            default: 50
-        - name: offset
-          in: query
-          description: The number of dumps seen on previous pages.
-          required: false
-          schema:
-            type: number
-            default: 0
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Dumps'
-          headers:
-            Link:
-              description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
-              schema:
-                type: string
-  /dumps/{repository}/{id}:
-    get:
-      description: Get an LSIF dump by its identifier.
-      tags:
-        - Dumps
-      parameters:
-        - name: repository
-          in: path
-          description: The url-encoded repository name.
-          required: true
-          example: github.com%2Fsourcegraph%2Flsif-go
-          schema:
-            type: string
-        - name: id
-          in: path
-          description: The dump identifier.
-          required: true
-          schema:
-            type: number
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Dump'
-        '404':
-          description: Not found
-    delete:
-      description: Delete an LSIF dump by its identifier.
-      tags:
-        - Dumps
-      parameters:
-        - name: repository
-          in: path
-          description: The url-encoded repository name.
-          required: true
-          example: github.com%2Fsourcegraph%2Flsif-go
-          schema:
-            type: string
-        - name: id
-          in: path
-          description: The dump identifier.
-          required: true
-          schema:
-            type: number
-      responses:
-        '204':
-          description: No content
-        '404':
-          description: Not found
-  /uploads/stats:
-    get:
-      description: Get the current counts of uploads by their state.
-      tags:
-        - Uploads
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UploadStats'
-  /uploads/{state}:
-    get:
-      description: Get LSIF uploads by state.
-      tags:
-        - Uploads
-      parameters:
-        - name: state
-          in: path
-          description: The target upload state.
-          required: true
-          schema:
-            type: string
-            enum:
-              - processing
-              - errored
-              - completed
-              - queued
-        - name: query
-          in: query
-          description: A search query applied over repository, commit, root, failure reason, and failure stacktrace properties.
-          required: false
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: The maximum number of uploads to return in one page.
-          required: false
-          schema:
-            type: number
-            default: 50
-        - name: offset
-          in: query
-          description: The number of uploads seen on previous pages.
-          required: false
-          schema:
-            type: number
-            default: 0
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Uploads'
-          headers:
-            Link:
-              description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
-              schema:
-                type: string
-  /uploads/{id}:
-    get:
-      description: Get an LSIF upload by its identifier.
-      tags:
-        - Uploads
-      parameters:
-        - name: id
-          in: path
-          description: The upload identifier.
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Upload'
-        '404':
-          description: Not Found
-    delete:
-      description: Delete an LSIF upload by its identifier.
-      tags:
-        - Uploads
-      parameters:
-        - name: id
-          in: path
-          description: The upload identifier.
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: No Content
-        '404':
-          description: Not Found
-  /uploads/stats:
-    get:
-      description: Get the current counts of uploads by their state.
-      tags:
-        - Uploads
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UploadStats'
-  /uploads/{state}:
-    get:
-      description: Get LSIF uploads by state.
-      tags:
-        - Uploads
-      parameters:
-        - name: state
-          in: path
-          description: The target upload state.
-          required: true
-          schema:
-            type: string
-            enum:
-              - processing
-              - errored
-              - completed
-              - queued
-        - name: query
-          in: query
-          description: A search query applied over repository, commit, root, failure reason, and failure stacktrace properties.
-          required: false
-          schema:
-            type: string
         - name: limit
           in: query
           description: The maximum number of uploads to return in one page.
@@ -783,55 +580,6 @@ components:
       required:
         - contents
       additionalProperties: false
-    Dumps:
-      type: object
-      description: A paginated wrapper for a list of dumps.
-      properties:
-        dumps:
-          type: array
-          description: A list of LSIF dumps for a repository.
-          items:
-            $ref: '#/components/schemas/Dump'
-        totalCount:
-          type: number
-          description: The total number of dumps in this set of results.
-      required:
-        - dumps
-        - totalCount
-      additionalProperties: false
-    Dump:
-      type: object
-      description: An LSIF dump.
-      properties:
-        id:
-          type: number
-          description: A unique identifier.
-        repository:
-          type: string
-          description: The repository name.
-        commit:
-          type: string
-          description: The 40-character commit hash.
-        root:
-          type: string
-          description: The root-relative path of the dump.
-        visibleAtTip:
-          type: boolean
-          description: Whether or not this dump can provide global reference code intelligence.
-        uploadedAt:
-          type: string
-          description: An ISO 8601-formatted date and time that the dump was uploaded.
-        processedAt:
-          type: string
-          description: An ISO 8601-formatted date and time that the dump became available for use.
-      required:
-        - id
-        - repository
-        - commit
-        - root
-        - visibleAtTip
-        - uploadedAt
-      additionalProperties: false
     EnqueueResponse:
       type: object
       description: A payload indicating the enqueued upload.
@@ -841,28 +589,6 @@ components:
           description: The upload identifier.
       required:
         - id
-      additionalProperties: false
-    UploadStats:
-      type: object
-      description: An object containing the counts of uploads by state.
-      properties:
-        processingCount:
-          type: number
-          description: The number of uploads being processed.
-        erroredCount:
-          type: number
-          description: The number of errored uploads.
-        completedCount:
-          type: number
-          description: The number of completed uploads.
-        queuedCount:
-          type: number
-          description: The number of queued uploads.
-      required:
-        - processingCount
-        - erroredCount
-        - completedCount
-        - queuedCount
       additionalProperties: false
     Uploads:
       type: object
@@ -923,6 +649,9 @@ components:
           type: string
           description: An ISO 8601-formatted time that the conversion completed or errored.
           nullable: true
+        visibleAtTip:
+          type: boolean
+          description: Whether or not this dump can provide global reference code intelligence.
       required:
         - id
         - repository

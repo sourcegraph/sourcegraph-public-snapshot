@@ -8,7 +8,6 @@ import express from 'express'
 import promClient from 'prom-client'
 import { Backend } from './backend/backend'
 import { Connection } from 'typeorm'
-import { createDumpRouter } from './routes/dumps'
 import { createLogger } from '../shared/logging'
 import { createLsifRouter } from './routes/lsif'
 import { createMetaRouter } from './routes/meta'
@@ -86,7 +85,6 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(createMetaRouter())
-    app.use(createDumpRouter(dumpManager))
     app.use(createUploadRouter(uploadManager))
     app.use(createLsifRouter(backend, uploadManager, logger, tracer))
 

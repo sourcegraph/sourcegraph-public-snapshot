@@ -39,7 +39,7 @@ func TestService(t *testing.T) {
 	}
 
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
-	cf := httpcli.NewHTTPClientFactory()
+	cf := httpcli.NewExternalHTTPClientFactory()
 
 	u, err := db.Users.Create(ctx, testUser)
 	if err != nil {
@@ -231,7 +231,7 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
-		changesetJob, _, err := svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -244,18 +244,21 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if changesetJob.ID != haveJob.ID {
-			t.Errorf("wrong changesetJob: %d. want=%d", changesetJob.ID, haveJob.ID)
-		}
-
 		// Try to create again, check that it's the same one
-		changesetJob2, _, err := svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		haveJob2, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
+			CampaignID:    campaign.ID,
+			CampaignJobID: campaignJob.ID,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if changesetJob2.ID != haveJob.ID {
-			t.Errorf("wrong changesetJob: %d. want=%d", changesetJob2.ID, haveJob.ID)
+		if haveJob2.ID != haveJob.ID {
+			t.Errorf("wrong changesetJob: %d. want=%d", haveJob2.ID, haveJob.ID)
 		}
 	})
 
@@ -349,7 +352,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	}
 
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
-	cf := httpcli.NewHTTPClientFactory()
+	cf := httpcli.NewExternalHTTPClientFactory()
 
 	u, err := db.Users.Create(ctx, testUser)
 	if err != nil {
