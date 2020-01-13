@@ -65,6 +65,10 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader fu
 	if !safe {
 		// Detect language from content
 		n, err := io.ReadFull(rc, buf)
+		if err == io.EOF {
+			// No bytes read, indicating an empty file
+			return Lang{}, nil
+		}
 		if err != nil && err != io.ErrUnexpectedEOF {
 			return lang, errors.Wrap(err, "reading initial file data")
 		}
