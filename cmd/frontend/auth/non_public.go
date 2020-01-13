@@ -101,6 +101,11 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
+	// This is just a redirect to a public download
+	if strings.HasPrefix(req.URL.Path, "/.api/src-cli") {
+		return true
+	}
+
 	// Authentication is performed in the webhook handler itself.
 	if strings.HasPrefix(req.URL.Path, "/.api/github-webhooks") {
 		return true

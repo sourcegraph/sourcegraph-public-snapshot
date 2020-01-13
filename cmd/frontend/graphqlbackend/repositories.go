@@ -70,6 +70,18 @@ func (r *schemaResolver) Repositories(args *struct {
 	}, nil
 }
 
+type TotalCountArgs struct {
+	Precise bool
+}
+
+type RepositoryConnectionResolver interface {
+	Nodes(ctx context.Context) ([]*RepositoryResolver, error)
+	TotalCount(ctx context.Context, args *TotalCountArgs) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
+
 type repositoryConnectionResolver struct {
 	opt             db.ReposListOptions
 	cloned          bool
@@ -215,9 +227,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 	return resolvers, nil
 }
 
-func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *struct {
-	Precise bool
-}) (countptr *int32, err error) {
+func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
 	if isAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx); isAdminErr != nil {
 		if args.Precise {
 			// Only site admins can perform precise counts, because it is a slow operation.

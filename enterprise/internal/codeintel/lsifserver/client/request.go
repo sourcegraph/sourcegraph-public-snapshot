@@ -14,7 +14,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
-	"github.com/tomnomnom/linkheader"
+	"github.com/sourcegraph/sourcegraph/internal/linkheader"
 )
 
 type lsifRequest struct {
@@ -99,9 +99,11 @@ func (c *Client) do(ctx context.Context, lsifRequest *lsifRequest, payload inter
 		}
 	}
 
+	nextURL, _ := linkheader.ExtractNextURL(resp)
+
 	return &lsifResponseMeta{
 		statusCode: resp.StatusCode,
-		nextURL:    extractNextURL(resp),
+		nextURL:    nextURL,
 	}, nil
 }
 
@@ -145,19 +147,6 @@ func buildURL(baseURL, path string, cursor *string, query queryValues) (string, 
 	u.RawQuery = q.Encode()
 
 	return u.String(), nil
-}
-
-// extractNextURL retrieves the URL with rel="next" in the given response's Link
-// header. If the link header is empty or has no rel="next", this method returns an
-// empty string.
-func extractNextURL(resp *http.Response) string {
-	for _, link := range linkheader.Parse(resp.Header.Get("Link")) {
-		if link.Rel == "next" {
-			return link.URL
-		}
-	}
-
-	return ""
 }
 
 type queryValues url.Values
