@@ -51,7 +51,7 @@ describe('DependencyManager', () => {
             root: string,
             identifiers: string[]
         ): Promise<pgModels.LsifDump> => {
-            const dump = await dumpManager.insertDump('foo', commit, root, new Date())
+            const dump = await util.insertDump(connection, dumpManager, 'foo', commit, root)
 
             await dependencyManager.addPackagesAndReferences(
                 dump.id,
@@ -120,7 +120,7 @@ describe('DependencyManager', () => {
             root: string,
             identifiers: string[]
         ): Promise<pgModels.LsifDump> => {
-            const dump = await dumpManager.insertDump('foo', commit, root, new Date())
+            const dump = await util.insertDump(connection, dumpManager, 'foo', commit, root)
 
             await dependencyManager.addPackagesAndReferences(
                 dump.id,
@@ -150,7 +150,7 @@ describe('DependencyManager', () => {
 
             const dump = await updatePackages(util.createCommit(), `r${i}`, ['x', isUse ? 'y' : 'z'])
             dump.visibleAtTip = true
-            await connection.getRepository(pgModels.LsifDump).save(dump)
+            await connection.getRepository(pgModels.LsifUpload).save(dump)
 
             if (isUse) {
                 // Save use ids
@@ -191,9 +191,9 @@ describe('DependencyManager', () => {
             },
         ]
 
-        const dumpa = await dumpManager.insertDump('foo', ca, '', new Date())
-        const dumpb = await dumpManager.insertDump('foo', cb, '', new Date())
-        const dumpc = await dumpManager.insertDump('foo', cc, '', new Date())
+        const dumpa = await util.insertDump(connection, dumpManager, 'foo', ca, '')
+        const dumpb = await util.insertDump(connection, dumpManager, 'foo', cb, '')
+        const dumpc = await util.insertDump(connection, dumpManager, 'foo', cc, '')
 
         await dependencyManager.addPackagesAndReferences(dumpa.id, [], references)
         await dependencyManager.addPackagesAndReferences(dumpb.id, [], references)
@@ -218,9 +218,9 @@ describe('DependencyManager', () => {
             dumpa.visibleAtTip = visibleA
             dumpb.visibleAtTip = visibleB
             dumpc.visibleAtTip = visibleC
-            await connection.getRepository(pgModels.LsifDump).save(dumpa)
-            await connection.getRepository(pgModels.LsifDump).save(dumpb)
-            await connection.getRepository(pgModels.LsifDump).save(dumpc)
+            await connection.getRepository(pgModels.LsifUpload).save(dumpa)
+            await connection.getRepository(pgModels.LsifUpload).save(dumpb)
+            await connection.getRepository(pgModels.LsifUpload).save(dumpc)
         }
 
         // Set a, b visible from tip

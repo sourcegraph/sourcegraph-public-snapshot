@@ -497,6 +497,13 @@ input UpdateCampaignInput {
 
     # The updated description of the campaign as Markdown (if non-null).
     description: String
+
+    # An optional reference to a completed CampaignPlan that was previewed
+    # before updating the Campaign.
+    # If set, the Campaign's changesets will be updated to the Changesets of the given CampaignPlan.
+    # The changesetCreationStatus will be updated accordingly while possibly
+    # new ExternalChangesets are created/updated/closed on the codehosts.
+    plan: ID
 }
 
 # A preview of changes that will be applied by a campaign.
@@ -570,7 +577,7 @@ type Campaign implements Node {
     plan: CampaignPlan
 
     # The current status of creating the campaigns changesets on the code host.
-    changesetCreationStatus: BackgroundProcessStatus
+    changesetCreationStatus: BackgroundProcessStatus!
 
     # The namespace where this campaign is defined.
     namespace: Namespace!

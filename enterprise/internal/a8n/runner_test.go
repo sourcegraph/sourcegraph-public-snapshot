@@ -30,6 +30,68 @@ type refAndTarget struct {
 	target string
 }
 
+func TestConsumePendingCampaignJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	store := NewStoreWithClock(dbconn.Global, clock)
+
+	defaultBranches := []refAndTarget{
+		{"refs/heads/master", "fc21c1a0a79047416c14642b3ca964faba9442e2"},
+	}
+
+	rs := []*repos.Repo{
+		testRepo(0, github.ServiceType),
+	}
+
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	err := reposStore.UpsertRepos(ctx, rs...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	campaignType := &testCampaignType{diff: testDiff, description: testDescription}
+	search := yieldRepos(rs...)
+	commitID := yieldDefaultBranches(defaultBranches)
+	plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+
+	runner := NewRunnerWithClock(store, campaignType, search, commitID, clock)
+	err = runner.CreatePlanAndJobs(ctx, plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// At this point the job has been created an added to the DB
+	// We need to fetch and pass it to runJob. In prod, this is done
+	// in a background process
+	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+		CampaignPlanID: plan.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jobs) != 1 {
+		t.Fatalf("expected 1 job, got %d", len(jobs))
+	}
+	if !jobs[0].FinishedAt.IsZero() {
+		t.Fatalf("job should not be finished")
+	}
+
+	// Launch background worker
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go RunCampaignJobs(ctx, store, clock, 100*time.Millisecond)
+	waitRunner(t, runner)
+}
+
 func TestRunner(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -124,7 +186,7 @@ func TestRunner(t *testing.T) {
 			wantJobs:     wantNoJobs,
 		},
 		{
-			name:         "multi search results and successfull execution",
+			name:         "multi search results and successful execution",
 			search:       yieldRepos(rs...),
 			commitID:     yieldDefaultBranches(defaultBranches),
 			campaignType: &testCampaignType{diff: testDiff, description: testDescription},
@@ -255,12 +317,23 @@ func TestRunner(t *testing.T) {
 			plan := testPlan.Clone()
 
 			runner := NewRunnerWithClock(store, tc.campaignType, tc.search, tc.commitID, clock)
-			err := runner.Run(ctx, plan)
+			err := runner.CreatePlanAndJobs(ctx, plan)
 			if have, want := fmt.Sprint(err), tc.runErr; have != want {
-				t.Fatalf("have runner.Run error: %q\nwant error: %q", have, want)
+				t.Fatalf("have runner.CreatePlanAndJobs error: %q\nwant error: %q", have, want)
+			}
+			// At this point the job has been created an added to the DB
+			// We need to fetch and pass it to runJob. In prod, this is done
+			// in a background process
+			haveJobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+				CampaignPlanID: plan.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
 			}
 
-			waitRunner(t, runner)
+			for i := range haveJobs {
+				runJob(ctx, clock, store, tc.campaignType, haveJobs[i])
+			}
 
 			if tc.wantPlan == nil && plan.ID == 0 {
 				return
@@ -277,13 +350,6 @@ func TestRunner(t *testing.T) {
 			planIgnore := cmpopts.IgnoreFields(a8n.CampaignPlan{}, "ID")
 			if diff := cmp.Diff(havePlan, tc.wantPlan, planIgnore); diff != "" {
 				t.Fatalf("CampaignPlan diff: %s", diff)
-			}
-
-			haveJobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
-				CampaignPlanID: plan.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
 			}
 
 			sort.Slice(haveJobs, func(i, j int) bool {
@@ -320,7 +386,7 @@ index 851b23a..140f333 100644
 +++ b/README.md
 @@ -1,3 +1,4 @@
  # README
- 
+
 +Let's add a line here.
  This file is hostEd at sourcegraph.com and is a test file.
 `
@@ -335,18 +401,21 @@ const testDescription = `Added three important lines:
 func waitRunner(t *testing.T, r *Runner) {
 	t.Helper()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	done := make(chan struct{})
 	go func() {
 		defer func() { close(done) }()
-		err := r.Wait()
+		err := r.Wait(ctx)
 		if err != nil {
 			t.Errorf("runner.Wait failed: %s", err)
 		}
 	}()
 
 	select {
-	case <-time.After(1 * time.Second):
-		t.Fatalf("timeout reached")
+	case <-ctx.Done():
+		t.Fatal(ctx.Err())
 	case <-done:
 	}
 }

@@ -52,10 +52,12 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
             // eslint-disable-next-line react/no-array-index-key
             <ErrorAlert error={error} className="mt-3" key={i} />
         ))}
-        {status.state === GQL.BackgroundProcessState.ERRORED && campaign?.__typename === 'Campaign' && (
-            <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
-                Retry failed jobs
-            </button>
-        )}
+        {status.state === GQL.BackgroundProcessState.ERRORED &&
+            campaign.__typename === 'Campaign' &&
+            !campaign.closedAt && (
+                <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
+                    Retry failed jobs
+                </button>
+            )}
     </>
 )

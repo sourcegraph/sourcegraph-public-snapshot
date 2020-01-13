@@ -62,6 +62,59 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	return &Store{db: tx, now: s.now}, nil
 }
 
+// ProcessPendingCampaignJob attempts to fetch one pending campaign job. If found, 'process'
+// is called. We guarantee that if process is called it will have exclusive global access to the job.
+// All operations on the job should be done using the supplied store as they will run in a transaction.
+// Returning an error will roll back the transaction.
+// NOTE: It should not be called from within an existing transaction
+func (s *Store) ProcessPendingCampaignJob(ctx context.Context, process func(ctx context.Context, s *Store, job a8n.CampaignJob) error) (didRun bool, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "starting transaction")
+	}
+	defer tx.Done(&err)
+	q := sqlf.Sprintf(getPendingCampaignJobQuery)
+	var job a8n.CampaignJob
+	_, count, err := tx.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		err = scanCampaignJob(&job, sc)
+		if err != nil {
+			return 0, 0, errors.Wrap(err, "scanning campaign job row")
+		}
+		return job.ID, 1, nil
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "querying for pending campaign job")
+	}
+	if count == 0 {
+		return false, nil
+	}
+	err = process(ctx, tx, job)
+	return true, err
+}
+
+const getPendingCampaignJobQuery = `
+UPDATE campaign_jobs c SET started_at = now() WHERE id = (
+	SELECT c.id FROM campaign_jobs c
+	JOIN campaign_plans p on p.id = c.campaign_plan_id
+	WHERE c.started_at is null
+	AND p.canceled_at is null
+	ORDER BY c.id ASC
+	FOR UPDATE SKIP LOCKED LIMIT 1
+)
+RETURNING c.id,
+  c.campaign_plan_id,
+  c.repo_id,
+  c.rev,
+  c.base_ref,
+  c.diff,
+  c.description,
+  c.error,
+  c.started_at,
+  c.finished_at,
+  c.created_at,
+  c.updated_at
+`
+
 // Done terminates the underlying Tx in a Store either by committing or rolling
 // back based on the value pointed to by the first given error pointer.
 // It's a no-op if the `Store` is not operating within a transaction,
@@ -1596,6 +1649,8 @@ func listCampaignPlansQuery(opts *ListCampaignPlansOpts) *sqlf.Query {
 }
 
 // CreateCampaignJob creates the given CampaignJob.
+// Due to a unique constraint in the DB it is safe to call this more than once
+// with the same input. Only one job will be added and the other calls will return an error
 func (s *Store) CreateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error {
 	q, err := s.createCampaignJobQuery(c)
 	if err != nil {
@@ -1756,7 +1811,7 @@ type CountCampaignJobsOpts struct {
 	OnlyUnpublishedInCampaign int64
 }
 
-// CountCampaignJobs returns the number of code mods in the database.
+// CountCampaignJobs returns the number of CampaignJobs in the database.
 func (s *Store) CountCampaignJobs(ctx context.Context, opts CountCampaignJobsOpts) (count int64, _ error) {
 	q := countCampaignJobsQuery(&opts)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
@@ -2272,23 +2327,49 @@ func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
 }
 
 // ResetFailedChangesetJobs resets the Error, StartedAt and FinishedAt fields
-// of the ChangesetJobs belonging to the Campaign with the given ID.
+// of the ChangesetJobs belonging to the Campaign with the given ID that
+// resulted in an error.
 func (s *Store) ResetFailedChangesetJobs(ctx context.Context, campaignID int64) (err error) {
-	q := sqlf.Sprintf(resetFailedChangesetJobsQueryFmtstr, campaignID)
+	q := resetChangesetJobsQuery(campaignID, true)
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		return 0, 1, nil
 	})
 }
 
-var resetFailedChangesetJobsQueryFmtstr = `
--- source: internal/a8n/store.go:ResetFailedChangesetJobs
+// ResetChangesetJobs resets the Error, StartedAt and FinishedAt fields
+// of all ChangesetJobs belonging to the Campaign with the given ID.
+func (s *Store) ResetChangesetJobs(ctx context.Context, campaignID int64) (err error) {
+	q := resetChangesetJobsQuery(campaignID, false)
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		return 0, 1, nil
+	})
+}
+
+func resetChangesetJobsQuery(campaignID int64, onlyErrored bool) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("campaign_id = %s", campaignID),
+	}
+
+	if onlyErrored {
+		preds = append(preds, sqlf.Sprintf("error != ''"))
+	}
+
+	return sqlf.Sprintf(
+		resetChangesetJobsQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+	)
+}
+
+var resetChangesetJobsQueryFmtstr = `
+-- source: internal/a8n/store.go:resetChangesetJobsQuery
 UPDATE changeset_jobs
 SET
   error = '',
   started_at = NULL,
   finished_at = NULL
-WHERE campaign_id = %s
+WHERE %s
 `
 
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {

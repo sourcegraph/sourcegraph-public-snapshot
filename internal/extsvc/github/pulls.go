@@ -395,6 +395,58 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 	return pr, nil
 }
 
+type UpdatePullRequestInput struct {
+	// The Node ID of the pull request.
+	PullRequestID string `json:"pullRequestId"`
+	// The name of the branch you want your changes pulled into. This should be
+	// an existing branch on the current repository.
+	BaseRefName string `json:"baseRefName"`
+	// The title of the pull request.
+	Title string `json:"title"`
+	// The body of the pull request (optional).
+	Body string `json:"body"`
+}
+
+// UpdatePullRequest creates a PullRequest on Github.
+func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString(`mutation	UpdatePullRequest($input:UpdatePullRequestInput!) {
+  updatePullRequest(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
+
+	var result struct {
+		UpdatePullRequest struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems struct{ Nodes []TimelineItem }
+			} `json:"pullRequest"`
+		} `json:"updatePullRequest"`
+	}
+
+	input := map[string]interface{}{"input": in}
+	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	if err != nil {
+		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
+			e := gqlErrs[0]
+			if strings.Contains(e.Message, "A pull request already exists for") {
+				return nil, ErrPullRequestAlreadyExists
+			}
+		}
+		return nil, err
+	}
+
+	pr := &result.UpdatePullRequest.PullRequest.PullRequest
+	pr.TimelineItems = result.UpdatePullRequest.PullRequest.TimelineItems.Nodes
+	pr.Participants = result.UpdatePullRequest.PullRequest.Participants.Nodes
+	return pr, nil
+}
+
 // ClosePullRequest closes the PullRequest on Github.
 func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	var q strings.Builder
