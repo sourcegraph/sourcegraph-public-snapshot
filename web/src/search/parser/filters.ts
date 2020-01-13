@@ -9,6 +9,30 @@ export interface FilterDefinition {
     default?: string
 }
 
+const LANGUAGES: string[] = [
+    'c',
+    'cpp',
+    'csharp',
+    'css',
+    'go',
+    'graphql',
+    'haskell',
+    'html',
+    'java',
+    'javascript',
+    'json',
+    'lua',
+    'markdown',
+    'php',
+    'powershell',
+    'python',
+    'r',
+    'ruby',
+    'sass',
+    'swift',
+    'typescript',
+]
+
 export const FILTERS: readonly FilterDefinition[] = [
     {
         aliases: ['r', 'repo'],
@@ -62,12 +86,12 @@ export const FILTERS: readonly FilterDefinition[] = [
     {
         aliases: ['lang'],
         description: 'Include only results from the given language',
-        discreteValues: ['ts', 'go', 'js', 'cpp'],
+        discreteValues: LANGUAGES,
     },
     {
         aliases: ['-lang'],
         description: 'Exclude results from the given language',
-        discreteValues: ['ts', 'go', 'js', 'cpp'],
+        discreteValues: LANGUAGES,
     },
     {
         aliases: ['fork'],
