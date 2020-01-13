@@ -1,0 +1,30 @@
+.monaco-query-input-container {
+    position: relative;
+    border: 1px solid $input-border-color;
+    box-sizing: border-box;
+    &:focus-within {
+        border: 1px solid $input-focus-border-color;
+        box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+    }
+    .monaco-editor {
+        .decorationsOverviewRuler {
+            display: none;
+        }
+        .view-overlays {
+            .current-line {
+                border: none;
+            }
+        }
+        .view-lines {
+            border: none;
+        }
+        .monaco-editor-background {
+            width: 100% !important;
+        }
+        .monaco-editor-hover-content {
+            .status-bar {
+                display: none;
+            }
+        }
+    }
+}
