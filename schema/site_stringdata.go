@@ -107,6 +107,12 @@ const SiteSchemaJSON = `{
               "default": false
             }
           }
+        },
+        "codeIntelIndicators": {
+          "description": "Enables the UI indicators for code intelligence precision.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         }
       },
       "group": "Experimental",

@@ -334,6 +334,8 @@ type ExperimentalFeatures struct {
 	Automation string `json:"automation,omitempty"`
 	// BitbucketServerFastPerm description: Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. This requires the installation of the Bitbucket Server Sourcegraph plugin. Warning: there may be performance degradation under significant load.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
+	// CodeIntelIndicators description: Enables the UI indicators for code intelligence precision.
+	CodeIntelIndicators string `json:"codeIntelIndicators,omitempty"`
 	// Discussions description: Enables the code discussions experiment.
 	Discussions string `json:"discussions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
@@ -814,6 +816,8 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
+	// CodeIntelIndicators description: Enables the UI indicators for code intelligence precision.
+	CodeIntelIndicators *bool `json:"codeIntelIndicators,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
