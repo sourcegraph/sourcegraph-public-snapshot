@@ -18,7 +18,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -63,7 +65,7 @@ func checkSpecArgSafety(spec string) error {
 // runWithRemoteOpts runs the command after applying the remote options.
 // If progress is not nil, all output is written to it in a separate goroutine.
 func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	configureGitCommand(cmd)
+	configureRemoteGitCommand(cmd, conf.Get().ExperimentalFeatures.TlsExternal)
 
 	var b interface {
 		Bytes() []byte
@@ -93,7 +95,7 @@ func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) (
 	return b.Bytes(), err
 }
 
-func configureGitCommand(cmd *exec.Cmd) {
+func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *schema.TlsExternal) {
 	if cmd.Args[0] != "git" {
 		panic("Only git commands are supported")
 	}
@@ -105,6 +107,12 @@ func configureGitCommand(cmd *exec.Cmd) {
 	//
 	// And set a timeout to avoid indefinite hangs if the server is unreachable.
 	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
+
+	if tlsConf != nil {
+		if tlsConf.InsecureSkipVerify {
+			cmd.Env = append(cmd.Env, "GIT_SSL_NO_VERIFY=true")
+		}
+	}
 
 	extraArgs := []string{
 		// Unset credential helper because the command is non-interactive.
