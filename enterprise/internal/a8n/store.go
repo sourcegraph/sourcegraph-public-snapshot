@@ -96,11 +96,11 @@ func (s *Store) ProcessPendingChangesetJobs(ctx context.Context, process func(ct
 const getPendingChangesetJobQuery = `
 UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	SELECT j.id FROM changeset_jobs j
-	JOIN campaigns c on c.id = j.campaign_id
-	JOIN campaign_plans p on p.id = c.campaign_plan_id
-	WHERE j.started_at is null
-	AND p.canceled_at is null
-	AND c.published_at is not null
+	JOIN campaigns c ON c.id = j.campaign_id
+	JOIN campaign_plans p ON p.id = c.campaign_plan_id
+	WHERE j.started_at IS NULL
+	AND p.canceled_at IS NULL
+	AND c.published_at IS NOT NULL
 	ORDER BY j.id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
@@ -148,9 +148,9 @@ func (s *Store) ProcessPendingCampaignJob(ctx context.Context, process func(ctx 
 const getPendingCampaignJobQuery = `
 UPDATE campaign_jobs c SET started_at = now() WHERE id = (
 	SELECT c.id FROM campaign_jobs c
-	JOIN campaign_plans p on p.id = c.campaign_plan_id
-	WHERE c.started_at is null
-	AND p.canceled_at is null
+	JOIN campaign_plans p ON p.id = c.campaign_plan_id
+	WHERE c.started_at IS NULL
+	AND p.canceled_at IS NULL
 	ORDER BY c.id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
