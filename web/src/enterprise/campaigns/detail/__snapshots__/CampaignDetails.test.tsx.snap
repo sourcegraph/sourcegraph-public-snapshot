@@ -228,6 +228,16 @@ Array [
         "updatedAt": "2020-01-01",
       }
     }
+    changesetUpdates={
+      Subject {
+        "_isScalar": false,
+        "closed": false,
+        "hasError": false,
+        "isStopped": false,
+        "observers": Array [],
+        "thrownError": null,
+      }
+    }
     className="mt-3"
     history={
       Object {
@@ -507,6 +517,16 @@ Array [
           "state": "PROCESSING",
         },
         "updatedAt": "2020-01-01",
+      }
+    }
+    changesetUpdates={
+      Subject {
+        "_isScalar": false,
+        "closed": false,
+        "hasError": false,
+        "isStopped": false,
+        "observers": Array [],
+        "thrownError": null,
       }
     }
     className="mt-3"

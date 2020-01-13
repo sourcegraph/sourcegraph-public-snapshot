@@ -546,6 +546,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 <CampaignTabs
                     campaign={campaign}
                     changesetUpdates={changesetUpdates}
+                    campaignUpdates={campaignUpdates}
                     persistLines={campaign.__typename === 'Campaign'}
                     history={history}
                     location={location}

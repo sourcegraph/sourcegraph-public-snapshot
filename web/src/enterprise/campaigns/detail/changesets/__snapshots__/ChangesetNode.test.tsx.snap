@@ -34,6 +34,11 @@ exports[`ChangesetNode renders a changesetplan 1`] = `
           </a>
            
           <span
+            className="badge badge-light"
+          >
+            Draft
+          </span>
+          <span
             className="mx-1"
           />
            
@@ -85,6 +90,15 @@ exports[`ChangesetNode renders a changesetplan 1`] = `
           />
         </div>
       </span>
+      <button
+        className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary"
+        disabled={false}
+        onClick={[Function]}
+        type="button"
+      >
+         
+        Publish
+      </button>
     </div>
   </div>
 </li>

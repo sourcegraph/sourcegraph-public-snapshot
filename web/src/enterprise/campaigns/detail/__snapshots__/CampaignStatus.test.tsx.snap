@@ -2,6 +2,22 @@
 
 exports[`CampaignStatus campaign errored 1`] = `
 <React.Fragment>
+  <React.Fragment>
+    <div
+      className="d-flex my-3"
+    >
+      <Memo(InformationIcon)
+        className="icon-inline text-info mr-1"
+      />
+       Campaign is drafted
+    </div>
+    <button
+      className="mb-3 btn btn-primary"
+      type="button"
+    >
+      Publish campaign
+    </button>
+  </React.Fragment>
   <div
     className="d-flex my-3"
   >
@@ -76,6 +92,22 @@ exports[`CampaignStatus campaign processing 1`] = `
       6
     </span>
   </div>
+  <React.Fragment>
+    <div
+      className="d-flex my-3"
+    >
+      <Memo(InformationIcon)
+        className="icon-inline text-info mr-1"
+      />
+       Campaign is drafted
+    </div>
+    <button
+      className="mb-3 btn btn-primary"
+      type="button"
+    >
+      Publish campaign
+    </button>
+  </React.Fragment>
   <ErrorAlert
     className="mt-3"
     error="a"
