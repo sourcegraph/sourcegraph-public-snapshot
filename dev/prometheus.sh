@@ -49,5 +49,6 @@ docker run --rm ${NET_ARG} --cidfile ${CID_FILE} \
     -p 0.0.0.0:9090:9090 \
     -v ${PROMETHEUS_DISK}:/prometheus \
     -v ${CONFIG_DIR}:/sg_prometheus_add_ons \
+    -e PROMETHEUS_ADDITIONAL_FLAGS=--web.enable-lifecycle \
     ${IMAGE} >> ${PROMETHEUS_DISK}/logs/prometheus.log 2>&1 &
 wait $!

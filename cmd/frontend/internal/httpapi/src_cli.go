@@ -1,0 +1,61 @@
+package httpapi
+
+import (
+	"net/http"
+	"path"
+
+	"github.com/gorilla/mux"
+	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
+	log15 "gopkg.in/inconshreveable/log15.v2"
+)
+
+var srcCliDownloadsURL = "https://github.com/sourcegraph/src-cli/releases/download"
+
+var whitelistedFilenames = []string{
+	"src_darwin_amd64",
+	"src_linux_amd64",
+	"src_windows_amd64.exe",
+}
+
+func srcCliVersionServe(w http.ResponseWriter, r *http.Request) error {
+	return writeJSON(w, &struct {
+		Version string `json:"version"`
+	}{
+		Version: srcCliVersion(),
+	})
+}
+
+func srcCliDownloadServe(w http.ResponseWriter, r *http.Request) error {
+	filename := mux.Vars(r)["rest"]
+	if !isExpectedRelease(filename) {
+		http.NotFound(w, r)
+		return nil
+	}
+
+	target := path.Join(srcCliDownloadsURL, srcCliVersion(), filename)
+	http.Redirect(w, r, target, http.StatusFound)
+	return nil
+}
+
+func srcCliVersion() string {
+	version, err := srccli.Version()
+	if err != nil {
+		// If we can't recommend a more specific version, just recommend the minimum version.
+		// This is always safe, but may not include some newer features released via patch.
+		// Use of the src-cli will warn users about an update once any transient error
+		// resolves.
+		log15.Warn("Failed to retrieve latest src-cli version", "err", err)
+		return srccli.MinimumVersion
+	}
+
+	return version
+}
+
+func isExpectedRelease(filename string) bool {
+	for _, v := range whitelistedFilenames {
+		if filename == v {
+			return true
+		}
+	}
+	return false
+}

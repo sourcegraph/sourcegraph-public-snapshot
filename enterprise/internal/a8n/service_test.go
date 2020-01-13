@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -321,17 +322,15 @@ func TestService(t *testing.T) {
 				newName := "this is a new campaign name"
 				args := UpdateCampaignArgs{Campaign: campaign.ID, Name: &newName}
 
-				updatedCampaign, err := svc.UpdateCampaign(ctx, args)
+				updatedCampaign, _, err := svc.UpdateCampaign(ctx, args)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 				}
 
-				fmt.Printf("tc.err=%q\n", tc.err)
 				if tc.err != "<nil>" {
 					return
 				}
 
-				fmt.Printf("updatedCampaign=%+v\n", updatedCampaign)
 				if updatedCampaign.Name != newName {
 					t.Errorf("Name not updated. want=%q, have=%q", newName, updatedCampaign.Name)
 				}
@@ -645,7 +644,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 			// Update the Campaign
 			args := tt.args(campaign.ID, newPlan.ID)
-			updatedCampaign, err := svc.UpdateCampaign(ctx, args)
+			updatedCampaign, detachedChangesets, err := svc.UpdateCampaign(ctx, args)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -761,23 +760,20 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				return
 			}
 
-			wantDetachedChangesetIDs := make([]int64, 0, len(detachedCampaignJobs))
+			wantIDs := make([]int64, 0, len(detachedCampaignJobs))
 			for _, c := range oldChangesets {
 				for _, job := range detachedCampaignJobs {
 					if c.RepoID == job.RepoID {
-						wantDetachedChangesetIDs = append(wantDetachedChangesetIDs, c.ID)
+						wantIDs = append(wantIDs, c.ID)
 					}
 				}
 			}
-			if len(wantDetachedChangesetIDs) != len(detachedCampaignJobs) {
+			if len(wantIDs) != len(detachedCampaignJobs) {
 				t.Fatalf("could not find old changeset to be detached")
 			}
 
-			changesets, _, err = store.ListChangesets(ctx, ListChangesetsOpts{IDs: wantDetachedChangesetIDs})
-			if err != nil {
-				t.Fatal(err)
-			}
-			for _, c := range changesets {
+			haveIDs := make([]int64, 0, len(detachedChangesets))
+			for _, c := range detachedChangesets {
 				if len(c.CampaignIDs) != 0 {
 					t.Fatalf("old changeset still attached to campaign")
 				}
@@ -786,6 +782,13 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 						t.Fatalf("old changeset still attached to campaign")
 					}
 				}
+				haveIDs = append(haveIDs, c.ID)
+			}
+			sort.Slice(wantIDs, func(i, j int) bool { return wantIDs[i] < wantIDs[j] })
+			sort.Slice(haveIDs, func(i, j int) bool { return haveIDs[i] < haveIDs[j] })
+
+			if diff := cmp.Diff(haveIDs, wantIDs); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}
