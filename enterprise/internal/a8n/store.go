@@ -64,7 +64,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 
 // ProcessPendingChangesetJobs attempts to fetch one pending changeset job.
 // A pending job is one that has never been started, its campaign is published and its plan is not cancelled.
-// If found, 'process 'is called. We guarantee that if process is called it will have exclusive global access to
+// If found, 'process' is called. We guarantee that if process is called it will have exclusive global access to
 // the job. All operations on the job should be done using the supplied store as they will run in a transaction.
 // Returning an error will roll back the transaction.
 // NOTE: It should not be called from within an existing transaction
