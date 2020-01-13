@@ -73,6 +73,7 @@ exports[`CampaignDetails creation form 1`] = `
     <React.Fragment>
       <button
         className="btn btn-primary"
+        disabled={false}
         type="submit"
       >
         Create
@@ -187,7 +188,7 @@ Array [
       }
     />
   </form>,
-  "CampaignStatus(state=PROCESSING)",
+  "",
   <h3>
     Progress
   </h3>,
@@ -468,7 +469,7 @@ Array [
       }
     />
   </form>,
-  "CampaignStatus(state=PROCESSING)",
+  "",
   <h3>
     Progress
   </h3>,

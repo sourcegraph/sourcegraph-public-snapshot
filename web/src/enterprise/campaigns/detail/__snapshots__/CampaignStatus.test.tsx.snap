@@ -37,7 +37,7 @@ exports[`CampaignStatus campaign plan processing 1`] = `
     className="mt-3 e2e-preview-loading campaign-status__progress-indicator"
   >
     <div
-      className="progress"
+      className="progress mb-1"
     >
       <div
         className="progress-bar"
@@ -52,7 +52,7 @@ exports[`CampaignStatus campaign plan processing 1`] = `
     </div>
     <p>
       Computing
-       changesets:
+       changes:
        
       3
        / 
@@ -76,7 +76,7 @@ exports[`CampaignStatus campaign processing 1`] = `
     className="mt-3 e2e-preview-loading campaign-status__progress-indicator"
   >
     <div
-      className="progress"
+      className="progress mb-1"
     >
       <div
         className="progress-bar"
@@ -91,7 +91,7 @@ exports[`CampaignStatus campaign processing 1`] = `
     </div>
     <p>
       Creating
-       changesets:
+       changes:
        
       3
        / 

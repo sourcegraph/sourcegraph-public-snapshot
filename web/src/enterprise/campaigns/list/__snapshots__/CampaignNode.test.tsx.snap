@@ -40,7 +40,7 @@ exports[`CampaignNode renders a campaign node 1`] = `
         </small>
       </div>
       <div
-        className="text-truncate markdown"
+        className="text-truncate text-muted markdown"
         dangerouslySetInnerHTML={
           Object {
             "__html": "Removes lodash
