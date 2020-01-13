@@ -70,7 +70,7 @@ func TestConsumePendingCampaignJobs(t *testing.T) {
 	}
 
 	// At this point the job has been created an added to the DB
-	// We need to fetch and pass it to runJob. In prod, this is done
+	// We need to fetch and pass it to runCampaignJob. In prod, this is done
 	// in a background process
 	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: plan.ID,
@@ -322,7 +322,7 @@ func TestRunner(t *testing.T) {
 				t.Fatalf("have runner.CreatePlanAndJobs error: %q\nwant error: %q", have, want)
 			}
 			// At this point the job has been created an added to the DB
-			// We need to fetch and pass it to runJob. In prod, this is done
+			// We need to fetch and pass it to runCampaignJob. In prod, this is done
 			// in a background process
 			haveJobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 				CampaignPlanID: plan.ID,
@@ -332,7 +332,7 @@ func TestRunner(t *testing.T) {
 			}
 
 			for i := range haveJobs {
-				runJob(ctx, clock, store, tc.campaignType, haveJobs[i])
+				runCampaignJob(ctx, clock, store, tc.campaignType, haveJobs[i])
 			}
 
 			if tc.wantPlan == nil && plan.ID == 0 {

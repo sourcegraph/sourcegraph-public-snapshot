@@ -49,7 +49,7 @@ describe('CampaignDetails', () => {
                     plan: { type: 'comby', arguments: '{}' },
                     changesets: { nodes: [] as GQL.IExternalChangeset[], totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
-                    changesetCreationStatus: {
+                    status: {
                         __typename: 'BackgroundProcessStatus',
                         completedCount: 3,
                         pendingCount: 3,

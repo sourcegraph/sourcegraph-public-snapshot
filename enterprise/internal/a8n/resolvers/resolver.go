@@ -237,16 +237,6 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	if !draft {
-		go func() {
-			ctx := trace.ContextWithTrace(context.Background(), tr)
-			err := svc.RunChangesetJobs(ctx, campaign)
-			if err != nil {
-				log15.Error("RunChangesetJobs", "err", err)
-			}
-		}()
-	}
-
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
@@ -290,14 +280,6 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	if err != nil {
 		return nil, err
 	}
-
-	go func() {
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		err := svc.RunChangesetJobs(ctx, campaign)
-		if err != nil {
-			log15.Error("RunChangesetJobs", "err", err)
-		}
-	}()
 
 	if detachedChangesets != nil {
 		go func() {
@@ -361,15 +343,6 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 	if err != nil {
 		return nil, errors.Wrap(err, "resetting failed changeset jobs")
 	}
-
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	go func() {
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		err := svc.RunChangesetJobs(ctx, campaign)
-		if err != nil {
-			log15.Error("RunChangesetJobs", "err", err)
-		}
-	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
@@ -686,14 +659,6 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 		return nil, errors.Wrap(err, "closing campaign")
 	}
 
-	go func() {
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		err := svc.RunChangesetJobs(ctx, campaign)
-		if err != nil {
-			log15.Error("RunChangesetJobs", "err", err)
-		}
-	}()
-
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
@@ -715,22 +680,10 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	changesetJob, campaign, err := svc.CreateChangesetJobForCampaignJob(ctx, campaignJobID)
+	err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJobID)
 	if err != nil {
 		return nil, err
 	}
-
-	if changesetJob.SuccessfullyCompleted() {
-		return &graphqlbackend.EmptyResponse{}, nil
-	}
-
-	go func() {
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		err := svc.RunChangesetJob(ctx, campaign, changesetJob)
-		if err != nil {
-			log15.Error("RunChangesetJobs", "err", err)
-		}
-	}()
 
 	return &graphqlbackend.EmptyResponse{}, nil
 }

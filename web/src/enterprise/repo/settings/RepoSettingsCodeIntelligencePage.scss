@@ -45,3 +45,12 @@
         }
     }
 }
+
+.lsif-uploads-filter-toggle {
+    // Take the remaining space in the radio button row
+    flex: 1 1 auto;
+
+    &-label {
+        float: right;
+    }
+}

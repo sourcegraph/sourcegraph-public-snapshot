@@ -110,10 +110,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             // todo(a8n): why does this not unsubscribe when takeWhile is in outer pipe
                                             takeWhile(
                                                 () =>
-                                                    !!currentCampaign &&
-                                                    !!currentCampaign.changesetCreationStatus &&
-                                                    currentCampaign.changesetCreationStatus.state ===
-                                                        GQL.BackgroundProcessState.PROCESSING
+                                                    currentCampaign?.status?.state ===
+                                                    GQL.BackgroundProcessState.PROCESSING
                                             ),
                                             delay(2000)
                                         )
@@ -214,12 +212,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }, [nextPreviewCampaignPlan, planID])
 
-    const status = campaign
-        ? campaign.__typename === 'Campaign'
-            ? campaign.changesetCreationStatus
-            : campaign.status
-        : null
-
     // Tracks if a refresh of the campaignPlan is required before the campaign can be created
     const previewRefreshNeeded = useMemo(() => {
         const currentSpec =
@@ -227,9 +219,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
         return (
             (campaignPlanSpec?.arguments && !isEqual(currentSpec, parseJSONC(campaignPlanSpec.arguments))) ||
-            (status && status.state !== GQL.BackgroundProcessState.COMPLETED)
+            (campaign && campaign.status.state !== GQL.BackgroundProcessState.COMPLETED)
         )
-    }, [campaign, campaignPlanSpec, status])
+    }, [campaign, campaignPlanSpec])
 
     if (campaign === undefined && campaignID) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -511,10 +503,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             </Form>
 
             {/* is already created or a preview is available */}
-
             {campaign && (
                 <>
-                    {status && <CampaignStatus campaign={campaign} status={status} onRetry={onRetry} />}
+                    {status && <CampaignStatus campaign={campaign} status={campaign.status} onRetry={onRetry} />}
 
                     {campaign.__typename === 'Campaign' && (
                         <>
