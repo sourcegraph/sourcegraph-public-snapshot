@@ -52,7 +52,7 @@ export function replaceRevisionInURL(href: string, newRev: string): string {
     const parsed = parseBrowserRepoURL(href)
     const repoRev = `/${encodeRepoRev(parsed.repoName, parsed.rev)}`
 
-    const u = new URL(window.location.href)
+    const u = new URL(href)
     u.pathname = `/${encodeRepoRev(parsed.repoName, newRev)}${u.pathname.slice(repoRev.length)}`
     return `${u.pathname}${u.search}${u.hash}`
 }
