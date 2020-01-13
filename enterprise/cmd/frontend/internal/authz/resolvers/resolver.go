@@ -12,20 +12,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-type Resolver struct{}
+type Resolver struct {
+	store *iauthz.Store
+}
 
 var _ graphqlbackend.AuthzResolver = &Resolver{}
 
 func NewResolver() graphqlbackend.AuthzResolver {
-	return &Resolver{}
+	return &Resolver{
+		store: iauthz.NewStore(dbconn.Global, time.Now),
+	}
 }
 
-func (*Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -98,12 +104,78 @@ func (*Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *gra
 		pendingBindIDs = append(pendingBindIDs, id)
 	}
 
-	s := iauthz.NewStore(dbconn.Global, time.Now)
-	if err = s.SetRepoPermissions(ctx, p); err != nil {
+	// Note: We're not wrapping these two operations in a transaction because PostgreSQL 9.6 (the minimal version
+	// we support) does not support nested transactions. Besides, these two operations will acquire row-level locks
+	// over 4 tables, which could greatly increase chances of causing deadlocks with other methods. Practically,
+	// the result of SetRepoPermissions is much more important because it takes effect immediately. If the call of
+	// the SetRepoPendingPermissions method failed, a retry from client won't hurt.
+	if err = r.store.SetRepoPermissions(ctx, p); err != nil {
 		return nil, err
-	} else if err = s.SetRepoPendingPermissions(ctx, pendingBindIDs, p); err != nil {
+	} else if err = r.store.SetRepoPendingPermissions(ctx, pendingBindIDs, p); err != nil {
 		return nil, err
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	cfg := conf.Get().SiteConfiguration
+	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
+		return nil, errors.New("permissions user mapping is not enabled")
+	}
+
+	var (
+		err    error
+		bindID string
+		user   *types.User
+	)
+	if args.Email != nil {
+		bindID = *args.Email
+		user, err = db.Users.GetByVerifiedEmail(ctx, *args.Email)
+	} else if args.Username != nil {
+		bindID = *args.Username
+		user, err = db.Users.GetByUsername(ctx, *args.Username)
+	} else {
+		return nil, errors.New("neither email nor username is given to identify a user")
+	}
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	}
+
+	var ids *roaring.Bitmap
+	if user != nil {
+		p := &iauthz.UserPermissions{
+			UserID:   user.ID,
+			Perm:     authz.Read, // Note: We currently only support read for repository permissions.
+			Type:     iauthz.PermRepos,
+			Provider: iauthz.ProviderSourcegraph,
+		}
+		err = r.store.LoadUserPermissions(ctx, p)
+		ids = p.IDs
+	} else {
+		p := &iauthz.UserPendingPermissions{
+			BindID: bindID,
+			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+			Type:   iauthz.PermRepos,
+		}
+		err = r.store.LoadUserPendingPermissions(ctx, p)
+		ids = p.IDs
+	}
+	if err != nil && err != iauthz.ErrNotFound {
+		return nil, err
+	}
+	if ids == nil {
+		ids = roaring.NewBitmap()
+	}
+
+	return &repositoryConnectionResolver{
+		ids:   ids,
+		first: args.First,
+		after: args.After,
+	}, nil
 }

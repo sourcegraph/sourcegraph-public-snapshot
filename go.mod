@@ -8,6 +8,7 @@ require (
 	cloud.google.com/go/pubsub v1.1.0
 	cloud.google.com/go/storage v1.4.0 // indirect
 	github.com/DataDog/zstd v1.4.4 // indirect
+	github.com/Masterminds/semver v1.5.0
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/RoaringBitmap/roaring v0.4.21

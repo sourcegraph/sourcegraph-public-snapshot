@@ -342,7 +342,7 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 		Kind:        req.ExternalService.Kind,
 		DisplayName: req.ExternalService.DisplayName,
 		Config:      req.ExternalService.Config,
-	}, httpcli.NewHTTPClientFactory())
+	}, httpcli.NewExternalHTTPClientFactory())
 	if err != nil {
 		return err
 	}
