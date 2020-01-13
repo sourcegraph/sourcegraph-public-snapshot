@@ -12,7 +12,6 @@ import { IFileMatch, IMatchItem } from './FileMatch'
 import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
 import { BadgeAttachment } from './BadgeAttachment'
-import { useEffect } from '@storybook/addons'
 import { isErrorLike } from '../util/errors'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
