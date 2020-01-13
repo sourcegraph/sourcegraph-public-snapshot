@@ -122,3 +122,5 @@ libsqlite3-pcre.so
 docker-images/prometheus/config/prometheus_targets.yml
 
 comment.txt
+
+.eslintcache

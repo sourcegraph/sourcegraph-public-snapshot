@@ -738,6 +738,7 @@ describe('e2e test suite', () => {
                     repoPath: '/github.com/sourcegraph/java-langserver@03efbe9558acc532e88f5288b4e6cfa155c6f2dc',
                     filePath: '/tree/src/main/java/com/sourcegraph/common',
                     symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java#L14:20-14:26',
+                    skip: true,
                 },
                 {
                     name:
@@ -745,17 +746,20 @@ describe('e2e test suite', () => {
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/examples',
                     symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go#L26:6-26:10',
+                    skip: true,
                 },
                 {
                     name: 'displays valid symbols at different file depths for Go (./sqltrace/sql.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/sqltrace',
                     symbolPath: '/blob/sqltrace/sql.go#L14:2-14:5',
+                    skip: true,
                 },
             ]
 
             for (const navigationTest of navigateToSymbolTests) {
-                test(navigationTest.name, async () => {
+                const testFunc = navigationTest.skip ? test.skip : test
+                testFunc(navigationTest.name, async () => {
                     const repoBaseURL = sourcegraphBaseUrl + navigationTest.repoPath + '/-'
 
                     await driver.page.goto(repoBaseURL + navigationTest.filePath)
@@ -1160,6 +1164,57 @@ describe('e2e test suite', () => {
             })
         })
 
+        describe('multiple revisions per repository', () => {
+            let previousExperimentalFeatures: any
+            beforeAll(async () => {
+                await driver.setConfig(['experimentalFeatures'], prev => {
+                    previousExperimentalFeatures = prev?.value
+                    return { searchMultipleRevisionsPerRepository: true }
+                })
+                // Wait for configuration to be applied.
+                await new Promise(resolve => setTimeout(resolve, 6000))
+            })
+            afterAll(async () => {
+                await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
+            })
+
+            test('searches', async () => {
+                await driver.page.goto(
+                    sourcegraphBaseUrl +
+                        '/search?q=repo:sourcegraph/go-diff%24%40master:print-options:*refs/heads/+func+NewHunksReader&patternType=regexp'
+                )
+                await driver.page.waitForSelector('.e2e-search-results-stats', { visible: true })
+                await retry(async () => {
+                    const label = await driver.page.evaluate(
+                        () => document.querySelector('.e2e-search-results-stats')!.textContent || ''
+                    )
+                    expect(label.includes('results')).toEqual(true)
+                })
+
+                const fileMatchHrefs = (
+                    await driver.page.$$eval('.e2e-file-match-children-item', as =>
+                        as.map(a => (a as HTMLAnchorElement).pathname)
+                    )
+                ).sort()
+
+                // Only check for specific branches, so that the test doesn't break when new
+                // branches are added (it's an active repository).
+                const checkBranches = [
+                    'master',
+                    'print-options',
+
+                    // These next 2 branches are included because of the *refs/heads/ in the query.
+                    // If they are ever deleted from the actual live repository, replace them with
+                    // any other branches that still exist.
+                    'test-already-exist-pr',
+                    'bug-fix-wip',
+                ].sort()
+                expect(
+                    fileMatchHrefs.filter(href => checkBranches.some(branch => href.includes(`@${branch}/`)))
+                ).toEqual(checkBranches.map(branch => `/github.com/sourcegraph/go-diff@${branch}/-/blob/diff/parse.go`))
+            })
+        })
+
         test('accepts query for sourcegraph/jsonrpc2', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
 
@@ -1243,7 +1298,7 @@ describe('e2e test suite', () => {
             )
 
             expect(tabs.length).toEqual(6)
-            expect(tabs).toStrictEqual(['Code', 'Diffs', 'Commits', 'Symbols', 'Repos', 'Files'])
+            expect(tabs).toStrictEqual(['Code', 'Diffs', 'Commits', 'Symbols', 'Repositories', 'Filenames'])
 
             const activeTab = await driver.page.evaluate(
                 () => document.querySelectorAll('.e2e-search-result-tab--active').length

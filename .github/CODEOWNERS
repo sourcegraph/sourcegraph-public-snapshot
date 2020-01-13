@@ -54,6 +54,8 @@
 /internal/prefixsuffixsaver @beyang
 /internal/gosrc @beyang
 /internal/txemail @slimsag
+/internal/src-cli @efritz
+/internal/linkheader @efritz
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
 /graphql-schema-linter.config.js @felixfbecker

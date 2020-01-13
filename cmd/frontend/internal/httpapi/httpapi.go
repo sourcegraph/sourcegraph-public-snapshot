@@ -48,8 +48,6 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
-	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
-
 	if githubWebhook != nil {
 		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
 	}
@@ -72,6 +70,10 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(lsifDisabledHandler)))
 		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(lsifDisabledHandler)))
 	}
+
+	// Return the minimum src-cli version that's compatible with this instance
+	m.Get(apirouter.SrcCliVersion).Handler(trace.TraceRoute(handler(srcCliVersionServe)))
+	m.Get(apirouter.SrcCliDownload).Handler(trace.TraceRoute(handler(srcCliDownloadServe)))
 
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
 
@@ -103,8 +105,6 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.TraceRoute(handler(serveExternalServiceConfigs)))
 	m.Get(apirouter.ExternalServicesList).Handler(trace.TraceRoute(handler(serveExternalServicesList)))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
-	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
-	m.Get(apirouter.ReposUpdateMetadata).Handler(trace.TraceRoute(handler(serveReposUpdateMetadata)))
 	reposList := &reposListServer{
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		Repos:                 backend.Repos,

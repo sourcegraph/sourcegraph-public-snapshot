@@ -136,15 +136,6 @@ type Mutation {
     # Only site admins may perform this mutation.
     setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
         @deprecated(reason: "update external service exclude setting.")
-    # DEPRECATED: All repositories are accessible or deleted. To prevent a
-    # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration.
-    #
-    # Enables or disables all site repositories.
-    #
-    # Only site admins may perform this mutation.
-    setAllRepositoriesEnabled(enabled: Boolean!): EmptyResponse
-        @deprecated(reason: "update external service exclude setting.")
     # Tests the connection to a mirror repository's original source repository. This is an
     # expensive and slow operation, so it should only be used for interactive diagnostics.
     #
@@ -173,19 +164,6 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
-    # DEPRECATED: All repositories are accessible or deleted. To prevent a
-    # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration. It will be deleted. This mutation will be removed in 3.6.
-    #
-    # Deletes a repository and all data associated with it, irreversibly.
-    #
-    # If the repository was added because it was present in the site configuration (directly,
-    # or because it originated from a configured code host), then it will be re-added during
-    # the next sync. If you intend to make the repository inaccessible to users and not searchable,
-    # use setRepositoryEnabled to disable the repository instead of deleteRepository.
-    #
-    # Only site admins may perform this mutation.
-    deleteRepository(repository: ID!): EmptyResponse @deprecated(reason: "update external service exclude setting.")
     # Creates a new user account.
     #
     # Only site admins may perform this mutation.
@@ -442,6 +420,16 @@ type Mutation {
     # CHANGELOG during this time.
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
+
+    # Set permissions of a repository with a full set of users by their usernames or emails.
+    setRepositoryPermissionsForUsers(
+        # The repository that the mutation is applied to.
+        repository: ID!
+        # A list of usernames or email addresses according to site configuration.
+        bindIDs: [String!]!
+        # The level of repository permission.
+        perm: RepositoryPermission = READ
+    ): EmptyResponse!
 }
 
 # The specification of what changesets Sourcegraph will open when the campaign is created.
@@ -509,6 +497,13 @@ input UpdateCampaignInput {
 
     # The updated description of the campaign as Markdown (if non-null).
     description: String
+
+    # An optional reference to a completed CampaignPlan that was previewed
+    # before updating the Campaign.
+    # If set, the Campaign's changesets will be updated to the Changesets of the given CampaignPlan.
+    # The changesetCreationStatus will be updated accordingly while possibly
+    # new ExternalChangesets are created/updated/closed on the codehosts.
+    plan: ID
 }
 
 # A preview of changes that will be applied by a campaign.
@@ -582,7 +577,7 @@ type Campaign implements Node {
     plan: CampaignPlan
 
     # The current status of creating the campaigns changesets on the code host.
-    changesetCreationStatus: BackgroundProcessStatus
+    changesetCreationStatus: BackgroundProcessStatus!
 
     # The namespace where this campaign is defined.
     namespace: Namespace!
@@ -713,6 +708,10 @@ type ChangesetPlan {
 type ExternalChangeset implements Node {
     # The unique ID for the changeset.
     id: ID!
+
+    # The external ID that uniquely identifies this ExternalChangeset on the
+    # codehost. For example, on GitHub this is the PR number.
+    externalID: String!
 
     # The repository changed by this changeset.
     repository: Repository!
@@ -992,6 +991,7 @@ input MarkdownOptions {
 enum EventSource {
     WEB
     CODEHOSTINTEGRATION
+    BACKEND
 }
 
 # Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user
@@ -2832,6 +2832,9 @@ type FileMatch {
     file: GitBlob!
     # The repository containing the file match.
     repository: Repository!
+    # The revspec of the revision that contains this match. If no revspec was given (such as when no
+    # repository filter or revspec is specified in the search query), it is null.
+    revSpec: GitRevSpec
     # The resource.
     resource: String! @deprecated(reason: "use the file field instead")
     # The symbols found in this file that match the query.
@@ -4643,4 +4646,9 @@ union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use
 # Date#toISOString.
 scalar DateTime
+
+# Different repository permission levels.
+enum RepositoryPermission {
+    READ
+}
 `

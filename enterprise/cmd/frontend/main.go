@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	authzResolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
@@ -63,11 +64,15 @@ func main() {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
+	a8nStore := a8n.NewStoreWithClock(dbconn.Global, clock)
+
 	githubWebhook := &a8n.GitHubWebhook{
-		Store: a8n.NewStoreWithClock(dbconn.Global, clock),
+		Store: a8nStore,
 		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
 		Now:   clock,
 	}
+
+	go a8n.RunCampaignJobs(ctx, a8nStore, clock, 5*time.Second)
 
 	shared.Main(githubWebhook)
 }
@@ -110,6 +115,7 @@ func initLicensing() {
 func initResolvers() {
 	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
 	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
+	graphqlbackend.NewAuthzResolver = authzResolvers.NewResolver
 }
 
 func initLSIFEndpoints() {

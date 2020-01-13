@@ -245,15 +245,6 @@ func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message)
 	return c.postInternal(ctx, "send-email", &message, nil)
 }
 
-func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCreateOrUpdateRequest) (*Repo, error) {
-	var repo Repo
-	err := c.postInternal(ctx, "repos/create-if-not-exists", op, &repo)
-	if err != nil {
-		return nil, err
-	}
-	return &repo, nil
-}
-
 // ReposListEnabled returns a list of all enabled repository names.
 func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoName, error) {
 	var names []RepoName
@@ -271,15 +262,6 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	var cfg conftypes.RawUnified
 	err := c.postInternal(ctx, "configuration", nil, &cfg)
 	return cfg, err
-}
-
-func (c *internalClient) ReposUpdateMetadata(ctx context.Context, repo RepoName, description string, fork bool, archived bool) error {
-	return c.postInternal(ctx, "repos/update-metadata", ReposUpdateMetadataRequest{
-		RepoName:    repo,
-		Description: description,
-		Fork:        fork,
-		Archived:    archived,
-	}, nil)
 }
 
 func (c *internalClient) ReposGetByName(ctx context.Context, repoName RepoName) (*Repo, error) {
@@ -318,8 +300,8 @@ func (c *internalClient) ExternalServicesList(ctx context.Context, opts External
 	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
 
-func (c *internalClient) LogTelemetry(ctx context.Context, env string, reqBody interface{}) error {
-	return c.postInternal(ctx, "telemetry/log/v1/"+env, reqBody, nil)
+func (c *internalClient) LogTelemetry(ctx context.Context, reqBody interface{}) error {
+	return c.postInternal(ctx, "telemetry", reqBody, nil)
 }
 
 // postInternal sends an HTTP post request to the internal route.

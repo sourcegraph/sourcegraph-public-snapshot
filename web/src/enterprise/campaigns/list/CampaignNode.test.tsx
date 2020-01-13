@@ -3,6 +3,8 @@ import renderer from 'react-test-renderer'
 import { CampaignNode } from './CampaignNode'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 
+jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
+
 describe('CampaignNode', () => {
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const node = {

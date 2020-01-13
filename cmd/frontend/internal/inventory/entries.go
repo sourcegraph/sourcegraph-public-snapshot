@@ -14,11 +14,6 @@ const fileReadBufferSize = 16 * 1024
 // Entries computes the inventory of languages for the given entries. It traverses trees recursively
 // and caches results for each subtree. Results for listed files are cached.
 //
-// Known issue: If a listed entry's (os.FileInfo).Size() == 0, it is treated as empty. Callers must
-// ensure that either the size is known. If the size is not known and the caller only cares about
-// line counts, the caller must ensure that a nonzero size is reported and must ignore all
-// TotalBytes counts.
-//
 // If a file is referenced more than once (e.g., because it is a descendent of a subtree and it is
 // passed directly), it will be double-counted in the result.
 func (c *Context) Entries(ctx context.Context, entries ...os.FileInfo) (inv Inventory, err error) {

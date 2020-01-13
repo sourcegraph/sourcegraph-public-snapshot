@@ -386,6 +386,22 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
+        test('Commit search, nonzero result', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/facebook/react$ type:commit hello world',
+                GQL.SearchPatternType.regexp
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
+        test('Diff search, nonzero result', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/sgtest/mux$ type:diff main',
+                GQL.SearchPatternType.regexp
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
 
         test(
             'Search timeout',

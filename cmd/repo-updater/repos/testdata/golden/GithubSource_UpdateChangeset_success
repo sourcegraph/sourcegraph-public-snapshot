@@ -1,0 +1,54 @@
+{
+  "ID": "MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0",
+  "Title": "This is a new title",
+  "Body": "This is a new body",
+  "State": "OPEN",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/91",
+  "HeadRefOid": "2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1",
+  "BaseRefOid": "97f8a75319760990c187710c50a957358f663366",
+  "HeadRefName": "sourcegraph/campaign-1578499147",
+  "BaseRefName": "master",
+  "Number": 91,
+  "Author": {
+   "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+   "Login": "mrnugget",
+   "URL": "https://github.com/mrnugget"
+  },
+  "Participants": [
+   {
+    "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+    "Login": "mrnugget",
+    "URL": "https://github.com/mrnugget"
+   }
+  ],
+  "TimelineItems": [
+   {
+    "Type": "RenamedTitleEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "PreviousTitle": "boring title",
+     "CurrentTitle": "AMAZING NAME!",
+     "CreatedAt": "2020-01-08T16:00:35Z"
+    }
+   },
+   {
+    "Type": "RenamedTitleEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "PreviousTitle": "AMAZING NAME!",
+     "CurrentTitle": "This is a new title",
+     "CreatedAt": "2020-01-08T16:24:43Z"
+    }
+   }
+  ],
+  "CreatedAt": "2020-01-08T15:59:11Z",
+  "UpdatedAt": "2020-01-08T16:24:44Z"
+ }

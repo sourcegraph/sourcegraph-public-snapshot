@@ -1,0 +1,101 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignChangesets renders 1`] = `
+<div
+  className="list-group "
+>
+  <FilteredConnection
+    className="mt-2"
+    defaultFirst={15}
+    hideSearch={true}
+    history={
+      Object {
+        "action": "POP",
+        "block": [Function],
+        "canGo": [Function],
+        "createHref": [Function],
+        "entries": Array [
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+        ],
+        "go": [Function],
+        "goBack": [Function],
+        "goForward": [Function],
+        "index": 0,
+        "length": 1,
+        "listen": [Function],
+        "location": Object {
+          "hash": "",
+          "key": undefined,
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        },
+        "push": [Function],
+        "replace": [Function],
+      }
+    }
+    location={
+      Object {
+        "hash": "",
+        "key": undefined,
+        "pathname": "/",
+        "search": "",
+        "state": undefined,
+      }
+    }
+    nodeComponent={[Function]}
+    nodeComponentProps={
+      Object {
+        "history": Object {
+          "action": "POP",
+          "block": [Function],
+          "canGo": [Function],
+          "createHref": [Function],
+          "entries": Array [
+            Object {
+              "hash": "",
+              "key": undefined,
+              "pathname": "/",
+              "search": "",
+              "state": undefined,
+            },
+          ],
+          "go": [Function],
+          "goBack": [Function],
+          "goForward": [Function],
+          "index": 0,
+          "length": 1,
+          "listen": [Function],
+          "location": Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+          "push": [Function],
+          "replace": [Function],
+        },
+        "isLightTheme": true,
+        "location": Object {
+          "hash": "",
+          "key": undefined,
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        },
+      }
+    }
+    noun="changeset"
+    pluralNoun="changesets"
+    queryConnection={[Function]}
+    useURLQuery={false}
+  />
+</div>
+`;

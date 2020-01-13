@@ -16,9 +16,15 @@ All notable changes to Sourcegraph are documented in this file.
 - Experimental feature flag `BitbucketServerFastPerm` can be enabled to speed up fetching ACL data from Bitbucket Server instances. This requires [Bitbucket Server Sourcegraph plugin](https://github.com/sourcegraph/bitbucket-server-plugin) to be installed.
 - Bitbucket Server repositories with the label `archived` can be excluded from search with `archived:no` [syntax](https://docs.sourcegraph.com/user/search/queries). [#5494](https://github.com/sourcegraph/sourcegraph/issues/5494)
 - Add button to download file in code view. [#5478](https://github.com/sourcegraph/sourcegraph/issues/5478)
+- The new `allowOrgs` site config setting in GitHub `auth.providers` enables admins to restrict GitHub logins to members of specific GitHub organizations. [#4195](https://github.com/sourcegraph/sourcegraph/issues/4195)
 - Skip LFS content when cloning git repositories. [#7322](https://github.com/sourcegraph/sourcegraph/issues/7322)
+- Experimental: To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Requires the site configuration value `{ "experimentalFeatures": { "searchMultipleRevisionsPerRepository": true } }`. Previously this was only supported for diff and commit searches.
 
 ### Changed
+
+- The "Files" tab in the search results page has been renamed to "Filenames" for clarity.
+- The search query builder now lives on its own page at `/search/query-builder`. The home search page has a link to it.
+- User passwords when using builtin auth are limited to 256 characters. Existing passwords longer than 256 characters will continue to work.
 
 ### Fixed
 
@@ -26,8 +32,24 @@ All notable changes to Sourcegraph are documented in this file.
 - We resolve relative symbolic links from the directory of the symlink, rather than the root of the repository. [#6034](https://github.com/sourcegraph/sourcegraph/issues/6034)
 - Show errors on repository settings page when repo-updater is down. [#3593](https://github.com/sourcegraph/sourcegraph/issues/3593)
 - Remove benign warning that verifying config took more than 10s when updating or saving an external service. [#7176](https://github.com/sourcegraph/sourcegraph/issues/7176)
+- repohasfile search filter works again (regressed in 3.10). [#7380](https://github.com/sourcegraph/sourcegraph/issues/7380)
 
 ### Removed
+
+- The deprecated GraphQL mutation `setAllRepositoriesEnabled` has been removed. [#7478](https://github.com/sourcegraph/sourcegraph/pull/7478)
+- The deprecated GraphQL mutation `deleteRepository` has been removed. [#7483](https://github.com/sourcegraph/sourcegraph/pull/7483)
+
+## 3.11.4
+
+### Fixed
+
+- The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
+
+## 3.11.1
+
+### Fixed
+
+- The syncing process for newly created Automation changesets has been fixed again after they have erroneously been marked as deleted in the database. [#7522](https://github.com/sourcegraph/sourcegraph/pull/7522)
 
 ## 3.11.0
 

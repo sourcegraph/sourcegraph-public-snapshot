@@ -123,14 +123,16 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         }
 
         const logo = <img className="global-navbar__logo" src={logoSrc} />
-        const logoLink =
-            this.props.isSourcegraphDotCom || !this.state.authRequired ? (
-                <Link to="/search" className={logoLinkClassName}>
-                    {logo}
-                </Link>
-            ) : (
-                <div className={logoLinkClassName}>{logo}</div>
-            )
+        const logoLink = !this.state.authRequired ? (
+            <Link to="/search" className={logoLinkClassName}>
+                {logo}
+            </Link>
+        ) : (
+            <div className={logoLinkClassName}>{logo}</div>
+        )
+        const navLinks = !this.state.authRequired && !this.props.hideNavLinks && (
+            <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
+        )
 
         return (
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg border-bottom'} py-1`}>
@@ -149,6 +151,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 Search
                             </Link>
                         </div>
+                        {navLinks}
                     </>
                 ) : (
                     <>
@@ -164,7 +167,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                         ) : (
                             <>
                                 {logoLink}
-                                {(this.props.isSourcegraphDotCom || !this.state.authRequired) && (
+                                {!this.state.authRequired && (
                                     <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
@@ -179,9 +182,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                         />
                                     </div>
                                 )}
-                                {!this.state.authRequired && !this.props.hideNavLinks && (
-                                    <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
-                                )}
+                                {navLinks}
                             </>
                         )}
                     </>

@@ -45,7 +45,7 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 	Blocking *bool
 	MaxWait  *int32
 	Body     io.ReadCloser
-}) (string, bool, error) {
+}) (int64, bool, error) {
 	query := queryValues{}
 	query.Set("repository", args.RepoName)
 	query.Set("commit", string(args.Commit))
@@ -61,12 +61,12 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 	}
 
 	payload := struct {
-		ID string `json:"id"`
+		ID int64 `json:"id"`
 	}{}
 
 	meta, err := c.do(ctx, req, &payload)
 	if err != nil {
-		return "", false, err
+		return 0, false, err
 	}
 
 	return payload.ID, meta.statusCode == http.StatusAccepted, nil

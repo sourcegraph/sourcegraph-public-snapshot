@@ -14,7 +14,7 @@ interface RowProps {
     onAddNewFilter: (filter: FilterTypes) => void
 }
 
-export enum DefaultFilterTypes {
+enum DefaultFilterTypes {
     repo = 'repo',
     file = 'file',
 }

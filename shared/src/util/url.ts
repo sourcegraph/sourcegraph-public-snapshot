@@ -44,7 +44,7 @@ export interface FileSpec {
     filePath: string
 }
 
-export interface ComparisonSpec {
+interface ComparisonSpec {
     /**
      * a diff specifier with optional base and comparison. Examples:
      * - "master..." (implicitly: "master...HEAD")
@@ -61,7 +61,7 @@ export interface PositionSpec {
     position: Position
 }
 
-export interface RangeSpec {
+interface RangeSpec {
     /**
      * a 1-indexed range in the blob
      */
@@ -76,7 +76,7 @@ export interface ModeSpec {
     mode: string
 }
 
-export type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
+type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -92,7 +92,7 @@ export interface ViewStateSpec {
  */
 export type RenderMode = 'code' | 'rendered' | undefined
 
-export interface RenderModeSpec {
+interface RenderModeSpec {
     /**
      * How the file should be rendered.
      */
@@ -208,18 +208,6 @@ export interface RepoFile extends RepoSpec, RevSpec, Partial<ResolvedRevSpec>, F
 export interface AbsoluteRepoFile extends RepoSpec, RevSpec, ResolvedRevSpec, FileSpec {}
 
 /**
- * A position in file
- */
-export interface RepoFilePosition
-    extends RepoSpec,
-        RevSpec,
-        Partial<ResolvedRevSpec>,
-        FileSpec,
-        PositionSpec,
-        Partial<ViewStateSpec>,
-        Partial<RenderModeSpec> {}
-
-/**
  * A position in file at an exact commit
  */
 export interface AbsoluteRepoFilePosition
@@ -228,18 +216,6 @@ export interface AbsoluteRepoFilePosition
         ResolvedRevSpec,
         FileSpec,
         PositionSpec,
-        Partial<ViewStateSpec>,
-        Partial<RenderModeSpec> {}
-
-/**
- * A range in file at an exact commit
- */
-export interface AbsoluteRepoFileRange
-    extends RepoSpec,
-        RevSpec,
-        ResolvedRevSpec,
-        FileSpec,
-        RangeSpec,
         Partial<ViewStateSpec>,
         Partial<RenderModeSpec> {}
 

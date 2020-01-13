@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -61,6 +62,59 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	return &Store{db: tx, now: s.now}, nil
 }
 
+// ProcessPendingCampaignJob attempts to fetch one pending campaign job. If found, 'process'
+// is called. We guarantee that if process is called it will have exclusive global access to the job.
+// All operations on the job should be done using the supplied store as they will run in a transaction.
+// Returning an error will roll back the transaction.
+// NOTE: It should not be called from within an existing transaction
+func (s *Store) ProcessPendingCampaignJob(ctx context.Context, process func(ctx context.Context, s *Store, job a8n.CampaignJob) error) (didRun bool, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "starting transaction")
+	}
+	defer tx.Done(&err)
+	q := sqlf.Sprintf(getPendingCampaignJobQuery)
+	var job a8n.CampaignJob
+	_, count, err := tx.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		err = scanCampaignJob(&job, sc)
+		if err != nil {
+			return 0, 0, errors.Wrap(err, "scanning campaign job row")
+		}
+		return job.ID, 1, nil
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "querying for pending campaign job")
+	}
+	if count == 0 {
+		return false, nil
+	}
+	err = process(ctx, tx, job)
+	return true, err
+}
+
+const getPendingCampaignJobQuery = `
+UPDATE campaign_jobs c SET started_at = now() WHERE id = (
+	SELECT c.id FROM campaign_jobs c
+	JOIN campaign_plans p on p.id = c.campaign_plan_id
+	WHERE c.started_at is null
+	AND p.canceled_at is null
+	ORDER BY c.id ASC
+	FOR UPDATE SKIP LOCKED LIMIT 1
+)
+RETURNING c.id,
+  c.campaign_plan_id,
+  c.repo_id,
+  c.rev,
+  c.base_ref,
+  c.diff,
+  c.description,
+  c.error,
+  c.started_at,
+  c.finished_at,
+  c.created_at,
+  c.updated_at
+`
+
 // Done terminates the underlying Tx in a Store either by committing or rolling
 // back based on the value pointed to by the first given error pointer.
 // It's a no-op if the `Store` is not operating within a transaction,
@@ -80,6 +134,61 @@ func (s *Store) Done(errs ...*error) {
 		_ = tx.Commit()
 	}
 }
+
+var NoTransactionError = errors.New("Not in a transaction")
+
+var lockNamespace = int32(fnv1.HashString32("a8n"))
+
+// TryAcquireAdvisoryLock will attempt to acquire an advisory lock using key
+// and is non blocking. If a lock is acquired, "true, nil" will be returned.
+// It must be called from within a transaction or "false, NoTransactionError" is returned
+func (s *Store) TryAcquireAdvisoryLock(ctx context.Context, key string) (bool, error) {
+	_, ok := s.db.(dbutil.Tx)
+	if !ok {
+		return false, NoTransactionError
+	}
+	q := lockQuery(key)
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return false, err
+	}
+
+	if !rows.Next() {
+		return false, rows.Err()
+	}
+
+	locked := false
+	if err = rows.Scan(&locked); err != nil {
+		return false, err
+	}
+
+	if err = rows.Close(); err != nil {
+		return false, err
+	}
+
+	return locked, nil
+}
+
+func lockQuery(key string) *sqlf.Query {
+	// Postgres advisory lock ids are a global namespace within one database.
+	// It's very unlikely that another part of our application uses a lock
+	// namespace identically to this one. It's equally unlikely that there are
+	// lock id conflicts for different permissions, but if it'd happen, no safety
+	// guarantees would be violated, since those two different users would simply
+	// have to wait on the other's update to finish, using stale permissions until
+	// it would.
+	lockID := int32(fnv1.HashString32(key))
+	return sqlf.Sprintf(
+		lockQueryFmtStr,
+		lockNamespace,
+		lockID,
+	)
+}
+
+const lockQueryFmtStr = `
+-- source: enterprise/internal/a8n/store/store.go:TryAcquireAdvisoryLock
+SELECT pg_try_advisory_xact_lock(%s, %s)
+`
 
 // DB returns the underlying dbutil.DB that this Store was
 // instantiated with.
@@ -232,7 +341,7 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 		CampaignIDs         json.RawMessage `json:"campaign_ids"`
 		ExternalID          string          `json:"external_id"`
 		ExternalServiceType string          `json:"external_service_type"`
-		ExternalDeletedAt   time.Time       `json:"external_deleted_at"`
+		ExternalDeletedAt   *time.Time      `json:"external_deleted_at"`
 	}
 
 	records := make([]record, 0, len(cs))
@@ -257,7 +366,7 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 			CampaignIDs:         campaignIDs,
 			ExternalID:          c.ExternalID,
 			ExternalServiceType: c.ExternalServiceType,
-			ExternalDeletedAt:   c.ExternalDeletedAt,
+			ExternalDeletedAt:   nullTimeColumn(c.ExternalDeletedAt),
 		})
 	}
 
@@ -394,7 +503,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 		return int64(c.ID), 1, err
 	})
 
-	if len(cs) == opts.Limit {
+	if opts.Limit != 0 && len(cs) == opts.Limit {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -417,7 +526,6 @@ SELECT
 FROM changesets
 WHERE %s
 ORDER BY id ASC
-LIMIT %s
 `
 
 const defaultListLimit = 50
@@ -427,6 +535,11 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		opts.Limit = defaultListLimit
 	}
 	opts.Limit++
+
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
 
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id >= %s", opts.Cursor),
@@ -451,9 +564,8 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangesetsQueryFmtstr,
+		listChangesetsQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
-		opts.Limit,
 	)
 }
 
@@ -1127,7 +1239,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 		return int64(c.ID), 1, err
 	})
 
-	if len(cs) == opts.Limit {
+	if opts.Limit != 0 && len(cs) == opts.Limit {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -1496,7 +1608,7 @@ func (s *Store) ListCampaignPlans(ctx context.Context, opts ListCampaignPlansOpt
 		return int64(c.ID), 1, err
 	})
 
-	if len(cs) == opts.Limit {
+	if opts.Limit != 0 && len(cs) == opts.Limit {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}
@@ -1537,6 +1649,8 @@ func listCampaignPlansQuery(opts *ListCampaignPlansOpts) *sqlf.Query {
 }
 
 // CreateCampaignJob creates the given CampaignJob.
+// Due to a unique constraint in the DB it is safe to call this more than once
+// with the same input. Only one job will be added and the other calls will return an error
 func (s *Store) CreateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error {
 	q, err := s.createCampaignJobQuery(c)
 	if err != nil {
@@ -1697,7 +1811,7 @@ type CountCampaignJobsOpts struct {
 	OnlyUnpublishedInCampaign int64
 }
 
-// CountCampaignJobs returns the number of code mods in the database.
+// CountCampaignJobs returns the number of CampaignJobs in the database.
 func (s *Store) CountCampaignJobs(ctx context.Context, opts CountCampaignJobsOpts) (count int64, _ error) {
 	q := countCampaignJobsQuery(&opts)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
@@ -2229,7 +2343,10 @@ SET
   error = '',
   started_at = NULL,
   finished_at = NULL
-WHERE campaign_id = %s
+WHERE
+  campaign_id = %s
+AND
+  error != '';
 `
 
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {

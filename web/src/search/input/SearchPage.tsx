@@ -14,15 +14,15 @@ import { ThemePreferenceProps } from '../../theme'
 import { limitString } from '../../util'
 import { submitSearch, QueryState } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
-import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
-import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
+import { SearchScopes } from './SearchScopes'
 import { InteractiveModeInput } from './interactive/InteractiveModeInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
+import { Link } from '../../../../shared/src/components/Link'
 
 interface Props
     extends SettingsCascadeProps,
@@ -87,7 +87,6 @@ export class SearchPage extends React.Component<Props, State> {
                 logoUrl = branding.dark.logo
             }
         }
-        const hasScopes = this.getScopes().length > 0
         const quickLinks = this.getQuickLinks()
         return (
             <div className="search-page">
@@ -124,53 +123,21 @@ export class SearchPage extends React.Component<Props, State> {
                                         />
                                         <SearchButton />
                                     </div>
-                                    {hasScopes ? (
-                                        <>
-                                            <div className="search-page__input-sub-container">
-                                                <SearchFilterChips
-                                                    location={this.props.location}
-                                                    history={this.props.history}
-                                                    query={this.state.userQueryState.query}
-                                                    authenticatedUser={this.props.authenticatedUser}
-                                                    settingsCascade={this.props.settingsCascade}
-                                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                                    patternType={this.props.patternType}
-                                                />
-                                            </div>
-                                            <QuickLinks
-                                                quickLinks={quickLinks}
-                                                className="search-page__input-sub-container"
-                                            />
-                                            <QueryBuilder
-                                                onFieldsQueryChange={this.onBuilderQueryChange}
-                                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                patternType={this.props.patternType}
-                                            />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <QueryBuilder
-                                                onFieldsQueryChange={this.onBuilderQueryChange}
-                                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                patternType={this.props.patternType}
-                                            />
-                                            <QuickLinks
-                                                quickLinks={quickLinks}
-                                                className="search-page__input-sub-container"
-                                            />
-                                            <div className="search-page__input-sub-container">
-                                                <SearchFilterChips
-                                                    location={this.props.location}
-                                                    history={this.props.history}
-                                                    query={this.state.userQueryState.query}
-                                                    authenticatedUser={this.props.authenticatedUser}
-                                                    settingsCascade={this.props.settingsCascade}
-                                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                                    patternType={this.props.patternType}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
+                                    <div className="search-page__input-sub-container">
+                                        {!this.props.splitSearchModes && (
+                                            <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
+                                                Query builder
+                                            </Link>
+                                        )}
+                                        <SearchScopes
+                                            history={this.props.history}
+                                            query={this.state.userQueryState.query}
+                                            authenticatedUser={this.props.authenticatedUser}
+                                            settingsCascade={this.props.settingsCascade}
+                                            patternType={this.props.patternType}
+                                        />
+                                    </div>
+                                    <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                                     <Notices
                                         className="my-3"
                                         location="home"
@@ -189,10 +156,6 @@ export class SearchPage extends React.Component<Props, State> {
         this.setState({ userQueryState })
     }
 
-    private onBuilderQueryChange = (builderQuery: string): void => {
-        this.setState({ builderQuery })
-    }
-
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         const query = [this.state.builderQuery, this.state.userQueryState.query].filter(s => !!s).join(' ')
@@ -205,14 +168,6 @@ export class SearchPage extends React.Component<Props, State> {
             return `${limitString(this.state.userQueryState.query, 25, true)}`
         }
         return undefined
-    }
-
-    private getScopes(): ISearchScope[] {
-        return (
-            (isSettingsValid<Settings>(this.props.settingsCascade) &&
-                this.props.settingsCascade.final['search.scopes']) ||
-            []
-        )
     }
 
     private getQuickLinks(): QuickLink[] {

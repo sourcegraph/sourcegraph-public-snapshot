@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PersonLink no user account 1`] = `
+<span
+  className="a "
+  data-tooltip="alice@example.com"
+>
+  alice
+</span>
+`;
+
+exports[`PersonLink with user account 1`] = `
+<a
+  className="a b"
+  data-tooltip="Alice Smith <alice@example.com>"
+  href="u"
+>
+  alice
+</a>
+`;

@@ -92,13 +92,11 @@ describe('mergeSettings', () => {
                     b?: { [key: string]: { [key: string]: string }[] }
                 } & Settings
             >([
-                { 'search.scopes': [{ name: 'sample repos', value: 'repogroup:sample' }] },
                 { 'search.scopes': [{ name: 'test repos', value: 'repogroup:test' }] },
                 { 'search.scopes': [{ name: 'sourcegraph repos', value: 'repogroup:sourcegraph' }] },
             ])
         ).toEqual({
             'search.scopes': [
-                { name: 'sample repos', value: 'repogroup:sample' },
                 { name: 'test repos', value: 'repogroup:test' },
                 { name: 'sourcegraph repos', value: 'repogroup:sourcegraph' },
             ],

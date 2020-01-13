@@ -82,7 +82,7 @@ export -f build_symbols
 
 build_lsif() {
     echo "--- build lsif-server"
-    IMAGE=sourcegraph/lsif-server:ci ./lsif/build.sh
+    IMAGE=sourcegraph/lsif-server-builder:ci ./lsif/build.sh
 }
 export -f build_lsif
 

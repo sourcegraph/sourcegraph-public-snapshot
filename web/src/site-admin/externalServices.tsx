@@ -100,7 +100,7 @@ const editorActionComments = {
     //    (https://docs.sourcegraph.com/admin/repo/permissions#sudo-access-token).`,
 }
 
-export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
+const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
     title: 'GitHub repositories',
     icon: GithubCircleIcon,
     jsonSchema: githubSchemaJSON,
@@ -227,7 +227,7 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
 }`,
 }
 
-export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServiceKindMetadata> = {
+const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServiceKindMetadata> = {
     [GQL.ExternalServiceKind.GITHUB]: GITHUB_EXTERNAL_SERVICE,
     [GQL.ExternalServiceKind.AWSCODECOMMIT]: {
         title: 'AWS CodeCommit repositories',

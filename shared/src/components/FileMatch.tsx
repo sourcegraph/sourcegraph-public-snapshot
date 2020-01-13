@@ -8,16 +8,19 @@ import { FetchFileCtx } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
+import { BadgeAttachmentRenderOptions } from 'sourcegraph'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
-export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'symbols' | 'limitHit'>> & {
+export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'revSpec' | 'symbols' | 'limitHit'>> & {
     file: Pick<GQL.IFile, 'path' | 'url'> & { commit: Pick<GQL.IGitCommit, 'oid'> }
     repository: Pick<GQL.IRepository, 'name' | 'url'>
     lineMatches: ILineMatch[]
 }
 
-export type ILineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'>
+export type ILineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & {
+    badge?: BadgeAttachmentRenderOptions
+}
 
 export interface IMatchItem {
     highlightRanges: {
@@ -26,6 +29,7 @@ export interface IMatchItem {
     }[]
     preview: string
     line: number
+    badge?: BadgeAttachmentRenderOptions
 }
 
 interface Props extends SettingsCascadeProps {
@@ -89,15 +93,27 @@ export class FileMatch extends React.PureComponent<Props> {
             })),
             preview: m.preview,
             line: m.lineNumber,
+            badge: m.badge,
         }))
+
+        const { repoAtRevURL, revDisplayName } =
+            result.revSpec?.__typename === 'GitRevSpecExpr' && result.revSpec.object?.commit
+                ? { repoAtRevURL: result.revSpec.object?.commit?.url, revDisplayName: result.revSpec.expr }
+                : result.revSpec?.__typename === 'GitRef'
+                ? { repoAtRevURL: result.revSpec.url, revDisplayName: result.revSpec.displayName }
+                : { repoAtRevURL: result.repository.url, revDisplayName: '' }
 
         const title = (
             <RepoFileLink
                 repoName={result.repository.name}
-                repoURL={result.repository.url}
+                repoURL={repoAtRevURL}
                 filePath={result.file.path}
                 fileURL={result.file.url}
-                repoDisplayName={this.props.repoDisplayName}
+                repoDisplayName={
+                    this.props.repoDisplayName
+                        ? `${this.props.repoDisplayName}${revDisplayName ? `@${revDisplayName}` : ''}`
+                        : undefined
+                }
             />
         )
 

@@ -170,13 +170,6 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
-		// legacy editor auth
-		{
-			path:      "/editor-auth",
-			wantRoute: routeLegacyEditorAuth,
-			wantVars:  map[string]string{},
-		},
-
 		// legacy login
 		{
 			path:      "/login",

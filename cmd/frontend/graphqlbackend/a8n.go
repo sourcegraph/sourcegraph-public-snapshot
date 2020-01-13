@@ -34,6 +34,7 @@ type UpdateCampaignArgs struct {
 		ID          graphql.ID
 		Name        *string
 		Description *string
+		Plan        *graphql.ID
 	}
 }
 
@@ -251,6 +252,7 @@ type ExternalChangesetsConnectionResolver interface {
 
 type ExternalChangesetResolver interface {
 	ID() graphql.ID
+	ExternalID() string
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	Title() (string, error)

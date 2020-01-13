@@ -21,7 +21,7 @@ interface State {
     sideloadedExtensionURL?: string | null
 }
 
-export class ExtensionStatus extends React.PureComponent<Props, State> {
+class ExtensionStatus extends React.PureComponent<Props, State> {
     public state: State = {}
 
     private componentUpdates = new Subject<Props>()

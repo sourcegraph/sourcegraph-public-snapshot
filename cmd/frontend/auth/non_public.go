@@ -92,12 +92,17 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
-	if strings.HasPrefix(req.URL.Path, "/.assets/") || strings.HasPrefix(req.URL.Path, "/.api/telemetry/log/v1/") {
+	if strings.HasPrefix(req.URL.Path, "/.assets/") {
 		return true
 	}
 
 	// Permission is checked by github token
 	if strings.HasPrefix(req.URL.Path, "/.api/lsif/upload") {
+		return true
+	}
+
+	// This is just a redirect to a public download
+	if strings.HasPrefix(req.URL.Path, "/.api/src-cli") {
 		return true
 	}
 

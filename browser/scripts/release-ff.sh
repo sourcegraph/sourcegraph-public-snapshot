@@ -17,6 +17,8 @@ for filename in $(ls build/web-ext); do
     gsutil -m acl set -R -a public-read gs://sourcegraph-for-firefox/latest.xpi
 done
 
+export TS_NODE_COMPILER_OPTIONS="{\"module\":\"commonjs\"}"
+
 gsutil ls gs://sourcegraph-for-firefox | xargs yarn ts-node scripts/build-updates-manifest.ts
 gsutil cp src/extension/updates.manifest.json gs://sourcegraph-for-firefox/updates.json
 gsutil -m acl set -R -a public-read gs://sourcegraph-for-firefox/updates.json
