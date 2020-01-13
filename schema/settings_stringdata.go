@@ -29,7 +29,7 @@ const SettingsSchemaJSON = `{
           "default": false,
           "!go": { "pointer": true }
         },
-        "codeIntelIndicators": {
+        "showBadgeAttachments": {
           "description": "Enables the UI indicators for code intelligence precision.",
           "type": "boolean",
           "default": true,

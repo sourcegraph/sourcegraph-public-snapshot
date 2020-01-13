@@ -34,7 +34,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     const showBadges =
         props.settingsCascade.final &&
         !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final.experimentalFeatures?.codeIntelIndicators
+        props.settingsCascade.final.experimentalFeatures?.showBadgeAttachments
 
     const showItems = props.items
         .sort((a, b) => {
