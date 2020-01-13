@@ -98,6 +98,27 @@ func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.R
 	return repos[0], nil
 }
 
+// GetByIDs returns a list of repositories by given IDs. The number of results list could be less
+// than the candidate list due to no repository is associated with some IDs.
+// 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
+// is the site admin because this method returns all available data from the database.
+func (s *repos) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
+	if Mocks.Repos.GetByIDs != nil {
+		return Mocks.Repos.GetByIDs(ctx, ids...)
+	}
+
+	if len(ids) == 0 {
+		return []*types.Repo{}, nil
+	}
+
+	items := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		items[i] = sqlf.Sprintf("%d", ids[i])
+	}
+	q := sqlf.Sprintf("id IN (%s)", sqlf.Join(items, ","))
+	return s.getReposBySQL(ctx, false, true, q)
+}
+
 func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)
@@ -136,10 +157,12 @@ var getBySQLColumns = []string{
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	return s.getReposBySQL(ctx, false, querySuffix)
+	return s.getReposBySQL(ctx, true, false, querySuffix)
 }
 
-func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+// 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
+// is the site admin who is authorized to see the repositories returned even when authorize=false.
+func (s *repos) getReposBySQL(ctx context.Context, authorize, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	columns := getBySQLColumns
 	if minimal {
 		columns = columns[:5]
@@ -173,6 +196,9 @@ func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sq
 		return nil, err
 	}
 
+	if !authorize {
+		return repos, nil
+	}
 	// 🚨 SECURITY: This enforces repository permissions
 	return authzFilter(ctx, repos, authz.Read)
 }
@@ -312,7 +338,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	// fetch matching repos
 	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
-	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
+	return s.getReposBySQL(ctx, true, opt.OnlyRepoIDs, fetchSQL)
 }
 
 // ListEnabledNames returns a list of all enabled repo names. This is commonly

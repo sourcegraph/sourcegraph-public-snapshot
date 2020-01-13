@@ -8,7 +8,6 @@ import { EntityManager } from 'typeorm'
 import { convertLsif } from './importer'
 import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
-import { withLock } from '../../shared/store/locks'
 import { DumpManager } from '../../shared/store/dumps'
 import { DependencyManager } from '../../shared/store/dependencies'
 
@@ -117,90 +116,4 @@ export async function updateCommitsAndDumpsVisibleFromTip(
 
     await dumpManager.updateCommits(upload.repository, commits, ctx, entityManager)
     await dumpManager.updateDumpsVisibleFromTip(upload.repository, tipCommit, ctx, entityManager)
-}
-
-/**
- * Remove dumps until the space occupied by the dbs directory is below
- * the given limit.
- *
- * @param entityManager The EntityManager to use as part of a transaction.
- * @param dumpManager The dumps manager instance.
- * @param storageRoot The path where SQLite databases are stored.
- * @param maximumSizeBytes The maximum number of bytes.
- * @param ctx The tracing context.
- */
-export function purgeOldDumps(
-    entityManager: EntityManager,
-    dumpManager: DumpManager,
-    storageRoot: string,
-    maximumSizeBytes: number,
-    { logger = createSilentLogger() }: TracingContext = {}
-): Promise<void> {
-    if (maximumSizeBytes < 0) {
-        return Promise.resolve()
-    }
-
-    const purge = async (): Promise<void> => {
-        let currentSizeBytes = await dirsize(path.join(storageRoot, constants.DBS_DIR))
-
-        while (currentSizeBytes > maximumSizeBytes) {
-            // While our current data usage is too big, find candidate dumps to delete
-            const dump = await dumpManager.getOldestPrunableDump(entityManager)
-            if (!dump) {
-                logger.warn(
-                    'Unable to reduce disk usage of the DB directory because deleting any single dump would drop in-use code intel for a repository.',
-                    { currentSizeBytes, softMaximumSizeBytes: maximumSizeBytes }
-                )
-
-                break
-            }
-
-            logger.info('Pruning dump', {
-                repository: dump.repository,
-                commit: dump.commit,
-                root: dump.root,
-            })
-
-            // Delete this dump and subtract its size from the current dir size
-            const filename = dbFilename(storageRoot, dump.id, dump.repository, dump.commit)
-            currentSizeBytes -= await filesize(filename)
-
-            // This delete cascades to the packages and references tables as well
-            await dumpManager.deleteDump(dump, entityManager)
-        }
-    }
-
-    // Ensure only one worker is doing this at the same time so that we don't
-    // choose more dumps than necessary to purge. This can happen if the directory
-    // size check and the selection of a purgeable dump are interleaved between
-    // multiple workers.
-    return withLock(entityManager.connection, 'retention', purge)
-}
-
-/**
- * Calculate the size of a directory.
- *
- * @param directory The directory path.
- */
-async function dirsize(directory: string): Promise<number> {
-    return (
-        await Promise.all((await fs.readdir(directory)).map(filename => filesize(path.join(directory, filename))))
-    ).reduce((a, b) => a + b, 0)
-}
-
-/**
- * Get the file size or zero if it doesn't exist.
- *
- * @param filename The filename.
- */
-async function filesize(filename: string): Promise<number> {
-    try {
-        return (await fs.stat(filename)).size
-    } catch (error) {
-        if (!(error && error.code === 'ENOENT')) {
-            throw error
-        }
-
-        return 0
-    }
 }

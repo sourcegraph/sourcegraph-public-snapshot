@@ -1172,7 +1172,7 @@ describe('e2e test suite', () => {
                     return { searchMultipleRevisionsPerRepository: true }
                 })
                 // Wait for configuration to be applied.
-                await new Promise(resolve => setTimeout(resolve, 3000))
+                await new Promise(resolve => setTimeout(resolve, 6000))
             })
             afterAll(async () => {
                 await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)

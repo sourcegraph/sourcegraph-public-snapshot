@@ -47,16 +47,12 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 	baseURL = NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	var opts []httpcli.Opt
 	if c.Certificate != "" {
-		pool, err := httpcli.NewCertPool(c.Certificate)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
 	cli, err := cf.Doer(opts...)
@@ -104,8 +100,10 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan Sourc
 	s.listAllRepos(ctx, results)
 }
 
+var _ ChangesetSource = BitbucketServerSource{}
+
 // CreateChangeset creates the given *Changeset in the code host.
-func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (error, bool) {
+func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	var exists bool
 
 	repo := c.Repo.Metadata.(*bitbucketserver.Repo)
@@ -124,13 +122,13 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	if err != nil {
 		if ae, ok := err.(*bitbucketserver.ErrAlreadyExists); ok && ae != nil {
 			if ae.Existing == nil {
-				return fmt.Errorf("existing PR is nil"), exists
+				return exists, fmt.Errorf("existing PR is nil")
 			}
 			log15.Info("Existing PR extracted", "ID", ae.Existing.ID)
 			pr = ae.Existing
 			exists = true
 		} else {
-			return err, exists
+			return exists, err
 		}
 	}
 
@@ -138,7 +136,7 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	c.Changeset.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
 	c.Changeset.ExternalServiceType = bitbucketserver.ServiceType
 
-	return nil, exists
+	return exists, nil
 }
 
 // CloseChangeset closes the given *Changeset on the code host and updates the

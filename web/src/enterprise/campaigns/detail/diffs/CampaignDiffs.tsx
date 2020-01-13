@@ -1,16 +1,19 @@
-import React from 'react'
-import H from 'history'
+import * as H from 'history'
+import * as React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { FileDiffTab } from './FileDiffTab'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { FileDiffTabNodeProps, FileDiffTabNode } from '../FileDiffTabNode'
+import { Observable } from 'rxjs'
+import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 
 interface Props extends ThemeProps {
-    changesets: Pick<GQL.IExternalChangesetConnection | GQL.IChangesetPlanConnection, 'nodes'>
+    queryChangesetsConnection: (
+        args: FilteredConnectionQueryArgs
+    ) => Observable<GQL.IExternalChangesetConnection | GQL.IChangesetPlanConnection>
     persistLines: boolean
-
     history: H.History
     location: H.Location
-
     className?: string
 }
 
@@ -18,20 +21,32 @@ interface Props extends ThemeProps {
  * A list of a campaign's or campaign preview's diffs.
  */
 export const CampaignDiffs: React.FunctionComponent<Props> = ({
-    changesets,
-    persistLines,
+    queryChangesetsConnection,
+    persistLines = true,
+    isLightTheme,
     history,
     location,
-    className = '',
-    isLightTheme,
+    className,
 }) => (
     <div className={className}>
-        <FileDiffTab
-            nodes={changesets.nodes}
-            persistLines={persistLines}
+        <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<FileDiffTabNodeProps, 'node'>>
+            className="mt-2"
+            // updates={changesetUpdates}
+            nodeComponent={FileDiffTabNode}
+            nodeComponentProps={{
+                persistLines,
+                isLightTheme,
+                history,
+                location,
+            }}
+            queryConnection={queryChangesetsConnection}
+            hideSearch={true}
+            defaultFirst={DEFAULT_CHANGESET_LIST_COUNT}
+            noun="changeset"
+            pluralNoun="changesets"
             history={history}
             location={location}
-            isLightTheme={isLightTheme}
-        ></FileDiffTab>
+            useURLQuery={false}
+        />
     </div>
 )
