@@ -3,33 +3,31 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
-func (c *Client) GetUploadStats(ctx context.Context) (*lsif.LSIFUploadStats, error) {
-	req := &lsifRequest{
-		path: "/uploads/stats",
-	}
-
-	payload := &lsif.LSIFUploadStats{}
-	_, err := c.do(ctx, req, &payload)
-	return payload, err
-}
-
 func (c *Client) GetUploads(ctx context.Context, args *struct {
-	State  string
-	Query  *string
-	Limit  *int32
-	Cursor *string
+	RepoName        string
+	Query           *string
+	State           *string
+	IsLatestForRepo *bool
+	Limit           *int32
+	Cursor          *string
 }) ([]*lsif.LSIFUpload, string, *int, error) {
 	query := queryValues{}
 	query.SetOptionalString("query", args.Query)
+	query.SetOptionalBool("visibleAtTip", args.IsLatestForRepo)
 	query.SetOptionalInt32("limit", args.Limit)
 
+	if args.State != nil {
+		query.Set("state", strings.ToLower(*args.State))
+	}
+
 	req := &lsifRequest{
-		path:   fmt.Sprintf("/uploads/%s", strings.ToLower(args.State)),
+		path:   fmt.Sprintf("/uploads/%s", url.PathEscape(args.RepoName)),
 		cursor: args.Cursor,
 		query:  query,
 	}

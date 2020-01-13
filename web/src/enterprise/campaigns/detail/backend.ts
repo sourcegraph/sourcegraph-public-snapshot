@@ -26,7 +26,7 @@ const campaignFragment = gql`
             username
             avatarURL
         }
-        changesetCreationStatus {
+        status {
             completedCount
             pendingCount
             state
