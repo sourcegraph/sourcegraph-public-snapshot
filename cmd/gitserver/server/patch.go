@@ -123,25 +123,21 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if message == "" {
 		message = "<Sourcegraph> Creating commit from patch"
 	}
-	const (
-		defaultName  = "Sourcegraph"
-		defaultEmail = "support@sourcegraph.com"
-	)
 	authorName := req.CommitInfo.AuthorName
 	if authorName == "" {
-		authorName = defaultName
+		authorName = "Sourcegraph"
 	}
 	authorEmail := req.CommitInfo.AuthorEmail
 	if authorEmail == "" {
-		authorEmail = defaultEmail
+		authorEmail = "support@sourcegraph.com"
 	}
 	committerName := req.CommitInfo.CommitterName
 	if committerName == "" {
-		committerName = defaultName
+		committerName = authorName
 	}
 	committerEmail := req.CommitInfo.CommitterEmail
 	if committerEmail == "" {
-		committerEmail = defaultEmail
+		committerEmail = authorEmail
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "commit", "-m", message)
