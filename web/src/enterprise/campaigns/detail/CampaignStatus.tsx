@@ -39,7 +39,7 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                         </div>
                     </div>
                     <p>
-                        {campaign.__typename === 'CampaignPlan' ? 'Computing' : 'Creating'} changesets:{' '}
+                        {campaign.__typename === 'CampaignPlan' ? 'Computing' : 'Creating'} changes:{' '}
                         {status.completedCount} / {status.pendingCount + status.completedCount}
                     </p>
                 </div>
