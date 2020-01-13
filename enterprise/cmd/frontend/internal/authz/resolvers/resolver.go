@@ -179,3 +179,17 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		after: args.After,
 	}, nil
 }
+
+func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	cfg := conf.Get().SiteConfiguration
+	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
+		return nil, errors.New("permissions user mapping is not enabled")
+	}
+
+	return r.store.ListPendingUsers(ctx)
+}

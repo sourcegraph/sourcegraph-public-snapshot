@@ -1382,6 +1382,9 @@ type Query {
         # Opaque pagination cursor.
         after: String
     ): RepositoryConnection!
+
+    # Returns a list of usernames or emails which can be used to query authorizedUserRepositories.
+    usersWithPendingPermissions: [String!]!
 }
 
 # The version of the search syntax.

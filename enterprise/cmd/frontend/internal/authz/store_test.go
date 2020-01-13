@@ -818,6 +818,88 @@ func testStoreSetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
+func testStoreListPendingUsers(db *sql.DB) func(t *testing.T) {
+	type update struct {
+		bindIDs []string
+		perm    *RepoPermissions
+	}
+	tests := []struct {
+		name               string
+		updates            []update
+		expectPendingUsers []string
+	}{
+		{
+			name: "alice",
+			updates: []update{
+				{
+					bindIDs: []string{"alice"},
+					perm: &RepoPermissions{
+						RepoID: 1,
+						Perm:   authz.Read,
+					},
+				},
+			},
+			expectPendingUsers: []string{"alice"},
+		},
+		{
+			name: "bob@example.com",
+			updates: []update{
+				{
+					bindIDs: []string{"bob@example.com"},
+					perm: &RepoPermissions{
+						RepoID: 1,
+						Perm:   authz.Read,
+					},
+				},
+				{
+					bindIDs: nil,
+					perm: &RepoPermissions{
+						RepoID: 1,
+						Perm:   authz.Read,
+					},
+				},
+			},
+			expectPendingUsers: []string{""},
+		},
+	}
+	return func(t *testing.T) {
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				s := NewStore(db, clock)
+				defer cleanup(t, s)
+
+				ctx := context.Background()
+
+				for _, update := range test.updates {
+					tmp := &RepoPermissions{
+						RepoID:    update.perm.RepoID,
+						Perm:      update.perm.Perm,
+						Provider:  update.perm.Provider,
+						UpdatedAt: update.perm.UpdatedAt,
+					}
+					if update.perm.UserIDs != nil {
+						tmp.UserIDs = update.perm.UserIDs.Clone()
+					}
+					if err := s.SetRepoPendingPermissions(ctx, update.bindIDs, tmp); err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				bindIDs, err := s.ListPendingUsers(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have := fmt.Sprintf("%v", bindIDs)
+				want := fmt.Sprintf("%v", test.expectPendingUsers)
+				if have != want {
+					t.Fatalf("want %v but got %v", want, have)
+				}
+			})
+		}
+	}
+}
+
 func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 	type pending struct {
 		bindIDs []string

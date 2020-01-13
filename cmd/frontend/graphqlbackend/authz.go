@@ -13,6 +13,7 @@ var NewAuthzResolver func() AuthzResolver
 type AuthzResolver interface {
 	SetRepositoryPermissionsForUsers(ctx context.Context, args *RepoPermsArgs) (*EmptyResponse, error)
 	AuthorizedUserRepositories(ctx context.Context, args *AuthorizedRepoArgs) (RepositoryConnectionResolver, error)
+	UsersWithPendingPermissions(ctx context.Context) ([]string, error)
 }
 
 type RepoPermsArgs struct {
@@ -43,4 +44,11 @@ func (*schemaResolver) AuthorizedUserRepositories(ctx context.Context, args *Aut
 		return nil, authzInEnterprise
 	}
 	return EnterpriseResolvers.authzResolver.AuthorizedUserRepositories(ctx, args)
+}
+
+func (*schemaResolver) UsersWithPendingPermissions(ctx context.Context) ([]string, error) {
+	if EnterpriseResolvers.authzResolver == nil {
+		return nil, authzInEnterprise
+	}
+	return EnterpriseResolvers.authzResolver.UsersWithPendingPermissions(ctx)
 }
