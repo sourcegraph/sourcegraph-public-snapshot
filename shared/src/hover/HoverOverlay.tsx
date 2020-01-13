@@ -108,7 +108,12 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         this.subscription.add(
             this.props.platformContext.settings.subscribe(s => {
                 this.setState({
-                    showBadges: s.final && !isErrorLike(s.final) && s.final.experimentalFeatures?.showBadgeAttachments,
+                    showBadges:
+                        s.final &&
+                        !isErrorLike(s.final) &&
+                        s.final.experimentalFeatures &&
+                        // Enabled if true or null
+                        s.final.experimentalFeatures.showBadgeAttachments !== false,
                 })
             })
         )
