@@ -786,7 +786,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	// Fast path: if we don't update the CampaignPlan, we don't need to rewire
 	// ChangesetJobs, but only update name/description if they changed.
 	if !updatePlanID && updateAttributes {
-		return campaign, tx.ResetChangesetJobs(ctx, campaign.ID)
+		return campaign, nil, tx.ResetChangesetJobs(ctx, campaign.ID)
 	}
 
 	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPlanID, updateAttributes)

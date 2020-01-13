@@ -299,13 +299,15 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		}
 	}()
 
-	go func() {
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		err := svc.CloseOpenChangesets(ctx, detachedChangesets)
-		if err != nil {
-			log15.Error("CloseOpenChangesets", "err", err)
-		}
-	}()
+	if detachedChangesets != nil {
+		go func() {
+			ctx := trace.ContextWithTrace(context.Background(), tr)
+			err := svc.CloseOpenChangesets(ctx, detachedChangesets)
+			if err != nil {
+				log15.Error("CloseOpenChangesets", "err", err)
+			}
+		}()
+	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
