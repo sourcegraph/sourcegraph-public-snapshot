@@ -17,14 +17,14 @@ exports[`CampaignTabs renders 1`] = `
             className="text-success"
           >
             +
-            3
+            0
           </span>
            
           <span
             className="text-danger"
           >
             -
-            5
+            0
           </span>
         </span>,
       },
@@ -33,46 +33,17 @@ exports[`CampaignTabs renders 1`] = `
         "label": <span
           className="e2e-campaign-changesets-tab"
         >
-          Changesets 
+          Changesets
+           
           <span
             className="badge badge-secondary badge-pill"
-          >
-            1
-          </span>
+          />
         </span>,
       },
     ]
   }
 >
   <CampaignChangesets
-    changesets={
-      Object {
-        "nodes": Array [
-          Object {
-            "__typename": "ChangesetPlan",
-            "diff": Object {
-              "__typename": "PreviewRepositoryComparison",
-              "fileDiffs": Object {
-                "__typename": "PreviewFileDiffConnection",
-                "diffStat": Object {
-                  "__typename": "DiffStat",
-                  "added": 1,
-                  "changed": 2,
-                  "deleted": 3,
-                },
-                "nodes": Array [],
-              },
-            },
-            "id": "0",
-            "repository": Object {
-              "name": "sourcegraph/sourcegraph",
-              "url": "github.com/sourcegraph/sourcegraph",
-            },
-          },
-        ],
-        "totalCount": 1,
-      }
-    }
     className="mt-3"
     history={
       Object {
@@ -116,36 +87,9 @@ exports[`CampaignTabs renders 1`] = `
         "state": undefined,
       }
     }
+    queryChangesetsConnection={[Function]}
   />
   <CampaignDiffs
-    changesets={
-      Object {
-        "nodes": Array [
-          Object {
-            "__typename": "ChangesetPlan",
-            "diff": Object {
-              "__typename": "PreviewRepositoryComparison",
-              "fileDiffs": Object {
-                "__typename": "PreviewFileDiffConnection",
-                "diffStat": Object {
-                  "__typename": "DiffStat",
-                  "added": 1,
-                  "changed": 2,
-                  "deleted": 3,
-                },
-                "nodes": Array [],
-              },
-            },
-            "id": "0",
-            "repository": Object {
-              "name": "sourcegraph/sourcegraph",
-              "url": "github.com/sourcegraph/sourcegraph",
-            },
-          },
-        ],
-        "totalCount": 1,
-      }
-    }
     className="mt-3"
     history={
       Object {
@@ -190,6 +134,7 @@ exports[`CampaignTabs renders 1`] = `
       }
     }
     persistLines={true}
+    queryChangesetsConnection={[Function]}
   />
 </TabsWithLocalStorageViewStatePersistence>
 `;

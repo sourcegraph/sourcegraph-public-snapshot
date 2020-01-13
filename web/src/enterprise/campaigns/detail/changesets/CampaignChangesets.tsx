@@ -1,12 +1,16 @@
 import React from 'react'
 import H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { ChangesetNode } from './ChangesetNode'
+import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { Observable } from 'rxjs'
+import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 
 interface Props extends ThemeProps {
-    changesets: Pick<GQL.IExternalChangesetConnection | GQL.IChangesetPlanConnection, 'nodes'>
-
+    queryChangesetsConnection: (
+        args: FilteredConnectionQueryArgs
+    ) => Observable<GQL.IExternalChangesetConnection | GQL.IChangesetPlanConnection>
     history: H.History
     location: H.Location
 
@@ -17,21 +21,26 @@ interface Props extends ThemeProps {
  * A list of a campaign's or campaign preview's changesets.
  */
 export const CampaignChangesets: React.FunctionComponent<Props> = ({
-    changesets,
+    queryChangesetsConnection,
     history,
     location,
     className = '',
     isLightTheme,
 }) => (
     <div className={`list-group ${className}`}>
-        {(changesets.nodes as (GQL.IExternalChangeset | GQL.IChangesetPlan)[]).map(changeset => (
-            <ChangesetNode
-                key={changeset.id}
-                node={changeset}
-                isLightTheme={isLightTheme}
-                location={location}
-                history={history}
-            ></ChangesetNode>
-        ))}
+        <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<ChangesetNodeProps, 'node'>>
+            className="mt-2"
+            // updates={changesetUpdates}
+            nodeComponent={ChangesetNode}
+            nodeComponentProps={{ isLightTheme, history, location }}
+            queryConnection={queryChangesetsConnection}
+            hideSearch={true}
+            defaultFirst={DEFAULT_CHANGESET_LIST_COUNT}
+            noun="changeset"
+            pluralNoun="changesets"
+            history={history}
+            location={location}
+            useURLQuery={false}
+        />
     </div>
 )

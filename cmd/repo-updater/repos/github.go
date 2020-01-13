@@ -71,11 +71,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}
 
 	if c.Certificate != "" {
-		pool, err := httpcli.NewCertPool(c.Certificate)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
 	cli, err := cf.Doer(opts...)
@@ -148,8 +144,10 @@ func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
+var _ ChangesetSource = GithubSource{}
+
 // CreateChangeset creates the given *Changeset in the code host.
-func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (error, bool) {
+func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	var exists bool
 	repo := c.Repo.Metadata.(*github.Repository)
 
@@ -163,15 +161,15 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (error,
 
 	if err != nil {
 		if err != github.ErrPullRequestAlreadyExists {
-			return err, exists
+			return exists, err
 		}
 		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
 		if err != nil {
-			return errors.Wrap(err, "getting repo owner and name"), exists
+			return exists, errors.Wrap(err, "getting repo owner and name")
 		}
 		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
 		if err != nil {
-			return errors.Wrap(err, "fetching existing PR"), exists
+			return exists, errors.Wrap(err, "fetching existing PR")
 		}
 		exists = true
 	}
@@ -180,7 +178,7 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (error,
 	c.Changeset.ExternalID = strconv.FormatInt(pr.Number, 10)
 	c.Changeset.ExternalServiceType = github.ServiceType
 
-	return nil, exists
+	return exists, nil
 }
 
 // CloseChangeset closes the given *Changeset on the code host and updates the

@@ -3,6 +3,11 @@ import { EncodedBloomFilter } from '../datastructures/bloom-filter'
 import { MAX_POSTGRES_BATCH_SIZE } from '../constants'
 
 /**
+ * The primary key of the `lsif_uploads` table.
+ */
+export type DumpId = number
+
+/**
  * The possible states of an LsifUpload entity.
  */
 export type LsifUploadState = 'queued' | 'completed' | 'errored' | 'processing'
@@ -24,7 +29,7 @@ export class LsifUpload {
      * A unique ID required by typeorm entities.
      */
     @PrimaryGeneratedColumn('increment', { type: 'int' })
-    public id!: number
+    public id!: DumpId
 
     /**
      *  The name of the source repository.
@@ -60,18 +65,6 @@ export class LsifUpload {
     public state!: LsifUploadState
 
     /**
-     * The error message that occurred during processing (if any).
-     */
-    @Column('text', { name: 'failure_summary', nullable: true })
-    public failureSummary!: string
-
-    /**
-     * The stacktrace of the error that occurred during processing (if any).
-     */
-    @Column('text', { name: 'failure_stacktrace', nullable: true })
-    public failureStacktrace!: string
-
-    /**
      * The time the dump was uploaded.
      */
     @Column('timestamp with time zone', { name: 'uploaded_at' })
@@ -81,19 +74,49 @@ export class LsifUpload {
      * The time the upload started its conversion.
      */
     @Column('timestamp with time zone', { name: 'started_at', nullable: true })
-    public startedAt!: Date
+    public startedAt!: Date | null
 
     /**
      * The time the conversion completed or errored.
      */
     @Column('timestamp with time zone', { name: 'finished_at', nullable: true })
-    public finishedAt!: Date
+    public finishedAt!: Date | null
+
+    /**
+     * The error message that occurred during processing (if any).
+     */
+    @Column('text', { name: 'failure_summary', nullable: true })
+    public failureSummary!: string | null
+
+    /**
+     * The stacktrace of the error that occurred during processing (if any).
+     */
+    @Column('text', { name: 'failure_stacktrace', nullable: true })
+    public failureStacktrace!: string | null
 
     /**
      * The opentracing headers from the upload request.
      */
     @Column('text', { name: 'tracing_context' })
     public tracingContext!: string
+
+    /**
+     * Whether or not this commit is visible at the tip of the default branch.
+     */
+    @Column('boolean', { name: 'visible_at_tip' })
+    public visibleAtTip!: boolean
+}
+
+/**
+ * A view of LsifUpload entities with state = 'completed'.
+ */
+@Entity({ name: 'lsif_dumps' })
+export class LsifDump extends LsifUpload {
+    /**
+     * The time the dump was created.
+     */
+    @Column('timestamp with time zone', { name: 'processed_at' })
+    public processedAt!: Date
 }
 
 /**
@@ -132,68 +155,6 @@ export class Commit {
      */
     @Column('text', { name: 'parent_commit', nullable: true })
     public parentCommit!: string | null
-}
-
-/**
- * The primary key of the `lsif_dumps` table.
- */
-export type DumpId = number
-
-/**
- * An entity within Postgres. A row with a repository and commit indicates that
- * there exists LSIF data for that pair.
- */
-@Entity({ name: 'lsif_dumps' })
-export class LsifDump {
-    /**
-     * The number of model instances that can be inserted at once.
-     */
-    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
-
-    /**
-     * A unique ID required by typeorm entities.
-     */
-    @PrimaryGeneratedColumn('increment', { type: 'int' })
-    public id!: DumpId
-
-    /**
-     * The name of the source repository.
-     */
-    @Column('text')
-    public repository!: string
-
-    /**
-     * The source commit.
-     */
-    @Column('text')
-    public commit!: string
-
-    /**
-     * The path at which this LSIF dump is mounted. Roots for two different LSIF
-     * dumps at the same repo@commit must not overlap (they are not allowed be
-     * prefixes of one another). Defaults to the empty string, which indicates
-     * this is the only LSIF dump for the repo@commit.
-     */
-    @Column('text')
-    public root!: string
-
-    /**
-     * Whether or not this commit is visible at the tip of the default branch.
-     */
-    @Column('boolean', { name: 'visible_at_tip' })
-    public visibleAtTip!: boolean
-
-    /**
-     * The time the dump was uploaded.
-     */
-    @Column('timestamp with time zone', { name: 'uploaded_at' })
-    public uploadedAt!: Date
-
-    /**
-     * The time the dump was created.
-     */
-    @Column('timestamp with time zone', { name: 'processed_at' })
-    public processedAt!: Date
 }
 
 /**

@@ -10,6 +10,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
@@ -275,9 +276,19 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	campaign, err := svc.UpdateCampaign(ctx, updateArgs)
+	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
 	if err != nil {
 		return nil, err
+	}
+
+	if detachedChangesets != nil {
+		go func() {
+			ctx := trace.ContextWithTrace(context.Background(), tr)
+			err := svc.CloseOpenChangesets(ctx, detachedChangesets)
+			if err != nil {
+				log15.Error("CloseOpenChangesets", "err", err)
+			}
+		}()
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil

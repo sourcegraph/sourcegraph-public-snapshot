@@ -45,6 +45,7 @@ import {
 } from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
+import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
 
 interface Props extends ThemeProps {
     /**
@@ -195,17 +196,41 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                   )
                               )
                     ),
-                    tap(setCampaign)
+                    tap(campaign => {
+                        setCampaign(campaign)
+                        if (campaign && campaign.changesets.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
+                            nextChangesetUpdate()
+                        }
+                    })
                 ),
-            [previewCampaignPlans]
+            [previewCampaignPlans, nextChangesetUpdate]
         )
     )
+
     const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
     useEffect(() => {
         if (planID) {
             nextPreviewCampaignPlan(planID)
         }
     }, [nextPreviewCampaignPlan, planID])
+
+    const status = campaign
+        ? campaign.__typename === 'CampaignPlan'
+            ? campaign.status
+            : campaign.changesetCreationStatus
+        : null
+
+    // Tracks if a refresh of the campaignPlan is required before the campaign can be created
+    const previewRefreshNeeded = useMemo(() => {
+        const currentSpec =
+            campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
+
+        return (
+            !currentSpec ||
+            (campaignPlanSpec?.arguments && !isEqual(currentSpec, parseJSONC(campaignPlanSpec.arguments))) ||
+            (status && status.state !== GQL.BackgroundProcessState.COMPLETED)
+        )
+    }, [campaign, campaignPlanSpec, status])
 
     if (campaign === undefined && campaignID) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -303,19 +328,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
-
-    const status = campaign
-        ? campaign.__typename === 'CampaignPlan'
-            ? campaign.status
-            : campaign.changesetCreationStatus
-        : null
-
-    const currentSpec = campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
-    // Tracks if a refresh of the campaignPlan is required before the campaign can be created
-    const previewRefreshNeeded =
-        !currentSpec ||
-        (campaignPlanSpec?.arguments && !isEqual(currentSpec, parseJSONC(campaignPlanSpec.arguments))) ||
-        (status && status.state !== GQL.BackgroundProcessState.COMPLETED)
 
     return (
         <>
@@ -506,10 +518,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
                 </>
             )}
+
             {/* is already created or a preview is available */}
             {campaign && (
                 <CampaignTabs
-                    changesets={campaign.changesets}
+                    campaign={campaign}
                     persistLines={campaign.__typename === 'Campaign'}
                     history={history}
                     location={location}
