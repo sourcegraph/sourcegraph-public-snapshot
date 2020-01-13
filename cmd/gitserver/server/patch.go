@@ -131,14 +131,22 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if authorEmail == "" {
 		authorEmail = "support@sourcegraph.com"
 	}
+	committerName := req.CommitInfo.CommitterName
+	if committerName == "" {
+		committerName = authorName
+	}
+	committerEmail := req.CommitInfo.CommitterEmail
+	if committerEmail == "" {
+		committerEmail = authorEmail
+	}
 
 	cmd = exec.CommandContext(ctx, "git", "commit", "-m", message)
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(cmd.Env, []string{
 		tmpGitPathEnv,
 		altObjectsEnv,
-		"GIT_COMMITTER_NAME=sourcegraph-committer",
-		"GIT_COMMITTER_EMAIL=support@sourcegraph.com",
+		fmt.Sprintf("GIT_COMMITTER_NAME=%s", committerName),
+		fmt.Sprintf("GIT_COMMITTER_EMAIL=%s", committerEmail),
 		fmt.Sprintf("GIT_AUTHOR_NAME=%s", authorName),
 		fmt.Sprintf("GIT_AUTHOR_EMAIL=%s", authorEmail),
 		fmt.Sprintf("GIT_COMMITTER_DATE=%v", req.CommitInfo.Date),
