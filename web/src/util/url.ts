@@ -52,7 +52,7 @@ export function replaceRevisionInURL(href: string, newRev: string): string {
     const parsed = parseBrowserRepoURL(href)
     const repoRev = `/${encodeRepoRev(parsed.repoName, parsed.rev)}`
 
-    const u = new URL(href)
+    const u = new URL(href, window.location.href)
     u.pathname = `/${encodeRepoRev(parsed.repoName, newRev)}${u.pathname.slice(repoRev.length)}`
     return `${u.pathname}${u.search}${u.hash}`
 }
@@ -61,7 +61,7 @@ export function replaceRevisionInURL(href: string, newRev: string): string {
  * Parses the properties of a blob URL.
  */
 export function parseBrowserRepoURL(href: string): ParsedRepoURI {
-    const loc = new URL(href, typeof window !== 'undefined' ? window.location.href : undefined)
+    const loc = new URL(href, window.location.href)
     let pathname = loc.pathname.slice(1) // trim leading '/'
     if (pathname.endsWith('/')) {
         pathname = pathname.substr(0, pathname.length - 1) // trim trailing '/'
