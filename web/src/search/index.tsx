@@ -121,3 +121,7 @@ export interface InteractiveSearchProps {
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
+
+export interface SmartSearchFieldProps {
+    smartSearchField: boolean
+}
