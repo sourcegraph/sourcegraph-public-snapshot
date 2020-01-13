@@ -412,12 +412,6 @@ type Mutation {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
-    # Deletes an LSIF dump.
-    deleteLSIFDump(id: ID!): EmptyResponse
-
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
 
@@ -1328,37 +1322,6 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
-    # Retrieve counts of uploads by state.
-    lsifUploadStats: LSIFUploadStats!
-
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
-    # Search for LSIF uploaads by state and query term.
-    lsifUploads(
-        # The state of returned uploads.
-        state: LSIFUploadState!
-
-        # An (optional) search query that searches over the repository, commit,
-        # root, and failure properties (reason and stacktrace).
-        query: String
-
-        # When specified, indicates that this request should be paginated and
-        # the first N results (relative to the cursor) should be returned. i.e.
-        # how many results to return per page. It must be in the range of 0-5000.
-        first: Int
-
-        # When specified, indicates that this request should be paginated and
-        # to fetch results starting at this cursor.
-        #
-        # A future request can be made for more results by passing in the
-        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
-        after: String
-    ): LSIFUploadConnection!
-
     # The repositories a user is authorized to access with the given permission.
     # This isn’t defined in the User type because we store permissions for users
     # that don’t yet exist (i.e. late binding). Only one of "username" or "email"
@@ -1903,12 +1866,15 @@ type Repository implements Node & GenericSearchResultInterface {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
-    # The repository's LSIF dumps.
-    lsifDumps(
+    # The repository's LSIF uploads.
+    lsifUploads(
         # An (optional) search query that searches over the commit and root properties.
         query: String
 
-        # When specified, shows only dumps that are latest for the given repository.
+        # The state of returned uploads.
+        state: LSIFUploadState
+
+        # When specified, shows only uploads that are latest for the given repository.
         isLatestForRepo: Boolean
 
         # When specified, indicates that this request should be paginated and
@@ -1920,9 +1886,9 @@ type Repository implements Node & GenericSearchResultInterface {
         # to fetch results starting at this cursor.
         #
         # A future request can be made for more results by passing in the
-        # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
+        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         after: String
-    ): LSIFDumpConnection!
+    ): LSIFUploadConnection!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
@@ -2766,7 +2732,7 @@ type GitBlob implements TreeEntry & File2 {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
-    # A wrapper around LSIF query methods. If no LSIF dump can be used to answer code
+    # A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
     # intelligence queries for this path-at-revision, this resolves to null.
     lsif: LSIFQueryResolver
 }
@@ -4128,35 +4094,6 @@ type RegistryExtensionConnection {
     error: String
 }
 
-# Metadata about an LSIF upload.
-type LSIFDump implements Node {
-    # An opaque GraphQL ID representing this LSIF dump.
-    id: ID!
-
-    # The project for which this dump provides code intelligence.
-    projectRoot: GitTree
-
-    # The original repository name supplied at upload time.
-    inputRepoName: String!
-
-    # The original 40-character commit commit supplied at upload time.
-    inputCommit: String!
-
-    # The original root supplied at upload time.
-    inputRoot: String!
-
-    # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
-    # will return symbols from remote repositories only when this property is true. This property is updated
-    # asynchronously and is eventually consistent with the git data known by the Sourcegraph instance.
-    isLatestForRepo: Boolean!
-
-    # The time the dump was uploaded.
-    uploadedAt: DateTime!
-
-    # The time the dump became available for use.
-    processedAt: DateTime!
-}
-
 # A list of locations within a file.
 type LocationConnection {
     # A list of locations within a file.
@@ -4175,18 +4112,6 @@ type Hover {
     range: Range!
 }
 
-# A list of LSIF dumps.
-type LSIFDumpConnection {
-    # A list of LSIF dumps.
-    nodes: [LSIFDump!]!
-
-    # The total number of dumps for this repository.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
 # The state an LSIF upload can be in.
 enum LSIFUploadState {
     # The LSIF worker is processing this upload.
@@ -4200,24 +4125,6 @@ enum LSIFUploadState {
 
     # This upload is queued to be processed later.
     QUEUED
-}
-
-# Counts of LSIF uploads by state.
-type LSIFUploadStats implements Node {
-    # An opaque GraphQL ID.
-    id: ID!
-
-    # How many uploads are currently being processed.
-    processingCount: Int!
-
-    # How many uploads have errored.
-    erroredCount: Int!
-
-    # How many uploads have completed.
-    completedCount: Int!
-
-    # How many uploads are queued.
-    queuedCount: Int!
 }
 
 # Metadata and status about an LSIF upload.
@@ -4240,9 +4147,6 @@ type LSIFUpload implements Node {
     # The upload's current state.
     state: LSIFUploadState!
 
-    # Metadata about a upload's failure (not set if state is not ERRORED).
-    failure: LSIFUploadFailureReason
-
     # The time the upload was uploaded.
     uploadedAt: DateTime!
 
@@ -4251,6 +4155,15 @@ type LSIFUpload implements Node {
 
     # The time the upload compelted or errored.
     finishedAt: DateTime
+
+    # Metadata about a upload's failure (not set if state is not ERRORED).
+    failure: LSIFUploadFailureReason
+
+    # Whether or not this upload provides intelligence for the tip of the default branch. Find reference
+    # queries will return symbols from remote repositories only when this property is true. This property
+    # is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
+    # instance.
+    isLatestForRepo: Boolean!
 }
 
 # Metadata about a LSIF upload failure.

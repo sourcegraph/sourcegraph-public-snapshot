@@ -1,6 +1,6 @@
 import HeartIcon from 'mdi-react/HeartIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import { primaryGroup, authGroup, otherGroup, siteAdminSidebarGroups } from '../../site-admin/sidebaritems'
+import { authGroup, otherGroup, siteAdminSidebarGroups } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
@@ -45,22 +45,6 @@ const dotcomGroup: SiteAdminSideBarGroup = {
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdminSidebarGroups.reduce<
     SiteAdminSideBarGroups
 >((enterpriseGroups, group) => {
-    if (group === primaryGroup) {
-        return [
-            ...enterpriseGroups,
-            {
-                ...group,
-                // Add LSIF uploads page to end of primary group
-                items: [
-                    ...group.items,
-                    {
-                        label: 'LSIF uploads',
-                        to: '/site-admin/lsif-uploads',
-                    },
-                ],
-            },
-        ]
-    }
     if (group === authGroup) {
         return [
             ...enterpriseGroups,
