@@ -205,15 +205,6 @@ Array [
           "username": "alice",
         },
         "changesetCountsOverTime": Array [],
-        "changesetCreationStatus": Object {
-          "__typename": "BackgroundProcessStatus",
-          "completedCount": 3,
-          "errors": Array [
-            "a",
-          ],
-          "pendingCount": 3,
-          "state": "PROCESSING",
-        },
         "changesets": Object {
           "nodes": Array [],
           "totalCount": 2,
@@ -224,6 +215,15 @@ Array [
         "plan": Object {
           "arguments": "{}",
           "type": "comby",
+        },
+        "status": Object {
+          "__typename": "BackgroundProcessStatus",
+          "completedCount": 3,
+          "errors": Array [
+            "a",
+          ],
+          "pendingCount": 3,
+          "state": "PROCESSING",
         },
         "updatedAt": "2020-01-01",
       }
@@ -486,15 +486,6 @@ Array [
           "username": "alice",
         },
         "changesetCountsOverTime": Array [],
-        "changesetCreationStatus": Object {
-          "__typename": "BackgroundProcessStatus",
-          "completedCount": 3,
-          "errors": Array [
-            "a",
-          ],
-          "pendingCount": 3,
-          "state": "PROCESSING",
-        },
         "changesets": Object {
           "nodes": Array [],
           "totalCount": 2,
@@ -505,6 +496,15 @@ Array [
         "plan": Object {
           "arguments": "{}",
           "type": "comby",
+        },
+        "status": Object {
+          "__typename": "BackgroundProcessStatus",
+          "completedCount": 3,
+          "errors": Array [
+            "a",
+          ],
+          "pendingCount": 3,
+          "state": "PROCESSING",
         },
         "updatedAt": "2020-01-01",
       }
