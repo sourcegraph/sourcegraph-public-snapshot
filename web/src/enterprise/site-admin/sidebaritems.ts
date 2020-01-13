@@ -45,9 +45,6 @@ const dotcomGroup: SiteAdminSideBarGroup = {
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdminSidebarGroups.reduce<
     SiteAdminSideBarGroups
 >((enterpriseGroups, group) => {
-    if (group === primaryGroup) {
-        return [...enterpriseGroups, group]
-    }
     if (group === authGroup) {
         return [
             ...enterpriseGroups,

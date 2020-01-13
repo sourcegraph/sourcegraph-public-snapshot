@@ -10,12 +10,15 @@ import { Collapsible } from '../../../components/Collapsible'
 import { fetchLsifUploads } from './backend'
 import { Toggle } from '../../../../../shared/src/components/Toggle'
 
-interface ToggleComponentProps {
+interface HideIncompleteLSIFUploadsToggleProps {
     onlyCompleted: boolean
     onToggle: (enabled: boolean) => void
 }
 
-const ToggleComponent: FunctionComponent<ToggleComponentProps> = ({ onlyCompleted, onToggle }) => (
+const HideIncompleteLSIFUploadsToggle: FunctionComponent<HideIncompleteLSIFUploadsToggleProps> = ({
+    onlyCompleted,
+    onToggle,
+}) => (
     <div className="lsif-uploads-filter-toggle">
         <label className="radio-buttons__item lsif-uploads-filter-toggle-label" title="Hide incomplete uploads">
             <Toggle value={onlyCompleted} onToggle={onToggle} title="Hide incomplete uploads" />
@@ -149,7 +152,9 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                         location={props.location}
                         listClassName="list-group list-group-flush"
                         cursorPaging={true}
-                        additionalFilterElement={<ToggleComponent onlyCompleted={onlyCompleted} onToggle={setState} />}
+                        additionalFilterElement={
+                            <HideIncompleteLSIFUploadsToggle onlyCompleted={onlyCompleted} onToggle={setState} />
+                        }
                     />
                 </Collapsible>
             </div>
