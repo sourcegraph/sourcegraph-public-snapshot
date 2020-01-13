@@ -743,7 +743,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 spellCheck={false}
                             />
                         )}
-                        {this.props.filters && this.state.activeFilter && (
+                        {this.props.filters && this.state.activeFilter ? (
                             <FilteredConnectionFilterControl
                                 filters={this.props.filters}
                                 onDidSelectFilter={this.onDidSelectFilter}
@@ -751,6 +751,8 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             >
                                 {this.props.additionalFilterElement}
                             </FilteredConnectionFilterControl>
+                        ) : (
+                            this.props.additionalFilterElement
                         )}
                     </Form>
                 )}

@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func (r *schemaResolver) Repositories(args *struct {
@@ -69,6 +69,18 @@ func (r *schemaResolver) Repositories(args *struct {
 		notIndexed:      args.NotIndexed,
 	}, nil
 }
+
+type TotalCountArgs struct {
+	Precise bool
+}
+
+type RepositoryConnectionResolver interface {
+	Nodes(ctx context.Context) ([]*RepositoryResolver, error)
+	TotalCount(ctx context.Context, args *TotalCountArgs) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
 	opt             db.ReposListOptions
@@ -215,9 +227,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 	return resolvers, nil
 }
 
-func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *struct {
-	Precise bool
-}) (countptr *int32, err error) {
+func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
 	if isAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx); isAdminErr != nil {
 		if args.Precise {
 			// Only site admins can perform precise counts, because it is a slow operation.
@@ -283,25 +293,10 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	// We only want to set the enabled state of a repo that isn't yet managed
-	// by the new syncer. Repo-updater returns the set of external services that
-	// were updated to exclude the given repo. If that set is empty, it means that
-	// the given repo isn't yet managed by the new syncer, so we proceed to update
-	// the enabled state regardless.
-	var done bool
 	if !args.Enabled {
-		resp, err := repoupdater.DefaultClient.ExcludeRepo(ctx, uint32(repo.repo.ID))
+		_, err := repoupdater.DefaultClient.ExcludeRepo(ctx, uint32(repo.repo.ID))
 		if err != nil {
 			return nil, errors.Wrapf(err, "repo-updater.exclude-repos")
-		}
-
-		// Have any external services been updated to exclude the given repo?
-		done = len(resp.ExternalServices) > 0
-	}
-
-	if !done {
-		if err = db.Repos.SetEnabled(ctx, repo.repo.ID, args.Enabled); err != nil {
-			return nil, err
 		}
 	}
 
@@ -316,57 +311,6 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		}
 	}
 
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) SetAllRepositoriesEnabled(ctx context.Context, args *struct {
-	Enabled bool
-}) (*EmptyResponse, error) {
-	// Only usable for self-hosted instances
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("Not available on sourcegraph.com")
-	}
-	// 🚨 SECURITY: Only site admins can enable/disable repositories, because it's a site-wide
-	// and semi-destructive action.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	var listArgs db.ReposListOptions
-	if args.Enabled {
-		listArgs = db.ReposListOptions{Disabled: true}
-	} else {
-		listArgs = db.ReposListOptions{Enabled: true}
-	}
-	reposList, err := db.Repos.List(ctx, listArgs)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, repo := range reposList {
-		if err := db.Repos.SetEnabled(ctx, repo.ID, args.Enabled); err != nil {
-			return nil, err
-		}
-	}
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) DeleteRepository(ctx context.Context, args *struct {
-	Repository graphql.ID
-}) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can delete repositories, because it's a site-wide
-	// and semi-destructive action.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	id, err := unmarshalRepositoryID(args.Repository)
-	if err != nil {
-		return nil, err
-	}
-	if err := db.Repos.Delete(ctx, id); err != nil {
-		return nil, err
-	}
 	return &EmptyResponse{}, nil
 }
 

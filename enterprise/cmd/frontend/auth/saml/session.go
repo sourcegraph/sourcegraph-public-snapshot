@@ -39,7 +39,7 @@ func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err erro
 // config; if there is more than 1, it returns multiple == true (which the caller should handle by
 // returning an error and refusing to proceed with auth).
 func getFirstProviderConfig() (pc *schema.SAMLAuthProvider, multiple bool) {
-	for _, p := range conf.Get().Critical.AuthProviders {
+	for _, p := range conf.Get().AuthProviders {
 		if p.Saml != nil {
 			if pc != nil {
 				return pc, true // multiple SAML auth providers

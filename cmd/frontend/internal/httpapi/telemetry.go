@@ -1,47 +1,35 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
-	"net/http/httputil"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 )
 
 var telemetryHandler http.Handler
 
 func init() {
-	if envvar.SourcegraphDotComMode() {
-		telemetryHandler = &httputil.ReverseProxy{
-			Director: func(req *http.Request) {
-				// Removed due to our event logging ETL pipeline sunsetting schedule.
-				// TODO(Dan): update with new logging URL.
-			},
-			ErrorLog: log.New(env.DebugOut, "telemetry proxy: ", log.LstdFlags),
+	telemetryHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var tr eventlogger.TelemetryRequest
+		err := json.NewDecoder(r.Body).Decode(&tr)
+		if err != nil {
+			log15.Error("telemetryHandler: Decode", "error", err)
 		}
-	} else {
-		telemetryHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var tr eventlogger.TelemetryRequest
-			err := json.NewDecoder(r.Body).Decode(&tr)
+		err = usagestats.LogEvent(context.Background(), tr.EventName, "internal:backend", tr.UserID, "", "BACKEND", &tr.Argument)
+		if err != nil {
+			log15.Error("telemetryHandler: usagestats.LogBackendEvent", "error", err)
+		}
+		if tr.UserID != 0 && tr.EventName == "SavedSearchEmailNotificationSent" {
+			err = usagestats.LogActivity(true, tr.UserID, "", "STAGEVERIFY")
 			if err != nil {
-				log15.Error("telemetryHandler: Decode(2)", "error", err)
+				log15.Error("telemetryHandler: usagestats.LogBackendEvent", "error", err)
 			}
-			if tr.UserID != 0 && tr.EventLabel == "SavedSearchEmailNotificationSent" {
-				err = usagestats.LogActivity(true, tr.UserID, "", "STAGEVERIFY")
-				if err != nil {
-					log15.Error("telemetryHandler: usagestats.LogActivity", "error", err)
-				}
-			}
-
-			fmt.Fprintln(w, "event-level telemetry is disabled")
-			w.WriteHeader(http.StatusNoContent)
-		})
-	}
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
 }

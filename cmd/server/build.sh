@@ -27,7 +27,7 @@ export CGO_ENABLED=0
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
-export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/management-console github.com/sourcegraph/sourcegraph/cmd/repo-updater}
+export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/repo-updater}
 
 # Overridable server package path for when this script is called externally by
 # our enterprise build scripts.
@@ -82,7 +82,7 @@ export -f build_symbols
 
 build_lsif() {
     echo "--- build lsif-server"
-    IMAGE=sourcegraph/lsif-server:ci ./lsif/build.sh
+    IMAGE=sourcegraph/lsif-server-builder:ci ./lsif/build.sh
 }
 export -f build_lsif
 

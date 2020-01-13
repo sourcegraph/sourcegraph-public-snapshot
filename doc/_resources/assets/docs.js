@@ -25,10 +25,14 @@ window.sgdocs = (() => {
       versionSelectorInit()
       mobileNavInit()
       navInit()
+      scrollNavToSelected()
       breadcrumbsInit()
+      docsVersionLinks()
       startSourcegraphCommandInit()
       setTimeout(schemaLinkCheck, 0) // Browser scrolls straight to element without this
     },
+
+    scrollToElement: scrollToElement
   }
 
   /**
@@ -37,12 +41,12 @@ window.sgdocs = (() => {
    * @param {HTMLElement} element Element to scroll to
    * @param {number} elementOffsetTop Optionally reduce vertical scroll distance
    */
-  function scrollToElement(element, elementOffsetTop = 0) {
+  function scrollToElement(parent = document.body, element, elementOffsetTop = 0) {
     if (!element) {
       return
     }
 
-    document.body.scrollTo({
+    parent.scrollTo({
       top: element.offsetTop - elementOffsetTop,
       left: 0,
       behavior: 'smooth',
@@ -102,14 +106,39 @@ window.sgdocs = (() => {
     document.querySelectorAll('.content-nav a').forEach(el => (el.title = el.text.trim()))
   }
 
+  function scrollNavToSelected() {
+    setTimeout(() => scrollToElement(CONTENT_NAV, CONTENT_NAV.querySelector('.selected')), 50)
+  }
+
   function breadcrumbsInit() {
+    const capitalized = ['AWS', 'URL', 'CI', 'LSIF', 'GRAPHQL', 'API', 'UI', 'SSL', 'NGINX', 'TLS', 'SSH', 'SSO', 'FAQ', 'SQL']
     document.querySelectorAll('.breadcrumb-links a').forEach((el, index) => {
       if (index > 0) {
         let text = el.text.replace(/_/g, ' ')
         text = text.charAt(0).toUpperCase() + text.slice(1)
+        capitalized.forEach(word => text = text.replace(new RegExp(word, 'gi'), word))
         el.text = text
       }
     })
+  }
+
+  /**
+   * Make the docs nav branch aware by dynamically adding the branch prefix if non-master.
+   *
+   * NOTE: This will cause 404s in instances where the nav has been updated in master to
+   * point to a new file which doesn't exist in a previous branch, but there is no easy fix
+   * as the document.html template always reflects master because only the docs content is
+   * loaded dynamically.
+   */
+  function docsVersionLinks() {
+    let urlPath = window.location.pathname
+
+    if (urlPath.indexOf('@') === -1) {
+      return
+    }
+
+    let branchPrefix = urlPath.match(/(@[\d\w\.]+)/)[0]
+    document.querySelectorAll('#content-nav a').forEach(e => e.setAttribute('href', `/${branchPrefix}${e.getAttribute('href')}`))
   }
 
   /**
@@ -168,6 +197,10 @@ window.sgdocs = (() => {
   }
 
   function startSourcegraphCommandInit() {
+    if (!START_SOURCEGRAPH_COMMAND_SNIPPET) {
+      return
+    }
+
     START_SOURCEGRAPH_COMMAND_SNIPPET.addEventListener('click', gaConversionOnStartSourcegraphCommands)
   }
 

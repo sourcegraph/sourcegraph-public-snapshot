@@ -21,7 +21,7 @@ func init() {
 			} else {
 				newProvidersList := make([]providers.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
-					newProvidersList = append(newProvidersList, p)
+					newProvidersList = append(newProvidersList, p.Provider)
 				}
 				providers.Update(pkgName, newProvidersList)
 			}
@@ -29,17 +29,24 @@ func init() {
 	}()
 }
 
-func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.Provider, problems conf.Problems) {
-	ps = make(map[schema.GitHubAuthProvider]providers.Provider)
-	for _, pr := range cfg.Critical.AuthProviders {
+type Provider struct {
+	*schema.GitHubAuthProvider
+	providers.Provider
+}
+
+func parseConfig(cfg *conf.Unified) (ps []Provider, problems conf.Problems) {
+	for _, pr := range cfg.AuthProviders {
 		if pr.Github == nil {
 			continue
 		}
 
 		provider, providerProblems := parseProvider(pr.Github, pr)
-		problems = append(problems, conf.NewCriticalProblems(providerProblems...)...)
+		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
 		if provider != nil {
-			ps[*pr.Github] = provider
+			ps = append(ps, Provider{
+				GitHubAuthProvider: pr.Github,
+				Provider:           provider,
+			})
 		}
 	}
 	return ps, problems

@@ -5,13 +5,9 @@ import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
-import { CodeEditorData, EditorId, EditorUpdate } from '../../client/services/editorService'
+import { EditorUpdate } from '../../client/services/editorService'
 import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
-
-export interface WindowData {
-    editors: readonly (CodeEditorData & EditorId)[]
-}
 
 interface WindowsProxyData {
     windows: ClientWindowsAPI

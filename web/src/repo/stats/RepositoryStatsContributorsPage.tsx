@@ -14,9 +14,9 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
+import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRev, PatternTypeProps } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
-import { PersonLink } from '../../user/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 
@@ -26,7 +26,7 @@ interface QuerySpec {
     path: string | null
 }
 
-interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'togglePatternType'> {
+interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'setPatternType'> {
     node: GQL.IRepositoryContributor
     repoName: string
 }
@@ -55,7 +55,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
         <div className="repository-contributor-node list-group-item py-2">
             <div className="repository-contributor-node__person">
                 <UserAvatar className="icon-inline mr-2" user={node.person} />
-                <PersonLink userClassName="font-weight-bold" user={node.person.user || node.person.displayName} />
+                <PersonLink userClassName="font-weight-bold" person={node.person} />
             </div>
             <div className="repository-contributor-node__commits">
                 <div className="repository-contributor-node__commit">
@@ -157,7 +157,7 @@ const queryRepositoryContributors = memoizeObservable(
 interface Props
     extends RepositoryStatsAreaPageProps,
         RouteComponentProps<{}>,
-        Omit<PatternTypeProps, 'togglePatternType'> {}
+        Omit<PatternTypeProps, 'setPatternType'> {}
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,

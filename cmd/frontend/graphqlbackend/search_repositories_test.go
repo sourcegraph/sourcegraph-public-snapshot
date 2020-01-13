@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
 func TestSearchRepositories(t *testing.T) {
@@ -20,7 +20,7 @@ func TestSearchRepositories(t *testing.T) {
 
 	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
 
-	mockSearchFilesInRepos = func(args *search.Args) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
+	mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
 		repoName := args.Repos[0].Repo.Name
 		switch repoName {
 		case "foo/one":
@@ -49,11 +49,11 @@ func TestSearchRepositories(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		args := search.Args{
-			Pattern: &search.PatternInfo{Pattern: "", IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
-			Repos:   repositories,
-			Query:   q,
-			Zoekt:   zoekt,
+		args := search.TextParameters{
+			PatternInfo: &search.TextPatternInfo{Pattern: "", IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
+			Repos:       repositories,
+			Query:       q,
+			Zoekt:       zoekt,
 		}
 		res, _, err := searchRepositories(context.Background(), &args, int32(100))
 		if err != nil {
@@ -70,11 +70,11 @@ func TestSearchRepositories(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		args := search.Args{
-			Pattern: &search.PatternInfo{Pattern: "foo/one", IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
-			Repos:   repositories,
-			Query:   q,
-			Zoekt:   zoekt,
+		args := search.TextParameters{
+			PatternInfo: &search.TextPatternInfo{Pattern: "foo/one", IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
+			Repos:       repositories,
+			Query:       q,
+			Zoekt:       zoekt,
 		}
 		res, _, err := searchRepositories(context.Background(), &args, int32(100))
 		if err != nil {
@@ -97,11 +97,11 @@ func TestSearchRepositories(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		args := search.Args{
-			Pattern: &search.PatternInfo{Pattern: "foo", IsRegExp: true, FileMatchLimit: 1, FilePatternsReposMustInclude: []string{"f.go"}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
-			Repos:   repositories,
-			Query:   q,
-			Zoekt:   zoekt,
+		args := search.TextParameters{
+			PatternInfo: &search.TextPatternInfo{Pattern: "foo", IsRegExp: true, FileMatchLimit: 1, FilePatternsReposMustInclude: []string{"f.go"}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
+			Repos:       repositories,
+			Query:       q,
+			Zoekt:       zoekt,
 		}
 		res, _, err := searchRepositories(context.Background(), &args, int32(100))
 		if err != nil {
@@ -121,7 +121,7 @@ func TestSearchRepositories(t *testing.T) {
 }
 
 func TestRepoShouldBeAdded(t *testing.T) {
-	mockSearchFilesInRepos = func(args *search.Args) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
+	mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
 		repoName := args.Repos[0].Repo.Name
 		switch repoName {
 		case "foo/one":
@@ -142,7 +142,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo should be included in results, query has repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: &types.Repo{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		mockSearchFilesInRepos = func(args *search.Args) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
@@ -150,7 +150,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 				},
 			}, &searchResultsCommon{}, nil
 		}
-		pat := &search.PatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
@@ -162,10 +162,10 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo shouldn't be included in results, query has repoHasFile filter ", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: &types.Repo{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		mockSearchFilesInRepos = func(args *search.Args) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
 			return []*FileMatchResolver{}, &searchResultsCommon{}, nil
 		}
-		pat := &search.PatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
@@ -177,7 +177,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo shouldn't be included in results, query has -repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: &types.Repo{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		mockSearchFilesInRepos = func(args *search.Args) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
@@ -185,7 +185,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 				},
 			}, &searchResultsCommon{}, nil
 		}
-		pat := &search.PatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
@@ -197,10 +197,10 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo should be included in results, query has -repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: &types.Repo{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		mockSearchFilesInRepos = func(args *search.Args) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
 			return []*FileMatchResolver{}, &searchResultsCommon{}, nil
 		}
-		pat := &search.PatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
@@ -213,11 +213,11 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 // repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *search.RepositoryRevisions, pattern *search.PatternInfo) (bool, error) {
+func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *search.RepositoryRevisions, pattern *search.TextPatternInfo) (bool, error) {
 	repos := []*search.RepositoryRevisions{repo}
-	args := search.Args{
-		Pattern: pattern,
-		Zoekt:   zoekt,
+	args := search.TextParameters{
+		PatternInfo: pattern,
+		Zoekt:       zoekt,
 	}
 	rsta, err := reposToAdd(ctx, &args, repos)
 	if err != nil {

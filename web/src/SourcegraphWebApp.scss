@@ -220,6 +220,7 @@ body,
 @import './savedSearches/index';
 @import './search/input/ScopePage';
 @import './search/input/SearchPage';
+@import './search/queryBuilder/index';
 @import './search/results/SearchResults';
 @import './settings/SettingsFile';
 @import './site-admin/SiteInitPage';
@@ -248,7 +249,6 @@ body,
 @import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
-@import './open/OpenPage';
 @import './components/AnimatedAlert';
 @import './components/DismissibleAlert';
 @import './marketing/SurveyPage';

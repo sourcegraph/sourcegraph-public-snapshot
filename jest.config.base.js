@@ -36,7 +36,10 @@ const config = {
     // Neither NodeJS nor JSDOM have fetch + AbortController yet
     require.resolve('abort-controller/polyfill'),
     path.join(__dirname, 'shared/dev/fetch'),
+    path.join(__dirname, 'shared/dev/setLinkComponentForTest.ts'),
   ],
+  setupFilesAfterEnv: [require.resolve('core-js/stable'), require.resolve('regenerator-runtime/runtime')],
+  globalSetup: path.join(__dirname, 'shared/dev/jestGlobalSetup.js'),
 }
 
 module.exports = config

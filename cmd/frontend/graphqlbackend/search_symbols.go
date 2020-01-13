@@ -18,13 +18,13 @@ import (
 	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -43,24 +43,24 @@ func (s *searchSymbolResult) uri() *gituri.URI {
 	return s.baseURI.WithFilePath(s.symbol.Path)
 }
 
-var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error)
+var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, limit)
 	}
 
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.Pattern, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	if args.Pattern.Pattern == "" {
+	if args.PatternInfo.Pattern == "" {
 		return nil, nil, nil
 	}
 
@@ -141,8 +141,8 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*Fi
 			unflattened = append(unflattened, matches)
 			flattenedSize += len(matches)
 
-			if flattenedSize > int(args.Pattern.FileMatchLimit) {
-				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.Pattern.FileMatchLimit)
+			if flattenedSize > int(args.PatternInfo.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.PatternInfo.FileMatchLimit)
 				overLimitCanceled = true
 				common.limitHit = true
 				cancelAll()
@@ -187,7 +187,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*Fi
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()
-			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.Pattern, args.Query, limit)
+			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, args.Query, limit)
 			if repoErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
 			}
@@ -209,7 +209,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*Fi
 		})
 	}
 	err = run.Wait()
-	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
+	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
 	res2 := limitSymbolResults(flattened, limit)
 	common.limitHit = symbolCount(res2) < symbolCount(res)
 	return res2, common, err
@@ -244,7 +244,7 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int) (res []*FileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, query *query.Query, limit int) (res []*FileMatchResolver, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -271,7 +271,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 
-	symbols, err := backend.Symbols.ListTags(ctx, protocol.SearchArgs{
+	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
 		CommitID:        commitID,
 		Query:           patternInfo.Pattern,

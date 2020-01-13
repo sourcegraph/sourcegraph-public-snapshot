@@ -6,8 +6,10 @@ import {
     parseRepoURI,
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
+    interactiveBuildSearchURLQuery,
 } from './url'
 import { SearchPatternType } from '../graphql/schema'
+import { SuggestionTypes } from '../search/suggestions/util'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
@@ -422,5 +424,51 @@ describe('lprToSelectionsZeroIndexed', () => {
                 },
             ]
         )
+    })
+})
+
+describe('interactiveBuildSearchURLQuery', () => {
+    test('builds search URL query correctly with no filter inputs', () => {
+        const result = new URLSearchParams()
+        expect(interactiveBuildSearchURLQuery({}).toString()).toBe(result.toString())
+    })
+
+    test('builds search URL query correctly with a repo filter input', () => {
+        const result = new URLSearchParams('repo=gorilla/mux')
+        expect(
+            interactiveBuildSearchURLQuery({
+                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
+            }).toString()
+        ).toBe(result.toString())
+    })
+
+    test('builds search URL query correctly with multiple repo filter inputs', () => {
+        const result = new URLSearchParams('repo=gorilla/mux&repo=gorilla/muxy')
+        expect(
+            interactiveBuildSearchURLQuery({
+                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
+                'repo 2': { type: SuggestionTypes.repo, value: 'gorilla/muxy', editable: false },
+            }).toString()
+        ).toBe(result.toString())
+    })
+
+    test('builds search URL query correctly with repo and file filter inputs', () => {
+        const result = new URLSearchParams('repo=gorilla/mux&file=test')
+        expect(
+            interactiveBuildSearchURLQuery({
+                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
+                'file 2': { type: SuggestionTypes.file, value: 'test', editable: false },
+            }).toString()
+        ).toBe(result.toString())
+    })
+
+    test('builds search URL query correctly with repo and file filter inputs, and a repo filter in the navbar query', () => {
+        const result = new URLSearchParams('repo=gorilla/mux&file=test')
+        expect(
+            interactiveBuildSearchURLQuery({
+                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
+                'file 2': { type: SuggestionTypes.file, value: 'test', editable: false },
+            }).toString()
+        ).toBe(result.toString())
     })
 })

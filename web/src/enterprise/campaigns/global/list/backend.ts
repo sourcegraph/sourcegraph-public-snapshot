@@ -12,12 +12,10 @@ export const queryCampaigns = ({ first }: FilteredConnectionQueryArgs): Observab
                 campaigns(first: $first) {
                     nodes {
                         id
-                        namespace {
-                            namespaceName
-                        }
                         name
                         description
                         url
+                        closedAt
                     }
                     totalCount
                 }

@@ -1,20 +1,20 @@
 import { getTestTools } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { editCriticalSiteConfig, getCriticalSiteConfig } from './util/helpers'
+import { editSiteConfig } from './util/helpers'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as jsonc from '@sqs/jsonc-parser'
-import { getManagementConsoleState } from './util/api'
 import { Driver } from '../../../shared/src/e2e/driver'
-import { GraphQLClient } from './util/GraphQLClient'
 import { TestResourceManager } from './util/TestResourceManager'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import { CriticalConfiguration, BuiltinAuthProvider } from '../schema/critical.schema'
+import { BuiltinAuthProvider, SiteConfiguration } from '../schema/site.schema'
+import { fetchSiteConfiguration } from './util/api'
+import { GraphQLClient } from './util/GraphQLClient'
 
 /**
  * @jest-environment node
  */
 
-describe('Critical config test suite', () => {
+describe('Site config test suite', () => {
     const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
     const config = getConfig(
         'sudoToken',
@@ -24,21 +24,14 @@ describe('Critical config test suite', () => {
         'keepBrowser',
         'noCleanup',
         'sourcegraphBaseUrl',
-        'managementConsoleUrl',
         'testUserPassword',
         'logBrowserConsole'
     )
     let driver: Driver
-    let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
-    let managementConsolePassword: string
+    let gqlClient: GraphQLClient
     beforeAll(async () => {
-        ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-        const { plaintextPassword } = await getManagementConsoleState(gqlClient)
-        if (!plaintextPassword) {
-            throw new Error('empty management console password')
-        }
-        managementConsolePassword = plaintextPassword
+        ;({ driver, resourceManager, gqlClient } = await getTestTools(config))
     })
     beforeEach(() => {
         resourceManager = new TestResourceManager()
@@ -52,7 +45,7 @@ describe('Critical config test suite', () => {
             resourceManager.add(
                 'Configuration',
                 'htmlBodyTop',
-                await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
+                await editSiteConfig(gqlClient, contents =>
                     jsoncEdit.setProperty(
                         contents,
                         ['htmlBodyTop'],
@@ -77,18 +70,14 @@ describe('Critical config test suite', () => {
     test(
         'builtin auth provider: allowSignup',
         async () => {
-            const criticalConfig = await getCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword)
-            const criticalConfigParsed: CriticalConfiguration = jsonc.parse(criticalConfig.Contents)
+            const siteConfig = await fetchSiteConfiguration(gqlClient).toPromise()
+            const siteConfigParsed: SiteConfiguration = jsonc.parse(siteConfig.configuration.effectiveContents)
+            // console.log('# siteConfig', siteConfigParsed)
             const setBuiltinAuthProvider = async (p: BuiltinAuthProvider) => {
-                let builtinAuthProviderIndex = -1
-                if (criticalConfigParsed['auth.providers']) {
-                    for (let i = 0; i < criticalConfigParsed['auth.providers'].length; i++) {
-                        if (criticalConfigParsed['auth.providers'][i].type === 'builtin') {
-                            builtinAuthProviderIndex = i
-                            break
-                        }
-                    }
-                }
+                const authProviders = siteConfigParsed['auth.providers']
+                const foundIndices =
+                    authProviders?.map((p, i) => (p.type === 'builtin' ? i : -1)).filter(i => i !== -1) || []
+                const builtinAuthProviderIndex = foundIndices.length > 0 ? foundIndices[0] : -1
                 const editFns = []
                 if (builtinAuthProviderIndex !== -1) {
                     editFns.push((contents: string) =>
@@ -103,7 +92,7 @@ describe('Critical config test suite', () => {
                 editFns.push((contents: string) =>
                     jsoncEdit.setProperty(contents, ['auth.providers', -1], p, formattingOptions)
                 )
-                return editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, ...editFns)
+                return editSiteConfig(gqlClient, ...editFns)
             }
 
             resourceManager.add(

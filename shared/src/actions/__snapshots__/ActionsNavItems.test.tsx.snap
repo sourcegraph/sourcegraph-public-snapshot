@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ActionItem Renders contributed action items 1`] = `
+Array [
+  " ",
+  <li>
+    <span
+      className="action-item  action-item--variant-action-item"
+      data-tooltip="This is Action A"
+    >
+      Action A
+    </span>
+  </li>,
+]
+`;

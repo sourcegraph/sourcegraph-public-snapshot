@@ -12,9 +12,6 @@ import (
 // two configurations.
 func diff(before, after *Unified) (fields map[string]struct{}) {
 	diff := diffStruct(before.SiteConfiguration, after.SiteConfiguration, "")
-	for k, v := range diffStruct(before.Critical, after.Critical, "critical::") {
-		diff[k] = v
-	}
 	for k, v := range diffStruct(before.ServiceConnections, after.ServiceConnections, "serviceConnections::") {
 		diff[k] = v
 	}

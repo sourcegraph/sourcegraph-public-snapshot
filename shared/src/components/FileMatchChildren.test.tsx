@@ -13,7 +13,6 @@ jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children
 import sinon from 'sinon'
 
 import { FileMatchChildren } from './FileMatchChildren'
-import { setLinkComponent } from './Link'
 import { RESULT, HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST, NOOP_SETTINGS_CASCADE } from '../util/searchTestHelpers'
 
 const history = H.createBrowserHistory()
@@ -40,11 +39,7 @@ const defaultProps = {
 }
 
 describe('FileMatchChildren', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-    afterAll(() => {
-        setLinkComponent(null as any)
-        cleanup()
-    })
+    afterAll(cleanup)
 
     it('calls onSelect callback when an item is clicked', () => {
         const { container } = render(<FileMatchChildren {...defaultProps} onSelect={onSelect} />)

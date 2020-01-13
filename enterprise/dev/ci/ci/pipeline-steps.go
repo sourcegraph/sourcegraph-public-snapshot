@@ -13,7 +13,6 @@ var allDockerImages = []string{
 	"frontend",
 	"github-proxy",
 	"gitserver",
-	"management-console",
 	"query-runner",
 	"replacer",
 	"repo-updater",
@@ -189,7 +188,18 @@ func wait(pipeline *bk.Pipeline) {
 
 func triggerE2E(c Config) func(*bk.Pipeline) {
 	// hardFail if we publish docker images
-	hardFail := c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+
+	env := copyEnv(
+		"BUILDKITE_PULL_REQUEST",
+		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
+		"BUILDKITE_PULL_REQUEST_REPO",
+
+		"COMMIT_SHA",
+		"DATE",
+	)
+	env["VERSION"] = c.version
+	env["TAG"] = candiateImageTag(c)
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":chromium:",
@@ -199,10 +209,7 @@ func triggerE2E(c Config) func(*bk.Pipeline) {
 				Message: os.Getenv("BUILDKITE_MESSAGE"),
 				Commit:  c.commit,
 				Branch:  c.branch,
-				Env: copyEnv(
-					"BUILDKITE_PULL_REQUEST",
-					"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
-					"BUILDKITE_PULL_REQUEST_REPO"),
+				Env:     env,
 			}))
 	}
 }
@@ -219,7 +226,14 @@ func copyEnv(keys ...string) map[string]string {
 
 // Build all relevant Docker images for Sourcegraph, given the current CI case (e.g., "tagged
 // release", "release branch", "master branch", etc.)
-func addDockerImages(c Config) func(*bk.Pipeline) {
+func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
+	addDockerImage := func(c Config, app string, insiders bool) func(*bk.Pipeline) {
+		if !final {
+			return addCanidateDockerImage(c, app)
+		}
+		return addFinalDockerImage(c, app, insiders)
+	}
+
 	return func(pipeline *bk.Pipeline) {
 		switch {
 		case c.taggedRelease:
@@ -230,8 +244,11 @@ func addDockerImages(c Config) func(*bk.Pipeline) {
 		case c.releaseBranch:
 			addDockerImage(c, "server", false)(pipeline)
 			pipeline.AddWait()
-		case strings.HasPrefix(c.branch, "master-dry-run/"): // replicates `master` build but does not deploy
-			fallthrough
+		case c.isMasterDryRun: // replicates `master` build but does not deploy
+			for _, dockerImage := range allDockerImages {
+				addDockerImage(c, dockerImage, false)(pipeline)
+			}
+			pipeline.AddWait()
 		case c.branch == "master":
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
@@ -245,21 +262,26 @@ func addDockerImages(c Config) func(*bk.Pipeline) {
 	}
 }
 
-// Build Docker image for the service defined by `app`.
-func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
+// Build a candidate docker image that will re-tagged with the final
+// tags once the e2e tests pass.
+func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
+		if app == "server" {
+			// The candiate server image is built by the e2e pipeline.
+			return
+		}
+
+		baseImage := "sourcegraph/" + app
+
 		cmds := []bk.StepOpt{
-			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
+			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
+			bk.Env("IMAGE", baseImage+":"+c.version),
+			bk.Env("VERSION", c.version),
+			bk.Cmd("yes | gcloud auth configure-docker"),
 		}
 
 		cmdDir := func() string {
-			cmdDirByApp := map[string]string{
-				"lsif-server": "lsif",
-			}
-			if cmdDir, ok := cmdDirByApp[app]; ok {
-				return cmdDir
-			}
 			if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
 				fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
 				return "cmd/" + app
@@ -272,29 +294,57 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			cmds = append(cmds, bk.Cmd(preBuildScript))
 		}
 
-		baseImage := "sourcegraph/" + app
+		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
 
-		getBuildScript := func() string {
-			buildScriptByApp := map[string]string{
-				"symbols": "env BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImage",
+		getBuildSteps := func() []bk.StepOpt {
+			buildScriptByApp := map[string][]bk.StepOpt{
+				"symbols": {
+					bk.Env("BUILD_TYPE", "dist"),
+					bk.Cmd("./cmd/symbols/build.sh buildSymbolsDockerImage"),
+				},
 			}
 			if buildScript, ok := buildScriptByApp[app]; ok {
 				return buildScript
 			}
-			return cmdDir + "/build.sh"
+			return []bk.StepOpt{
+				bk.Cmd(cmdDir + "/build.sh"),
+			}
 		}
 
 		cmds = append(cmds,
-			bk.Env("IMAGE", baseImage+":"+c.version),
-			bk.Env("VERSION", c.version),
-			bk.Cmd(getBuildScript()),
+			getBuildSteps()...,
 		)
 
-		cmds = append(cmds, bk.Cmd("yes | gcloud auth configure-docker"))
+		tag := candiateImageTag(c)
+		cmds = append(cmds,
+			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", baseImage, c.version, gcrImage, tag)),
+			bk.Cmd(fmt.Sprintf("docker push %s:%s", gcrImage, tag)),
+		)
 
-		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
+		pipeline.AddStep(":docker: :construction:", cmds...)
+	}
+}
+
+// Tag and push final Docker image for the service defined by `app`
+// after the e2e tests pass.
+func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		baseImage := "sourcegraph/" + app
+
+		cmds := []bk.StepOpt{
+			bk.Cmd(fmt.Sprintf(`echo "Tagging final %s image..."`, app)),
+			bk.Cmd("yes | gcloud auth configure-docker"),
+		}
+
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
 
+		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candiateImageTag(c))
+		cmds = append(cmds,
+			bk.Cmd(fmt.Sprintf("docker pull %s", candidateImage)),
+			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", candidateImage, baseImage, c.version)),
+		)
+
+		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
 		for _, image := range []string{dockerHubImage, gcrImage} {
 			if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
 				cmds = append(cmds,
@@ -318,6 +368,11 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			}
 		}
 
-		pipeline.AddStep(":docker:", cmds...)
+		pipeline.AddStep(":docker: :white_check_mark:", cmds...)
 	}
+}
+
+func candiateImageTag(c Config) string {
+	buildNumber := os.Getenv("BUILDKITE_BUILD_NUMBER")
+	return fmt.Sprintf("%s_%s_candidate", c.commit, buildNumber)
 }

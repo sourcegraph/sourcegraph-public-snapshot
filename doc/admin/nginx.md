@@ -1,8 +1,6 @@
 # Sourcegraph NGINX HTTP and HTTPS/SSL configuration
 
-> NOTE: This a Sourcegraph 3.0+ feature.
-
-In Sourcegraph 3.0+, [NGINX](https://www.nginx.com/resources/glossary/nginx/) acts as a [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for the Sourcegraph front-end server, meaning NGINX proxies external HTTP (and [HTTPS](#nginx-ssl-https-configuration)) requests to the Sourcegraph front-end.
+In Sourcegraph, [NGINX](https://www.nginx.com/resources/glossary/nginx/) acts as a [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for the Sourcegraph front-end server, meaning NGINX proxies external HTTP (and [HTTPS](#nginx-ssl-https-configuration)) requests to the Sourcegraph front-end.
 
 ![NGINX and Sourcegraph architecture](img/sourcegraph-nginx.svg)
 
@@ -107,7 +105,7 @@ more details.
 
 ## Redirect to external HTTPS URL
 
-The URL that clients should use to access Sourcegraph is defined in the `externalURL` property in [critical configuration](config/critical_config.md). To enforce that clients access Sourcegraph via this URL (and not some other URL, such as an IP address or other non-`https` URL), add the following to `nginx.conf` (replacing `https://sourcegraph.example.com` with your external URL):
+The URL that clients should use to access Sourcegraph is defined in the `externalURL` property in [site configuration](config/site_config.md). To enforce that clients access Sourcegraph via this URL (and not some other URL, such as an IP address or other non-`https` URL), add the following to `nginx.conf` (replacing `https://sourcegraph.example.com` with your external URL):
 
 ``` nginx
 # Redirect non-HTTPS traffic to HTTPS.
@@ -137,4 +135,4 @@ See the [NGINX SSL Termination](https://docs.nginx.com/nginx/admin-guide/securit
 
 ## Next steps
 
-You should configure Sourcegraph's `externalURL` in the [critical configuration](config/critical_config.md) (and restart the frontend instances) so that Sourcegraph knows its URL.
+You should configure Sourcegraph's `externalURL` in the [site configuration](config/site_config.md) (and restart the frontend instances) so that Sourcegraph knows its URL.

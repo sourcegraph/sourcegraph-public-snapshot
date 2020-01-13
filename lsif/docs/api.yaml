@@ -12,8 +12,6 @@ servers:
 tags:
   - name: LSIF
     description: LSIF operations
-  - name: Dumps
-    description: Dump operations
   - name: Uploads
     description: Upload operations
 paths:
@@ -104,7 +102,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/Dump'
+                  - $ref: '#/components/schemas/Upload'
                   - type: null
   /definitions:
     get:
@@ -400,17 +398,12 @@ paths:
       tags:
         - Uploads
       parameters:
-        - name: state
-          in: path
-          description: The target upload state.
+        - name: repository
+          in: query
+          description: The repository name.
           required: true
           schema:
             type: string
-            enum:
-              - processing
-              - errored
-              - completed
-              - queued
         - name: query
           in: query
           description: A search query applied over repository, commit, root, failure reason, and failure stacktrace properties.
@@ -551,55 +544,6 @@ components:
         - text
         - range
       additionalProperties: false
-    Dumps:
-      type: object
-      description: A paginated wrapper for a list of dumps.
-      properties:
-        dumps:
-          type: array
-          description: A list of LSIF dumps for a repository.
-          items:
-            $ref: '#/components/schemas/Dump'
-        totalCount:
-          type: number
-          description: The total number of dumps in this set of results.
-      required:
-        - dumps
-        - totalCount
-      additionalProperties: false
-    Dump:
-      type: object
-      description: An LSIF dump.
-      properties:
-        id:
-          type: number
-          description: A unique identifier.
-        repository:
-          type: string
-          description: The repository name.
-        commit:
-          type: string
-          description: The 40-character commit hash.
-        root:
-          type: string
-          description: The root-relative path of the dump.
-        visibleAtTip:
-          type: boolean
-          description: Whether or not this dump can provide global reference code intelligence.
-        uploadedAt:
-          type: string
-          description: An ISO 8601-formatted date and time that the dump was uploaded.
-        processedAt:
-          type: string
-          description: An ISO 8601-formatted date and time that the dump became available for use.
-      required:
-        - id
-        - repository
-        - commit
-        - root
-        - visibleAtTip
-        - uploadedAt
-      additionalProperties: false
     EnqueueResponse:
       type: object
       description: A payload indicating the enqueued upload.
@@ -609,28 +553,6 @@ components:
           description: The upload identifier.
       required:
         - id
-      additionalProperties: false
-    UploadStats:
-      type: object
-      description: An object containing the counts of uploads by state.
-      properties:
-        processingCount:
-          type: number
-          description: The number of uploads being processed.
-        erroredCount:
-          type: number
-          description: The number of errored uploads.
-        completedCount:
-          type: number
-          description: The number of completed uploads.
-        queuedCount:
-          type: number
-          description: The number of queued uploads.
-      required:
-        - processingCount
-        - erroredCount
-        - completedCount
-        - queuedCount
       additionalProperties: false
     Uploads:
       type: object
@@ -652,7 +574,7 @@ components:
       description: An LSIF upload.
       properties:
         id:
-          type: string
+          type: number
           description: A unique identifier.
         repository:
           type: string
@@ -691,6 +613,9 @@ components:
           type: string
           description: An ISO 8601-formatted time that the conversion completed or errored.
           nullable: true
+        visibleAtTip:
+          type: boolean
+          description: Whether or not this dump can provide global reference code intelligence.
       required:
         - id
         - repository

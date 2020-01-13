@@ -21,12 +21,12 @@ const NotFoundPage: React.FunctionComponent = () => (
 )
 
 interface Props
-    extends RouteComponentProps<any>,
+    extends RouteComponentProps<{}>,
         ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
-        Omit<PatternTypeProps, 'togglePatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 

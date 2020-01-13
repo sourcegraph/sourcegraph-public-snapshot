@@ -7,7 +7,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
 import { ThemeProps } from '../../../shared/src/theme'
 import { UserAvatar } from '../user/UserAvatar'
-import { ThemePreferenceProps, ThemePreference } from '../search/theme'
+import { ThemePreferenceProps, ThemePreference } from '../theme'
 
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location

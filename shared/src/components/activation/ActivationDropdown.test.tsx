@@ -2,14 +2,13 @@ import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { noop } from 'rxjs'
-import { setLinkComponent } from '../Link'
 import { Activation } from './Activation'
 import { ActivationDropdown } from './ActivationDropdown'
 
-describe('ActivationDropdown', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-    afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
+jest.mock('mdi-react/CheckboxBlankCircleIcon', () => 'CheckboxBlankCircleIcon')
+jest.mock('mdi-react/CheckIcon', () => 'CheckIcon')
 
+describe('ActivationDropdown', () => {
     const baseActivation: Activation = {
         steps: [
             {

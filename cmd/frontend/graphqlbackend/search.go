@@ -17,13 +17,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/src-d/enry/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	searchquerytypes "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -31,7 +27,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -82,6 +81,10 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	searchType, err := detectSearchType(args.Version, args.PatternType, args.Query)
 	if err != nil {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
+	}
+
+	if searchType == SearchTypeStructural && !conf.StructuralSearchEnabled() {
+		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
 	var queryString string
@@ -160,7 +163,7 @@ func detectSearchType(version string, patternType *string, input string) (Search
 	// The patterntype field is Singular, but not enforced since we do not
 	// properly parse the input. The regex extraction, takes the left-most
 	// "patterntype:value" match.
-	var patternTypeRegex = lazyregexp.New(`patterntype:([a-zA-Z"']+)`)
+	var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
 	patternFromField := patternTypeRegex.FindStringSubmatch(input)
 	if len(patternFromField) > 1 {
 		extracted := patternFromField[1]
@@ -268,46 +271,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 		groups[name] = repos
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		sampleRepos, err := getSampleRepos(ctx)
-		if err != nil {
-			return nil, err
-		}
-		groups["sample"] = sampleRepos
-	}
-
 	return groups, nil
-}
-
-var (
-	sampleReposMu sync.Mutex
-	sampleRepos   []*types.Repo
-)
-
-func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
-	sampleReposMu.Lock()
-	defer sampleReposMu.Unlock()
-	if sampleRepos == nil {
-		sampleRepoPaths := []api.RepoName{
-			"github.com/sourcegraph/jsonrpc2",
-			"github.com/sourcegraph/javascript-typescript-langserver",
-			"github.com/gorilla/mux",
-			"github.com/gorilla/schema",
-			"github.com/golang/lint",
-			"github.com/golang/oauth2",
-			"github.com/pallets/flask",
-		}
-		repos := make([]*types.Repo, len(sampleRepoPaths))
-		for i, path := range sampleRepoPaths {
-			repo, err := backend.Repos.GetByName(ctx, path)
-			if err != nil {
-				return nil, fmt.Errorf("get %q: %s", path, err)
-			}
-			repos[i] = repo
-		}
-		sampleRepos = repos
-	}
-	return sampleRepos, nil
 }
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
@@ -745,15 +709,15 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	if err != nil {
 		return nil, err
 	}
-	args := search.Args{
-		Pattern:         p,
+	args := search.TextParameters{
+		PatternInfo:     p,
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
-	if err := args.Pattern.Validate(); err != nil {
+	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, err
 	}
 

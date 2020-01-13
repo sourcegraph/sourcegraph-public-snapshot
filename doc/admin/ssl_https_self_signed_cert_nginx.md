@@ -85,12 +85,11 @@ Now that NGINX is listening on port 7443, we need to configure the Sourcegraph c
 docker container run \
   --rm  \
   --publish 7080:7080 \
-  --publish 2633:2633 \
   --publish 443:7443 \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.10.4
+  sourcegraph/server:3.11.4
 ```
 
 > NOTE: We recommend removing `--publish 7080:7080` as it's not needed and traffic sent to that port is un-encrypted.
@@ -141,7 +140,7 @@ This is largely the same as step 5, except easier. For other developer machines 
 
 ## Next steps
 
-- [Configure Sourcegraph's `externalURL`](config/critical_config.md)
+- [Configure Sourcegraph's `externalURL`](config/site_config.md)
 - [Redirect to external HTTPS URL](nginx.md#redirect-to-external-https-url)
 - [NGINX HTTP Strict Transport Security](nginx.md#redirect-to-external-https-url)
 - [NGINX SSL Termination guide](https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/)

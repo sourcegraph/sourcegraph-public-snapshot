@@ -5,13 +5,9 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
-import {
-    Suggestion,
-    SuggestionTypes,
-    FiltersSuggestionTypes,
-    isolatedFuzzySearchFilters,
-    filterAliases,
-} from './input/Suggestion'
+import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
+import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
+import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -19,21 +15,24 @@ import {
  */
 export function submitSearch(
     history: H.History,
-    query: string,
+    navbarQuery: string,
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type',
     patternType: GQL.SearchPatternType,
-    activation?: ActivationProps['activation']
+    activation?: ActivationProps['activation'],
+    filtersQuery?: FiltersToTypeAndValue
 ): void {
+    const searchQueryParam = buildSearchURLQuery(navbarQuery, patternType, filtersQuery)
+
     // Go to search results page
-    const path = '/search?' + buildSearchURLQuery(query, patternType)
+    const path = '/search?' + searchQueryParam
     eventLogger.log('SearchSubmitted', {
         code_search: {
-            pattern: query,
-            query,
+            pattern: navbarQuery,
+            query: navbarQuery,
             source,
         },
     })
-    history.push(path, { ...history.location.state, query })
+    history.push(path, { ...history.location.state, query: navbarQuery })
     if (activation) {
         activation.update({ DidSearch: true })
     }
@@ -131,31 +130,7 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 export const isSearchResults = (val: any): val is GQL.ISearchResults =>
     val && typeof val === 'object' && val.__typename === 'SearchResults'
 
-/**
- * Toggles the given search scope by adding it or removing it from the current string, and removes `repogroup:sample`
- * from the query if it exists in the query, and the search scope being added contains a `repogroup:` filter.
- *
- * @param query the current user query
- * @param searchFilter the search scope (sub query) or dynamic filter to toggle (add/remove from the current user query)
- * @returns The new query
- */
-export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searchFilter: string): string => {
-    const newQuery = toggleSearchFilter(query, searchFilter)
-    // RegExp to replace `repogroup:sample` without removing leading whitespace.
-    const replaceSampleRepogroupRegexp = /(\b|^)repogroup:sample(\s|$)/
-    // RegExp to match `repogroup:sample` in any part of a query.
-    const matchSampleRepogroupRegexp = /(\s*|^)repogroup:sample(\s*|$)/
-    if (
-        /\brepogroup:/.test(searchFilter) &&
-        matchSampleRepogroupRegexp.test(newQuery) &&
-        !matchSampleRepogroupRegexp.test(searchFilter)
-    ) {
-        return newQuery.replace(replaceSampleRepogroupRegexp, '')
-    }
-    return newQuery
-}
-
-export const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
+const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
     Object.prototype.hasOwnProperty.call(SuggestionTypes, filter) ||
     Object.prototype.hasOwnProperty.call(filterAliases, filter)
 
@@ -195,7 +170,7 @@ const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null =
  * If a filter value is being typed, try to get its filter and value.
  * E.g: ("|" is the cursor): "lang:go repo:test|" => "repo:test"
  */
-export const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueMatch => {
+const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueMatch => {
     const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
     // get string before ":" char until a space is found or start of string
     const match = firstPart.match(/([^\s:]+)?(:(\S?)+)?$/) || []
@@ -264,7 +239,7 @@ export interface QueryState {
  * "l:go yes" => true
  * "l:go archived:" => false
  */
-export const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean(value.match(/\s+([^:]?)+$/))
+const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean(value.match(/\s+([^:]?)+$/))
 
 /**
  * Adds suggestions value to search query where cursor was positioned.
@@ -366,3 +341,20 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
 
     return firstPart.substring(0, filterIndex) + formattedFilterAndValue + lastPart
 }
+
+/**
+ * Formats a query for fetching suggestions in interactive mode.
+ *
+ * This is a modified version of  formatQueryForFuzzySearch, which accounts for interactive search
+ * mode, where we don't have and don't require a cursor position since we don't require splitting
+ * queries to add suggestion values.
+ *
+ * If the resolved filter is an isolated one, we will ignore the rest of the query, and return only
+ * the resolved filter and value. Otherwise, we return the entire query.
+ *
+ * */
+export const formatInteractiveQueryForFuzzySearch = (
+    fullQuery: string,
+    filterType: SuggestionTypes,
+    value: string = ''
+): string => (isolatedFuzzySearchFilters.includes(filterType) ? filterType + ':' + value : fullQuery)

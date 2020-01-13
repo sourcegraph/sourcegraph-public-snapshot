@@ -297,7 +297,7 @@ Key dates:
             if (parsedVersion.prerelease.length > 0) {
                 throw new Error(`version ${version} is pre-release`)
             }
-            const requiredCommands = ['comby', 'sed', 'find']
+            const requiredCommands = ['comby', sed, 'find']
             for (const cmd of requiredCommands) {
                 try {
                     await commandExists(cmd)
@@ -330,7 +330,7 @@ Key dates:
                     head: `publish-${parsedVersion.version}`,
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
                     bashEditCommands: [
-                        `sed -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
+                        `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
                 },
@@ -341,7 +341,7 @@ Key dates:
                     head: `publish-${parsedVersion.version}`,
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
                     bashEditCommands: [
-                        `sed -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
+                        `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
                 },

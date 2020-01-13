@@ -106,12 +106,22 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 			continue
 		}
 
+		// We don't have an event for the deletion of a Changeset, but we set
+		// ExternalDeletedAt manually in the Syncer.
+		deletedAt := changeset.ExternalDeletedAt
+
 		// For each changeset and its events, go through every point in time we
 		// want to record and reconstruct the state of the changeset at that
 		// point in time
 		for _, c := range counts {
 			if openedAt.After(c.Time) {
 				// No need to look at events if changeset was not created yet
+				continue
+			}
+
+			if !deletedAt.IsZero() && (deletedAt.Before(c.Time) || deletedAt.Equal(c.Time)) {
+				c.Total++
+				c.Closed++
 				continue
 			}
 

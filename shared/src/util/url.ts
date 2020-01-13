@@ -1,6 +1,9 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
+import { FiltersToTypeAndValue } from '../search/interactive/util'
+import { suggestionTypeKeys } from '../search/suggestions/util'
+import { isEmpty } from 'lodash'
 
 export interface RepoSpec {
     /**
@@ -42,7 +45,7 @@ export interface FileSpec {
     filePath: string
 }
 
-export interface ComparisonSpec {
+interface ComparisonSpec {
     /**
      * a diff specifier with optional base and comparison. Examples:
      * - "master..." (implicitly: "master...HEAD")
@@ -59,7 +62,7 @@ export interface PositionSpec {
     position: Position
 }
 
-export interface RangeSpec {
+interface RangeSpec {
     /**
      * a 1-indexed range in the blob
      */
@@ -74,7 +77,7 @@ export interface ModeSpec {
     mode: string
 }
 
-export type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
+type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -90,7 +93,7 @@ export interface ViewStateSpec {
  */
 export type RenderMode = 'code' | 'rendered' | undefined
 
-export interface RenderModeSpec {
+interface RenderModeSpec {
     /**
      * How the file should be rendered.
      */
@@ -206,18 +209,6 @@ export interface RepoFile extends RepoSpec, RevSpec, Partial<ResolvedRevSpec>, F
 export interface AbsoluteRepoFile extends RepoSpec, RevSpec, ResolvedRevSpec, FileSpec {}
 
 /**
- * A position in file
- */
-export interface RepoFilePosition
-    extends RepoSpec,
-        RevSpec,
-        Partial<ResolvedRevSpec>,
-        FileSpec,
-        PositionSpec,
-        Partial<ViewStateSpec>,
-        Partial<RenderModeSpec> {}
-
-/**
  * A position in file at an exact commit
  */
 export interface AbsoluteRepoFilePosition
@@ -226,18 +217,6 @@ export interface AbsoluteRepoFilePosition
         ResolvedRevSpec,
         FileSpec,
         PositionSpec,
-        Partial<ViewStateSpec>,
-        Partial<RenderModeSpec> {}
-
-/**
- * A range in file at an exact commit
- */
-export interface AbsoluteRepoFileRange
-    extends RepoSpec,
-        RevSpec,
-        ResolvedRevSpec,
-        FileSpec,
-        RangeSpec,
         Partial<ViewStateSpec>,
         Partial<RenderModeSpec> {}
 
@@ -541,12 +520,25 @@ export function withWorkspaceRootInputRevision(
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
  * Having a `patternType:` filter in the query overrides this argument.
+ * @param filtersInQuery filters in an interactive mode query. For callers of
+ * this function requiring correct behavior in interactive mode, this param
+ * must be passed.
+ *
  */
-export function buildSearchURLQuery(query: string, patternType: SearchPatternType): string {
-    const searchParams = new URLSearchParams()
+export function buildSearchURLQuery(
+    query: string,
+    patternType: SearchPatternType,
+    filtersInQuery?: FiltersToTypeAndValue
+): string {
+    let searchParams = new URLSearchParams()
+
+    if (filtersInQuery && !isEmpty(filtersInQuery)) {
+        searchParams = interactiveBuildSearchURLQuery(filtersInQuery)
+    }
+
     const patternTypeInQuery = parsePatternTypeFromQuery(query)
     if (patternTypeInQuery) {
-        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
+        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
         const newQuery = query.replace(patternTypeRegexp, '')
         searchParams.set('q', newQuery)
         searchParams.set('patternType', patternTypeInQuery.toLowerCase())
@@ -561,8 +553,29 @@ export function buildSearchURLQuery(query: string, patternType: SearchPatternTyp
         .replace(/%3A/g, ':')
 }
 
+/**
+ * Builds a URL query for a given interactive mode query (without leading `?`).
+ * Returns a URLSearchParams object containing the filters and values in the
+ * search query.
+ *
+ * @param filtersInQuery the map representing the filters added to the query
+ */
+export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
+    const searchParams = new URLSearchParams()
+
+    for (const searchType of suggestionTypeKeys) {
+        for (const [, filterValue] of Object.entries(filtersInQuery)) {
+            if (filterValue.type === searchType) {
+                searchParams.append(searchType, filterValue.value)
+            }
+        }
+    }
+
+    return searchParams
+}
+
 function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
-    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
+    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
     const matches = query.match(patternTypeRegexp)
     if (matches?.groups?.type) {
         return matches.groups.type as SearchPatternType

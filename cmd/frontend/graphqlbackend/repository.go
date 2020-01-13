@@ -60,12 +60,12 @@ func RepositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryRes
 }
 
 func (r *RepositoryResolver) ID() graphql.ID {
-	return marshalRepositoryID(r.repo.ID)
+	return MarshalRepositoryID(r.repo.ID)
 }
 
-func marshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
+func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
 
-func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
+func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
 }
@@ -128,6 +128,10 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
+	return r.CommitFromID(ctx, args, commitID)
+}
+
+func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
 	commit, err := backend.Repos.GetCommit(ctx, r.repo, commitID)
 	if commit == nil || err != nil {
 		return nil, err
@@ -178,7 +182,7 @@ func (r *RepositoryResolver) Language(ctx context.Context) string {
 		return ""
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo, commitID)
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo, commitID, false)
 	if err != nil {
 		return ""
 	}
@@ -260,13 +264,13 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RepositoryResolver) LSIFDumps(ctx context.Context, args *LSIFDumpsQueryArgs) (LSIFDumpConnectionResolver, error) {
+func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
 	if EnterpriseResolvers.codeIntelResolver == nil {
 		return nil, codeIntelOnlyInEnterprise
 	}
-	return EnterpriseResolvers.codeIntelResolver.LSIFDumps(ctx, &LSIFRepositoryDumpsQueryArgs{
-		LSIFDumpsQueryArgs: args,
-		RepositoryID:       r.ID(),
+	return EnterpriseResolvers.codeIntelResolver.LSIFUploads(ctx, &LSIFRepositoryUploadsQueryArgs{
+		LSIFUploadsQueryArgs: args,
+		RepositoryID:         r.ID(),
 	})
 }
 

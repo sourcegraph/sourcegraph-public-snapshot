@@ -8,15 +8,17 @@ import {
     ChangesetState,
     IExternalChangeset,
 } from '../../../../../../shared/src/graphql/schema'
-import { setLinkComponent } from '../../../../../../shared/src/components/Link'
+
+jest.mock('mdi-react/AccountCheckIcon', () => 'AccountCheckIcon')
+jest.mock('mdi-react/AccountAlertIcon', () => 'AccountAlertIcon')
+jest.mock('mdi-react/AccountQuestionIcon', () => 'AccountQuestionIcon')
+jest.mock('mdi-react/SourceMergeIcon', () => 'SourceMergeIcon')
+jest.mock('mdi-react/SourcePullIcon', () => 'SourcePullIcon')
+jest.mock('mdi-react/DeleteIcon', () => 'DeleteIcon')
 
 describe('ChangesetNode', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     const location = H.createLocation('/campaigns')
-    beforeEach(() => {
-        setLinkComponent((props: any) => <a {...props} />)
-        afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
-    })
     test('renders a changesetplan', () => {
         expect(
             renderer
@@ -75,6 +77,7 @@ describe('ChangesetNode', () => {
                                             changed: 200,
                                             deleted: 100,
                                         },
+                                        nodes: [{ __typename: 'FileDiff' }],
                                     },
                                 },
                                 repository: {

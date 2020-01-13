@@ -6,7 +6,7 @@ To create an organization, go to `http(s)://[hostname]/organizations/new` on you
 
 You (and any other organization members) may add members from the organization's members page at `http(s)://[hostname]/organizations/[org-name]/members`.
 
-To automatically join all users on your instance to a specific organization, create the organization first and then set the `auth.userOrgMap` [critical configuration](../../admin/config/critical_config.md) option:
+To automatically join all users on your instance to a specific organization, create the organization first and then set the `auth.userOrgMap` [site configuration](../../admin/config/site_config.md) option:
 
 ```json
 {

@@ -7,10 +7,12 @@ import {
     ICampaign,
     IUpdateCampaignInput,
     ICreateCampaignInput,
-    IExternalChangesetConnection,
-    IChangesetsOnCampaignArguments,
     ICampaignPlan,
     ICampaignPlanSpecification,
+    IChangesetPlansOnCampaignArguments,
+    IChangesetPlanConnection,
+    IChangesetsOnCampaignArguments,
+    IExternalChangesetConnection,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 
@@ -19,10 +21,6 @@ export type CampaignType = 'comby' | 'credentials'
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         id
-        namespace {
-            id
-            namespaceName
-        }
         author {
             username
             avatarURL
@@ -37,11 +35,14 @@ const campaignFragment = gql`
         description
         createdAt
         updatedAt
+        closedAt
         url
         __typename
         changesets {
             totalCount
             nodes {
+                __typename
+                id
                 repository {
                     id
                     name
@@ -49,13 +50,7 @@ const campaignFragment = gql`
                 }
                 diff {
                     fileDiffs {
-                        nodes {
-                            ...FileDiffFields
-                        }
                         totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
                         diffStat {
                             ...DiffStatFields
                         }
@@ -76,18 +71,16 @@ const campaignFragment = gql`
             openApproved
             openChangesRequested
             openPending
+            total
         }
     }
-
-    ${FileDiffFields}
-
-    ${FileDiffHunkRangeFields}
 
     ${DiffStatFields}
 `
 
 const campaignPlanFragment = gql`
     fragment CampaignPlanFields on CampaignPlan {
+        __typename
         id
         type
         arguments
@@ -100,7 +93,9 @@ const campaignPlanFragment = gql`
         changesets {
             totalCount
             nodes {
+                id
                 __typename
+                id
                 repository {
                     id
                     name
@@ -108,13 +103,7 @@ const campaignPlanFragment = gql`
                 }
                 diff {
                     fileDiffs {
-                        nodes {
-                            ...PreviewFileDiffFields
-                        }
                         totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
                         diffStat {
                             ...DiffStatFields
                         }
@@ -123,10 +112,6 @@ const campaignPlanFragment = gql`
             }
         }
     }
-
-    ${PreviewFileDiffFields}
-
-    ${FileDiffHunkRangeFields}
 
     ${DiffStatFields}
 `
@@ -181,18 +166,6 @@ export function previewCampaignPlan(
     )
 }
 
-export async function cancelCampaignPlan(plan: ID): Promise<void> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation CancelCampaignPlan($id: ID!) {
-                cancelCampaignPlan(id: $id)
-            }
-        `,
-        { id: plan }
-    ).toPromise()
-    dataOrThrowErrors(result)
-}
-
 export async function retryCampaign(campaignID: ID): Promise<void> {
     const result = await mutateGraphQL(
         gql`
@@ -207,16 +180,30 @@ export async function retryCampaign(campaignID: ID): Promise<void> {
     dataOrThrowErrors(result)
 }
 
-export async function deleteCampaign(campaign: ID): Promise<void> {
+export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {
     const result = await mutateGraphQL(
         gql`
-            mutation DeleteCampaign($campaign: ID!) {
-                deleteCampaign(campaign: $campaign) {
+            mutation CloseCampaign($campaign: ID!, $closeChangesets: Boolean!) {
+                closeCampaign(campaign: $campaign, closeChangesets: $closeChangesets) {
+                    id
+                }
+            }
+        `,
+        { campaign, closeChangesets }
+    ).toPromise()
+    dataOrThrowErrors(result)
+}
+
+export async function deleteCampaign(campaign: ID, closeChangesets = false): Promise<void> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation DeleteCampaign($campaign: ID!, $closeChangesets: Boolean!) {
+                deleteCampaign(campaign: $campaign, closeChangesets: $closeChangesets) {
                     alwaysNil
                 }
             }
         `,
-        { campaign }
+        { campaign, closeChangesets }
     ).toPromise()
     dataOrThrowErrors(result)
 }
@@ -336,6 +323,66 @@ export const queryChangesets = (
                 throw new Error(`Campaign with ID ${campaign} does not exist`)
             }
             if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node.changesets
+        })
+    )
+
+export const queryChangesetPlans = (
+    campaignPlan: ID,
+    { first }: IChangesetPlansOnCampaignArguments
+): Observable<IChangesetPlanConnection> =>
+    queryGraphQL(
+        gql`
+            query CampaignChangesets($campaignPlan: ID!, $first: Int) {
+                node(id: $campaignPlan) {
+                    __typename
+                    ... on CampaignPlan {
+                        changesets(first: $first) {
+                            totalCount
+                            nodes {
+                                __typename
+                                id
+                                repository {
+                                    id
+                                    name
+                                    url
+                                }
+                                diff {
+                                    fileDiffs {
+                                        nodes {
+                                            ...PreviewFileDiffFields
+                                        }
+                                        totalCount
+                                        pageInfo {
+                                            hasNextPage
+                                        }
+                                        diffStat {
+                                            ...DiffStatFields
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ${PreviewFileDiffFields}
+
+            ${FileDiffHunkRangeFields}
+
+            ${DiffStatFields}
+        `,
+        { campaignPlan, first }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`CampaignPlan with ID ${campaignPlan} does not exist`)
+            }
+            if (node.__typename !== 'CampaignPlan') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
             return node.changesets

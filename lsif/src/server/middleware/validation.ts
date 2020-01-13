@@ -61,6 +61,15 @@ export const validateOptionalInt = (key: string): ValidationChain =>
 export const validateQuery = validateOptionalString('query')
 
 /**
+ * Create a query string validator for an LSIF upload state.
+ *
+ * @param key The query string key.
+ */
+export const validateLsifUploadState = query('state')
+    .optional()
+    .isIn(['queued', 'completed', 'errored', 'processing'])
+
+/**
  * Create a validator for an integer limit field.
  */
 export const validateLimit = validateOptionalInt('limit')

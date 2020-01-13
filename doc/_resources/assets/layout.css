@@ -158,6 +158,9 @@ code {
 /* Large Viewport */
 
 @media screen and (min-width: 1020px) {
+    .large-push-3 {
+        margin-left: 25%;
+    }
     .large-push-2 {
         margin-left: 16.66667%;
     }
@@ -198,6 +201,9 @@ code {
     }
     .medium-4 {
         width: 33.33334%;
+    }
+    .medium-push-4 {
+        margin-left: 33.33334%;
     }
     .medium-push-3 {
         margin-left: 25%;
@@ -445,6 +451,7 @@ code {
         z-index: 9998;
     }
     .nav-state:not(:checked)+.nav-content .nav-container .nav-links {
+        display: none;
         top: -100%;
         opacity: 0;
     }
@@ -741,11 +748,13 @@ li.content-nav-no-hover:hover {
 .page-nav {
     position: fixed;
     right: 0;
-    top: 135px;
+    top: 136px;
+    padding-right: 1rem;
     padding-bottom: 2rem;
 }
 
 .page-nav-title {
+    font-size: 1.3rem;
     border-bottom: 1px solid #eaeaea;
 }
 

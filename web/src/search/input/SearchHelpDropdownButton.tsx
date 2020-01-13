@@ -10,7 +10,7 @@ import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reac
 export const SearchHelpDropdownButton: React.FunctionComponent = () => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
-    const docsURLPrefix = window.context.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
+    const docsURLPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="d-flex">
             <DropdownToggle
@@ -49,7 +49,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                             repo:<strong>my/repo</strong>
                         </code>
                     </li>
-                    {window.context.sourcegraphDotComMode && (
+                    {window.context?.sourcegraphDotComMode && (
                         <li>
                             <code>
                                 repo:<strong>github.com/myorg/</strong>
@@ -100,7 +100,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                 >
                     <ExternalLinkIcon className="icon-inline small mr-1 mb-1" /> All search keywords
                 </a>
-                {window.context.sourcegraphDotComMode && (
+                {window.context?.sourcegraphDotComMode && (
                     <div className="p-2 alert alert-info small rounded-0 mb-0 mt-1">
                         On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
                         repositories.

@@ -15,10 +15,10 @@ exports[`LinkOrButton render a button when "to" is undefined 1`] = `
 exports[`LinkOrButton render a link when "to" is set 1`] = `
 <a
   className="nav-link "
+  href="http://example.com"
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
-  to="http://example.com"
 >
   foo
 </a>

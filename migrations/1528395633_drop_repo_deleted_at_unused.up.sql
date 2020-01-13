@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE repo
+  DROP CONSTRAINT IF EXISTS deleted_at_unused;
+
+COMMIT;

@@ -12,14 +12,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
 type searchAlert struct {
+	prometheusType  string
 	title           string
 	description     string
+	patternType     SearchType
 	proposedQueries []*searchQueryDescription
 }
 
@@ -36,12 +38,20 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	if len(a.proposedQueries) == 0 {
 		return nil
 	}
-	// TODO: we need to append patternType:regexp to all proposed queries to avoid
-	// invalid suggestions. There are many where places we assume the original query is regexp,
-	// so more work is required to create a nice solution for this.
 	for _, proposedQuery := range a.proposedQueries {
 		if proposedQuery.description != "Remove quotes" {
-			proposedQuery.query = proposedQuery.query + " patternType:regexp"
+			switch a.patternType {
+			case SearchTypeRegex:
+				proposedQuery.query = proposedQuery.query + " patternType:regexp"
+			case SearchTypeLiteral:
+				proposedQuery.query = proposedQuery.query + " patternType:literal"
+			case SearchTypeStructural:
+				// Don't append patternType:structural, it is not erased from the query like
+				// patterntype:regexp and patterntype:literal.
+				// TODO(RVT): Making this consistent requires a change on the UI side.
+			default:
+				panic("unreachable")
+			}
 		}
 	}
 	return &a.proposedQueries
@@ -49,8 +59,9 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 
 func (r *searchResolver) alertForQuotesInQueryInLiteralMode(ctx context.Context) (*searchAlert, error) {
 	return &searchAlert{
-		title:       "No results. Did you mean to use quotes?",
-		description: "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
+		prometheusType: "no_results__suggest_quotes",
+		title:          "No results. Did you mean to use quotes?",
+		description:    "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
 		proposedQueries: []*searchQueryDescription{{
 			description: "Remove quotes",
 			query:       syntax.ExprString(omitQuotes(r.query)),
@@ -67,20 +78,26 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
 		return &searchAlert{
-			title:       "Add repositories or connect repository hosts",
-			description: "There are no repositories to search. Add an external service connection to your code host.",
+			prometheusType: "no_resolved_repos__no_repositories",
+			title:          "Add repositories or connect repository hosts",
+			description:    "There are no repositories to search. Add an external service connection to your code host.",
+			patternType:    r.patternType,
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
 		return &searchAlert{
-			title:       fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
-			description: fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
+			prometheusType: "no_resolved_repos__repogroup_empty",
+			title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
+			description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
+			patternType:    r.patternType,
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
 		return &searchAlert{
-			title:       "Repository groups have no repositories in common",
-			description: "No repository exists in all of the specified repository groups.",
+			prometheusType: "no_resolved_repos__repogroup_none_in_common",
+			title:          "Repository groups have no repositories in common",
+			description:    "No repository exists in all of the specified repository groups.",
+			patternType:    r.patternType,
 		}, nil
 	}
 
@@ -89,6 +106,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 	withoutRepoFields := omitQueryFields(r, query.FieldRepo)
 
 	var a searchAlert
+	a.patternType = r.patternType
 	switch {
 	case len(repoGroupFilters) > 1:
 		// This is a rare case, so don't bother proposing queries.
@@ -225,7 +243,9 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
 	alert := &searchAlert{
-		title: "Too many matching repositories",
+		prometheusType: "over_repo_limit",
+		title:          "Too many matching repositories",
+		patternType:    r.patternType,
 	}
 
 	if envvar.SourcegraphDotComMode() {
@@ -345,8 +365,10 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.Repos
 		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository: %s.", len(missingRepoRevs), strings.Join(repoRevs, ", "))
 	}
 	return &searchAlert{
-		title:       "Some repositories could not be searched",
-		description: description,
+		prometheusType: "missing_repo_revs",
+		title:          "Some repositories could not be searched",
+		description:    description,
+		patternType:    r.patternType,
 	}
 }
 

@@ -1,13 +1,20 @@
 package httpcli
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -122,11 +129,41 @@ func TestContextErrorMiddleware(t *testing.T) {
 	}
 }
 
+func genCert(subject string) (string, error) {
+	priv, err := rsa.GenerateKey(rand.Reader, 1024)
+	if err != nil {
+		return "", err
+	}
+
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization: []string{subject},
+		},
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return "", err
+	}
+
+	var b strings.Builder
+	if err := pem.Encode(&b, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		return "", err
+	}
+	return b.String(), nil
+}
+
 func TestNewCertPool(t *testing.T) {
-	pool := x509.NewCertPool()
+	subject := "newcertpooltest"
+	cert, err := genCert(subject)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	for _, tc := range []struct {
 		name   string
-		pool   *x509.CertPool
+		certs  []string
 		cli    *http.Client
 		assert func(testing.TB, *http.Client)
 		err    string
@@ -155,20 +192,23 @@ func TestNewCertPool(t *testing.T) {
 			},
 		},
 		{
-			name: "pool is set to what is given",
-			cli:  &http.Client{Transport: &http.Transport{}},
-			pool: pool,
+			name:  "pool is set to what is given",
+			cli:   &http.Client{Transport: &http.Transport{}},
+			certs: []string{cert},
 			assert: func(t testing.TB, cli *http.Client) {
-				have := cli.Transport.(*http.Transport).TLSClientConfig.RootCAs
-				if want := pool; !reflect.DeepEqual(have, want) {
-					t.Fatal(pretty.Compare(have, want))
+				pool := cli.Transport.(*http.Transport).TLSClientConfig.RootCAs
+				for _, have := range pool.Subjects() {
+					if bytes.Contains(have, []byte(subject)) {
+						return
+					}
 				}
+				t.Fatal("could not find subject in pool")
 			},
 		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			err := NewCertPoolOpt(tc.pool)(tc.cli)
+			err := NewCertPoolOpt(tc.certs...)(tc.cli)
 
 			if tc.err == "" {
 				tc.err = "<nil>"

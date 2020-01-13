@@ -3,6 +3,7 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as uuid from 'uuid'
 import rmfr from 'rmfr'
+import * as pgModels from '../../shared/models/pg'
 import { Backend, ReferencePaginationCursor } from '../../server/backend/backend'
 import { child_process } from 'mz'
 import { Connection } from 'typeorm'
@@ -11,9 +12,9 @@ import { convertLsif } from '../../worker/conversion/importer'
 import { dbFilename, ensureDirectory } from '../../shared/paths'
 import { lsp } from 'lsif-protocol'
 import { userInfo } from 'os'
-import { XrepoDatabase } from '../../shared/xrepo/xrepo'
-import { internalLocationToLocation } from '../../server/routes/lsif'
 import { InternalLocation } from '../../server/backend/database'
+import { DumpManager } from '../../shared/store/dumps'
+import { DependencyManager } from '../../shared/store/dependencies'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.
@@ -40,7 +41,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     const port = parseInt(process.env.PGPORT || '5432', 10)
     const username = process.env.PGUSER || userInfo().username || 'postgres'
     const password = process.env.PGPASSWORD || ''
-    const database = `sourcegraph-test-lsif-xrepo-${suffix}`
+    const database = `sourcegraph-test-lsif-${suffix}`
 
     // Determine the path of the migrate script. This will cover the case
     // where `yarn test` is run from within the root or from the lsif directory.
@@ -75,7 +76,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     // for the test. It is necessary to close the database first, otherwise we
     // get failures during the after hooks:
     //
-    // dropdb: database removal failed: ERROR:  database "sourcegraph-test-lsif-xrepo-5033c9e8" is being accessed by other users
+    // dropdb: database removal failed: ERROR:  database "sourcegraph-test-lsif-5033c9e8" is being accessed by other users
 
     let connection: Connection
     const cleanup = async (): Promise<void> => {
@@ -83,7 +84,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
             await connection.close()
         }
 
-        await child_process.exec(dropCommand, { env }).then(() => {})
+        await child_process.exec(dropCommand, { env }).then(() => undefined)
     }
 
     // Try to create database
@@ -124,11 +125,49 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
 }
 
 /**
+ * Insert an upload entity and return the corresponding dump entity.
+ *
+ * @param connection The Postgres connection.
+ * @param dumpManager The dumps manager instance.
+ * @param repository The repository name.
+ * @param commit The commit.
+ * @param root The root of the dump.
+ */
+export async function insertDump(
+    connection: Connection,
+    dumpManager: DumpManager,
+    repository: string,
+    commit: string,
+    root: string
+): Promise<pgModels.LsifDump> {
+    await dumpManager.deleteOverlappingDumps(repository, commit, root, {})
+
+    const upload = new pgModels.LsifUpload()
+    upload.repository = repository
+    upload.commit = commit
+    upload.root = root
+    upload.filename = '<test>'
+    upload.uploadedAt = new Date()
+    upload.state = 'completed'
+    upload.tracingContext = '{}'
+    await connection.createEntityManager().save(upload)
+
+    const dump = new pgModels.LsifDump()
+    dump.id = upload.id
+    dump.repository = repository
+    dump.commit = commit
+    dump.root = root
+    return dump
+}
+
+/**
  * Mock an upload of the given file. This will create a SQLite database in the
  * given storage root and will insert dump, package, and reference data into
- * the given cross-repository database.
+ * the given Postgres database.
  *
- * @param xrepoDatabase The cross-repository database.
+ * @param connection The Postgres connection.
+ * @param dumpManager The dumps manager instance.
+ * @param dependencyManager The dependency manager instance.
  * @param storageRoot The temporary storage root.
  * @param repository The repository name.
  * @param commit The commit.
@@ -137,7 +176,9 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
  * @param updateCommits Whether not to update commits.
  */
 export async function convertTestData(
-    xrepoDatabase: XrepoDatabase,
+    connection: Connection,
+    dumpManager: DumpManager,
+    dependencyManager: DependencyManager,
     storageRoot: string,
     repository: string,
     commit: string,
@@ -151,46 +192,35 @@ export async function convertTestData(
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const { packages, references } = await convertLsif(fullFilename, tmp)
-    const dump = await xrepoDatabase.addPackagesAndReferences(
-        repository,
-        commit,
-        root,
-        new Date(),
-        packages,
-        references
-    )
+    const dump = await insertDump(connection, dumpManager, repository, commit, root)
+    await dependencyManager.addPackagesAndReferences(dump.id, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
 
     if (updateCommits) {
-        await xrepoDatabase.updateCommits(
+        await dumpManager.updateCommits(
             repository,
             new Map<string, Set<string>>([[commit, new Set<string>()]])
         )
-        await xrepoDatabase.updateDumpsVisibleFromTip(repository, commit)
+        await dumpManager.updateDumpsVisibleFromTip(repository, commit)
     }
 }
 
 /**
  * A wrapper around tests for the Backend class. This abstracts a lot
  * of the common setup and teardown around creating a temporary Postgres
- * database, a storage root, across-repository database instance, and a
+ * database, a storage root, a dumps manager, a dependency manager, and a
  * backend instance.
  */
 export class BackendTestContext {
     /**
-     * The backend instance.
-     */
-    public backend?: Backend
-
-    /**
-     * The cross-repository database instance.
-     */
-    public xrepoDatabase?: XrepoDatabase
-
-    /**
      * A temporary directory.
      */
     private storageRoot?: string
+
+    /**
+     * The Postgres connection
+     */
+    private connection?: Connection
 
     /**
      * A reference to a function that destroys the temporary database.
@@ -198,25 +228,44 @@ export class BackendTestContext {
     private cleanup?: () => Promise<void>
 
     /**
-     * Create a backend and a cross-repository database. This will create
-     * temporary resources (database and temporary directory) that should
-     * be cleaned up via the `teardown` method.
+     * The backend instance.
+     */
+    public backend?: Backend
+
+    /**
+     * The dumps manager instance.
+     */
+    public dumpManager?: DumpManager
+
+    /**
+     * The dependency manager instance.
+     */
+    public dependencyManager?: DependencyManager
+
+    /**
+     * Create a backend, a dumps manager, and a dependency manager instance.
+     * This will create temporary resources (database and temporary directory)
+     * that should be cleaned up via the `teardown` method.
      *
-     * The backend and cross-repository database values can be referenced
-     * by the public fields of this class.
+     * The backend and data manager instances can be referenced by the public
+     * fields of this class.
      */
     public async init(): Promise<void> {
         this.storageRoot = await createStorageRoot()
         const { connection, cleanup } = await createCleanPostgresDatabase()
+        this.connection = connection
         this.cleanup = cleanup
-        this.xrepoDatabase = new XrepoDatabase(connection, this.storageRoot)
-        this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => ({ gitServers: [] }))
+        this.dumpManager = new DumpManager(connection, this.storageRoot)
+        this.dependencyManager = new DependencyManager(connection)
+        this.backend = new Backend(this.storageRoot, this.dumpManager, this.dependencyManager, () => ({
+            gitServers: [],
+        }))
     }
 
     /**
      * Mock an upload of the given file. This will create a SQLite database in the
      * given storage root and will insert dump, package, and reference data into
-     * the given cross-repository database.
+     * the given Postgres database.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -231,11 +280,21 @@ export class BackendTestContext {
         filename: string,
         updateCommits: boolean = true
     ): Promise<void> {
-        if (!this.xrepoDatabase || !this.storageRoot) {
+        if (!this.connection || !this.dumpManager || !this.dependencyManager || !this.storageRoot) {
             return Promise.resolve()
         }
 
-        return convertTestData(this.xrepoDatabase, this.storageRoot, repository, commit, root, filename, updateCommits)
+        return convertTestData(
+            this.connection,
+            this.dumpManager,
+            this.dependencyManager,
+            this.storageRoot,
+            repository,
+            commit,
+            root,
+            filename,
+            updateCommits
+        )
     }
 
     /**
@@ -253,28 +312,6 @@ export class BackendTestContext {
 }
 
 /**
- * Create an LSP location.
- *
- * @param uri The document path.
- * @param startLine The starting line.
- * @param startCharacter The starting character.
- * @param endLine The ending line.
- * @param endCharacter The ending character.
- */
-export function createLocation(
-    uri: string,
-    startLine: number,
-    startCharacter: number,
-    endLine: number,
-    endCharacter: number
-): lsp.Location {
-    return lsp.Location.create(uri, {
-        start: { line: startLine, character: startCharacter },
-        end: { line: endLine, character: endCharacter },
-    })
-}
-
-/**
  * Create an LSP location with a remote URI.
  *
  * @param repository The repository name.
@@ -285,7 +322,7 @@ export function createLocation(
  * @param endLine The ending line.
  * @param endCharacter The ending character.
  */
-export function createRemoteLocation(
+export function createLocation(
     repository: string,
     commit: string,
     documentPath: string,
@@ -298,7 +335,47 @@ export function createRemoteLocation(
     url.search = commit
     url.hash = documentPath
 
-    return createLocation(url.href, startLine, startCharacter, endLine, endCharacter)
+    return lsp.Location.create(url.href, {
+        start: {
+            line: startLine,
+            character: startCharacter,
+        },
+        end: {
+            line: endLine,
+            character: endCharacter,
+        },
+    })
+}
+
+/**
+ * Map an internal location to an LSP location.
+ *
+ * @param location The internal location.
+ */
+export function mapLocation(location: InternalLocation): lsp.Location {
+    return createLocation(
+        location.dump.repository,
+        location.dump.commit,
+        location.path,
+        location.range.start.line,
+        location.range.start.character,
+        location.range.end.line,
+        location.range.end.character
+    )
+}
+
+/**
+ * Map the locations field from internal locations to LSP locations.
+ *
+ * @param resp The input containing a locations array.
+ */
+export function mapLocations<T extends { locations: InternalLocation[] }>(
+    resp: T
+): Omit<T, 'locations'> & { locations: lsp.Location[] } {
+    return {
+        ...resp,
+        locations: resp.locations.map(mapLocation),
+    }
 }
 
 /** A counter used for unique commit generation. */
@@ -334,22 +411,4 @@ export function filterNodeModules<T>({
     cursor?: ReferencePaginationCursor
 }): { locations: lsp.Location[]; cursor?: ReferencePaginationCursor } {
     return { locations: locations.filter(l => !l.uri.includes('node_modules')), cursor }
-}
-
-/**
- * Map locations into the 'legacy' shape. Tests will need to be updated do that
- * the assertions work against internal locations rather than the lsp.Location
- * object (it does not hold enough data).
- *
- * @param repository The source repository.
- * @param resp The input containing a locations array.
- */
-export function mapInternalLocations<T extends { locations: InternalLocation[] }>(
-    repository: string,
-    resp: T
-): Omit<T, 'locations'> & { locations: lsp.Location[] } {
-    return {
-        ...resp,
-        locations: resp.locations.map(l => internalLocationToLocation(repository, l)),
-    }
 }

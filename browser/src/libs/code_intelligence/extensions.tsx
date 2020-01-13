@@ -29,6 +29,7 @@ import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { CodeHost } from './code_intelligence'
 import { DOMFunctions } from './code_views'
 import { ISettingsCascade } from '../../../../shared/src/graphql/schema'
+import { IS_LIGHT_THEME } from './consts'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
@@ -95,8 +96,6 @@ export const renderGlobalDebug = ({
         mount
     )
 }
-
-const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)
 
 const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
     codeElement.style.backgroundColor = ''

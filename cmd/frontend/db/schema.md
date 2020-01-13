@@ -87,6 +87,7 @@ Referenced by:
  changeset_ids     | jsonb                    | not null default '{}'::jsonb
  campaign_plan_id  | integer                  | 
  closed_at         | timestamp with time zone | 
+ published_at      | timestamp with time zone | 
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
     "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
@@ -169,6 +170,7 @@ Foreign-key constraints:
  metadata              | jsonb                    | not null default '{}'::jsonb
  external_id           | text                     | not null
  external_service_type | text                     | not null
+ external_deleted_at   | timestamp with time zone | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -210,7 +212,7 @@ Indexes:
 Indexes:
     "default_repos_pkey" PRIMARY KEY, btree (repo_id)
 Foreign-key constraints:
-    "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
+    "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
 
@@ -383,31 +385,6 @@ Check constraints:
 
 ```
 
-# Table "public.lsif_dumps"
-```
-     Column     |           Type           |                        Modifiers                        
-----------------+--------------------------+---------------------------------------------------------
- id             | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
- repository     | text                     | not null
- commit         | text                     | not null
- root           | text                     | not null default ''::text
- visible_at_tip | boolean                  | not null default false
- processed_at   | timestamp with time zone | not null default now()
- uploaded_at    | timestamp with time zone | not null
-Indexes:
-    "lsif_dumps_pkey" PRIMARY KEY, btree (id)
-    "lsif_dumps_repository_commit_root" UNIQUE CONSTRAINT, btree (repository, commit, root)
-    "lsif_dumps_uploaded_at" btree (uploaded_at)
-    "lsif_dumps_visible_repository_commit" btree (repository, commit) WHERE visible_at_tip
-Check constraints:
-    "lsif_dumps_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
-    "lsif_dumps_repository_check" CHECK (repository <> ''::text)
-Referenced by:
-    TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
-    TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
-
-```
-
 # Table "public.lsif_packages"
 ```
  Column  |  Type   |                         Modifiers                          
@@ -421,7 +398,7 @@ Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
     "lsif_packages_package_unique" UNIQUE, btree (scheme, name, version)
 Foreign-key constraints:
-    "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
+    "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
 
@@ -439,30 +416,39 @@ Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
     "lsif_references_package" btree (scheme, name, version)
 Foreign-key constraints:
-    "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
+    "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
 
 # Table "public.lsif_uploads"
 ```
-       Column       |           Type           |                         Modifiers                         
---------------------+--------------------------+-----------------------------------------------------------
- id                 | bigint                   | not null default nextval('lsif_uploads_id_seq'::regclass)
+       Column       |           Type           |                        Modifiers                        
+--------------------+--------------------------+---------------------------------------------------------
+ id                 | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
  repository         | text                     | not null
  commit             | text                     | not null
- root               | text                     | not null
+ root               | text                     | not null default ''::text
+ visible_at_tip     | boolean                  | not null default false
+ uploaded_at        | timestamp with time zone | not null default now()
  filename           | text                     | not null
  state              | lsif_upload_state        | not null default 'queued'::lsif_upload_state
  failure_summary    | text                     | 
  failure_stacktrace | text                     | 
- uploaded_at        | timestamp with time zone | not null default now()
  started_at         | timestamp with time zone | 
  finished_at        | timestamp with time zone | 
  tracing_context    | text                     | not null
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
+    "lsif_uploads_repository_commit_root" UNIQUE, btree (repository, commit, root) WHERE state = 'completed'::lsif_upload_state
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
+    "lsif_uploads_visible_repository_commit" btree (repository, commit) WHERE visible_at_tip
+Check constraints:
+    "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
+    "lsif_uploads_repository_check" CHECK (repository <> ''::text)
+Referenced by:
+    TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
 
@@ -709,7 +695,7 @@ Referenced by:
  metadata              | jsonb                    | not null default '{}'::jsonb
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
-    "repo_external_service_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id) WHERE external_service_type IS NOT NULL AND external_service_id IS NOT NULL AND external_id IS NOT NULL
+    "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
@@ -717,14 +703,40 @@ Indexes:
     "repo_uri_idx" btree (uri)
 Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
-    "deleted_at_unused" CHECK (deleted_at IS NULL)
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
     TABLE "campaign_jobs" CONSTRAINT "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
+    TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+
+```
+
+# Table "public.repo_pending_permissions"
+```
+   Column   |           Type           | Modifiers 
+------------+--------------------------+-----------
+ repo_id    | integer                  | not null
+ permission | text                     | not null
+ user_ids   | bytea                    | not null
+ updated_at | timestamp with time zone | not null
+Indexes:
+    "repo_pending_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
+
+```
+
+# Table "public.repo_permissions"
+```
+   Column   |           Type           | Modifiers 
+------------+--------------------------+-----------
+ repo_id    | integer                  | not null
+ permission | text                     | not null
+ user_ids   | bytea                    | not null
+ provider   | text                     | not null
+ updated_at | timestamp with time zone | not null
+Indexes:
+    "repo_permissions_perm_provider_unique" UNIQUE CONSTRAINT, btree (repo_id, permission, provider)
 
 ```
 
@@ -867,6 +879,21 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.user_pending_permissions"
+```
+   Column    |           Type           |                               Modifiers                               
+-------------+--------------------------+-----------------------------------------------------------------------
+ id          | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
+ bind_id     | text                     | not null
+ permission  | text                     | not null
+ object_type | text                     | not null
+ object_ids  | bytea                    | not null
+ updated_at  | timestamp with time zone | not null
+Indexes:
+    "user_pending_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (bind_id, permission, object_type)
+
+```
+
 # Table "public.user_permissions"
 ```
    Column    |           Type           | Modifiers 
@@ -876,8 +903,9 @@ Foreign-key constraints:
  object_type | text                     | not null
  object_ids  | bytea                    | not null
  updated_at  | timestamp with time zone | not null
+ provider    | text                     | not null
 Indexes:
-    "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
+    "user_permissions_perm_object_provider_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type, provider)
 
 ```
 
