@@ -14,7 +14,7 @@ interface Props {
         GQL.ICampaign,
         'id' | 'plan' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt'
     >
-    /* Used for testing purposes. Sets the current date */
+    /** Used for testing purposes. Sets the current date */
     now?: Date
 }
 
@@ -45,7 +45,7 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new D
                         </small>
                     </div>
                     <Markdown
-                        className={classNames('text-truncate', ...(node.description ? [] : ['text-muted']))}
+                        className={classNames('text-truncate', node.description && 'text-muted')}
                         dangerousInnerHTML={
                             node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
                         }

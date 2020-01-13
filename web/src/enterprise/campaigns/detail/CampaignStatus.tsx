@@ -24,7 +24,7 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
     const creationCompletedLongAgo =
         status.state === GQL.BackgroundProcessState.COMPLETED &&
         campaign.__typename === 'Campaign' &&
-        campaign.publishedAt &&
+        !!campaign.publishedAt &&
         isBefore(parseISO(campaign.publishedAt), addDays(new Date(), 1))
     const progress = (status.completedCount / (status.pendingCount + status.completedCount)) * 100
     return (

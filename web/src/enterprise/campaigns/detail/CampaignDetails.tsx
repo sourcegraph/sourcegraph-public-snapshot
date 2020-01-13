@@ -501,7 +501,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             disabled={
                                 previewRefreshNeeded ||
                                 mode !== 'editing' ||
-                                (campaign && campaign.changesets.totalCount === 0)
+                                campaign?.changesets.totalCount === 0
                             }
                         >
                             Create
