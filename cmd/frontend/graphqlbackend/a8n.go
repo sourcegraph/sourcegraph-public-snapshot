@@ -232,7 +232,7 @@ type CampaignResolver interface {
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
 	Plan(ctx context.Context) (CampaignPlanResolver, error)
-	ChangesetCreationStatus(context.Context) (BackgroundProcessStatus, error)
+	Status(context.Context) (BackgroundProcessStatus, error)
 	ClosedAt() *DateTime
 	PublishedAt() *DateTime
 	ChangesetPlans(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
