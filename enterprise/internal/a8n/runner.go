@@ -237,7 +237,7 @@ func (r *Runner) Wait(ctx context.Context) error {
 
 // RunChangesetJobs should run in a background goroutine and is responsible
 // for finding pending jobs and running them.
-// ctx should be canceled to terminat the function
+// ctx should be canceled to terminate the function
 func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, gitClient GitserverClient, backoffDuration time.Duration) {
 	workerCount, err := strconv.Atoi(maxWorkers)
 	if err != nil {
