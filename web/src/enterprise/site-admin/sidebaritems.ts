@@ -1,6 +1,6 @@
 import HeartIcon from 'mdi-react/HeartIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import { primaryGroup, authGroup, otherGroup, siteAdminSidebarGroups } from '../../site-admin/sidebaritems'
+import { authGroup, otherGroup, siteAdminSidebarGroups } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
