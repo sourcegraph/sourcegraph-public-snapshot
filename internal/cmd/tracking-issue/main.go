@@ -40,18 +40,37 @@ func run(milestone, labels string) error {
 		return err
 	}
 
+	workloads := map[string]float64{}
+
+	fmt.Printf("### Items\n\n")
 	for _, issue := range issues {
+		estimate := estimate(issue.Labels)
+		category := category(issue)
+		assignee := assignee(issue.Assignee)
+
 		fmt.Printf("- [ ] %s [#%d](%s) __%s__ %s %s\n",
 			*issue.Title,
 			*issue.Number,
 			*issue.HTMLURL,
-			estimate(issue.Labels),
-			category(issue),
-			assignee(issue.Assignee),
+			estimate,
+			category,
+			assignee,
 		)
+
+		workloads[assignee] += days(estimate)
+	}
+
+	fmt.Printf("\n### Workloads\n\n")
+	for assignee, days := range workloads {
+		fmt.Printf("- %s: %.2fd\n", assignee, days)
 	}
 
 	return err
+}
+
+func days(estimate string) float64 {
+	d, _ := strconv.ParseFloat(strings.TrimSuffix(estimate, "d"), 64)
+	return d
 }
 
 func estimate(labels []github.Label) string {
