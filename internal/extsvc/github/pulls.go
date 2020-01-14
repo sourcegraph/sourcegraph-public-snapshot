@@ -19,6 +19,12 @@ type Actor struct {
 	URL       string
 }
 
+// A Team represents a team on Github.
+type Team struct {
+	Name string
+	URL  string
+}
+
 // A GitActor represents an actor in a Git commit (ie. an author or committer).
 type GitActor struct {
 	AvatarURL string
@@ -238,17 +244,18 @@ func (e ReviewDismissedEvent) Key() string {
 type ReviewRequestRemovedEvent struct {
 	Actor             Actor
 	RequestedReviewer Actor
+	RequestedTeam     Team
 	CreatedAt         time.Time
 }
 
 // Key is a unique key identifying this event in the context of its pull request.
 func (e ReviewRequestRemovedEvent) Key() string {
-	return fmt.Sprintf(
-		"%s:%s:%d",
-		e.Actor.Login,
-		e.RequestedReviewer.Login,
-		e.CreatedAt.UnixNano(),
-	)
+	requestedFrom := e.RequestedReviewer.Login
+	if requestedFrom == "" {
+		requestedFrom = e.RequestedTeam.Name
+	}
+
+	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CreatedAt.UnixNano())
 }
 
 // ReviewRequestedRevent represents a 'review_requested' event on a
@@ -256,17 +263,18 @@ func (e ReviewRequestRemovedEvent) Key() string {
 type ReviewRequestedEvent struct {
 	Actor             Actor
 	RequestedReviewer Actor
+	RequestedTeam     Team
 	CreatedAt         time.Time
 }
 
 // Key is a unique key identifying this event in the context of its pull request.
 func (e ReviewRequestedEvent) Key() string {
-	return fmt.Sprintf(
-		"%s:%s:%d",
-		e.Actor.Login,
-		e.RequestedReviewer.Login,
-		e.CreatedAt.UnixNano(),
-	)
+	requestedFrom := e.RequestedReviewer.Login
+	if requestedFrom == "" {
+		requestedFrom = e.RequestedTeam.Name
+	}
+
+	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CreatedAt.UnixNano())
 }
 
 // UnassignedEvent represents an 'unassigned' event on a pull request.
@@ -727,11 +735,17 @@ fragment pr on PullRequest {
 		... on ReviewRequestRemovedEvent {
 		actor { ...actor }
 		requestedReviewer { ...actor }
+		requestedTeam: requestedReviewer {
+			... on Team { name url avatarUrl }
+		}
 		createdAt
 		}
 		... on ReviewRequestedEvent {
 		actor { ...actor }
 		requestedReviewer { ...actor }
+		requestedTeam: requestedReviewer {
+			... on Team { name url avatarUrl }
+		}
 		createdAt
 		}
 		... on UnassignedEvent {

@@ -268,35 +268,59 @@ func (*GitHubWebhook) unassignedEvent(e *gh.PullRequestEvent) *github.Unassigned
 }
 
 func (*GitHubWebhook) reviewRequestedEvent(e *gh.PullRequestEvent) *github.ReviewRequestedEvent {
-	return &github.ReviewRequestedEvent{
+	event := &github.ReviewRequestedEvent{
 		Actor: github.Actor{
 			AvatarURL: *e.Sender.AvatarURL,
 			Login:     *e.Sender.Login,
 			URL:       *e.Sender.URL,
 		},
-		RequestedReviewer: github.Actor{
+		CreatedAt: *e.PullRequest.UpdatedAt,
+	}
+
+	if e.RequestedReviewer != nil {
+		event.RequestedReviewer = github.Actor{
 			AvatarURL: *e.RequestedReviewer.AvatarURL,
 			Login:     *e.RequestedReviewer.Login,
 			URL:       *e.RequestedReviewer.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+		}
 	}
+
+	if e.RequestedTeam != nil {
+		event.RequestedTeam = github.Team{
+			Name: *e.RequestedTeam.Name,
+			URL:  *e.RequestedTeam.URL,
+		}
+	}
+
+	return event
 }
 
 func (*GitHubWebhook) reviewRequestRemovedEvent(e *gh.PullRequestEvent) *github.ReviewRequestRemovedEvent {
-	return &github.ReviewRequestRemovedEvent{
+	event := &github.ReviewRequestRemovedEvent{
 		Actor: github.Actor{
 			AvatarURL: *e.Sender.AvatarURL,
 			Login:     *e.Sender.Login,
 			URL:       *e.Sender.URL,
 		},
-		RequestedReviewer: github.Actor{
+		CreatedAt: *e.PullRequest.UpdatedAt,
+	}
+
+	if e.RequestedReviewer != nil {
+		event.RequestedReviewer = github.Actor{
 			AvatarURL: *e.RequestedReviewer.AvatarURL,
 			Login:     *e.RequestedReviewer.Login,
 			URL:       *e.RequestedReviewer.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+		}
 	}
+
+	if e.RequestedTeam != nil {
+		event.RequestedTeam = github.Team{
+			Name: *e.RequestedTeam.Name,
+			URL:  *e.RequestedTeam.URL,
+		}
+	}
+
+	return event
 }
 
 func (*GitHubWebhook) renamedTitleEvent(e *gh.PullRequestEvent) *github.RenamedTitleEvent {
