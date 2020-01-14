@@ -28,7 +28,7 @@ Manual campaigns keep track of existing changesets from various code hosts. You 
 
 ### Comby search and replace
 
-We currently offer search and replace functionality using [Comby](https://comby.dev), which is a tailored solution for syntactic, lint-like code changes. If you're interested in general text or regex search and replace then stay tuned, it's in the works!
+We currently offer search and replace functionality using [Comby](https://comby.dev), which is a tailored solution for syntactic, lint-like code changes (if you're interested in general text or regex search and replace then stay tuned, it's in the works!)
 
 > Run Comby across all of your repositories that match a specified scope query. Currently GitHub and Bitbucket Server are supported Codehosts for this campaign type. Other repositories **won't** be matched by the `scopeQuery` parameter. Also, a maximum of 200 repositories applies at this time.
 
@@ -39,6 +39,8 @@ Parameters:
 | scopeQuery      | Search query to narrow down repositories to be included in this campaign.                            |
 | matchTemplate   | The template to match against in source files. See the [Comby documentation](https://comby.dev/#match-syntax) for syntax. |
 | rewriteTemplate | The template to use for the replacements. See the [Comby documentation](https://comby.dev/#match-syntax) for syntax.      |
+
+Note: the `scopeQuery` filter narrows the set of repositories to run on, and will then run across all files in the repository. Future improvements will allow further scoping by file name and file contents.
 
 ### Upcoming: Regex search and replace
 
