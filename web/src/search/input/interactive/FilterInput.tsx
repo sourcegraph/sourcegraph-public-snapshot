@@ -71,6 +71,8 @@ interface Props {
      */
     editable: boolean
 
+    isHomepage: boolean
+
     /**
      * Callback that handles a filter input being submitted. Triggers a search
      * with the new query value.
@@ -359,7 +361,9 @@ export class FilterInput extends React.Component<Props, State> {
         return (
             <div
                 className={`filter-input ${
-                    this.props.editable && isText ? 'filter-input--active' : ''
+                    this.props.editable && isText
+                        ? `${this.props.isHomepage ? 'filter-input--active-homepage' : 'filter-input--active'}`
+                        : ''
                 } e2e-filter-input-${this.props.mapKey}`}
                 onBlur={this.onInputBlur}
                 tabIndex={0}

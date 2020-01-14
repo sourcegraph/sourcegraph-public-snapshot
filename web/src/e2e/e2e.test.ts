@@ -1719,7 +1719,7 @@ describe('e2e test suite', () => {
 
         test('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-query-input', {visible: true})
+            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-filter-dropdown')
             await driver.page.type('.e2e-query-input', 'test')
             await driver.page.click('.e2e-filter-dropdown')
