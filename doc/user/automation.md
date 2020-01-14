@@ -42,7 +42,7 @@ Parameters:
 
 ### Upcoming: Regex search and replace
 
-We are actively working on campaign support for regex search and replace.
+We are actively working on campaign support for regex search and replace. Let us know if this is a feature you are especially excited for!
 
 ## Creating a new campaign
 
