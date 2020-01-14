@@ -62,21 +62,23 @@ const quickConfigureActions: {
         id: 'addGitLabAuth',
         label: 'Add GitLab sign-in',
         run: config => {
-            const edits = [editWithComments(
-                config,
-                ['auth.providers', -1],
-                {
-                    COMMENT: true,
-                    type: 'gitlab',
-                    displayName: 'GitLab',
-                    url: '<GitLab URL>',
-                    clientID: '<client ID>',
-                    clientSecret: '<client secret>',
-                },
-                {
-                    COMMENT: '// See https://docs.sourcegraph.com/admin/auth#gitlab for instructions'
-                }
-            )]
+            const edits = [
+                editWithComments(
+                    config,
+                    ['auth.providers', -1],
+                    {
+                        COMMENT: true,
+                        type: 'gitlab',
+                        displayName: 'GitLab',
+                        url: '<GitLab URL>',
+                        clientID: '<client ID>',
+                        clientSecret: '<client secret>',
+                    },
+                    {
+                        COMMENT: '// See https://docs.sourcegraph.com/admin/auth#gitlab for instructions',
+                    }
+                ),
+            ]
             return { edits, selectText: '<GitLab URL>' }
         },
     },
@@ -84,20 +86,22 @@ const quickConfigureActions: {
         id: 'addGitHubAuth',
         label: 'Add GitHub sign-in',
         run: config => {
-            const edits = [editWithComments(
-                config,
-                ['auth.providers', -1],
-                {
-                    COMMENT: true,
-                    type: 'github',
-                    displayName: 'GitHub',
-                    url: 'https://github.com/',
-                    allowSignup: true,
-                    clientID: '<client ID>',
-                    clientSecret: '<client secret>',
-                },
-                { COMMENT: '// See https://docs.sourcegraph.com/admin/auth#github for instructions'}
-            )]
+            const edits = [
+                editWithComments(
+                    config,
+                    ['auth.providers', -1],
+                    {
+                        COMMENT: true,
+                        type: 'github',
+                        displayName: 'GitHub',
+                        url: 'https://github.com/',
+                        allowSignup: true,
+                        clientID: '<client ID>',
+                        clientSecret: '<client secret>',
+                    },
+                    { COMMENT: '// See https://docs.sourcegraph.com/admin/auth#github for instructions' }
+                ),
+            ]
             return { edits, selectText: '<client ID>' }
         },
     },
@@ -105,21 +109,23 @@ const quickConfigureActions: {
         id: 'useOneLoginSAML',
         label: 'Add OneLogin SAML',
         run: config => {
-            const edits = [editWithComments(
-                config,
-                ['auth.providers', -1],
-                {
-                    COMMENT: true,
+            const edits = [
+                editWithComments(
+                    config,
+                    ['auth.providers', -1],
+                    {
+                        COMMENT: true,
 
-                    type: 'saml',
-                    displayName: 'OneLogin',
-                    identityProviderMetadataURL: '<identity provider metadata URL>',
-                },
-                {
-                    COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml/one_login for instructions'
-                },
-            )]
-            return { edits, selectText: '<identity provider metadata URL>'}
+                        type: 'saml',
+                        displayName: 'OneLogin',
+                        identityProviderMetadataURL: '<identity provider metadata URL>',
+                    },
+                    {
+                        COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml/one_login for instructions',
+                    }
+                ),
+            ]
+            return { edits, selectText: '<identity provider metadata URL>' }
         },
     },
     {
@@ -132,9 +138,11 @@ const quickConfigureActions: {
                 displayName: 'Okta',
                 identityProviderMetadataURL: '<identity provider metadata URL>',
             }
-            const edits = [editWithComments(config, ['auth.providers', -1], value, {
-                COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml/okta for instructions'
-            })]
+            const edits = [
+                editWithComments(config, ['auth.providers', -1], value, {
+                    COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml/okta for instructions',
+                }),
+            ]
             return { edits, selectText: '<identity provider metadata URL>' }
         },
     },
@@ -142,17 +150,19 @@ const quickConfigureActions: {
         id: 'useSAML',
         label: 'Add other SAML',
         run: config => {
-            const edits = [editWithComments(
-                config,
-                ['auth.providers', -1],
-                {
-                    COMMENT: true,
-                    type: 'saml',
-                    displayName: 'SAML',
-                    identityProviderMetadataURL: '<SAML IdP metadata URL>',
-                },
-                { COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml for instructions'},
-            )]
+            const edits = [
+                editWithComments(
+                    config,
+                    ['auth.providers', -1],
+                    {
+                        COMMENT: true,
+                        type: 'saml',
+                        displayName: 'SAML',
+                        identityProviderMetadataURL: '<SAML IdP metadata URL>',
+                    },
+                    { COMMENT: '// See https://docs.sourcegraph.com/admin/auth/saml for instructions' }
+                ),
+            ]
             return { edits, selectText: '<SAML IdP metadata URL>' }
         },
     },
@@ -160,19 +170,21 @@ const quickConfigureActions: {
         id: 'useOIDC',
         label: 'Add OpenID Connect',
         run: config => {
-            const edits = [editWithComments(
-                config,
-                ['auth.providers', -1],
-                {
-                    COMMENT: true,
-                    type: 'openidconnect',
-                    displayName: 'OpenID Connect',
-                    issuer: '<identity provider URL>',
-                    clientID: '<client ID>',
-                    clientSecret: '<client secret>',
-                },
-                { COMMENT: '// See https://docs.sourcegraph.com/admin/auth#openid-connect for instructions'}
-            )]
+            const edits = [
+                editWithComments(
+                    config,
+                    ['auth.providers', -1],
+                    {
+                        COMMENT: true,
+                        type: 'openidconnect',
+                        displayName: 'OpenID Connect',
+                        issuer: '<identity provider URL>',
+                        clientID: '<client ID>',
+                        clientSecret: '<client secret>',
+                    },
+                    { COMMENT: '// See https://docs.sourcegraph.com/admin/auth#openid-connect for instructions' }
+                ),
+            ]
             return { edits, selectText: '<identity provider URL>' }
         },
     },
