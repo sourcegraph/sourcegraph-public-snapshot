@@ -38,6 +38,20 @@ export class UploadManager {
     }
 
     /**
+     * Return the number of distinct repositories that have LSIF data.
+     */
+    public async countRepositories(): Promise<number> {
+        return (
+            await this.connection
+                .getRepository(pgModels.LsifUpload)
+                .createQueryBuilder()
+                .select('repository')
+                .groupBy('repository')
+                .getRawMany()
+        ).length
+    }
+
+    /**
      * Get the uploads in the given state.
      *
      * @param repository The repository.

@@ -2,7 +2,7 @@ import express from 'express'
 import promClient from 'prom-client'
 
 /**
- * Create a router containing health endpoint.
+ * Create a router containing the health and metric endpoints.
  */
 export function createMetaRouter(): express.Router {
     const router = express.Router()
