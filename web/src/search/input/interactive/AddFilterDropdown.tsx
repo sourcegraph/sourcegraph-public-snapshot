@@ -26,7 +26,7 @@ export class AddFilterDropdown extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <select
-                className="form-control add-filter-dropdown"
+                className="form-control add-filter-dropdown e2e-filter-dropdown"
                 onChange={this.onAddNewFilter}
                 value={this.state.value}
             >
@@ -36,7 +36,7 @@ export class AddFilterDropdown extends React.Component<Props, State> {
                 {filterTypeKeys
                     .filter(filter => !defaultFilterTypes.includes(filter) && filter !== FilterTypes.case)
                     .map(filter => (
-                        <option key={filter} value={filter}>
+                        <option key={filter} value={filter} className={`e2e-filter-dropdown-option-${filter}`}>
                             {FilterTypesToProseNames[filter]}
                         </option>
                     ))}

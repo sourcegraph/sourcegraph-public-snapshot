@@ -454,7 +454,7 @@ export class FilterInput extends React.Component<Props, State> {
     private renderFiniteFilterForm(): JSX.Element {
         return (
             <Form onSubmit={this.onSubmitInput}>
-                <div className="filter-input__form">
+                <div className="filter-input__form e2e-filter-input-finite-form">
                     <div className="filter-input__radio-button-container">
                         <span>{`${FilterTypesToProseNames[this.props.filterType]}:`}</span>
                         {isFiniteFilter(this.props.filterType) &&
@@ -462,6 +462,7 @@ export class FilterInput extends React.Component<Props, State> {
                                 <div key={val.value} className="filter-input__radio">
                                     <input
                                         type="radio"
+                                        className={`e2e-filter-input-radio-button-${val.value}`}
                                         id={val.value}
                                         name={val.value}
                                         onChange={() => this.setState({ inputValue: val.value })}

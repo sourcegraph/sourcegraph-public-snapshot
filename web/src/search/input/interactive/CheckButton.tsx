@@ -8,7 +8,7 @@ import React from 'react'
 export const CheckButton: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className="search-button d-flex">
         <button
-            className={`btn btn-primary ${className}`}
+            className={`btn btn-primary ${className} e2e-confirm-filter-button`}
             type="submit"
             aria-label="Confirm filter"
             data-tooltip="Confirm filter"
