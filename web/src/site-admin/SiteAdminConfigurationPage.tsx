@@ -12,6 +12,236 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 import { ErrorAlert } from '../components/alerts'
+import * as jsonc from '@sqs/jsonc-parser'
+import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+
+const defaultFormattingOptions: jsonc.FormattingOptions = {
+    eol: '\n',
+    insertSpaces: true,
+    tabSize: 2,
+}
+
+function getExternalURLPlaceholders(config: string): { externalURL: string; externalURLRegexp: string } {
+    let externalURL
+    let externalURLRegexp
+    try {
+        externalURL = jsonc.parse(config).externalURL
+        externalURLRegexp = externalURL.replace(/\//g, '\\/')
+    } catch {
+        /* not necessarily an error, config might be empty */
+    }
+    if (!externalURL) {
+        externalURL = '<externalURL>'
+        externalURLRegexp = '<externalURL regex>'
+    }
+    return { externalURL, externalURLRegexp }
+}
+
+function editWithComments(
+    config: string,
+    path: jsonc.JSONPath,
+    value: any,
+    comments: { [key: string]: string }
+): jsonc.Edit {
+    const edit = setProperty(config, path, value, defaultFormattingOptions)[0]
+    for (const commentKey of Object.keys(comments)) {
+        edit.content = edit.content.replace(`"${commentKey}": true,`, comments[commentKey])
+        edit.content = edit.content.replace(`"${commentKey}": true`, comments[commentKey])
+    }
+    return edit
+}
+
+const quickConfigureActions: {
+    id: string
+    label: string
+    run: (config: string) => { edits: jsonc.Edit[]; selectText: string }
+}[] = [
+    {
+        id: 'setExternalURL',
+        label: 'Set external URL',
+        run: config => {
+            const value = '<external URL>'
+            const edits = setProperty(config, ['externalURL'], value, defaultFormattingOptions)
+            return { edits, selectText: '<external URL>' }
+        },
+    },
+    {
+        id: 'setLicenseKey',
+        label: 'Set license key',
+        run: config => {
+            const value = '<license key>'
+            const edits = setProperty(config, ['licenseKey'], value, defaultFormattingOptions)
+            return { edits, selectText: '<license key>' }
+        },
+    },
+    {
+        id: 'addGitLabAuth',
+        label: 'Add GitLab sign-in',
+        run: config => {
+            const edits = setProperty(
+                config,
+                ['auth.providers', -1],
+                {
+                    type: 'gitlab',
+                    displayName: 'GitLab',
+                    url: '<GitLab URL>',
+                    clientID: '<client ID>',
+                    clientSecret: '<client secret>',
+                },
+                defaultFormattingOptions
+            )
+            return { edits, selectText: '<GitLab URL>' }
+        },
+    },
+    {
+        id: 'addGitHubAuth',
+        label: 'Add GitHub sign-in',
+        run: config => {
+            const edits = setProperty(
+                config,
+                ['auth.providers', -1],
+                {
+                    type: 'github',
+                    displayName: 'GitHub',
+                    url: 'https://github.com/',
+                    allowSignup: true,
+                    clientID: '<client ID>',
+                    clientSecret: '<client secret>',
+                },
+                defaultFormattingOptions
+            )
+            return { edits, selectText: '<client ID>' }
+        },
+    },
+    {
+        id: 'useOneLoginSAML',
+        label: 'Add OneLogin SAML',
+        run: config => {
+            const { externalURL, externalURLRegexp } = getExternalURLPlaceholders(config)
+            const value = {
+                type: 'saml',
+                displayName: 'OneLogin',
+                COMMENT_1: true,
+                COMMENT_2: true,
+                identityProviderMetadataURL: '<identity provider metadata URL>',
+            }
+            const comments = {
+                COMMENT_1: `
+      // OneLogin SAML instructions
+      // ==========================
+      //
+      // Before proceeding, ensure you've set externalURL to the appropriate value.
+      // (The instructions below use the current value of externalURL.)
+      //
+      // Create a SAML app in OneLogin:
+      // 1. Go to https://mycompany.onelogin.com/apps/find (replace "mycompany" with your
+      //    company's OneLogin ID).
+      // 2. Select "SAML Test Connector (SP)" and click "Save".
+      // 3. Under the "Configuration" tab, set the following properties:
+      //    Audience:  ${externalURL}/.auth/saml/metadata
+      //    Recipient: ${externalURL}/.auth/saml/acs
+      //    ACS (Consumer) URL Validator: ${externalURLRegexp}\\/\\.auth\\/saml\\/acs
+      //    ACS (Consumer) URL: ${externalURL}/.auth/saml/acs
+      // 4. Under the "Parameters" tab, ensure the following parameters exist:
+      //    Email (NameID): Email
+      //    DisplayName:    First Name         Include in SAML Assertion: ✓
+      //    login:          AD user name       Include in SAML Assertion: ✓
+      // 5. Save the app in OneLogin and fill in the fields below:`,
+                COMMENT_2: `
+      // This URL describes OneLogin to Sourcegraph. Find it in the OneLogin app config GUI
+      // under the "SSO" tab, under "Issuer URL".
+      // It should look something like "https://mycompany.onelogin.com/saml/metadata/123456"
+      // or "https://app.onelogin.com/saml/metadata/123456".`,
+            }
+            const edits = [editWithComments(config, ['auth.providers', -1], value, comments)]
+            return { edits, selectText: 'OneLogin SAML instructions' }
+        },
+    },
+    {
+        id: 'useOktaSAML',
+        label: 'Add Okta SAML',
+        run: config => {
+            const { externalURL } = getExternalURLPlaceholders(config)
+            const value = {
+                type: 'saml',
+                displayName: 'Okta',
+                COMMENT_1: true,
+                COMMENT_2: true,
+                identityProviderMetadataURL: '<identity provider metadata URL>',
+            }
+            const comments = {
+                COMMENT_1: `
+      // Okta SAML instructions
+      // ======================
+      //
+      // Before proceeding, ensure you've set externalURL to the appropriate value.
+      // (The instructions below use the current value of externalURL.)
+      //
+      // Create a SAML app in Okta:
+      // 1. Go to the Okta admin "Add Application" page, classic UI (looks like
+      //    https://my-org.okta.com/admin/apps/add-app or https://dev-12345.oktapreview.com/admin/apps/add-app).
+      // 2. Click "Create New App", select "SAML 2.0", and "Create".
+      // 3. Give the app the name "Sourcegraph", click "Next".
+      // 4. Set the following SAML settings:
+      //    Single Sign On URL: ${externalURL}/.auth/saml/acs
+      //      Use this for Recipient URL and Destination URL: ✓
+      //    Audience URI (SP Entity ID) / Audience Restriction: ${externalURL}/.auth/saml/metadata
+      //    Attribute statements:
+      //      Email: user.email
+      //      Login: user.login
+      //      DisplayName: \${user.firstName} \${user.lastName}
+      //    Click "Next".
+      // 5. Select "I'm an Okta customer adding an internal app" and click "Finish".
+      // 6. Go to the "Assignments" tab, click the "Assign" dropdown > "Assign to Groups"
+      //    > Everyone ("Assign" button).
+      // 7. Fill in the fields below:`,
+                COMMENT_2: `
+      // This URL describes Okta to Sourcegraph. Go to the "Sign On" tab and copy
+      // the hyperlink "Identity Provider metadata is available if this application
+      // supports dynamic configuration." The value looks like
+      // "https://my-org.okta.com/app/abcdefghijk012345678/sso/saml/metadata" or "https://dev-123435.oktapreview.com/app/abcdefghijk012345678/sso/saml/metadata".`,
+            }
+            const edits = [editWithComments(config, ['auth.providers', -1], value, comments)]
+            return { edits, selectText: 'Okta SAML instructions' }
+        },
+    },
+    {
+        id: 'useSAML',
+        label: 'Add other SAML',
+        run: config => {
+            const edits = setProperty(
+                config,
+                ['auth.providers', -1],
+                {
+                    type: 'saml',
+                    displayName: 'SAML',
+                    identityProviderMetadataURL: '<SAML IdP metadata URL>',
+                },
+                defaultFormattingOptions
+            )
+            return { edits, selectText: '<SAML IdP metadata URL>' }
+        },
+    },
+    {
+        id: 'useOIDC',
+        label: 'Add OpenID Connect',
+        run: config => {
+            const edits = setProperty(
+                config,
+                ['auth.providers', -1],
+                {
+                    type: 'openidconnect',
+                    displayName: 'OpenID Connect',
+                    issuer: '<identity provider URL>',
+                    clientID: '<client ID>',
+                    clientSecret: '<client secret>',
+                },
+                defaultFormattingOptions
+            )
+            return { edits, selectText: '<identity provider URL>' }
+        },
+    },
+]
 
 interface Props extends RouteComponentProps<{}> {
     isLightTheme: boolean
@@ -251,6 +481,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             height={600}
                             isLightTheme={this.props.isLightTheme}
                             onSave={this.onSave}
+                            actions={quickConfigureActions}
                             history={this.props.history}
                         />
                         <p className="form-text text-muted">
