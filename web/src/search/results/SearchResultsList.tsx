@@ -35,7 +35,7 @@ const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__ty
 
 export interface SearchResultsListProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         SettingsCascadeProps,
         ThemeProps,

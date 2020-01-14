@@ -33,7 +33,7 @@ interface Props
         KeyboardShortcutsProps,
         EventLoggerProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
