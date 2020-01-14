@@ -64,7 +64,11 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
             .map(filter => {
                 const itemsOfType = searchParams.getAll(filter)
                 itemsOfType.map(item => {
-                    filtersInQuery[isFiniteFilter(filter) ? filter : uniqueId(filter)] = { type: filter, value: item, editable: false }
+                    filtersInQuery[isFiniteFilter(filter) ? filter : uniqueId(filter)] = {
+                        type: filter,
+                        value: item,
+                        editable: false,
+                    }
                 })
             })
 
