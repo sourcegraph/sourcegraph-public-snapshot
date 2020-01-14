@@ -45,7 +45,7 @@ export class CaseSensitivityToggle extends React.Component<Props> {
             <div
                 ref={this.toggleCheckbox}
                 onClick={this.toggle}
-                className="btn btn-icon icon-inline query-input2__toggle"
+                className="btn btn-icon icon-inline query-input2__toggle e2e-case-sensitivity-toggle"
                 role="checkbox"
                 aria-checked={isCaseSensitive}
                 aria-label="Case sensitivity toggle"
