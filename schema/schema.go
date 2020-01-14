@@ -512,7 +512,7 @@ type GitLabConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Token description: A GitLab access token with "api" and "sudo" scopes. If this token does not have "sudo" scope, then you must set `permissions.ignore` to true.
+	// Token description: A GitLab access token with "api" scope. If you are enabling permissions with identity provider type "external", this token should also have "sudo" scope.
 	Token string `json:"token"`
 	// Url description: URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.
 	Url string `json:"url"`
