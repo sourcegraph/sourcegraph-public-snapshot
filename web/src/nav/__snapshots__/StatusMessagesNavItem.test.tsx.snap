@@ -36,7 +36,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
         Repositories up to date
       </h4>
       <p>
-        All repositories hosted on the configured external services are cloned.
+        All repositories hosted on the configured code hosts are cloned.
       </p>
     </div>
   </div>
@@ -131,7 +131,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
           href="/site-admin/external-services"
           onClick={[Function]}
         >
-          Configure external services
+          Configure synced repositories
         </a>
       </p>
     </div>
@@ -172,7 +172,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
         <CloudAlertIcon
           className="icon-inline mr-1"
         />
-        Syncing external service "GitHub.com" failed:
+        Syncing repositories from external service "GitHub.com" failed:
       </h4>
       <p>
         failed to list organization kubernetes repos: request returned status 404: Not Found
@@ -215,7 +215,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
         <CloudAlertIcon
           className="icon-inline mr-1"
         />
-        Syncing external service "GitHub.com" failed:
+        Syncing repositories from external service "GitHub.com" failed:
       </h4>
       <p>
         failed to list organization kubernetes repos: request returned status 404: Not Found
@@ -323,7 +323,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
           href="/site-admin/external-services"
           onClick={[Function]}
         >
-          Configure external services
+          Configure synced repositories
         </a>
       </p>
     </div>
