@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
@@ -84,15 +82,13 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 		case "/metadata":
 			metadata, err := p.samlSP.Metadata()
 			if err != nil {
-				log15.Error("Error generating SAML service provider metadata.", "err", err)
-				http.Error(w, "", http.StatusInternalServerError)
+				logAndSetHTTPError(w, err, logAndSetHTTPErrorOp{logErrMsg: "Error generating SAML service provider metadata."})
 				return
 			}
 
 			buf, err := xml.MarshalIndent(metadata, "", "  ")
 			if err != nil {
-				log15.Error("Error encoding SAML service provider metadata.", "err", err)
-				http.Error(w, "", http.StatusInternalServerError)
+				logAndSetHTTPError(w, err, logAndSetHTTPErrorOp{logErrMsg: "Error encoding SAML service provider metadata."})
 				return
 			}
 			traceLog(fmt.Sprintf("Service Provider metadata: %s", p.ConfigID().ID), string(buf))
@@ -132,15 +128,20 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 	case "/acs":
 		info, err := readAuthnResponse(p, r.FormValue("SAMLResponse"))
 		if err != nil {
-			log15.Error("Error validating SAML assertions. Set the env var INSECURE_SAML_LOG_TRACES=1 to log all SAML requests and responses.", "err", err)
-			http.Error(w, "Error validating SAML assertions. Try signing in again. If the problem persists, a site admin must check the configuration.", http.StatusForbidden)
+			logAndSetHTTPError(w, err, logAndSetHTTPErrorOp{
+				userVisibleErrMsg: "Error validating SAML assertions. Try signing in again. If the problem persists, a site admin must check the configuration.",
+				logErrMsg:         "Error validating SAML assertions. Set the env var INSECURE_SAML_LOG_TRACES=1 to log all SAML requests and responses.",
+				httpStatus:        http.StatusForbidden,
+			})
 			return
 		}
 
 		actor, safeErrMsg, err := getOrCreateUser(r.Context(), info)
 		if err != nil {
-			log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
-			http.Error(w, safeErrMsg, http.StatusInternalServerError)
+			logAndSetHTTPError(w, err, logAndSetHTTPErrorOp{
+				logErrMsg:         "Error looking up SAML-authenticated user.",
+				userVisibleErrMsg: safeErrMsg,
+			})
 			return
 		}
 		var exp time.Duration
@@ -155,8 +156,10 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 		// 	exp = time.Until(*info.SessionNotOnOrAfter)
 		// }
 		if err := session.SetActor(w, r, actor, exp); err != nil {
-			log15.Error("Error setting SAML-authenticated actor in session.", "err", err)
-			http.Error(w, "Error starting SAML-authenticated session. Try signing in again.", http.StatusInternalServerError)
+			logAndSetHTTPError(w, err, logAndSetHTTPErrorOp{
+				logErrMsg:         "Error setting SAML-authenticated actor in session.",
+				userVisibleErrMsg: "Error starting SAML-authenticated session. Try signing in again.",
+			})
 			return
 		}
 
@@ -180,8 +183,10 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 		// validate the LogoutResponse to avoid being vulnerable to spoofing.
 		_, err := p.samlSP.ValidateEncodedResponse(encodedResp)
 		if err != nil && !strings.HasPrefix(err.Error(), "unable to unmarshal response:") {
-			log15.Error("Error validating SAML logout response.", "err", err)
-			http.Error(w, "Error validating SAML logout response.", http.StatusForbidden)
+			logAndSetHTTPError(w, err, logAndSetHTTPErrorOp{
+				userVisibleErrMsg: "Error validating SAML logout response.",
+				httpStatus:        http.StatusForbidden,
+			})
 			return
 		}
 
@@ -189,8 +194,10 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 		// session (but there's no harm in clearing it again). If it's an IdP-initiated logout,
 		// then it hasn't, and we must clear it here.
 		if err := session.SetActor(w, r, nil, 0); err != nil {
-			log15.Error("Error clearing actor from session in SAML logout handler.", "err", err)
-			http.Error(w, "Error signing out of SAML-authenticated session.", http.StatusInternalServerError)
+			logAndSetHTTPError(w, err, logAndSetHTTPErrorOp{
+				logErrMsg:         "Error clearing actor from session in SAML logout handler.",
+				userVisibleErrMsg: "Error signing out of SAML-authenticated session.",
+			})
 			return
 		}
 		http.Redirect(w, r, "/", http.StatusFound)
@@ -206,8 +213,10 @@ func redirectToAuthURL(w http.ResponseWriter, r *http.Request, p *provider, retu
 		ReturnToURL: auth.SafeRedirectURL(returnToURL),
 	})
 	if err != nil {
-		log15.Error("Failed to build SAML auth URL.", "err", err)
-		http.Error(w, "Unexpected error in SAML authentication provider.", http.StatusInternalServerError)
+		logAndSetHTTPError(w, err, logAndSetHTTPErrorOp{
+			logErrMsg:         "Failed to build SAML auth URL",
+			userVisibleErrMsg: "Unexpected error in SAML authentication provider.",
+		})
 		return
 	}
 	http.Redirect(w, r, authURL, http.StatusFound)

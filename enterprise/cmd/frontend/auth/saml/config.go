@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var mockGetProviderValue *provider
@@ -50,13 +49,16 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) 
 
 	p = getProvider(pcID)
 	if p == nil {
-		log15.Error("No SAML auth provider found with ID", "id", pcID)
-		http.Error(w, "Misconfigured SAML auth provider.", http.StatusInternalServerError)
+		logAndSetHTTPError(w, fmt.Errorf("No SAML auth provider found with ID %s", pcID), logAndSetHTTPErrorOp{
+			userVisibleErrMsg: "Misconfigured SAML auth provider.",
+		})
 		return nil, true
 	}
 	if err := p.Refresh(ctx); err != nil {
-		log15.Error("Error getting SAML auth provider", "id", p.ConfigID(), "error", err)
-		http.Error(w, "Unexpected error getting SAML authentication provider. This may indicate that the SAML IdP does not exist. Ask a site admin to check the server \"frontend\" logs for \"Error getting SAML auth provider\".", http.StatusInternalServerError)
+		logAndSetHTTPError(w, err, logAndSetHTTPErrorOp{
+			logErrMsg:         fmt.Sprintf("Error getting SAML auth provider with ID %s", p.ConfigID()),
+			userVisibleErrMsg: "Unexpected error getting SAML authentication provider. This may indicate that the SAML IdP does not exist. Ask a site admin to check the server \"frontend\" logs for \"Error getting SAML auth provider\".",
+		})
 		return nil, true
 	}
 	return p, false
