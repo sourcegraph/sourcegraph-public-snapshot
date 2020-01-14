@@ -1735,6 +1735,15 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-confirm-filter-button')
             await driver.assertWindowLocation('/search?q=test&patternType=literal&fork=only')
+            // Edit filter by clicking dropdown menu
+            await driver.page.waitForSelector('.e2e-filter-dropdown')
+            await driver.page.click('.e2e-filter-dropdown')
+            await driver.page.waitForSelector('.e2e-filter-dropdown-option-fork')
+            await driver.page.click('.e2e-filter-dropdown-option-fork')
+            await driver.page.waitForSelector('.e2e-filter-input-finite-form')
+            await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
+            await driver.page.click('.e2e-confirm-filter-button')
+            await driver.assertWindowLocation('/search?q=test&patternType=literal&fork=no')
         })
     })
 
