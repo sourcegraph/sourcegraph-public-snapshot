@@ -848,6 +848,10 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 			e.RequestedReviewer = o.RequestedReviewer
 		}
 
+		if e.RequestedTeam == (github.Team{}) {
+			e.RequestedTeam = o.RequestedTeam
+		}
+
 		if e.CreatedAt.IsZero() {
 			e.CreatedAt = o.CreatedAt
 		}
@@ -861,6 +865,10 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 
 		if e.RequestedReviewer == (github.Actor{}) {
 			e.RequestedReviewer = o.RequestedReviewer
+		}
+
+		if e.RequestedTeam == (github.Team{}) {
+			e.RequestedTeam = o.RequestedTeam
 		}
 
 		if e.CreatedAt.IsZero() {

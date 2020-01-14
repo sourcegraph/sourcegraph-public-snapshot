@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -230,11 +229,11 @@ func testStringResult(result *searchSuggestionResolver) string {
 	var name string
 	switch r := result.result.(type) {
 	case *RepositoryResolver:
-		name = "repo:" + syntax.MaybeEscapeValue(string(r.repo.Name))
+		name = "repo:" + string(r.repo.Name)
 	case *GitTreeEntryResolver:
-		name = "file:" + syntax.MaybeEscapeValue(r.Path())
+		name = "file:" + r.Path()
 	case *languageResolver:
-		name = "lang:" + syntax.MaybeEscapeValue(r.name)
+		name = "lang:" + r.name
 	default:
 		panic("never here")
 	}

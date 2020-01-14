@@ -66,17 +66,15 @@ func main() {
 	}
 
 	a8nStore := a8n.NewStoreWithClock(dbconn.Global, clock)
+	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	githubWebhook := &a8n.GitHubWebhook{
-		Store: a8nStore,
-		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
-		Now:   clock,
-	}
+	githubWebhook := a8n.NewGitHubWebhook(a8nStore, repositories, clock)
+	bitbucketServerWebhook := a8n.NewBitbucketServerWebhook(a8nStore, repositories, clock)
 
 	go a8n.RunCampaignJobs(ctx, a8nStore, clock, 5*time.Second)
 	go a8n.RunChangesetJobs(ctx, a8nStore, clock, gitserver.DefaultClient, 5*time.Second)
 
-	shared.Main(githubWebhook)
+	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
 
 func initLicensing() {

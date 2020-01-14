@@ -7,10 +7,10 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { ExternalServiceCard } from '../../components/ExternalServiceCard'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
-import { getExternalService } from '../../site-admin/externalServices'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
 import { ErrorAlert } from '../../components/alerts'
+import { defaultExternalServices } from '../../site-admin/externalServices'
 
 interface Props extends RouteComponentProps<{}> {
     repo: GQL.IRepository
@@ -71,7 +71,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                         {services.map(service => (
                             <div className="mb-3" key={service.id}>
                                 <ExternalServiceCard
-                                    {...getExternalService(service.kind)}
+                                    {...defaultExternalServices[service.kind]}
                                     kind={service.kind}
                                     title={service.displayName}
                                     shortDescription="Update this external service configuration to manage repository mirroring."

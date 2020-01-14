@@ -133,8 +133,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 		}
 
 		fs := loadFixtures(t)
-		hook := &GitHubWebhook{Store: store, Repos: repoStore, Now: clock}
-
+		hook := NewGitHubWebhook(store, repoStore, clock)
 		issueComment := github.IssueComment{
 			DatabaseID: 540540777,
 			Author: github.Actor{

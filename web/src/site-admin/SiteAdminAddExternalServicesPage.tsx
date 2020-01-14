@@ -1,16 +1,9 @@
 import * as H from 'history'
 import React from 'react'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { PageTitle } from '../components/PageTitle'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import {
-    AddExternalServiceMetadata,
-    ALL_EXTERNAL_SERVICE_ADD_VARIANTS,
-    ExternalServiceVariant,
-    getExternalService,
-    isExternalServiceVariant,
-} from './externalServices'
+import { codeHostExternalServices, nonCodeHostExternalServices, allExternalServices } from './externalServices'
 import { SiteAdminAddExternalServicePage } from './SiteAdminAddExternalServicePage'
 
 interface Props extends ThemeProps {
@@ -26,50 +19,47 @@ interface Props extends ThemeProps {
  */
 export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
     /**
-     * Gets the external service kind and add-service kind from the URL paramsters
+     * Returns the id of the external service from the URL parameters.
      */
-    private getExternalServiceKind(): {
-        kind: GQL.ExternalServiceKind | null
-        variant: ExternalServiceVariant | undefined
-    } {
-        const params = new URLSearchParams(this.props.history.location.search)
-        let kind = params.get('kind') || undefined
-        if (kind) {
-            kind = kind.toUpperCase()
-        }
-        const isKnownKind = (kind: string): kind is GQL.ExternalServiceKind =>
-            !!getExternalService(kind as GQL.ExternalServiceKind)
-
-        const q = params.get('variant')
-        const variant = q && isExternalServiceVariant(q) ? q : undefined
-        return { kind: kind && isKnownKind(kind) ? kind : null, variant }
-    }
-
-    private static getAddURL(serviceToAdd: AddExternalServiceMetadata): string {
-        const params = new URLSearchParams()
-        params.append('kind', serviceToAdd.kind.toLowerCase())
-        if (serviceToAdd.variant) {
-            params.append('variant', serviceToAdd.variant)
-        }
-        return `?${params.toString()}`
+    private getExternalServiceID(): string | null {
+        return new URLSearchParams(this.props.history.location.search).get('id') ?? null
     }
 
     public render(): JSX.Element | null {
-        const { kind, variant } = this.getExternalServiceKind()
-        if (kind) {
-            return <SiteAdminAddExternalServicePage {...this.props} kind={kind} variant={variant} />
+        const id = this.getExternalServiceID()
+        if (id) {
+            const externalService = allExternalServices[id]
+            if (externalService) {
+                return <SiteAdminAddExternalServicePage {...this.props} externalService={externalService} />
+            }
         }
         return (
             <div className="add-external-services-page mt-3">
-                <PageTitle title="Choose an external service type to add" />
-                <h1>Add external service</h1>
-                <p>Choose an external service to add to Sourcegraph.</p>
-                {ALL_EXTERNAL_SERVICE_ADD_VARIANTS.map((service, i) => (
-                    <div className="add-external-services-page__card" key={i}>
-                        <ExternalServiceCard to={SiteAdminAddExternalServicesPage.getAddURL(service)} {...service} />
+                <PageTitle title="Add repositories" />
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                    <h2 className="mb-0">Add repositories</h2>
+                </div>
+                <p className="mt-2">Add repositories from one of these code hosts.</p>
+                {Object.entries(codeHostExternalServices).map(([id, externalService]) => (
+                    <div className="add-external-services-page__card" key={id}>
+                        <ExternalServiceCard to={getAddURL(id)} {...externalService} />
+                    </div>
+                ))}
+                <br />
+                <h2>Other connections</h2>
+                <p className="mt-2">Add connections to non-code-host services.</p>
+                {Object.entries(nonCodeHostExternalServices).map(([id, externalService]) => (
+                    <div className="add-external-services-page__card" key={id}>
+                        <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                     </div>
                 ))}
             </div>
         )
     }
+}
+
+function getAddURL(id: string): string {
+    const params = new URLSearchParams()
+    params.append('id', id)
+    return `?${params.toString()}`
 }
