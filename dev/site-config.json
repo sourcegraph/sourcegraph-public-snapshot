@@ -6,6 +6,7 @@
       "allowSignup": false
     }
   ],
+  "externalURL": "http://localhost:3080/",
   "experimentalFeatures": {
     "discussions": "enabled"
   },
