@@ -205,6 +205,8 @@ type BitbucketServerConnection struct {
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding "token" or "password" field.
 	Username string `json:"username"`
+	// Webhooks description: Configuration for Bitbucket Server Sourcegraph plugin webhooks
+	Webhooks *Webhooks `json:"webhooks,omitempty"`
 }
 
 // BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
@@ -942,4 +944,10 @@ type TlsExternal struct {
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
+}
+
+// Webhooks description: Configuration for Bitbucket Server Sourcegraph plugin webhooks
+type Webhooks struct {
+	// Secret description: Secret for authenticating incoming webhook paylods
+	Secret string `json:"secret,omitempty"`
 }
