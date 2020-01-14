@@ -5,7 +5,6 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { codeHostExternalServices, nonCodeHostExternalServices, allExternalServices } from './externalServices'
 import { SiteAdminAddExternalServicePage } from './SiteAdminAddExternalServicePage'
-import { map } from 'lodash'
 
 interface Props extends ThemeProps {
     history: H.History
