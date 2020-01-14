@@ -1,6 +1,5 @@
 import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { concat } from 'lodash'
 import AmazonIcon from 'mdi-react/AmazonIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
@@ -234,7 +233,6 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
 )
 
 const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
-    concat(
         [
             {
                 id: 'setAccessToken',
@@ -294,13 +292,12 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
                     return { edits, selectText: '123' }
                 },
             },
-        ],
-        isSelfManaged
+        ...(isSelfManaged
             ? [
                   {
                       id: 'addInternalProjects',
                       label: 'Add internal projects',
-                      run: config => {
+                      run: (config: string) => {
                           const value = 'projects?visibility=internal'
                           const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
                           return { edits, selectText: value }
@@ -309,15 +306,14 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
                   {
                       id: 'addPrivateProjects',
                       label: 'Add private projects',
-                      run: config => {
+                      run: (config: string) => {
                           const value = 'projects?visibility=private'
                           const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
                           return { edits, selectText: value }
                       },
                   },
               ]
-            : [],
-        [
+            : []),
             {
                 id: 'excludeProject',
                 label: 'Exclude a project',
@@ -327,13 +323,12 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
                     return { edits, selectText: '"<group>/<project>"' }
                 },
             },
-        ],
-        isSelfManaged
+        ...(isSelfManaged
             ? [
                   {
                       id: 'enforcePermissionsOAuth',
                       label: 'Enforce permissions (OAuth)',
-                      run: config => {
+                      run: (config: string) => {
                           const value = {
                               identityProvider: {
                                   COMMENT_SENTINEL: true,
@@ -348,7 +343,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
                   {
                       id: 'enforcePermissionsSudo',
                       label: 'Enforce permissions (sudo)',
-                      run: config => {
+                      run: (config: string) => {
                           const value = {
                               COMMENT_SENTINEL: true,
                               identityProvider: {
@@ -367,7 +362,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
                   {
                       id: 'setSelfSignedCert',
                       label: 'Set internal or self-signed certificate',
-                      run: config => {
+                      run: (config: string) => {
                           const value = '<certificate>'
                           const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
                           return { edits, selectText: value }
@@ -378,7 +373,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
                   {
                       id: 'enforcePermissionsOAuth',
                       label: 'Enforce permissions',
-                      run: config => {
+                      run: (config: string) => {
                           const value = {
                               identityProvider: {
                                   COMMENT_SENTINEL: true,
@@ -390,8 +385,8 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
                           return { edits: [edit], selectText: comment }
                       },
                   },
-              ]
-    )
+              ])
+            ]
 
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.GITHUB,
