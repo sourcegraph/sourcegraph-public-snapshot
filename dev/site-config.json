@@ -1,5 +1,11 @@
 // The Sourcegraph site configuration for development servers.
 {
+  "auth.providers": [
+    {
+      "type": "builtin",
+      "allowSignup": false
+    }
+  ],
   "experimentalFeatures": {
     "discussions": "enabled"
   },
