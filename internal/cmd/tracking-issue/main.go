@@ -41,12 +41,13 @@ func run(milestone, labels string) error {
 	}
 
 	for _, issue := range issues {
-		fmt.Printf("- [ ] %s [#%d](%s) __%s__ %s\n",
+		fmt.Printf("- [ ] %s [#%d](%s) __%s__ %s %s\n",
 			*issue.Title,
 			*issue.Number,
 			*issue.HTMLURL,
 			estimate(issue.Labels),
 			category(issue),
+			assignee(issue.Assignee),
 		)
 	}
 
@@ -94,6 +95,13 @@ func customer(issue *github.Issue) string {
 	}
 
 	return "[👩](" + customer + ")"
+}
+
+func assignee(user *github.User) string {
+	if user == nil || user.Login == nil {
+		return ""
+	}
+	return "@" + *user.Login
 }
 
 func getMilestoneByTitle(ctx context.Context, cli *github.Client, title string) (*github.Milestone, error) {
