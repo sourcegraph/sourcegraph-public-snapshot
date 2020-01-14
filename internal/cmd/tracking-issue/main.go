@@ -62,6 +62,9 @@ func run(milestone, labels string) error {
 
 	fmt.Printf("\n### Workloads\n\n")
 	for assignee, days := range workloads {
+		if assignee == "" {
+			assignee = "Unassigned"
+		}
 		fmt.Printf("- %s: %.2fd\n", assignee, days)
 	}
 
