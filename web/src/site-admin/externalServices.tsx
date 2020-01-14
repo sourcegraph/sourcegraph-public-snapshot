@@ -232,8 +232,99 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
     </div>
 )
 
+const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
+    ...(isEnterprise ? [
+        {
+            id: 'setURL',
+            label: 'Set GitHub URL',
+            run: (config: string) => {
+                const value = 'https://github.example.com'
+                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            }
+        }
+    ]: []),
+    {
+        id: 'setAccessToken',
+        label: 'Set access token',
+        run: (config: string) => {
+            const value = '<access token>'
+            const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+            return { edits, selectText: '<access token>' }
+        },
+    },
+    {
+        id: 'addOrgRepo',
+        label: 'Add repositories in an organization',
+        run: (config: string) => {
+            const value = '<organization name>'
+            const edits = setProperty(config, ['orgs', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '<organization name>' }
+        },
+    },
+    {
+        id: 'addSearchQueryRepos',
+        label: 'Add repositories matching a search query',
+        run: (config: string) => {
+            const value = '<search query>'
+            const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '<search query>' }
+        },
+    },
+    {
+        id: 'addAffiliatedRepos',
+        label: 'Add repositories affiliated with token',
+        run: (config: string) => {
+            const value = 'affiliated'
+            const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+            return { edits, selectText: 'affiliated' }
+        },
+    },
+    {
+        id: 'addRepo',
+        label: 'Add a single repository',
+        run: config => {
+            const value = '<owner>/<repository>'
+            const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '<owner>/<repository>' }
+        },
+    },
+    {
+        id: 'excludeRepo',
+        label: 'Exclude a repository',
+        run: config => {
+            const value = { name: '<owner>/<repository>' }
+            const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '<owner>/<repository>' }
+        },
+    },
+    {
+        id: 'enablePermissions',
+        label: 'Enforce permissions',
+        run: config => {
+            const value = {
+                COMMENT_SENTINEL: true,
+            }
+            const comment = editorActionComments.enablePermissions
+            const edit = editWithComment(config, ['authorization'], value, comment)
+            return { edits: [edit], selectText: comment }
+        },
+    },
+]
+
 const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
         [
+            ...(isSelfManaged ? [
+                {
+                    id: 'setURL',
+                    label: 'Set GitLab URL',
+                    run: (config: string) => {
+                        const value = 'https://gitlab.example.com'
+                        const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                        return { edits, selectText: value }
+                    }
+                }
+            ]: []),
             {
                 id: 'setAccessToken',
                 label: 'Set access token',
@@ -393,74 +484,7 @@ const GITHUB_DOTCOM: AddExternalServiceOptions = {
     title: 'GitHub.com',
     icon: GithubCircleIcon,
     jsonSchema: githubSchemaJSON,
-    editorActions: [
-        {
-            id: 'setAccessToken',
-            label: 'Set access token',
-            run: (config: string) => {
-                const value = '<access token>'
-                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
-                return { edits, selectText: '<access token>' }
-            },
-        },
-        {
-            id: 'addOrgRepo',
-            label: 'Add repositories in an organization',
-            run: (config: string) => {
-                const value = '<organization name>'
-                const edits = setProperty(config, ['orgs', -1], value, defaultFormattingOptions)
-                return { edits, selectText: '<organization name>' }
-            },
-        },
-        {
-            id: 'addSearchQueryRepos',
-            label: 'Add repositories matching a search query',
-            run: (config: string) => {
-                const value = '<search query>'
-                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
-                return { edits, selectText: '<search query>' }
-            },
-        },
-        {
-            id: 'addAffiliatedRepos',
-            label: 'Add repositories affiliated with token',
-            run: (config: string) => {
-                const value = 'affiliated'
-                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
-                return { edits, selectText: 'affiliated' }
-            },
-        },
-        {
-            id: 'addRepo',
-            label: 'Add a single repository',
-            run: config => {
-                const value = '<owner>/<repository>'
-                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
-                return { edits, selectText: '<owner>/<repository>' }
-            },
-        },
-        {
-            id: 'excludeRepo',
-            label: 'Exclude a repository',
-            run: config => {
-                const value = { name: '<owner>/<repository>' }
-                const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
-                return { edits, selectText: '<owner>/<repository>' }
-            },
-        },
-        {
-            id: 'enablePermissions',
-            label: 'Enforce permissions',
-            run: config => {
-                const value = {
-                    COMMENT_SENTINEL: true,
-                }
-                const comment = editorActionComments.enablePermissions
-                const edit = editWithComment(config, ['authorization'], value, comment)
-                return { edits: [edit], selectText: comment }
-            },
-        },
-    ],
+    editorActions: githubEditorActions(false),
     instructions: githubInstructions(false),
     defaultDisplayName: 'GitHub',
     defaultConfig: `{
@@ -477,6 +501,7 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
   "token": "<access token>",
   "orgs": []
 }`,
+    editorActions: githubEditorActions(true),
     instructions: githubInstructions(true),
 }
 const AWS_CODE_COMMIT: AddExternalServiceOptions = {
@@ -853,7 +878,15 @@ const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
     title: 'GitLab Self-Managed',
     instructions: gitlabInstructions(true),
     editorActions: gitlabEditorActions(true),
+    defaultConfig: `{
+  "url": "https://gitlab.example.com",
+  "token": "<access token>",
+  "projectQuery": [
+    "projects?membership=true&archived=no"
+  ]
+}`,
 }
+
 const GITOLITE: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.GITOLITE,
     title: 'Gitolite',
