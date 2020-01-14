@@ -22,7 +22,7 @@ import { PatternTypeProps } from '..'
 
 interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         PatternTypeProps {
     /** The currently authenticated user or null */

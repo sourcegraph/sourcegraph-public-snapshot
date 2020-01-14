@@ -9,6 +9,7 @@ import { ThemePreference } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
+import { NEVER } from 'rxjs'
 
 // Renders a human-readable list of the NavLinks' contents so that humans can more easily diff
 // snapshots to see what actually changed.
@@ -42,7 +43,7 @@ describe('NavLinks', () => {
     const NOOP_EXTENSIONS_CONTROLLER: ExtensionsControllerProps<
         'executeCommand' | 'services'
     >['extensionsController'] = { executeCommand: () => Promise.resolve(), services: {} as any }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
+    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
     const KEYBOARD_SHORTCUTS: KeyboardShortcutsProps['keyboardShortcuts'] = []
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions

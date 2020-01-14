@@ -46,7 +46,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                             to={`/site-admin/external-services/${this.props.node.id}`}
                             data-tooltip="External service settings"
                         >
-                            <SettingsIcon className="icon-inline" /> Settings
+                            <SettingsIcon className="icon-inline" /> Edit
                         </Link>{' '}
                         <button
                             type="button"
@@ -195,19 +195,17 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
         }
         return (
             <div className="site-admin-external-services-page">
-                <PageTitle title="External services - Admin" />
+                <PageTitle title="Manage repositories - Admin" />
                 <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
-                    <h2 className="mb-0">External services</h2>
+                    <h2 className="mb-0">Manage repositories</h2>
                     <Link
                         className="btn btn-primary e2e-goto-add-external-service-page"
                         to="/site-admin/external-services/new"
                     >
-                        <AddIcon className="icon-inline" /> Add external service
+                        <AddIcon className="icon-inline" /> Add repositories
                     </Link>
                 </div>
-                <p className="mt-2">
-                    Manage connections to external services, such as code hosts (to sync repositories).
-                </p>
+                <p className="mt-2">Manage code host connections to sync repositories.</p>
                 <FilteredExternalServiceConnection
                     className="list-group list-group-flush mt-3"
                     noun="external service"
