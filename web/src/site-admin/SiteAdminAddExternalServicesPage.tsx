@@ -20,7 +20,7 @@ interface Props extends ThemeProps {
  */
 export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
     /**
-     * Gets the external service kind and add-service kind from the URL paramsters
+     * Returns the id of the external service from the URL parameters.
      */
     private getExternalServiceID(): string | null {
         return new URLSearchParams(this.props.history.location.search).get('id') ?? null
