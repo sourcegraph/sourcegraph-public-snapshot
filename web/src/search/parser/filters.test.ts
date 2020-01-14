@@ -30,7 +30,7 @@ describe('validateFilter()', () => {
         {
             description: 'Invalid filter type',
             filterType: 'repoo',
-            expected: { valid: false, reason: 'Invalid filter type' },
+            expected: { valid: false, reason: 'Invalid filter type.' },
             token: { type: 'literal', value: 'a' },
         },
         {
@@ -42,13 +42,13 @@ describe('validateFilter()', () => {
         {
             description: 'Invalid quoted value for case filter',
             filterType: 'case',
-            expected: { valid: false, reason: 'Invalid filter value, expected one of: yes, no' },
+            expected: { valid: false, reason: 'Invalid filter value, expected one of: yes, no.' },
             token: { type: 'quoted', quotedValue: 'yes' },
         },
         {
             description: 'Invalid literal value for case filter',
             filterType: 'case',
-            expected: { valid: false, reason: 'Invalid filter value, expected one of: yes, no' },
+            expected: { valid: false, reason: 'Invalid filter value, expected one of: yes, no.' },
             token: { type: 'literal', value: 'yess' },
         },
     ]
