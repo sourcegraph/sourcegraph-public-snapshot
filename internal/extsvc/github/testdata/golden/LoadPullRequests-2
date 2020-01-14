@@ -46,6 +46,10 @@
        "Login": "unknwon",
        "URL": "https://github.com/unknwon"
       },
+      "RequestedTeam": {
+       "Name": "",
+       "URL": ""
+      },
       "CreatedAt": "2019-09-12T10:06:09Z"
      }
     },
@@ -61,6 +65,10 @@
        "AvatarURL": "https://avatars0.githubusercontent.com/u/10532611?v=4",
        "Login": "felixfbecker",
        "URL": "https://github.com/felixfbecker"
+      },
+      "RequestedTeam": {
+       "Name": "",
+       "URL": ""
       },
       "CreatedAt": "2019-09-12T10:06:09Z"
      }
@@ -269,7 +277,7 @@
        "Login": "tsenart",
        "URL": "https://github.com/tsenart"
       },
-      "AuthorAssociation": "CONTRIBUTOR",
+      "AuthorAssociation": "MEMBER",
       "Body": "This is a comment. EDIT",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537920237",
       "CreatedAt": "2019-10-03T12:18:21Z",
@@ -309,7 +317,7 @@
        "Login": "tsenart",
        "URL": "https://github.com/tsenart"
       },
-      "AuthorAssociation": "CONTRIBUTOR",
+      "AuthorAssociation": "MEMBER",
       "Body": "A review",
       "State": "COMMENTED",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-296894453",
@@ -346,7 +354,7 @@
        "URL": "https://github.com/tsenart"
       },
       "Editor": null,
-      "AuthorAssociation": "CONTRIBUTOR",
+      "AuthorAssociation": "MEMBER",
       "Body": "Making this PR the playground for fetching timeline events from Github. ",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537960109",
       "CreatedAt": "2019-10-03T14:04:06Z",
@@ -367,6 +375,10 @@
        "Login": "beyang",
        "URL": "https://github.com/beyang"
       },
+      "RequestedTeam": {
+       "Name": "",
+       "URL": ""
+      },
       "CreatedAt": "2019-10-03T14:04:11Z"
      }
     },
@@ -382,6 +394,10 @@
        "AvatarURL": "https://avatars2.githubusercontent.com/u/3173176?v=4",
        "Login": "slimsag",
        "URL": "https://github.com/slimsag"
+      },
+      "RequestedTeam": {
+       "Name": "",
+       "URL": ""
       },
       "CreatedAt": "2019-10-03T14:04:11Z"
      }
@@ -428,6 +444,10 @@
        "Login": "beyang",
        "URL": "https://github.com/beyang"
       },
+      "RequestedTeam": {
+       "Name": "",
+       "URL": ""
+      },
       "CreatedAt": "2019-10-04T19:23:05Z"
      }
     },
@@ -444,6 +464,10 @@
        "Login": "",
        "URL": ""
       },
+      "RequestedTeam": {
+       "Name": "automation",
+       "URL": "https://github.com/orgs/sourcegraph/teams/automation"
+      },
       "CreatedAt": "2019-10-07T07:59:23Z"
      }
     },
@@ -456,7 +480,7 @@
        "Login": "mrnugget",
        "URL": "https://github.com/mrnugget"
       },
-      "AuthorAssociation": "CONTRIBUTOR",
+      "AuthorAssociation": "MEMBER",
       "Body": "",
       "State": "COMMENTED",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298093884",
@@ -492,7 +516,7 @@
        "Login": "mrnugget",
        "URL": "https://github.com/mrnugget"
       },
-      "AuthorAssociation": "CONTRIBUTOR",
+      "AuthorAssociation": "MEMBER",
       "Body": "",
       "State": "COMMENTED",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298094119",
@@ -541,7 +565,7 @@
        "Login": "mrnugget",
        "URL": "https://github.com/mrnugget"
       },
-      "AuthorAssociation": "CONTRIBUTOR",
+      "AuthorAssociation": "MEMBER",
       "Body": "",
       "State": "APPROVED",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298099102",
@@ -577,7 +601,7 @@
        "Login": "mrnugget",
        "URL": "https://github.com/mrnugget"
       },
-      "AuthorAssociation": "CONTRIBUTOR",
+      "AuthorAssociation": "MEMBER",
       "Body": "👍 \r\n\u003cimg width=\"495\" alt=\"Screen Shot 2019-10-07 at 14 49 12\" src=\"https://user-images.githubusercontent.com/1185253/66312845-a4328180-e911-11e9-93b9-d1c421324015.png\"\u003e\r\n",
       "State": "APPROVED",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298101262",
@@ -815,5 +839,235 @@
    ],
    "CreatedAt": "2014-03-03T18:08:45Z",
    "UpdatedAt": "2014-03-06T11:11:42Z"
+  },
+  {
+   "ID": "MDExOlB1bGxSZXF1ZXN0MzU2MTI0MDAw",
+   "Title": "Replace redis-based usage stats with postgres-based stats",
+   "Body": "fixes #5542\r\n\r\n(This PR is the second piece of https://github.com/sourcegraph/sourcegraph/pull/6473, after it was broken up)\r\n\r\nThis update adds a new usagestats package that uses the new `event_logs` Postgres table. It deprecates the old usagstats package that uses Redis. \r\n\r\nUsing this new data store will make our metrics less brittle, and will allow us to show more useful information to site administrators.\r\n\r\nI had originally structured this to REMOVE the old package entirely, but I decided to keep it for now. The compute cost is low, the old package can be removed next month, and having overlapping metrics from each will be helpful for ensuring validity for site admins.",
+   "State": "OPEN",
+   "URL": "https://github.com/sourcegraph/sourcegraph/pull/7352",
+   "HeadRefOid": "f61aa961987181d2c3c50bf5b699f883b7133808",
+   "BaseRefOid": "2eca7037782a7aa6a39637999f9ebf58d6761e17",
+   "HeadRefName": "stats3",
+   "BaseRefName": "stats-2",
+   "Number": 7352,
+   "Author": {
+    "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+    "Login": "dadlerj",
+    "URL": "https://github.com/dadlerj"
+   },
+   "Participants": [
+    {
+     "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+     "Login": "dadlerj",
+     "URL": "https://github.com/dadlerj"
+    },
+    {
+     "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+     "Login": "lguychard",
+     "URL": "https://github.com/lguychard"
+    },
+    {
+     "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?v=4",
+     "Login": "unknwon",
+     "URL": "https://github.com/unknwon"
+    }
+   ],
+   "TimelineItems": [
+    {
+     "Type": "ReviewRequestedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+       "Login": "dadlerj",
+       "URL": "https://github.com/dadlerj"
+      },
+      "RequestedReviewer": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "RequestedTeam": {
+       "Name": "",
+       "URL": ""
+      },
+      "CreatedAt": "2019-12-22T21:53:47Z"
+     }
+    },
+    {
+     "Type": "ReviewRequestedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+       "Login": "dadlerj",
+       "URL": "https://github.com/dadlerj"
+      },
+      "RequestedReviewer": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?v=4",
+       "Login": "unknwon",
+       "URL": "https://github.com/unknwon"
+      },
+      "RequestedTeam": {
+       "Name": "",
+       "URL": ""
+      },
+      "CreatedAt": "2019-12-22T21:53:47Z"
+     }
+    },
+    {
+     "Type": "ReviewRequestedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+       "Login": "dadlerj",
+       "URL": "https://github.com/dadlerj"
+      },
+      "RequestedReviewer": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/1646931?v=4",
+       "Login": "beyang",
+       "URL": "https://github.com/beyang"
+      },
+      "RequestedTeam": {
+       "Name": "",
+       "URL": ""
+      },
+      "CreatedAt": "2019-12-22T21:53:47Z"
+     }
+    },
+    {
+     "Type": "ReviewRequestedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+       "Login": "dadlerj",
+       "URL": "https://github.com/dadlerj"
+      },
+      "RequestedReviewer": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/3173176?v=4",
+       "Login": "slimsag",
+       "URL": "https://github.com/slimsag"
+      },
+      "RequestedTeam": {
+       "Name": "",
+       "URL": ""
+      },
+      "CreatedAt": "2019-12-22T21:53:47Z"
+     }
+    },
+    {
+     "Type": "ReviewRequestedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+       "Login": "dadlerj",
+       "URL": "https://github.com/dadlerj"
+      },
+      "RequestedReviewer": {
+       "AvatarURL": "",
+       "Login": "",
+       "URL": ""
+      },
+      "RequestedTeam": {
+       "Name": "Core Services",
+       "URL": "https://github.com/orgs/sourcegraph/teams/core-services"
+      },
+      "CreatedAt": "2019-12-22T21:53:47Z"
+     }
+    },
+    {
+     "Type": "ReviewRequestedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+       "Login": "dadlerj",
+       "URL": "https://github.com/dadlerj"
+      },
+      "RequestedReviewer": {
+       "AvatarURL": "",
+       "Login": "",
+       "URL": ""
+      },
+      "RequestedTeam": {
+       "Name": "web",
+       "URL": "https://github.com/orgs/sourcegraph/teams/web"
+      },
+      "CreatedAt": "2019-12-22T21:53:47Z"
+     }
+    },
+    {
+     "Type": "PullRequestReview",
+     "Item": {
+      "DatabaseID": 335837573,
+      "Author": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?v=4",
+       "Login": "unknwon",
+       "URL": "https://github.com/unknwon"
+      },
+      "AuthorAssociation": "MEMBER",
+      "Body": "",
+      "State": "COMMENTED",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/7352#pullrequestreview-335837573",
+      "CreatedAt": "2019-12-23T12:18:32Z",
+      "UpdatedAt": "2019-12-23T13:03:25Z",
+      "Commit": {
+       "OID": "f61aa961987181d2c3c50bf5b699f883b7133808",
+       "Message": "dev/generate",
+       "MessageHeadline": "dev/generate",
+       "URL": "https://github.com/sourcegraph/sourcegraph/commit/f61aa961987181d2c3c50bf5b699f883b7133808",
+       "Committer": {
+        "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+        "Email": "daniel.neal.adler@gmail.com",
+        "Name": "Dan Adler",
+        "User": {
+         "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+         "Login": "dadlerj",
+         "URL": "https://github.com/dadlerj"
+        }
+       },
+       "CommittedDate": "2019-12-22T22:20:32Z",
+       "PushedDate": "2019-12-22T22:20:38Z"
+      },
+      "IncludesCreatedEdit": false
+     }
+    },
+    {
+     "Type": "PullRequestReview",
+     "Item": {
+      "DatabaseID": 337663572,
+      "Author": {
+       "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+       "Login": "lguychard",
+       "URL": "https://github.com/lguychard"
+      },
+      "AuthorAssociation": "MEMBER",
+      "Body": "Web changes LGTM",
+      "State": "APPROVED",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/7352#pullrequestreview-337663572",
+      "CreatedAt": "2020-01-02T13:45:56Z",
+      "UpdatedAt": "2020-01-02T13:45:56Z",
+      "Commit": {
+       "OID": "f61aa961987181d2c3c50bf5b699f883b7133808",
+       "Message": "dev/generate",
+       "MessageHeadline": "dev/generate",
+       "URL": "https://github.com/sourcegraph/sourcegraph/commit/f61aa961987181d2c3c50bf5b699f883b7133808",
+       "Committer": {
+        "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+        "Email": "daniel.neal.adler@gmail.com",
+        "Name": "Dan Adler",
+        "User": {
+         "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
+         "Login": "dadlerj",
+         "URL": "https://github.com/dadlerj"
+        }
+       },
+       "CommittedDate": "2019-12-22T22:20:32Z",
+       "PushedDate": "2019-12-22T22:20:38Z"
+      },
+      "IncludesCreatedEdit": false
+     }
+    }
+   ],
+   "CreatedAt": "2019-12-22T21:53:47Z",
+   "UpdatedAt": "2020-01-02T13:45:56Z"
   }
  ]

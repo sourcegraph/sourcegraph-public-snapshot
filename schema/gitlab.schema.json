@@ -20,7 +20,7 @@
       "examples": ["https://gitlab.com", "https://gitlab.example.com"]
     },
     "token": {
-      "description": "A GitLab access token with \"api\" and \"sudo\" scopes. If this token does not have \"sudo\" scope, then you must set `permissions.ignore` to true.",
+      "description": "A GitLab access token with \"api\" scope. If you are enabling permissions with identity provider type \"external\", this token should also have \"sudo\" scope.",
       "type": "string",
       "minLength": 1
     },

@@ -4,7 +4,7 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 
 Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions are supported. Check our [product direction](https://about.sourcegraph.com/direction) for plans to support other code hosts. If your desired code host is not yet on the roadmap, please [open a feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
 
-> **Note:** Site admin users bypass all permission checks and have access to every repository on Sourcegraph.
+> NOTE: Site admin users bypass all permission checks and have access to every repository on Sourcegraph.
 
 ## GitHub
 
@@ -172,3 +172,60 @@ The default `hardTTL` is **3 days**, after which a user's cached permissions mus
 ---
 
 Finally, **save the configuration**. You're done!
+
+## Explicit permissions API
+
+Sourcegraph exposes a GraphQL API to explicitly set repository ACLs. This will become the primary
+way to specify permissions in the future and will eventually replace the other repository
+permissions mechanisms.
+
+To enable the permissions API, add the following to the [site config](../config/site_config.md):
+
+```json
+"permissions.userMapping": {
+    "enabled": true,
+    "bindID": "email"
+},
+```
+
+> The `bindID` value is used to uniquely identify users when setting permissions. Alternatively, it
+> can be set to `"username"` if that is preferable to email.
+
+The following GraphQL calls can be tested out in the [GraphQL API
+console](../../api/graphql.md#api-console), which is accessible at the URL path `/api/console` on any
+Sourcegraph instance.
+
+Setting the permissions for a repository can be accomplished with two GraphQL API calls. First,
+obtain the ID of the repository from its name:
+
+```graphql
+{
+  repository(name:"github.com/owner/repo"){
+    id
+  }
+}
+```
+
+Next, set the list of users allowed to view the repository:
+
+```graphql
+mutation {
+  setRepositoryPermissionsForUsers(repository: "<repo ID>", bindIDs: ["user@example.com"]) {
+    alwaysNil
+  }
+}
+```
+
+You may query the set of repositories visible to a particular user with the
+`authorizedUserRepositories` endpoint, which accepts either username or email:
+
+```graphql
+query {
+  authorizedUserRepositories(email:"user@example.com", first:100) {
+    nodes {
+      name
+    }
+    totalCount
+  }
+}
+```

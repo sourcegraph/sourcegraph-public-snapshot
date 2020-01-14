@@ -120,17 +120,18 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                         <>
                             {this.props.activation && this.props.activation.completed && (
                                 <Collapsible
-                                    title={<>{setupPercentage < 100 ? 'Set up Sourcegraph' : 'Status'}</>}
+                                    title={
+                                        <>{setupPercentage < 100 ? 'Get started with Sourcegraph' : 'Setup status'}</>
+                                    }
                                     defaultExpanded={setupPercentage < 100}
                                     className="list-group-item"
-                                    titleClassName="h5 mb-0 font-weight-normal p-2"
+                                    titleClassName="h4 mb-0 mt-2 font-weight-normal p-2"
                                 >
                                     {this.props.activation.completed && (
                                         <ActivationChecklist
                                             history={this.props.history}
                                             steps={this.props.activation.steps}
                                             completed={this.props.activation.completed}
-                                            className="border-top"
                                         />
                                     )}
                                 </Collapsible>

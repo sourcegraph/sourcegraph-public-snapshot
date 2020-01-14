@@ -117,7 +117,7 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
     const sources: (ActivationStep & { siteAdminOnly?: boolean })[] = [
         {
             id: 'ConnectedCodeHost',
-            title: 'Connect your code host',
+            title: 'Add repositories',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
             link: { to: '/site-admin/external-services' },
             siteAdminOnly: true,
@@ -148,7 +148,10 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
             id: 'EnabledSharing',
             title: 'Configure SSO or share with teammates',
             detail: 'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',
-            link: { to: 'https://docs.sourcegraph.com/admin/auth', target: '_blank' },
+            onClick: () => {
+                window.open('https://docs.sourcegraph.com/admin/auth', '_blank', 'height=200,width=200')
+                window.open('/site-admin/configuration', '_self')
+            },
             siteAdminOnly: true,
         },
     ]

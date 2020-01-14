@@ -19,7 +19,7 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
         }
       }
     />
-    Setup
+    Get started
     <div
       style={
         Object {
@@ -73,20 +73,19 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
     role="menu"
     tabIndex="-1"
   >
-    <div
+    <a
       className="dropdown-item-text activation-dropdown-header"
+      href="/onboard/guide"
     >
-      <h3
-        className="mb-1"
-      >
-        Get started with Sourcegraph
+      <h3>
+        Welcome to Sourcegraph
       </h3>
       <p
-        className="mb-0"
+        className="mb-1"
       >
-        Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
+        Complete the steps below to finish onboarding!
       </p>
-    </div>
+    </a>
     <div
       className="dropdown-divider"
       onClick={[Function]}
@@ -104,17 +103,15 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
           className="btn btn-link text-left w-100 p-0"
           type="button"
         >
-          <div
-            className="d-flex justify-content-between"
-          >
-            <span
-              className="mr-2"
-            >
-              title1
-            </span>
+          <div>
             <CheckboxBlankCircleIcon
               className="icon-inline text-muted"
             />
+            <span
+              className="mr-2 ml-2"
+            >
+              title1
+            </span>
           </div>
         </button>
       </div>
@@ -130,17 +127,15 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
         <a
           href="/some/url"
         >
-          <div
-            className="d-flex justify-content-between"
-          >
-            <span
-              className="mr-2"
-            >
-              title2
-            </span>
+          <div>
             <CheckboxBlankCircleIcon
               className="icon-inline text-muted"
             />
+            <span
+              className="mr-2 ml-2"
+            >
+              title2
+            </span>
           </div>
         </a>
       </div>
@@ -168,7 +163,7 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
         }
       }
     />
-    Setup
+    Get started
     <div
       style={
         Object {
@@ -222,20 +217,19 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
     role="menu"
     tabIndex="-1"
   >
-    <div
+    <a
       className="dropdown-item-text activation-dropdown-header"
+      href="/onboard/guide"
     >
-      <h3
-        className="mb-1"
-      >
-        Get started with Sourcegraph
+      <h3>
+        Welcome to Sourcegraph
       </h3>
       <p
-        className="mb-0"
+        className="mb-1"
       >
-        Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
+        Complete the steps below to finish onboarding!
       </p>
-    </div>
+    </a>
     <div
       className="dropdown-divider"
       onClick={[Function]}
@@ -253,17 +247,15 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
           className="btn btn-link text-left w-100 p-0"
           type="button"
         >
-          <div
-            className="d-flex justify-content-between"
-          >
-            <span
-              className="mr-2"
-            >
-              title1
-            </span>
+          <div>
             <CheckIcon
               className="icon-inline text-success"
             />
+            <span
+              className="mr-2 ml-2"
+            >
+              title1
+            </span>
           </div>
         </button>
       </div>
@@ -279,17 +271,15 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
         <a
           href="/some/url"
         >
-          <div
-            className="d-flex justify-content-between"
-          >
-            <span
-              className="mr-2"
-            >
-              title2
-            </span>
+          <div>
             <CheckboxBlankCircleIcon
               className="icon-inline text-muted"
             />
+            <span
+              className="mr-2 ml-2"
+            >
+              title2
+            </span>
           </div>
         </a>
       </div>
@@ -317,7 +307,7 @@ exports[`ActivationDropdown render loading 1`] = `
         }
       }
     />
-    Setup
+    Get started
     <div
       style={
         Object {
@@ -371,20 +361,19 @@ exports[`ActivationDropdown render loading 1`] = `
     role="menu"
     tabIndex="-1"
   >
-    <div
+    <a
       className="dropdown-item-text activation-dropdown-header"
+      href="/onboard/guide"
     >
-      <h3
-        className="mb-1"
-      >
-        Get started with Sourcegraph
+      <h3>
+        Welcome to Sourcegraph
       </h3>
       <p
-        className="mb-0"
+        className="mb-1"
       >
-        Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
+        Complete the steps below to finish onboarding!
       </p>
-    </div>
+    </a>
     <div
       className="dropdown-divider"
       onClick={[Function]}
