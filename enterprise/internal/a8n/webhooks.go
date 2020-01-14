@@ -12,7 +12,7 @@ import (
 	gh "github.com/google/go-github/v28/github"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -98,7 +98,7 @@ func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *Gi
 }
 
 func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time) *BitbucketServerWebhook {
-	return &BitbucketServerWebhook{&Webhook{store, repos, now, bitbucketserver.ServiceType}}
+	return &BitbucketServerWebhook{&Webhook{store, repos, now, bbs.ServiceType}}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -446,7 +446,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 	for _, e := range es {
 		c, _ := e.Configuration()
 		hook, ok := c.(*schema.BitbucketServerConnection)
-		if !ok {
+		if !ok || hook.Webhooks == nil {
 			continue
 		}
 		secrets = append(secrets, []byte(hook.Webhooks.Secret))
@@ -463,10 +463,19 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 		return nil, &httpError{http.StatusUnauthorized, err}
 	}
 
-	return nil, &httpError{http.StatusInternalServerError, fmt.Errorf("unimplemented")}
+	e, err := bbs.ParseWebHook(bbs.WebHookType(r), payload)
+	if err != nil {
+		return nil, &httpError{http.StatusBadRequest, err}
+	}
+	return e, nil
 }
 
 func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (pr int64, ours interface{ Key() string }) {
+	switch e := theirs.(type) {
+	case *bbs.PullRequestEvent:
+		return int64(e.PullRequest.ID), e.Activity
+	}
+
 	return
 }
 
