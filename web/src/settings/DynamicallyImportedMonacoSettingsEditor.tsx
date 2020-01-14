@@ -83,25 +83,6 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         const effectiveValue = this.effectiveValue
         return (
             <div className={this.props.className || ''}>
-                {this.props.actions && (
-                    <div className="site-admin-configuration-page__action-groups">
-                        <div className="site-admin-configuration-page__action-groups">
-                            <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
-                            <div className="site-admin-configuration-page__actions">
-                                {this.props.actions.map(({ id, label }) => (
-                                    <button
-                                        key={id}
-                                        className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                        onClick={() => this.runAction(id, this.configEditor)}
-                                        type="button"
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
                 {this.props.canEdit && (
                     <SaveToolbar
                         dirty={isDirty}
@@ -110,6 +91,22 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                         onSave={this.onSave}
                         onDiscard={this.discard}
                     />
+                )}
+                {this.props.actions && (
+                    <div className="site-admin-configuration-page__action-groups">
+                        <div className="site-admin-configuration-page__actions">
+                            {this.props.actions.map(({ id, label }) => (
+                                <button
+                                    key={id}
+                                    className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                    onClick={() => this.runAction(id, this.configEditor)}
+                                    type="button"
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 )}
                 <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
                     <MonacoSettingsEditor

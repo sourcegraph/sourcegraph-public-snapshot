@@ -20,23 +20,6 @@ export class UploadManager {
     constructor(private connection: Connection) {}
 
     /**
-     * Get the counts of uploads in each possible state.
-     */
-    public getCounts(): Promise<{
-        queuedCount: number
-        completedCount: number
-        erroredCount: number
-        processingCount: number
-    }> {
-        return withInstrumentedTransaction(this.connection, async entityManager => ({
-            queuedCount: await this.getCount('queued', entityManager),
-            completedCount: await this.getCount('completed', entityManager),
-            erroredCount: await this.getCount('errored', entityManager),
-            processingCount: await this.getCount('processing', entityManager),
-        }))
-    }
-
-    /**
      * Get the count of uploads in the given state.
      *
      * @param state The state.
@@ -57,14 +40,18 @@ export class UploadManager {
     /**
      * Get the uploads in the given state.
      *
+     * @param repository The repository.
      * @param state The state.
      * @param query A search query.
+     * @param visibleAtTip If true, only return dumps visible at tip.
      * @param limit The maximum number of uploads to return.
      * @param offset The number of uploads to skip.
      */
     public async getUploads(
-        state: pgModels.LsifUploadState,
+        repository: string,
+        state: pgModels.LsifUploadState | undefined,
         query: string,
+        visibleAtTip: boolean,
         limit: number,
         offset: number
     ): Promise<{ uploads: pgModels.LsifUpload[]; totalCount: number }> {
@@ -72,10 +59,14 @@ export class UploadManager {
             let queryBuilder = this.connection
                 .getRepository(pgModels.LsifUpload)
                 .createQueryBuilder('upload')
-                .where({ state })
+                .where({ repository })
                 .orderBy('uploaded_at', 'DESC')
                 .limit(limit)
                 .offset(offset)
+
+            if (state) {
+                queryBuilder = queryBuilder.andWhere('state = :state', { state })
+            }
 
             if (query) {
                 const clauses = ['repository', 'commit', 'root', 'failure_summary', 'failure_stacktrace'].map(
@@ -87,6 +78,10 @@ export class UploadManager {
                         clauses.slice(1).reduce((ob, c) => ob.orWhere(c, { query }), qb.where(clauses[0], { query }))
                     )
                 )
+            }
+
+            if (visibleAtTip) {
+                queryBuilder = queryBuilder.andWhere('visible_at_tip = true')
             }
 
             return queryBuilder.getManyAndCount()

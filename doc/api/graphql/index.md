@@ -8,7 +8,9 @@ The Sourcegraph GraphQL API supports the following types of queries:
 - Rich git-level metadata, including commits, branches, blame information, and file tree data
 - Repository and user metadata
 
-> NOTE: The API is under active development, so it may change in backward incompatible ways. These types of changes will be documented in the [changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md).
+> NOTE: The API is under active development. Backwards compatibility will be maintained in most
+> cases, and backwards-incompatible changes will be documented in the
+> [changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md).
 
 ## Quickstart
 

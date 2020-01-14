@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Add button to download file in code view. [#5478](https://github.com/sourcegraph/sourcegraph/issues/5478)
 - The new `allowOrgs` site config setting in GitHub `auth.providers` enables admins to restrict GitHub logins to members of specific GitHub organizations. [#4195](https://github.com/sourcegraph/sourcegraph/issues/4195)
 - Skip LFS content when cloning git repositories. [#7322](https://github.com/sourcegraph/sourcegraph/issues/7322)
+- An experimental site setting `experimentalFeatures/tls.external` which allows you to configure SSL/TLS settings for Sourcegraph contacting your code hosts. Currently just supports turning off TLS/SSL verification. [#71](https://github.com/sourcegraph/sourcegraph/issues/71)
 - Experimental: To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Requires the site configuration value `{ "experimentalFeatures": { "searchMultipleRevisionsPerRepository": true } }`. Previously this was only supported for diff and commit searches.
 
 ### Changed
@@ -25,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The "Files" tab in the search results page has been renamed to "Filenames" for clarity.
 - The search query builder now lives on its own page at `/search/query-builder`. The home search page has a link to it.
 - User passwords when using builtin auth are limited to 256 characters. Existing passwords longer than 256 characters will continue to work.
+- GraphQL API: Campaign.changesetCreationStatus has been renamed to Campaign.status to be aligned with CampaignPlan. [#7654](https://github.com/sourcegraph/sourcegraph/pull/7654)
 
 ### Fixed
 

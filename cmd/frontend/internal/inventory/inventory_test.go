@@ -27,6 +27,11 @@ func TestGetLang_language(t *testing.T) {
 			TotalBytes: 0,
 			TotalLines: 0,
 		}},
+		"empty file_unsafe_path": {file: fi{"a.ml", ""}, want: Lang{
+			Name:       "",
+			TotalBytes: 0,
+			TotalLines: 0,
+		}},
 		"java": {file: fi{"a.java", "a"}, want: Lang{
 			Name:       "Java",
 			TotalBytes: 1,

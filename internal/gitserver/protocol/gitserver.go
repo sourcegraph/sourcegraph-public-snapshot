@@ -149,10 +149,12 @@ type CreateCommitFromPatchRequest struct {
 
 // PatchCommitInfo will be used for commit information when creating a commit from a patch
 type PatchCommitInfo struct {
-	Message     string
-	AuthorName  string
-	AuthorEmail string
-	Date        time.Time
+	Message        string
+	AuthorName     string
+	AuthorEmail    string
+	CommitterName  string
+	CommitterEmail string
+	Date           time.Time
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating

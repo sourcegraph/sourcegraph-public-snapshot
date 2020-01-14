@@ -10,9 +10,9 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import { getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 import { ErrorAlert } from '../components/alerts'
+import { defaultExternalServices } from './externalServices'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
     isLightTheme: boolean
@@ -109,7 +109,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 this.state.externalServiceOrError) ||
             undefined
 
-        const externalServiceCategory = externalService && getExternalService(externalService.kind)
+        const externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
 
         return (
             <div className="site-admin-configuration-page mt-3">
@@ -118,17 +118,14 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 ) : (
                     <PageTitle title="External service" />
                 )}
-                <h2>Update external service</h2>
+                <h2>Update synced repositories</h2>
                 {this.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
                 {isErrorLike(this.state.externalServiceOrError) && (
                     <ErrorAlert className="mb-3" error={this.state.externalServiceOrError} />
                 )}
                 {externalService && (
                     <div className="mb-3">
-                        <ExternalServiceCard
-                            {...getExternalService(externalService.kind)}
-                            kind={externalService.kind}
-                        />
+                        <ExternalServiceCard {...defaultExternalServices[externalService.kind]} />
                     </div>
                 )}
                 {externalService && externalServiceCategory && (

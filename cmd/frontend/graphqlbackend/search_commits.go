@@ -83,28 +83,7 @@ func (r *commitSearchResultResolver) resultCount() int32 {
 	return 1
 }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
-
-func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
-	if mockSearchCommitDiffsInRepo != nil {
-		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
-	}
-
-	return searchCommitsInRepo(ctx, search.CommitParameters{
-		RepoRevs:    repoRevs,
-		PatternInfo: info,
-		Query:       query,
-		Diff:        true,
-	})
-}
-
-var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
-
 func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
-	if mockSearchCommitLogInRepo != nil {
-		return mockSearchCommitLogInRepo(ctx, repoRevs, info, query)
-	}
-
 	var terms []string
 	if info.Pattern != "" {
 		terms = append(terms, info.Pattern)
@@ -465,7 +444,13 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersFo
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {
 			defer wg.Done()
-			results, repoLimitHit, repoTimedOut, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.PatternInfo, args.Query)
+			commitParams := search.CommitParameters{
+				RepoRevs:    repoRev,
+				PatternInfo: args.PatternInfo,
+				Query:       args.Query,
+				Diff:        true,
+			}
+			results, repoLimitHit, repoTimedOut, searchErr := searchCommitsInRepo(ctx, commitParams)
 			if ctx.Err() == context.Canceled {
 				// Our request has been canceled (either because another one of args.repos had a
 				// fatal error, or otherwise), so we can just ignore these results.

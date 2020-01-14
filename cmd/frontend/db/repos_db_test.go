@@ -203,6 +203,38 @@ func TestRepos_Get(t *testing.T) {
 	}
 }
 
+func TestRepos_GetByIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	want := mustCreate(ctx, t, &types.Repo{
+		Name: "r",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "a",
+			ServiceType: "b",
+			ServiceID:   "c",
+		},
+	})
+
+	repos, err := Repos.GetByIDs(ctx, want[0].ID, 404)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 1 {
+		t.Fatalf("got %d repos, but want 1", len(repos))
+	}
+
+	// We don't need the RepoFields to indentify a repository.
+	want[0].RepoFields = nil
+	if !jsonEqual(t, repos[0], want[0]) {
+		t.Errorf("got %v, want %v", repos[0], want[0])
+	}
+}
+
 func TestRepos_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
