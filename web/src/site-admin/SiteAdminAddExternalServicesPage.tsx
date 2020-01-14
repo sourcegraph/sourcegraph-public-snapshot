@@ -49,7 +49,7 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
                 <br />
                 <h2>Other connections</h2>
                 <p className="mt-2">Add connections to non-code-host services.</p>
-                {map(nonCodeHostExternalServices, (externalService, id) => (
+                {Object.entries(nonCodeHostExternalServices).map(([id, externalService]) => (
                     <div className="add-external-services-page__card" key={id}>
                         <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                     </div>
