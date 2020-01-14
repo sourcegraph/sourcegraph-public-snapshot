@@ -35,6 +35,7 @@ The commands are:
 	extensions,ext  manages extensions (experimental)
 	campaigns       manages campaigns (experimental)
 	lsif            manages LSIF data
+	version         display and compare the src-cli version against the recommended version for your instance
 
 Use "src [command] -h" for more information about a command.
 
