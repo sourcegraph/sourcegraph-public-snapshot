@@ -20,7 +20,7 @@ Automation requires that your [external service](../admin/external_service.md) i
 
 ## Supported campaign types and functionality
 
-Our focus is to deliver _general_ functionality (e.g., centralized monitoring all ongoing PRs) as well as _tailored_ solutions for large-scale code changes and workflows (e.g., detect leaked NPM credentials). If you have a specific automation workflow in mind that is not covered by our current feature set, [please reach out to us](email or slack link here).
+Our focus is to deliver _general_ functionality (e.g., centralized monitoring of a large set of pull requests on different codehosts) as well as _tailored_ solutions for large-scale code changes and workflows (e.g., detect leaked NPM credentials). If you have a specific automation workflow in mind that is not covered by our current feature set, [please reach out to us](email or slack link here).
 
 ### Manual changeset monitoring
 
