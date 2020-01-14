@@ -818,6 +818,8 @@ type Settings struct {
 type SettingsExperimentalFeatures struct {
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
+	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
+	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
 	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
 	SplitSearchModes *bool `json:"splitSearchModes,omitempty"`
 }

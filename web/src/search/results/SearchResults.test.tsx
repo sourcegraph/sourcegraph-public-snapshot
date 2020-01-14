@@ -2,7 +2,7 @@ import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from '@testing-library/react'
-import { noop } from 'rxjs'
+import { noop, NEVER } from 'rxjs'
 import sinon from 'sinon'
 import {
     extensionsController,
@@ -30,7 +30,7 @@ describe('SearchResults', () => {
         settingsCascade: NOOP_SETTINGS_CASCADE,
         extensionsController,
         isSourcegraphDotCom: false,
-        platformContext: { forceUpdateTooltip: sinon.spy() },
+        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
         telemetryService: { log: noop, logViewEvent: noop },
         deployType: 'dev',
         patternType: SearchPatternType.regexp,
