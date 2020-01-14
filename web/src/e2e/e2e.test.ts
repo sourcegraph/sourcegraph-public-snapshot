@@ -1724,7 +1724,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-case-sensitivity-toggle')
             await driver.page.type('.e2e-query-input', 'test')
-            await driver.page.click('.e2e-case-sensitivty-toggle')
+            await driver.page.click('.e2e-case-sensitivity-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal&case=yes')
         })
     })
