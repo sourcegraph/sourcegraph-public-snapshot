@@ -10,6 +10,7 @@ import (
 	"time"
 
 	gh "github.com/google/go-github/v28/github"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -410,6 +411,48 @@ func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewComme
 	}
 
 	return &comment
+}
+
+// EnsureCreation ensures the creation of the BitbucketServer automation webhook.
+func (h *BitbucketServerWebhook) EnsureCreation() {
+	for {
+		args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
+		es, err := h.Repos.ListExternalServices(context.Background(), args)
+		if err != nil {
+			log15.Error("Ensuring BBS Webhook failed [Listing BBS extsvc]", err.Error())
+			continue
+		}
+
+		for _, e := range es {
+			c, _ := e.Configuration()
+			con, ok := c.(*schema.BitbucketServerConnection)
+			if !ok || con.Webhooks == nil {
+				continue
+			}
+
+			client, err := bbs.NewClientWithConfig(con)
+			if err != nil {
+				log15.Error("Ensuring BBS Webhook failed [Creating Client]", err.Error())
+				continue
+			}
+
+			endpoint := globals.ExternalURL().String() + "/.api/bitbucket-server-webhooks"
+			wh := bbs.Webhook{
+				Name:     "sourcegraph-a8n",
+				Scope:    "global",
+				Events:   []string{"pr"},
+				Endpoint: endpoint,
+				Secret:   con.Webhooks.Secret,
+			}
+
+			err = client.EnsureWebhook(context.Background(), wh)
+			if err != nil {
+				log15.Error("Ensuring BBS Webhook failed [HTTP Request]", err.Error())
+			}
+		}
+
+		time.Sleep(time.Minute * 5)
+	}
 }
 
 func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
