@@ -51,7 +51,11 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 
 	var opts []httpcli.Opt
 	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
+		pool, err := httpcli.NewCertPool(c.Certificate)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, httpcli.NewCertPoolOpt(pool))
 	}
 
 	cli, err := cf.Doer(opts...)

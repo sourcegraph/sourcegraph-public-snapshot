@@ -71,7 +71,11 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}
 
 	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
+		pool, err := httpcli.NewCertPool(c.Certificate)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, httpcli.NewCertPoolOpt(pool))
 	}
 
 	cli, err := cf.Doer(opts...)

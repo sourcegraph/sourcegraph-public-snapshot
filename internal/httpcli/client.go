@@ -174,7 +174,7 @@ func ExternalTransportOpt(cli *http.Client) error {
 
 // NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
 // transport.
-func NewCertPoolOpt(certs ...string) Opt {
+func NewCertPoolOpt(pool *x509.CertPool) Opt {
 	return func(cli *http.Client) error {
 		tr, err := getTransportForMutation(cli)
 		if err != nil {
@@ -185,14 +185,7 @@ func NewCertPoolOpt(certs ...string) Opt {
 			tr.TLSClientConfig = new(tls.Config)
 		}
 
-		pool := x509.NewCertPool()
 		tr.TLSClientConfig.RootCAs = pool
-
-		for _, cert := range certs {
-			if ok := pool.AppendCertsFromPEM([]byte(cert)); !ok {
-				return errors.New("httpcli.NewCertPoolOpt: invalid certificate")
-			}
-		}
 
 		return nil
 	}
