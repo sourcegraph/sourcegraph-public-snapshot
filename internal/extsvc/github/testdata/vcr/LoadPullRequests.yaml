@@ -24,8 +24,10 @@ interactions:
       on ReopenedEvent {\n\t\tactor { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on
       ReviewDismissedEvent {\n\t\tactor { ...actor }\n\t\treview { ...review }\n\t\tdismissalMessage\n\t\tcreatedAt\n\t\t}\n\t\t...
       on ReviewRequestRemovedEvent {\n\t\tactor { ...actor }\n\t\trequestedReviewer
-      { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
-      { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
+      { ...actor }\n\t\trequestedTeam: requestedReviewer {\n\t\t\t... on Team { name
+      url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent
+      {\n\t\tactor { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\trequestedTeam:
+      requestedReviewer {\n\t\t\t... on Team { name url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t...
       on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nquery
       {\nrepo_0: repository(owner: \"whoisthis\", name: \"sourcegraph\") {\nrepo_0_5550:
       pullRequest(number: 5550) { ...pr }\n}\n}","variables":null}'
@@ -36,7 +38,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repo_0":null},"errors":[{"type":"NOT_FOUND","path":["repo_0"],"locations":[{"line":130,"column":1}],"message":"Could
+    body: '{"data":{"repo_0":null},"errors":[{"type":"NOT_FOUND","path":["repo_0"],"locations":[{"line":136,"column":1}],"message":"Could
       not resolve to a Repository with the name ''sourcegraph''."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -52,7 +54,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 13:19:06 GMT
+      - Tue, 14 Jan 2020 11:24:07 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -72,15 +74,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - CF92:2CFEA:5489B84:64B312D:5DCAB14A
+      - EBC9:456E7:1DEAF6:231144:5E1DA4D7
       X-Oauth-Scopes:
-      - public_repo
+      - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4973"
+      - "4962"
       X-Ratelimit-Reset:
-      - "1573568016"
+      - "1579003548"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -109,8 +111,10 @@ interactions:
       on ReopenedEvent {\n\t\tactor { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on
       ReviewDismissedEvent {\n\t\tactor { ...actor }\n\t\treview { ...review }\n\t\tdismissalMessage\n\t\tcreatedAt\n\t\t}\n\t\t...
       on ReviewRequestRemovedEvent {\n\t\tactor { ...actor }\n\t\trequestedReviewer
-      { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
-      { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
+      { ...actor }\n\t\trequestedTeam: requestedReviewer {\n\t\t\t... on Team { name
+      url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent
+      {\n\t\tactor { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\trequestedTeam:
+      requestedReviewer {\n\t\t\t... on Team { name url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t...
       on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nquery
       {\nrepo_0: repository(owner: \"sourcegraph\", name: \"sourcegraph\") {\nrepo_0_0:
       pullRequest(number: 0) { ...pr }\n}\n}","variables":null}'
@@ -121,7 +125,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repo_0":{"repo_0_0":null}},"errors":[{"type":"NOT_FOUND","path":["repo_0","repo_0_0"],"locations":[{"line":131,"column":1}],"message":"Could
+    body: '{"data":{"repo_0":{"repo_0_0":null}},"errors":[{"type":"NOT_FOUND","path":["repo_0","repo_0_0"],"locations":[{"line":137,"column":1}],"message":"Could
       not resolve to a PullRequest with the number of 0."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -137,7 +141,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 13:19:07 GMT
+      - Tue, 14 Jan 2020 11:24:08 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -157,15 +161,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - CF92:2CFEA:5489BD7:64B318A:5DCAB14A
+      - EBC9:456E7:1DEB07:23115A:5E1DA4D7
       X-Oauth-Scopes:
-      - public_repo
+      - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4970"
+      - "4959"
       X-Ratelimit-Reset:
-      - "1573568016"
+      - "1579003548"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -194,14 +198,17 @@ interactions:
       on ReopenedEvent {\n\t\tactor { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on
       ReviewDismissedEvent {\n\t\tactor { ...actor }\n\t\treview { ...review }\n\t\tdismissalMessage\n\t\tcreatedAt\n\t\t}\n\t\t...
       on ReviewRequestRemovedEvent {\n\t\tactor { ...actor }\n\t\trequestedReviewer
-      { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
-      { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
+      { ...actor }\n\t\trequestedTeam: requestedReviewer {\n\t\t\t... on Team { name
+      url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent
+      {\n\t\tactor { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\trequestedTeam:
+      requestedReviewer {\n\t\t\t... on Team { name url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t...
       on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nquery
       {\nrepo_0: repository(owner: \"sourcegraph\", name: \"sourcegraph\") {\nrepo_0_5550:
       pullRequest(number: 5550) { ...pr }\n}\nrepo_1: repository(owner: \"sourcegraph\",
       name: \"sourcegraph\") {\nrepo_1_5834: pullRequest(number: 5834) { ...pr }\n}\nrepo_2:
       repository(owner: \"tsenart\", name: \"vegeta\") {\nrepo_2_50: pullRequest(number:
-      50) { ...pr }\n}\n}","variables":null}'
+      50) { ...pr }\n}\nrepo_3: repository(owner: \"sourcegraph\", name: \"sourcegraph\")
+      {\nrepo_3_7352: pullRequest(number: 7352) { ...pr }\n}\n}","variables":null}'
     form: {}
     headers:
       Content-Type:
@@ -212,7 +219,7 @@ interactions:
     body: "{\"data\":{\"repo_0\":{\"repo_0_5550\":{\"id\":\"MDExOlB1bGxSZXF1ZXN0MzE2ODI5NDE0\",\"title\":\"Fix
       disableExtension flag for native integrations\",\"body\":\"This flag should
       only be observed in the browser extension. Calling `observeStorageKey()` breaks
-      native integrations.\",\"state\":\"MERGED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5550\",\"number\":5550,\"createdAt\":\"2019-09-12T10:06:09Z\",\"updatedAt\":\"2019-09-13T09:44:39Z\",\"headRefOid\":\"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea\",\"baseRefOid\":\"f7097fe19816d0a9d637dc759722f6f43fd057ea\",\"headRefName\":\"disable-extension-native-integratin\",\"baseRefName\":\"master\",\"author\":{\"avatarUrl\":\"https://avatars1.githubusercontent.com/u/1741180?v=4\",\"login\":\"lguychard\",\"url\":\"https://github.com/lguychard\"},\"participants\":{\"nodes\":[{\"avatarUrl\":\"https://avatars1.githubusercontent.com/u/1741180?v=4\",\"login\":\"lguychard\",\"url\":\"https://github.com/lguychard\"},{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/2946214?v=4\",\"login\":\"unknwon\",\"url\":\"https://github.com/unknwon\"},{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/10532611?v=4\",\"login\":\"felixfbecker\",\"url\":\"https://github.com/felixfbecker\"}]},\"timelineItems\":{\"nodes\":[{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars1.githubusercontent.com/u/1741180?v=4\",\"login\":\"lguychard\",\"url\":\"https://github.com/lguychard\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/2946214?v=4\",\"login\":\"unknwon\",\"url\":\"https://github.com/unknwon\"},\"createdAt\":\"2019-09-12T10:06:09Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars1.githubusercontent.com/u/1741180?v=4\",\"login\":\"lguychard\",\"url\":\"https://github.com/lguychard\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/10532611?v=4\",\"login\":\"felixfbecker\",\"url\":\"https://github.com/felixfbecker\"},\"createdAt\":\"2019-09-12T10:06:09Z\"},{\"__typename\":\"PullRequestReview\",\"databaseId\":287537086,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/2946214?v=4\",\"login\":\"unknwon\",\"url\":\"https://github.com/unknwon\"},\"authorAssociation\":\"MEMBER\",\"body\":\"Thanks
+      native integrations.\",\"state\":\"MERGED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5550\",\"number\":5550,\"createdAt\":\"2019-09-12T10:06:09Z\",\"updatedAt\":\"2019-09-13T09:44:39Z\",\"headRefOid\":\"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea\",\"baseRefOid\":\"f7097fe19816d0a9d637dc759722f6f43fd057ea\",\"headRefName\":\"disable-extension-native-integratin\",\"baseRefName\":\"master\",\"author\":{\"avatarUrl\":\"https://avatars1.githubusercontent.com/u/1741180?v=4\",\"login\":\"lguychard\",\"url\":\"https://github.com/lguychard\"},\"participants\":{\"nodes\":[{\"avatarUrl\":\"https://avatars1.githubusercontent.com/u/1741180?v=4\",\"login\":\"lguychard\",\"url\":\"https://github.com/lguychard\"},{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/2946214?v=4\",\"login\":\"unknwon\",\"url\":\"https://github.com/unknwon\"},{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/10532611?v=4\",\"login\":\"felixfbecker\",\"url\":\"https://github.com/felixfbecker\"}]},\"timelineItems\":{\"nodes\":[{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars1.githubusercontent.com/u/1741180?v=4\",\"login\":\"lguychard\",\"url\":\"https://github.com/lguychard\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/2946214?v=4\",\"login\":\"unknwon\",\"url\":\"https://github.com/unknwon\"},\"requestedTeam\":{},\"createdAt\":\"2019-09-12T10:06:09Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars1.githubusercontent.com/u/1741180?v=4\",\"login\":\"lguychard\",\"url\":\"https://github.com/lguychard\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/10532611?v=4\",\"login\":\"felixfbecker\",\"url\":\"https://github.com/felixfbecker\"},\"requestedTeam\":{},\"createdAt\":\"2019-09-12T10:06:09Z\"},{\"__typename\":\"PullRequestReview\",\"databaseId\":287537086,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/2946214?v=4\",\"login\":\"unknwon\",\"url\":\"https://github.com/unknwon\"},\"authorAssociation\":\"MEMBER\",\"body\":\"Thanks
       for the fix! The chaining logic looks brilliant to me (as a non-FE dev).\",\"state\":\"APPROVED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086\",\"createdAt\":\"2019-09-12T15:57:28Z\",\"updatedAt\":\"2019-09-12T15:57:28Z\",\"commit\":{\"oid\":\"36734225c6bf58fb5c499b1489def2a7b65af45d\",\"message\":\"Fix
       disableExtension flag for native integrations\\n\\nThis flag should only be
       observed in the browser extension. Calling `observeStorageKey()` breaks native
@@ -249,24 +256,24 @@ interactions:
       of the same event and update the database entry to its newest version.\\r\\n\\r\\nThe
       PR also adds a minimal first GraphQL API for changeset events. It's minimal,
       because we still need to work out the schema.\\r\\n\\r\\ncc @felixfbecker \\r\\n\",\"state\":\"MERGED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834\",\"number\":5834,\"createdAt\":\"2019-10-02T14:49:31Z\",\"updatedAt\":\"2019-10-08T09:52:20Z\",\"headRefOid\":\"9780015346b79568f04925a03f6ec6cdbc0ae9be\",\"baseRefOid\":\"cec6864065fbe12890b3778af1f76c03b03c801a\",\"headRefName\":\"a8n/changeset-events\",\"baseRefName\":\"master\",\"author\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"participants\":{\"nodes\":[{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"}]},\"timelineItems\":{\"nodes\":[{\"__typename\":\"RenamedTitleEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"previousTitle\":\"A8n/changeset
-      events\",\"currentTitle\":\"a8n: ChangesetEvents\",\"createdAt\":\"2019-10-02T14:49:45Z\"},{\"__typename\":\"AssignedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"assignee\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"createdAt\":\"2019-10-03T12:05:41Z\"},{\"__typename\":\"IssueComment\",\"databaseId\":537920237,\"author\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"authorAssociation\":\"CONTRIBUTOR\",\"body\":\"This
-      is a comment. EDIT\",\"createdAt\":\"2019-10-03T12:18:21Z\",\"editor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537920237\",\"updatedAt\":\"2019-10-03T12:22:14Z\",\"includesCreatedEdit\":true,\"publishedAt\":\"2019-10-03T12:18:21Z\"},{\"__typename\":\"ClosedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"createdAt\":\"2019-10-03T14:02:51Z\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#event-2684174597\"},{\"__typename\":\"ReopenedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"createdAt\":\"2019-10-03T14:02:54Z\"},{\"__typename\":\"PullRequestReview\",\"databaseId\":296894453,\"author\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"authorAssociation\":\"CONTRIBUTOR\",\"body\":\"A
+      events\",\"currentTitle\":\"a8n: ChangesetEvents\",\"createdAt\":\"2019-10-02T14:49:45Z\"},{\"__typename\":\"AssignedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"assignee\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"createdAt\":\"2019-10-03T12:05:41Z\"},{\"__typename\":\"IssueComment\",\"databaseId\":537920237,\"author\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"authorAssociation\":\"MEMBER\",\"body\":\"This
+      is a comment. EDIT\",\"createdAt\":\"2019-10-03T12:18:21Z\",\"editor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537920237\",\"updatedAt\":\"2019-10-03T12:22:14Z\",\"includesCreatedEdit\":true,\"publishedAt\":\"2019-10-03T12:18:21Z\"},{\"__typename\":\"ClosedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"createdAt\":\"2019-10-03T14:02:51Z\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#event-2684174597\"},{\"__typename\":\"ReopenedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"createdAt\":\"2019-10-03T14:02:54Z\"},{\"__typename\":\"PullRequestReview\",\"databaseId\":296894453,\"author\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"authorAssociation\":\"MEMBER\",\"body\":\"A
       review\",\"state\":\"COMMENTED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-296894453\",\"createdAt\":\"2019-10-03T14:03:23Z\",\"updatedAt\":\"2019-10-03T14:03:23Z\",\"commit\":{\"oid\":\"0830ebfae3fa8f6405d30c1d0bb6dbdfba514e3f\",\"message\":\"a8n:
       Fix CreateChangesetEvent query\",\"messageHeadline\":\"a8n: Fix CreateChangesetEvent
       query\",\"committedDate\":\"2019-10-02T14:41:15Z\",\"pushedDate\":\"2019-10-02T14:41:30Z\",\"url\":\"https://github.com/sourcegraph/sourcegraph/commit/0830ebfae3fa8f6405d30c1d0bb6dbdfba514e3f\",\"committer\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"email\":\"tsenart@gmail.com\",\"name\":\"Tomás
-      Senart\",\"user\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"}}},\"includesCreatedEdit\":false},{\"__typename\":\"IssueComment\",\"databaseId\":537960109,\"author\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"authorAssociation\":\"CONTRIBUTOR\",\"body\":\"Making
-      this PR the playground for fetching timeline events from Github. \",\"createdAt\":\"2019-10-03T14:04:06Z\",\"editor\":null,\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537960109\",\"updatedAt\":\"2019-10-03T14:04:06Z\",\"includesCreatedEdit\":false,\"publishedAt\":\"2019-10-03T14:04:06Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/1646931?v=4\",\"login\":\"beyang\",\"url\":\"https://github.com/beyang\"},\"createdAt\":\"2019-10-03T14:04:11Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/3173176?v=4\",\"login\":\"slimsag\",\"url\":\"https://github.com/slimsag\"},\"createdAt\":\"2019-10-03T14:04:11Z\"},{\"__typename\":\"RenamedTitleEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"previousTitle\":\"a8n:
-      ChangesetEvents\",\"currentTitle\":\"[WIP] a8n: ChangesetEvents\",\"createdAt\":\"2019-10-03T14:04:27Z\"},{\"__typename\":\"UnassignedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"assignee\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"createdAt\":\"2019-10-03T14:04:58Z\"},{\"__typename\":\"ReviewRequestRemovedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/1646931?v=4\",\"login\":\"beyang\",\"url\":\"https://github.com/beyang\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/1646931?v=4\",\"login\":\"beyang\",\"url\":\"https://github.com/beyang\"},\"createdAt\":\"2019-10-04T19:23:05Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"requestedReviewer\":null,\"createdAt\":\"2019-10-07T07:59:23Z\"},{\"__typename\":\"PullRequestReview\",\"databaseId\":298093884,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"},\"authorAssociation\":\"CONTRIBUTOR\",\"body\":\"\",\"state\":\"COMMENTED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298093884\",\"createdAt\":\"2019-10-07T12:36:48Z\",\"updatedAt\":\"2019-10-07T12:36:48Z\",\"commit\":{\"oid\":\"d0144535fb3207a38678ac7e436529e53768ad8f\",\"message\":\"Undo
+      Senart\",\"user\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"}}},\"includesCreatedEdit\":false},{\"__typename\":\"IssueComment\",\"databaseId\":537960109,\"author\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"authorAssociation\":\"MEMBER\",\"body\":\"Making
+      this PR the playground for fetching timeline events from Github. \",\"createdAt\":\"2019-10-03T14:04:06Z\",\"editor\":null,\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537960109\",\"updatedAt\":\"2019-10-03T14:04:06Z\",\"includesCreatedEdit\":false,\"publishedAt\":\"2019-10-03T14:04:06Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/1646931?v=4\",\"login\":\"beyang\",\"url\":\"https://github.com/beyang\"},\"requestedTeam\":{},\"createdAt\":\"2019-10-03T14:04:11Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/3173176?v=4\",\"login\":\"slimsag\",\"url\":\"https://github.com/slimsag\"},\"requestedTeam\":{},\"createdAt\":\"2019-10-03T14:04:11Z\"},{\"__typename\":\"RenamedTitleEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"previousTitle\":\"a8n:
+      ChangesetEvents\",\"currentTitle\":\"[WIP] a8n: ChangesetEvents\",\"createdAt\":\"2019-10-03T14:04:27Z\"},{\"__typename\":\"UnassignedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"assignee\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"createdAt\":\"2019-10-03T14:04:58Z\"},{\"__typename\":\"ReviewRequestRemovedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/1646931?v=4\",\"login\":\"beyang\",\"url\":\"https://github.com/beyang\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/1646931?v=4\",\"login\":\"beyang\",\"url\":\"https://github.com/beyang\"},\"requestedTeam\":{},\"createdAt\":\"2019-10-04T19:23:05Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"requestedReviewer\":{},\"requestedTeam\":{\"name\":\"automation\",\"url\":\"https://github.com/orgs/sourcegraph/teams/automation\",\"avatarUrl\":\"https://avatars2.githubusercontent.com/t/3452110?s=400&v=4\"},\"createdAt\":\"2019-10-07T07:59:23Z\"},{\"__typename\":\"PullRequestReview\",\"databaseId\":298093884,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"},\"authorAssociation\":\"MEMBER\",\"body\":\"\",\"state\":\"COMMENTED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298093884\",\"createdAt\":\"2019-10-07T12:36:48Z\",\"updatedAt\":\"2019-10-07T12:36:48Z\",\"commit\":{\"oid\":\"d0144535fb3207a38678ac7e436529e53768ad8f\",\"message\":\"Undo
       previous change to GitHubSource tests\",\"messageHeadline\":\"Undo previous
       change to GitHubSource tests\",\"committedDate\":\"2019-10-07T12:31:07Z\",\"pushedDate\":\"2019-10-07T12:31:21Z\",\"url\":\"https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f\",\"committer\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"email\":\"mrnugget@gmail.com\",\"name\":\"Thorsten
-      Ball\",\"user\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"}}},\"includesCreatedEdit\":false},{\"__typename\":\"PullRequestReview\",\"databaseId\":298094119,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"},\"authorAssociation\":\"CONTRIBUTOR\",\"body\":\"\",\"state\":\"COMMENTED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298094119\",\"createdAt\":\"2019-10-07T12:37:11Z\",\"updatedAt\":\"2019-10-07T12:37:12Z\",\"commit\":{\"oid\":\"d0144535fb3207a38678ac7e436529e53768ad8f\",\"message\":\"Undo
+      Ball\",\"user\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"}}},\"includesCreatedEdit\":false},{\"__typename\":\"PullRequestReview\",\"databaseId\":298094119,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"},\"authorAssociation\":\"MEMBER\",\"body\":\"\",\"state\":\"COMMENTED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298094119\",\"createdAt\":\"2019-10-07T12:37:11Z\",\"updatedAt\":\"2019-10-07T12:37:12Z\",\"commit\":{\"oid\":\"d0144535fb3207a38678ac7e436529e53768ad8f\",\"message\":\"Undo
       previous change to GitHubSource tests\",\"messageHeadline\":\"Undo previous
       change to GitHubSource tests\",\"committedDate\":\"2019-10-07T12:31:07Z\",\"pushedDate\":\"2019-10-07T12:31:21Z\",\"url\":\"https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f\",\"committer\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"email\":\"mrnugget@gmail.com\",\"name\":\"Thorsten
       Ball\",\"user\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"}}},\"includesCreatedEdit\":false},{\"__typename\":\"RenamedTitleEvent\",\"actor\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"},\"previousTitle\":\"[WIP]
       a8n: ChangesetEvents\",\"currentTitle\":\"a8n: Persist GitHub ChangesetEvents
-      to database\",\"createdAt\":\"2019-10-07T12:42:32Z\"},{\"__typename\":\"PullRequestReview\",\"databaseId\":298099102,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"},\"authorAssociation\":\"CONTRIBUTOR\",\"body\":\"\",\"state\":\"APPROVED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298099102\",\"createdAt\":\"2019-10-07T12:45:49Z\",\"updatedAt\":\"2019-10-07T12:45:49Z\",\"commit\":{\"oid\":\"701963b67b97e85e10d101065015ae0cf9d0a7c9\",\"message\":\"fixup!
+      to database\",\"createdAt\":\"2019-10-07T12:42:32Z\"},{\"__typename\":\"PullRequestReview\",\"databaseId\":298099102,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"},\"authorAssociation\":\"MEMBER\",\"body\":\"\",\"state\":\"APPROVED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298099102\",\"createdAt\":\"2019-10-07T12:45:49Z\",\"updatedAt\":\"2019-10-07T12:45:49Z\",\"commit\":{\"oid\":\"701963b67b97e85e10d101065015ae0cf9d0a7c9\",\"message\":\"fixup!
       Fix indentation\",\"messageHeadline\":\"fixup! Fix indentation\",\"committedDate\":\"2019-10-07T12:39:26Z\",\"pushedDate\":\"2019-10-07T12:39:32Z\",\"url\":\"https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9\",\"committer\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"email\":\"mrnugget@gmail.com\",\"name\":\"Thorsten
-      Ball\",\"user\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"}}},\"includesCreatedEdit\":false},{\"__typename\":\"PullRequestReview\",\"databaseId\":298101262,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"},\"authorAssociation\":\"CONTRIBUTOR\",\"body\":\"\U0001F44D
+      Ball\",\"user\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"}}},\"includesCreatedEdit\":false},{\"__typename\":\"PullRequestReview\",\"databaseId\":298101262,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"login\":\"mrnugget\",\"url\":\"https://github.com/mrnugget\"},\"authorAssociation\":\"MEMBER\",\"body\":\"\U0001F44D
       \\r\\n<img width=\\\"495\\\" alt=\\\"Screen Shot 2019-10-07 at 14 49 12\\\"
       src=\\\"https://user-images.githubusercontent.com/1185253/66312845-a4328180-e911-11e9-93b9-d1c421324015.png\\\">\\r\\n\",\"state\":\"APPROVED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298101262\",\"createdAt\":\"2019-10-07T12:49:30Z\",\"updatedAt\":\"2019-10-07T12:49:30Z\",\"commit\":{\"oid\":\"701963b67b97e85e10d101065015ae0cf9d0a7c9\",\"message\":\"fixup!
       Fix indentation\",\"messageHeadline\":\"fixup! Fix indentation\",\"committedDate\":\"2019-10-07T12:39:26Z\",\"pushedDate\":\"2019-10-07T12:39:32Z\",\"url\":\"https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9\",\"committer\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/1185253?v=4\",\"email\":\"mrnugget@gmail.com\",\"name\":\"Thorsten
@@ -311,7 +318,21 @@ interactions:
       also including your other PR's changeset here. It's confusing to review if not
       commit by commit.\\n\",\"createdAt\":\"2014-03-06T11:07:35Z\",\"editor\":null,\"url\":\"https://github.com/tsenart/vegeta/pull/50#issuecomment-36845273\",\"updatedAt\":\"2014-03-06T11:07:35Z\",\"includesCreatedEdit\":false,\"publishedAt\":\"2014-03-06T11:07:35Z\"},{\"__typename\":\"IssueComment\",\"databaseId\":36845573,\"author\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"authorAssociation\":\"OWNER\",\"body\":\"Sorry,
       I don't feel this patch is good enough to make it into master, both in terms
-      of semantics and implementation.\\n\",\"createdAt\":\"2014-03-06T11:11:42Z\",\"editor\":null,\"url\":\"https://github.com/tsenart/vegeta/pull/50#issuecomment-36845573\",\"updatedAt\":\"2014-03-06T11:11:42Z\",\"includesCreatedEdit\":false,\"publishedAt\":\"2014-03-06T11:11:42Z\"},{\"__typename\":\"ClosedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"createdAt\":\"2014-03-06T11:11:42Z\",\"url\":\"https://github.com/tsenart/vegeta/pull/50#event-99444167\"}]}}}}}"
+      of semantics and implementation.\\n\",\"createdAt\":\"2014-03-06T11:11:42Z\",\"editor\":null,\"url\":\"https://github.com/tsenart/vegeta/pull/50#issuecomment-36845573\",\"updatedAt\":\"2014-03-06T11:11:42Z\",\"includesCreatedEdit\":false,\"publishedAt\":\"2014-03-06T11:11:42Z\"},{\"__typename\":\"ClosedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"createdAt\":\"2014-03-06T11:11:42Z\",\"url\":\"https://github.com/tsenart/vegeta/pull/50#event-99444167\"}]}}},\"repo_3\":{\"repo_3_7352\":{\"id\":\"MDExOlB1bGxSZXF1ZXN0MzU2MTI0MDAw\",\"title\":\"Replace
+      redis-based usage stats with postgres-based stats\",\"body\":\"fixes #5542\\r\\n\\r\\n(This
+      PR is the second piece of https://github.com/sourcegraph/sourcegraph/pull/6473,
+      after it was broken up)\\r\\n\\r\\nThis update adds a new usagestats package
+      that uses the new `event_logs` Postgres table. It deprecates the old usagstats
+      package that uses Redis. \\r\\n\\r\\nUsing this new data store will make our
+      metrics less brittle, and will allow us to show more useful information to site
+      administrators.\\r\\n\\r\\nI had originally structured this to REMOVE the old
+      package entirely, but I decided to keep it for now. The compute cost is low,
+      the old package can be removed next month, and having overlapping metrics from
+      each will be helpful for ensuring validity for site admins.\",\"state\":\"OPEN\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/7352\",\"number\":7352,\"createdAt\":\"2019-12-22T21:53:47Z\",\"updatedAt\":\"2020-01-02T13:45:56Z\",\"headRefOid\":\"f61aa961987181d2c3c50bf5b699f883b7133808\",\"baseRefOid\":\"2eca7037782a7aa6a39637999f9ebf58d6761e17\",\"headRefName\":\"stats3\",\"baseRefName\":\"stats-2\",\"author\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"login\":\"dadlerj\",\"url\":\"https://github.com/dadlerj\"},\"participants\":{\"nodes\":[{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"login\":\"dadlerj\",\"url\":\"https://github.com/dadlerj\"},{\"avatarUrl\":\"https://avatars1.githubusercontent.com/u/1741180?v=4\",\"login\":\"lguychard\",\"url\":\"https://github.com/lguychard\"},{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/2946214?v=4\",\"login\":\"unknwon\",\"url\":\"https://github.com/unknwon\"}]},\"timelineItems\":{\"nodes\":[{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"login\":\"dadlerj\",\"url\":\"https://github.com/dadlerj\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/67471?v=4\",\"login\":\"tsenart\",\"url\":\"https://github.com/tsenart\"},\"requestedTeam\":{},\"createdAt\":\"2019-12-22T21:53:47Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"login\":\"dadlerj\",\"url\":\"https://github.com/dadlerj\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/2946214?v=4\",\"login\":\"unknwon\",\"url\":\"https://github.com/unknwon\"},\"requestedTeam\":{},\"createdAt\":\"2019-12-22T21:53:47Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"login\":\"dadlerj\",\"url\":\"https://github.com/dadlerj\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/1646931?v=4\",\"login\":\"beyang\",\"url\":\"https://github.com/beyang\"},\"requestedTeam\":{},\"createdAt\":\"2019-12-22T21:53:47Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"login\":\"dadlerj\",\"url\":\"https://github.com/dadlerj\"},\"requestedReviewer\":{\"avatarUrl\":\"https://avatars2.githubusercontent.com/u/3173176?v=4\",\"login\":\"slimsag\",\"url\":\"https://github.com/slimsag\"},\"requestedTeam\":{},\"createdAt\":\"2019-12-22T21:53:47Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"login\":\"dadlerj\",\"url\":\"https://github.com/dadlerj\"},\"requestedReviewer\":{},\"requestedTeam\":{\"name\":\"Core
+      Services\",\"url\":\"https://github.com/orgs/sourcegraph/teams/core-services\",\"avatarUrl\":\"https://avatars0.githubusercontent.com/t/3116080?s=400&v=4\"},\"createdAt\":\"2019-12-22T21:53:47Z\"},{\"__typename\":\"ReviewRequestedEvent\",\"actor\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"login\":\"dadlerj\",\"url\":\"https://github.com/dadlerj\"},\"requestedReviewer\":{},\"requestedTeam\":{\"name\":\"web\",\"url\":\"https://github.com/orgs/sourcegraph/teams/web\",\"avatarUrl\":\"https://avatars0.githubusercontent.com/t/3385661?s=400&v=4\"},\"createdAt\":\"2019-12-22T21:53:47Z\"},{\"__typename\":\"PullRequestReview\",\"databaseId\":335837573,\"author\":{\"avatarUrl\":\"https://avatars3.githubusercontent.com/u/2946214?v=4\",\"login\":\"unknwon\",\"url\":\"https://github.com/unknwon\"},\"authorAssociation\":\"MEMBER\",\"body\":\"\",\"state\":\"COMMENTED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/7352#pullrequestreview-335837573\",\"createdAt\":\"2019-12-23T12:18:32Z\",\"updatedAt\":\"2019-12-23T13:03:25Z\",\"commit\":{\"oid\":\"f61aa961987181d2c3c50bf5b699f883b7133808\",\"message\":\"dev/generate\",\"messageHeadline\":\"dev/generate\",\"committedDate\":\"2019-12-22T22:20:32Z\",\"pushedDate\":\"2019-12-22T22:20:38Z\",\"url\":\"https://github.com/sourcegraph/sourcegraph/commit/f61aa961987181d2c3c50bf5b699f883b7133808\",\"committer\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"email\":\"daniel.neal.adler@gmail.com\",\"name\":\"Dan
+      Adler\",\"user\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"login\":\"dadlerj\",\"url\":\"https://github.com/dadlerj\"}}},\"includesCreatedEdit\":false},{\"__typename\":\"PullRequestReview\",\"databaseId\":337663572,\"author\":{\"avatarUrl\":\"https://avatars1.githubusercontent.com/u/1741180?v=4\",\"login\":\"lguychard\",\"url\":\"https://github.com/lguychard\"},\"authorAssociation\":\"MEMBER\",\"body\":\"Web
+      changes LGTM\",\"state\":\"APPROVED\",\"url\":\"https://github.com/sourcegraph/sourcegraph/pull/7352#pullrequestreview-337663572\",\"createdAt\":\"2020-01-02T13:45:56Z\",\"updatedAt\":\"2020-01-02T13:45:56Z\",\"commit\":{\"oid\":\"f61aa961987181d2c3c50bf5b699f883b7133808\",\"message\":\"dev/generate\",\"messageHeadline\":\"dev/generate\",\"committedDate\":\"2019-12-22T22:20:32Z\",\"pushedDate\":\"2019-12-22T22:20:38Z\",\"url\":\"https://github.com/sourcegraph/sourcegraph/commit/f61aa961987181d2c3c50bf5b699f883b7133808\",\"committer\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"email\":\"daniel.neal.adler@gmail.com\",\"name\":\"Dan
+      Adler\",\"user\":{\"avatarUrl\":\"https://avatars0.githubusercontent.com/u/5589410?v=4\",\"login\":\"dadlerj\",\"url\":\"https://github.com/dadlerj\"}}},\"includesCreatedEdit\":false}]}}}}}"
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -326,7 +347,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 13:19:07 GMT
+      - Tue, 14 Jan 2020 11:24:09 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -346,15 +367,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - CF92:2CFEA:5489C2F:64B31F4:5DCAB14B
+      - EBC9:456E7:1DEB17:23116D:5E1DA4D8
       X-Oauth-Scopes:
-      - public_repo
+      - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4961"
+      - "4947"
       X-Ratelimit-Reset:
-      - "1573568016"
+      - "1579003549"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
