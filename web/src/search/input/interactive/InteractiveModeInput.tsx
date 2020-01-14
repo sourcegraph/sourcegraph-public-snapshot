@@ -22,6 +22,7 @@ import { QueryInput } from '../QueryInput'
 import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
+import { isFiniteFilter } from './filters'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -63,7 +64,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
             .map(filter => {
                 const itemsOfType = searchParams.getAll(filter)
                 itemsOfType.map(item => {
-                    filtersInQuery[uniqueId(filter)] = { type: filter, value: item, editable: false }
+                    filtersInQuery[isFiniteFilter(filter) ? filter : uniqueId(filter)] = { type: filter, value: item, editable: false }
                 })
             })
 
@@ -74,7 +75,21 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
      * Adds a new filter to the top-level filtersInQuery state field.
      */
     private addNewFilter = (filterType: FilterTypes): void => {
-        const filterKey = uniqueId(filterType)
+        let filterKey: string = uniqueId(filterType)
+        if (isFiniteFilter(filterType)) {
+            filterKey = filterType
+            // We only allow finite-option filters to be specified once per query,
+            // so we don't need to append a uniqueId.
+            if (this.props.filtersInQuery[filterKey]) {
+                // If the finite filter already exists in the query, just make the
+                // existing one editable.
+                const newFiltersInQuery = this.props.filtersInQuery
+                newFiltersInQuery[filterKey].editable = true
+                this.props.onFiltersInQueryChange(newFiltersInQuery)
+                return
+            }
+        }
+
         this.props.onFiltersInQueryChange({
             ...this.props.filtersInQuery,
             [filterKey]: { type: filterType, value: '', editable: true },
