@@ -340,8 +340,6 @@ type ExperimentalFeatures struct {
 	EventLogging string `json:"eventLogging,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: Enables searching multiple revisions of the same repository (using `repo:myrepo@branch1:branch2`).
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
-	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
-	ShowBadgeAttachments string `json:"showBadgeAttachments,omitempty"`
 	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
 	SplitSearchModes string `json:"splitSearchModes,omitempty"`
 	// StructuralSearch description: Enables structural search.
