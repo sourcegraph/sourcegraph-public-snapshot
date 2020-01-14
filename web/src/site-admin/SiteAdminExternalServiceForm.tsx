@@ -86,8 +86,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                     disabled={this.props.loading}
                 >
                     {this.props.loading && <LoadingSpinner className="icon-inline" />}
-                    {this.props.submitName ??
-                        (this.props.mode === 'edit' ? 'Update repositories' : 'Add repositories')}
+                    {this.props.submitName ?? (this.props.mode === 'edit' ? 'Update repositories' : 'Add repositories')}
                 </button>
             </Form>
         )

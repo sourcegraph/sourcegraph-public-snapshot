@@ -233,17 +233,19 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
 )
 
 const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
-    ...(isEnterprise ? [
-        {
-            id: 'setURL',
-            label: 'Set GitHub URL',
-            run: (config: string) => {
-                const value = 'https://github.example.com'
-                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
-                return { edits, selectText: value }
-            }
-        }
-    ]: []),
+    ...(isEnterprise
+        ? [
+              {
+                  id: 'setURL',
+                  label: 'Set GitHub URL',
+                  run: (config: string) => {
+                      const value = 'https://github.example.com'
+                      const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                      return { edits, selectText: value }
+                  },
+              },
+          ]
+        : []),
     {
         id: 'setAccessToken',
         label: 'Set access token',
@@ -312,172 +314,168 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
     },
 ]
 
-const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
-        [
-            ...(isSelfManaged ? [
-                {
-                    id: 'setURL',
-                    label: 'Set GitLab URL',
-                    run: (config: string) => {
-                        const value = 'https://gitlab.example.com'
-                        const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
-                        return { edits, selectText: value }
-                    }
-                }
-            ]: []),
-            {
-                id: 'setAccessToken',
-                label: 'Set access token',
-                run: (config: string) => {
-                    const value = '<access token>'
-                    const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
-            },
-            {
-                id: 'addGroupProjects',
-                label: 'Add projects in a group',
-                run: (config: string) => {
-                    const value = 'groups/<my group>/projects'
-                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '<my group>' }
-                },
-            },
-            {
-                id: 'addMemberProjects',
-                label: "Add projects that have the token's user as member",
-                run: (config: string) => {
-                    const value = 'projects?membership=true&archived=no'
-                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
-            },
-            {
-                id: 'addProjectsMatchingSearch',
-                label: 'Add projects matching search',
-                run: config => ({
-                    edits: setProperty(
-                        config,
-                        ['projectQuery', -1],
-                        '?search=<search query>',
-                        defaultFormattingOptions
-                    ),
-                    selectText: '<search query>',
-                }),
-            },
-            {
-                id: 'addIndividualProjectByName',
-                label: 'Add single project by name',
-                run: (config: string) => {
-                    const value = { name: '<group>/<name>' }
-                    const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '<group>/<name>' }
-                },
-            },
-            {
-                id: 'addIndividualProjectByID',
-                label: 'Add single project by ID',
-                run: (config: string) => {
-                    const value = { id: 123 }
-                    const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '123' }
-                },
-            },
-        ...(isSelfManaged
-            ? [
-                  {
-                      id: 'addInternalProjects',
-                      label: 'Add internal projects',
-                      run: (config: string) => {
-                          const value = 'projects?visibility=internal'
-                          const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
-                          return { edits, selectText: value }
-                      },
+const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
+    ...(isSelfManaged
+        ? [
+              {
+                  id: 'setURL',
+                  label: 'Set GitLab URL',
+                  run: (config: string) => {
+                      const value = 'https://gitlab.example.com'
+                      const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                      return { edits, selectText: value }
                   },
-                  {
-                      id: 'addPrivateProjects',
-                      label: 'Add private projects',
-                      run: (config: string) => {
-                          const value = 'projects?visibility=private'
-                          const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
-                          return { edits, selectText: value }
-                      },
+              },
+          ]
+        : []),
+    {
+        id: 'setAccessToken',
+        label: 'Set access token',
+        run: (config: string) => {
+            const value = '<access token>'
+            const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+            return { edits, selectText: value }
+        },
+    },
+    {
+        id: 'addGroupProjects',
+        label: 'Add projects in a group',
+        run: (config: string) => {
+            const value = 'groups/<my group>/projects'
+            const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '<my group>' }
+        },
+    },
+    {
+        id: 'addMemberProjects',
+        label: "Add projects that have the token's user as member",
+        run: (config: string) => {
+            const value = 'projects?membership=true&archived=no'
+            const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+            return { edits, selectText: value }
+        },
+    },
+    {
+        id: 'addProjectsMatchingSearch',
+        label: 'Add projects matching search',
+        run: config => ({
+            edits: setProperty(config, ['projectQuery', -1], '?search=<search query>', defaultFormattingOptions),
+            selectText: '<search query>',
+        }),
+    },
+    {
+        id: 'addIndividualProjectByName',
+        label: 'Add single project by name',
+        run: (config: string) => {
+            const value = { name: '<group>/<name>' }
+            const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '<group>/<name>' }
+        },
+    },
+    {
+        id: 'addIndividualProjectByID',
+        label: 'Add single project by ID',
+        run: (config: string) => {
+            const value = { id: 123 }
+            const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '123' }
+        },
+    },
+    ...(isSelfManaged
+        ? [
+              {
+                  id: 'addInternalProjects',
+                  label: 'Add internal projects',
+                  run: (config: string) => {
+                      const value = 'projects?visibility=internal'
+                      const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                      return { edits, selectText: value }
                   },
-              ]
-            : []),
-            {
-                id: 'excludeProject',
-                label: 'Exclude a project',
-                run: config => {
-                    const value = { name: '<group>/<project>' }
-                    const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '"<group>/<project>"' }
-                },
-            },
-        ...(isSelfManaged
-            ? [
-                  {
-                      id: 'enforcePermissionsOAuth',
-                      label: 'Enforce permissions (OAuth)',
-                      run: (config: string) => {
-                          const value = {
-                              identityProvider: {
-                                  COMMENT_SENTINEL: true,
-                                  type: 'oauth',
-                              },
-                          }
-                          const comment = editorActionComments.enforcePermissionsOAuth
-                          const edit = editWithComment(config, ['authorization'], value, comment)
-                          return { edits: [edit], selectText: comment }
-                      },
+              },
+              {
+                  id: 'addPrivateProjects',
+                  label: 'Add private projects',
+                  run: (config: string) => {
+                      const value = 'projects?visibility=private'
+                      const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                      return { edits, selectText: value }
                   },
-                  {
-                      id: 'enforcePermissionsSudo',
-                      label: 'Enforce permissions (sudo)',
-                      run: (config: string) => {
-                          const value = {
+              },
+          ]
+        : []),
+    {
+        id: 'excludeProject',
+        label: 'Exclude a project',
+        run: config => {
+            const value = { name: '<group>/<project>' }
+            const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '"<group>/<project>"' }
+        },
+    },
+    ...(isSelfManaged
+        ? [
+              {
+                  id: 'enforcePermissionsOAuth',
+                  label: 'Enforce permissions (OAuth)',
+                  run: (config: string) => {
+                      const value = {
+                          identityProvider: {
                               COMMENT_SENTINEL: true,
-                              identityProvider: {
-                                  type: 'external',
-                                  authProviderID: '<configID field of the auth provider>',
-                                  authProviderType: '<type field of the auth provider>',
-                                  gitlabProvider:
-                                      '<name that identifies the auth provider to GitLab (hover over "gitlabProvider" for docs)>',
-                              },
-                          }
-                          const comment = editorActionComments.enforcePermissionsSSO
-                          const edit = editWithComment(config, ['authorization'], value, comment)
-                          return { edits: [edit], selectText: comment }
-                      },
+                              type: 'oauth',
+                          },
+                      }
+                      const comment = editorActionComments.enforcePermissionsOAuth
+                      const edit = editWithComment(config, ['authorization'], value, comment)
+                      return { edits: [edit], selectText: comment }
                   },
-                  {
-                      id: 'setSelfSignedCert',
-                      label: 'Set internal or self-signed certificate',
-                      run: (config: string) => {
-                          const value = '<certificate>'
-                          const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
-                          return { edits, selectText: value }
-                      },
+              },
+              {
+                  id: 'enforcePermissionsSudo',
+                  label: 'Enforce permissions (sudo)',
+                  run: (config: string) => {
+                      const value = {
+                          COMMENT_SENTINEL: true,
+                          identityProvider: {
+                              type: 'external',
+                              authProviderID: '<configID field of the auth provider>',
+                              authProviderType: '<type field of the auth provider>',
+                              gitlabProvider:
+                                  '<name that identifies the auth provider to GitLab (hover over "gitlabProvider" for docs)>',
+                          },
+                      }
+                      const comment = editorActionComments.enforcePermissionsSSO
+                      const edit = editWithComment(config, ['authorization'], value, comment)
+                      return { edits: [edit], selectText: comment }
                   },
-              ]
-            : [
-                  {
-                      id: 'enforcePermissionsOAuth',
-                      label: 'Enforce permissions',
-                      run: (config: string) => {
-                          const value = {
-                              identityProvider: {
-                                  COMMENT_SENTINEL: true,
-                                  type: 'oauth',
-                              },
-                          }
-                          const comment = editorActionComments.enforcePermissionsOAuth
-                          const edit = editWithComment(config, ['authorization'], value, comment)
-                          return { edits: [edit], selectText: comment }
-                      },
+              },
+              {
+                  id: 'setSelfSignedCert',
+                  label: 'Set internal or self-signed certificate',
+                  run: (config: string) => {
+                      const value = '<certificate>'
+                      const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
+                      return { edits, selectText: value }
                   },
-              ])
-            ]
+              },
+          ]
+        : [
+              {
+                  id: 'enforcePermissionsOAuth',
+                  label: 'Enforce permissions',
+                  run: (config: string) => {
+                      const value = {
+                          identityProvider: {
+                              COMMENT_SENTINEL: true,
+                              type: 'oauth',
+                          },
+                      }
+                      const comment = editorActionComments.enforcePermissionsOAuth
+                      const edit = editWithComment(config, ['authorization'], value, comment)
+                      return { edits: [edit], selectText: comment }
+                  },
+              },
+          ]),
+]
 
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.GITHUB,
