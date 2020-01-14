@@ -41,7 +41,7 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
                     <h2 className="mb-0">Add repositories</h2>
                 </div>
                 <p className="mt-2">Add repositories from one of these code hosts.</p>
-                {map(codeHostExternalServices, (externalService, id) => (
+                {Object.entries(codeHostExternalServices).map(([id, externalService]) => (
                     <div className="add-external-services-page__card" key={id}>
                         <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                     </div>
