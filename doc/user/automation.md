@@ -18,17 +18,19 @@ In order to use the Automation preview, a site-admin of your Sourcegraph instanc
 
 Automation requires that your [external service](../admin/external_service.md) is using a token with **write access** in order to create changesets on your code host.
 
-## Supported campaign types
+## Supported campaign types and functionality
 
-### Manual
+Our focus is to deliver _general_ functionality (e.g., centralized monitoring of a large set of pull requests on different codehosts) as well as _tailored_ solutions for large-scale code changes and workflows (e.g., detect leaked NPM credentials). If you have a specific automation workflow in mind that is not covered by our current feature set, please reach out to us at <support@sourcegraph.com>.
+
+### Manual changeset monitoring
 
 Manual campaigns keep track of existing changesets from various code hosts. You will manually add each changeset you would like to track (such as a GitHub pull request), and can track them to completion.
 
 ### Comby search and replace
 
-Comby search and replace campaigns run [Comby](https://comby.dev), a powerful search and replace tool, over a set of repositories that match a specified query scope.
+We currently offer search and replace functionality using [Comby](https://comby.dev), which is a tailored solution for syntactic, lint-like code changes (if you're interested in general text or regex search and replace then stay tuned, it's in the works!)
 
-> Currently GitHub and Bitbucket Server are supported Codehosts for this campaign type. Other repositories **won't** be matched by the `scopeQuery` parameter. Also, a maximum of 200 repositories applies at this time.
+> Run Comby across all of your repositories that match a specified scope query. Currently GitHub and Bitbucket Server are supported Codehosts for this campaign type. Other repositories **won't** be matched by the `scopeQuery` parameter. Also, a maximum of 200 repositories applies at this time.
 
 Parameters:
 
@@ -37,6 +39,12 @@ Parameters:
 | scopeQuery      | Search query to narrow down repositories to be included in this campaign.                            |
 | matchTemplate   | The template to match against in source files. See the [Comby documentation](https://comby.dev/#match-syntax) for syntax. |
 | rewriteTemplate | The template to use for the replacements. See the [Comby documentation](https://comby.dev/#match-syntax) for syntax.      |
+
+Note: the `scopeQuery` filter narrows the set of repositories to run on, and will then run across all files in the repository. Future improvements will allow further scoping by file name and file contents.
+
+### Upcoming: Regex search and replace
+
+We are actively working on campaign support for regex search and replace. Let us know if this is a feature you are especially excited for!
 
 ## Creating a new campaign
 
