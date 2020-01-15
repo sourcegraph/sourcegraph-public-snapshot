@@ -188,7 +188,7 @@ Array [
       }
     />
   </form>,
-  "",
+  "CampaignStatus(state=PROCESSING)",
   <h3>
     Progress
   </h3>,
@@ -469,7 +469,7 @@ Array [
       }
     />
   </form>,
-  "",
+  "CampaignStatus(state=PROCESSING)",
   <h3>
     Progress
   </h3>,
