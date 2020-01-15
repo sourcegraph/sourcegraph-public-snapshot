@@ -169,7 +169,8 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	if err != nil && err != iauthz.ErrNotFound {
 		return nil, err
 	}
-	if ids == nil {
+	// If no row is found, we return an empty list to the consumer.
+	if err == iauthz.ErrNotFound {
 		ids = roaring.NewBitmap()
 	}
 
@@ -223,7 +224,8 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	if err != nil && err != iauthz.ErrNotFound {
 		return nil, err
 	}
-	if p.UserIDs == nil {
+	// If no row is found, we return an empty list to the consumer.
+	if err == iauthz.ErrNotFound {
 		p.UserIDs = roaring.NewBitmap()
 	}
 
