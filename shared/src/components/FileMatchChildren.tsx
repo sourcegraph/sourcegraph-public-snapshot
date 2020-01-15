@@ -12,6 +12,7 @@ import { IFileMatch, IMatchItem } from './FileMatch'
 import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
 import { BadgeAttachment } from './BadgeAttachment'
+import { isErrorLike } from '../util/errors'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
@@ -30,6 +31,13 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
 const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
+    const showBadges =
+        props.settingsCascade.final &&
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final.experimentalFeatures &&
+        // Enabled if true or null
+        props.settingsCascade.final.experimentalFeatures.showBadgeAttachments !== false
+
     const showItems = props.items
         .sort((a, b) => {
             if (a.line < b.line) {
@@ -121,7 +129,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         </Link>
 
                         <div className="file-match-children__item-badge-row">
-                            {item.badge && (
+                            {item.badge && showBadges && (
                                 // This div is necessary: it has block display, where the badge row
                                 // has flex display and would cause the hover tooltip to be offset
                                 // in a weird way (centered in the code context, not on the icon).

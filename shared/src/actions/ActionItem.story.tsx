@@ -5,6 +5,7 @@ import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem, ActionItemComponentProps } from './ActionItem'
 import './ActionItem.scss'
+import { NEVER } from 'rxjs'
 
 const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = {
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
@@ -12,6 +13,7 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
 
 const PLATFORM_CONTEXT: ActionItemComponentProps['platformContext'] = {
     forceUpdateTooltip: () => undefined,
+    settings: NEVER,
 }
 
 const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }

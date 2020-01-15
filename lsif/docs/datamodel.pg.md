@@ -1,8 +1,8 @@
 # Cross-repo data model
 
-This document outlines the data model used to correlate multiple LSIF dumps. The definition of the cross-repo database tables can be found in [../src/shared/models/pg.models.ts](../src/shared/models/pg.ts).
+This document outlines the data model used to correlate multiple LSIF dumps. The definition of the cross-repo database tables can be found in [pg.ts](../src/shared/models/pg.ts).
 
-> Commits have been abbreviated to 7 characters to fit on a GitHub page.
+In the following document, commits have been abbreviated to 7 characters for readibility.
 
 ## Database tables
 
@@ -21,18 +21,28 @@ This table contains all commits known for a repository for which LSIF data has b
 
 This table allows us to ues recursive CTEs to find ancestor and descendant commits with a particular property (as indicated by the existence of an entry in the `lsif_dumps` table) and enables closest commit functionality.
 
-**`lsif_dumps` table**
+**`lsif_uploads` table**
 
-This table contains an entry for each commit that has had LSIF data uploaded.
+This table contains an entry for each LSIF upload. An upload is inserted with the state `queued` and is processed asynchronously by a worker. The `root` indicates the directory for which this upload provides code intelligence. The `visible_at_tip` indicates whether this a (completed) upload that is closest to the tip of the default branch.
 
-| id  | repository                    | commit    |
-| --- | ----------------------------- | --------- |
-| 1   | github.com/sourcegraph/sample | `a360643` |
-| 2   | github.com/sourcegraph/sample | `f4fb066` |
-| 3   | github.com/sourcegraph/sample | `4c8d9dc` |
-| 4   | github.com/sourcegraph/sample | `323e23f` |
+| id  | repository                    | commit    | root | state     | visible_at_tip |
+| --- | ----------------------------- | --------- | ---- | --------- | -------------- |
+| 1   | github.com/sourcegraph/sample | `a360643` |      | completed | true           |
+| 2   | github.com/sourcegraph/sample | `f4fb066` |      | completed | false          |
+| 3   | github.com/sourcegraph/sample | `4c8d9dc` | cmd  | completed | true           |
+| 4   | github.com/sourcegraph/sample | `323e23f` |      | completed | false          |
 
-This table enables us to determine the closest commit with LSIF data to a given target commit.
+The view `lsif_dumps` selects all uploads with a state of `completed`.
+
+Additional fields are not shown in the table above which do not affect code intelligence queries in a meaningful way.
+
+- `filename`: The filename of the raw upload.
+- `uploaded_at`: The time the record was inserted.
+- `started_at`: The time the conversion was started.
+- `finished_at`: The time the conversion was finished.
+- `failure_summary`: The message of the error that occurred during conversion.
+- `failure_stacktrace`: The stacktrace of the error that occurred during conversion.
+- `tracing_context`: The tracing context from the `/upload` endpoint. Used to trace the entire span of work from the upload to the end of conversion.
 
 **`lsif_packages` table**
 

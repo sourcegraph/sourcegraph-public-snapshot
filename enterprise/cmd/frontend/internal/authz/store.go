@@ -888,6 +888,47 @@ AND object_type = %s
 	)
 }
 
+// ListPendingUsers returns a list of bind IDs who have pending permissions.
+func (s *Store) ListPendingUsers(ctx context.Context) (bindIDs []string, err error) {
+	ctx, save := s.observe(ctx, "ListPendingUsers", "")
+	defer save(&err)
+
+	q := sqlf.Sprintf(`SELECT bind_id, object_ids FROM user_pending_permissions`)
+
+	var rows *sql.Rows
+	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var bindID string
+		var ids []byte
+		if err = rows.Scan(&bindID, &ids); err != nil {
+			return nil, err
+		}
+
+		if len(ids) == 0 {
+			continue
+		}
+
+		bm := roaring.NewBitmap()
+		if err = bm.UnmarshalBinary(ids); err != nil {
+			return nil, err
+		} else if bm.GetCardinality() == 0 {
+			continue
+		}
+
+		bindIDs = append(bindIDs, bindID)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return bindIDs, nil
+}
+
 func (s *Store) execute(ctx context.Context, q *sqlf.Query) (err error) {
 	ctx, save := s.observe(ctx, "execute", "")
 	defer func() { save(&err, otlog.Object("q", q)) }()

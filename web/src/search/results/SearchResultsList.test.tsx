@@ -15,6 +15,7 @@ import {
     SEARCH_REQUEST,
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
+import { NEVER } from 'rxjs'
 
 let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
 
@@ -109,7 +110,7 @@ describe('SearchResultsList', () => {
             final: null,
         },
         extensionsController: { executeCommand: sinon.spy(), services: extensionsController.services },
-        platformContext: { forceUpdateTooltip: sinon.spy() },
+        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
         telemetryService: NOOP_TELEMETRY_SERVICE,
         patternType: GQL.SearchPatternType.regexp,
         setPatternType: sinon.spy(),

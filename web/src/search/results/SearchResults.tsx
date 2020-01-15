@@ -26,7 +26,7 @@ import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         SettingsCascadeProps,
         TelemetryProps,
         ThemeProps,

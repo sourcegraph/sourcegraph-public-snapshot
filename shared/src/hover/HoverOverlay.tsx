@@ -15,6 +15,8 @@ import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
 import { toNativeEvent } from './helpers'
 import { BadgeAttachment } from '../components/BadgeAttachment'
 import { ThemeProps } from '../theme'
+import { PlatformContextProps } from '../platform/context'
+import { Subscription } from 'rxjs'
 
 const LOADING: 'loading' = 'loading'
 
@@ -66,7 +68,8 @@ export interface HoverOverlayProps<A extends string>
         ActionItemComponentProps,
         HoverOverlayClassProps,
         TelemetryProps,
-        ThemeProps {
+        ThemeProps,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
 
@@ -74,6 +77,10 @@ export interface HoverOverlayProps<A extends string>
     onCloseButtonClick?: (event: MouseEvent) => void
     /** Called when an alert is dismissed, with the type of the dismissed alert. */
     onAlertDismissed?: (alertType: A) => void
+}
+
+interface HoverOverlayState {
+    showBadges: boolean
 }
 
 const isEmptyHover = <A extends string>({
@@ -85,9 +92,31 @@ const isEmptyHover = <A extends string>({
     ((!hoverOrError || hoverOrError === LOADING || isErrorLike(hoverOrError)) &&
         (!actionsOrError || actionsOrError === LOADING || isErrorLike(actionsOrError)))
 
-export class HoverOverlay<A extends string> extends React.PureComponent<HoverOverlayProps<A>> {
+export class HoverOverlay<A extends string> extends React.PureComponent<HoverOverlayProps<A>, HoverOverlayState> {
+    private subscription = new Subscription()
+
+    constructor(props: HoverOverlayProps<A>) {
+        super(props)
+        this.state = {
+            showBadges: false,
+        }
+    }
+
     public componentDidMount(): void {
         this.logTelemetryEvent()
+
+        this.subscription.add(
+            this.props.platformContext.settings.subscribe(s => {
+                this.setState({
+                    showBadges:
+                        s.final &&
+                        !isErrorLike(s.final) &&
+                        s.final.experimentalFeatures &&
+                        // Enabled if true or null
+                        s.final.experimentalFeatures.showBadgeAttachments !== false,
+                })
+            })
+        )
     }
 
     public componentDidUpdate(prevProps: HoverOverlayProps<A>): void {
@@ -99,6 +128,10 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         ) {
             this.logTelemetryEvent()
         }
+    }
+
+    public componentWillUnmount(): void {
+        this.subscription.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -175,7 +208,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                             const offsetBadge = showCloseButton && i === 0
                                             return (
                                                 <div className="hover-overlay__row e2e-tooltip-badged-content" key={i}>
-                                                    {'badge' in content && content.badge && (
+                                                    {'badge' in content && content.badge && this.state.showBadges && (
                                                         <div
                                                             className={classNames(
                                                                 'hover-overlay__badge',
