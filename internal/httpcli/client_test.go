@@ -180,7 +180,7 @@ func TestNewCertPool(t *testing.T) {
 		{
 			name: "fails if transport isn't an http.Transport",
 			cli:  &http.Client{Transport: bogusTransport{}},
-			err:  "httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport",
+			err:  "httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name: "sets TLSClientConfig if nil",
@@ -246,7 +246,7 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 		{
 			name: "fails if transport isn't an http.Transport",
 			cli:  &http.Client{Transport: bogusTransport{}},
-			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport is not an *http.Transport",
+			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:    "IdleConnTimeout is set to what is given",

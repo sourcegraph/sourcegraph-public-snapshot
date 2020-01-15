@@ -254,7 +254,7 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 
 	tr, ok := cli.Transport.(*http.Transport)
 	if !ok {
-		return nil, errors.New("http.Client.Transport is not an *http.Transport")
+		return nil, errors.Errorf("http.Client.Transport is not an *http.Transport: %T", cli.Transport)
 	}
 
 	tr = tr.Clone()
