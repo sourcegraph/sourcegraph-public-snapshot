@@ -18,7 +18,6 @@ interface Props {
      * Callback to trigger a search when a filter is submitted.
      */
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
-
     /**
      * Callback to handle a filter's value being updated.
      */
@@ -33,11 +32,6 @@ interface Props {
      * Callback to handle the editable state of a filter.
      */
     toggleFilterEditable: (filterKey: string) => void
-
-    /**
-     * Callback to handle the negation state of a filter.
-     */
-    toggleFilterNegated: (filterKey: string) => void
 
     /**
      * Whether we're on the search homepage.
@@ -55,7 +49,6 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
     onFilterEdited,
     onFilterDeleted,
     toggleFilterEditable,
-    toggleFilterNegated,
     isHomepage,
 }) => {
     const filterKeys = Object.keys(filtersInQuery)
@@ -72,15 +65,12 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
                                 filterType={filtersInQuery[field].type}
                                 value={filtersInQuery[field].value}
                                 editable={filtersInQuery[field].editable}
-                                negated={filtersInQuery[field].negated}
                                 filtersInQuery={filtersInQuery}
                                 navbarQuery={navbarQuery}
-                                isHomepage={isHomepage}
                                 onSubmit={onSubmit}
                                 onFilterDeleted={onFilterDeleted}
                                 onFilterEdited={onFilterEdited}
                                 toggleFilterEditable={toggleFilterEditable}
-                                toggleFilterNegated={toggleFilterNegated}
                             />
                         ))}
                 </div>

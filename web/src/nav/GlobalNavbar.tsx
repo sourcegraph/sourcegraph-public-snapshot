@@ -7,7 +7,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { authRequired } from '../auth'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps } from '../search'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
@@ -31,7 +31,6 @@ interface Props
         ThemePreferenceProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps,
         InteractiveSearchProps {
     history: H.History
     location: H.Location<{ query: string }>

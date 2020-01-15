@@ -1,11 +1,7 @@
 import { escapeRegExp } from 'lodash'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
-import {
-    FiltersToTypeAndValue,
-    filterTypeKeys,
-    FilterTypes,
-    negatedFilters,
-} from '../../../shared/src/search/interactive/util'
+import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
+import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -41,9 +37,9 @@ export function parseSearchURLQuery(
 export function interactiveParseSearchURLQuery(query: string): string | undefined {
     const searchParams = new URLSearchParams(query)
     const finalQueryParts = []
-    for (const filterType of [...filterTypeKeys, ...negatedFilters].filter(key => key !== FilterTypes.case)) {
-        for (const filterValue of searchParams.getAll(filterType)) {
-            finalQueryParts.push(`${filterType}:${filterValue}`)
+    for (const suggestionType of Object.keys(SuggestionTypes)) {
+        for (const filterValue of searchParams.getAll(suggestionType)) {
+            finalQueryParts.push(`${suggestionType}:${filterValue}`)
         }
     }
 
@@ -77,12 +73,6 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
     return patternType
 }
 
-export function searchURLIsCaseSensitive(query: string): boolean {
-    const searchParams = new URLSearchParams(query)
-    const caseSensitive = searchParams.get('case')
-    return caseSensitive === 'yes'
-}
-
 export function searchQueryForRepoRev(repoName: string, rev?: string): string {
     return `repo:${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
 }
@@ -104,11 +94,6 @@ export function quoteIfNeeded(s: string): string {
 export interface PatternTypeProps {
     patternType: SearchPatternType
     setPatternType: (patternType: SearchPatternType) => void
-}
-
-export interface CaseSensitivityProps {
-    caseSensitive: boolean
-    setCaseSensitivity: (caseSensitive: boolean) => void
 }
 
 export interface InteractiveSearchProps {
