@@ -451,7 +451,7 @@ export async function publishCampaign(campaign: ID): Promise<ICampaign> {
     const result = await mutateGraphQL(
         gql`
             mutation PublishCampaign($campaign: ID!) {
-                campaign(campaign: $campaign) {
+                publishCampaign(campaign: $campaign) {
                     ...CampaignFields
                 }
             }

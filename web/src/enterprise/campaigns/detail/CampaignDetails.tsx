@@ -232,7 +232,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
 
-    const onDraft: React.MouseEventHandler = async event => {
+    const onDraft: React.FormEventHandler = async event => {
         event.preventDefault()
         setMode('saving')
         try {
@@ -254,7 +254,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
     
-    const onPublish = async(): Promise<void> => {
+    const onPublish = async():Promise<void> => {
         setMode('saving')
         try {
             await publishCampaign(campaign!.id)
@@ -523,10 +523,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     Preview changes
                                 </button>
                                 <button
-                                    type="button"
+                                    type="submit"
                                     className="btn btn-secondary mr-1"
-                                    disabled={previewRefreshNeeded || mode !== 'editing'}
                                     onClick={onDraft}
+                                    disabled={previewRefreshNeeded || mode !== 'editing'}
                                 >
                                     Create draft
                                 </button>
