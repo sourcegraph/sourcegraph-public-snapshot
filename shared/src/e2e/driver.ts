@@ -597,6 +597,10 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
             if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
                 return
             }
+            if (message.text().includes('Warning: componentWillReceiveProps has been renamed')) {
+                // This warning applies to our dependencies and leads to logspam on every page.
+                return
+            }
             console.log('Browser console:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))
         })
     }
