@@ -95,7 +95,7 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 		)
 	}
 
-	cf := httpcli.NewExternalHTTPClientFactory()
+	cf := httpcli.NewHTTPClientFactory()
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()

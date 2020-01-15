@@ -57,18 +57,14 @@ type Factory struct {
 	common []Opt
 }
 
-// NewExternalHTTPClientFactory returns an httpcli.Factory with common options
-// and middleware pre-set for communicating to external services.
-func NewExternalHTTPClientFactory() *Factory {
+// NewHTTPClientFactory returns an httpcli.Factory with common
+// options and middleware pre-set.
+func NewHTTPClientFactory() *Factory {
 	return NewFactory(
 		// TODO(tsenart): Use middle for Prometheus instrumentation later.
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
-		// ExternalTransportOpt needs to be before TracedTransportOpt and
-		// NewCachedTransportOpt since it wants to extract a http.Transport,
-		// not a generic http.RoundTripper.
-		ExternalTransportOpt,
 		TracedTransportOpt,
 		NewCachedTransportOpt(httputil.Cache, true),
 	)
@@ -158,19 +154,6 @@ func ContextErrorMiddleware(cli Doer) Doer {
 //
 // Common Opts
 //
-
-// ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
-// can contact non-Sourcegraph services. For example Admins can configure
-// TLS/SSL settings.
-func ExternalTransportOpt(cli *http.Client) error {
-	tr, err := getTransportForMutation(cli)
-	if err != nil {
-		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
-	}
-
-	cli.Transport = &externalTransport{base: tr}
-	return nil
-}
 
 // NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
 // transport.
