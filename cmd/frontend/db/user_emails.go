@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 )
@@ -122,7 +124,27 @@ func (*userEmails) Verify(ctx context.Context, userID int32, email, code string)
 	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email); err != nil {
 		return false, err
 	}
-	return true, nil
+
+	return true, (&userEmails{}).grantPendingPermissions(ctx, userID, email)
+}
+
+// grantPendingPermissions attempts to grant pending permissions by email.
+// 🚨 SECURITY: It is the caller's responsibility to ensure the email is verified.
+func (*userEmails) grantPendingPermissions(ctx context.Context, userID int32, email string) error {
+	cfg := conf.Get().SiteConfiguration
+	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
+		return nil
+	}
+
+	if cfg.PermissionsUserMapping.BindID != "email" {
+		return nil
+	}
+	return Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
+		UserID: userID,
+		BindID: email,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	})
 }
 
 // SetVerified bypasses the normal email verification code process and manually sets the verified

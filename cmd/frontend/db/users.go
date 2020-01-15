@@ -11,6 +11,7 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -270,6 +271,11 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		}
 	}
 
+	// If permissions user mapping is enabled, grant pending permissions for the user.
+	if err = u.grantPendingPermissions(ctx, id, info); err != nil {
+		return nil, err
+	}
+
 	return &types.User{
 		ID:          id,
 		Username:    info.Username,
@@ -279,6 +285,36 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		UpdatedAt:   updatedAt,
 		SiteAdmin:   siteAdmin,
 	}, nil
+}
+
+// grantPendingPermissions attempts to grant pending permissions by either username or email according
+// to the site configuration.
+func (*users) grantPendingPermissions(ctx context.Context, userID int32, info NewUser) error {
+	cfg := conf.Get().SiteConfiguration
+	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
+		return nil
+	}
+
+	args := &GrantPendingPermissionsArgs{
+		UserID: userID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	}
+	switch cfg.PermissionsUserMapping.BindID {
+	case "email":
+		if info.Email == "" || !info.EmailIsVerified {
+			return nil
+		}
+		args.BindID = info.Email
+
+	case "username":
+		args.BindID = info.Username
+
+	default:
+		return fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.PermissionsUserMapping.BindID)
+	}
+
+	return Authz.GrantPendingPermissions(ctx, args)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value

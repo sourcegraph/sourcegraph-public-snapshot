@@ -26,6 +26,7 @@ import (
 
 func initAuthz() {
 	db.ExternalServices = edb.NewExternalServicesStore()
+	db.Authz = edb.NewAuthzStore()
 
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
