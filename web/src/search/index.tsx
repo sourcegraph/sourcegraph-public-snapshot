@@ -72,7 +72,7 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
     return patternType
 }
 
-export function parseSearchURLCaseSensitive(query: string): boolean {
+export function searchURLIsCaseSensitive(query: string): boolean {
     const searchParams = new URLSearchParams(query)
     const caseSensitive = searchParams.get('case')
     return caseSensitive === 'yes'

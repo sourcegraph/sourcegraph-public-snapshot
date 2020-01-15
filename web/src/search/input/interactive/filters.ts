@@ -3,7 +3,8 @@ import { Suggestion } from '../Suggestion'
 import { assign } from 'lodash/fp'
 import { FilterTypes } from '../../../../../shared/src/search/interactive/util'
 
-export type finiteFilterTypes = FilterTypes.archived | FilterTypes.fork
+/** FilterTypes which have a finite number of valid options. */
+export type FiniteFilterTypes = FilterTypes.archived | FilterTypes.fork
 
 export function isTextFilter(filter: FilterTypes): boolean {
     const validTextFilters = [
@@ -21,7 +22,7 @@ export function isTextFilter(filter: FilterTypes): boolean {
 }
 
 export const finiteFilters: Record<
-    finiteFilterTypes,
+    FiniteFilterTypes,
     {
         default: string
         values: Suggestion[]
@@ -45,12 +46,12 @@ export const finiteFilters: Record<
     },
 }
 
-export const isFiniteFilter = (filter: FilterTypes): filter is finiteFilterTypes =>
+export const isFiniteFilter = (filter: FilterTypes): filter is FiniteFilterTypes =>
     ['archived', 'fork'].includes(filter)
 
 export const isolatedFuzzySearchFiltersFilterType = [FilterTypes.repo, FilterTypes.repogroup]
 
-export const FilterTypesToProseNames = {
+export const FilterTypesToProseNames: Record<FilterTypes, string> = {
     repo: 'Repository',
     repogroup: 'Repository group',
     repohasfile: 'Repo has file',

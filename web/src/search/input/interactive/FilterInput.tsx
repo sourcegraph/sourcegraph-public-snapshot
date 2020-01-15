@@ -228,9 +228,12 @@ export class FilterInput extends React.Component<Props, State> {
         if (isFiniteFilter(this.props.filterType)) {
             this.subscriptions.add(
                 this.setFiniteFilterDefault.subscribe(() => {
-                    if (isFiniteFilter(this.props.filterType) && this.state.inputValue === '') {
-                        this.setState({ inputValue: finiteFilters[this.props.filterType].default })
-                    }
+                    this.setState(({ inputValue }) => ({
+                        inputValue:
+                            isFiniteFilter(this.props.filterType) && inputValue === ''
+                                ? finiteFilters[this.props.filterType].default
+                                : inputValue,
+                    }))
                 })
             )
         }

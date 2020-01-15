@@ -67,7 +67,8 @@ export class CaseSensitivityToggle extends React.Component<Props> {
         const isSearchHomepage =
             this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search, true)
 
-        const shouldSubmitSearchOnHomepage = this.props.navbarSearchQuery !== '' || (this.props.filtersInQuery && !isEmpty(this.props.filtersInQuery))
+        const shouldSubmitSearchOnHomepage =
+            this.props.navbarSearchQuery !== '' || (this.props.filtersInQuery && !isEmpty(this.props.filtersInQuery))
         const newCaseSensitivity = !this.props.caseSensitive
         this.props.setCaseSensitivity(newCaseSensitivity)
 
@@ -76,7 +77,7 @@ export class CaseSensitivityToggle extends React.Component<Props> {
                 // We only want the toggle to submit searches if the query input it is in
                 // has global behavior (i.e. query inputs on the main search page or global navbar). Non-global inputs
                 // don't have the canonical query, and are dependent on the page it's on for context, which makes the
-                // submit on-toggle behavior undesirable.
+                // submit-on-toggle behavior undesirable.
                 //
                 // Also, we only want to submit a search when toggling on the search homepage when the query is non-empty.
                 submitSearch(

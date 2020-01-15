@@ -7,20 +7,9 @@ interface Props {
     onAddNewFilter: (filterType: FilterTypes) => void
 }
 
-interface State {
-    value: string
-}
-
-export class AddFilterDropdown extends React.Component<Props, State> {
-    constructor(props: Props) {
-        super(props)
-
-        this.state = { value: 'default' }
-    }
-
+export class AddFilterDropdown extends React.PureComponent<Props> {
     private onAddNewFilter = (e: React.ChangeEvent<HTMLSelectElement>): void => {
         this.props.onAddNewFilter(e.target.value as FilterTypes)
-        this.setState({ value: 'default' })
     }
 
     public render(): JSX.Element | null {
@@ -28,7 +17,7 @@ export class AddFilterDropdown extends React.Component<Props, State> {
             <select
                 className="form-control add-filter-dropdown e2e-filter-dropdown"
                 onChange={this.onAddNewFilter}
-                value={this.state.value}
+                value="default"
             >
                 <option value="default" disabled={true}>
                     Add filter…

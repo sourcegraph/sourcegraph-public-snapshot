@@ -1,5 +1,6 @@
 import CheckIcon from 'mdi-react/CheckIcon'
 import React from 'react'
+import classNames from 'classnames'
 
 /**
  * A checkmark button for the filter input. It must be wrapped in a form whose onSubmit
@@ -8,7 +9,7 @@ import React from 'react'
 export const CheckButton: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className="search-button d-flex">
         <button
-            className={`btn btn-primary ${className} e2e-confirm-filter-button`}
+            className={classNames('btn', 'btn-primary', className, 'e2e-confirm-filter-button')}
             type="submit"
             aria-label="Confirm filter"
             data-tooltip="Confirm filter"
