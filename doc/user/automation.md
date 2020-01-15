@@ -52,9 +52,9 @@ We are actively working on campaign support for regex search and replace. Let us
 1. Click `Create new campaign`.
 1. Enter the title and an optional description for your campaign.
 1. Select the type of campaign to run. For example, enter patterns to match and replace code for `Comby` using the JSON editor.
-1. To generate a preview campaign, click `Preview changes` and wait for all repositories to be processed. When the preview completes, you'll see a set of diffs and the changesets that will go into a Pull Request.
+1. To generate a preview campaign, click `Preview changes` and wait for all repositories to be processed. When the preview is ready, you'll see a list of diffs.
 1. Feel free to change the search and replace patterns to create a new preview.
-1. Once the preview looks good, click `create`. **This will create pull requests on your code host**. Once created, changeset progress (e.g., `open`, `merged`) can be tracked in the campaign view.
+1. Once the preview looks good, click `create`. **This will create a pull request of the changset on your codehost**. Once created, changeset progress (e.g., `open`, `merged`) can be tracked in the campaign view.
 
 ---
 
