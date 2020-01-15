@@ -1431,18 +1431,19 @@ describe('e2e test suite', () => {
             await driver.resetUserSettings()
         })
 
-        // This is a substring that appears in the sourcegraph/go-vcs repository, which is present
+        // This is a substring that appears in the sourcegraph/go-diff repository, which is present
         // in the external service added for the e2e test. It is OK if it starts to appear in other
         // repositories (such as sourcegraph/sourcegraph now that it's mentioned here); the test
         // just checks that it is found in at least 1 Go file.
-        const uniqueString = '055e4ae3a'
+        const uniqueString = 'Incomplete-'
+        const uniqueStringPostfix = 'Lines'
 
         test('button on search results page', async () => {
             await driver.page.goto(`${sourcegraphBaseUrl}/search?q=${uniqueString}`)
             await driver.page.waitForSelector(`a[href="/stats?q=${uniqueString}"]`)
         })
 
-        test('page', async () => {
+        test.only('page', async () => {
             await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=${uniqueString}`)
 
             // Ensure the global navbar hides the search input (to avoid confusion with the one on
@@ -1465,8 +1466,8 @@ describe('e2e test suite', () => {
             await percySnapshot(driver.page, 'Search stats')
 
             // Update the query and rerun the computation.
-            await driver.page.type('.e2e-stats-query', 'e') // the uniqueString is followed by an e in go-vcs
-            const wantQuery = `${uniqueString}e`
+            await driver.page.type('.e2e-stats-query', uniqueStringPostfix) // the uniqueString is followed by 'Incomplete-Lines' in go-diff
+            const wantQuery = `${uniqueString}${uniqueStringPostfix}`
             assert.strictEqual(await queryInputValue(), wantQuery)
             await driver.page.click('.e2e-stats-query-update')
             await driver.page.waitForSelector(`a[href*="${wantQuery}+lang:go"]`)
