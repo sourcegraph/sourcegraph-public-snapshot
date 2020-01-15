@@ -72,8 +72,8 @@ export class CaseSensitivityToggle extends React.Component<Props> {
         const newCaseSensitivity = !this.props.caseSensitive
         this.props.setCaseSensitivity(newCaseSensitivity)
 
-        if (this.props.hasGlobalQueryBehavior) {
-            if ((isSearchHomepage && shouldSubmitSearchOnHomepage) || !isSearchHomepage) {
+        const shouldSubmitSearch = this.props.hasGlobalQueryBehavior && ((isSearchHomepage && shouldSubmitSearchOnHomepage) || !isSearchHomepage)
+        if (shouldSubmitSearch) {
                 // We only want the toggle to submit searches if the query input it is in
                 // has global behavior (i.e. query inputs on the main search page or global navbar). Non-global inputs
                 // don't have the canonical query, and are dependent on the page it's on for context, which makes the
@@ -89,7 +89,6 @@ export class CaseSensitivityToggle extends React.Component<Props> {
                     undefined,
                     this.props.filtersInQuery
                 )
-            }
         }
     }
 }

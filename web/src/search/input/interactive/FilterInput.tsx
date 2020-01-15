@@ -35,6 +35,7 @@ import { searchFilterSuggestions } from '../../searchFilterSuggestions'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CheckButton } from './CheckButton'
 import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypesToProseNames } from './filters'
+import classNames from 'classnames'
 
 interface Props {
     /**
@@ -360,14 +361,15 @@ export class FilterInput extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         const isText = isTextFilter(this.props.filterType)
-
+        const isEditableAndText = this.props.editable && isText
         return (
             <div
-                className={`filter-input ${
-                    this.props.editable && isText
-                        ? `${this.props.isHomepage ? 'filter-input--active-homepage' : 'filter-input--active'}`
-                        : ''
-                } e2e-filter-input-${this.props.mapKey}`}
+                className={`${classNames(
+                    'filter-input',
+                    `e2e-filter-input-${this.props.mapKey}`,
+                    { 'filter-input--active-homepage': isEditableAndText && this.props.isHomepage },
+                    { 'filter-input--active': isEditableAndText && !this.props.isHomepage }
+                )}`}
                 onBlur={this.onInputBlur}
                 tabIndex={0}
             >

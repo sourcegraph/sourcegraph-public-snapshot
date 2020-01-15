@@ -49,6 +49,12 @@ export const finiteFilters: Record<
 export const isFiniteFilter = (filter: FilterTypes): filter is FiniteFilterTypes =>
     ['archived', 'fork'].includes(filter)
 
+/**
+ * Some filter types should have their suggestions searched without influence
+ * from the rest of the query, as they will then influence the scope of other filters.
+ *
+ * Same as {@link isolatedFuzzySearchFilters} but using FilterTypes rather than SuggestionTypes.
+ */
 export const isolatedFuzzySearchFiltersFilterType = [FilterTypes.repo, FilterTypes.repogroup]
 
 export const FilterTypesToProseNames: Record<FilterTypes, string> = {

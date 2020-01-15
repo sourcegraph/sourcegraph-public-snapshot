@@ -59,18 +59,17 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
         const searchParams = new URLSearchParams(props.location.search)
         const filtersInQuery: FiltersToTypeAndValue = {}
-        filterTypeKeys
-            .filter(key => key !== FilterTypes.case)
-            .map(filter => {
-                const itemsOfType = searchParams.getAll(filter)
-                itemsOfType.map(item => {
-                    filtersInQuery[isFiniteFilter(filter) ? filter : uniqueId(filter)] = {
-                        type: filter,
-                        value: item,
-                        editable: false,
-                    }
-                })
+
+        for (const filter of filterTypeKeys.filter(key => key !== FilterTypes.case)) {
+            const itemsOfType = searchParams.getAll(filter)
+            itemsOfType.map(item => {
+                filtersInQuery[isFiniteFilter(filter) ? filter : uniqueId(filter)] = {
+                    type: filter,
+                    value: item,
+                    editable: false,
+                }
             })
+        }
 
         this.props.onFiltersInQueryChange(filtersInQuery)
     }
