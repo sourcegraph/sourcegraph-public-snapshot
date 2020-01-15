@@ -231,7 +231,7 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
-		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -245,7 +245,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Try to create again, check that it's the same one
-		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID, false)
 		if err != nil {
 			t.Fatal(err)
 		}

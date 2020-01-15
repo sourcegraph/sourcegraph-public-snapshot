@@ -638,7 +638,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) 
 // CreateChangesetJob creates a ChangesetJob for the CampaignJob with the given
 // ID. The CampaignJob has to belong to a CampaignPlan that was attached to a
 // Campaign.
-func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64) (err error) {
+func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64, publish bool) (err error) {
 	traceTitle := fmt.Sprintf("campaignJob: %d", id)
 	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForCampaignJob", traceTitle)
 	defer func() {
@@ -669,11 +669,18 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64
 	if existing != nil && err == nil {
 		return nil
 	}
+	if existing != nil && publish && !existing.PublishedAt.IsZero() {
+		// Already published
+		return nil
+	}
 	if err != nil && err != ErrNoResults {
 		return err
 	}
 
 	changesetJob := &a8n.ChangesetJob{CampaignID: campaign.ID, CampaignJobID: job.ID}
+	if publish {
+		changesetJob.PublishedAt = s.clock()
+	}
 	err = tx.CreateChangesetJob(ctx, changesetJob)
 	if err != nil {
 		return err
