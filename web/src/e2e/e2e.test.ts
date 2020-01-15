@@ -1562,7 +1562,7 @@ describe('e2e test suite', () => {
             expect(generatedChangesetCount).toEqual(changesetCount)
             await percySnapshot(driver.page, snapshotName + ' changesets tab')
         }
-        test.skip('Create campaign preview for comby campaign type', async () => {
+        test('Create campaign preview for comby campaign type', async () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
                     matchTemplate: 'file',
@@ -1575,7 +1575,7 @@ describe('e2e test suite', () => {
                 campaignType: 'comby',
             })
         })
-        test.skip('Create campaign preview for credentials campaign type', async () => {
+        test('Create campaign preview for credentials campaign type', async () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
                     matchers: [{ type: 'npm' }],
