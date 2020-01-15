@@ -1346,7 +1346,8 @@ type Query {
         after: String
     ): RepositoryConnection!
 
-    # Returns a list of usernames or emails which can be used to query authorizedUserRepositories.
+    # Returns a list of usernames or emails that have associated pending permissions.
+    # The returned list can be used to query authorizedUserRepositories for pending permissions.
     usersWithPendingPermissions: [String!]!
 }
 
@@ -1901,6 +1902,8 @@ type Repository implements Node & GenericSearchResultInterface {
     ): LSIFUploadConnection!
 
     # A list of authorized users to access this repository with the given permission.
+    # This API currently only returns permissions from the Sourcegraph provider, i.e.
+    # "permissions.userMapping" in site configuration.
     authorizedUsers(
         # Permission that the user has on this repository.
         perm: RepositoryPermission = READ
