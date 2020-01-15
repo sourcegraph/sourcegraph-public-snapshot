@@ -3,7 +3,7 @@ import combyJsonSchema from '../../../../../../schema/campaign-types/comby.schem
 import credentialsJsonSchema from '../../../../../../schema/campaign-types/credentials.schema.json'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
-import { CampaignType } from '../backend.js'
+import { CampaignType } from '../backend'
 import { MANUAL_CAMPAIGN_TYPE, campaignTypeLabels } from '../presentation'
 
 /**
