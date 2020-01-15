@@ -152,7 +152,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		p := &iauthz.UserPermissions{
 			UserID:   user.ID,
 			Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-			Type:     iauthz.PermRepos,
+			Type:     authz.PermRepos,
 			Provider: iauthz.ProviderSourcegraph,
 		}
 		err = r.store.LoadUserPermissions(ctx, p)
@@ -161,7 +161,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		p := &iauthz.UserPendingPermissions{
 			BindID: bindID,
 			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-			Type:   iauthz.PermRepos,
+			Type:   authz.PermRepos,
 		}
 		err = r.store.LoadUserPendingPermissions(ctx, p)
 		ids = p.IDs
