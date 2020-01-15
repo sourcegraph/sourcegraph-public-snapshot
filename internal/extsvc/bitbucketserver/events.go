@@ -45,7 +45,7 @@ func (c *Client) UpsertWebhook(ctx context.Context, w Webhook) error {
 		return err
 	}
 	u := "rest/sourcegraph-admin/1.0/webhook"
-	req, err := http.NewRequest("PUT", u, bytes.NewReader(raw))
+	req, err := http.NewRequest("POST", u, bytes.NewReader(raw))
 	if err != nil {
 		return err
 	}

@@ -420,7 +420,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 		args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
 		es, err := h.Repos.ListExternalServices(context.Background(), args)
 		if err != nil {
-			log15.Error("Upserting BBS Webhook failed [Listing BBS extsvc]", err.Error())
+			log15.Error("Upserting BBS Webhook failed [Listing BBS extsvc]", "err", err)
 			continue
 		}
 
@@ -433,7 +433,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 
 			client, err := bbs.NewClientWithConfig(con)
 			if err != nil {
-				log15.Error("Upserting BBS Webhook [Creating Client]", err.Error())
+				log15.Error("Upserting BBS Webhook [Creating Client]", "err", err)
 				continue
 			}
 
@@ -448,7 +448,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 
 			err = client.UpsertWebhook(context.Background(), wh)
 			if err != nil {
-				log15.Error("Upserting BBS Webhook failed [HTTP Request]", err.Error())
+				log15.Error("Upserting BBS Webhook failed [HTTP Request]", "err", err)
 			}
 		}
 
