@@ -48,7 +48,10 @@ export class RegexpToggle extends React.Component<RegexpToggleProps> {
             <div
                 ref={this.toggleCheckbox}
                 onClick={this.toggle}
-                className={classNames('btn btn-icon icon-inline query-input2__toggle e2e-regexp-toggle', this.props.className)}
+                className={classNames(
+                    'btn btn-icon icon-inline query-input2__toggle e2e-regexp-toggle',
+                    this.props.className
+                )}
                 role="checkbox"
                 aria-checked={isRegexp}
                 aria-label="Regular expression toggle"

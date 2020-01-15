@@ -245,6 +245,8 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             )
         )
         // Trigger a layout of the Monaco editor when its container gets resized.
+        // The Monaco editor doesn't auto-resize with its container:
+        // https://github.com/microsoft/monaco-editor/issues/28
         if (this.containerRef) {
             const resizeObserver = new ResizeObserver(() => {
                 editor.layout()
