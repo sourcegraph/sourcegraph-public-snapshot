@@ -716,12 +716,12 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			}
 
 			// Insert one of the previously soft-deleted repos. Ensure ID on upserted repo is set and we get back the same ID.
-			want := all[0]
+			want := repos.Repos{all[0]}
 			upsert := want.Clone().With(repos.Opt.RepoID(0))
-			if err = tx.UpsertRepos(ctx, upsert); err != nil {
+			if err = tx.UpsertRepos(ctx, upsert...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
-			if upsert.ID == 0 {
+			if upsert[0].ID == 0 {
 				t.Fatalf("Repo ID is zero")
 			}
 
