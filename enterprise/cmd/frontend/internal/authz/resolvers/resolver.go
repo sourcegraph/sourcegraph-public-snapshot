@@ -169,12 +169,68 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	if err != nil && err != iauthz.ErrNotFound {
 		return nil, err
 	}
-	if ids == nil {
+	// If no row is found, we return an empty list to the consumer.
+	if err == iauthz.ErrNotFound {
 		ids = roaring.NewBitmap()
 	}
 
 	return &repositoryConnectionResolver{
 		ids:   ids,
+		first: args.First,
+		after: args.After,
+	}, nil
+}
+
+func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	cfg := conf.Get().SiteConfiguration
+	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
+		return nil, errors.New("permissions user mapping is not enabled")
+	}
+
+	return r.store.ListPendingUsers(ctx)
+}
+
+func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.RepoAuthorizedUserArgs) (graphqlbackend.UserConnectionResolver, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	cfg := conf.Get().SiteConfiguration
+	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
+		return nil, errors.New("permissions user mapping is not enabled")
+	}
+
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.RepositoryID)
+	if err != nil {
+		return nil, err
+	}
+	// Make sure the repo ID is valid.
+	if _, err = db.Repos.Get(ctx, repoID); err != nil {
+		return nil, err
+	}
+
+	p := &iauthz.RepoPermissions{
+		RepoID:   int32(repoID),
+		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
+		Provider: iauthz.ProviderSourcegraph,
+	}
+	err = r.store.LoadRepoPermissions(ctx, p)
+	if err != nil && err != iauthz.ErrNotFound {
+		return nil, err
+	}
+	// If no row is found, we return an empty list to the consumer.
+	if err == iauthz.ErrNotFound {
+		p.UserIDs = roaring.NewBitmap()
+	}
+
+	return &userConnectionResolver{
+		ids:   p.UserIDs,
 		first: args.First,
 		after: args.After,
 	}, nil
