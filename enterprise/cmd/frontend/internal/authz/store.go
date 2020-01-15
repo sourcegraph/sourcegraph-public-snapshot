@@ -224,7 +224,7 @@ func loadUserPermissionsBatchQuery(
 	userIDs []uint32,
 	perm authz.Perms,
 	typ authz.PermType,
-	provider ProviderType,
+	provider authz.ProviderType,
 	lock string,
 ) *sqlf.Query {
 	const format = `
@@ -723,7 +723,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	// Batch query all repository permissions object IDs in one go.
 	// NOTE: It is critical to always acquire row-level locks in the same order as SetRepoPermissions
 	// (i.e. repo -> user) to prevent deadlocks.
-	q := loadRepoPermissionsBatchQuery(ids, p.Perm, ProviderSourcegraph, "FOR UPDATE")
+	q := loadRepoPermissionsBatchQuery(ids, p.Perm, authz.ProviderSourcegraph, "FOR UPDATE")
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load repo permissions")
@@ -743,7 +743,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 			RepoID:    repoID,
 			Perm:      p.Perm,
 			UserIDs:   oldIDs,
-			Provider:  ProviderSourcegraph,
+			Provider:  authz.ProviderSourcegraph,
 			UpdatedAt: updatedAt,
 		})
 	}
@@ -759,7 +759,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 		Perm:      p.Perm,
 		Type:      p.Type,
 		IDs:       p.IDs,
-		Provider:  ProviderSourcegraph,
+		Provider:  authz.ProviderSourcegraph,
 		UpdatedAt: txs.clock(),
 	}
 	if q, err = insertUserPermissionsQuery(up); err != nil {
@@ -808,7 +808,7 @@ VALUES
 	), nil
 }
 
-func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, provider ProviderType, lock string) *sqlf.Query {
+func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, provider authz.ProviderType, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadRepoPermissionsBatchQuery
 SELECT repo_id, user_ids

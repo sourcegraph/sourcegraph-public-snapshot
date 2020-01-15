@@ -70,7 +70,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		RepoID:   int32(repoID),
 		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
 		UserIDs:  roaring.NewBitmap(),
-		Provider: iauthz.ProviderSourcegraph,
+		Provider: authz.ProviderSourcegraph,
 	}
 	switch cfg.PermissionsUserMapping.BindID {
 	case "email":
@@ -153,7 +153,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 			UserID:   user.ID,
 			Perm:     authz.Read, // Note: We currently only support read for repository permissions.
 			Type:     authz.PermRepos,
-			Provider: iauthz.ProviderSourcegraph,
+			Provider: authz.ProviderSourcegraph,
 		}
 		err = r.store.LoadUserPermissions(ctx, p)
 		ids = p.IDs
@@ -218,7 +218,7 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	p := &iauthz.RepoPermissions{
 		RepoID:   int32(repoID),
 		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-		Provider: iauthz.ProviderSourcegraph,
+		Provider: authz.ProviderSourcegraph,
 	}
 	err = r.store.LoadRepoPermissions(ctx, p)
 	if err != nil && err != iauthz.ErrNotFound {

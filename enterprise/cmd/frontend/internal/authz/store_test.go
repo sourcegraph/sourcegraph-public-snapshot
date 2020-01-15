@@ -69,7 +69,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 				RepoID:   1,
 				Perm:     authz.Read,
 				UserIDs:  bitmap(2),
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -79,7 +79,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 				UserID:   1,
 				Perm:     authz.Read,
 				Type:     authz.PermRepos,
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			err := s.LoadUserPermissions(context.Background(), up)
 			equal(t, "err", err, ErrNotFound)
@@ -94,7 +94,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 				RepoID:   1,
 				Perm:     authz.Read,
 				UserIDs:  bitmap(2),
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -104,7 +104,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 				UserID:   2,
 				Perm:     authz.Read,
 				Type:     authz.PermRepos,
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -121,7 +121,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 				RepoID:   1,
 				Perm:     authz.Read,
 				UserIDs:  bitmap(1, 2),
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -131,7 +131,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 				RepoID:   1,
 				Perm:     authz.Read,
 				UserIDs:  bitmap(2, 3),
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -141,7 +141,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 				UserID:   1,
 				Perm:     authz.Read,
 				Type:     authz.PermRepos,
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up1); err != nil {
 				t.Fatal(err)
@@ -152,7 +152,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 				UserID:   2,
 				Perm:     authz.Read,
 				Type:     authz.PermRepos,
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up2); err != nil {
 				t.Fatal(err)
@@ -164,7 +164,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 				UserID:   3,
 				Perm:     authz.Read,
 				Type:     authz.PermRepos,
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up3); err != nil {
 				t.Fatal(err)
@@ -185,7 +185,7 @@ func testStoreLoadRepoPermissions(db *sql.DB) func(*testing.T) {
 				RepoID:   1,
 				Perm:     authz.Read,
 				UserIDs:  bitmap(2),
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -194,7 +194,7 @@ func testStoreLoadRepoPermissions(db *sql.DB) func(*testing.T) {
 			rp = &RepoPermissions{
 				RepoID:   2,
 				Perm:     authz.Read,
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			err := s.LoadRepoPermissions(context.Background(), rp)
 			equal(t, "err", err, ErrNotFound)
@@ -209,7 +209,7 @@ func testStoreLoadRepoPermissions(db *sql.DB) func(*testing.T) {
 				RepoID:   1,
 				Perm:     authz.Read,
 				UserIDs:  bitmap(2),
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -218,7 +218,7 @@ func testStoreLoadRepoPermissions(db *sql.DB) func(*testing.T) {
 			rp = &RepoPermissions{
 				RepoID:   1,
 				Perm:     authz.Read,
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}
 			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -284,7 +284,7 @@ func testStoreSetRepoPermissions(db *sql.DB) func(*testing.T) {
 				{
 					RepoID:   1,
 					Perm:     authz.Read,
-					Provider: ProviderSourcegraph,
+					Provider: authz.ProviderSourcegraph,
 				},
 			},
 		},
@@ -295,19 +295,19 @@ func testStoreSetRepoPermissions(db *sql.DB) func(*testing.T) {
 					RepoID:   1,
 					Perm:     authz.Read,
 					UserIDs:  bitmap(1),
-					Provider: ProviderSourcegraph,
+					Provider: authz.ProviderSourcegraph,
 				},
 				{
 					RepoID:   2,
 					Perm:     authz.Read,
 					UserIDs:  bitmap(1, 2),
-					Provider: ProviderSourcegraph,
+					Provider: authz.ProviderSourcegraph,
 				},
 				{
 					RepoID:   3,
 					Perm:     authz.Read,
 					UserIDs:  bitmap(3, 4),
-					Provider: ProviderSourcegraph,
+					Provider: authz.ProviderSourcegraph,
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -329,25 +329,25 @@ func testStoreSetRepoPermissions(db *sql.DB) func(*testing.T) {
 					RepoID:   1,
 					Perm:     authz.Read,
 					UserIDs:  bitmap(1),
-					Provider: ProviderSourcegraph,
+					Provider: authz.ProviderSourcegraph,
 				},
 				{
 					RepoID:   1,
 					Perm:     authz.Read,
 					UserIDs:  bitmap(2, 3),
-					Provider: ProviderSourcegraph,
+					Provider: authz.ProviderSourcegraph,
 				},
 				{
 					RepoID:   2,
 					Perm:     authz.Read,
 					UserIDs:  bitmap(1, 2),
-					Provider: ProviderSourcegraph,
+					Provider: authz.ProviderSourcegraph,
 				},
 				{
 					RepoID:   2,
 					Perm:     authz.Read,
 					UserIDs:  bitmap(3, 4),
-					Provider: ProviderSourcegraph,
+					Provider: authz.ProviderSourcegraph,
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -368,13 +368,13 @@ func testStoreSetRepoPermissions(db *sql.DB) func(*testing.T) {
 					RepoID:   1,
 					Perm:     authz.Read,
 					UserIDs:  bitmap(1, 2, 3),
-					Provider: ProviderSourcegraph,
+					Provider: authz.ProviderSourcegraph,
 				},
 				{
 					RepoID:   1,
 					Perm:     authz.Read,
 					UserIDs:  bitmap(),
-					Provider: ProviderSourcegraph,
+					Provider: authz.ProviderSourcegraph,
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -944,13 +944,13 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 							RepoID:   1,
 							Perm:     authz.Read,
 							UserIDs:  bitmap(1),
-							Provider: ProviderSourcegraph,
+							Provider: authz.ProviderSourcegraph,
 						},
 						{
 							RepoID:   2,
 							Perm:     authz.Read,
 							UserIDs:  bitmap(1, 2),
-							Provider: ProviderSourcegraph,
+							Provider: authz.ProviderSourcegraph,
 						},
 					},
 					pendings: []pending{
@@ -1005,13 +1005,13 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 							RepoID:   1,
 							Perm:     authz.Read,
 							UserIDs:  bitmap(1),
-							Provider: ProviderSourcegraph,
+							Provider: authz.ProviderSourcegraph,
 						},
 						{
 							RepoID:   2,
 							Perm:     authz.Read,
 							UserIDs:  bitmap(1, 2),
-							Provider: ProviderSourcegraph,
+							Provider: authz.ProviderSourcegraph,
 						},
 					},
 					pendings: []pending{
@@ -1122,7 +1122,7 @@ func testStoreDatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 				RepoID:   1,
 				Perm:     authz.Read,
 				UserIDs:  bitmap(1),
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}); err != nil {
 				t.Fatal(err)
 			}
@@ -1131,7 +1131,7 @@ func testStoreDatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 			if err := s.SetRepoPendingPermissions(ctx, []string{"alice"}, &RepoPermissions{
 				RepoID:   1,
 				Perm:     authz.Read,
-				Provider: ProviderSourcegraph,
+				Provider: authz.ProviderSourcegraph,
 			}); err != nil {
 				t.Fatal(err)
 			}

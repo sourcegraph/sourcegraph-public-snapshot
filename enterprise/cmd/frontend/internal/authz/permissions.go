@@ -8,16 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-)
-
-// ProviderType is the type of provider implementation for the permissions.
-type ProviderType string
-
-// The list of available provider types.
-const (
-	ProviderBitbucketServer ProviderType = bitbucketserver.ServiceType
-	ProviderSourcegraph     ProviderType = "sourcegraph"
 )
 
 // UserPermissions are the permissions of a user to perform an action
@@ -28,7 +18,7 @@ type UserPermissions struct {
 	Perm      authz.Perms
 	Type      authz.PermType
 	IDs       *roaring.Bitmap
-	Provider  ProviderType
+	Provider  authz.ProviderType
 	UpdatedAt time.Time
 }
 
@@ -78,7 +68,7 @@ type RepoPermissions struct {
 	RepoID    int32
 	Perm      authz.Perms
 	UserIDs   *roaring.Bitmap
-	Provider  ProviderType
+	Provider  authz.ProviderType
 	UpdatedAt time.Time
 }
 
