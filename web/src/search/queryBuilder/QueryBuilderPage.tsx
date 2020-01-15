@@ -29,7 +29,7 @@ export const QueryBuilderPage: React.FunctionComponent<Props> = ({ patternType }
                 />
                 <Link
                     className={`btn btn-primary ${query === '' ? 'disabled' : ''}`}
-                    to={`/search?${buildSearchURLQuery(query, patternType)}`}
+                    to={`/search?${buildSearchURLQuery(query, patternType, false)}`}
                 >
                     Search
                 </Link>

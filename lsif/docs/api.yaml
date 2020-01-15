@@ -41,7 +41,7 @@ paths:
             type: string
         - name: root
           in: query
-          description: The path to the directory associated with the dump, relative to the repository root.
+          description: The path to the directory associated with the upload, relative to the repository root.
           example: cmd/project1
           required: false
           schema:
@@ -73,7 +73,7 @@ paths:
                 $ref: '#/components/schemas/EnqueueResponse'
   /exists:
     get:
-      description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return the LSIF dump for which definitions, references, and hover queries will use.
+      description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return the LSIF upload for which definitions, references, and hover queries will use.
       tags:
         - LSIF
       parameters:
@@ -171,9 +171,9 @@ paths:
           required: true
           schema:
             type: number
-        - name: dumpId
+        - name: uploadId
           in: query
-          description: The identifier of the dump to load. If not supplied, the dump nearest to the given commit will be loaded.
+          description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
           required: false
           schema:
             type: number
@@ -183,7 +183,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Locations2'
+                $ref: '#/components/schemas/Locations'
         '404':
           description: Not found
   /references:
@@ -223,15 +223,15 @@ paths:
           required: true
           schema:
             type: number
-        - name: dumpId
+        - name: uploadId
           in: query
-          description: The identifier of the dump to load. If not supplied, the dump nearest to the given commit will be loaded.
+          description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
           required: false
           schema:
             type: number
         - name: limit
           in: query
-          description: The maximum number of remote dumps to search for remote references per page. This parameter is only read on references request.
+          description: The maximum number of remote uploads to search for remote references per page. This parameter is only read on references request.
           required: false
           schema:
             type: number
@@ -248,7 +248,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Locations2'
+                $ref: '#/components/schemas/Locations'
           headers:
             Link:
               description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
@@ -293,9 +293,9 @@ paths:
           required: true
           schema:
             type: number
-        - name: dumpId
+        - name: uploadId
           in: query
-          description: The identifier of the dump to load. If not supplied, the dump nearest to the given commit will be loaded.
+          description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
           required: false
           schema:
             type: number
@@ -305,56 +305,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Hover2'
+                $ref: '#/components/schemas/Hover'
         '404':
           description: Not found
-  /request:
-    post:
-      description: Answer a definitions, references, or hover LSP request. This endpoint will use a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
-      tags:
-        - LSIF
-      parameters:
-        - name: repository
-          in: query
-          description: The repository name.
-          required: true
-          schema:
-            type: string
-        - name: commit
-          in: query
-          description: The 40-character commit hash.
-          required: true
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: The maximum number of remote dumps to search for remote references per page. This parameter is only read on references request.
-          required: false
-          schema:
-            type: number
-            default: 10
-        - name: cursor
-          in: query
-          description: The end cursor given in the response of a previous page.
-          required: false
-          schema:
-            type: string
-      requestBody:
-        description: The LSP request, including the type of data being requested and the source location.
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LSPRequest'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                anyOf:
-                  - $ref: '#/components/schemas/Locations'
-                  - $ref: '#/components/schemas/Hover'
   /uploads/{repository}:
     get:
       description: Get LSIF uploads by state.
@@ -386,7 +339,7 @@ paths:
               - queued
         - name: visibleAtTip
           in: query
-          description: If true, only show dumps visible at tip.
+          description: If true, only show uploads visible at tip.
           required: false
           schema:
             type: boolean
@@ -485,19 +438,6 @@ components:
       type: object
       description: A position in a file of a code base.
       properties:
-        uri:
-          type: string
-          description: The root-relative path to the file.
-        range:
-          $ref: '#/components/schemas/Range'
-      required:
-        - uri
-        - range
-      additionalProperties: false
-    Location2:
-      type: object
-      description: A position in a file of a code base.
-      properties:
         repository:
           type: string
           description: The repository in which the location occurs.
@@ -515,37 +455,12 @@ components:
         - path
         - range
       additionalProperties: false
-    LSPRequest:
-      type: object
-      description: A payload indicating the type of requested LSP data.
-      properties:
-        method:
-          type: string
-          description: The request type.
-          enum:
-            - definitions
-            - references
-            - hover
-        path:
-          type: string
-          description: The root-relative path to the file containing the hover position.
-        position:
-          $ref: '#/components/schemas/Position'
-      required:
-        - path
-        - position
-      additionalProperties: false
     Locations:
       type: array
       description: A list of definition or reference locations.
       items:
         $ref: '#/components/schemas/Location'
-    Locations2:
-      type: array
-      description: A list of definition or reference locations.
-      items:
-        $ref: '#/components/schemas/Location2'
-    Hover2:
+    Hover:
       type: object
       description: The text associated with a position in a source file.
       properties:
@@ -554,31 +469,6 @@ components:
           description: The raw hover text.
       required:
         - text
-      additionalProperties: false
-    Hover:
-      type: object
-      description: The text associated with a position in a source file.
-      properties:
-        contents:
-          type: object
-          description: The hover text wrapper.
-          properties:
-            kind:
-              type: string
-              description: An indicator for the format of the value property. Currently only markdown is supported.
-              enum:
-                - markdown
-            value:
-              type: string
-              description: The raw markdown text.
-          required:
-            - kind
-            - value
-          additionalProperties: false
-        range:
-          $ref: '#/components/schemas/Range'
-      required:
-        - contents
       additionalProperties: false
     EnqueueResponse:
       type: object
@@ -640,7 +530,7 @@ components:
           description: The stacktrace of the upload error.
         uploadedAt:
           type: string
-          description: An ISO 8601-formatted time that the dump was uploaded.
+          description: An ISO 8601-formatted time that the upload was uploaded.
         startedAt:
           type: string
           description: An ISO 8601-formatted time that the conversion started.
@@ -651,7 +541,7 @@ components:
           nullable: true
         visibleAtTip:
           type: boolean
-          description: Whether or not this dump can provide global reference code intelligence.
+          description: Whether or not this upload can provide global reference code intelligence.
       required:
         - id
         - repository

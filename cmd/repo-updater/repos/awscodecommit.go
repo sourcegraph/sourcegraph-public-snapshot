@@ -54,7 +54,7 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 	}
 
 	if cf == nil {
-		cf = httpcli.NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	cli, err := cf.Doer(func(c *http.Client) error {
@@ -243,3 +243,9 @@ func (t stubBadHTTPRedirectTransport) RoundTrip(r *http.Request) (*http.Response
 
 	return resp, err
 }
+
+// UnwrappableTransport signals that this transport can't be wrapped. In
+// particular this means we won't respect global external
+// settings. https://github.com/sourcegraph/sourcegraph/issues/71 and
+// https://github.com/sourcegraph/sourcegraph/issues/7738
+func (stubBadHTTPRedirectTransport) UnwrappableTransport() {}
