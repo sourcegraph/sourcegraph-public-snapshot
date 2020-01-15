@@ -413,13 +413,14 @@ func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewComme
 	return &comment
 }
 
-// EnsureCreation ensures the creation of the BitbucketServer automation webhook.
-func (h *BitbucketServerWebhook) EnsureCreation() {
+// Upsert ensures the creation of the BitbucketServer automation webhook.
+// This happens periodically at the specified interval.
+func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 	for {
 		args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
 		es, err := h.Repos.ListExternalServices(context.Background(), args)
 		if err != nil {
-			log15.Error("Ensuring BBS Webhook failed [Listing BBS extsvc]", err.Error())
+			log15.Error("Upserting BBS Webhook failed [Listing BBS extsvc]", err.Error())
 			continue
 		}
 
@@ -432,7 +433,7 @@ func (h *BitbucketServerWebhook) EnsureCreation() {
 
 			client, err := bbs.NewClientWithConfig(con)
 			if err != nil {
-				log15.Error("Ensuring BBS Webhook failed [Creating Client]", err.Error())
+				log15.Error("Upserting BBS Webhook [Creating Client]", err.Error())
 				continue
 			}
 
@@ -445,13 +446,13 @@ func (h *BitbucketServerWebhook) EnsureCreation() {
 				Secret:   con.Webhooks.Secret,
 			}
 
-			err = client.EnsureWebhook(context.Background(), wh)
+			err = client.UpsertWebhook(context.Background(), wh)
 			if err != nil {
-				log15.Error("Ensuring BBS Webhook failed [HTTP Request]", err.Error())
+				log15.Error("Upserting BBS Webhook failed [HTTP Request]", err.Error())
 			}
 		}
 
-		time.Sleep(time.Minute * 5)
+		time.Sleep(every)
 	}
 }
 

@@ -28,6 +28,8 @@ type PullRequestEvent struct {
 	Activity    *Activity   `json:"activity"`
 }
 
+// Webhook defines the JSON schema from the BBS Sourcegraph plugin.
+// This is not the native BBS webhook.
 type Webhook struct {
 	Name     string   `json:"name"`
 	Scope    string   `json:"scope"`
@@ -36,8 +38,8 @@ type Webhook struct {
 	Secret   string   `json:"secret"`
 }
 
-// EnsureWebhook upserts a Webhook on a BBS instance.
-func (c *Client) EnsureWebhook(ctx context.Context, w Webhook) error {
+// UpsertWebhook upserts a Webhook on a BBS instance.
+func (c *Client) UpsertWebhook(ctx context.Context, w Webhook) error {
 	raw, err := json.Marshal(w)
 	if err != nil {
 		return err
