@@ -490,9 +490,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             type="submit"
                             className="btn btn-primary"
                             disabled={
-                                previewRefreshNeeded ||
-                                mode !== 'editing' ||
-                                campaign?.changesets.totalCount === 0
+                                previewRefreshNeeded || mode !== 'editing' || campaign?.changesets.totalCount === 0
                             }
                         >
                             Create
