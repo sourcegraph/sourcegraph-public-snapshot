@@ -736,7 +736,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 }
 
 func hasNoID(r *repos.Repo) bool {
-	return r.ID <= 0
+	return r.ID == 0
 }
 
 func hasID(ids ...uint32) func(r *repos.Repo) bool {

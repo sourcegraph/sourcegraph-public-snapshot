@@ -500,7 +500,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		{"delete", deleteReposQuery, deletes},
 		{"update", updateReposQuery, updates},
 		{"insert", insertReposQuery, inserts},
-		{"list", listRepoIDsQuery, inserts},
+		{"list", listRepoIDsQuery, inserts}, // list must run last to pick up inserted IDs
 	} {
 		if len(op.repos) == 0 {
 			continue
@@ -545,7 +545,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 
 	// Assert we have set ID for all repos.
 	for _, r := range repos {
-		if r.ID <= 0 && !r.IsDeleted() {
+		if r.ID == 0 && !r.IsDeleted() {
 			return errors.Errorf("DBStore.UpsertRepos did not set ID for %v", r)
 		}
 	}
