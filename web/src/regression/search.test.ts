@@ -75,7 +75,6 @@ describe('Search regression test suite', () => {
         'antonmedv/expr',
         'ClickHouse/clickhouse-go',
         'xwb1989/sqlparser',
-        'henrylee2cn/pholcus_lib',
         'itcloudy/ERP',
         'iovisor/kubectl-trace',
         'minio/highwayhash',
