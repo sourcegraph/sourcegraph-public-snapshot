@@ -53,8 +53,7 @@ export class SearchCommand {
                 ? query
                 : `${sourcegraphURL}/search?${buildSearchURLQuery(
                       query,
-                      SearchPatternType.literal,
-                      false
+                      SearchPatternType.literal
                   )}&utm_source=omnibox`,
         }
 

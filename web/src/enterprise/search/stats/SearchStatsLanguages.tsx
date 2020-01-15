@@ -51,7 +51,7 @@ export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, st
 
     const urlToSearchWithExtraQuery = useCallback(
         (extraQuery: string) =>
-            `/search?${buildSearchURLQuery(`${query} ${extraQuery}`, GQL.SearchPatternType.literal, false)}`,
+            `/search?${buildSearchURLQuery(`${query} ${extraQuery}`, GQL.SearchPatternType.literal)}`,
         [query]
     )
 

@@ -67,7 +67,6 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
                                 editable={filtersInQuery[field].editable}
                                 filtersInQuery={filtersInQuery}
                                 navbarQuery={navbarQuery}
-                                isHomepage={isHomepage}
                                 onSubmit={onSubmit}
                                 onFilterDeleted={onFilterDeleted}
                                 onFilterEdited={onFilterEdited}
