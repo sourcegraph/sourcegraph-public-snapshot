@@ -60,7 +60,8 @@ Click **Add Rule...** and proceed through the "Add Transform Claim Rule Wizard" 
   - Attribute store: `Active Directory`
   - Mapping of LDAP attributes to outgoing claim types:<br>
     `E-Mail-Addresses` -> `E-Mail Address`<br>
-    `Display-Name` -> `Name`<br>
+    `Display-Name` -> `Common Name`<br>
+    `SAM-Account-Name` -> `Name` (optional, username will be derived from email if omitted)<br>
   - Click **Finish**.
 
 #### Claim Rule 2: Email to NameID
