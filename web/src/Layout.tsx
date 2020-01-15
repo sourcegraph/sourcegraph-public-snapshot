@@ -31,7 +31,13 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps, SmartSearchFieldProps } from './search'
+import {
+    parseSearchURLQuery,
+    PatternTypeProps,
+    InteractiveSearchProps,
+    CaseSensitivityProps,
+    SmartSearchFieldProps,
+} from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
