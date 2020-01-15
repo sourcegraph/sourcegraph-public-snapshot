@@ -500,7 +500,12 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		{"delete", deleteReposQuery, deletes},
 		{"update", updateReposQuery, updates},
 		{"insert", insertReposQuery, inserts},
+		{"list", listRepoIDsQuery, inserts}, // list must run last to pick up inserted IDs
 	} {
+		if len(op.repos) == 0 {
+			continue
+		}
+
 		q, err := batchReposQuery(op.query, op.repos)
 		if err != nil {
 			return errors.Wrap(err, op.name)
@@ -511,7 +516,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 			return errors.Wrap(err, op.name)
 		}
 
-		if op.name != "insert" {
+		if op.name != "list" {
 			if err = rows.Close(); err != nil {
 				return errors.Wrap(err, op.name)
 			}
@@ -519,15 +524,29 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 			continue
 		}
 
-		i := -1
 		_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
-			i++
-			err = sc.Scan(&(op.repos[i].ID))
-			return int64(op.repos[i].ID), 1, err
+			var (
+				i  int
+				id uint32
+			)
+
+			err = sc.Scan(&i, &id)
+			if err != nil {
+				return 0, 0, err
+			}
+			op.repos[i-1].ID = id
+			return int64(id), 1, nil
 		})
 
 		if err != nil {
 			return errors.Wrap(err, op.name)
+		}
+	}
+
+	// Assert we have set ID for all repos.
+	for _, r := range repos {
+		if r.ID == 0 && !r.IsDeleted() {
+			return errors.Errorf("DBStore.UpsertRepos did not set ID for %v", r)
 		}
 	}
 
@@ -670,49 +689,48 @@ WHERE batch.deleted_at IS NOT NULL
 AND repo.id = batch.id
 `
 
-var insertReposQuery = batchReposQueryFmtstr + `,
-inserted AS (
-  INSERT INTO repo (
-    name,
-    uri,
-    description,
-    language,
-    created_at,
-    updated_at,
-    deleted_at,
-    external_service_type,
-    external_service_id,
-    external_id,
-    enabled,
-    archived,
-    fork,
-    sources,
-    metadata
-  )
-  SELECT
-    name,
-    NULLIF(BTRIM(uri), ''),
-    description,
-    language,
-    created_at,
-    updated_at,
-    deleted_at,
-    external_service_type,
-    external_service_id,
-    external_id,
-    enabled,
-    archived,
-    fork,
-    sources,
-    metadata
-  FROM batch
-  ON CONFLICT (external_service_type, external_service_id, external_id) DO NOTHING
-  RETURNING repo.*
+var insertReposQuery = batchReposQueryFmtstr + `
+INSERT INTO repo (
+  name,
+  uri,
+  description,
+  language,
+  created_at,
+  updated_at,
+  deleted_at,
+  external_service_type,
+  external_service_id,
+  external_id,
+  enabled,
+  archived,
+  fork,
+  sources,
+  metadata
 )
-SELECT inserted.id
-FROM inserted
-LEFT JOIN batch USING (external_service_type, external_service_id, external_id)
-ORDER BY batch.ordinality
+SELECT
+  name,
+  NULLIF(BTRIM(uri), ''),
+  description,
+  language,
+  created_at,
+  updated_at,
+  deleted_at,
+  external_service_type,
+  external_service_id,
+  external_id,
+  enabled,
+  archived,
+  fork,
+  sources,
+  metadata
+FROM batch
+ON CONFLICT (external_service_type, external_service_id, external_id) DO NOTHING
+`
+
+var listRepoIDsQuery = batchReposQueryFmtstr + `
+SELECT batch.ordinality, repo.id
+FROM batch
+JOIN repo USING (external_service_type, external_service_id, external_id)
 `
 
 func nullTimeColumn(t time.Time) *time.Time {
