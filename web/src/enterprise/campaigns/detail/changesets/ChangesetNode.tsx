@@ -32,6 +32,8 @@ export interface ChangesetNodeProps extends ThemeProps {
     campaignUpdates: Subject<void>
     history: H.History
     location: H.Location
+    /** Shows the publish button for ChangesetPlans */
+    enablePublishing: boolean
 }
 
 export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
@@ -40,15 +42,17 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     isLightTheme,
     history,
     location,
+    enablePublishing,
 }) => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const publishChangeset: React.MouseEventHandler = async () => {
-        try{
+        try {
             setIsLoading(true)
+            await new Promise(resolve => setTimeout(resolve, 5000))
             await _publishChangeset(node.id)
             campaignUpdates.next()
-        } catch(error) {
-            // todo: handle error 
+        } catch (error) {
+            // todo: handle error
         } finally {
             setIsLoading(false)
         }
@@ -89,7 +93,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <Link to={node.repository.url} className="text-muted" target="_blank" rel="noopener noreferrer">
                         {node.repository.name}
                     </Link>{' '}
-                    {node.__typename === 'ChangesetPlan' && (<span className="badge badge-light">Draft</span>)}
+                    {node.__typename === 'ChangesetPlan' && enablePublishing && <span className="badge badge-light">Draft</span>}
                     <span className="mx-1"></span>{' '}
                     {node.__typename === 'ExternalChangeset' && (
                         <>
@@ -120,8 +124,16 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <DiffStat {...fileDiffs.diffStat} expandedCounts={true}></DiffStat>
                 </span>
             )}
-            {/* todo: only when not in preview mode */}
-            {node.__typename === 'ChangesetPlan'&& (<button type="button" className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary" disabled={isLoading} onClick={publishChangeset}>{isLoading && (<LoadingSpinner className="mr-1 icon-inline"></LoadingSpinner>)}{' '}Publish</button>)}
+            {enablePublishing && node.__typename === 'ChangesetPlan' && !node.processed && (
+                <button
+                    type="button"
+                    className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary"
+                    disabled={isLoading}
+                    onClick={publishChangeset}
+                >
+                    {isLoading && <LoadingSpinner className="mr-1 icon-inline"></LoadingSpinner>} Publish
+                </button>
+            )}
         </div>
     )
     return (

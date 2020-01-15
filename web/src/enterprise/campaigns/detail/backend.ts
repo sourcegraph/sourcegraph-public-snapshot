@@ -12,10 +12,12 @@ import {
     IChangesetPlansOnCampaignArguments,
     IChangesetPlanConnection,
     IChangesetsOnCampaignArguments,
-    IExternalChangesetConnection,
     IEmptyResponse,
+    IChangesetPlan,
+    IExternalChangeset,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
+import { Connection } from '../../../components/FilteredConnection'
 
 export type CampaignType = 'comby' | 'credentials'
 
@@ -37,6 +39,7 @@ const campaignFragment = gql`
         createdAt
         updatedAt
         closedAt
+        publishedAt
         url
         __typename
         changesets {
@@ -287,7 +290,7 @@ export const fetchCampaignPlanById = (campaignPlan: ID): Observable<ICampaignPla
 export const queryChangesets = (
     campaign: ID,
     { first }: IChangesetsOnCampaignArguments
-): Observable<IExternalChangesetConnection> =>
+): Observable<Connection<IExternalChangeset | IChangesetPlan>> =>
     queryGraphQL(
         gql`
             query CampaignChangesets($campaign: ID!, $first: Int) {
@@ -337,6 +340,7 @@ export const queryChangesets = (
                                     name
                                     url
                                 }
+                                processed
                                 diff {
                                     fileDiffs {
                                         nodes {
@@ -375,7 +379,10 @@ export const queryChangesets = (
             if (node.__typename !== 'Campaign') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return node.changesetPlans as any
+            return {
+                totalCount: node.changesetPlans.totalCount + node.changesets.totalCount,
+                nodes: [...node.changesetPlans.nodes, ...node.changesets.nodes],
+            }
         })
     )
 
@@ -399,6 +406,7 @@ export const queryChangesetPlans = (
                                     name
                                     url
                                 }
+                                processed
                                 diff {
                                     fileDiffs {
                                         nodes {
@@ -449,7 +457,7 @@ export async function publishCampaign(campaign: ID): Promise<ICampaign> {
             }
             ${campaignFragment}
         `,
-        {campaign }
+        { campaign }
     ).toPromise()
     return dataOrThrowErrors(result).publishCampaign
 }

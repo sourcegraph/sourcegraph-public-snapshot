@@ -71,6 +71,8 @@ type CampaignJob struct {
 	StartedAt  time.Time
 	FinishedAt time.Time
 
+	Processed bool
+
 	Error string
 
 	CreatedAt time.Time

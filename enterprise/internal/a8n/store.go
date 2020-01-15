@@ -100,7 +100,6 @@ UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	JOIN campaign_plans p ON p.id = c.campaign_plan_id
 	WHERE j.started_at IS NULL
 	AND p.canceled_at IS NULL
-	AND c.published_at IS NOT NULL
 	ORDER BY j.id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )

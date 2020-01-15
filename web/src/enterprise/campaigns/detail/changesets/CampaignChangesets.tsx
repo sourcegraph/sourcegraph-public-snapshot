@@ -15,6 +15,8 @@ interface Props extends ThemeProps {
     location: H.Location
     campaignUpdates: Subject<void>
     changesetUpdates: Subject<void>
+    /** Shows the publish button for ChangesetPlans */
+    enablePublishing: ChangesetNodeProps['enablePublishing']
 
     className?: string
 }
@@ -29,14 +31,15 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     className = '',
     isLightTheme,
     changesetUpdates,
-    campaignUpdates
+    campaignUpdates,
+    enablePublishing,
 }) => (
     <div className={`list-group ${className}`}>
         <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<ChangesetNodeProps, 'node'>>
             className="mt-2"
             updates={changesetUpdates}
             nodeComponent={ChangesetNode}
-            nodeComponentProps={{ isLightTheme, history, location,campaignUpdates }}
+            nodeComponentProps={{ isLightTheme, history, location, campaignUpdates, enablePublishing }}
             queryConnection={queryChangesetsConnection}
             hideSearch={true}
             defaultFirst={DEFAULT_CHANGESET_LIST_COUNT}

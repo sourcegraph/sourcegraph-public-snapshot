@@ -41,7 +41,7 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
     className = '',
     isLightTheme,
     campaignUpdates,
-    changesetUpdates
+    changesetUpdates,
 }) => {
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
@@ -51,8 +51,13 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
         [campaign]
     )
 
-    const changesets =
-        useMemo(() => campaign.__typename === 'Campaign' ? [...campaign.changesets.nodes, ...campaign.changesetPlans.nodes] : campaign.changesets.nodes, [campaign])
+    const changesets = useMemo(
+        () =>
+            campaign.__typename === 'Campaign'
+                ? [...campaign.changesets.nodes, ...campaign.changesetPlans.nodes]
+                : campaign.changesets.nodes,
+        [campaign]
+    )
     const totalAdditions = useMemo(() => sumDiffStat(changesets, 'added'), [changesets])
     const totalDeletions = useMemo(() => sumDiffStat(changesets, 'deleted'), [changesets])
 
@@ -75,7 +80,10 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                     label: (
                         <span className="e2e-campaign-changesets-tab">
                             Changesets{' '}
-                            <span className="badge badge-secondary badge-pill">{campaign.changesets.totalCount}</span>
+                            <span className="badge badge-secondary badge-pill">
+                                {campaign.changesets.totalCount +
+                                    (campaign.__typename === 'Campaign' ? campaign.changesetPlans.totalCount : 0)}
+                            </span>
                         </span>
                     ),
                 },
@@ -85,6 +93,7 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
             <CampaignChangesets
                 key="changesets"
                 queryChangesetsConnection={queryChangesetsConnection}
+                enablePublishing={campaign.__typename === 'Campaign'}
                 campaignUpdates={campaignUpdates}
                 changesetUpdates={changesetUpdates}
                 history={history}

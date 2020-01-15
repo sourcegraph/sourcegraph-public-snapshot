@@ -276,6 +276,7 @@ type ChangesetPlansConnectionResolver interface {
 
 type ChangesetPlanResolver interface {
 	ID() graphql.ID
+	Processed(ctx context.Context) (bool, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() ChangesetPlanResolver
