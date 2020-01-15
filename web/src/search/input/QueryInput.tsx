@@ -432,11 +432,11 @@ export class QueryInput extends React.Component<Props, State> {
                                     </ul>
                                 )}
                                 <div className="query-input2__toggle-container">
-                                    <CaseSensitivityToggle
+                                    {this.props.withSearchModeToggle && (<CaseSensitivityToggle
                                         {...this.props}
                                         navbarSearchQuery={this.props.value.query}
                                         filtersInQuery={this.props.filterQuery}
-                                    />
+                                    />)}
                                     <RegexpToggle
                                         {...this.props}
                                         navbarSearchQuery={this.props.value.query}
