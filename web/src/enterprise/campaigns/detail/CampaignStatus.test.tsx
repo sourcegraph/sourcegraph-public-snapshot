@@ -30,6 +30,7 @@ describe('CampaignStatus', () => {
                         errors: [],
                         state: GQL.BackgroundProcessState.COMPLETED,
                     }}
+                    onPublish={() => undefined}
                 />
             )
         ).toMatchSnapshot())
@@ -46,6 +47,7 @@ describe('CampaignStatus', () => {
                         errors: [],
                         state: GQL.BackgroundProcessState.COMPLETED,
                     }}
+                    onPublish={() => undefined}
                 />
             )
         ).toMatchSnapshot())
@@ -62,6 +64,7 @@ describe('CampaignStatus', () => {
                         errors: ['a', 'b'],
                         state: GQL.BackgroundProcessState.PROCESSING,
                     }}
+                    onPublish={() => undefined}
                 />
             )
         ).toMatchSnapshot())
@@ -78,6 +81,7 @@ describe('CampaignStatus', () => {
                         errors: ['a', 'b'],
                         state: GQL.BackgroundProcessState.PROCESSING,
                     }}
+                    onPublish={() => undefined}
                 />
             )
         ).toMatchSnapshot())
@@ -94,6 +98,7 @@ describe('CampaignStatus', () => {
                         errors: ['a', 'b'],
                         state: GQL.BackgroundProcessState.ERRORED,
                     }}
+                    onPublish={() => undefined}
                 />
             )
         ).toMatchSnapshot())

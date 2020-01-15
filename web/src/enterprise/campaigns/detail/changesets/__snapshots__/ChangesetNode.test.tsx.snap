@@ -105,14 +105,16 @@ Object {
           expandedCounts={true}
         />
       </span>
-      <button
-        className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary"
-        disabled={false}
-        onClick={[Function]}
-        type="button"
-      >
-         Publish
-      </button>
+      <React.Fragment>
+        <button
+          className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary"
+          disabled={false}
+          onClick={[Function]}
+          type="button"
+        >
+           Publish
+        </button>
+      </React.Fragment>
     </div>
   </div>,
   "className": "list-group-item e2e-changeset-node",

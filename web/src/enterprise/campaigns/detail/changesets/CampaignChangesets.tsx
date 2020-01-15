@@ -3,14 +3,14 @@ import H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
 import { Observable, Subject } from 'rxjs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 
 interface Props extends ThemeProps {
     queryChangesetsConnection: (
         args: FilteredConnectionQueryArgs
-    ) => Observable<GQL.IExternalChangesetConnection | GQL.IChangesetPlanConnection>
+    ) => Observable<Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>>
     history: H.History
     location: H.Location
     campaignUpdates: Subject<void>

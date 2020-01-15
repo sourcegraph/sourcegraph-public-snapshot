@@ -113,6 +113,7 @@ exports[`CampaignStatus drafted campaign 1`] = `
     </div>
     <button
       className="mb-3 btn btn-primary"
+      onClick={[Function]}
       type="button"
     >
       Publish campaign

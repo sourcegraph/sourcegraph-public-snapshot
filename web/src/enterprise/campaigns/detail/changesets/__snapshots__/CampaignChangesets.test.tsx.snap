@@ -52,8 +52,15 @@ exports[`CampaignChangesets renders 1`] = `
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
-        "campaignUpdates": undefined,
-        "enablePublishing": undefined,
+        "campaignUpdates": Subject {
+          "_isScalar": false,
+          "closed": false,
+          "hasError": false,
+          "isStopped": false,
+          "observers": Array [],
+          "thrownError": null,
+        },
+        "enablePublishing": false,
         "history": Object {
           "action": "POP",
           "block": [Function],
@@ -97,6 +104,16 @@ exports[`CampaignChangesets renders 1`] = `
     noun="changeset"
     pluralNoun="changesets"
     queryConnection={[Function]}
+    updates={
+      Subject {
+        "_isScalar": false,
+        "closed": false,
+        "hasError": false,
+        "isStopped": false,
+        "observers": Array [],
+        "thrownError": null,
+      }
+    }
     useURLQuery={false}
   />
 </div>

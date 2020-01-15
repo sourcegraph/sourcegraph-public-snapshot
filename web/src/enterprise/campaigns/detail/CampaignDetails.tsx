@@ -253,8 +253,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setAlertError(asError(err))
         }
     }
-    
-    const onPublish = async():Promise<void> => {
+
+    const onPublish = async (): Promise<void> => {
         setMode('saving')
         try {
             await publishCampaign(campaign!.id)
@@ -265,7 +265,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setMode('editing')
             setAlertError(asError(err))
         }
-
     }
 
     const onSubmit: React.FormEventHandler = async event => {
@@ -544,12 +543,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             </Form>
 
             {campaign?.status && (
-                <CampaignStatus
-                    campaign={campaign}
-                    status={campaign.status}
-                    onPublish={onPublish}
-                    onRetry={onRetry}
-                />
+                <CampaignStatus campaign={campaign} status={campaign.status} onPublish={onPublish} onRetry={onRetry} />
             )}
 
             {campaign && campaign.__typename === 'Campaign' && (
