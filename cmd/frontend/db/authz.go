@@ -13,7 +13,7 @@ type GrantPendingPermissionsArgs struct {
 	Type   authz.PermType
 }
 
-// An AuthzStore stores methods for user permissions, they will be set to non-nil in enterprise version.
+// An AuthzStore stores methods for user permissions, they will be no-op in OSS version.
 type AuthzStore interface {
 	GrantPendingPermissions(ctx context.Context, args *GrantPendingPermissionsArgs) error
 }
