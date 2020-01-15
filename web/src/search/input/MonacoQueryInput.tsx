@@ -208,6 +208,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         // Focus the editor by default, with cursor at end.
         editor.focus()
         editor.setPosition({
+            // +2 as Monaco is 1-indexed, and the cursor should be placed after the query.
             column: editor.getValue().length + 2,
             lineNumber: 1,
         })
