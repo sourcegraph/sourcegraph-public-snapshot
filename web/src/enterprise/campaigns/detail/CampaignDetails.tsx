@@ -41,11 +41,10 @@ import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import {
     CampaignPlanSpecificationFields,
     CampaignPlanSpecificationFormData,
-    MANUAL_CAMPAIGN_TYPE,
 } from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
-import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
+import { DEFAULT_CHANGESET_LIST_COUNT, MANUAL_CAMPAIGN_TYPE } from './presentation'
 
 interface Props extends ThemeProps {
     /**
@@ -126,7 +125,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
                     setCampaignPlanSpec({
-                        type: fetchedCampaign?.plan?.type as CampaignType,
+                        type: (fetchedCampaign?.plan?.type as CampaignType) ?? MANUAL_CAMPAIGN_TYPE,
                         arguments: fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null,
                     })
                     nextChangesetUpdate()
@@ -218,7 +217,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
 
         return (
-            !currentSpec ||
             (campaignPlanSpec?.arguments && !isEqual(currentSpec, parseJSONC(campaignPlanSpec.arguments))) ||
             (campaign && campaign.status.state !== GQL.BackgroundProcessState.COMPLETED)
         )
@@ -266,7 +264,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setName(name)
             setDescription(description)
             setMode('editing')
-            setCampaignPlanSpec({ type: plan?.type as CampaignType, arguments: plan?.arguments || '' })
+            setCampaignPlanSpec({
+                type: (plan?.type as CampaignType) ?? MANUAL_CAMPAIGN_TYPE,
+                arguments: plan?.arguments || '',
+            })
         }
     }
 
@@ -488,7 +489,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={previewRefreshNeeded || mode !== 'editing'}
+                            disabled={
+                                previewRefreshNeeded || mode !== 'editing' || campaign?.changesets.totalCount === 0
+                            }
                         >
                             Create
                         </button>
@@ -496,30 +499,38 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
             </Form>
 
-            {campaign?.status && <CampaignStatus campaign={campaign} status={campaign.status} onRetry={onRetry} />}
-
-            {campaign && campaign.__typename === 'Campaign' && (
-                <>
-                    <h3>Progress</h3>
-                    <CampaignBurndownChart
-                        changesetCountsOverTime={campaign.changesetCountsOverTime}
-                        history={history}
-                    />
-                    {/* only campaigns that have no plan can add changesets manually */}
-                    {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
-                </>
-            )}
-
             {/* is already created or a preview is available */}
             {campaign && (
-                <CampaignTabs
-                    campaign={campaign}
-                    persistLines={campaign.__typename === 'Campaign'}
-                    history={history}
-                    location={location}
-                    className="mt-3"
-                    isLightTheme={isLightTheme}
-                />
+                <>
+                    <CampaignStatus campaign={campaign} status={campaign.status} onRetry={onRetry} />
+
+                    {campaign.__typename === 'Campaign' && (
+                        <>
+                            <h3>Progress</h3>
+                            <CampaignBurndownChart
+                                changesetCountsOverTime={campaign.changesetCountsOverTime}
+                                history={history}
+                            />
+                            {/* only campaigns that have no plan can add changesets manually */}
+                            {!campaign.plan && (
+                                <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
+                            )}
+                        </>
+                    )}
+
+                    {campaign.changesets.totalCount > 0 ? (
+                        <CampaignTabs
+                            campaign={campaign}
+                            persistLines={campaign.__typename === 'Campaign'}
+                            history={history}
+                            location={location}
+                            className="mt-3"
+                            isLightTheme={isLightTheme}
+                        />
+                    ) : (
+                        <p className="mt-3 text-muted">No changesets</p>
+                    )}
+                </>
             )}
         </>
     )

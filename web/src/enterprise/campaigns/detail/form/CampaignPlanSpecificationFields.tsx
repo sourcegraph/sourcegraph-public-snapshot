@@ -3,9 +3,8 @@ import combyJsonSchema from '../../../../../../schema/campaign-types/comby.schem
 import credentialsJsonSchema from '../../../../../../schema/campaign-types/credentials.schema.json'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
-import { CampaignType } from '../backend.js'
-
-export const MANUAL_CAMPAIGN_TYPE = 'manual' as const
+import { CampaignType } from '../backend'
+import { MANUAL_CAMPAIGN_TYPE, campaignTypeLabels } from '../presentation'
 
 /**
  * Data represented in {@link CampaignPlanSpecificationFields}.
@@ -30,12 +29,6 @@ interface Props extends ThemeProps {
 const jsonSchemaByType: { [K in CampaignType]: any } = {
     comby: combyJsonSchema,
     credentials: credentialsJsonSchema,
-}
-
-const typeLabels: Record<CampaignType | typeof MANUAL_CAMPAIGN_TYPE, string> = {
-    [MANUAL_CAMPAIGN_TYPE]: 'Manual',
-    comby: 'Comby search and replace',
-    credentials: 'Find leaked credentials',
 }
 
 const defaultInputByType: { [K in CampaignType]: string } = {
@@ -92,9 +85,9 @@ export const CampaignPlanSpecificationFields: React.FunctionComponent<Props> = (
                                 onChange={e => onTypeChange(e.currentTarget.value as CampaignType)}
                                 value={value.type}
                             >
-                                {(Object.keys(typeLabels) as CampaignType[]).map(typeName => (
+                                {(Object.keys(campaignTypeLabels) as CampaignType[]).map(typeName => (
                                     <option value={typeName || ''} key={typeName}>
-                                        {typeLabels[typeName]}
+                                        {campaignTypeLabels[typeName]}
                                     </option>
                                 ))}
                             </select>
@@ -107,7 +100,7 @@ export const CampaignPlanSpecificationFields: React.FunctionComponent<Props> = (
                             )}
                         </>
                     ) : (
-                        <p className="mb-0">{typeLabels[value.type || '']}</p>
+                        <p className="mb-0">{campaignTypeLabels[value.type || '']}</p>
                     )}
                 </div>
             </div>
