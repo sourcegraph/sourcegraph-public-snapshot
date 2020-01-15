@@ -4,12 +4,14 @@ import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import { submitSearch } from '../helpers'
 import { Subscription, fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { PatternTypeProps, CaseSensitivityProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery } from '..'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import { isEmpty } from 'lodash'
 
 interface Props extends PatternTypeProps, CaseSensitivityProps {
     navbarSearchQuery: string
     history: H.History
+    location: H.Location
     filtersInQuery?: FiltersToTypeAndValue
     hasGlobalQueryBehavior?: boolean
 }
@@ -62,22 +64,31 @@ export class CaseSensitivityToggle extends React.Component<Props> {
     }
 
     private toggle = (): void => {
+        const isSearchHomepage =
+            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search, true)
+
+        const shouldSubmitSearchOnHomepage = this.props.navbarSearchQuery !== '' || (this.props.filtersInQuery && !isEmpty(this.props.filtersInQuery))
         const newCaseSensitivity = !this.props.caseSensitive
         this.props.setCaseSensitivity(newCaseSensitivity)
+
         if (this.props.hasGlobalQueryBehavior) {
-            // We only want the toggle to submit searches if the query input it is in
-            // has global behavior (i.e. query inputs on the main search page or global navbar). Non-global inputs
-            // don't have the canonical query, and are dependent on the page it's on for context, which makes the
-            // submit on-toggle behavior undesirable.
-            submitSearch(
-                this.props.history,
-                this.props.navbarSearchQuery,
-                'filter',
-                this.props.patternType,
-                newCaseSensitivity,
-                undefined,
-                this.props.filtersInQuery
-            )
+            if ((isSearchHomepage && shouldSubmitSearchOnHomepage) || !isSearchHomepage) {
+                // We only want the toggle to submit searches if the query input it is in
+                // has global behavior (i.e. query inputs on the main search page or global navbar). Non-global inputs
+                // don't have the canonical query, and are dependent on the page it's on for context, which makes the
+                // submit on-toggle behavior undesirable.
+                //
+                // Also, we only want to submit a search when toggling on the search homepage when the query is non-empty.
+                submitSearch(
+                    this.props.history,
+                    this.props.navbarSearchQuery,
+                    'filter',
+                    this.props.patternType,
+                    newCaseSensitivity,
+                    undefined,
+                    this.props.filtersInQuery
+                )
+            }
         }
     }
 }
