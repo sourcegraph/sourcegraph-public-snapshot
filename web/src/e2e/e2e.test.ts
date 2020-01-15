@@ -39,14 +39,9 @@ describe('e2e test suite', () => {
         const repoSlugs = [
             'sourcegraph/java-langserver',
             'gorilla/mux',
-            'gorilla/securecookie',
             'sourcegraphtest/AlwaysCloningTest',
-            'sourcegraph/godockerize',
             'sourcegraph/jsonrpc2',
-            'sourcegraph/checkup',
             'sourcegraph/go-diff',
-            'sourcegraph/vcsstore',
-            'sourcegraph/go-vcs',
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
             'sourcegraph-testing/automation-e2e-test',
@@ -463,15 +458,15 @@ describe('e2e test suite', () => {
         describe('file tree', () => {
             test('does navigation on file click', async () => {
                 await driver.page.goto(
-                    sourcegraphBaseUrl + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
+                    sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d'
                 )
                 await (
-                    await driver.page.waitForSelector('[data-tree-path="godockerize.go"]', {
+                    await driver.page.waitForSelector('[data-tree-path="async.go"]', {
                         visible: true,
                     })
                 ).click()
                 await driver.assertWindowLocation(
-                    '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
+                    '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/blob/async.go'
                 )
             })
 
@@ -512,9 +507,9 @@ describe('e2e test suite', () => {
             test('selects the current file', async () => {
                 await driver.page.goto(
                     sourcegraphBaseUrl +
-                        '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
+                        '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/blob/async.go'
                 )
-                await driver.page.waitForSelector('.tree__row--active [data-tree-path="godockerize.go"]', {
+                await driver.page.waitForSelector('.tree__row--active [data-tree-path="async.go"]', {
                     visible: true,
                 })
             })
@@ -841,7 +836,7 @@ describe('e2e test suite', () => {
 
             test('shows commit information on a row', async () => {
                 await driver.page.goto(
-                    sourcegraphBaseUrl + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983',
+                    sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d',
                     {
                         waitUntil: 'domcontentloaded',
                     }
@@ -850,23 +845,23 @@ describe('e2e test suite', () => {
                 await retry(async () =>
                     expect(
                         await driver.page.evaluate(
-                            () => document.querySelectorAll('.git-commit-node__message')[2].textContent
+                            () => document.querySelectorAll('.git-commit-node__message')[3].textContent
                         )
-                    ).toContain('Add fuzz testing corpus.')
+                    ).toContain('Add support for new/removed binary files.')
                 )
                 await retry(async () =>
                     expect(
                         await driver.page.evaluate(() =>
-                            document.querySelectorAll('.git-commit-node-byline')[2].textContent!.trim()
+                            document.querySelectorAll('.git-commit-node-byline')[3].textContent!.trim()
                         )
-                    ).toContain('Kamil Kisiel')
+                    ).toContain('Dmitri Shuralyov')
                 )
                 await retry(async () =>
                     expect(
                         await driver.page.evaluate(
-                            () => document.querySelectorAll('.git-commit-node__oid')[2].textContent
+                            () => document.querySelectorAll('.git-commit-node__oid')[3].textContent
                         )
-                    ).toEqual('c13558c')
+                    ).toEqual('2083912')
                 )
             })
 
@@ -909,15 +904,15 @@ describe('e2e test suite', () => {
             })
 
             test('updates rev with switcher', async () => {
-                await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/checkup/-/blob/s3.go')
+                await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
                 // Open rev switcher
                 await driver.page.waitForSelector('#repo-rev-popover', { visible: true })
                 await driver.page.click('#repo-rev-popover')
                 // Click "Tags" tab
                 await driver.page.click('.revisions-popover .tab-bar__tab:nth-child(2)')
-                await driver.page.waitForSelector('a.git-ref-node[href*="0.1.0"]', { visible: true })
-                await driver.page.click('a.git-ref-node[href*="0.1.0"]')
-                await driver.assertWindowLocation('/github.com/sourcegraph/checkup@v0.1.0/-/blob/s3.go')
+                await driver.page.waitForSelector('a.git-ref-node[href*="0.5.0"]', { visible: true })
+                await driver.page.click('a.git-ref-node[href*="0.5.0"]')
+                await driver.assertWindowLocation('/github.com/sourcegraph/go-diff@v0.5.0/-/blob/diff/diff.go')
             })
         })
 
@@ -986,6 +981,8 @@ describe('e2e test suite', () => {
                     })
 
                     // basic code intel doesn't support cross-repo jump-to-definition yet.
+                    // If this test gets re-enabled `sourcegraph/vcsstore` and
+                    // `sourcegraph/go-vcs` need to be cloned.
                     test.skip('does navigation (external repo)', async () => {
                         await driver.page.goto(
                             sourcegraphBaseUrl +
