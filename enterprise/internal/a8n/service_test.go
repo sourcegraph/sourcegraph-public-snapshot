@@ -231,7 +231,7 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
-		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID, false)
+		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -245,7 +245,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Try to create again, check that it's the same one
-		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID, false)
+		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -259,6 +259,53 @@ func TestService(t *testing.T) {
 
 		if haveJob2.ID != haveJob.ID {
 			t.Errorf("wrong changesetJob: %d. want=%d", haveJob2.ID, haveJob.ID)
+		}
+	})
+
+	t.Run("CreateChangesetJobForCampaignJobWhenNotAlreadyPublished", func(t *testing.T) {
+		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+		err = store.CreateCampaignPlan(ctx, plan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		campaignJob := testCampaignJob(plan.ID, rs[0].ID, now)
+		err := store.CreateCampaignJob(ctx, campaignJob)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(u.ID, plan.ID)
+		err = store.CreateCampaign(ctx, campaign)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		haveJob, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
+			CampaignID:    campaign.ID,
+			CampaignJobID: campaignJob.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Reset published at to null
+		haveJob.PublishedAt = time.Time{}
+		err = store.UpdateChangesetJob(ctx, haveJob)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Try to create again, should not fail
+		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		if err != nil {
+			t.Fatal(err)
 		}
 	})
 
