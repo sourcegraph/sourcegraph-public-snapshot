@@ -17,7 +17,14 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { ThemePreferenceProps } from '../../../theme'
 import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
-import { FiltersToTypeAndValue, filterTypeKeys, FilterTypes } from '../../../../../shared/src/search/interactive/util'
+import {
+    FiltersToTypeAndValue,
+    filterTypeKeys,
+    FilterTypes,
+    negatedFilters,
+    isNegatedFilter,
+    resolveNegatedFilter,
+} from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
 import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
@@ -60,15 +67,26 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         const searchParams = new URLSearchParams(props.location.search)
         const filtersInQuery: FiltersToTypeAndValue = {}
 
-        for (const filter of filterTypeKeys.filter(key => key !== FilterTypes.case)) {
+        const allFilters = [...filterTypeKeys, ...negatedFilters]
+        for (const filter of allFilters.filter(key => key !== FilterTypes.case)) {
             const itemsOfType = searchParams.getAll(filter)
-            itemsOfType.map(item => {
-                filtersInQuery[isFiniteFilter(filter) ? filter : uniqueId(filter)] = {
-                    type: filter,
-                    value: item,
-                    editable: false,
+            for (const item of itemsOfType) {
+                if (isNegatedFilter(filter)) {
+                    filtersInQuery[uniqueId(resolveNegatedFilter(filter))] = {
+                        type: resolveNegatedFilter(filter),
+                        value: item,
+                        editable: false,
+                        negated: true,
+                    }
+                } else {
+                    filtersInQuery[isFiniteFilter(filter) ? filter : uniqueId(filter)] = {
+                        type: filter,
+                        value: item,
+                        editable: false,
+                        negated: false,
+                    }
                 }
-            })
+            }
         }
 
         this.props.onFiltersInQueryChange(filtersInQuery)
@@ -166,6 +184,16 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         })
     }
 
+    private toggleFilterNegated = (filterKey: string): void => {
+        this.props.onFiltersInQueryChange({
+            ...this.props.filtersInQuery,
+            [filterKey]: {
+                ...this.props.filtersInQuery[filterKey],
+                negated: !this.props.filtersInQuery[filterKey].negated,
+            },
+        })
+    }
+
     private onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
 
@@ -253,6 +281,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                         onFilterEdited={this.onFilterEdited}
                         onFilterDeleted={this.onFilterDeleted}
                         toggleFilterEditable={this.toggleFilterEditable}
+                        toggleFilterNegated={this.toggleFilterNegated}
                         isHomepage={isSearchHomepage}
                     />
                     <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={isSearchHomepage} />

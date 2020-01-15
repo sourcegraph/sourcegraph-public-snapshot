@@ -163,7 +163,7 @@ interface ValidFilterAndValueMatch extends FilterAndValueMatch {
 /**
  * Tries to resolve the given string into a valid filter type.
  */
-const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null => {
+export const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null => {
     const absoluteFilter = filter.replace(/^-/, '')
     return filterAliases[absoluteFilter] ?? (isValidFilter(absoluteFilter) ? absoluteFilter : null)
 }
@@ -363,7 +363,7 @@ export const formatInteractiveQueryForFuzzySearch = (
     // `repohasfile:` should be converted to `file:`
     const filterSearchAlias = filterAliasForSearch[filterType]
     if (filterSearchAlias) {
-        return `${filterSearchAlias}:${value}`
+        return fullQuery.replace(`${filterType}:${value}`, `${filterSearchAlias}:${value}`)
     }
 
     return isolatedFuzzySearchFiltersFilterType.includes(filterType) ? filterType + ':' + value : fullQuery
