@@ -829,7 +829,11 @@ func testStoreListPendingUsers(db *sql.DB) func(t *testing.T) {
 		expectPendingUsers []string
 	}{
 		{
-			name: "alice",
+			name:               "no user with pending permissions",
+			expectPendingUsers: nil,
+		},
+		{
+			name: "has user with pending permissions",
 			updates: []update{
 				{
 					bindIDs: []string{"alice"},
@@ -842,7 +846,7 @@ func testStoreListPendingUsers(db *sql.DB) func(t *testing.T) {
 			expectPendingUsers: []string{"alice"},
 		},
 		{
-			name: "bob@example.com",
+			name: "has user but with empty object_ids",
 			updates: []update{
 				{
 					bindIDs: []string{"bob@example.com"},
@@ -859,7 +863,7 @@ func testStoreListPendingUsers(db *sql.DB) func(t *testing.T) {
 					},
 				},
 			},
-			expectPendingUsers: []string{""},
+			expectPendingUsers: nil,
 		},
 	}
 	return func(t *testing.T) {
@@ -890,10 +894,8 @@ func testStoreListPendingUsers(db *sql.DB) func(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				have := fmt.Sprintf("%v", bindIDs)
-				want := fmt.Sprintf("%v", test.expectPendingUsers)
-				if have != want {
-					t.Fatalf("want %v but got %v", want, have)
+				if !reflect.DeepEqual(test.expectPendingUsers, bindIDs) {
+					t.Error("expectPendingUsers != bindIDs", cmp.Diff(test.expectPendingUsers, bindIDs))
 				}
 			})
 		}

@@ -891,7 +891,7 @@ AND object_type = %s
 // ListPendingUsers returns a list of bind IDs who have pending permissions.
 func (s *Store) ListPendingUsers(ctx context.Context) (bindIDs []string, err error) {
 	ctx, save := s.observe(ctx, "ListPendingUsers", "")
-	defer func() { save(&err) }()
+	defer save(&err)
 
 	q := sqlf.Sprintf(`SELECT bind_id, object_ids FROM user_pending_permissions`)
 
