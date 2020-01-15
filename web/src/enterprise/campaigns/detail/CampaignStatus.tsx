@@ -4,7 +4,7 @@ import WarningIcon from 'mdi-react/WarningIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { ErrorAlert } from '../../../components/alerts'
-import { parseISO, addDays, isBefore } from 'date-fns'
+import { parseISO, isBefore, addMinutes } from 'date-fns'
 
 interface Props {
     campaign: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt'> | Pick<GQL.ICampaignPlan, '__typename'>
@@ -25,7 +25,7 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
         status.state === GQL.BackgroundProcessState.COMPLETED &&
         campaign.__typename === 'Campaign' &&
         !!campaign.publishedAt &&
-        isBefore(parseISO(campaign.publishedAt), addDays(new Date(), 1))
+        isBefore(parseISO(campaign.publishedAt), addMinutes(new Date(), 1))
     const progress = (status.completedCount / (status.pendingCount + status.completedCount)) * 100
     return (
         <>

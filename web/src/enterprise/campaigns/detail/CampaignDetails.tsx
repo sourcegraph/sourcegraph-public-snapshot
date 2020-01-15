@@ -41,11 +41,10 @@ import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import {
     CampaignPlanSpecificationFields,
     CampaignPlanSpecificationFormData,
-    MANUAL_CAMPAIGN_TYPE,
 } from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
-import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
+import { DEFAULT_CHANGESET_LIST_COUNT, MANUAL_CAMPAIGN_TYPE } from './presentation'
 
 interface Props extends ThemeProps {
     /**

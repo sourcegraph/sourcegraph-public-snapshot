@@ -8,6 +8,8 @@ import classNames from 'classnames'
 import { changesetStateIcons, changesetStatusColorClasses } from '../detail/changesets/presentation'
 import formatDistance from 'date-fns/formatDistance'
 import parseISO from 'date-fns/parseISO'
+import { MANUAL_CAMPAIGN_TYPE, campaignTypeLabels } from '../detail/presentation'
+import { CampaignType } from '../detail/backend'
 
 interface Props {
     node: Pick<
@@ -39,13 +41,26 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new D
                         <h3 className="m-0 d-inline-block">
                             <Link to={`/campaigns/${node.id}`}>{node.name}</Link>
                         </h3>
-                        <span className="badge badge-light ml-2">{node.plan?.type ?? 'manual'}</span>
+                        <span
+                            className="badge badge-light ml-2"
+                            data-tooltip={
+                                campaignTypeLabels[
+                                    (node.plan?.type as CampaignType | undefined) ?? MANUAL_CAMPAIGN_TYPE
+                                ]
+                            }
+                        >
+                            {node.plan?.type ?? 'manual'}
+                        </span>
                         <small className="ml-2 text-muted" data-tooltip={node.createdAt}>
-                            {formatDistance(parseISO(node.createdAt), now)} ago
+                            created {formatDistance(parseISO(node.createdAt), now)} ago
                         </small>
                     </div>
                     <Markdown
-                        className={classNames('text-truncate', node.description && 'text-muted')}
+                        className={classNames(
+                            'text-truncate',
+                            !node.description && 'text-muted',
+                            !node.description && 'text-italic'
+                        )}
                         dangerousInnerHTML={
                             node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
                         }
