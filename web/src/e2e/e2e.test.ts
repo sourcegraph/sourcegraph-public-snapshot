@@ -1636,7 +1636,7 @@ describe('e2e test suite', () => {
             ).toBe(1)
         })
 
-        test('Interactive search mode filter buttons', async () => {
+        test('Interactive search mode functionality', async () => {
             await driver.page.waitForSelector('.e2e-search-mode-toggle', { visible: true })
             await driver.page.click('.e2e-search-mode-toggle')
             await driver.page.click('.e2e-search-mode-toggle__interactive-mode')
@@ -1713,55 +1713,6 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.type('/mux')
             await driver.page.click('.e2e-search-button')
             await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
-        })
-
-        test('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
-            await driver.page.waitForSelector('.e2e-filter-dropdown')
-            await driver.page.type('.e2e-query-input', 'test')
-            await driver.page.click('.e2e-filter-dropdown')
-            await driver.page.select('.e2e-filter-dropdown', 'fork')
-            await driver.page.waitForSelector('.e2e-filter-input-finite-form')
-            await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
-            await driver.page.click('.e2e-filter-input-radio-button-no')
-            await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?fork=no&q=test&patternType=literal')
-            // Edit filter
-            await driver.page.waitForSelector('.filter-input')
-            await driver.page.waitForSelector('.e2e-filter-input__button-text-fork')
-            await driver.page.click('.e2e-filter-input__button-text-fork')
-            await driver.page.waitForSelector('.e2e-filter-input-radio-button-only')
-            await driver.page.click('.e2e-filter-input-radio-button-only')
-            await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?fork=only&q=test&patternType=literal')
-            // Edit filter by clicking dropdown menu
-            await driver.page.waitForSelector('.e2e-filter-dropdown')
-            await driver.page.click('.e2e-filter-dropdown')
-            await driver.page.select('.e2e-filter-dropdown', 'fork')
-            await driver.page.waitForSelector('.e2e-filter-input-finite-form')
-            await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
-            await driver.page.click('.e2e-filter-input-radio-button-no')
-            await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?fork=no&q=test&patternType=literal')
-        })
-    })
-
-    describe('Case sensitivity toggle', () => {
-        test('Clicking toggle turns on case sensitivity', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
-            await driver.page.waitForSelector('.e2e-case-sensitivity-toggle')
-            await driver.page.type('.e2e-query-input', 'test')
-            await driver.page.click('.e2e-case-sensitivity-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal&case=yes')
-        })
-
-        test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
-            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
-            await driver.page.waitForSelector('.e2e-case-sensitivity-toggle')
-            await driver.page.click('.e2e-case-sensitivity-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal')
         })
     })
 })

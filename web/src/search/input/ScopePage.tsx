@@ -18,7 +18,7 @@ import { fetchReposByQuery } from '../backend'
 import { submitSearch, QueryState } from '../helpers'
 import { QueryInput, queryUpdates } from './QueryInput'
 import { SearchButton } from './SearchButton'
-import { PatternTypeProps, CaseSensitivityProps } from '..'
+import { PatternTypeProps } from '..'
 import { ErrorAlert } from '../../components/alerts'
 
 const ScopeNotFound: React.FunctionComponent = () => (
@@ -35,11 +35,7 @@ const ScopeNotFound: React.FunctionComponent = () => (
     />
 )
 
-interface ScopePageProps
-    extends RouteComponentProps<{ id: GQL.ID }>,
-        SettingsCascadeProps,
-        PatternTypeProps,
-        CaseSensitivityProps {
+interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }>, SettingsCascadeProps, PatternTypeProps {
     authenticatedUser: GQL.IUser | null
 }
 
@@ -237,8 +233,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
             this.props.history,
             `${this.state.value} ${this.state.queryState.query}`,
             'home',
-            this.props.patternType,
-            this.props.caseSensitive
+            this.props.patternType
         )
     }
 

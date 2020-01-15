@@ -58,12 +58,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
             <div className="saved-search-list-page__row list-group-item e2e-saved-search-list-page-row">
                 <div className="d-flex">
                     <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
-                    <Link
-                        to={
-                            '/search?' +
-                            buildSearchURLQuery(this.props.savedSearch.query, this.props.patternType, false)
-                        }
-                    >
+                    <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query, this.props.patternType)}>
                         <div className="e2e-saved-search-list-page-row-title">{this.props.savedSearch.description}</div>
                     </Link>
                 </div>

@@ -1,10 +1,10 @@
 import * as React from 'react'
 import * as H from 'history'
 import { SearchResultTabHeader } from './SearchResultTab'
-import { PatternTypeProps, CaseSensitivityProps } from '..'
+import { PatternTypeProps } from '..'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'>, Omit<CaseSensitivityProps, 'setCaseSensitivity'> {
+interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
     location: H.Location
     history: H.History
     query: string

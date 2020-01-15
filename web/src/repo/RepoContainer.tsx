@@ -15,7 +15,7 @@ import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors
 import { makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import { searchQueryForRepoRev, PatternTypeProps, CaseSensitivityProps } from '../search'
+import { searchQueryForRepoRev, PatternTypeProps } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
@@ -41,8 +41,7 @@ export interface RepoContainerContext
         ThemeProps,
         EventLoggerProps,
         ActivationProps,
-        PatternTypeProps,
-        CaseSensitivityProps {
+        PatternTypeProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -70,8 +69,7 @@ interface RepoContainerProps
         ExtensionsControllerProps,
         ActivationProps,
         ThemeProps,
-        PatternTypeProps,
-        CaseSensitivityProps {
+        PatternTypeProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -249,8 +247,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             onDidUpdateRepository: this.onDidUpdateRepository,
             patternType: this.props.patternType,
             setPatternType: this.props.setPatternType,
-            caseSensitive: this.props.caseSensitive,
-            setCaseSensitivity: this.props.setCaseSensitivity,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
         }

@@ -5,10 +5,10 @@ import { submitSearch } from '../helpers'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { Subscription, fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { PatternTypeProps, CaseSensitivityProps } from '..'
+import { PatternTypeProps } from '..'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
-interface RegexpToggleProps extends PatternTypeProps, CaseSensitivityProps {
+interface RegexpToggleProps extends PatternTypeProps {
     navbarSearchQuery: string
     history: H.History
     filtersInQuery?: FiltersToTypeAndValue
@@ -46,18 +46,14 @@ export class RegexpToggle extends React.Component<RegexpToggleProps> {
             <div
                 ref={this.toggleCheckbox}
                 onClick={this.toggle}
-                className="btn btn-icon icon-inline query-input2__toggle e2e-regexp-toggle"
+                className="btn btn-icon icon-inline regexp-toggle e2e-regexp-toggle"
                 role="checkbox"
                 aria-checked={isRegexp}
                 aria-label="Regular expression toggle"
                 tabIndex={0}
                 data-tooltip={`${isRegexp ? 'Disable' : 'Enable'} regular expressions`}
             >
-                <span
-                    className={`query-input2__toggle-icon ${
-                        isRegexp ? 'query-input2__toggle-icon--active e2e-regexp-toggle--active' : ''
-                    }`}
-                >
+                <span className={isRegexp ? 'regexp-toggle--active e2e-regexp-toggle--active' : ''}>
                     <RegexIcon />
                 </span>
             </div>
@@ -79,7 +75,6 @@ export class RegexpToggle extends React.Component<RegexpToggleProps> {
                 this.props.navbarSearchQuery,
                 'filter',
                 newPatternType,
-                this.props.caseSensitive,
                 undefined,
                 this.props.filtersInQuery
             )

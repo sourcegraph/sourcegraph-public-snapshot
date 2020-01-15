@@ -3,14 +3,7 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import {
-    parseSearchURLQuery,
-    parseSearchURLPatternType,
-    PatternTypeProps,
-    InteractiveSearchProps,
-    CaseSensitivityProps,
-    searchURLIsCaseSensitive,
-} from '..'
+import { parseSearchURLQuery, parseSearchURLPatternType, PatternTypeProps, InteractiveSearchProps } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -38,7 +31,6 @@ export interface SearchResultsProps
         TelemetryProps,
         ThemeProps,
         PatternTypeProps,
-        CaseSensitivityProps,
         InteractiveSearchProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
@@ -101,7 +93,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 buildSearchURLQuery(
                     this.props.navbarSearchQueryState.query,
                     GQL.SearchPatternType.regexp,
-                    this.props.caseSensitive,
                     this.props.filtersInQuery
                 )
             window.location.replace(newLoc)
@@ -113,23 +104,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => ({
-                        query: parseSearchURLQuery(props.location.search, props.interactiveSearchMode),
-                        patternType: parseSearchURLPatternType(props.location.search),
-                        caseSensitive: searchURLIsCaseSensitive(props.location.search),
-                    })),
+                    map(props => [
+                        parseSearchURLQuery(props.location.search, props.interactiveSearchMode),
+                        parseSearchURLPatternType(props.location.search),
+                    ]),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter(
-                        (
-                            queryAndPatternTypeAndCase
-                        ): queryAndPatternTypeAndCase is {
-                            query: string
-                            patternType: GQL.SearchPatternType
-                            caseSensitive: boolean
-                        } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
+                        (queryAndPatternType): queryAndPatternType is [string, GQL.SearchPatternType] =>
+                            !!queryAndPatternType[0] && !!queryAndPatternType[1]
                     ),
-                    tap(({ query }) => {
+                    tap(([query]) => {
                         const query_data = queryTelemetryData(query)
                         this.props.telemetryService.log('SearchResultsQueried', {
                             code_search: { query_data },
@@ -142,7 +127,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             this.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
-                    switchMap(({ query, patternType, caseSensitive }) =>
+                    switchMap(([query, patternType]) =>
                         concat(
                             // Reset view state
                             [
@@ -170,9 +155,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                         })
                                         if (patternType && patternType !== this.props.patternType) {
                                             this.props.setPatternType(patternType)
-                                        }
-                                        if (caseSensitive !== this.props.caseSensitive) {
-                                            this.props.setCaseSensitivity(caseSensitive)
                                         }
                                     },
                                     error => {
@@ -347,6 +329,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
         const newQuery = toggleSearchFilter(this.props.navbarSearchQueryState.query, value)
 
-        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType, this.props.caseSensitive)
+        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType)
     }
 }

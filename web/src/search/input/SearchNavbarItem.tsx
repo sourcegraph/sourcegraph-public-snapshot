@@ -5,9 +5,9 @@ import { Form } from '../../components/Form'
 import { submitSearch, QueryState } from '../helpers'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
-import { PatternTypeProps, CaseSensitivityProps } from '..'
+import { PatternTypeProps } from '..'
 
-interface Props extends ActivationProps, PatternTypeProps, CaseSensitivityProps {
+interface Props extends ActivationProps, PatternTypeProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
@@ -24,8 +24,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
     location,
     history,
     patternType,
-    caseSensitive,
-    setCaseSensitivity,
     setPatternType,
 }) => {
     // Only autofocus the query input on search result pages (otherwise we
@@ -36,9 +34,9 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
     const onSubmit = useCallback(
         (e: React.FormEvent<HTMLFormElement>): void => {
             e.preventDefault()
-            submitSearch(history, navbarSearchState.query, 'nav', patternType, caseSensitive, activation)
+            submitSearch(history, navbarSearchState.query, 'nav', patternType, activation)
         },
-        [history, navbarSearchState.query, patternType, caseSensitive, activation]
+        [history, navbarSearchState.query, patternType, activation]
     )
 
     return (
@@ -52,8 +50,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
                 history={history}
                 patternType={patternType}
                 setPatternType={setPatternType}
-                caseSensitive={caseSensitive}
-                setCaseSensitivity={setCaseSensitivity}
             />
             <SearchButton />
         </Form>

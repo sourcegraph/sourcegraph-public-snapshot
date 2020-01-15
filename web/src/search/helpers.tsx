@@ -6,9 +6,8 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
 import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
-import { FiltersToTypeAndValue, FilterTypes } from '../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
-import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -19,11 +18,10 @@ export function submitSearch(
     navbarQuery: string,
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type',
     patternType: GQL.SearchPatternType,
-    caseSensitive: boolean,
     activation?: ActivationProps['activation'],
     filtersQuery?: FiltersToTypeAndValue
 ): void {
-    const searchQueryParam = buildSearchURLQuery(navbarQuery, patternType, caseSensitive, filtersQuery)
+    const searchQueryParam = buildSearchURLQuery(navbarQuery, patternType, filtersQuery)
 
     // Go to search results page
     const path = '/search?' + searchQueryParam
@@ -163,7 +161,7 @@ interface ValidFilterAndValueMatch extends FilterAndValueMatch {
 /**
  * Tries to resolve the given string into a valid filter type.
  */
-export const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null => {
+const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null => {
     const absoluteFilter = filter.replace(/^-/, '')
     return filterAliases[absoluteFilter] ?? (isValidFilter(absoluteFilter) ? absoluteFilter : null)
 }
@@ -357,14 +355,6 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
  * */
 export const formatInteractiveQueryForFuzzySearch = (
     fullQuery: string,
-    filterType: FilterTypes,
+    filterType: SuggestionTypes,
     value: string = ''
-): string => {
-    // `repohasfile:` should be converted to `file:`
-    const filterSearchAlias = filterAliasForSearch[filterType]
-    if (filterSearchAlias) {
-        return fullQuery.replace(`${filterType}:${value}`, `${filterSearchAlias}:${value}`)
-    }
-
-    return isolatedFuzzySearchFiltersFilterType.includes(filterType) ? filterType + ':' + value : fullQuery
-}
+): string => (isolatedFuzzySearchFilters.includes(filterType) ? filterType + ':' + value : fullQuery)
