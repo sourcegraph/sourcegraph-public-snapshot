@@ -234,7 +234,7 @@ type CampaignResolver interface {
 	Plan(ctx context.Context) (CampaignPlanResolver, error)
 	Status(context.Context) (BackgroundProcessStatus, error)
 	ClosedAt() *DateTime
-	PublishedAt() *DateTime
+	PublishedAt(ctx context.Context) (*DateTime, error)
 	ChangesetPlans(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
 }
 

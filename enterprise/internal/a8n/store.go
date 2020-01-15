@@ -2245,6 +2245,30 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 	return sqlf.Sprintf(countChangesetJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
+func (s *Store) GetLatestChangesetPublishedAt(ctx context.Context, campaignID int64) (time.Time, error) {
+	q := sqlf.Sprintf(getLatestChangesetPublishedAtFmtstr, campaignID, campaignID)
+	var publishedAt time.Time
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		err = sc.Scan(&publishedAt)
+		if err != nil {
+			return 0, 0, err
+		}
+		return 0, 1, nil
+	})
+	if err != nil {
+		return publishedAt, err
+	}
+	return publishedAt, nil
+}
+
+var getLatestChangesetPublishedAtFmtstr = `
+SELECT max(published_at)
+FROM changeset_jobs
+WHERE campaign_id = %d
+AND NOT EXISTS
+  (SELECT id FROM changeset_jobs WHERE id = %d AND published_at IS NULL)
+`
+
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
 type GetChangesetJobOpts struct {
 	ID            int64
