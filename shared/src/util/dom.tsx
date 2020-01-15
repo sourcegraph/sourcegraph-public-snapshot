@@ -114,7 +114,12 @@ function highlightNodeHelper(
                     containerNode.appendChild(highlight)
 
                     if (currNode.childNodes.length === 0 || isLastNode) {
-                        currNode.appendChild(containerNode)
+                        if (currNode.classList.contains('selection-highlight')) {
+                            // Nothing to do; it's already highlighted.
+                            currNode.appendChild(child)
+                        } else {
+                            currNode.appendChild(containerNode)
+                        }
                     } else {
                         currNode.insertBefore(containerNode, currNode.childNodes[i] || currNode.firstChild)
                     }
