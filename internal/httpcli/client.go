@@ -57,14 +57,18 @@ type Factory struct {
 	common []Opt
 }
 
-// NewHTTPClientFactory returns an httpcli.Factory with common
-// options and middleware pre-set.
-func NewHTTPClientFactory() *Factory {
+// NewExternalHTTPClientFactory returns an httpcli.Factory with common options
+// and middleware pre-set for communicating to external services.
+func NewExternalHTTPClientFactory() *Factory {
 	return NewFactory(
 		// TODO(tsenart): Use middle for Prometheus instrumentation later.
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
+		// ExternalTransportOpt needs to be before TracedTransportOpt and
+		// NewCachedTransportOpt since it wants to extract a http.Transport,
+		// not a generic http.RoundTripper.
+		ExternalTransportOpt,
 		TracedTransportOpt,
 		NewCachedTransportOpt(httputil.Cache, true),
 	)
@@ -155,10 +159,41 @@ func ContextErrorMiddleware(cli Doer) Doer {
 // Common Opts
 //
 
+// ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
+// can contact non-Sourcegraph services. For example Admins can configure
+// TLS/SSL settings.
+func ExternalTransportOpt(cli *http.Client) error {
+	tr, err := getTransportForMutation(cli)
+	if err != nil {
+		// TODO(keegancsmith) for now we don't support unwrappable
+		// transports. https://github.com/sourcegraph/sourcegraph/pull/7741
+		// https://github.com/sourcegraph/sourcegraph/pull/71
+		if isUnwrappableTransport(cli) {
+			return nil
+		}
+		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
+	}
+
+	cli.Transport = &externalTransport{base: tr}
+	return nil
+}
+
+func isUnwrappableTransport(cli *http.Client) bool {
+	if cli.Transport == nil {
+		return false
+	}
+	_, ok := cli.Transport.(interface{ UnwrappableTransport() })
+	return ok
+}
+
 // NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
 // transport.
 func NewCertPoolOpt(certs ...string) Opt {
 	return func(cli *http.Client) error {
+		if len(certs) == 0 {
+			return nil
+		}
+
 		tr, err := getTransportForMutation(cli)
 		if err != nil {
 			return errors.Wrap(err, "httpcli.NewCertPoolOpt")
@@ -237,7 +272,7 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 
 	tr, ok := cli.Transport.(*http.Transport)
 	if !ok {
-		return nil, errors.New("http.Client.Transport is not an *http.Transport")
+		return nil, errors.Errorf("http.Client.Transport is not an *http.Transport: %T", cli.Transport)
 	}
 
 	tr = tr.Clone()
