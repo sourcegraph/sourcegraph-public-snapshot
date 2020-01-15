@@ -28,6 +28,7 @@ exports[`CampaignNode renders a campaign node 1`] = `
         </h3>
         <span
           className="badge badge-light ml-2"
+          data-tooltip="Manual"
         >
           manual
         </span>
@@ -35,12 +36,13 @@ exports[`CampaignNode renders a campaign node 1`] = `
           className="ml-2 text-muted"
           data-tooltip="2019-12-04T23:15:01Z"
         >
+          created 
           11 months
            ago
         </small>
       </div>
       <div
-        className="text-truncate text-muted markdown"
+        className="text-truncate markdown"
         dangerouslySetInnerHTML={
           Object {
             "__html": "Removes lodash

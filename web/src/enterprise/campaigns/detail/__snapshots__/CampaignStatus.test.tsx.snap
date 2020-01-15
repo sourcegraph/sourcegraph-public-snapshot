@@ -34,7 +34,7 @@ exports[`CampaignStatus campaign errored 1`] = `
 exports[`CampaignStatus campaign plan processing 1`] = `
 <React.Fragment>
   <div
-    className="mt-3 e2e-preview-loading campaign-status__progress-indicator"
+    className="mt-3 e2e-preview-loading"
   >
     <div
       className="progress mb-1"
@@ -73,7 +73,7 @@ exports[`CampaignStatus campaign plan processing 1`] = `
 exports[`CampaignStatus campaign processing 1`] = `
 <React.Fragment>
   <div
-    className="mt-3 e2e-preview-loading campaign-status__progress-indicator"
+    className="mt-3 e2e-preview-loading"
   >
     <div
       className="progress mb-1"

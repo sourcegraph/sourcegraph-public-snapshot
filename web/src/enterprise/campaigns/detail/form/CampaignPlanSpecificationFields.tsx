@@ -4,7 +4,7 @@ import credentialsJsonSchema from '../../../../../../schema/campaign-types/crede
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { CampaignType } from '../backend.js'
-import { MANUAL_CAMPAIGN_TYPE, campaignTypeLabels } from '../presentation.js'
+import { MANUAL_CAMPAIGN_TYPE, campaignTypeLabels } from '../presentation'
 
 /**
  * Data represented in {@link CampaignPlanSpecificationFields}.

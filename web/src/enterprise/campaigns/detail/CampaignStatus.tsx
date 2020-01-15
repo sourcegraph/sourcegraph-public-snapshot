@@ -30,7 +30,7 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
     return (
         <>
             {status.state === GQL.BackgroundProcessState.PROCESSING && (
-                <div className="mt-3 e2e-preview-loading campaign-status__progress-indicator">
+                <div className="mt-3 e2e-preview-loading">
                     <div className="progress mb-1">
                         {/* we need to set the width to control the progress bar, so: */}
                         {/* eslint-disable-next-line react/forbid-dom-props */}
