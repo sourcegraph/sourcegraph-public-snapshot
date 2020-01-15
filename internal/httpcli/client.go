@@ -176,6 +176,10 @@ func ExternalTransportOpt(cli *http.Client) error {
 // transport.
 func NewCertPoolOpt(certs ...string) Opt {
 	return func(cli *http.Client) error {
+		if len(certs) == 0 {
+			return nil
+		}
+
 		tr, err := getTransportForMutation(cli)
 		if err != nil {
 			return errors.Wrap(err, "httpcli.NewCertPoolOpt")
