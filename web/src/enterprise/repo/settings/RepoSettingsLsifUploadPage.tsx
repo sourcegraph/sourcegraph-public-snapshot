@@ -7,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/
 import { catchError } from 'rxjs/operators'
 import { ErrorAlert } from '../../../components/alerts'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { fetchLsifUpload } from './backend'
+import { fetchLsifUpload, fetchRepositoryName } from './backend'
 import { Link } from '../../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../../components/PageTitle'
@@ -27,6 +27,10 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
 }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsLsifUpload'))
 
+    const repositoryName = useObservable(
+        useMemo(() => fetchRepositoryName({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
+    )
+
     const uploadOrError = useObservable(
         useMemo(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
     )
@@ -42,20 +46,16 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                 </div>
             ) : (
                 <>
-                    <div className="mt-3 mb-1">
+                    <div className="mb-1">
                         <h2 className="mb-0">
-                            Upload for{' '}
+                            Upload for commit{' '}
                             {uploadOrError.projectRoot
-                                ? lsifUploadDescription(
-                                      uploadOrError.projectRoot.commit.repository.name,
-                                      uploadOrError.projectRoot.commit.abbreviatedOID,
-                                      uploadOrError.projectRoot.path
-                                  )
-                                : lsifUploadDescription(
-                                      uploadOrError.inputRepoName,
-                                      uploadOrError.inputCommit.substring(0, 7),
-                                      uploadOrError.inputRoot
-                                  )}
+                                ? uploadOrError.projectRoot.commit.abbreviatedOID
+                                : uploadOrError.inputCommit.substring(0, 7)}
+                            {uploadOrError.inputRoot !== '' &&
+                                ` rooted at ${
+                                    uploadOrError.projectRoot ? uploadOrError.projectRoot.path : uploadOrError.inputRoot
+                                }`}
                         </h2>
                     </div>
 
@@ -88,7 +88,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                                             {uploadOrError.projectRoot.commit.repository.name}
                                         </Link>
                                     ) : (
-                                        uploadOrError.inputRepoName
+                                        repositoryName
                                     )}
                                 </td>
                             </tr>
@@ -158,8 +158,4 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
             )}
         </div>
     )
-}
-
-export function lsifUploadDescription(repoName: string, commit: string, root: string): string {
-    return `${repoName}@${commit}${root === '' ? '' : ` rooted at ${root}`}`
 }

@@ -44,10 +44,10 @@ export async function convertDatabase(
         )
 
         // Move the temp file where it can be found by the server
-        await fs.rename(tempFile, dbFilename(settings.STORAGE_ROOT, upload.id, upload.repository, upload.commit))
+        await fs.rename(tempFile, dbFilename(settings.STORAGE_ROOT, upload.id))
 
         logger.info('Converted upload', {
-            repository: upload.repository,
+            repositoryId: upload.repositoryId,
             commit: upload.commit,
             root: upload.root,
         })
@@ -80,13 +80,23 @@ export async function updateCommitsAndDumpsVisibleFromTip(
 ): Promise<void> {
     const gitserverUrls = fetchConfiguration().gitServers
 
-    const tipCommit = await dumpManager.discoverTip({ repository: upload.repository, gitserverUrls, ctx })
+    // FIXME - this is a quick hack
+    const repositoryId = upload.repositoryId
+    const result: { name: string }[] = await entityManager.query('SELECT name FROM repo WHERE id = $1', [repositoryId])
+    const repositoryName = result[0].name
+
+    const tipCommit = await dumpManager.discoverTip({
+        repositoryName,
+        gitserverUrls,
+        ctx,
+    })
     if (tipCommit === undefined) {
         throw new Error('No tip commit available for repository')
     }
 
     const commits = await dumpManager.discoverCommits({
-        repository: upload.repository,
+        repositoryId,
+        repositoryName,
         commit: upload.commit,
         gitserverUrls,
         ctx,
@@ -100,7 +110,8 @@ export async function updateCommitsAndDumpsVisibleFromTip(
         // the tip and all dumps will be invisible.
 
         const tipCommits = await dumpManager.discoverCommits({
-            repository: upload.repository,
+            repositoryId,
+            repositoryName,
             commit: tipCommit,
             gitserverUrls,
             ctx,
@@ -114,6 +125,6 @@ export async function updateCommitsAndDumpsVisibleFromTip(
         }
     }
 
-    await dumpManager.updateCommits(upload.repository, commits, ctx, entityManager)
-    await dumpManager.updateDumpsVisibleFromTip(upload.repository, tipCommit, ctx, entityManager)
+    await dumpManager.updateCommits(upload.repositoryId, commits, ctx, entityManager)
+    await dumpManager.updateDumpsVisibleFromTip(upload.repositoryId, tipCommit, ctx, entityManager)
 }
