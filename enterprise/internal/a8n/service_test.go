@@ -211,7 +211,7 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("CreateChangesetJobForCampaignJob", func(t *testing.T) {
+	t.Run("PublishChangesetJobForCampaignJob", func(t *testing.T) {
 		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
@@ -231,7 +231,7 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
-		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		err = svc.PublishChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -245,7 +245,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Try to create again, check that it's the same one
-		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		err = svc.PublishChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -282,7 +282,7 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
-		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		err = svc.PublishChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -295,6 +295,10 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		if haveJob.PublishedAt.IsZero() {
+			t.Fatalf("PublishedAt is not set")
+		}
+
 		// Reset published at to null
 		haveJob.PublishedAt = time.Time{}
 		err = store.UpdateChangesetJob(ctx, haveJob)
@@ -303,9 +307,21 @@ func TestService(t *testing.T) {
 		}
 
 		// Try to create again, should not fail
-		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		err = svc.PublishChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		// Get again and make sure PublishedAt has been set
+		haveJob, err = store.GetChangesetJob(ctx, GetChangesetJobOpts{
+			CampaignID:    campaign.ID,
+			CampaignJobID: campaignJob.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if haveJob.PublishedAt.IsZero() {
+			t.Fatalf("PublishedAt is not set")
 		}
 	})
 

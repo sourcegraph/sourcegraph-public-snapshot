@@ -635,12 +635,13 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) 
 	return syncer.SyncChangesetsWithSources(ctx, bySource)
 }
 
-// CreateChangesetJob creates a ChangesetJob for the CampaignJob with the given
-// ID. The CampaignJob has to belong to a CampaignPlan that was attached to a
-// Campaign. It will ensure that the ChangesetJob is published, even if it already exists.
-func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, campaignJobID int64) (err error) {
+// PublishChangesetJobForCampaignJob creates or updates a ChangesetJob for the
+// CampaignJob with the given ID. The CampaignJob has to belong to a
+// CampaignPlan that was attached to a Campaign. It will ensure that the
+// ChangesetJob is published, even if it already exists.
+func (s *Service) PublishChangesetJobForCampaignJob(ctx context.Context, campaignJobID int64) (err error) {
 	traceTitle := fmt.Sprintf("campaignJob: %d", campaignJobID)
-	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForCampaignJob", traceTitle)
+	tr, ctx := trace.New(ctx, "service.PublishChangesetJobForCampaignJob", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -673,7 +674,9 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, campaign
 		// No need to update
 		return nil
 	}
+
 	if existing != nil {
+		existing.PublishedAt = s.clock()
 		err = tx.UpdateChangesetJob(ctx, existing)
 		if err != nil {
 			return err
