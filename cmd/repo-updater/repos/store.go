@@ -715,6 +715,12 @@ LEFT JOIN batch USING (external_service_type, external_service_id, external_id)
 ORDER BY batch.ordinality
 `
 
+// TODO: Something like this might fix it
+// SELECT repo.id
+// FROM batch
+// LEFT JOIN repo USING (external_service_type, external_service_id, external_id)
+// ORDER BY batch.ordinality
+
 func nullTimeColumn(t time.Time) *time.Time {
 	if t.IsZero() {
 		return nil
