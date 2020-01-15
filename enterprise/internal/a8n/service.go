@@ -151,6 +151,11 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	if c.Name == "" {
+		return ErrCampaignNameBlank
+	}
+
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -689,6 +694,10 @@ type UpdateCampaignArgs struct {
 	Plan        *int64
 }
 
+// ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
+// specified Campaign name is blank.
+var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
+
 // UpdateCampaign updates the Campaign with the given arguments.
 func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *a8n.Campaign, detachedChangesets []*a8n.Changeset, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", args.Campaign)
@@ -713,6 +722,10 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	var updateAttributes, updatePlanID bool
 
 	if args.Name != nil && campaign.Name != *args.Name {
+		if *args.Name == "" {
+			return nil, nil, ErrCampaignNameBlank
+		}
+
 		campaign.Name = *args.Name
 		updateAttributes = true
 	}
