@@ -1,5 +1,5 @@
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import CursorTextIcon from 'mdi-react/CursorTextIcon'
+import KeyboardIcon from 'mdi-react/KeyboardIcon'
 import ViewQuiltIcon from 'mdi-react/ViewQuiltIcon'
 import React, { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
@@ -24,7 +24,7 @@ export const SearchModeToggle: React.FunctionComponent<Props> = props => {
                 {props.interactiveSearchMode ? (
                     <ViewQuiltIcon className="icon-inline" size={8}></ViewQuiltIcon>
                 ) : (
-                    <CursorTextIcon className="icon-inline" size={8}></CursorTextIcon>
+                    <KeyboardIcon className="icon-inline" size={8}></KeyboardIcon>
                 )}
             </DropdownToggle>
             <DropdownMenu>
@@ -33,14 +33,16 @@ export const SearchModeToggle: React.FunctionComponent<Props> = props => {
                     onClick={!props.interactiveSearchMode ? props.toggleSearchMode : undefined}
                     className="e2e-search-mode-toggle__interactive-mode"
                 >
-                    Interactive mode
+                    <ViewQuiltIcon className="icon-inline" size={8}></ViewQuiltIcon>
+                    <span className="ml-1">Interactive mode</span>
                 </DropdownItem>
                 <DropdownItem
                     active={!props.interactiveSearchMode}
                     onClick={props.interactiveSearchMode ? props.toggleSearchMode : undefined}
-                    className="e2e-search-mode-toggle__omni-mode"
+                    className="e2e-search-mode-text-mode"
                 >
-                    Omni mode
+                    <KeyboardIcon className="icon-inline"></KeyboardIcon>
+                    <span className="ml-1">Plain text mode</span>
                 </DropdownItem>
                 <DropdownItem tag={Link} to="/search/query-builder">
                     Query builder&hellip;
