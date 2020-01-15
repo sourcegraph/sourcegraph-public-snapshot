@@ -3,22 +3,40 @@ interface CharacterRange {
     end: number
 }
 
+/**
+ * Represents a literal in a search query.
+ *
+ * Example: `Conn`.
+ */
 export interface Literal {
     type: 'literal'
     value: string
 }
 
+/**
+ * Represents a filter in a search query.
+ *
+ * Example: `repo:^github\.com\/sourcegraph\/sourcegraph$`.
+ */
 export interface Filter {
     type: 'filter'
     filterType: Pick<ParseSuccess<Literal>, 'range' | 'token'>
     filterValue: Pick<ParseSuccess<Literal | Quoted>, 'range' | 'token'> | undefined
 }
 
+/**
+ * Represents a sequence of tokens in a search query.
+ */
 export interface Sequence {
     type: 'sequence'
     members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[]
 }
 
+/**
+ * Represents a quoted string in a search query.
+ *
+ * Example: "Conn".
+ */
 export interface Quoted {
     type: 'quoted'
     quotedValue: string
@@ -26,31 +44,57 @@ export interface Quoted {
 
 export type Token = { type: 'whitespace' } | Literal | Filter | Sequence | Quoted
 
+/**
+ * Represents the failed result of running a {@link Parser} on a search query.
+ */
 interface ParseError {
     type: 'error'
+
+    /**
+     * A string representing the token that would have been expected
+     * for successful parsing at {@link ParseError#at}.
+     */
     expected: string
+
+    /**
+     * The index in the search query string where parsing failed.
+     */
     at: number
 }
 
+/**
+ * Represents the successful result of running a {@link Parser} on a search query.
+ */
 export interface ParseSuccess<T = Token> {
     type: 'success'
+
+    /**
+     * The parsed token.
+     */
     token: T
+
+    /**
+     * The character range that was successfully parsed.
+     */
     range: CharacterRange
 }
 
+/**
+ * Represents the result of running a {@link Parser} on a search query.
+ */
 type ParserResult<T = Token> = ParseError | ParseSuccess<T>
 
 type Parser<T = Token> = (input: string, start: number) => ParserResult<T>
 
-const flatten = (members: Pick<ParseSuccess, 'range' | 'token'>[]): Sequence['members'] =>
-    members.reduce(
-        (merged: Sequence['members'], { range, token }) =>
-            token.type === 'sequence' ? [...merged, ...flatten(token.members)] : [...merged, { token, range }],
-        []
-    )
-
-const zeroOrMore = (parse: Parser, parseSeparator: Parser): Parser<Sequence> => (input, start) => {
-    const members: Pick<ParseSuccess, 'range' | 'token'>[] = []
+/**
+ * Returns a {@link Parser} that succeeds if zero or more of the given `parseToken` parsers,
+ * separated by `parsedSeparator`, are found in a search query.
+ */
+const zeroOrMore = (
+    parseToken: Parser<Exclude<Token, Sequence>>,
+    parseSeparator: Parser<Exclude<Token, Sequence>>
+): Parser<Sequence> => (input, start) => {
+    const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
     let adjustedStart = start
     let end = start
     // try to start with separator
@@ -61,7 +105,7 @@ const zeroOrMore = (parse: Parser, parseSeparator: Parser): Parser<Sequence> => 
         const { token, range } = separatorResult
         members.push({ token, range })
     }
-    let result = parse(input, adjustedStart)
+    let result = parseToken(input, adjustedStart)
     while (result.type !== 'error') {
         const { token, range } = result
         members.push({ token, range })
@@ -80,16 +124,19 @@ const zeroOrMore = (parse: Parser, parseSeparator: Parser): Parser<Sequence> => 
         end = separatorResult.range.end
         adjustedStart = end + 1
         members.push({ token: separatorResult.token, range: separatorResult.range })
-        result = parse(input, adjustedStart)
+        result = parseToken(input, adjustedStart)
     }
     return {
         type: 'success',
         range: { start, end },
-        token: { type: 'sequence', members: flatten(members) },
+        token: { type: 'sequence', members },
     }
 }
 
-const oneOf = <T = Token>(...parsers: Parser<T>[]): Parser<T> => (input, start) => {
+/**
+ * Returns a {@link Parser} that succeeds if any of the given parsers succeeds.
+ */
+const oneOf = <T extends Exclude<Token, Sequence>>(...parsers: Parser<T>[]): Parser<T> => (input, start) => {
     const expected: string[] = []
     for (const parser of parsers) {
         const result = parser(input, start)
@@ -105,6 +152,9 @@ const oneOf = <T = Token>(...parsers: Parser<T>[]): Parser<T> => (input, start) 
     }
 }
 
+/**
+ * A {@link Parser} that will attempt to parse quoted strings in a search query.
+ */
 const quoted: Parser<Quoted> = (input, start) => {
     if (input[start] !== '"') {
         return { type: 'error', expected: '"', at: start }
@@ -123,6 +173,10 @@ const quoted: Parser<Quoted> = (input, start) => {
     }
 }
 
+/**
+ * Returns a {@link Parser} that will attempt to parse tokens matching
+ * the given character in a search query.
+ */
 const character = (c: string): Parser<Literal> => (input, start) => {
     if (input[start] !== c) {
         return { type: 'error', expected: c, at: start }
@@ -134,6 +188,10 @@ const character = (c: string): Parser<Literal> => (input, start) => {
     }
 }
 
+/**
+ * Returns a {@link Parser} that will attempt to parse
+ * tokens matching the given RegExp pattern in a search query.
+ */
 const pattern = <T = Literal>(p: RegExp, output?: T, expected?: string): Parser<T> => {
     if (!p.source.startsWith('^')) {
         p = new RegExp(`^${p.source}`)
@@ -165,6 +223,11 @@ const filterDelimiter = character(':')
 
 const filterValue = oneOf<Quoted | Literal>(quoted, pattern(/[^:\s'"]+/))
 
+/**
+ * A {@link Parser} that will attempt to parse {@link Filter} tokens
+ * (consisting a of a filter type and a filter value, separated by a colon)
+ * in a search query.
+ */
 const filter: Parser<Filter> = (input, start) => {
     const parsedKeyword = filterKeyword(input, start)
     if (parsedKeyword.type === 'error') {
@@ -192,6 +255,12 @@ const filter: Parser<Filter> = (input, start) => {
     }
 }
 
+/**
+ * A {@link Parser} for a Sourcegraph search query.
+ */
 const searchQuery = zeroOrMore(oneOf<Filter | Quoted | Literal>(filter, quoted, literal), whitespace)
 
+/**
+ * Parses a search query string.
+ */
 export const parseSearchQuery = (query: string): ParserResult<Sequence> => searchQuery(query, 0)
