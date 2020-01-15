@@ -5,10 +5,10 @@ import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
-import { PatternTypeProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps } from '..'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
+interface Props extends Omit<PatternTypeProps, 'setPatternType'>, Omit<CaseSensitivityProps, 'setCaseSensitivity'> {
     location: H.Location
     type: SearchType
     query: string
@@ -29,9 +29,10 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     query,
     filtersInQuery,
     patternType,
+    caseSensitive,
 }) => {
     const q = toggleSearchType(query, type)
-    const builtURLQuery = buildSearchURLQuery(q, patternType, filtersInQuery)
+    const builtURLQuery = buildSearchURLQuery(q, patternType, caseSensitive, filtersInQuery)
 
     const isActiveFunc = constant(location.search === `?${builtURLQuery}`)
     return (

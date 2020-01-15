@@ -6,8 +6,9 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
 import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
-import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue, FilterTypes } from '../../../shared/src/search/interactive/util'
 import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
+import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -18,10 +19,11 @@ export function submitSearch(
     navbarQuery: string,
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type',
     patternType: GQL.SearchPatternType,
+    caseSensitive: boolean,
     activation?: ActivationProps['activation'],
     filtersQuery?: FiltersToTypeAndValue
 ): void {
-    const searchQueryParam = buildSearchURLQuery(navbarQuery, patternType, filtersQuery)
+    const searchQueryParam = buildSearchURLQuery(navbarQuery, patternType, caseSensitive, filtersQuery)
 
     // Go to search results page
     const path = '/search?' + searchQueryParam
@@ -355,6 +357,14 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
  * */
 export const formatInteractiveQueryForFuzzySearch = (
     fullQuery: string,
-    filterType: SuggestionTypes,
+    filterType: FilterTypes,
     value: string = ''
-): string => (isolatedFuzzySearchFilters.includes(filterType) ? filterType + ':' + value : fullQuery)
+): string => {
+    // `repohasfile:` should be converted to `file:`
+    const filterSearchAlias = filterAliasForSearch[filterType]
+    if (filterSearchAlias) {
+        return `${filterSearchAlias}:${value}`
+    }
+
+    return isolatedFuzzySearchFiltersFilterType.includes(filterType) ? filterType + ':' + value : fullQuery
+}

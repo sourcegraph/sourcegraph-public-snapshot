@@ -1,8 +1,7 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
-import { FiltersToTypeAndValue } from '../search/interactive/util'
-import { suggestionTypeKeys } from '../search/suggestions/util'
+import { FiltersToTypeAndValue, filterTypeKeys } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 
 export interface RepoSpec {
@@ -528,6 +527,7 @@ export function withWorkspaceRootInputRevision(
 export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
+    caseSensitive: boolean,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
     let searchParams = new URLSearchParams()
@@ -542,9 +542,40 @@ export function buildSearchURLQuery(
         const newQuery = query.replace(patternTypeRegexp, '')
         searchParams.set('q', newQuery)
         searchParams.set('patternType', patternTypeInQuery.toLowerCase())
+        query = newQuery
     } else {
         searchParams.set('q', query)
         searchParams.set('patternType', patternType)
+    }
+
+    const caseInQuery = parseCaseSensitivityFromQuery(query)
+    if (caseInQuery) {
+        const caseRegexp = /\bcase:(?<type>yes|no)\b/i
+        const newQuery = query.replace(caseRegexp, '')
+        searchParams.set('q', newQuery)
+
+        if (caseInQuery === 'yes') {
+            searchParams.set('case', caseInQuery)
+        } else {
+            // For now, remove case when case:no, since it's the default behavior. Avoids
+            // queries breaking when only `repo:` filters are specified.
+            //
+            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
+            searchParams.delete('case')
+        }
+
+        query = newQuery
+    } else {
+        searchParams.set('q', query)
+        if (caseSensitive) {
+            searchParams.set('case', 'yes')
+        } else {
+            // For now, remove case when case:no, since it's the default behavior. Avoids
+            // queries breaking when only `repo:` filters are specified.
+            //
+            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
+            searchParams.delete('case')
+        }
     }
 
     return searchParams
@@ -563,7 +594,7 @@ export function buildSearchURLQuery(
 export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
     const searchParams = new URLSearchParams()
 
-    for (const searchType of suggestionTypeKeys) {
+    for (const searchType of filterTypeKeys) {
         for (const [, filterValue] of Object.entries(filtersInQuery)) {
             if (filterValue.type === searchType) {
                 searchParams.append(searchType, filterValue.value)
@@ -582,4 +613,11 @@ function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined
     }
 
     return undefined
+}
+
+function parseCaseSensitivityFromQuery(query: string): string | undefined {
+    const caseRegexp = /\bcase:(?<option>yes|no)\b/i
+    const matches = query.match(caseRegexp)
+
+    return matches?.groups?.option
 }

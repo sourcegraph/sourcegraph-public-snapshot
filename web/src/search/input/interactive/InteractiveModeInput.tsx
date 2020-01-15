@@ -17,12 +17,12 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { ThemePreferenceProps } from '../../../theme'
 import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
-import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
-import { SuggestionTypes, suggestionTypeKeys } from '../../../../../shared/src/search/suggestions/util'
+import { FiltersToTypeAndValue, filterTypeKeys, FilterTypes } from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
-import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps } from '../..'
+import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
+import { isFiniteFilter } from './filters'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -34,6 +34,7 @@ interface InteractiveModeProps
         EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
+        CaseSensitivityProps,
         Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'> {
     location: H.Location
     history: H.History
@@ -58,10 +59,15 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
         const searchParams = new URLSearchParams(props.location.search)
         const filtersInQuery: FiltersToTypeAndValue = {}
-        for (const t of suggestionTypeKeys) {
-            const itemsOfType = searchParams.getAll(t)
-            itemsOfType.map((item, i) => {
-                filtersInQuery[uniqueId(t)] = { type: t, value: item, editable: false }
+
+        for (const filter of filterTypeKeys.filter(key => key !== FilterTypes.case)) {
+            const itemsOfType = searchParams.getAll(filter)
+            itemsOfType.map(item => {
+                filtersInQuery[isFiniteFilter(filter) ? filter : uniqueId(filter)] = {
+                    type: filter,
+                    value: item,
+                    editable: false,
+                }
             })
         }
 
@@ -71,8 +77,22 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
     /**
      * Adds a new filter to the top-level filtersInQuery state field.
      */
-    private addNewFilter = (filterType: SuggestionTypes): void => {
-        const filterKey = uniqueId(filterType)
+    private addNewFilter = (filterType: FilterTypes): void => {
+        let filterKey: string = uniqueId(filterType)
+        if (isFiniteFilter(filterType)) {
+            filterKey = filterType
+            // We only allow finite-option filters to be specified once per query,
+            // so we don't need to append a uniqueId.
+            if (this.props.filtersInQuery[filterKey]) {
+                // If the finite filter already exists in the query, just make the
+                // existing one editable.
+                const newFiltersInQuery = this.props.filtersInQuery
+                newFiltersInQuery[filterKey].editable = true
+                this.props.onFiltersInQueryChange(newFiltersInQuery)
+                return
+            }
+        }
+
         this.props.onFiltersInQueryChange({
             ...this.props.filtersInQuery,
             [filterKey]: { type: filterType, value: '', editable: true },
@@ -103,26 +123,32 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
             this.props.navbarSearchState.query,
             'nav',
             this.props.patternType,
+            this.props.caseSensitive,
             undefined,
             newFiltersInQuery
         )
     }
 
     private onFilterDeleted = (filterKey: string): void => {
+        const filterWasEmpty =
+            this.props.filtersInQuery[filterKey].value === '' || !this.props.filtersInQuery[filterKey]
         const newFiltersInQuery = { ...this.props.filtersInQuery }
         delete newFiltersInQuery[filterKey]
 
         this.props.onFiltersInQueryChange(newFiltersInQuery)
 
-        // Submit a search with the new values
-        submitSearch(
-            this.props.history,
-            this.props.navbarSearchState.query,
-            'nav',
-            this.props.patternType,
-            undefined,
-            newFiltersInQuery
-        )
+        if (!filterWasEmpty) {
+            // Submit a search with the new values
+            submitSearch(
+                this.props.history,
+                this.props.navbarSearchState.query,
+                'nav',
+                this.props.patternType,
+                this.props.caseSensitive,
+                undefined,
+                newFiltersInQuery
+            )
+        }
     }
 
     /**
@@ -148,6 +174,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
             this.props.navbarSearchState.query,
             'nav',
             this.props.patternType,
+            this.props.caseSensitive,
             undefined,
             this.props.filtersInQuery
         )
@@ -203,6 +230,8 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                                     onChange={this.props.onNavbarQueryChange}
                                     patternType={this.props.patternType}
                                     setPatternType={this.props.setPatternType}
+                                    caseSensitive={this.props.caseSensitive}
+                                    setCaseSensitivity={this.props.setCaseSensitivity}
                                     autoFocus={true}
                                     filterQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}

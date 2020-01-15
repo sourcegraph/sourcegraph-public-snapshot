@@ -15,20 +15,27 @@ import {
     share,
     delay,
 } from 'rxjs/operators'
-import { createSuggestion, Suggestion, SuggestionItem, FiltersSuggestionTypes } from '../Suggestion'
+import { createSuggestion, Suggestion, SuggestionItem, fuzzySearchFilters } from '../Suggestion'
 import { fetchSuggestions } from '../../backend'
 import { ComponentSuggestions, noSuggestions, typingDebounceTime } from '../QueryInput'
 import { isDefined } from '../../../../../shared/src/util/types'
 import Downshift from 'downshift'
 import { generateFiltersQuery } from '../helpers'
-import { QueryState, formatInteractiveQueryForFuzzySearch } from '../../helpers'
+import {
+    QueryState,
+    formatInteractiveQueryForFuzzySearch,
+    validFilterAndValueBeforeCursor,
+    filterStaticSuggestions,
+} from '../../helpers'
 import { dedupeWhitespace } from '../../../../../shared/src/util/strings'
-import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue, FilterTypes } from '../../../../../shared/src/search/interactive/util'
 import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
-import { startCase } from 'lodash'
+import { startCase, isEqual } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CheckButton } from './CheckButton'
+import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypesToProseNames } from './filters'
+import classNames from 'classnames'
 
 interface Props {
     /**
@@ -54,7 +61,7 @@ interface Props {
     /**
      * The search filter type, as available in {@link SuggstionTypes}
      */
-    filterType: SuggestionTypes
+    filterType: FilterTypes
 
     /**
      * Whether or not this FilterInput is currently editable.
@@ -64,6 +71,8 @@ interface Props {
      * on initial mount.
      */
     editable: boolean
+
+    isHomepage: boolean
 
     /**
      * Callback that handles a filter input being submitted. Triggers a search
@@ -110,6 +119,8 @@ export class FilterInput extends React.Component<Props, State> {
     private inputEl = React.createRef<HTMLInputElement>()
     /** Emits when the suggestions are hidden */
     private suggestionsHidden = new Subject<void>()
+    /** Emits on mount to set the default value for finite-option filters */
+    private setFiniteFilterDefault = new Subject<void>()
 
     constructor(props: Props) {
         super(props)
@@ -144,6 +155,32 @@ export class FilterInput extends React.Component<Props, State> {
                                 editable: true,
                             }
                         }
+                        const filterAndValue = `${filterType}:${inputValue}`
+                        const filterAndValueBeforeCursor = validFilterAndValueBeforeCursor({
+                            query: `${filterType}:${inputValue}`,
+                            cursorPosition: filterAndValue.length,
+                        })
+
+                        // First get static suggestions
+                        const staticSuggestions = {
+                            cursorPosition: filterAndValue.length,
+                            values: filterStaticSuggestions(
+                                {
+                                    query: `${filterType}:${inputValue}`,
+                                    cursorPosition: filterAndValue.length,
+                                },
+                                searchFilterSuggestions
+                            ),
+                        }
+
+                        // If a filter value is being typed but selected filter does not use
+                        // fuzzy-search suggestions, then return only static suggestions
+                        if (
+                            filterAndValueBeforeCursor &&
+                            !fuzzySearchFilters.includes(filterAndValueBeforeCursor.resolvedFilterType)
+                        ) {
+                            return [{ suggestions: staticSuggestions }]
+                        }
 
                         let fullQuery = `${props.navbarQuery.query} ${generateFiltersQuery(newFiltersQuery)}`
 
@@ -152,7 +189,18 @@ export class FilterInput extends React.Component<Props, State> {
                             map(createSuggestion),
                             filter(isDefined),
                             map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
-                            filter(suggestion => suggestion.type === filterType),
+                            filter(suggestion => {
+                                // Only show fuzzy-suggestions that are relevant to the typed filter
+                                if (filterAndValueBeforeCursor?.resolvedFilterType) {
+                                    switch (filterAndValueBeforeCursor.resolvedFilterType) {
+                                        case SuggestionTypes.repohasfile:
+                                            return suggestion.type === SuggestionTypes.file
+                                        default:
+                                            return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
+                                    }
+                                }
+                                return true
+                            }),
                             toArray(),
                             map(suggestions => ({
                                 suggestions: {
@@ -177,12 +225,27 @@ export class FilterInput extends React.Component<Props, State> {
                 )
                 .subscribe(state => this.setState({ ...state, showSuggestions: true }))
         )
+
+        if (isFiniteFilter(this.props.filterType)) {
+            this.subscriptions.add(
+                this.setFiniteFilterDefault.subscribe(() => {
+                    this.setState(({ inputValue }) => ({
+                        inputValue:
+                            isFiniteFilter(this.props.filterType) && inputValue === ''
+                                ? finiteFilters[this.props.filterType].default
+                                : inputValue,
+                    }))
+                })
+            )
+        }
     }
 
     public componentDidMount(): void {
         if (this.inputEl.current) {
             this.inputEl.current.focus()
         }
+
+        this.setFiniteFilterDefault.next()
     }
 
     public componentWillUnmount(): void {
@@ -231,6 +294,20 @@ export class FilterInput extends React.Component<Props, State> {
     }
 
     /**
+     * Checks that the newly focused element is not a child of the previously focused element.
+     * Prevents onBlur from firing if we are clicking inside the filter input chip.
+     */
+    private focusInCurrentTarget = (e: React.FocusEvent<HTMLDivElement>): boolean => {
+        const { relatedTarget, currentTarget } = e
+
+        if (relatedTarget === null) {
+            return false
+        }
+        const node = (relatedTarget as HTMLElement).parentNode
+        return currentTarget.contains(node) || isEqual(currentTarget, node)
+    }
+
+    /**
      * Handles the input field in the filter input becoming unfocused.
      */
     private onInputBlur: React.FocusEventHandler<HTMLDivElement> = e => {
@@ -263,28 +340,14 @@ export class FilterInput extends React.Component<Props, State> {
         this.setState({ suggestions: noSuggestions, inputValue: this.props.value })
     }
 
-    /**
-     * Checks that the newly focused element is not a child of the previously focused element.
-     * Prevents onBlur from firing if we are clicking inside the filter input chip.
-     */
-    private focusInCurrentTarget = (e: React.FocusEvent<HTMLDivElement>): boolean => {
-        const { relatedTarget, currentTarget } = e
-        if (relatedTarget === null) {
-            return false
-        }
-
-        const node = (relatedTarget as HTMLElement).parentNode
-        return currentTarget.contains(node)
-    }
-
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
-        // Ctrl+Space to show all available filter type suggestions
         if (event.ctrlKey && event.key === ' ') {
             this.setState({
                 suggestions: {
                     cursorPosition: event.currentTarget.selectionStart ?? 0,
-                    values: searchFilterSuggestions[this.props.filterType as FiltersSuggestionTypes].values,
+                    values: searchFilterSuggestions[this.props.filterType].values,
                 },
+                showSuggestions: true,
             })
         }
 
@@ -297,110 +360,167 @@ export class FilterInput extends React.Component<Props, State> {
     private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.value : '')
 
     public render(): JSX.Element | null {
+        const isText = isTextFilter(this.props.filterType)
+        const isEditableAndText = this.props.editable && isText
+        return (
+            <div
+                className={`${classNames(
+                    'filter-input',
+                    `e2e-filter-input-${this.props.mapKey}`,
+                    { 'filter-input--active-homepage': isEditableAndText && this.props.isHomepage },
+                    { 'filter-input--active': isEditableAndText && !this.props.isHomepage }
+                )}`}
+                onBlur={this.onInputBlur}
+                tabIndex={0}
+            >
+                {this.props.editable
+                    ? isText
+                        ? this.renderTextFilterForm()
+                        : this.renderFiniteFilterForm()
+                    : this.renderUneditableFilter()}
+            </div>
+        )
+    }
+
+    private renderTextFilterForm(): JSX.Element {
         const suggestionsAreLoading = this.state.suggestions === LOADING
         const showSuggestions =
             this.state.showSuggestions &&
             ((this.state.suggestions !== LOADING && this.state.suggestions.values.length > 0) || suggestionsAreLoading)
 
         return (
-            <div
-                className={`filter-input ${this.props.editable ? 'filter-input--active' : ''} e2e-filter-input-${
-                    this.props.mapKey
-                }`}
-                onBlur={this.onInputBlur}
-            >
-                {this.props.editable ? (
-                    <Form onSubmit={this.onSubmitInput}>
-                        <Downshift onSelect={this.onSuggestionSelect} itemToString={this.downshiftItemToString}>
-                            {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
-                                const { onKeyDown } = getInputProps()
-                                return (
-                                    <div>
-                                        <div className="filter-input__form">
-                                            <div className="filter-input__input-wrapper">
-                                                <input
-                                                    ref={this.inputEl}
-                                                    className={`form-control filter-input__input-field e2e-filter-input__input-field-${this.props.mapKey}`}
-                                                    value={this.state.inputValue}
-                                                    onChange={this.onInputUpdate}
-                                                    placeholder={`${startCase(this.props.filterType)} filter`}
-                                                    onKeyDown={event => {
-                                                        this.onInputKeyDown(event)
-                                                        onKeyDown(event)
-                                                    }}
-                                                    autoFocus={true}
-                                                />
-                                                {showSuggestions && (
-                                                    <ul
-                                                        className="filter-input__suggestions e2e-filter-input__suggestions"
-                                                        {...getMenuProps()}
-                                                    >
-                                                        {this.state.suggestions === LOADING ? (
-                                                            <li className="suggestion suggestion--selected">
-                                                                <LoadingSpinner className="icon-inline" />
-                                                                <div className="suggestion__description">Loading</div>
-                                                            </li>
-                                                        ) : (
-                                                            this.state.suggestions.values.map((suggestion, index) => {
-                                                                const isSelected = highlightedIndex === index
-                                                                const key = `${index}-${suggestion}`
-                                                                return (
-                                                                    <SuggestionItem
-                                                                        key={key}
-                                                                        {...getItemProps({
-                                                                            key,
-                                                                            index,
-                                                                            item: suggestion,
-                                                                        })}
-                                                                        suggestion={suggestion}
-                                                                        isSelected={isSelected}
-                                                                        showUrlLabel={false}
-                                                                    />
-                                                                )
-                                                            })
-                                                        )}
-                                                    </ul>
-                                                )}
-                                            </div>
-                                            <CheckButton />
-                                            <button
-                                                type="button"
-                                                onClick={this.handleDiscard}
-                                                className={`btn btn-icon icon-inline e2e-filter-input__cancel-button-${this.props.mapKey}`}
-                                                aria-label="Cancel"
-                                                data-tooltip="Cancel"
+            <Form onSubmit={this.onSubmitInput}>
+                <Downshift onSelect={this.onSuggestionSelect} itemToString={this.downshiftItemToString}>
+                    {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
+                        const { onKeyDown } = getInputProps()
+                        return (
+                            <div>
+                                <div className="filter-input__form">
+                                    <div className="filter-input__input-wrapper">
+                                        <input
+                                            ref={this.inputEl}
+                                            className={`form-control filter-input__input-field e2e-filter-input__input-field-${this.props.mapKey}`}
+                                            value={this.state.inputValue}
+                                            onChange={this.onInputUpdate}
+                                            placeholder={`${startCase(this.props.filterType)} filter`}
+                                            onKeyDown={event => {
+                                                this.onInputKeyDown(event)
+                                                onKeyDown(event)
+                                            }}
+                                            autoFocus={true}
+                                        />
+                                        {showSuggestions && (
+                                            <ul
+                                                className="filter-input__suggestions e2e-filter-input__suggestions"
+                                                {...getMenuProps()}
                                             >
-                                                <CloseIcon />
-                                            </button>
-                                        </div>
+                                                {this.state.suggestions === LOADING ? (
+                                                    <li className="suggestion suggestion--selected">
+                                                        <LoadingSpinner className="icon-inline" />
+                                                        <div className="suggestion__description">Loading</div>
+                                                    </li>
+                                                ) : (
+                                                    this.state.suggestions.values.map((suggestion, index) => {
+                                                        const isSelected = highlightedIndex === index
+                                                        const key = `${index}-${suggestion}`
+                                                        return (
+                                                            <SuggestionItem
+                                                                key={key}
+                                                                {...getItemProps({
+                                                                    key,
+                                                                    index,
+                                                                    item: suggestion,
+                                                                })}
+                                                                suggestion={suggestion}
+                                                                isSelected={isSelected}
+                                                                showUrlLabel={false}
+                                                            />
+                                                        )
+                                                    })
+                                                )}
+                                            </ul>
+                                        )}
                                     </div>
-                                )
-                            }}
-                        </Downshift>
-                    </Form>
-                ) : (
-                    <div className="filter-input--uneditable d-flex">
-                        <button
-                            type="button"
-                            className={`filter-input__button-text btn text-nowrap e2e-filter-input__button-text-${this.props.mapKey}`}
-                            onClick={this.onClickFilterChip}
-                            data-tooltip="Edit filter"
-                            aria-label="Edit filter"
-                            tabIndex={0}
-                        >
-                            {this.props.filterType}:{this.state.inputValue}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={this.onClickDelete}
-                            className="btn btn-icon icon-inline e2e-filter-input__delete-button"
-                            aria-label="Delete filter"
-                            data-tooltip="Delete filter"
-                        >
-                            <CloseIcon />
-                        </button>
+                                    <CheckButton className="check-button__btn" />
+                                    <button
+                                        type="button"
+                                        onClick={this.handleDiscard}
+                                        className={`btn btn-icon icon-inline e2e-filter-input__cancel-button-${this.props.mapKey}`}
+                                        aria-label="Cancel"
+                                        data-tooltip="Cancel"
+                                    >
+                                        <CloseIcon />
+                                    </button>
+                                </div>
+                            </div>
+                        )
+                    }}
+                </Downshift>
+            </Form>
+        )
+    }
+
+    private renderFiniteFilterForm(): JSX.Element {
+        return (
+            <Form onSubmit={this.onSubmitInput}>
+                <div className="filter-input__form e2e-filter-input-finite-form">
+                    <div className="filter-input__radio-button-container">
+                        <span>{`${FilterTypesToProseNames[this.props.filterType]}:`}</span>
+                        {isFiniteFilter(this.props.filterType) &&
+                            finiteFilters[this.props.filterType].values.map(val => (
+                                <div key={val.value} className="filter-input__radio">
+                                    <input
+                                        type="radio"
+                                        className={`e2e-filter-input-radio-button-${val.value}`}
+                                        id={val.value}
+                                        name={val.value}
+                                        onChange={() => this.setState({ inputValue: val.value })}
+                                        checked={this.state.inputValue === val.value}
+                                        autoFocus={true}
+                                    />
+                                    <label htmlFor={val.value} tabIndex={0} className="filter-input__radio-label">
+                                        {startCase(val.value)}
+                                    </label>
+                                </div>
+                            ))}
                     </div>
-                )}
+                    <CheckButton />
+                    <button
+                        type="button"
+                        onClick={this.handleDiscard}
+                        className={`btn btn-icon icon-inline e2e-filter-input__cancel-button-${this.props.mapKey}`}
+                        aria-label="Cancel"
+                        data-tooltip="Cancel"
+                    >
+                        <CloseIcon />
+                    </button>
+                </div>
+            </Form>
+        )
+    }
+
+    private renderUneditableFilter(): JSX.Element {
+        return (
+            <div className="filter-input--uneditable d-flex">
+                <button
+                    type="button"
+                    className={`filter-input__button-text btn text-nowrap e2e-filter-input__button-text-${this.props.mapKey}`}
+                    onClick={this.onClickFilterChip}
+                    data-tooltip="Edit filter"
+                    aria-label="Edit filter"
+                    tabIndex={0}
+                >
+                    {this.props.filterType}:{this.state.inputValue}
+                </button>
+                <button
+                    type="button"
+                    onClick={this.onClickDelete}
+                    className="btn btn-icon icon-inline e2e-filter-input__delete-button"
+                    aria-label="Delete filter"
+                    data-tooltip="Delete filter"
+                >
+                    <CloseIcon />
+                </button>
             </div>
         )
     }

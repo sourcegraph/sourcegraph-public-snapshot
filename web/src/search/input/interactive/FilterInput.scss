@@ -2,14 +2,18 @@ $filter-input-margin-y: 0.5rem;
 $filter-input-padding: 0.25rem;
 
 .filter-input {
-    margin: $filter-input-margin-y 0.25rem;
+    margin: $filter-input-margin-y 0.25rem $filter-input-margin-y 0;
     border: 1px solid $color-border;
     padding: $filter-input-padding;
     border-radius: 2px;
     background-color: $color-bg-2;
 
-    &--active {
+    &--active-homepage {
         min-width: 50%;
+    }
+
+    &--active {
+        min-width: 35%;
     }
 
     &--uneditable {
@@ -56,6 +60,19 @@ $filter-input-padding: 0.25rem;
         border: solid 1px #1b548a;
         border-top: none;
         padding: 0;
+    }
+
+    &__radio {
+        padding: 0 0.25rem;
+    }
+
+    &__radio-label {
+        padding: 0 0.25rem;
+    }
+
+    &__radio-button-container {
+        display: flex;
+        align-self: flex-end;
     }
 }
 

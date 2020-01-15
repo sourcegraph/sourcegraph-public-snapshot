@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from '..'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -30,6 +30,7 @@ interface Props
         ThemePreferenceProps,
         ActivationProps,
         PatternTypeProps,
+        CaseSensitivityProps,
         KeyboardShortcutsProps,
         EventLoggerProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -159,7 +160,14 @@ export class SearchPage extends React.Component<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         const query = [this.state.builderQuery, this.state.userQueryState.query].filter(s => !!s).join(' ')
-        submitSearch(this.props.history, query, 'home', this.props.patternType, this.props.activation)
+        submitSearch(
+            this.props.history,
+            query,
+            'home',
+            this.props.patternType,
+            this.props.caseSensitive,
+            this.props.activation
+        )
     }
 
     private getPageTitle(): string | undefined {
