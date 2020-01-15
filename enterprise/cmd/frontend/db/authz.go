@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
@@ -34,4 +35,28 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 		Perm:   args.Perm,
 		Type:   args.Type,
 	})
+}
+
+func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedReposArgs) ([]*types.Repo, error) {
+	s.init()
+
+	p := &iauthz.UserPermissions{
+		UserID:   args.UserID,
+		Perm:     args.Perm,
+		Type:     args.Type,
+		Provider: args.Provider,
+	}
+	if err := s.store.LoadUserPermissions(ctx, p); err != nil {
+		if err == iauthz.ErrNotFound {
+			return []*types.Repo{}, nil
+		}
+		return nil, err
+	}
+
+	perms := p.AuthorizedRepos(args.Repos)
+	filtered := args.Repos[:0]
+	for _, r := range perms {
+		filtered = append(filtered, r.Repo) // In-place filtering
+	}
+	return filtered, nil
 }

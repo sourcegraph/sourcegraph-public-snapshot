@@ -187,7 +187,7 @@ func authzProvidersFromConfig(
 		warnings = append(warnings, bbsWarnings...)
 	}
 
-	// 🚨 SECURITY: Warn the admin when both code host authz provider and the Sourcegraph authz provider are configured.
+	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
 	if cfg.SiteConfiguration.PermissionsUserMapping != nil &&
 		cfg.SiteConfiguration.PermissionsUserMapping.Enabled && len(providers) > 0 {
 		serviceTypes := make([]string, len(providers))

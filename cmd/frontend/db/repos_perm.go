@@ -6,9 +6,11 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -91,6 +93,24 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		otlog.Bool("authzAllowByDefault", authzAllowByDefault),
 		otlog.Int("authzProviders.count", len(authzProviders)),
 	)
+
+	// 🚨 SECURITY: Blocking access to all repositories if both code host authz provider(s) and permissions user mapping
+	// are configured.
+	cfg := conf.Get().SiteConfiguration
+	if cfg.PermissionsUserMapping != nil && cfg.PermissionsUserMapping.Enabled {
+		if len(authzProviders) > 0 {
+			return nil, errors.New("site configuration has conflict settings on repository permissions, please contact site admin to resolve it.")
+		}
+
+		return Authz.AuthorizedRepos(ctx, &AuthorizedReposArgs{
+			Repos:    repos,
+			UserID:   currentUser.ID,
+			Perm:     p,
+			Type:     authz.PermRepos,
+			Provider: authz.ProviderSourcegraph,
+		})
+	}
+
 	if authzAllowByDefault && len(authzProviders) == 0 {
 		return repos, nil
 	}

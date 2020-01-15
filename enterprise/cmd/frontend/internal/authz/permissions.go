@@ -32,11 +32,13 @@ func (p *UserPermissions) Expired(ttl time.Duration, now time.Time) bool {
 func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []authz.RepoPerms {
 	if p.Type != authz.PermRepos {
 		return nil
+	} else if p.IDs == nil || p.IDs.GetCardinality() == 0 {
+		return nil
 	}
 
 	perms := make([]authz.RepoPerms, 0, len(repos))
 	for _, r := range repos {
-		if r.ID != 0 && p.IDs != nil && p.IDs.Contains(uint32(r.ID)) {
+		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
 			perms = append(perms, authz.RepoPerms{Repo: r, Perms: p.Perm})
 		}
 	}
@@ -80,9 +82,13 @@ func (p *RepoPermissions) Expired(ttl time.Duration, now time.Time) bool {
 // AuthorizedUsers returns the intersection of the given user IDs with
 // the authorized IDs.
 func (p *RepoPermissions) AuthorizedUsers(users []*types.User) []authz.RepoPerms {
+	if p.UserIDs == nil || p.UserIDs.GetCardinality() == 0 {
+		return nil
+	}
+
 	perms := make([]authz.RepoPerms, 0, len(users))
 	for _, u := range users {
-		if u.ID != 0 && p.UserIDs != nil && p.UserIDs.Contains(uint32(u.ID)) {
+		if u.ID != 0 && p.UserIDs.Contains(uint32(u.ID)) {
 			perms = append(perms, authz.RepoPerms{
 				Repo: &types.Repo{
 					ID: api.RepoID(p.RepoID),
@@ -136,11 +142,13 @@ func (p *UserPendingPermissions) Expired(ttl time.Duration, now time.Time) bool 
 func (p *UserPendingPermissions) AuthorizedRepos(repos []*types.Repo) []authz.RepoPerms {
 	if p.Type != authz.PermRepos {
 		return nil
+	} else if p.IDs == nil || p.IDs.GetCardinality() == 0 {
+		return nil
 	}
 
 	perms := make([]authz.RepoPerms, 0, len(repos))
 	for _, r := range repos {
-		if r.ID != 0 && p.IDs != nil && p.IDs.Contains(uint32(r.ID)) {
+		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
 			perms = append(perms, authz.RepoPerms{Repo: r, Perms: p.Perm})
 		}
 	}
