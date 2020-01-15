@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/time/rate"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -89,6 +90,27 @@ func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
 		URL:        url,
 		RateLimit:  rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests),
 	}
+}
+
+// NewClientWithConfig returns an authenticated Bitbucket Server API client with
+// the provided configuration.
+func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
+	u, err := url.Parse(c.Url)
+	if err != nil {
+		return nil, err
+	}
+
+	client := NewClient(u, nil)
+	client.Username = c.Username
+	client.Password = c.Password
+	client.Token = c.Token
+	if c.Authorization != nil {
+		client.SetOAuth(
+			c.Authorization.Oauth.ConsumerKey,
+			c.Authorization.Oauth.SigningKey,
+		)
+	}
+	return client, nil
 }
 
 // SetOAuth enables OAuth authentication in a Client, using the given consumer
