@@ -1,5 +1,4 @@
 import * as util from '../integration-test-util'
-import { internalLocationToLocation } from '../../../server/routes/lsif'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
@@ -21,8 +20,8 @@ describe('Backend', () => {
         }
 
         const definitions = await ctx.backend.definitions(repository, commit, 'src/a.ts', { line: 0, character: 17 })
-        expect(definitions?.map(l => internalLocationToLocation(repository, l))).toEqual([
-            util.createLocation('src/a.ts', 0, 16, 0, 19),
+        expect(definitions?.map(util.mapLocation)).toEqual([
+            util.createLocation(repository, commit, 'src/a.ts', 0, 16, 0, 19),
         ])
     })
 
@@ -32,8 +31,8 @@ describe('Backend', () => {
         }
 
         const definitions = await ctx.backend.definitions(repository, commit, 'src/b.ts', { line: 2, character: 1 })
-        expect(definitions?.map(l => internalLocationToLocation(repository, l))).toEqual([
-            util.createLocation('src/a.ts', 0, 16, 0, 19),
+        expect(definitions?.map(util.mapLocation)).toEqual([
+            util.createLocation(repository, commit, 'src/a.ts', 0, 16, 0, 19),
         ])
     })
 
@@ -43,19 +42,18 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            util.mapInternalLocations(
-                repository,
+            util.mapLocations(
                 (await ctx.backend.references(repository, commit, 'src/a.ts', { line: 0, character: 17 })) || {
                     locations: [],
                 }
             )
         )
 
-        expect(locations).toContainEqual(util.createLocation('src/a.ts', 0, 16, 0, 19)) // def
-        expect(locations).toContainEqual(util.createLocation('src/b.ts', 0, 9, 0, 12)) // import
-        expect(locations).toContainEqual(util.createLocation('src/b.ts', 2, 0, 2, 3)) // use
-        expect(locations).toContainEqual(util.createLocation('src/b.ts', 2, 7, 2, 10)) // use
-        expect(locations).toContainEqual(util.createLocation('src/b.ts', 2, 14, 2, 17)) // use
+        expect(locations).toContainEqual(util.createLocation(repository, commit, 'src/a.ts', 0, 16, 0, 19)) // def
+        expect(locations).toContainEqual(util.createLocation(repository, commit, 'src/b.ts', 0, 9, 0, 12)) // import
+        expect(locations).toContainEqual(util.createLocation(repository, commit, 'src/b.ts', 2, 0, 2, 3)) // use
+        expect(locations).toContainEqual(util.createLocation(repository, commit, 'src/b.ts', 2, 7, 2, 10)) // use
+        expect(locations).toContainEqual(util.createLocation(repository, commit, 'src/b.ts', 2, 14, 2, 17)) // use
         expect(locations).toHaveLength(5)
     })
 })

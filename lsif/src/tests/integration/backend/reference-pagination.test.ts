@@ -27,8 +27,7 @@ describe('Backend', () => {
 
         const fetch = async (paginationContext?: ReferencePaginationContext) =>
             util.filterNodeModules(
-                util.mapInternalLocations(
-                    'a',
+                util.mapLocations(
                     (await backend.references(
                         'a',
                         commit,
@@ -60,7 +59,7 @@ describe('Backend', () => {
             Array.from(new Set(references.map(r => (r.uri.match(/git:\/\/([^?]+)\?.+/) || ['', ''])[1]))).sort()
 
         // Ensure paging gets us expected results per page
-        expect(extractRepos(locations1)).toEqual(['', 'b1', 'b10', 'b2'])
+        expect(extractRepos(locations1)).toEqual(['a', 'b1', 'b10', 'b2'])
         expect(extractRepos(locations2)).toEqual(['b3', 'b4', 'b5'])
         expect(extractRepos(locations3)).toEqual(['b6', 'b7', 'b8'])
         expect(extractRepos(locations4)).toEqual(['b9'])
