@@ -165,11 +165,25 @@ func ContextErrorMiddleware(cli Doer) Doer {
 func ExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
 	if err != nil {
+		// TODO(keegancsmith) for now we don't support unwrappable
+		// transports. https://github.com/sourcegraph/sourcegraph/pull/7741
+		// https://github.com/sourcegraph/sourcegraph/pull/71
+		if isUnwrappableTransport(cli) {
+			return nil
+		}
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
 	cli.Transport = &externalTransport{base: tr}
 	return nil
+}
+
+func isUnwrappableTransport(cli *http.Client) bool {
+	if cli.Transport == nil {
+		return false
+	}
+	_, ok := cli.Transport.(interface{ UnwrappableTransport() })
+	return ok
 }
 
 // NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
