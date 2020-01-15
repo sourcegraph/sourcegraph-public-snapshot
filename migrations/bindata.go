@@ -62,6 +62,8 @@
 // 1528395633_drop_repo_deleted_at_unused.up.sql (81B)
 // 1528395634_lsif_unify_dumps_and_uploads.down.sql (2.604kB)
 // 1528395634_lsif_unify_dumps_and_uploads.up.sql (2.607kB)
+// 1528395635_check_campaign_name_not_blank.down.sql (81B)
+// 1528395635_check_campaign_name_not_blank.up.sql (189B)
 
 package migrations
 
@@ -1370,6 +1372,46 @@ func _1528395634_lsif_unify_dumps_and_uploadsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395635_check_campaign_name_not_blankDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x41\xc8\xc4\xe7\x25\xe6\xa6\xc6\xe7\xe5\x97\xc4\x27\xe5\x24\xe6\x65\x5b\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x1f\xba\xb9\x0c\x51\x00\x00\x00")
+
+func _1528395635_check_campaign_name_not_blankDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395635_check_campaign_name_not_blankDownSql,
+		"1528395635_check_campaign_name_not_blank.down.sql",
+	)
+}
+
+func _1528395635_check_campaign_name_not_blankDownSql() (*asset, error) {
+	bytes, err := _1528395635_check_campaign_name_not_blankDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395635_check_campaign_name_not_blank.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xda, 0x18, 0x80, 0x59, 0xc2, 0x39, 0x93, 0x1a, 0x7d, 0x2b, 0xe8, 0x67, 0xfe, 0x71, 0x5d, 0x90, 0xb8, 0x1, 0x29, 0xb6, 0x65, 0x99, 0x4d, 0xc7, 0x41, 0xd7, 0x7, 0x9c, 0xab, 0x65, 0xb2, 0x5}}
+	return a, nil
+}
+
+var __1528395635_check_campaign_name_not_blankUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\x56\x08\x76\x0d\x51\xc8\x4b\xcc\x4d\x55\xb0\x55\x50\x77\x86\x8a\x2a\x28\xab\x2b\xd4\xd4\x20\x14\xe9\x65\xa6\x28\x84\x7b\xb8\x06\x21\xe9\xd3\x83\xe9\x51\xb7\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x41\x36\xd8\xd1\xc5\x45\xc1\xd9\xdf\x2f\x38\x24\xc8\xd1\xd3\x2f\x04\x21\x11\x0f\xd2\x19\x9f\x97\x5f\x12\x9f\x94\x93\x98\x97\xad\xe0\xec\xe1\xea\xec\xad\xa0\x01\x36\xcf\xc6\x4e\x41\x5d\xdd\xca\xaa\x24\xb5\xa2\x44\xd3\x9a\x8b\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x46\x8c\x53\x7d\xbd\x00\x00\x00")
+
+func _1528395635_check_campaign_name_not_blankUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395635_check_campaign_name_not_blankUpSql,
+		"1528395635_check_campaign_name_not_blank.up.sql",
+	)
+}
+
+func _1528395635_check_campaign_name_not_blankUpSql() (*asset, error) {
+	bytes, err := _1528395635_check_campaign_name_not_blankUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395635_check_campaign_name_not_blank.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xad, 0xe, 0xba, 0xb9, 0xcf, 0xf1, 0x5b, 0x54, 0x75, 0x6d, 0xd8, 0x5d, 0x85, 0xea, 0xb3, 0x91, 0xcf, 0x51, 0x7a, 0xf1, 0xe4, 0x4c, 0x65, 0xa5, 0xc3, 0xa4, 0xac, 0xfc, 0x1a, 0x77, 0x11, 0x6}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1523,6 +1565,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395633_drop_repo_deleted_at_unused.up.sql":                      _1528395633_drop_repo_deleted_at_unusedUpSql,
 	"1528395634_lsif_unify_dumps_and_uploads.down.sql":                   _1528395634_lsif_unify_dumps_and_uploadsDownSql,
 	"1528395634_lsif_unify_dumps_and_uploads.up.sql":                     _1528395634_lsif_unify_dumps_and_uploadsUpSql,
+	"1528395635_check_campaign_name_not_blank.down.sql":                  _1528395635_check_campaign_name_not_blankDownSql,
+	"1528395635_check_campaign_name_not_blank.up.sql":                    _1528395635_check_campaign_name_not_blankUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1628,6 +1672,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395633_drop_repo_deleted_at_unused.up.sql":                      {_1528395633_drop_repo_deleted_at_unusedUpSql, map[string]*bintree{}},
 	"1528395634_lsif_unify_dumps_and_uploads.down.sql":                   {_1528395634_lsif_unify_dumps_and_uploadsDownSql, map[string]*bintree{}},
 	"1528395634_lsif_unify_dumps_and_uploads.up.sql":                     {_1528395634_lsif_unify_dumps_and_uploadsUpSql, map[string]*bintree{}},
+	"1528395635_check_campaign_name_not_blank.down.sql":                  {_1528395635_check_campaign_name_not_blankDownSql, map[string]*bintree{}},
+	"1528395635_check_campaign_name_not_blank.up.sql":                    {_1528395635_check_campaign_name_not_blankUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
