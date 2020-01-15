@@ -548,7 +548,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             {/* is already created or a preview is available */}
             {campaign && (
                 <>
-                    <CampaignStatus campaign={campaign} status={campaign.status} onPublish={onPublish} onRetry={onRetry} />
+                    <CampaignStatus
+                        campaign={campaign}
+                        status={campaign.status}
+                        onPublish={onPublish}
+                        onRetry={onRetry}
+                    />
 
                     {campaign.__typename === 'Campaign' && (
                         <>
@@ -568,7 +573,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <CampaignTabs
                             campaign={campaign}
                             changesetUpdates={changesetUpdates}
-                    campaignUpdates={campaignUpdates}
+                            campaignUpdates={campaignUpdates}
                             persistLines={campaign.__typename === 'Campaign'}
                             history={history}
                             location={location}
