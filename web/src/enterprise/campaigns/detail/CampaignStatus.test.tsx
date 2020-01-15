@@ -7,9 +7,10 @@ const PROPS = {
     onRetry: () => undefined,
 }
 
-const CAMPAIGN: Pick<GQL.ICampaign, '__typename' | 'closedAt'> = {
+const CAMPAIGN: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt'> = {
     __typename: 'Campaign',
     closedAt: null,
+    publishedAt: '2020-01-01',
 }
 
 const CAMPAIGN_PLAN: Pick<GQL.ICampaignPlan, '__typename'> = {
@@ -23,6 +24,22 @@ describe('CampaignStatus', () => {
                 <CampaignStatus
                     {...PROPS}
                     campaign={{ ...CAMPAIGN, closedAt: '2020-01-01' }}
+                    status={{
+                        completedCount: 1,
+                        pendingCount: 0,
+                        errors: [],
+                        state: GQL.BackgroundProcessState.COMPLETED,
+                    }}
+                />
+            )
+        ).toMatchSnapshot())
+
+    test('drafted campaign', () =>
+        expect(
+            createRenderer().render(
+                <CampaignStatus
+                    {...PROPS}
+                    campaign={{ ...CAMPAIGN, publishedAt: null }}
                     status={{
                         completedCount: 1,
                         pendingCount: 0,
