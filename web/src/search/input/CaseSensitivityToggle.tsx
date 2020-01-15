@@ -72,23 +72,25 @@ export class CaseSensitivityToggle extends React.Component<Props> {
         const newCaseSensitivity = !this.props.caseSensitive
         this.props.setCaseSensitivity(newCaseSensitivity)
 
-        const shouldSubmitSearch = this.props.hasGlobalQueryBehavior && ((isSearchHomepage && shouldSubmitSearchOnHomepage) || !isSearchHomepage)
+        const shouldSubmitSearch =
+            this.props.hasGlobalQueryBehavior &&
+            ((isSearchHomepage && shouldSubmitSearchOnHomepage) || !isSearchHomepage)
         if (shouldSubmitSearch) {
-                // We only want the toggle to submit searches if the query input it is in
-                // has global behavior (i.e. query inputs on the main search page or global navbar). Non-global inputs
-                // don't have the canonical query, and are dependent on the page it's on for context, which makes the
-                // submit-on-toggle behavior undesirable.
-                //
-                // Also, we only want to submit a search when toggling on the search homepage when the query is non-empty.
-                submitSearch(
-                    this.props.history,
-                    this.props.navbarSearchQuery,
-                    'filter',
-                    this.props.patternType,
-                    newCaseSensitivity,
-                    undefined,
-                    this.props.filtersInQuery
-                )
+            // We only want the toggle to submit searches if the query input it is in
+            // has global behavior (i.e. query inputs on the main search page or global navbar). Non-global inputs
+            // don't have the canonical query, and are dependent on the page it's on for context, which makes the
+            // submit-on-toggle behavior undesirable.
+            //
+            // Also, we only want to submit a search when toggling on the search homepage when the query is non-empty.
+            submitSearch(
+                this.props.history,
+                this.props.navbarSearchQuery,
+                'filter',
+                this.props.patternType,
+                newCaseSensitivity,
+                undefined,
+                this.props.filtersInQuery
+            )
         }
     }
 }
