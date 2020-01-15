@@ -78,7 +78,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 			up := &UserPermissions{
 				UserID:   1,
 				Perm:     authz.Read,
-				Type:     PermRepos,
+				Type:     authz.PermRepos,
 				Provider: ProviderSourcegraph,
 			}
 			err := s.LoadUserPermissions(context.Background(), up)
@@ -103,7 +103,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 			up := &UserPermissions{
 				UserID:   2,
 				Perm:     authz.Read,
-				Type:     PermRepos,
+				Type:     authz.PermRepos,
 				Provider: ProviderSourcegraph,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up); err != nil {
@@ -140,7 +140,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 			up1 := &UserPermissions{
 				UserID:   1,
 				Perm:     authz.Read,
-				Type:     PermRepos,
+				Type:     authz.PermRepos,
 				Provider: ProviderSourcegraph,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up1); err != nil {
@@ -151,7 +151,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 			up2 := &UserPermissions{
 				UserID:   2,
 				Perm:     authz.Read,
-				Type:     PermRepos,
+				Type:     authz.PermRepos,
 				Provider: ProviderSourcegraph,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up2); err != nil {
@@ -163,7 +163,7 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 			up3 := &UserPermissions{
 				UserID:   3,
 				Perm:     authz.Read,
-				Type:     PermRepos,
+				Type:     authz.PermRepos,
 				Provider: ProviderSourcegraph,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up3); err != nil {
@@ -450,7 +450,7 @@ func testStoreLoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			up := &UserPendingPermissions{
 				BindID: "alice",
 				Perm:   authz.Read,
-				Type:   PermRepos,
+				Type:   authz.PermRepos,
 			}
 			err := s.LoadUserPendingPermissions(context.Background(), up)
 			equal(t, "err", err, ErrNotFound)
@@ -473,7 +473,7 @@ func testStoreLoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			up := &UserPendingPermissions{
 				BindID: "alice",
 				Perm:   authz.Read,
-				Type:   PermRepos,
+				Type:   authz.PermRepos,
 			}
 			if err := s.LoadUserPendingPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -507,7 +507,7 @@ func testStoreLoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			up1 := &UserPendingPermissions{
 				BindID: "alice",
 				Perm:   authz.Read,
-				Type:   PermRepos,
+				Type:   authz.PermRepos,
 			}
 			if err := s.LoadUserPendingPermissions(context.Background(), up1); err != nil {
 				t.Fatal(err)
@@ -517,7 +517,7 @@ func testStoreLoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			up2 := &UserPendingPermissions{
 				BindID: "bob",
 				Perm:   authz.Read,
-				Type:   PermRepos,
+				Type:   authz.PermRepos,
 			}
 			if err := s.LoadUserPendingPermissions(context.Background(), up2); err != nil {
 				t.Fatal(err)
@@ -528,7 +528,7 @@ func testStoreLoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			up3 := &UserPendingPermissions{
 				BindID: "cindy",
 				Perm:   authz.Read,
-				Type:   PermRepos,
+				Type:   authz.PermRepos,
 			}
 			if err := s.LoadUserPendingPermissions(context.Background(), up3); err != nil {
 				t.Fatal(err)
@@ -931,7 +931,7 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				perm: &UserPendingPermissions{
 					BindID: "alice",
 					Perm:   authz.Read,
-					Type:   PermRepos,
+					Type:   authz.PermRepos,
 				},
 			},
 		},
@@ -976,7 +976,7 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				perm: &UserPendingPermissions{
 					BindID: "cindy",
 					Perm:   authz.Read,
-					Type:   PermRepos,
+					Type:   authz.PermRepos,
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -1037,7 +1037,7 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				perm: &UserPendingPermissions{
 					BindID: "alice",
 					Perm:   authz.Read,
-					Type:   PermRepos,
+					Type:   authz.PermRepos,
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -1140,7 +1140,7 @@ func testStoreDatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 			if err := s.GrantPendingPermissions(ctx, 1, &UserPendingPermissions{
 				BindID: "alice",
 				Perm:   authz.Read,
-				Type:   PermRepos,
+				Type:   authz.PermRepos,
 			}); err != nil &&
 				!strings.Contains(err.Error(), `pq: duplicate key value violates unique constraint "user_permissions_perm_object_provider_unique"`) {
 				t.Fatal(err)
