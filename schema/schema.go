@@ -205,6 +205,8 @@ type BitbucketServerConnection struct {
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding "token" or "password" field.
 	Username string `json:"username"`
+	// Webhooks description: Configuration for Bitbucket Server Sourcegraph plugin webhooks
+	Webhooks *Webhooks `json:"webhooks,omitempty"`
 }
 
 // BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
@@ -344,8 +346,6 @@ type ExperimentalFeatures struct {
 	SplitSearchModes string `json:"splitSearchModes,omitempty"`
 	// StructuralSearch description: Enables structural search.
 	StructuralSearch string `json:"structuralSearch,omitempty"`
-	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -510,7 +510,7 @@ type GitLabConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Token description: A GitLab access token with "api" and "sudo" scopes. If this token does not have "sudo" scope, then you must set `permissions.ignore` to true.
+	// Token description: A GitLab access token with "api" scope. If you are enabling permissions with identity provider type "external", this token should also have "sudo" scope.
 	Token string `json:"token"`
 	// Url description: URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.
 	Url string `json:"url"`
@@ -816,6 +816,8 @@ type Settings struct {
 type SettingsExperimentalFeatures struct {
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
+	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
+	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
 	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
 	SplitSearchModes *bool `json:"splitSearchModes,omitempty"`
 }
@@ -933,13 +935,12 @@ type SiteConfiguration struct {
 	// 1. Go to http://localhost:16686 to view the Jaeger dashboard.
 	UseJaeger bool `json:"useJaeger,omitempty"`
 }
-
-// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-type TlsExternal struct {
-	// InsecureSkipVerify description: insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
-	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.
-	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
-}
 type UsernameIdentity struct {
 	Type string `json:"type"`
+}
+
+// Webhooks description: Configuration for Bitbucket Server Sourcegraph plugin webhooks
+type Webhooks struct {
+	// Secret description: Secret for authenticating incoming webhook payloads
+	Secret string `json:"secret,omitempty"`
 }

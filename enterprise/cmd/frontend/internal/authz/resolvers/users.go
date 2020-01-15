@@ -14,10 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolver{}
+var _ graphqlbackend.UserConnectionResolver = &userConnectionResolver{}
 
-// repositoryConnectionResolver resolves a list of repositories from the roaring bitmap with pagination.
-type repositoryConnectionResolver struct {
+// userConnectionResolver resolves a list of user from the roaring bitmap with pagination.
+type userConnectionResolver struct {
 	ids *roaring.Bitmap
 
 	first int32
@@ -25,7 +25,7 @@ type repositoryConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once     sync.Once
-	repos    []*types.Repo
+	users    []*types.User
 	pageInfo *graphqlutil.PageInfo
 	err      error
 }
@@ -33,7 +33,7 @@ type repositoryConnectionResolver struct {
 // 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
 // is the site admin because this method computes data from all available information in
 // the database.
-func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *graphqlutil.PageInfo, error) {
+func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
 		// Create the bitmap iterator and advance to the next value of r.after.
 		var afterID api.RepoID
@@ -46,57 +46,58 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		iter := r.ids.Iterator()
 		iter.AdvanceIfNeeded(uint32(afterID) + 1) // Plus 1 since r.after should be excluded.
 
-		repoIDs := make([]api.RepoID, 0, r.first)
+		userIDs := make([]int32, 0, r.first)
 		for iter.HasNext() {
-			repoIDs = append(repoIDs, api.RepoID(iter.Next()))
-			if len(repoIDs) >= int(r.first) {
+			userIDs = append(userIDs, int32(iter.Next()))
+			if len(userIDs) >= int(r.first) {
 				break
 			}
 		}
 
-		r.repos, r.err = db.Repos.GetByIDs(ctx, repoIDs...)
+		r.users, r.err = db.Users.List(ctx, &db.UsersListOptions{
+			UserIDs: userIDs,
+		})
 		if r.err != nil {
 			return
 		}
 
 		if iter.HasNext() {
-			endCursor := string(graphqlbackend.MarshalRepositoryID(repoIDs[len(repoIDs)-1]))
+			endCursor := string(graphqlbackend.MarshalUserID(userIDs[len(userIDs)-1]))
 			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
 		} else {
 			r.pageInfo = graphqlutil.HasNextPage(false)
 		}
 	})
-	return r.repos, r.pageInfo, r.err
+	return r.users, r.pageInfo, r.err
 }
 
-func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
+func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.UserResolver, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	repos, _, err := r.compute(ctx)
+	users, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*graphqlbackend.RepositoryResolver, len(repos))
-	for i := range repos {
-		resolvers[i] = graphqlbackend.NewRepositoryResolver(repos[i])
+	resolvers := make([]*graphqlbackend.UserResolver, len(users))
+	for i := range users {
+		resolvers[i] = graphqlbackend.NewUserResolver(users[i])
 	}
 	return resolvers, nil
 }
 
-func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *graphqlbackend.TotalCountArgs) (*int32, error) {
+func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
+		return -1, err
 	}
 
-	count := int32(r.ids.GetCardinality())
-	return &count, nil
+	return int32(r.ids.GetCardinality()), nil
 }
 
-func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err

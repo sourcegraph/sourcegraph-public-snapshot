@@ -61,7 +61,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewExternalHTTPClientFactory()
+		cf = httpcli.NewHTTPClientFactory()
 	}
 
 	opts := []httpcli.Opt{
@@ -370,7 +370,8 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 			// Catch 404 to handle
 			if page == 1 {
 				if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
-					oerr, err = err, nil
+					oerr = fmt.Errorf("organisation %q not found", org)
+					err = nil
 				}
 			}
 

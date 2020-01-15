@@ -28,6 +28,12 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "showBadgeAttachments": {
+          "description": "Enables the UI indicators for code intelligence precision.",
+          "type": "boolean",
+          "default": true,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"

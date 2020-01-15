@@ -1346,6 +1346,10 @@ type Query {
         # Opaque pagination cursor.
         after: String
     ): RepositoryConnection!
+
+    # Returns a list of usernames or emails that have associated pending permissions.
+    # The returned list can be used to query authorizedUserRepositories for pending permissions.
+    usersWithPendingPermissions: [String!]!
 }
 
 # The version of the search syntax.
@@ -1897,6 +1901,18 @@ type Repository implements Node & GenericSearchResultInterface {
         # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         after: String
     ): LSIFUploadConnection!
+
+    # A list of authorized users to access this repository with the given permission.
+    # This API currently only returns permissions from the Sourcegraph provider, i.e.
+    # "permissions.userMapping" in site configuration.
+    authorizedUsers(
+        # Permission that the user has on this repository.
+        perm: RepositoryPermission = READ
+        # Number of users to return after the given cursor.
+        first: Int!
+        # Opaque pagination cursor.
+        after: String
+    ): UserConnection!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.

@@ -39,7 +39,7 @@ func TestService(t *testing.T) {
 	}
 
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
-	cf := httpcli.NewExternalHTTPClientFactory()
+	cf := httpcli.NewHTTPClientFactory()
 
 	u, err := db.Users.Create(ctx, testUser)
 	if err != nil {
@@ -352,7 +352,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	}
 
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
-	cf := httpcli.NewExternalHTTPClientFactory()
+	cf := httpcli.NewHTTPClientFactory()
 
 	u, err := db.Users.Create(ctx, testUser)
 	if err != nil {

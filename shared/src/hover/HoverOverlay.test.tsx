@@ -9,6 +9,7 @@ import { createRenderer } from 'react-test-renderer/shallow'
 import { HoverMerged } from '../api/client/types/hover'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
+import { NEVER } from 'rxjs'
 
 const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): React.ReactElement => {
     const renderer = createRenderer()
@@ -18,7 +19,7 @@ const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): 
 
 describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
+    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
     const history = H.createMemoryHistory({ keyLength: 0 })
     const commonProps = {
         location: history.location,

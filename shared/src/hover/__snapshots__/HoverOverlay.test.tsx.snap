@@ -126,6 +126,10 @@ exports[`HoverOverlay actions and hover present 1`] = `
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
+          "settings": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
         }
       }
       showInlineError={true}
@@ -258,6 +262,10 @@ exports[`HoverOverlay actions present 1`] = `
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
+          "settings": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
         }
       }
       showInlineError={true}
@@ -325,6 +333,10 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
+          "settings": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
         }
       }
       showInlineError={true}
@@ -431,6 +443,10 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
+          "settings": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
         }
       }
       showInlineError={true}
@@ -522,6 +538,10 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
+          "settings": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
         }
       }
       showInlineError={true}
