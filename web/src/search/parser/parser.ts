@@ -1,7 +1,24 @@
+import { IRange } from 'monaco-editor'
+
+/**
+ * Represents a zero-indexed character range in a single-line search query.
+ */
 interface CharacterRange {
+    /** Zero-based character on the line */
     start: number
+    /** Zero-based character on the line */
     end: number
 }
+
+/**
+ * Converts a zero-indexed, single-line {@link CharacterRange} to a Monaco {@link IRange}.
+ */
+export const toMonacoRange = ({ start, end }: CharacterRange): IRange => ({
+    startLineNumber: 1,
+    endLineNumber: 1,
+    startColumn: start + 1,
+    endColumn: end + 1
+})
 
 /**
  * Represents a literal in a search query.
@@ -95,13 +112,13 @@ const zeroOrMore = (
     parseSeparator: Parser<Exclude<Token, Sequence>>
 ): Parser<Sequence> => (input, start) => {
     const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
+    let end = start + 1
     let adjustedStart = start
-    let end = start
     // try to start with separator
     const separatorResult = parseSeparator(input, start)
     if (separatorResult.type === 'success') {
         end = separatorResult.range.end
-        adjustedStart = separatorResult.range.end + 1
+        adjustedStart = separatorResult.range.end
         const { token, range } = separatorResult
         members.push({ token, range })
     }
@@ -110,21 +127,19 @@ const zeroOrMore = (
         const { token, range } = result
         members.push({ token, range })
         end = result.range.end
-        adjustedStart = end + 1
-        if (input[adjustedStart] === undefined) {
+        if (input[end] === undefined) {
             // EOF
             break
         }
         // Parse separator
-        const separatorResult = parseSeparator(input, adjustedStart)
+        const separatorResult = parseSeparator(input, end)
         if (separatorResult.type === 'error') {
             return separatorResult
         }
         // Try to parse another token.
         end = separatorResult.range.end
-        adjustedStart = end + 1
         members.push({ token: separatorResult.token, range: separatorResult.range })
-        result = parseToken(input, adjustedStart)
+        result = parseToken(input, end)
     }
     return {
         type: 'success',
@@ -168,7 +183,8 @@ const quoted: Parser<Quoted> = (input, start) => {
     }
     return {
         type: 'success',
-        range: { start, end },
+        // end + 1 as `end` is currently the index of the quote in the string.
+        range: { start, end: end + 1 },
         token: { type: 'quoted', quotedValue: input.substring(start + 1, end) },
     }
 }
@@ -183,7 +199,7 @@ const character = (c: string): Parser<Literal> => (input, start) => {
     }
     return {
         type: 'success',
-        range: { start, end: start },
+        range: { start, end: start + 1 },
         token: { type: 'literal', value: c },
     }
 }
@@ -201,13 +217,13 @@ const pattern = <T = Literal>(p: RegExp, output?: T, expected?: string): Parser<
         if (!matchTarget) {
             return { type: 'error', expected: expected || `/${p.source}/`, at: start }
         }
-        const match = input.substring(start).match(p)
+        const match = matchTarget.match(p)
         if (!match) {
             return { type: 'error', expected: expected || `/${p.source}/`, at: start }
         }
         return {
             type: 'success',
-            range: { start, end: start + match[0].length - 1 },
+            range: { start, end: start + match[0].length },
             token: (output || { type: 'literal', value: match[0] }) as T,
         }
     }
@@ -233,14 +249,12 @@ const filter: Parser<Filter> = (input, start) => {
     if (parsedKeyword.type === 'error') {
         return parsedKeyword
     }
-    const parsedDelimiter = filterDelimiter(input, parsedKeyword.range.end + 1)
+    const parsedDelimiter = filterDelimiter(input, parsedKeyword.range.end)
     if (parsedDelimiter.type === 'error') {
         return parsedDelimiter
     }
     const parsedValue =
-        input[parsedDelimiter.range.end + 1] === undefined
-            ? undefined
-            : filterValue(input, parsedDelimiter.range.end + 1)
+        input[parsedDelimiter.range.end] === undefined ? undefined : filterValue(input, parsedDelimiter.range.end)
     if (parsedValue && parsedValue.type === 'error') {
         return parsedValue
     }

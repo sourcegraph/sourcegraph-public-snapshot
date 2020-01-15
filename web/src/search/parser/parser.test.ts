@@ -4,8 +4,8 @@ describe('parseSearchQuery()', () => {
     test('empty', () =>
         expect(parseSearchQuery('')).toMatchObject({
             range: {
-                end: 0,
                 start: 0,
+                end: 1,
             },
             token: {
                 members: [],
@@ -17,14 +17,14 @@ describe('parseSearchQuery()', () => {
     test('whitespace', () =>
         expect(parseSearchQuery('  ')).toMatchObject({
             range: {
-                end: 1,
                 start: 0,
+                end: 2,
             },
             token: {
                 members: [
                     {
                         range: {
-                            end: 1,
+                            end: 2,
                             start: 0,
                         },
                         token: {
@@ -40,15 +40,15 @@ describe('parseSearchQuery()', () => {
     test('literal', () =>
         expect(parseSearchQuery('a')).toMatchObject({
             range: {
-                end: 0,
                 start: 0,
+                end: 1,
             },
             token: {
                 members: [
                     {
                         range: {
-                            end: 0,
                             start: 0,
+                            end: 1,
                         },
                         token: {
                             type: 'literal',
@@ -64,20 +64,20 @@ describe('parseSearchQuery()', () => {
     test('filter', () =>
         expect(parseSearchQuery('a:b')).toMatchObject({
             range: {
-                end: 2,
+                end: 3,
                 start: 0,
             },
             token: {
                 members: [
                     {
                         range: {
-                            end: 2,
+                            end: 3,
                             start: 0,
                         },
                         token: {
                             filterType: {
                                 range: {
-                                    end: 0,
+                                    end: 1,
                                     start: 0,
                                 },
                                 token: {
@@ -88,7 +88,7 @@ describe('parseSearchQuery()', () => {
                             },
                             filterValue: {
                                 range: {
-                                    end: 2,
+                                    end: 3,
                                     start: 2,
                                 },
                                 token: {
@@ -109,20 +109,20 @@ describe('parseSearchQuery()', () => {
     test('negated filter', () =>
         expect(parseSearchQuery('-a:b')).toMatchObject({
             range: {
-                end: 3,
+                end: 4,
                 start: 0,
             },
             token: {
                 members: [
                     {
                         range: {
-                            end: 3,
+                            end: 4,
                             start: 0,
                         },
                         token: {
                             filterType: {
                                 range: {
-                                    end: 1,
+                                    end: 2,
                                     start: 0,
                                 },
                                 token: {
@@ -133,7 +133,7 @@ describe('parseSearchQuery()', () => {
                             },
                             filterValue: {
                                 range: {
-                                    end: 3,
+                                    end: 4,
                                     start: 3,
                                 },
                                 token: {
@@ -154,20 +154,20 @@ describe('parseSearchQuery()', () => {
     test('filter with quoted value', () => {
         expect(parseSearchQuery('a:"b"')).toMatchObject({
             range: {
-                end: 4,
+                end: 5,
                 start: 0,
             },
             token: {
                 members: [
                     {
                         range: {
-                            end: 4,
+                            end: 5,
                             start: 0,
                         },
                         token: {
                             filterType: {
                                 range: {
-                                    end: 0,
+                                    end: 1,
                                     start: 0,
                                 },
                                 token: {
@@ -178,7 +178,7 @@ describe('parseSearchQuery()', () => {
                             },
                             filterValue: {
                                 range: {
-                                    end: 4,
+                                    end: 5,
                                     start: 2,
                                 },
                                 token: {
@@ -200,14 +200,14 @@ describe('parseSearchQuery()', () => {
     test('quoted', () =>
         expect(parseSearchQuery('"a:b"')).toMatchObject({
             range: {
-                end: 4,
+                end: 5,
                 start: 0,
             },
             token: {
                 members: [
                     {
                         range: {
-                            end: 4,
+                            end: 5,
                             start: 0,
                         },
                         token: {
@@ -224,14 +224,14 @@ describe('parseSearchQuery()', () => {
     test('quoted (escaped quotes)', () =>
         expect(parseSearchQuery('"-\\"a\\":b"')).toMatchObject({
             range: {
-                end: 9,
+                end: 10,
                 start: 0,
             },
             token: {
                 members: [
                     {
                         range: {
-                            end: 9,
+                            end: 10,
                             start: 0,
                         },
                         token: {
@@ -248,20 +248,20 @@ describe('parseSearchQuery()', () => {
     test('complex query', () =>
         expect(parseSearchQuery('repo:^github\\.com/gorilla/mux$ lang:go -file:mux.go Router')).toMatchObject({
             range: {
-                end: 57,
+                end: 58,
                 start: 0,
             },
             token: {
                 members: [
                     {
                         range: {
-                            end: 29,
+                            end: 30,
                             start: 0,
                         },
                         token: {
                             filterType: {
                                 range: {
-                                    end: 3,
+                                    end: 4,
                                     start: 0,
                                 },
                                 token: {
@@ -272,7 +272,7 @@ describe('parseSearchQuery()', () => {
                             },
                             filterValue: {
                                 range: {
-                                    end: 29,
+                                    end: 30,
                                     start: 5,
                                 },
                                 token: {
@@ -286,7 +286,7 @@ describe('parseSearchQuery()', () => {
                     },
                     {
                         range: {
-                            end: 30,
+                            end: 31,
                             start: 30,
                         },
                         token: {
@@ -295,13 +295,13 @@ describe('parseSearchQuery()', () => {
                     },
                     {
                         range: {
-                            end: 37,
+                            end: 38,
                             start: 31,
                         },
                         token: {
                             filterType: {
                                 range: {
-                                    end: 34,
+                                    end: 35,
                                     start: 31,
                                 },
                                 token: {
@@ -312,7 +312,7 @@ describe('parseSearchQuery()', () => {
                             },
                             filterValue: {
                                 range: {
-                                    end: 37,
+                                    end: 38,
                                     start: 36,
                                 },
                                 token: {
@@ -326,7 +326,7 @@ describe('parseSearchQuery()', () => {
                     },
                     {
                         range: {
-                            end: 38,
+                            end: 39,
                             start: 38,
                         },
                         token: {
@@ -335,13 +335,13 @@ describe('parseSearchQuery()', () => {
                     },
                     {
                         range: {
-                            end: 50,
+                            end: 51,
                             start: 39,
                         },
                         token: {
                             filterType: {
                                 range: {
-                                    end: 43,
+                                    end: 44,
                                     start: 39,
                                 },
                                 token: {
@@ -352,7 +352,7 @@ describe('parseSearchQuery()', () => {
                             },
                             filterValue: {
                                 range: {
-                                    end: 50,
+                                    end: 51,
                                     start: 45,
                                 },
                                 token: {
@@ -366,7 +366,7 @@ describe('parseSearchQuery()', () => {
                     },
                     {
                         range: {
-                            end: 51,
+                            end: 52,
                             start: 51,
                         },
                         token: {
@@ -375,7 +375,7 @@ describe('parseSearchQuery()', () => {
                     },
                     {
                         range: {
-                            end: 57,
+                            end: 58,
                             start: 52,
                         },
                         token: {

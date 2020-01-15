@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Sequence } from './parser'
+import { Sequence, toMonacoRange } from './parser'
 import { validateFilter } from './filters'
 
 /**
@@ -17,20 +17,14 @@ export function getDiagnostics({ members }: Pick<Sequence, 'members'>): Monaco.e
             diagnostics.push({
                 severity: Monaco.MarkerSeverity.Error,
                 message: validationResult.reason,
-                startLineNumber: 1,
-                endLineNumber: 1,
-                startColumn: filterType.range.start + 1,
-                endColumn: filterType.range.end + 2,
+                ...toMonacoRange(filterType.range),
             })
         } else if (token.type === 'literal') {
             if (token.value.includes(':')) {
                 diagnostics.push({
                     severity: Monaco.MarkerSeverity.Warning,
                     message: 'Quoting the query may help if you want a literal match.',
-                    startLineNumber: 1,
-                    endLineNumber: 1,
-                    startColumn: range.start + 1,
-                    endColumn: range.end + 2,
+                    ...toMonacoRange(range),
                 })
             }
         }

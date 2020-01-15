@@ -1,7 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { escapeRegExp } from 'lodash'
 import { FILTERS, getFilterDefinition } from './filters'
-import { Sequence } from './parser'
+import { Sequence, toMonacoRange } from './parser'
 import { Omit } from 'utility-types'
 import { SearchSuggestion } from '../../../../shared/src/graphql/schema'
 import { Observable } from 'rxjs'
@@ -41,12 +41,7 @@ export async function getCompletionItems(
             suggestions: FILTER_TYPE_COMPLETIONS.filter(({ label }) => label.startsWith(token.value)).map(
                 (suggestion): Monaco.languages.CompletionItem => ({
                     ...suggestion,
-                    range: {
-                        startLineNumber: 1,
-                        endLineNumber: 1,
-                        startColumn: range.start + 1,
-                        endColumn: range.end + 2,
-                    },
+                    range: toMonacoRange(range),
                 })
             ),
         }
@@ -82,12 +77,7 @@ export async function getCompletionItems(
                                     suggestion.__typename === 'File'
                                         ? `${suggestion.path} - ${suggestion.repository.name}`
                                         : '',
-                                range: {
-                                    startLineNumber: 1,
-                                    endLineNumber: 1,
-                                    startColumn: filterValue.range.start + 1,
-                                    endColumn: filterValue.range.end + 2,
-                                },
+                                range: toMonacoRange(filterValue.range),
                             }
                         }
                         return null
@@ -103,12 +93,7 @@ export async function getCompletionItems(
                         kind: Monaco.languages.CompletionItemKind.Text,
                         insertText: `${label} `,
                         filterText: label,
-                        range: {
-                            startLineNumber: 1,
-                            endLineNumber: 1,
-                            startColumn: filterValue.range.start + 1,
-                            endColumn: filterValue.range.end + 2,
-                        },
+                        range: toMonacoRange(filterValue.range),
                     })
                 ),
             }

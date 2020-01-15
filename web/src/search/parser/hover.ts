@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Sequence } from './parser'
+import { Sequence, toMonacoRange } from './parser'
 import { FILTERS } from './filters'
 
 /**
@@ -20,11 +20,6 @@ export const getHoverResult = (
     }
     return {
         contents: [{ value: matchedFilterDefinition.description }],
-        range: {
-            startLineNumber: 1,
-            endLineNumber: 1,
-            startColumn: tokenAtColumn.range.start + 1,
-            endColumn: tokenAtColumn.range.end + 2,
-        },
+        range: toMonacoRange(tokenAtColumn.range),
     }
 }
