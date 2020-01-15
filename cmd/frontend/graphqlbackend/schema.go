@@ -692,9 +692,6 @@ type ChangesetPlan {
     # The id of the changeset plan.
     id: ID!
 
-    # True when the changesetPlan has been submitted for creation
-    processed: Boolean!
-
     # The repository changed by the changeset.
     repository: Repository!
 
