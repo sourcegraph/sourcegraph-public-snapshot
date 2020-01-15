@@ -2,6 +2,7 @@ import { Suggestion, FiltersSuggestionTypes } from './input/Suggestion'
 import { assign } from 'lodash/fp'
 import { languageIcons } from '../../../shared/src/components/languageIcons'
 import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
+import { FilterTypes } from '../../../shared/src/search/interactive/util'
 
 export type SearchFilterSuggestions = Record<
     FiltersSuggestionTypes,

@@ -1,6 +1,11 @@
 import { escapeRegExp } from 'lodash'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
-import { FiltersToTypeAndValue, filterTypeKeys, FilterTypes } from '../../../shared/src/search/interactive/util'
+import {
+    FiltersToTypeAndValue,
+    filterTypeKeys,
+    FilterTypes,
+    negatedFilters,
+} from '../../../shared/src/search/interactive/util'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -36,7 +41,7 @@ export function parseSearchURLQuery(
 export function interactiveParseSearchURLQuery(query: string): string | undefined {
     const searchParams = new URLSearchParams(query)
     const finalQueryParts = []
-    for (const filterType of filterTypeKeys.filter(key => key !== FilterTypes.case)) {
+    for (const filterType of [...filterTypeKeys, ...negatedFilters].filter(key => key !== FilterTypes.case)) {
         for (const filterValue of searchParams.getAll(filterType)) {
             finalQueryParts.push(`${filterType}:${filterValue}`)
         }

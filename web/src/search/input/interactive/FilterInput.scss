@@ -74,6 +74,22 @@ $filter-input-padding: 0.25rem;
         display: flex;
         align-self: flex-end;
     }
+
+    &__negation-button {
+        border: 1px solid transparent;
+        margin-right: 0.25rem;
+
+        &--active {
+            border: 1px solid $color-border-active;
+            border-radius: 2px;
+            .theme-dark & {
+                background: $color-bg-5;
+            }
+            .theme-light & {
+                background: $color-light-bg-3;
+            }
+        }
+    }
 }
 
 .theme-light {
