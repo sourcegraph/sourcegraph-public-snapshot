@@ -7,7 +7,7 @@ BEGIN;
 --
 
 -- Restore old column
-ALTER TABLE lsif_uploads ADD repository text;
+ALTER TABLE lsif_uploads RENAME COLUMN repository_name_at_upload TO repository;
 CREATE UNIQUE INDEX lsif_uploads_repository_commit_root on lsif_uploads(repository, "commit", root) WHERE state = 'completed'::lsif_upload_state;
 CREATE INDEX lsif_uploads_visible_repository_commit on lsif_uploads(repository, "commit") WHERE visible_at_tip;
 ALTER TABLE lsif_uploads ADD CONSTRAINT "lsif_uploads_repository_check" CHECK (repository <> ''::text);

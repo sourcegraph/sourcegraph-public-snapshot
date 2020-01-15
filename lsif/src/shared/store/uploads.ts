@@ -167,12 +167,15 @@ export class UploadManager {
     public async enqueue(
         {
             repositoryId,
+            repositoryName,
             commit,
             root,
             filename,
         }: {
             /** The repository identifier. */
             repositoryId: number
+            /** The repository name. */
+            repositoryName: string
             /** The commit. */
             commit: string
             /** The root. */
@@ -190,6 +193,7 @@ export class UploadManager {
 
         const upload = new pgModels.LsifUpload()
         upload.repositoryId = repositoryId
+        upload.repositoryNameAtUpload = repositoryName
         upload.commit = commit
         upload.root = root
         upload.filename = filename

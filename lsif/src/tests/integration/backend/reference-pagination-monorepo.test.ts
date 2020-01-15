@@ -60,6 +60,7 @@ describe('Backend', () => {
             dumps.map(({ commit, project, suffix }) =>
                 ctx.convertTestData(
                     repositoryId,
+                    repositoryName,
                     commit,
                     `${project}/`,
                     `reference-pagination-monorepo/data/${project}${suffix}.lsif.gz`,
@@ -183,6 +184,7 @@ describe('Backend', () => {
             Object.values(ids).map(externalRepositoryId =>
                 ctx.convertTestData(
                     externalRepositoryId,
+                    repositoryName,
                     util.createCommit(0),
                     'f/',
                     'reference-pagination-monorepo/data/f-ref.lsif.gz'

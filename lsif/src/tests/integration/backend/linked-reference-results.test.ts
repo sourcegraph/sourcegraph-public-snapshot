@@ -8,7 +8,13 @@ describe('Backend', () => {
 
     beforeAll(async () => {
         await ctx.init()
-        await ctx.convertTestData(repositoryId, commit, '', 'linked-reference-results/data/main.lsif.gz')
+        await ctx.convertTestData(
+            repositoryId,
+            repositoryName,
+            commit,
+            '',
+            'linked-reference-results/data/main.lsif.gz'
+        )
     })
 
     afterAll(async () => {

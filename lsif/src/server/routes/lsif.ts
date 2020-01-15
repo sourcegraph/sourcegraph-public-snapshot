@@ -65,6 +65,7 @@ export function createLsifRouter(
 
     interface UploadQueryArgs {
         repositoryId: number
+        repositoryName: string
         commit: string
         root?: string
         blocking?: boolean
@@ -75,6 +76,7 @@ export function createLsifRouter(
         '/upload',
         validation.validationMiddleware([
             validation.validateInt('repositoryId'),
+            validation.validateNonEmptyString('repositoryName'),
             validation.validateNonEmptyString('commit').matches(commitPattern),
             validation.validateOptionalString('root'),
             validation.validateOptionalBoolean('blocking'),
@@ -82,7 +84,14 @@ export function createLsifRouter(
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repositoryId, commit, root: rootRaw, blocking, maxWait }: UploadQueryArgs = req.query
+                const {
+                    repositoryId,
+                    repositoryName,
+                    commit,
+                    root: rootRaw,
+                    blocking,
+                    maxWait,
+                }: UploadQueryArgs = req.query
                 const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repositoryId, commit, root })
                 const filename = nodepath.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
@@ -90,7 +99,11 @@ export function createLsifRouter(
                 await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
 
                 // Add upload record
-                const upload = await uploadManager.enqueue({ repositoryId, commit, root, filename }, tracer, ctx.span)
+                const upload = await uploadManager.enqueue(
+                    { repositoryId, repositoryName, commit, root, filename },
+                    tracer,
+                    ctx.span
+                )
 
                 if (blocking) {
                     logger.debug('Blocking on upload conversion', { repositoryId, commit, root })

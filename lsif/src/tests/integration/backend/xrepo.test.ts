@@ -18,7 +18,7 @@ describe('Backend', () => {
         await ctx.init()
         await Promise.all(
             Object.entries(ids).map(([repositoryName, repositoryId]) =>
-                ctx.convertTestData(repositoryId, commit, '', `xrepo/data/${repositoryName}.lsif.gz`)
+                ctx.convertTestData(repositoryId, repositoryName, commit, '', `xrepo/data/${repositoryName}.lsif.gz`)
             )
         )
     })

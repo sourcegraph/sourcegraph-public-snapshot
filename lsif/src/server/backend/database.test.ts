@@ -117,6 +117,7 @@ describe('mapRangesToInternalLocations', () => {
         const dump = {
             id: 42,
             repositoryId: 1234,
+            repositoryNameAtUpload: 'foo/bar',
             commit: 'deadbeef',
             root: '',
             filename: '',

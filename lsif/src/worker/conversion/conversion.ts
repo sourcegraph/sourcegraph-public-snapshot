@@ -80,10 +80,8 @@ export async function updateCommitsAndDumpsVisibleFromTip(
 ): Promise<void> {
     const gitserverUrls = fetchConfiguration().gitServers
 
-    // FIXME - this is a quick hack
     const repositoryId = upload.repositoryId
-    const result: { name: string }[] = await entityManager.query('SELECT name FROM repo WHERE id = $1', [repositoryId])
-    const repositoryName = result[0].name
+    const repositoryName = upload.repositoryNameAtUpload
 
     const tipCommit = await dumpManager.discoverTip({
         repositoryName,
