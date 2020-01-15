@@ -177,7 +177,11 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                     options={options}
                     border={false}
                 ></MonacoEditor>
-                <RegexpToggle {...this.props} navbarSearchQuery={this.props.queryState.query}></RegexpToggle>
+                <RegexpToggle
+                    {...this.props}
+                    navbarSearchQuery={this.props.queryState.query}
+                    className="monaco-query-input-container__regexp-toggle"
+                ></RegexpToggle>
             </div>
         )
     }
