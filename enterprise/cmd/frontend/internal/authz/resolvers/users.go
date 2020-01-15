@@ -16,6 +16,7 @@ import (
 
 var _ graphqlbackend.UserConnectionResolver = &userConnectionResolver{}
 
+// userConnectionResolver resolves a list of user from the roaring bitmap with pagination.
 type userConnectionResolver struct {
 	ids *roaring.Bitmap
 
