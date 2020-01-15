@@ -16,10 +16,6 @@ export function isTextFilter(filter: FilterTypes): boolean {
         'lang',
         'count',
         'timeout',
-        '-repo',
-        '-repohasfile',
-        '-file',
-        '-lang',
     ]
 
     return validTextFilters.includes(filter)

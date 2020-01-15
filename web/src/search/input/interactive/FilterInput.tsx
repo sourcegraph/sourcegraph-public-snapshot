@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { Form } from '../../../components/Form'
 import CloseIcon from 'mdi-react/CloseIcon'
-import MinusIcon from 'mdi-react/MinusIcon'
 import { Subscription, Subject, merge, of } from 'rxjs'
 import {
     distinctUntilChanged,
@@ -29,11 +28,7 @@ import {
     filterStaticSuggestions,
 } from '../../helpers'
 import { dedupeWhitespace } from '../../../../../shared/src/util/strings'
-import {
-    FiltersToTypeAndValue,
-    FilterTypes,
-    isNegatableFilter,
-} from '../../../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue, FilterTypes } from '../../../../../shared/src/search/interactive/util'
 import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
 import { startCase, isEqual } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
@@ -77,11 +72,6 @@ interface Props {
      */
     editable: boolean
 
-    /**
-     * Whether the current filter is negated
-     */
-    negated?: boolean
-
     isHomepage: boolean
 
     /**
@@ -104,8 +94,6 @@ interface Props {
      * Callback to handle the editable state of this filter.
      */
     toggleFilterEditable: (filterKey: string) => void
-
-    toggleFilterNegated: (filterKey: string) => void
 }
 
 const LOADING: 'loading' = 'loading'
@@ -369,10 +357,6 @@ export class FilterInput extends React.Component<Props, State> {
         }
     }
 
-    private toggleNegation = (): void => {
-        this.props.toggleFilterNegated(this.props.mapKey)
-    }
-
     private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.value : '')
 
     public render(): JSX.Element | null {
@@ -412,18 +396,6 @@ export class FilterInput extends React.Component<Props, State> {
                         return (
                             <div>
                                 <div className="filter-input__form">
-                                    {isNegatableFilter(this.props.filterType) && this.props.editable && (
-                                        <button
-                                            type="button"
-                                            className={classNames('btn', 'btn-icon', 'filter-input__negation-button', {
-                                                'filter-input__negation-button--active': this.props.negated,
-                                            })}
-                                            onClick={this.toggleNegation}
-                                            data-tooltip={this.props.negated ? 'Include results' : 'Exclude results'}
-                                        >
-                                            <MinusIcon />
-                                        </button>
-                                    )}
                                     <div className="filter-input__input-wrapper">
                                         <input
                                             ref={this.inputEl}
@@ -538,7 +510,6 @@ export class FilterInput extends React.Component<Props, State> {
                     aria-label="Edit filter"
                     tabIndex={0}
                 >
-                    {this.props.negated ? '-' : ''}
                     {this.props.filterType}:{this.state.inputValue}
                 </button>
                 <button

@@ -1,13 +1,7 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
-import {
-    FiltersToTypeAndValue,
-    filterTypeKeys,
-    negatedFilters,
-    NegatedFilters,
-    isNegatableFilter,
-} from '../search/interactive/util'
+import { FiltersToTypeAndValue, filterTypeKeys } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 
 export interface RepoSpec {
@@ -600,15 +594,9 @@ export function buildSearchURLQuery(
 export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
     const searchParams = new URLSearchParams()
 
-    for (const searchType of [...filterTypeKeys, ...negatedFilters]) {
+    for (const searchType of filterTypeKeys) {
         for (const [, filterValue] of Object.entries(filtersInQuery)) {
             if (filterValue.type === searchType) {
-                if (filterValue.negated) {
-                    if (isNegatableFilter(searchType)) {
-                        searchParams.append(NegatedFilters[searchType], filterValue.value)
-                    }
-                    continue
-                }
                 searchParams.append(searchType, filterValue.value)
             }
         }
