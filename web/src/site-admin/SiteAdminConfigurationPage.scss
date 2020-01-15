@@ -21,7 +21,7 @@
     }
 
     &__action-groups {
-        background-color: $color-light-bg-2;
+        background-color: $color-bg-1;
         padding-bottom: 0.5rem;
         padding-left: 0.5rem;
     }
@@ -41,10 +41,10 @@
     }
 }
 
-.theme-dark {
+.theme-light {
     .site-admin-configuration-page {
         &__action-groups {
-            background-color: $color-bg-1;
+            background-color: $color-light-bg-2;
         }
     }
 }
