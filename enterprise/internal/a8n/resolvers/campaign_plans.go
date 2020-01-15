@@ -109,7 +109,7 @@ func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlba
 			return nil, fmt.Errorf("failed to load repo %d", j.RepoID)
 		}
 
-		resolvers = append(resolvers, &campaignJobResolver{store: r.store, job: j, preloadedRepo: repo})
+		resolvers = append(resolvers, &campaignJobResolver{job: j, preloadedRepo: repo})
 	}
 	return resolvers, nil
 }
@@ -161,7 +161,6 @@ func (r *campaignJobsConnectionResolver) PageInfo(ctx context.Context) (*graphql
 }
 
 type campaignJobResolver struct {
-	store         *ee.Store
 	job           *a8n.CampaignJob
 	preloadedRepo *repos.Repo
 
@@ -203,18 +202,6 @@ func (r *campaignJobResolver) BaseRepository(ctx context.Context) (*graphqlbacke
 
 func (r *campaignJobResolver) Diff() graphqlbackend.ChangesetPlanResolver {
 	return r
-}
-
-func (r *campaignJobResolver) Processed(ctx context.Context) (bool, error) {
-	_, err := r.store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{CampaignJobID: r.job.ID})
-	if err != nil {
-		if err != ee.ErrNoResults {
-			return false, err
-		}
-		return false, nil
-	}
-
-	return true, nil
 }
 
 func (r *campaignJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.PreviewFileDiffConnection, error) {

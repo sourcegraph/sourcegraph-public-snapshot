@@ -674,25 +674,6 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64
 		return err
 	}
 
-	// set publishedAt when all campaignJobs have been converted to changesetJobs
-	if campaign.PublishedAt.IsZero() {
-		campaignJobCount, err := tx.CountCampaignJobs(ctx, CountCampaignJobsOpts{CampaignPlanID: campaign.CampaignPlanID})
-		if err != nil {
-			return err
-		}
-		changesetJobCount, err := tx.CountChangesetJobs(ctx, CountChangesetJobsOpts{CampaignID: campaign.ID})
-		if err != nil {
-			return err
-		}
-		if campaignJobCount == changesetJobCount {
-			campaign.PublishedAt = time.Now()
-			err = tx.UpdateCampaign(ctx, campaign)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
