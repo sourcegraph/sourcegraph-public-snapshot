@@ -128,7 +128,7 @@ func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.Dat
 	if !r.Campaign.PublishedAt.IsZero() {
 		return &graphqlbackend.DateTime{Time: r.Campaign.PublishedAt}, nil
 	}
-	publishedAt, err := r.store.GetLatestChangesetPublishedAt(ctx, r.Campaign.ID)
+	publishedAt, err := r.store.GetLatestChangesetJobPublishedAt(ctx, r.Campaign.ID)
 	if err != nil {
 		return nil, err
 	}
