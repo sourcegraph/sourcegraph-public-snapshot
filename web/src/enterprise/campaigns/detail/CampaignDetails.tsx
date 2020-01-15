@@ -20,6 +20,7 @@ import {
     CampaignType,
     retryCampaign,
     closeCampaign,
+    publishCampaign,
 } from './backend'
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -246,10 +247,25 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             history.push(`/campaigns/${createdCampaign.id}`)
             setMode('viewing')
             setAlertError(undefined)
+            campaignUpdates.next()
         } catch (err) {
             setMode('editing')
             setAlertError(asError(err))
         }
+    }
+    
+    const onPublish = async(): Promise<void> => {
+        setMode('saving')
+        try {
+            await publishCampaign(campaign!.id)
+            setMode('viewing')
+            setAlertError(undefined)
+            campaignUpdates.next()
+        } catch (err) {
+            setMode('editing')
+            setAlertError(asError(err))
+        }
+
     }
 
     const onSubmit: React.FormEventHandler = async event => {
@@ -531,7 +547,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 <CampaignStatus
                     campaign={campaign}
                     status={campaign.status}
-                    onPublish={() => undefined}
+                    onPublish={onPublish}
                     onRetry={onRetry}
                 />
             )}

@@ -26,6 +26,8 @@ import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { publishChangeset as _publishChangeset } from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Subject } from 'rxjs'
+import ErrorIcon from 'mdi-react/ErrorIcon'
+import { asError } from '../../../../../../shared/src/util/errors'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
@@ -45,14 +47,15 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     enablePublishing,
 }) => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [publishError, setPublishError] = useState<Error>()
     const publishChangeset: React.MouseEventHandler = async () => {
         try {
+            setPublishError(undefined)
             setIsLoading(true)
-            await new Promise(resolve => setTimeout(resolve, 5000))
             await _publishChangeset(node.id)
             campaignUpdates.next()
         } catch (error) {
-            // todo: handle error
+            setPublishError(asError(error))
         } finally {
             setIsLoading(false)
         }
@@ -127,14 +130,17 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                 </span>
             )}
             {enablePublishing && node.__typename === 'ChangesetPlan' && !node.processed && (
-                <button
-                    type="button"
-                    className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary"
-                    disabled={isLoading}
-                    onClick={publishChangeset}
-                >
-                    {isLoading && <LoadingSpinner className="mr-1 icon-inline"></LoadingSpinner>} Publish
-                </button>
+                <>
+                    {publishError && <ErrorIcon data-tooltip={publishError.message} />}
+                    <button
+                        type="button"
+                        className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary"
+                        disabled={isLoading}
+                        onClick={publishChangeset}
+                    >
+                        {isLoading && <LoadingSpinner className="mr-1 icon-inline"></LoadingSpinner>} Publish
+                    </button>
+                </>
             )}
         </div>
     )
