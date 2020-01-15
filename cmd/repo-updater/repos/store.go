@@ -531,6 +531,13 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		}
 	}
 
+	// Assert we have set ID for all repos.
+	for _, r := range repos {
+		if r.ID <= 0 {
+			return errors.Errorf("DBStore.UpsertRepos did not set ID for %v", r)
+		}
+	}
+
 	return nil
 }
 

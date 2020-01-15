@@ -717,6 +717,14 @@ func (r *Repo) Less(s *Repo) bool {
 	return sortedSliceLess(sourcesKeys(r.Sources), sourcesKeys(s.Sources))
 }
 
+func (r *Repo) String() string {
+	eid := fmt.Sprintf("{%s %s %s}", r.ExternalRepo.ServiceID, r.ExternalRepo.ServiceType, r.ExternalRepo.ID)
+	if r.IsDeleted() {
+		return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s, IsDeleted: true}", r.ID, r.Name, eid)
+	}
+	return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s}", r.ID, r.Name, eid)
+}
+
 func sourcesKeys(m map[string]*SourceInfo) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
