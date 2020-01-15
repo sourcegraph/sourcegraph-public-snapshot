@@ -307,9 +307,6 @@ export const isFuzzyWordSearch = (queryState: QueryState): boolean => {
  */
 export const filterAliasForSearch: Record<string, SuggestionTypes | undefined> = {
     [SuggestionTypes.repohasfile]: SuggestionTypes.file,
-    // [FilterTypes['-repohasfile']]: SuggestionTypes.file,
-    // [FilterTypes['-repo']]: SuggestionTypes.repo,
-    // [FilterTypes['-file']]: SuggestionTypes.file,
 }
 
 /**

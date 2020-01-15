@@ -30,10 +30,6 @@ export enum FilterTypes {
     fork = 'fork',
     archived = 'archived',
     case = 'case',
-    // '-repo' = '-repo',
-    // '-file' = '-file',
-    // '-lang' = '-lang',
-    // '-repohasfile' = '-repohasfile',
 }
 
 export const filterTypeKeys: FilterTypes[] = Object.keys(FilterTypes) as FilterTypes[]

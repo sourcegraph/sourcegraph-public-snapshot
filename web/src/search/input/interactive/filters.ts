@@ -73,8 +73,4 @@ export const FilterTypesToProseNames: Record<FilterTypes, string> = {
     fork: 'Forks',
     archived: 'Archived repos',
     case: 'Case sensitive',
-    // '-repo': 'Exclude repos',
-    // '-repohasfile': 'Exclude repos with file',
-    // '-file': 'Exclude files',
-    // '-lang': 'Exclude languages',
 }

@@ -34,6 +34,9 @@ interface Props {
      */
     toggleFilterEditable: (filterKey: string) => void
 
+    /**
+     * Callback to handle the negation state of a filter.
+     */
     toggleFilterNegated: (filterKey: string) => void
 
     /**
