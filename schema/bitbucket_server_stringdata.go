@@ -69,7 +69,7 @@ const BitbucketServerSchemaJSON = `{
       "type": "object",
       "properties": {
         "secret": {
-          "description": "Secret for authenticating incoming webhook paylods",
+          "description": "Secret for authenticating incoming webhook payloads",
           "type": "string",
           "minLength": 1
         }

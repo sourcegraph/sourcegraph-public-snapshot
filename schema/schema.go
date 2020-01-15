@@ -941,6 +941,6 @@ type UsernameIdentity struct {
 
 // Webhooks description: Configuration for Bitbucket Server Sourcegraph plugin webhooks
 type Webhooks struct {
-	// Secret description: Secret for authenticating incoming webhook paylods
+	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret,omitempty"`
 }
