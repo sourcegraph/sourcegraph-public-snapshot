@@ -502,7 +502,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             {/* is already created or a preview is available */}
             {campaign && (
                 <>
-                    {status && <CampaignStatus campaign={campaign} status={campaign.status} onRetry={onRetry} />}
+                    <CampaignStatus campaign={campaign} status={campaign.status} onRetry={onRetry} />
 
                     {campaign.__typename === 'Campaign' && (
                         <>
