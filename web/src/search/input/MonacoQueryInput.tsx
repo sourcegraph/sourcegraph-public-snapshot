@@ -1,4 +1,5 @@
 import React from 'react'
+import * as H from 'history'
 import * as Monaco from 'monaco-editor'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
@@ -7,10 +8,17 @@ import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
 import { fetchSuggestions } from '../backend'
 import { toArray, map, distinctUntilChanged, publishReplay, refCount } from 'rxjs/operators'
 import { RegexpToggle, RegexpToggleProps } from './RegexpToggle'
+import { CaseSensitivityToggle } from './CaseSensitivityToggle'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { CaseSensitivityProps } from '..'
 
-export interface MonacoQueryInputProps extends Omit<RegexpToggleProps, 'navbarSearchQuery'>, ThemeProps {
+export interface MonacoQueryInputProps
+    extends Omit<RegexpToggleProps, 'navbarSearchQuery'>,
+        ThemeProps,
+        CaseSensitivityProps {
+    location: H.Location
+    history: H.History
     queryState: QueryState
     onChange: (newState: QueryState) => void
     onSubmit: () => void
@@ -177,11 +185,17 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                     options={options}
                     border={false}
                 ></MonacoEditor>
-                <RegexpToggle
-                    {...this.props}
-                    navbarSearchQuery={this.props.queryState.query}
-                    className="monaco-query-input-container__regexp-toggle"
-                ></RegexpToggle>
+                <div className="monaco-query-input-container__toggles">
+                    <CaseSensitivityToggle
+                        {...this.props}
+                        navbarSearchQuery={this.props.queryState.query}
+                    ></CaseSensitivityToggle>
+                    <RegexpToggle
+                        {...this.props}
+                        navbarSearchQuery={this.props.queryState.query}
+                        className="monaco-query-input-container__regexp-toggle"
+                    ></RegexpToggle>
+                </div>
             </div>
         )
     }
@@ -205,13 +219,15 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     }
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
-        // Focus the editor by default, with cursor at end.
-        editor.focus()
-        editor.setPosition({
-            // +2 as Monaco is 1-indexed, and the cursor should be placed after the query.
-            column: editor.getValue().length + 2,
-            lineNumber: 1,
-        })
+        if (this.props.autoFocus) {
+            // Focus the editor with cursor at end.
+            editor.focus()
+            editor.setPosition({
+                // +2 as Monaco is 1-indexed, and the cursor should be placed after the query.
+                column: editor.getValue().length + 2,
+                lineNumber: 1,
+            })
+        }
         // Prevent newline insertion in model, and surface query changes with stripped newlines.
         this.subscriptions.add(
             toUnsubscribable(

@@ -17,7 +17,7 @@ export const toMonacoRange = ({ start, end }: CharacterRange): IRange => ({
     startLineNumber: 1,
     endLineNumber: 1,
     startColumn: start + 1,
-    endColumn: end + 1
+    endColumn: end + 1,
 })
 
 /**

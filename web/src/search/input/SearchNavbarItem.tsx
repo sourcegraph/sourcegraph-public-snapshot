@@ -42,6 +42,7 @@ export class SearchNavbarItem extends React.PureComponent<Props> {
                         hasGlobalQueryBehavior={true}
                         queryState={this.props.navbarSearchState}
                         onSubmit={this.onSubmit}
+                        autoFocus={true}
                     ></LazyMonacoQueryInput>
                 ) : (
                     <QueryInput
