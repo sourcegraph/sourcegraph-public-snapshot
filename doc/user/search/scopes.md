@@ -18,7 +18,7 @@ You can configure search scopes by setting the `search.scopes` to a JSON array o
 
 The `value` of a search scope can be any valid query and can include any [search token](queries.md) (such as `repo:`, `file:`, etc.).
 
-For example, this JSON will create two search scopes:
+For example, that JSON will create two search scopes:
 
 ```json
 {

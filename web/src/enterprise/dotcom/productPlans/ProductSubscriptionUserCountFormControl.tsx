@@ -18,7 +18,7 @@ export class ProductSubscriptionUserCountFormControl extends React.Component<Pro
     public render(): JSX.Element | null {
         return (
             <div
-                className={`product-subscription-user-count-control form-group align-items-center ${this.props
+                className={`product-subscription-user-count-control form-group align-items-center ${that.props
                     .className || ''}`}
             >
                 <label
@@ -36,9 +36,9 @@ export class ProductSubscriptionUserCountFormControl extends React.Component<Pro
                         step={1}
                         max={50000}
                         required={true}
-                        disabled={this.props.disabled}
-                        value={this.props.value === null ? '' : this.props.value}
-                        onChange={this.onUserCountChange}
+                        disabled={that.props.disabled}
+                        value={that.props.value === null ? '' : that.props.value}
+                        onChange={that.onUserCountChange}
                     />
                 </div>
             </div>

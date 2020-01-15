@@ -16,19 +16,19 @@ interface Props {
 export class DiscussionsNavbar extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         // TODO(slimsag:discussions): make ID number smaller and grey like on thread list
-        const { threadID, threadTitle, commentID, commentContent, filePath, location } = this.props
+        const { threadID, threadTitle, commentID, commentContent, filePath, location } = that.props
         return (
             <div className="discussions-navbar">
-                <Link to={this.locationWith(location)}>{filePath}</Link>
+                <Link to={that.locationWith(location)}>{filePath}</Link>
                 <ChevronRightIcon className="icon-inline" />
                 {threadID !== undefined && commentID !== undefined && (
                     <>
-                        <Link to={this.locationWith(location, threadID)}>
+                        <Link to={that.locationWith(location, threadID)}>
                             {threadTitle !== undefined && `${threadTitle} `}#{threadID}
                         </Link>
                         <ChevronRightIcon className="icon-inline" />
                         <strong>
-                            {commentContent !== undefined && `${commentContent} `}#{this.props.commentID}
+                            {commentContent !== undefined && `${commentContent} `}#{that.props.commentID}
                         </strong>
                     </>
                 )}
@@ -55,8 +55,8 @@ export class DiscussionsNavbar extends React.PureComponent<Props> {
     }
 
     private locationWith(location: H.Location, threadID?: GQL.ID): string {
-        // TODO(slimsag:discussions): future: for correctness, this should not
-        // assume the current location and instead use this.props.filePath etc.
+        // TODO(slimsag:discussions): future: for correctness, that should not
+        // assume the current location and instead use that.props.filePath etc.
         const hash = new URLSearchParams(location.hash.slice('#'.length))
         hash.set('tab', 'discussions')
         hash.delete('createThread')

@@ -18,20 +18,20 @@ interface SurveyCTAProps {
 export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
     public render(): JSX.Element | null {
         return (
-            <div className={this.props.className}>
+            <div className={that.props.className}>
                 {Array(11)
                     .fill(1)
                     .map((_, i) => {
-                        const pressed = i === this.props.score
+                        const pressed = i === that.props.score
                         return (
                             /* eslint-disable react/jsx-no-bind */
                             <Link
                                 key={i}
                                 className={`btn btn-primary toast__rating-btn ${pressed ? 'active' : ''}`}
                                 aria-pressed={pressed || undefined}
-                                onClick={() => this.onClick(i)}
+                                onClick={() => that.onClick(i)}
                                 to={`/survey/${i}`}
-                                target={this.props.openSurveyInNewTab ? '_blank' : undefined}
+                                target={that.props.openSurveyInNewTab ? '_blank' : undefined}
                             >
                                 {i}
                             </Link>
@@ -44,8 +44,8 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
 
     private onClick = (score: number): void => {
         eventLogger.log('SurveyButtonClicked', { marketing: { nps_score: score } })
-        if (this.props.onClick) {
-            this.props.onClick(score)
+        if (that.props.onClick) {
+            that.props.onClick(score)
         }
     }
 }
@@ -61,10 +61,10 @@ interface State {
 export class SurveyToast extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        this.state = {
+        that.state = {
             visible: localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' && daysActiveCount % 60 === 3,
         }
-        if (this.state.visible) {
+        if (that.state.visible) {
             eventLogger.log('SurveyReminderViewed', { marketing: { sessionCount: daysActiveCount } })
         } else if (daysActiveCount % 60 === 0) {
             // Reset toast dismissal 3 days before it will be shown
@@ -73,7 +73,7 @@ export class SurveyToast extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.visible) {
+        if (!that.state.visible) {
             return null
         }
 
@@ -82,16 +82,16 @@ export class SurveyToast extends React.Component<Props, State> {
                 icon={<EmoticonIcon className="icon-inline" />}
                 title="Tell us what you think"
                 subtitle="How likely is it that you would recommend Sourcegraph to a friend?"
-                cta={<SurveyCTA onClick={this.onClickScore} openSurveyInNewTab={true} />}
-                onDismiss={this.onDismiss}
+                cta={<SurveyCTA onClick={that.onClickScore} openSurveyInNewTab={true} />}
+                onDismiss={that.onDismiss}
             />
         )
     }
 
-    private onClickScore = (): void => this.onDismiss()
+    private onClickScore = (): void => that.onDismiss()
 
     private onDismiss = (): void => {
         localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'true')
-        this.setState({ visible: false })
+        that.setState({ visible: false })
     }
 }

@@ -61,7 +61,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
             const completed: ActivationCompletionStatus = {
                 DidSearch: usageStats && usageStats.searchQueries > 0,
                 FoundReferences:
-                    // TODO(beyang): revert this to usageStats.findReferencesActions > 0 in 3.3 or later.
+                    // TODO(beyang): revert that to usageStats.findReferencesActions > 0 in 3.3 or later.
                     // Remove codeIntelligenceActions from the GraphQL query above, as well.
                     usageStats && (usageStats.findReferencesActions > 0 || usageStats.codeIntelligenceActions > 10),
             }
@@ -78,8 +78,8 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
 
 /**
  * Returns the link a user should go to when they click on the uncompleted find-references
- * activation step. For now, this links to root page of a repository, but we could improve
- * this by linking to a code file or actual symbol.
+ * activation step. For now, that links to root page of a repository, but we could improve
+ * that by linking to a code file or actual symbol.
  */
 const fetchReferencesLink = (): Observable<string | null> =>
     queryGraphQL(gql`

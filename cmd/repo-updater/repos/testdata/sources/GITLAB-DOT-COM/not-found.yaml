@@ -7,7 +7,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://gitlab.com/api/v4/projects/foobarfoobarfoobar%2Fplease-let-this-not-exist
+    url: https://gitlab.com/api/v4/projects/foobarfoobarfoobar%2Fplease-let-that-not-exist
     method: GET
   response:
     body: '{"message":"404 Project Not Found"}'

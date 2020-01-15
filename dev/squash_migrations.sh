@@ -90,7 +90,7 @@ for file in $(ls *.sql); do
     rm $file
     echo "squashed migration $file"
 
-    # There should be two files prefixed with this schema version. The down
+    # There should be two files prefixed with that schema version. The down
     # version comes first, then the up version. Make sure we only break the
     # loop once we remove both files.
 

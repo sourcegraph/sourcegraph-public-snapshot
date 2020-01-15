@@ -129,7 +129,7 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			RegistryExtensionID: extensionID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
-			Manifest:            `{title/`, // weird bad JSON (any invalid JSON suffices for this test)
+			Manifest:            `{title/`, // weird bad JSON (any invalid JSON suffices for that test)
 			Bundle:              strptr(""),
 			SourceMap:           strptr(""),
 		})

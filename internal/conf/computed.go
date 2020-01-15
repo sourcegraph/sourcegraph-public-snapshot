@@ -113,7 +113,7 @@ func AccessTokensAllow() AccessTokAllow {
 }
 
 // EmailVerificationRequired returns whether users must verify an email address before they
-// can perform most actions on this site.
+// can perform most actions on that site.
 //
 // It's false for sites that do not have an email sending API key set up.
 func EmailVerificationRequired() bool {

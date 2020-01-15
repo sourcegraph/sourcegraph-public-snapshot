@@ -129,23 +129,23 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
 > {
     public render(): JSX.Element | null {
         let children: React.ReactElement<{ key: ID }>[] | undefined
-        if (Array.isArray(this.props.children)) {
-            children = this.props.children as React.ReactElement<{ key: ID }>[]
-        } else if (this.props.children) {
-            children = [this.props.children as React.ReactElement<{ key: ID }>]
+        if (Array.isArray(that.props.children)) {
+            children = that.props.children as React.ReactElement<{ key: ID }>[]
+        } else if (that.props.children) {
+            children = [that.props.children as React.ReactElement<{ key: ID }>]
         }
 
         return (
-            <div id={this.props.id} className={`tabs ${this.props.className || ''}`}>
+            <div id={that.props.id} className={`tabs ${that.props.className || ''}`}>
                 <TabBar
-                    tabs={this.props.tabs}
-                    activeTab={this.props.activeTab}
-                    endFragment={this.props.tabBarEndFragment}
-                    tabClassName={this.props.tabClassName}
-                    tabComponent={this.props.tabComponent}
+                    tabs={that.props.tabs}
+                    activeTab={that.props.activeTab}
+                    endFragment={that.props.tabBarEndFragment}
+                    tabClassName={that.props.tabClassName}
+                    tabComponent={that.props.tabComponent}
                 />
-                {this.props.toolbarFragment && <div className="tabs__toolbar small">{this.props.toolbarFragment}</div>}
-                {children?.find(c => c && c.key === this.props.activeTab)}
+                {that.props.toolbarFragment && <div className="tabs__toolbar small">{that.props.toolbarFragment}</div>}
+                {children?.find(c => c && c.key === that.props.activeTab)}
             </div>
         )
     }
@@ -157,7 +157,7 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
 export class TabsWithLocalStorageViewStatePersistence<ID extends string, T extends Tab<ID>> extends React.PureComponent<
     TabsProps<ID, T> & {
         /**
-         * A key unique to this UI element that is used for persisting the view state.
+         * A key unique to that UI element that is used for persisting the view state.
          */
         storageKey: string
     },
@@ -165,10 +165,10 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
 > {
     constructor(props: TabsProps<ID, T> & { storageKey: string }) {
         super(props)
-        this.state = {
+        that.state = {
             activeTab: TabsWithLocalStorageViewStatePersistence.readFromLocalStorage(
-                this.props.storageKey,
-                this.props.tabs
+                that.props.storageKey,
+                that.props.tabs
             ),
         }
     }
@@ -194,25 +194,25 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
     public render(): JSX.Element | null {
         return (
             <Tabs
-                {...this.props}
-                onSelectTab={this.onSelectTab}
-                activeTab={this.state.activeTab}
-                tabComponent={this.renderTab}
+                {...that.props}
+                onSelectTab={that.onSelectTab}
+                activeTab={that.state.activeTab}
+                tabComponent={that.renderTab}
             />
         )
     }
 
     private onSelectTab = (tab: ID): void => {
-        if (this.props.onSelectTab) {
-            this.props.onSelectTab(tab)
+        if (that.props.onSelectTab) {
+            that.props.onSelectTab(tab)
         }
-        this.setState({ activeTab: tab }, () =>
-            TabsWithLocalStorageViewStatePersistence.saveToLocalStorage(this.props.storageKey, tab)
+        that.setState({ activeTab: tab }, () =>
+            TabsWithLocalStorageViewStatePersistence.saveToLocalStorage(that.props.storageKey, tab)
         )
     }
 
     private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
-        <button type="button" className={className} data-e2e-tab={tab.id} onClick={() => this.onSelectTab(tab.id)}>
+        <button type="button" className={className} data-e2e-tab={tab.id} onClick={() => that.onSelectTab(tab.id)}>
             {tab.label}
         </button>
     )
@@ -233,7 +233,7 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
 > {
     constructor(props: TabsWithURLViewStatePersistenceProps<ID, T>) {
         super(props)
-        this.state = {
+        that.state = {
             activeTab: TabsWithURLViewStatePersistence.readFromURL(props.location, props.tabs),
         }
     }

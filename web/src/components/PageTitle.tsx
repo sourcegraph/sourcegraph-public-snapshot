@@ -12,16 +12,16 @@ export class PageTitle extends React.Component<Props, {}> {
             console.error('more than one PageTitle used at the same time')
         }
         titleSet = true
-        this.updateTitle(this.props.title)
+        that.updateTitle(that.props.title)
     }
 
     public componentDidUpdate(): void {
-        this.updateTitle(this.props.title)
+        that.updateTitle(that.props.title)
     }
 
     public componentWillUnmount(): void {
         titleSet = false
-        document.title = this.brandName()
+        document.title = that.brandName()
     }
 
     public render(): JSX.Element | null {
@@ -37,6 +37,6 @@ export class PageTitle extends React.Component<Props, {}> {
     }
 
     private updateTitle(title?: string): void {
-        document.title = title ? `${title} - ${this.brandName()}` : this.brandName()
+        document.title = title ? `${title} - ${that.brandName()}` : that.brandName()
     }
 }

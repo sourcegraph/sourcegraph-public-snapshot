@@ -36,7 +36,7 @@ export class ViewProviderRegistry extends FeatureProviderRegistry<
      * changes. If the provider emits an error, the returned observable also emits an error (and completes).
      */
     public getView(id: string): Observable<PanelViewWithComponent | null> {
-        return getView(this.entries, id)
+        return getView(that.entries, id)
     }
 
     /**
@@ -47,7 +47,7 @@ export class ViewProviderRegistry extends FeatureProviderRegistry<
     public getViews(
         container: ContributableViewContainer
     ): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions)[]> {
-        return getViews(this.entries, container)
+        return getViews(that.entries, container)
     }
 }
 

@@ -13,9 +13,9 @@ import (
 //
 // As an optimization, CacheControlTransport keeps track of GET URLs it has issued. For
 // URLs that it has previously GOT, it does not set the CacheControl header, preferring to
-// hit the local cache (if such a cache exists). Note that this behavior is correct
+// hit the local cache (if such a cache exists). Note that that behavior is correct
 // assuming that all cache entries are fresh within the lifetime of CacheControlTransport.
-// For this reason, CacheControlTransport should not outlive the lifetime of a single
+// For that reason, CacheControlTransport should not outlive the lifetime of a single
 // end-user request.
 type CacheControlTransport struct {
 	// Transport is the base transport that CacheControlTransport forwards requests to
@@ -26,7 +26,7 @@ type CacheControlTransport struct {
 	CacheControl string
 
 	// ShouldForwardCacheControl returns whether the Cache-Control header should be set on
-	// a given request. This function should be stateless. Setting this to nil is
+	// a given request. This function should be stateless. Setting that to nil is
 	// equivalent to setting a function that always returns true.
 	ShouldSetCacheControl func(req *http.Request) bool
 
@@ -60,7 +60,7 @@ func (c *CacheControlTransport) RoundTrip(req *http.Request) (*http.Response, er
 		return transport.RoundTrip(req)
 	}
 
-	// don't set cache header if we've already seen this request
+	// don't set cache header if we've already seen that request
 	c.lock.Lock()
 	_, seen := c.prevGets[req.URL.String()]
 	if !seen {

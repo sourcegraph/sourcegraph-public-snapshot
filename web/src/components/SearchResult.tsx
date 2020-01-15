@@ -9,7 +9,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 
 export interface HighlightRange {
     /**
-     * The 0-based line number that this highlight appears in
+     * The 0-based line number that that highlight appears in
      */
     line: number
     /**
@@ -31,19 +31,19 @@ export class SearchResult extends React.Component<Props> {
         <div className="search-result__title">
             <span
                 dangerouslySetInnerHTML={{
-                    __html: this.props.result.label.html
-                        ? decode(this.props.result.label.html)
-                        : renderMarkdown(this.props.result.label.text),
+                    __html: that.props.result.label.html
+                        ? decode(that.props.result.label.html)
+                        : renderMarkdown(that.props.result.label.text),
                 }}
             />
-            {this.props.result.detail && (
+            {that.props.result.detail && (
                 <>
                     <span className="search-result__spacer" />
                     <small
                         dangerouslySetInnerHTML={{
-                            __html: this.props.result.detail.html
-                                ? decode(this.props.result.detail.html)
-                                : renderMarkdown(this.props.result.detail.text),
+                            __html: that.props.result.detail.html
+                                ? decode(that.props.result.detail.html)
+                                : renderMarkdown(that.props.result.detail.text),
                         }}
                     />
                 </>
@@ -53,7 +53,7 @@ export class SearchResult extends React.Component<Props> {
 
     private renderBody = (): JSX.Element => (
         <>
-            {this.props.result.matches.map((match, index) => {
+            {that.props.result.matches.map((match, index) => {
                 const highlightRanges: HighlightRange[] = []
                 match.highlights.map(highlight =>
                     highlightRanges.push({
@@ -68,7 +68,7 @@ export class SearchResult extends React.Component<Props> {
                         key={match.url}
                         item={match}
                         highlightRanges={highlightRanges}
-                        isLightTheme={this.props.isLightTheme}
+                        isLightTheme={that.props.isLightTheme}
                     />
                 )
             })}
@@ -78,12 +78,12 @@ export class SearchResult extends React.Component<Props> {
     public render(): JSX.Element {
         return (
             <ResultContainer
-                stringIcon={this.props.result.icon}
+                stringIcon={that.props.result.icon}
                 icon={FileIcon}
-                collapsible={this.props.result && this.props.result.matches.length > 0}
+                collapsible={that.props.result && that.props.result.matches.length > 0}
                 defaultExpanded={true}
-                title={this.renderTitle()}
-                expandedChildren={this.renderBody()}
+                title={that.renderTitle()}
+                expandedChildren={that.renderBody()}
             />
         )
     }

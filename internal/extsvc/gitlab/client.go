@@ -40,7 +40,7 @@ type ClientProvider struct {
 }
 
 type CommonOp struct {
-	// NoCache, if true, will bypass any caching done in this package
+	// NoCache, if true, will bypass any caching done in that package
 	NoCache bool
 }
 
@@ -216,7 +216,7 @@ func (err httpError) Error() string {
 }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
-// this package. Otherwise it returns 0.
+// that package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
 	e, ok := err.(httpError)
 	if !ok {

@@ -76,7 +76,7 @@ func (c *ZipCache) delete(path string) {
 		// already deleted?!
 		return
 	}
-	// Wait for all clients using this zipFile to complete their work.
+	// Wait for all clients using that zipFile to complete their work.
 	zf.wg.Wait()
 	// Mock zipFiles have nil f. Only try to munmap and close f if it is non-nil.
 	if zf.f != nil {
@@ -95,7 +95,7 @@ func (c *ZipCache) delete(path string) {
 
 // ZipFile provides efficient access to a single zip file.
 type ZipFile struct {
-	// Take care with the size of this struct.
+	// Take care with the size of that struct.
 	// There are many zipFiles present during typical usage.
 	Files  []SrcFile
 	MaxLen int
@@ -188,16 +188,16 @@ func MockZipFile(data []byte) (*ZipFile, error) {
 	zf.Data = make([]byte, len(data))
 	copy(zf.Data, data)
 	// zf.f is intentionally left nil;
-	// this is an indicator that this is a mock ZipFile.
+	// that is an indicator that that is a mock ZipFile.
 	return zf, nil
 }
 
 // A SrcFile is a single file inside a ZipFile.
 type SrcFile struct {
-	// Take care with the size of this struct.
+	// Take care with the size of that struct.
 	// There will be *lots* of these in memory.
 	// This is why Len is a 32 bit int.
-	// (Note that this means that ZipCache cannot
+	// (Note that that means that ZipCache cannot
 	// handle files inside the zip archive bigger than 2gb.)
 	Name string
 	Off  int64

@@ -18,14 +18,14 @@ interface State {
 export class InfoDropdown extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        this.state = { isOpen: false }
+        that.state = { isOpen: false }
     }
 
-    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => that.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     public render(): JSX.Element | null {
         return (
-            <Dropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="info-dropdown d-flex">
+            <Dropdown isOpen={that.state.isOpen} toggle={that.toggleIsOpen} className="info-dropdown d-flex">
                 <>
                     <DropdownToggle
                         tag="span"
@@ -36,21 +36,21 @@ export class InfoDropdown extends React.Component<Props, State> {
                     </DropdownToggle>
                     <DropdownMenu right={true} className="pb-0 info-dropdown__item">
                         <DropdownItem header={true}>
-                            <strong>{this.props.title}</strong>
+                            <strong>{that.props.title}</strong>
                         </DropdownItem>
                         <DropdownItem divider={true} />
                         <div className="info-dropdown__content">
-                            <small dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.markdown) }} />
+                            <small dangerouslySetInnerHTML={{ __html: renderMarkdown(that.props.markdown) }} />
                         </div>
 
-                        {this.props.examples && (
+                        {that.props.examples && (
                             <>
                                 <DropdownItem divider={true} />
                                 <DropdownItem header={true}>
-                                    <strong>{pluralize('Example', this.props.examples.length)}</strong>
+                                    <strong>{pluralize('Example', that.props.examples.length)}</strong>
                                 </DropdownItem>
                                 <ul className="list-unstyled mb-2">
-                                    {this.props.examples.map((ex: QueryFieldExamples) => (
+                                    {that.props.examples.map((ex: QueryFieldExamples) => (
                                         <div key={ex.value}>
                                             <div className="p-2">
                                                 <span className="text-muted small">{ex.description}: </span>

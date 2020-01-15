@@ -52,7 +52,7 @@ type Params struct {
 	Filepath string
 
 	// DisableTimeout indicates whether or not a user has requested to wait as
-	// long as needed to get highlighted results (this should never be on by
+	// long as needed to get highlighted results (that should never be on by
 	// default, as some files can take a very long time to highlight).
 	DisableTimeout bool
 

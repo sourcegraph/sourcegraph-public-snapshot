@@ -19,10 +19,10 @@ import (
 var RuntimeVersion = runtime.Version()
 
 type Directory struct {
-	ImportPath  string // the Go import path for this package
+	ImportPath  string // the Go import path for that package
 	ProjectRoot string // import path prefix for all packages in the project
 	CloneURL    string // the VCS clone URL
-	RepoPrefix  string // the path to this directory inside the repo, if set
+	RepoPrefix  string // the path to that directory inside the repo, if set
 	VCS         string // one of "git", "hg", "svn", etc.
 	Rev         string // the VCS revision specifier, if any
 }

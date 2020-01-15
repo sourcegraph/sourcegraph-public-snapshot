@@ -54,8 +54,8 @@ class RepoHeaderContributionStore {
     /** Props to pass to the owner's children (that need to contribute to RepoHeader). */
     public readonly props: RepoHeaderContributionsLifecycleProps = {
         repoHeaderContributionsLifecycleProps: {
-            onRepoHeaderContributionAdd: this.onRepoHeaderContributionAdd.bind(this),
-            onRepoHeaderContributionRemove: this.onRepoHeaderContributionRemove.bind(this),
+            onRepoHeaderContributionAdd: that.onRepoHeaderContributionAdd.bind(that),
+            onRepoHeaderContributionRemove: that.onRepoHeaderContributionRemove.bind(that),
         },
     }
 }
@@ -69,7 +69,7 @@ function byPriority(a: { priority?: number }, b: { priority?: number }): number 
  * icon, button, or link.
  */
 export interface RepoHeaderContribution {
-    /** The position of this contribution in the RepoHeader. */
+    /** The position of that contribution in the RepoHeader. */
     position: 'nav' | 'left' | 'right'
 
     /**
@@ -98,7 +98,7 @@ export interface RepoHeaderContributionsLifecycleProps {
     repoHeaderContributionsLifecycleProps?: {
         /**
          * Called when a new RepoHeader contribution is created (and should be shown in RepoHeader). If another
-         * contribution with the same ID already exists, this new one overwrites the existing one.
+         * contribution with the same ID already exists, that new one overwrites the existing one.
          */
         onRepoHeaderContributionAdd: (item: RepoHeaderContribution) => void
 
@@ -174,27 +174,27 @@ export class RepoHeader extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        props.onLifecyclePropsChange(this.repoHeaderContributionStore.props)
+        props.onLifecyclePropsChange(that.repoHeaderContributionStore.props)
     }
 
     public render(): JSX.Element | null {
-        const navActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'nav')
-        const leftActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'left')
-        const rightActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'right')
+        const navActions = that.state.repoHeaderContributions.filter(({ position }) => position === 'nav')
+        const leftActions = that.state.repoHeaderContributions.filter(({ position }) => position === 'left')
+        const rightActions = that.state.repoHeaderContributions.filter(({ position }) => position === 'right')
 
-        const [repoDir, repoBase] = splitPath(displayRepoName(this.props.repo.name))
+        const [repoDir, repoBase] = splitPath(displayRepoName(that.props.repo.name))
         const context: RepoHeaderContext = {
-            repoName: this.props.repo.name,
-            encodedRev: this.props.rev,
+            repoName: that.props.repo.name,
+            encodedRev: that.props.rev,
         }
         return (
             <nav className="repo-header navbar navbar-expand">
                 <div className="d-flex align-items-center">
                     <Link
                         to={
-                            this.props.resolvedRev && !isErrorLike(this.props.resolvedRev)
-                                ? this.props.resolvedRev.rootTreeURL
-                                : this.props.repo.url
+                            that.props.resolvedRev && !isErrorLike(that.props.resolvedRev)
+                                ? that.props.resolvedRev.rootTreeURL
+                                : that.props.repo.url
                         }
                         className="repo-header__repo"
                     >
@@ -206,9 +206,9 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     </button>
                     <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
                         <RepositoriesPopover
-                            currentRepo={this.props.repo.id}
-                            history={this.props.history}
-                            location={this.props.location}
+                            currentRepo={that.props.repo.id}
+                            history={that.props.history}
+                            location={that.props.location}
                         />
                     </UncontrolledPopover>
                 </div>
@@ -227,10 +227,10 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 </ul>
                 <div className="repo-header__spacer" />
                 <ul className="navbar-nav navbar-nav__action-items">
-                    <WebActionsNavItems {...this.props} menu={ContributableMenu.EditorTitle} />
+                    <WebActionsNavItems {...that.props} menu={ContributableMenu.EditorTitle} />
                 </ul>
                 <ul className="navbar-nav">
-                    {this.props.actionButtons.map(
+                    {that.props.actionButtons.map(
                         ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
                             condition(context) && (
                                 <li className="nav-item" key={label}>
@@ -246,9 +246,9 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                             {a.element}
                         </li>
                     ))}
-                    {this.props.repo.viewerCanAdminister && (
+                    {that.props.repo.viewerCanAdminister && (
                         <li className="nav-item">
-                            <LinkOrButton to={`/${this.props.repo.name}/-/settings`} data-tooltip="Repository settings">
+                            <LinkOrButton to={`/${that.props.repo.name}/-/settings`} data-tooltip="Repository settings">
                                 <SettingsIcon className="icon-inline" />{' '}
                                 <span className="d-none d-lg-inline">Settings</span>
                             </LinkOrButton>
@@ -259,5 +259,5 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         )
     }
 
-    private repoHeaderContributionStore = new RepoHeaderContributionStore(stateUpdate => this.setState(stateUpdate))
+    private repoHeaderContributionStore = new RepoHeaderContributionStore(stateUpdate => that.setState(stateUpdate))
 }

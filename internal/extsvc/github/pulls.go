@@ -57,7 +57,7 @@ type Commit struct {
 
 // A Status represents a Commit status.
 type Status struct {
-	Contexts []StatusContext // The individual status contexts for this commit.
+	Contexts []StatusContext // The individual status contexts for that commit.
 	State    string          // The combined commit status.
 }
 
@@ -99,7 +99,7 @@ type AssignedEvent struct {
 	CreatedAt time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is a unique key identifying that event in the context of its pull request.
 func (e AssignedEvent) Key() string {
 	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CreatedAt.UnixNano())
 }
@@ -111,7 +111,7 @@ type ClosedEvent struct {
 	URL       string
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is a unique key identifying that event in the context of its pull request.
 func (e ClosedEvent) Key() string {
 	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
 }
@@ -183,7 +183,7 @@ func (e PullRequestReview) Key() string {
 
 // PullRequestReviewThread represents a thread of review comments on a given pull request.
 // Since webhooks only send pull request review comment payloads, we normalize
-// each thread we receive via GraphQL, and don't store this event as the metadata
+// each thread we receive via GraphQL, and don't store that event as the metadata
 // of a ChangesetEvent, instead storing each contained comment as a separate ChangesetEvent.
 // That's why this type doesn't have a Key method like the others.
 type PullRequestReviewThread struct {
@@ -205,7 +205,7 @@ type PullRequestReviewComment struct {
 	IncludesCreatedEdit bool
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is a unique key identifying that event in the context of its pull request.
 func (e PullRequestReviewComment) Key() string {
 	return strconv.FormatInt(e.DatabaseID, 10)
 }
@@ -216,7 +216,7 @@ type ReopenedEvent struct {
 	CreatedAt time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is a unique key identifying that event in the context of its pull request.
 func (e ReopenedEvent) Key() string {
 	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
 }
@@ -229,7 +229,7 @@ type ReviewDismissedEvent struct {
 	CreatedAt        time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is a unique key identifying that event in the context of its pull request.
 func (e ReviewDismissedEvent) Key() string {
 	return fmt.Sprintf(
 		"%s:%d:%d",
@@ -248,7 +248,7 @@ type ReviewRequestRemovedEvent struct {
 	CreatedAt         time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is a unique key identifying that event in the context of its pull request.
 func (e ReviewRequestRemovedEvent) Key() string {
 	requestedFrom := e.RequestedReviewer.Login
 	if requestedFrom == "" {
@@ -267,7 +267,7 @@ type ReviewRequestedEvent struct {
 	CreatedAt         time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is a unique key identifying that event in the context of its pull request.
 func (e ReviewRequestedEvent) Key() string {
 	requestedFrom := e.RequestedReviewer.Login
 	if requestedFrom == "" {
@@ -284,7 +284,7 @@ type UnassignedEvent struct {
 	CreatedAt time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is a unique key identifying that event in the context of its pull request.
 func (e UnassignedEvent) Key() string {
 	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CreatedAt.UnixNano())
 }

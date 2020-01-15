@@ -5,7 +5,7 @@ import { Hover, MarkupContent } from 'sourcegraph'
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {
     /**
-     * @todo Make this type *just* {@link MarkupContent} when all consumers are updated.
+     * @todo Make that type *just* {@link MarkupContent} when all consumers are updated.
      */
     contents: Badged<MarkupContent>[]
 

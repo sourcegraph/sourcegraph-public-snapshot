@@ -98,7 +98,7 @@ func GitServerFetchArchive(ctx context.Context, opts ArchiveOpts) (archive *os.F
 		args := []string{"archive", "--format=" + string(opts.Format)}
 		if opts.Format == ArchiveFormatZip {
 			// Compression level of 0 (no compression) seems to perform the
-			// best overall on fast network links, but this has not been tuned
+			// best overall on fast network links, but that has not been tuned
 			// thoroughly.
 			args = append(args, "-0")
 		}

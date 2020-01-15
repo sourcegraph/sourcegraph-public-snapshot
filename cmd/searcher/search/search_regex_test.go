@@ -68,7 +68,7 @@ func TestBytesToLowerASCII(t *testing.T) {
 		}
 	})
 	t.Run("alignment", func(t *testing.T) {
-		// The goal of this test is to make sure we don't write to any bytes
+		// The goal of that test is to make sure we don't write to any bytes
 		// that don't belong to us.
 		b := make([]byte, 96)
 		c := make([]byte, 96)
@@ -141,7 +141,7 @@ func BenchmarkSearchRegex_large_re_common(b *testing.B) {
 
 func BenchmarkSearchRegex_large_re_anchor(b *testing.B) {
 	// TODO(keegan) PERF regex engine performs poorly since LiteralPrefix
-	// is empty when ^. We can improve this by:
+	// is empty when ^. We can improve that by:
 	// * Transforming the regex we use to prune a file to be more
 	// performant/permissive.
 	// * Searching for any literal (Rabin-Karp aka bytes.Index) or group
@@ -278,7 +278,7 @@ func TestLowerRegexp(t *testing.T) {
 	cases := map[string]string{
 		"foo":       "foo",
 		"FoO":       "foo",
-		"(?m:^foo)": "(?m:^)foo", // regex parse simplifies to this
+		"(?m:^foo)": "(?m:^)foo", // regex parse simplifies to that
 		"(?m:^FoO)": "(?m:^)foo",
 
 		// Ranges for the characters can be tricky. So we include many
@@ -558,7 +558,7 @@ func Test_regexSearch(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				rg: &readerGrep{
-					// Check this case specifically.
+					// Check that case specifically.
 					re:        nil,
 					matchPath: match,
 				},

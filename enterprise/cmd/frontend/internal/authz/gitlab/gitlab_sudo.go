@@ -203,7 +203,7 @@ func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAc
 
 // fetchProjVis fetches a repository's visibility with usr's credentials. It returns:
 // - whether the project is accessible to the user,
-// - the visibility if the repo is accessible (otherwise this is empty),
+// - the visibility if the repo is accessible (otherwise that is empty),
 // - whether the repository contents are accessible to usr, and
 // - any error encountered in fetching (not including an error due to the repository not being visible);
 //   if the error is non-nil, all other return values should be disregraded
@@ -226,7 +226,7 @@ func (p *SudoProvider) fetchProjVis(ctx context.Context, sudo string, projID int
 		return false, proj.Visibility, false, nil
 	}
 
-	// At this point, sudo is non-nil *and* project visibility is internal or private
+	// At that point, sudo is non-nil *and* project visibility is internal or private
 
 	if proj.Visibility == gitlab.Internal {
 		// All authenticated users can read the contents of all internal/public projects

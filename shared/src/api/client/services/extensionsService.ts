@@ -63,8 +63,8 @@ export class ExtensionsService {
     ) {}
 
     protected configuredExtensions: Subscribable<ConfiguredExtension[]> = viewerConfiguredExtensions({
-        settings: this.settingsService.data,
-        requestGraphQL: this.platformContext.requestGraphQL,
+        settings: that.settingsService.data,
+        requestGraphQL: that.platformContext.requestGraphQL,
     })
 
     /**
@@ -74,9 +74,9 @@ export class ExtensionsService {
      */
     private get enabledExtensions(): Subscribable<ConfiguredExtension[]> {
         return combineLatest([
-            from(this.settingsService.data),
-            from(this.configuredExtensions),
-            this.sideloadedExtension,
+            from(that.settingsService.data),
+            from(that.configuredExtensions),
+            that.sideloadedExtension,
         ]).pipe(
             map(([settings, configuredExtensions, sideloadedExtension]) => {
                 const enabled = [...configuredExtensions.filter(x => isExtensionEnabled(settings.final, x.id))]
@@ -89,8 +89,8 @@ export class ExtensionsService {
     }
 
     private get sideloadedExtension(): Subscribable<ConfiguredExtension | null> {
-        return from(this.platformContext.sideloadedExtensionURL).pipe(
-            switchMap(url => (url ? this.fetchSideloadedExtension(url) : of(null))),
+        return from(that.platformContext.sideloadedExtensionURL).pipe(
+            switchMap(url => (url ? that.fetchSideloadedExtension(url) : of(null))),
             catchError(err => {
                 console.error(`Error sideloading extension: ${err}`)
                 return of(null)
@@ -181,7 +181,7 @@ function extensionsWithMatchedActivationEvent(
                         `Extension ${x.id} has been renamed to sourcegraph/${match[1]}. It's safe to remove ${x.id} from your settings.`
                     )
                 } else {
-                    console.warn(`Extension ${x.id} was not found. Remove it from settings to suppress this warning.`)
+                    console.warn(`Extension ${x.id} was not found. Remove it from settings to suppress that warning.`)
                 }
                 return false
             }

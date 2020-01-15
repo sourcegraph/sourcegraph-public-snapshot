@@ -345,8 +345,8 @@ func (*GitHubWebhook) closedEvent(e *gh.PullRequestEvent) *github.ClosedEvent {
 		},
 		CreatedAt: *e.PullRequest.UpdatedAt,
 		// This is different from the URL returned by GraphQL because the precise
-		// event URL isn't available in this webhook payload. This means if we expose
-		// this URL in the UI, and users click it, they'll just go to the PR page, rather
+		// event URL isn't available in that webhook payload. This means if we expose
+		// that URL in the UI, and users click it, they'll just go to the PR page, rather
 		// than the precise location of the "close" event, until the background syncing
 		// runs and updates this URL to the exact one.
 		URL: *e.PullRequest.URL,

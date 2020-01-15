@@ -86,39 +86,39 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminOverview')
 
-        this.subscriptions.add(fetchOverview().subscribe(info => this.setState({ info })))
-        this.subscriptions.add(
+        that.subscriptions.add(fetchOverview().subscribe(info => that.setState({ info })))
+        that.subscriptions.add(
             fetchWeeklyActiveUsers().subscribe(
-                stats => this.setState({ stats }),
-                error => this.setState({ error })
+                stats => that.setState({ stats }),
+                error => that.setState({ error })
             )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         let setupPercentage = 0
-        if (this.props.activation) {
-            setupPercentage = percentageDone(this.props.activation.completed)
+        if (that.props.activation) {
+            setupPercentage = percentageDone(that.props.activation.completed)
         }
         return (
             <div className="site-admin-overview-page py-3">
                 <PageTitle title="Overview - Admin" />
-                {this.props.overviewComponents.length > 0 && (
+                {that.props.overviewComponents.length > 0 && (
                     <div className="mb-4">
-                        {this.props.overviewComponents.map((C, i) => (
+                        {that.props.overviewComponents.map((C, i) => (
                             <C key={i} />
                         ))}
                     </div>
                 )}
-                {!this.state.info && <LoadingSpinner className="icon-inline" />}
+                {!that.state.info && <LoadingSpinner className="icon-inline" />}
                 <div className="list-group">
-                    {this.state.info && (
+                    {that.state.info && (
                         <>
-                            {this.props.activation && this.props.activation.completed && (
+                            {that.props.activation && that.props.activation.completed && (
                                 <Collapsible
                                     title={
                                         <>{setupPercentage < 100 ? 'Get started with Sourcegraph' : 'Setup status'}</>
@@ -127,67 +127,67 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     className="list-group-item"
                                     titleClassName="h4 mb-0 mt-2 font-weight-normal p-2"
                                 >
-                                    {this.props.activation.completed && (
+                                    {that.props.activation.completed && (
                                         <ActivationChecklist
-                                            history={this.props.history}
-                                            steps={this.props.activation.steps}
-                                            completed={this.props.activation.completed}
+                                            history={that.props.history}
+                                            steps={that.props.activation.steps}
+                                            completed={that.props.activation.completed}
                                         />
                                     )}
                                 </Collapsible>
                             )}
-                            {this.state.info.repositories !== null && (
+                            {that.state.info.repositories !== null && (
                                 <Link
                                     to="/site-admin/repositories"
                                     className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
                                 >
-                                    {numberWithCommas(this.state.info.repositories)}{' '}
-                                    {pluralize('repository', this.state.info.repositories, 'repositories')}
+                                    {numberWithCommas(that.state.info.repositories)}{' '}
+                                    {pluralize('repository', that.state.info.repositories, 'repositories')}
                                 </Link>
                             )}
-                            {this.state.info.users > 1 && (
+                            {that.state.info.users > 1 && (
                                 <Link
                                     to="/site-admin/users"
                                     className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
                                 >
-                                    {numberWithCommas(this.state.info.users)} {pluralize('user', this.state.info.users)}
+                                    {numberWithCommas(that.state.info.users)} {pluralize('user', that.state.info.users)}
                                 </Link>
                             )}
-                            {this.state.info.orgs > 1 && (
+                            {that.state.info.orgs > 1 && (
                                 <Link
                                     to="/site-admin/organizations"
                                     className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
                                 >
-                                    {numberWithCommas(this.state.info.orgs)}{' '}
-                                    {pluralize('organization', this.state.info.orgs)}
+                                    {numberWithCommas(that.state.info.orgs)}{' '}
+                                    {pluralize('organization', that.state.info.orgs)}
                                 </Link>
                             )}
-                            {this.state.info.users > 1 && (
+                            {that.state.info.users > 1 && (
                                 <Link
                                     to="/site-admin/surveys"
                                     className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
                                 >
-                                    {numberWithCommas(this.state.info.surveyResponses.totalCount)}{' '}
-                                    {pluralize('user survey response', this.state.info.surveyResponses.totalCount)}
+                                    {numberWithCommas(that.state.info.surveyResponses.totalCount)}{' '}
+                                    {pluralize('user survey response', that.state.info.surveyResponses.totalCount)}
                                 </Link>
                             )}
-                            {this.state.info.users > 1 && this.state.stats && (
+                            {that.state.info.users > 1 && that.state.stats && (
                                 <Collapsible
                                     title={
                                         <>
-                                            {this.state.stats.waus[1].userCount}{' '}
-                                            {pluralize('active user', this.state.stats.waus[1].userCount)} last week
+                                            {that.state.stats.waus[1].userCount}{' '}
+                                            {pluralize('active user', that.state.stats.waus[1].userCount)} last week
                                         </>
                                     }
                                     defaultExpanded={true}
                                     className="list-group-item"
                                     titleClassName="h5 mb-0 font-weight-normal p-2"
                                 >
-                                    {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
-                                    {this.state.stats && (
+                                    {that.state.error && <ErrorAlert className="mb-3" error={that.state.error} />}
+                                    {that.state.stats && (
                                         <UsageChart
-                                            {...this.props}
-                                            stats={this.state.stats}
+                                            {...that.props}
+                                            stats={that.state.stats}
                                             chartID="waus"
                                             showLegend={false}
                                             header={

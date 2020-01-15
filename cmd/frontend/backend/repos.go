@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
+// ErrRepoSeeOther indicates that the repo does not exist on that server but might exist on an external Sourcegraph
 // server.
 type ErrRepoSeeOther struct {
 	// RedirectURL is the base URL for the repository at an external location.

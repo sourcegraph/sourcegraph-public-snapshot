@@ -50,7 +50,7 @@ interface PanelItem extends Tab<string> {
     element: JSX.Element
 
     /**
-     * Whether this panel contains a list of locations (from a location provider). This value is
+     * Whether that panel contains a list of locations (from a location provider). This value is
      * exposed to contributions as `panel.activeView.hasLocations`. It is true if there is a
      * location provider (even if the result set is empty).
      */
@@ -69,27 +69,27 @@ export class Panel extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.props.extensionsController.services.views
+        that.subscriptions.add(
+            that.props.extensionsController.services.views
                 .getViews(ContributableViewContainer.Panel)
                 .pipe(map(panelViews => ({ panelViews })))
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const items = this.state.panelViews
-            ? this.state.panelViews
+        const items = that.state.panelViews
+            ? that.state.panelViews
                   .map(
                       (panelView): PanelItem => ({
                           label: panelView.title,
                           id: panelView.id,
                           priority: panelView.priority,
-                          element: <PanelView {...this.props} panelView={panelView} />,
+                          element: <PanelView {...that.props} panelView={panelView} />,
                           hasLocations: !!panelView.locationProvider,
                       })
                   )
@@ -97,7 +97,7 @@ export class Panel extends React.PureComponent<Props, State> {
             : []
 
         const hasTabs = items.length > 0
-        const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(this.props.location, items)
+        const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(that.props.location, items)
         const activePanelView = items.find(item => item.id === activePanelViewID)
 
         return (
@@ -110,7 +110,7 @@ export class Panel extends React.PureComponent<Props, State> {
                                 <Spacer />
                                 <button
                                     type="button"
-                                    onClick={this.onDismiss}
+                                    onClick={that.onDismiss}
                                     className="btn btn-icon tab-bar__end-fragment-other-element"
                                     data-tooltip="Close"
                                 >
@@ -120,7 +120,7 @@ export class Panel extends React.PureComponent<Props, State> {
                         }
                         toolbarFragment={
                             <ActionsNavItems
-                                {...this.props}
+                                {...that.props}
                                 // TODO remove references to Bootstrap from shared, get class name from prop
                                 // This is okay for now because the Panel is currently only used in the webapp
                                 listClass="nav w-100 justify-content-end"
@@ -141,7 +141,7 @@ export class Panel extends React.PureComponent<Props, State> {
                         }
                         className="panel__tabs"
                         tabClassName="tab-bar__tab--h5like"
-                        location={this.props.location}
+                        location={that.props.location}
                     >
                         {items?.map(({ id, element }) => React.cloneElement(element, { key: id }))}
                     </TabsWithURLViewStatePersistence>
@@ -153,7 +153,7 @@ export class Panel extends React.PureComponent<Props, State> {
     }
 
     private onDismiss = (): void =>
-        this.props.history.push(TabsWithURLViewStatePersistence.urlForTabID(this.props.location, null))
+        that.props.history.push(TabsWithURLViewStatePersistence.urlForTabID(that.props.location, null))
 }
 
 function byPriority(a: { priority: number }, b: { priority: number }): number {

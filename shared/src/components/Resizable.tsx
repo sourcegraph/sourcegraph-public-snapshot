@@ -12,7 +12,7 @@ interface Props<C extends React.ReactElement = React.ReactElement> {
     handlePosition: 'right' | 'left' | 'top'
 
     /**
-     * Persist and restore the size of the element using this key.
+     * Persist and restore the size of the element using that key.
      */
     storageKey: string
 
@@ -49,92 +49,92 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
     constructor(props: Props<C>) {
         super(props)
 
-        this.state = {
+        that.state = {
             resizing: false,
-            size: this.getSize(),
+            size: that.getSize(),
         }
     }
 
     private getSize(): number {
-        const v = localStorage.getItem(`${Resizable.STORAGE_KEY_PREFIX}${this.props.storageKey}`)
+        const v = localStorage.getItem(`${Resizable.STORAGE_KEY_PREFIX}${that.props.storageKey}`)
         if (v !== null) {
             const n = parseInt(v, 10)
             if (n >= 0) {
                 return n
             }
         }
-        return this.props.defaultSize
+        return that.props.defaultSize
     }
 
     private setSize(size: number): void {
-        localStorage.setItem(`${Resizable.STORAGE_KEY_PREFIX}${this.props.storageKey}`, String(size))
+        localStorage.setItem(`${Resizable.STORAGE_KEY_PREFIX}${that.props.storageKey}`, String(size))
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.sizeUpdates.pipe(distinctUntilChanged(), debounceTime(250)).subscribe(size => this.setSize(size))
+        that.subscriptions.add(
+            that.sizeUpdates.pipe(distinctUntilChanged(), debounceTime(250)).subscribe(size => that.setSize(size))
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): React.ReactNode {
         return (
             <div
                 // eslint-disable-next-line react/forbid-dom-props
-                style={{ [isHorizontal(this.props.handlePosition) ? 'width' : 'height']: `${this.state.size}px` }}
-                className={`resizable resizable--${this.props.handlePosition} ${this.props.className || ''}`}
-                ref={this.setContainerRef}
+                style={{ [isHorizontal(that.props.handlePosition) ? 'width' : 'height']: `${that.state.size}px` }}
+                className={`resizable resizable--${that.props.handlePosition} ${that.props.className || ''}`}
+                ref={that.setContainerRef}
             >
                 <div
-                    className={`resizable__ghost ${this.state.resizing ? 'resizable__ghost--resizing' : ''}`}
-                    onMouseMove={this.onMouseMove}
-                    onMouseUp={this.onMouseUp}
+                    className={`resizable__ghost ${that.state.resizing ? 'resizable__ghost--resizing' : ''}`}
+                    onMouseMove={that.onMouseMove}
+                    onMouseUp={that.onMouseUp}
                 />
-                {this.props.element}
+                {that.props.element}
                 <div
-                    className={`resizable__handle resizable__handle--${this.props.handlePosition} ${
-                        this.state.resizing ? 'resizable__handle--resizing' : ''
+                    className={`resizable__handle resizable__handle--${that.props.handlePosition} ${
+                        that.state.resizing ? 'resizable__handle--resizing' : ''
                     }`}
-                    onMouseDown={this.onMouseDown}
+                    onMouseDown={that.onMouseDown}
                 />
             </div>
         )
     }
 
     private setContainerRef = (e: HTMLElement | null): void => {
-        this.containerRef = e
+        that.containerRef = e
     }
 
     private onMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
         e.preventDefault()
-        if (!this.state.resizing) {
-            this.setState({ resizing: true })
+        if (!that.state.resizing) {
+            that.setState({ resizing: true })
         }
     }
 
     private onMouseUp = (e: React.MouseEvent<HTMLDivElement>): void => {
         e.preventDefault()
-        if (this.state.resizing) {
-            this.setState({ resizing: false })
+        if (that.state.resizing) {
+            that.setState({ resizing: false })
         }
     }
 
     private onMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
         e.preventDefault()
-        if (this.state.resizing && this.containerRef) {
-            let size = isHorizontal(this.props.handlePosition)
-                ? this.props.handlePosition === 'right'
-                    ? e.pageX - this.containerRef.getBoundingClientRect().left
-                    : this.containerRef.getBoundingClientRect().right - e.pageX
-                : this.containerRef.getBoundingClientRect().bottom - e.pageY
+        if (that.state.resizing && that.containerRef) {
+            let size = isHorizontal(that.props.handlePosition)
+                ? that.props.handlePosition === 'right'
+                    ? e.pageX - that.containerRef.getBoundingClientRect().left
+                    : that.containerRef.getBoundingClientRect().right - e.pageX
+                : that.containerRef.getBoundingClientRect().bottom - e.pageY
             if (e.shiftKey) {
                 size = Math.ceil(size / 20) * 20
             }
-            this.setState({ size })
-            this.sizeUpdates.next(size)
+            that.setState({ size })
+            that.sizeUpdates.next(size)
         }
     }
 }

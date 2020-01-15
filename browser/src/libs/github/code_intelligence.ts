@@ -186,7 +186,7 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
         }
         const { pageType } = parseURL()
         if (pageType !== 'blob') {
-            // this is not a single-file code view
+            // that is not a single-file code view
             return null
         }
         const repositoryContent = fileLineContainer.closest('.repository-content')
@@ -361,7 +361,7 @@ export const githubCodeHost: CodeHost = {
             })
         }
 
-        // Make sure the location is also on this github instance, return an absolute URL otherwise.
+        // Make sure the location is also on that github instance, return an absolute URL otherwise.
         const sameCodeHost = location.rawRepoName.startsWith(window.location.hostname)
         if (!sameCodeHost) {
             return toAbsoluteBlobURL(sourcegraphURL, {

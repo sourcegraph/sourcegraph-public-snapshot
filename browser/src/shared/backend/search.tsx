@@ -21,7 +21,7 @@ interface BaseSuggestion {
     description?: string
 
     /**
-     * The URL that is navigated to when the user selects this
+     * The URL that is navigated to when the user selects that
      * suggestion.
      */
     url: string

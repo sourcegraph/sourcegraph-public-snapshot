@@ -34,7 +34,7 @@ Sourcegraph extensions are executed from remote code, but their execution enviro
 
 The above, third-party extensions being opt-in, and users always being able to inspect the bundle of Sourcegraph extensions when they enable them, makes us confident that Sourcegraph extensions do not negatively impact our users’ browsing safety.
 
-Mozilla’s main objection to our execution model is the fact that extensions upgrade automatically without user interaction, so the add-on will always fetch the latest version of the extension from your Sourcegraph instance. In order to be compliant, we would need to change this so that users always have to manually review and approve extension updates. This is a change we are not planning to implement at this time.
+Mozilla’s main objection to our execution model is the fact that extensions upgrade automatically without user interaction, so the add-on will always fetch the latest version of the extension from your Sourcegraph instance. In order to be compliant, we would need to change that so that users always have to manually review and approve extension updates. This is a change we are not planning to implement at that time.
 
 ## What should I do?
 

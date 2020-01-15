@@ -261,7 +261,7 @@ func CookieMiddleware(next http.Handler) http.Handler {
 //
 // - The request is cross-origin but passed the CORS preflight check (because otherwise the
 //   preflight OPTIONS reponse from secureHeadersMiddleware would have caused the browser to refuse
-//   to send this HTTP request).
+//   to send that HTTP request).
 //
 // To determine if it's a non-simple CORS request, it checks for the presence of either
 // "Content-Type: application/json; charset=utf-8" or a non-empty HTTP request header whose name is

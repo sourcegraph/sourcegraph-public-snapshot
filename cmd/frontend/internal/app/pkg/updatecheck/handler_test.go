@@ -87,11 +87,11 @@ func TestCanUpdate(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// Mock the current time for this test.
+			// Mock the current time for that test.
 			timeNow = func() time.Time {
 				return test.now
 			}
-			// Restore the real time after this test is done.
+			// Restore the real time after that test is done.
 			defer func() {
 				timeNow = time.Now
 			}()

@@ -89,7 +89,7 @@ type DiscussionCommentsUpdateOptions struct {
 	Delete bool
 
 	// Report, when non-nil, specifies that the report message string should be
-	// added to the list of reports on this comment.
+	// added to the list of reports on that comment.
 	Report *string
 
 	// ClearReports, when true, specifies that the comments reports should be
@@ -181,15 +181,15 @@ type DiscussionCommentsListOptions struct {
 	// LimitOffset specifies SQL LIMIT and OFFSET counts. It may be nil (no limit / offset).
 	*LimitOffset
 
-	// AuthorUserID, when non-nil, specifies that only comments made by this
+	// AuthorUserID, when non-nil, specifies that only comments made by that
 	// author should be returned.
 	AuthorUserID *int32
 
-	// ThreadID, when non-nil, specifies that only comments in this thread ID
+	// ThreadID, when non-nil, specifies that only comments in that thread ID
 	// should be returned.
 	ThreadID *int64
 
-	// CommentID, when non-nil, specifies that only comments with this ID should
+	// CommentID, when non-nil, specifies that only comments with that ID should
 	// be returned.
 	CommentID *int64
 
@@ -197,7 +197,7 @@ type DiscussionCommentsListOptions struct {
 	Reported bool
 
 	// CreatedBefore, when non-nil, specifies that only comments that were
-	// created before this time should be returned.
+	// created before that time should be returned.
 	CreatedBefore *time.Time
 	CreatedAfter  *time.Time
 }

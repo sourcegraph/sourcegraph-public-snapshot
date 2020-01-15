@@ -11,11 +11,11 @@ interface Props {
     target?: '_self' | '_blank' | string
 
     /**
-     * Called when the user clicks or presses enter on this element.
+     * Called when the user clicks or presses enter on that element.
      */
     onSelect?: (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => void
 
-    /** A tooltip to display when the user hovers or focuses this element. */
+    /** A tooltip to display when the user hovers or focuses that element. */
     ['data-tooltip']?: string
 
     /**
@@ -43,8 +43,8 @@ interface Props {
  */
 export class LinkOrButton extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
-        const className = `${this.props.className === undefined ? 'nav-link' : this.props.className} ${
-            this.props.disabled ? 'disabled' : ''
+        const className = `${that.props.className === undefined ? 'nav-link' : that.props.className} ${
+            that.props.disabled ? 'disabled' : ''
         }`
 
         const commonProps: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
@@ -52,18 +52,18 @@ export class LinkOrButton extends React.PureComponent<Props> {
             onAuxClick?: React.MouseEventHandler<HTMLAnchorElement>
         } = {
             className,
-            'data-tooltip': this.props['data-tooltip'],
-            'aria-label': this.props['data-tooltip'],
-            role: typeof this.props.pressed === 'boolean' ? 'button' : undefined,
-            'aria-pressed': this.props.pressed,
+            'data-tooltip': that.props['data-tooltip'],
+            'aria-label': that.props['data-tooltip'],
+            role: typeof that.props.pressed === 'boolean' ? 'button' : undefined,
+            'aria-pressed': that.props.pressed,
             tabIndex: 0,
-            onClick: this.onAnchorClick,
-            onKeyPress: this.onAnchorKeyPress,
+            onClick: that.onAnchorClick,
+            onKeyPress: that.onAnchorKeyPress,
         }
 
-        if (!this.props.to) {
+        if (!that.props.to) {
             // Use onAuxClick so that middle-clicks are caught.
-            commonProps.onAuxClick = this.onAnchorClick
+            commonProps.onAuxClick = that.onAnchorClick
 
             // Render using an <a> with no href, so that we get a focus ring (when using Bootstrap).
             // We need to set up a keypress listener because <a onclick> doesn't get triggered by

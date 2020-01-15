@@ -9,13 +9,13 @@ It will ask teams to review these dependency updates, depending on code ownershi
 As a reviewer of a Renovate pull request, you need to make an assessment of:
 - The **usefulness** of the update: Updates are considered useful by default, but e.g. a change to the README does not need to be merged.
 - The _amount_ and _areas_ of **testing** needed, which is determined by:
-  - The **risk** of updating this dependency, which is determined by:
+  - The **risk** of updating that dependency, which is determined by:
     - The dependency type (`dependency` or `devDependency`): devDependencies generally only break the entire build or app, rarely individual features.
     - The [semver](https://semver.org/) type: major (breaking), minor (feature), patch (bug fix)
     - The actual changes, which are determined by:
       - The **changelog** (usually inlined in the pull request description)
       - The **commits** made between the version (linked from the pull request description)
-    - The amount of **automatic testing** we have in this area (either automatically running on the branch in CI, or manually)
+    - The amount of **automatic testing** we have in that area (either automatically running on the branch in CI, or manually)
     - Whether the breaking changes would be detected by the TypeScript **type checker**
       Note: This only applies to packages that are written in TypeScript like `rxjs`, since otherwise the types may not have been updated yet and may be "lying".
     - Where/how the dependency **is used**: Are we actually using the feature that has a breaking change? Tip: The PR description includes a badge for Sourcegraph search results that can help finding usages of the package.
@@ -27,7 +27,7 @@ Once you assessed these aspects, you can make an informed decision to:
 - Merge the pull request as-is
 - Close it
 - Make the needed commits on the branch to migrate, then merge
-- _Request changes_ on the pull request with a summary of the migration work neeeded, postponing that work but signalling that somebody already reviewed this pull request.
+- _Request changes_ on the pull request with a summary of the migration work neeeded, postponing that work but signalling that somebody already reviewed that pull request.
   Everyone should take a look at open Renovate pull requests that have been open for a while regularly.
 
 When in doubt, you can ping your team on the pull request to get more eyes on it.

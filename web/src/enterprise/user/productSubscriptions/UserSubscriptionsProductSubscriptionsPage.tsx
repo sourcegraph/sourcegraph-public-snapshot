@@ -27,7 +27,7 @@ class FilteredProductSubscriptionConnection extends FilteredConnection<
 > {}
 
 /**
- * Displays the product subscriptions associated with this account.
+ * Displays the product subscriptions associated with that account.
  */
 export class UserSubscriptionsProductSubscriptionsPage extends React.Component<Props> {
     private subscriptions = new Subscription()
@@ -38,12 +38,12 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<ProductSubscriptionNodeProps, 'onDidUpdate'> = {
-            onDidUpdate: this.onDidUpdateProductSubscription,
+            onDidUpdate: that.onDidUpdateProductSubscription,
         }
 
         return (
@@ -51,7 +51,7 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
                 <PageTitle title="Subscriptions" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Subscriptions</h2>
-                    <Link to={`${this.props.match.path}/new`} className="btn btn-primary">
+                    <Link to={`${that.props.match.path}/new`} className="btn btn-primary">
                         New subscription
                     </Link>
                 </div>
@@ -65,15 +65,15 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
                     listClassName="table"
                     noun="subscription"
                     pluralNoun="subscriptions"
-                    queryConnection={this.queryLicenses}
+                    queryConnection={that.queryLicenses}
                     headComponent={ProductSubscriptionNodeHeader}
                     nodeComponent={ProductSubscriptionNode}
                     nodeComponentProps={nodeProps}
-                    updates={this.updates}
+                    updates={that.updates}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
-                    history={this.props.history}
-                    location={this.props.location}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
@@ -82,7 +82,7 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
     private queryLicenses = (args: { first?: number }): Observable<GQL.IProductSubscriptionConnection> => {
         const vars: GQL.IProductSubscriptionsOnDotcomQueryArguments = {
             first: args.first,
-            account: this.props.user.id,
+            account: that.props.user.id,
         }
         return queryGraphQL(
             gql`
@@ -112,5 +112,5 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
         )
     }
 
-    private onDidUpdateProductSubscription = (): void => this.updates.next()
+    private onDidUpdateProductSubscription = (): void => that.updates.next()
 }

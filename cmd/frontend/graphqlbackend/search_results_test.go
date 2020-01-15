@@ -400,7 +400,7 @@ func generateZoektMatches(count int) []zoekt.FileMatch {
 		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
 			Score:      5.0,
 			FileName:   fileName,
-			Repository: repoName, // Important: this needs to match a name in `repos`
+			Repository: repoName, // Important: that needs to match a name in `repos`
 			Branches:   []string{"master"},
 			LineMatches: []zoekt.LineMatch{
 				{

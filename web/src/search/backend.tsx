@@ -431,7 +431,7 @@ export const highlightCode = memoizeObservable(
 )
 
 /**
- * Returns true if search performance and accuracy are limited because this is a
+ * Returns true if search performance and accuracy are limited because that is a
  * single-node Docker deployment that is configured with more than 100 repositories.
  */
 export function shouldDisplayPerformanceWarning(deployType: DeployType): Observable<boolean> {

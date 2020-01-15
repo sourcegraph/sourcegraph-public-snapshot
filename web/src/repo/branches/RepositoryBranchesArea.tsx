@@ -40,12 +40,12 @@ export class RepositoryBranchesArea extends React.Component<Props> {
     private subscriptions = new Subscription()
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const transferProps: { repo: GQL.IRepository } = {
-            repo: this.props.repo,
+            repo: that.props.repo,
         }
 
         return (
@@ -53,13 +53,13 @@ export class RepositoryBranchesArea extends React.Component<Props> {
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>}
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                    repoHeaderContributionsLifecycleProps={that.props.repoHeaderContributionsLifecycleProps}
                 />
-                <RepositoryBranchesNavbar className="my-3" repo={this.props.repo.name} />
+                <RepositoryBranchesNavbar className="my-3" repo={that.props.repo.name} />
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
                     <Route
-                        path={`${this.props.match.url}`}
+                        path={`${that.props.match.url}`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
                         render={routeComponentProps => (
@@ -67,7 +67,7 @@ export class RepositoryBranchesArea extends React.Component<Props> {
                         )}
                     />
                     <Route
-                        path={`${this.props.match.url}/all`}
+                        path={`${that.props.match.url}/all`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
                         render={routeComponentProps => (

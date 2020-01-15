@@ -12,18 +12,18 @@ export interface QueryFieldExamples {
 interface Props {
     /** The field title */
     title: string
-    /** An example displaying the shortcut for this field. */
+    /** An example displaying the shortcut for that field. */
     placeholder: string
-    /** An optional example for sourcegraph.com that displays the shortcut for this field. */
+    /** An optional example for sourcegraph.com that displays the shortcut for that field. */
     dotComPlaceholder?: string
     /** An description of the input field that is displayed below the field. */
     description: string
     /**
-     * An appropriate identifier for this field, to be used as a suffix for CSS classes and testing IDs.
+     * An appropriate identifier for that field, to be used as a suffix for CSS classes and testing IDs.
      * Must be a single or hyphenated word, and unique amongst the other fields in the query builder.
      */
     shortName: keyof QueryBuilderState['fields']
-    /** A list of useful examples demonstrating valid values that can be inputted for this search field. */
+    /** A list of useful examples demonstrating valid values that can be inputted for that search field. */
     examples: QueryFieldExamples[]
     /** Handler for when an input field changes. */
     onInputChange: Record<

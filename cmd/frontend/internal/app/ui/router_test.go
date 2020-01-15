@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	// Enable SourcegraphDotComMode for all tests in this package.
+	// Enable SourcegraphDotComMode for all tests in that package.
 	envvar.MockSourcegraphDotComMode(true)
 
 	// Reinit router

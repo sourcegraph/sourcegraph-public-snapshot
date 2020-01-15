@@ -11,7 +11,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 
 interface AuthProviderNodeProps {
-    /** The auth provider to display in this item. */
+    /** The auth provider to display in that item. */
     node: GQL.IAuthProvider
 }
 
@@ -24,20 +24,20 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="mr-2">
-                        <strong>{this.props.node.displayName}</strong>{' '}
-                        <span className="badge badge-secondary">{this.props.node.serviceType}</span>
+                        <strong>{that.props.node.displayName}</strong>{' '}
+                        <span className="badge badge-secondary">{that.props.node.serviceType}</span>
                         <br />
-                        {(this.props.node.serviceID || this.props.node.clientID) && (
+                        {(that.props.node.serviceID || that.props.node.clientID) && (
                             <small className="text-muted">
-                                {this.props.node.serviceID}
-                                {this.props.node.clientID && <> &mdash; {this.props.node.clientID}</>}
+                                {that.props.node.serviceID}
+                                {that.props.node.clientID && <> &mdash; {that.props.node.clientID}</>}
                             </small>
                         )}
                     </div>
                     {authExp && (
                         <div className="text-nowrap">
-                            {this.props.node.authenticationURL && (
-                                <a className="btn btn-secondary" href={this.props.node.authenticationURL}>
+                            {that.props.node.authenticationURL && (
+                                <a className="btn btn-secondary" href={that.props.node.authenticationURL}>
                                     Authenticate
                                 </a>
                             )}
@@ -89,11 +89,11 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
                     className="list-group list-group-flush mt-3"
                     noun="authentication provider"
                     pluralNoun="authentication providers"
-                    queryConnection={this.queryAuthProviders}
+                    queryConnection={that.queryAuthProviders}
                     nodeComponent={AuthProviderNode}
                     hideSearch={true}
-                    history={this.props.history}
-                    location={this.props.location}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )

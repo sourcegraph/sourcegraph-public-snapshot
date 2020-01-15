@@ -8,7 +8,7 @@ export class ClientRoots {
     private subscriptions = new Subscription()
 
     constructor(proxy: ProxyResult<ExtRootsAPI>, workspaceService: WorkspaceService) {
-        this.subscriptions.add(
+        that.subscriptions.add(
             workspaceService.roots.subscribe(roots => {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 proxy.$acceptRoots(roots || [])
@@ -17,6 +17,6 @@ export class ClientRoots {
     }
 
     public unsubscribe(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 }

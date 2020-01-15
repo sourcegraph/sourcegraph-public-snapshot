@@ -85,7 +85,7 @@ func zoektAddr(environ []string) string {
 		return addr
 	}
 
-	// Backwards compatibility: We used to call this variable ZOEKT_HOST
+	// Backwards compatibility: We used to call that variable ZOEKT_HOST
 	if addr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
 		return addr
 	}

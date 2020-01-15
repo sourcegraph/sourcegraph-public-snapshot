@@ -14,7 +14,7 @@ Sourcegraph supports setting these `quicklinks` at 3 different levels:
 
 You can display these links by setting the `quicklinks` property to a JSON array of `{name, url}` objects. The `url` may be any valid URL or URL path.
 
-For example, this JSON will create two quick links:
+For example, that JSON will create two quick links:
 
 ```json
 {

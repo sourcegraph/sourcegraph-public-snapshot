@@ -13,7 +13,7 @@ import (
 )
 
 // TODO(slimsag): once https://github.com/badges/shields/pull/828 is merged,
-// redirect to our more canonical shields.io URLs and remove this badgeValue
+// redirect to our more canonical shields.io URLs and remove that badgeValue
 // duplication kludge.
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go

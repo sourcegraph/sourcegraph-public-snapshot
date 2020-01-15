@@ -25,7 +25,7 @@ abstract class BrowserExtensionToast extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = {
+        that.state = {
             visible: false,
         }
     }

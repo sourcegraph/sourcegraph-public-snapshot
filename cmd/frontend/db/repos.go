@@ -66,7 +66,7 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 // database, or an error. If we have a match on name and uri, we prefer the
 // match on name.
 //
-// Name is the name for this repository (e.g., "github.com/user/repo"). It is
+// Name is the name for that repository (e.g., "github.com/user/repo"). It is
 // the same as URI, unless the user configures a non-default
 // repositoryPathPattern.
 func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.Repo, error) {
@@ -101,7 +101,7 @@ func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.R
 // GetByIDs returns a list of repositories by given IDs. The number of results list could be less
 // than the candidate list due to no repository is associated with some IDs.
 // 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
-// is the site admin because this method returns all available data from the database.
+// is the site admin because that method returns all available data from the database.
 func (s *repos) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
 	if Mocks.Repos.GetByIDs != nil {
 		return Mocks.Repos.GetByIDs(ctx, ids...)
@@ -486,7 +486,7 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 // (which generally can't use an index).
 //
 // This optimization is necessary for good performance when there are many repos
-// in the database. With this optimization, specifying a "repogroup:" in the query
+// in the database. With that optimization, specifying a "repogroup:" in the query
 // will be fast (even if there are many repos) because the query can be constrained
 // efficiently to only the repos in the group.
 func parseIncludePattern(pattern string) (exact, like []string, regexp string, err error) {

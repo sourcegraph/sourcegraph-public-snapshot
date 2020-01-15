@@ -49,7 +49,7 @@ interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<PositionSpec>
 
     /**
      * Include the full URI fragment here because it represents the state of panels, and we want
-     * panels to be re-rendered when this state changes.
+     * panels to be re-rendered when that state changes.
      */
     hash: string
 }
@@ -79,7 +79,7 @@ export class BlobPanel extends React.PureComponent<Props> {
     constructor(props: Props) {
         super(props)
 
-        const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
+        const componentUpdates = that.componentUpdates.pipe(startWith(that.props))
 
         // Changes to the subject, including upon the initial mount.
         const subjectChanges = componentUpdates.pipe(
@@ -95,12 +95,12 @@ export class BlobPanel extends React.PureComponent<Props> {
             extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.editor.activeEditorUpdates).pipe(
+            provider: from(that.props.extensionsController.services.editor.activeEditorUpdates).pipe(
                 map(activeEditor =>
                     activeEditor
                         ? {
                               ...activeEditor,
-                              model: this.props.extensionsController.services.model.getPartialModel(
+                              model: that.props.extensionsController.services.model.getPartialModel(
                                   activeEditor.resource
                               ),
                           }
@@ -130,12 +130,12 @@ export class BlobPanel extends React.PureComponent<Props> {
                                         locationsObservable.pipe(
                                             tap(locations => {
                                                 if (
-                                                    this.props.activation &&
+                                                    that.props.activation &&
                                                     id === 'references' &&
                                                     locations &&
                                                     locations.length > 0
                                                 ) {
-                                                    this.props.activation.update({ FoundReferences: true })
+                                                    that.props.activation.update({ FoundReferences: true })
                                                 }
                                             })
                                         )
@@ -148,20 +148,20 @@ export class BlobPanel extends React.PureComponent<Props> {
             ),
         })
 
-        this.subscriptions.add(
-            this.props.extensionsController.services.views.registerProviders(
+        that.subscriptions.add(
+            that.props.extensionsController.services.views.registerProviders(
                 [
                     entryForViewProviderRegistration(
                         'def',
                         'Definition',
                         190,
-                        this.props.extensionsController.services.textDocumentDefinition
+                        that.props.extensionsController.services.textDocumentDefinition
                     ),
                     entryForViewProviderRegistration(
                         'references',
                         'References',
                         180,
-                        this.props.extensionsController.services.textDocumentReferences,
+                        that.props.extensionsController.services.textDocumentReferences,
                         {
                             context: { includeDeclaration: false },
                         }
@@ -179,11 +179,11 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 reactElement: (
                                     <RepoRevSidebarCommits
                                         key="commits"
-                                        repoID={this.props.repoID}
+                                        repoID={that.props.repoID}
                                         rev={subject.rev}
                                         filePath={subject.filePath}
-                                        history={this.props.history}
-                                        location={this.props.location}
+                                        history={that.props.history}
+                                        location={that.props.location}
                                     />
                                 ),
                             }))
@@ -195,7 +195,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                         registrationOptions: { id: 'discussions', container: ContributableViewContainer.Panel },
                         provider: subjectChanges.pipe(
                             map((subject: PanelSubject) =>
-                                isDiscussionsEnabled(this.props.settingsCascade)
+                                isDiscussionsEnabled(that.props.settingsCascade)
                                     ? {
                                           title: 'Discussions',
                                           content: '',
@@ -203,15 +203,15 @@ export class BlobPanel extends React.PureComponent<Props> {
                                           locationProvider: null,
                                           reactElement: (
                                               <DiscussionsTree
-                                                  repoID={this.props.repoID}
+                                                  repoID={that.props.repoID}
                                                   repoName={subject.repoName}
                                                   commitID={subject.commitID}
                                                   rev={subject.rev}
                                                   filePath={subject.filePath}
-                                                  history={this.props.history}
-                                                  location={this.props.location}
+                                                  history={that.props.history}
+                                                  location={that.props.location}
                                                   compact={true}
-                                                  extensionsController={this.props.extensionsController}
+                                                  extensionsController={that.props.extensionsController}
                                               />
                                           ),
                                       }
@@ -227,11 +227,11 @@ export class BlobPanel extends React.PureComponent<Props> {
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {

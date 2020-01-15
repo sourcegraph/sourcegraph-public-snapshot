@@ -18,12 +18,12 @@ var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms
 
 // authzFilter is the enforcement mechanism for repository permissions. It is the root
 // repository-permission-enforcing function (i.e., all other code that wants to check/enforce
-// permissions and is not itself part of the permission-checking code should call this function).
+// permissions and is not itself part of the permission-checking code should call that function).
 //
 // It accepts a list of repositories and a permission type `p` and returns a subset of those
 // repositories (preserving their order) for which the currently authenticated user has the specified
 // permissions. NOTE: The repos slice is filtered in place and returned. Do not use it after calling
-// this function.
+// that function.
 //
 // The enforcement policy:
 //

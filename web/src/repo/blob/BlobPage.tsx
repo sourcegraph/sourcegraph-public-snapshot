@@ -123,7 +123,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        this.state = {
+        that.state = {
             wrapCode: ToggleLineWrap.getValue(),
         }
     }
@@ -133,19 +133,19 @@ export class BlobPage extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.logViewEvent()
+        that.logViewEvent()
 
         // Fetch repository revision.
-        this.subscriptions.add(
+        that.subscriptions.add(
             combineLatest([
-                this.propsUpdates.pipe(
+                that.propsUpdates.pipe(
                     map(props => pick(props, 'repoName', 'commitID', 'filePath', 'isLightTheme')),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
-                this.extendHighlightingTimeoutClicks.pipe(mapTo(true), startWith(false)),
+                that.extendHighlightingTimeoutClicks.pipe(mapTo(true), startWith(false)),
             ])
                 .pipe(
-                    tap(() => this.setState({ blobOrError: undefined })),
+                    tap(() => that.setState({ blobOrError: undefined })),
                     switchMap(([{ repoName, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
                         fetchBlob({
                             repoName,
@@ -162,7 +162,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     )
                 )
                 .subscribe(
-                    blobOrError => this.setState({ blobOrError }),
+                    blobOrError => that.setState({ blobOrError }),
                     err => console.error(err)
                 )
         )

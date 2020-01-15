@@ -48,7 +48,7 @@ INSERT INTO product_licenses(id, product_subscription_id, license_key) VALUES($1
 
 // GetByID retrieves the product license (if any) given its ID.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this product license.
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view that product license.
 func (s dbLicenses) GetByID(ctx context.Context, id string) (*dbLicense, error) {
 	if mocks.licenses.GetByID != nil {
 		return mocks.licenses.GetByID(id)
@@ -81,7 +81,7 @@ func (s dbLicenses) GetByLicenseKey(ctx context.Context, licenseKey string) (*db
 // dbLicensesListOptions contains options for listing product licenses.
 type dbLicensesListOptions struct {
 	LicenseKeySubstring   string
-	ProductSubscriptionID string // only list product licenses for this subscription (by UUID)
+	ProductSubscriptionID string // only list product licenses for that subscription (by UUID)
 	*db.LimitOffset
 }
 

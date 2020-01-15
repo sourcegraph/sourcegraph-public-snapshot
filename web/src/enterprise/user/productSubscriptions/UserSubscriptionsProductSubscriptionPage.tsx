@@ -44,35 +44,35 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSubscriptionsProductSubscription')
 
-        const subscriptionUUIDChanges = this.componentUpdates.pipe(
+        const subscriptionUUIDChanges = that.componentUpdates.pipe(
             map(props => props.match.params.subscriptionUUID),
             distinctUntilChanged()
         )
 
         const productSubscriptionChanges = subscriptionUUIDChanges.pipe(
             switchMap(subscriptionUUID =>
-                this.queryProductSubscription(subscriptionUUID).pipe(
+                that.queryProductSubscription(subscriptionUUID).pipe(
                     catchError(err => [asError(err)]),
                     startWith(LOADING)
                 )
             )
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             productSubscriptionChanges
                 .pipe(map(result => ({ productSubscriptionOrError: result })))
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -80,13 +80,13 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
             <div className="user-subscriptions-product-subscription-page">
                 <PageTitle title="Subscription" />
                 <div className="d-flex align-items-center justify-content-between">
-                    <BackToAllSubscriptionsLink user={this.props.user} />
-                    {this.state.productSubscriptionOrError !== LOADING &&
-                        !isErrorLike(this.state.productSubscriptionOrError) &&
-                        this.state.productSubscriptionOrError.urlForSiteAdmin && (
+                    <BackToAllSubscriptionsLink user={that.props.user} />
+                    {that.state.productSubscriptionOrError !== LOADING &&
+                        !isErrorLike(that.state.productSubscriptionOrError) &&
+                        that.state.productSubscriptionOrError.urlForSiteAdmin && (
                             <SiteAdminAlert className="small m-0 p-1">
                                 <Link
-                                    to={this.state.productSubscriptionOrError.urlForSiteAdmin}
+                                    to={that.state.productSubscriptionOrError.urlForSiteAdmin}
                                     className="mt-2 d-block"
                                 >
                                     View subscription
@@ -94,53 +94,53 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                             </SiteAdminAlert>
                         )}
                 </div>
-                {this.state.productSubscriptionOrError === LOADING ? (
+                {that.state.productSubscriptionOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline" />
-                ) : isErrorLike(this.state.productSubscriptionOrError) ? (
-                    <ErrorAlert className="my-2" error={this.state.productSubscriptionOrError} />
+                ) : isErrorLike(that.state.productSubscriptionOrError) ? (
+                    <ErrorAlert className="my-2" error={that.state.productSubscriptionOrError} />
                 ) : (
                     <>
-                        <h2>Subscription {this.state.productSubscriptionOrError.name}</h2>
-                        {(this.state.productSubscriptionOrError.invoiceItem ||
-                            (this.state.productSubscriptionOrError.activeLicense &&
-                                this.state.productSubscriptionOrError.activeLicense.info)) && (
+                        <h2>Subscription {that.state.productSubscriptionOrError.name}</h2>
+                        {(that.state.productSubscriptionOrError.invoiceItem ||
+                            (that.state.productSubscriptionOrError.activeLicense &&
+                                that.state.productSubscriptionOrError.activeLicense.info)) && (
                             <UserProductSubscriptionStatus
-                                subscriptionName={this.state.productSubscriptionOrError.name}
+                                subscriptionName={that.state.productSubscriptionOrError.name}
                                 productNameWithBrand={
-                                    this.state.productSubscriptionOrError.activeLicense &&
-                                    this.state.productSubscriptionOrError.activeLicense.info
-                                        ? this.state.productSubscriptionOrError.activeLicense.info.productNameWithBrand
-                                        : this.state.productSubscriptionOrError.invoiceItem!.plan.nameWithBrand
+                                    that.state.productSubscriptionOrError.activeLicense &&
+                                    that.state.productSubscriptionOrError.activeLicense.info
+                                        ? that.state.productSubscriptionOrError.activeLicense.info.productNameWithBrand
+                                        : that.state.productSubscriptionOrError.invoiceItem!.plan.nameWithBrand
                                 }
                                 userCount={
-                                    this.state.productSubscriptionOrError.activeLicense &&
-                                    this.state.productSubscriptionOrError.activeLicense.info
-                                        ? this.state.productSubscriptionOrError.activeLicense.info.userCount
-                                        : this.state.productSubscriptionOrError.invoiceItem!.userCount
+                                    that.state.productSubscriptionOrError.activeLicense &&
+                                    that.state.productSubscriptionOrError.activeLicense.info
+                                        ? that.state.productSubscriptionOrError.activeLicense.info.userCount
+                                        : that.state.productSubscriptionOrError.invoiceItem!.userCount
                                 }
                                 expiresAt={
-                                    this.state.productSubscriptionOrError.activeLicense &&
-                                    this.state.productSubscriptionOrError.activeLicense.info
-                                        ? parseISO(this.state.productSubscriptionOrError.activeLicense.info.expiresAt)
-                                        : parseISO(this.state.productSubscriptionOrError.invoiceItem!.expiresAt)
+                                    that.state.productSubscriptionOrError.activeLicense &&
+                                    that.state.productSubscriptionOrError.activeLicense.info
+                                        ? parseISO(that.state.productSubscriptionOrError.activeLicense.info.expiresAt)
+                                        : parseISO(that.state.productSubscriptionOrError.invoiceItem!.expiresAt)
                                 }
                                 licenseKey={
-                                    this.state.productSubscriptionOrError.activeLicense &&
-                                    this.state.productSubscriptionOrError.activeLicense.licenseKey
+                                    that.state.productSubscriptionOrError.activeLicense &&
+                                    that.state.productSubscriptionOrError.activeLicense.licenseKey
                                 }
                             />
                         )}
                         <div className="card mt-3">
                             <div className="card-header">Billing</div>
-                            {this.state.productSubscriptionOrError.invoiceItem ? (
+                            {that.state.productSubscriptionOrError.invoiceItem ? (
                                 <>
                                     <ProductSubscriptionBilling
-                                        productSubscription={this.state.productSubscriptionOrError}
+                                        productSubscription={that.state.productSubscriptionOrError}
                                     />
                                     <div className="card-footer">
                                         <a
                                             href={mailtoSales({
-                                                subject: `Change payment method for subscription ${this.state.productSubscriptionOrError.name}`,
+                                                subject: `Change payment method for subscription ${that.state.productSubscriptionOrError.name}`,
                                             })}
                                         >
                                             Contact sales
@@ -151,10 +151,10 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                             ) : (
                                 <div className="card-body">
                                     <span className="text-muted ">
-                                        No billing information is associated with this subscription.{' '}
+                                        No billing information is associated with that subscription.{' '}
                                         <a
                                             href={mailtoSales({
-                                                subject: `Billing for subscription ${this.state.productSubscriptionOrError.name}`,
+                                                subject: `Billing for subscription ${that.state.productSubscriptionOrError.name}`,
                                             })}
                                         >
                                             Contact sales
@@ -166,7 +166,7 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                         </div>
                         <div className="card mt-3">
                             <div className="card-header">History</div>
-                            <ProductSubscriptionHistory productSubscription={this.state.productSubscriptionOrError} />
+                            <ProductSubscriptionHistory productSubscription={that.state.productSubscriptionOrError} />
                         </div>
                     </>
                 )}

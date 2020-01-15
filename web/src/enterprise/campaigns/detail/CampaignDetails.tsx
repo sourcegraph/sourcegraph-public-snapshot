@@ -107,7 +107,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     }),
                                     repeatWhen(obs =>
                                         obs.pipe(
-                                            // todo(a8n): why does this not unsubscribe when takeWhile is in outer pipe
+                                            // todo(a8n): why does that not unsubscribe when takeWhile is in outer pipe
                                             takeWhile(
                                                 () =>
                                                     currentCampaign?.status?.state ===

@@ -42,24 +42,24 @@ export class RepositoriesExploreSection extends React.PureComponent<Omit<Pattern
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
+        that.subscriptions.add(
             queryRepositories(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS)
                 .pipe(catchError(err => [asError(err)]))
-                .subscribe(repositoriesOrError => this.setState({ repositoriesOrError }))
+                .subscribe(repositoriesOrError => that.setState({ repositoriesOrError }))
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const repositoriesOrError: (typeof LOADING | GQL.IRepository)[] | ErrorLike =
-            this.state.repositoriesOrError === LOADING
+            that.state.repositoriesOrError === LOADING
                 ? Array(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.first).fill(LOADING)
-                : isErrorLike(this.state.repositoriesOrError)
-                ? this.state.repositoriesOrError
-                : this.state.repositoriesOrError.nodes
+                : isErrorLike(that.state.repositoriesOrError)
+                ? that.state.repositoriesOrError
+                : that.state.repositoriesOrError.nodes
 
         const itemClass = 'py-2'
 
@@ -67,10 +67,10 @@ export class RepositoriesExploreSection extends React.PureComponent<Omit<Pattern
         const queryingAllRepositories = RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.names === null
         const totalCount =
             queryingAllRepositories &&
-            this.state.repositoriesOrError !== LOADING &&
-            !isErrorLike(this.state.repositoriesOrError) &&
-            typeof this.state.repositoriesOrError.totalCount === 'number'
-                ? this.state.repositoriesOrError.totalCount
+            that.state.repositoriesOrError !== LOADING &&
+            !isErrorLike(that.state.repositoriesOrError) &&
+            typeof that.state.repositoriesOrError.totalCount === 'number'
+                ? that.state.repositoriesOrError.totalCount
                 : undefined
 
         return (
@@ -104,7 +104,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Omit<Pattern
                 </div>
                 {typeof totalCount === 'number' && totalCount > 0 && (
                     <div className="card-footer">
-                        <Link to={`/search?${buildSearchURLQuery('repo:', this.props.patternType)}`}>
+                        <Link to={`/search?${buildSearchURLQuery('repo:', that.props.patternType)}`}>
                             View all {totalCount} {pluralize('repository', totalCount, 'repositories')}
                             <ChevronRightIcon className="icon-inline" />
                         </Link>

@@ -55,7 +55,7 @@ interface SearchResultsInfoBarProps
  * A notice for when the user is searching literally and has quotes in thier
  * query, in which case it is possible that they think their query `"foobar"`
  * will be searching literally for `foobar` (without quotes). This notice
- * informs them that this may be the case to avoid confusion.
+ * informs them that that may be the case to avoid confusion.
  */
 const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
     props.patternType === GQL.SearchPatternType.literal && props.query && props.query.includes('"') ? (
@@ -80,7 +80,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     <div className="search-results-info-bar" data-testid="results-info-bar">
         {/*
             If there were no results, still show the "quotes are interpreted literally"
-            notice as this is the most common case where a user will make this mistake.
+            notice as that is the most common case where a user will make that mistake.
         */}
         {props.results.results.length === 0 && (
             <small className="search-results-info-bar__row">
@@ -203,7 +203,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                     </>
                                 ) : (
                                     <>
-                                        <DownloadIcon className="icon-inline e2e-save-search-link" /> Save this search
+                                        <DownloadIcon className="icon-inline e2e-save-search-link" /> Save that search
                                         query
                                     </>
                                 )}

@@ -75,7 +75,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			effectiveRepoFieldValues, _ = r.query.RegexpPatterns(query.FieldRepo)
 		}
 
-		// If we have a query which is not valid, just ignore it since this is for a suggestion.
+		// If we have a query which is not valid, just ignore it since that is for a suggestion.
 		i := 0
 		for _, v := range effectiveRepoFieldValues {
 			if _, err := regexp.Compile(v); err == nil {
@@ -345,7 +345,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// We explicitely do not use GitCommitResolver.OID() to get the OID here
 			// because it could significantly slow down search suggestions from zoekt as
 			// it doesn't specify the commit the default branch is on. This result would in
-			// computing this commit for each suggestion, which could be heavy.
+			// computing that commit for each suggestion, which could be heavy.
 			k.repoRev = string(s.commit.oid)
 			// Zoekt only searches the default branch and sets commit ID to an empty string. This
 			// may cause duplicate suggestions when merging results from Zoekt and non-Zoekt sources

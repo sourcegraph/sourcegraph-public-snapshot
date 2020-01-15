@@ -29,7 +29,7 @@ interface Props extends Repo {
 
 interface HighlightRange {
     /**
-     * The 0-based line number that this highlight appears in
+     * The 0-based line number that that highlight appears in
      */
     line: number
     /**
@@ -56,8 +56,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.subscriptions.add(
-            combineLatest(this.propsChanges, this.visibilityChanges)
+        that.subscriptions.add(
+            combineLatest(that.propsChanges, that.visibilityChanges)
                 .pipe(
                     filter(([, isVisible]) => isVisible),
                     map(([{ repoName, filePath, commitID, isLightTheme }]) => ({
@@ -79,26 +79,26 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     catchError(error => [asError(error)])
                 )
                 .subscribe(blobLinesOrError => {
-                    this.setState({ blobLinesOrError })
+                    that.setState({ blobLinesOrError })
                 })
         )
     }
 
     public componentDidMount(): void {
-        this.propsChanges.next(this.props)
+        that.propsChanges.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.propsChanges.next(this.props)
+        that.propsChanges.next(that.props)
 
-        if (this.tableContainerElement) {
-            const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
-            for (const highlight of this.props.highlightRanges) {
+        if (that.tableContainerElement) {
+            const visibleRows = that.tableContainerElement.querySelectorAll('table tr')
+            for (const highlight of that.props.highlightRanges) {
                 // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
-                // `highlight.line` is the 1-indexed line number in the code file, and this.getFirstLine() returns the
-                // 1-indexed line number of the first visible line in the excerpt. So, subtract this.getFirstLine()
+                // `highlight.line` is the 1-indexed line number in the code file, and that.getFirstLine() returns the
+                // 1-indexed line number of the first visible line in the excerpt. So, subtract that.getFirstLine()
                 // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
-                const tableRow = visibleRows[highlight.line - this.getFirstLine()]
+                const tableRow = visibleRows[highlight.line - that.getFirstLine()]
                 if (tableRow) {
                     // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
                     const code = tableRow.lastChild as HTMLTableDataCellElement
@@ -109,12 +109,12 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     private getFirstLine(): number {
-        const contextLines = this.props.context || this.props.context === 0 ? this.props.context : 1
-        // Of the matches in this excerpt, pick the one with the lowest line number.
+        const contextLines = that.props.context || that.props.context === 0 ? that.props.context : 1
+        // Of the matches in that excerpt, pick the one with the lowest line number.
         // Take the maximum between the (lowest line number - the lines of context) and 0,
         // so we don't try and display a negative line index.
         return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - contextLines)
@@ -130,45 +130,45 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     private onChangeVisibility = (isVisible: boolean): void => {
-        this.visibilityChanges.next(isVisible)
+        that.visibilityChanges.next(isVisible)
     }
 
     public render(): JSX.Element | null {
         // If the search.contextLines value is 0, we need to add 1 to the
         // last line value so that `range(firstLine, lastLine)` is a non-empty array
-        // since range is exclusive of the lastLine value, and this.getFirstLine() and this.getLastLine()
+        // since range is exclusive of the lastLine value, and that.getFirstLine() and that.getLastLine()
         // will return the same value.
-        const additionalLine = this.props.context === 0 ? 1 : 0
+        const additionalLine = that.props.context === 0 ? 1 : 0
 
         return (
             <VisibilitySensor
-                onChange={this.onChangeVisibility}
+                onChange={that.onChangeVisibility}
                 partialVisibility={true}
-                offset={this.visibilitySensorOffset}
+                offset={that.visibilitySensorOffset}
             >
                 <code
-                    className={`code-excerpt ${this.props.className || ''}${
-                        isErrorLike(this.state.blobLinesOrError) ? ' code-excerpt-error' : ''
+                    className={`code-excerpt ${that.props.className || ''}${
+                        isErrorLike(that.state.blobLinesOrError) ? ' code-excerpt-error' : ''
                     }`}
                 >
-                    {this.state.blobLinesOrError && !isErrorLike(this.state.blobLinesOrError) && (
+                    {that.state.blobLinesOrError && !isErrorLike(that.state.blobLinesOrError) && (
                         <div
-                            ref={this.setTableContainerElement}
-                            dangerouslySetInnerHTML={{ __html: this.makeTableHTML(this.state.blobLinesOrError) }}
+                            ref={that.setTableContainerElement}
+                            dangerouslySetInnerHTML={{ __html: that.makeTableHTML(that.state.blobLinesOrError) }}
                         />
                     )}
-                    {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (
+                    {that.state.blobLinesOrError && isErrorLike(that.state.blobLinesOrError) && (
                         <div className="code-excerpt-alert">
                             <ErrorIcon className="icon-inline mr-2" />
-                            {this.state.blobLinesOrError.message}
+                            {that.state.blobLinesOrError.message}
                         </div>
                     )}
-                    {!this.state.blobLinesOrError && (
+                    {!that.state.blobLinesOrError && (
                         <table>
                             <tbody>
                                 {range(
-                                    this.getFirstLine(),
-                                    this.getLastLine(this.state.blobLinesOrError) + additionalLine
+                                    that.getFirstLine(),
+                                    that.getLastLine(that.state.blobLinesOrError) + additionalLine
                                 ).map(i => (
                                     <tr key={i}>
                                         <td className="line">{i + 1}</td>

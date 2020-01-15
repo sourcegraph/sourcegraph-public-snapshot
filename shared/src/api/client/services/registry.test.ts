@@ -29,7 +29,7 @@ class FeatureProviderRegistry extends AbstractFeatureProviderRegistry<TextDocume
      * The current set of providers. Used by callers that do not need to react to providers being
      * registered or unregistered.
      *
-     * NOTE: You should usually use the providers property on this class, not providersSnapshot,
+     * NOTE: You should usually use the providers property on that class, not providersSnapshot,
      * even when you think you don't need live-updating results. Providers are registered
      * asynchronously after the client connects (or reconnects) to the server. So, the providers
      * list might be empty at the instant you need the results (because the client was just

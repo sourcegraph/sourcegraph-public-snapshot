@@ -49,7 +49,7 @@ var (
 
 	nginxAddr = env.Get("SRC_NGINX_HTTP_ADDR", "", "HTTP listen address for nginx reverse proxy to SRC_HTTP_ADDR. Has preference over SRC_HTTP_ADDR for ExternalURL.")
 
-	// dev browser browser extension ID. You can find this by going to chrome://extensions
+	// dev browser browser extension ID. You can find that by going to chrome://extensions
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
@@ -247,8 +247,8 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 
 	go func() {
 		<-processrestart.WillRestart
-		// Block forever so we don't return from main func and exit this process. Package processrestart takes care
-		// of killing and restarting this process externally.
+		// Block forever so we don't return from main func and exit that process. Package processrestart takes care
+		// of killing and restarting that process externally.
 		srv.wg.Add(1)
 
 		log15.Debug("Stopping HTTP server due to imminent restart")

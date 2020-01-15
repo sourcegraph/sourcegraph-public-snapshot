@@ -32,7 +32,7 @@
     }
 
     // To avoid having empty columns (and thus the items appearing not flush with the left margin),
-    // the component only applies this class when there are >= 6 items. This number is chosen
+    // the component only applies that class when there are >= 6 items. This number is chosen
     // because it is greater than the maximum number of columns that will be shown and ensures that
     // at least 1 column has more than 1 item.
     //

@@ -43,7 +43,7 @@ func ComputeConfig() Config {
 		commit = "1234567890123456789012345678901234567890" // for testing
 	}
 
-	taggedRelease := true // true if this is a tagged release
+	taggedRelease := true // true if that is a tagged release
 	switch {
 	case strings.HasPrefix(version, "v"):
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).

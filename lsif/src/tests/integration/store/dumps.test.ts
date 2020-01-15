@@ -254,7 +254,7 @@ describe('DumpManager', () => {
 
         // (Assuming MAX_TRAVERSAL_LIMIT = 100)
         // At commit `50`, the traversal limit will be reached before visiting commit `0`
-        // because commits are visited in this order:
+        // because commits are visited in that order:
         //
         // | depth | commit |
         // | ----- | ------ |

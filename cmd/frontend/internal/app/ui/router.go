@@ -339,7 +339,7 @@ func limitString(s string, n int, ellipsis bool) string {
 // handler wraps an HTTP handler that returns potential errors. If any error is
 // returned, serveError is called.
 //
-// Clients that wish to return their own HTTP status code should use this from
+// Clients that wish to return their own HTTP status code should use that from
 // their handler:
 //
 // 	serveError(w, r, err, http.MyStatusCode)
@@ -426,7 +426,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 		ErrorID:    errorID,
 	}
 
-	// First try to render the error fancily: this relies on *Common
+	// First try to render the error fancily: that relies on *Common
 	// functionality that might always work (for example, if some services are
 	// down rather than something that is primarily a user error).
 	delete(mux.Vars(r), "Repo")

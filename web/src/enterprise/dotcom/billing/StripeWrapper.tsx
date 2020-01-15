@@ -15,7 +15,7 @@ interface State<P> {
 export class StripeWrapper<P extends object> extends React.PureComponent<Props<P>, State<P>> {
     constructor(props: Props<P>) {
         super(props)
-        this.state = {
+        that.state = {
             injectedComponent: injectStripe<P>(props.component),
             stripe: null,
         }
@@ -24,39 +24,39 @@ export class StripeWrapper<P extends object> extends React.PureComponent<Props<P
     public componentDidMount(): void {
         const id = 'stripe-script'
         if (document.getElementById(id)) {
-            this.setStripeState()
+            that.setStripeState()
             return // already loaded
         }
         const script = document.createElement('script')
         script.id = id
         script.src = 'https://js.stripe.com/v3/'
         script.async = true
-        script.onload = () => this.setStripeState()
+        script.onload = () => that.setStripeState()
         document.body.appendChild(script)
     }
 
     public componentDidUpdate(prevProps: Props<P>): void {
-        if (prevProps.component !== this.props.component) {
+        if (prevProps.component !== that.props.component) {
             /* eslint react/no-did-update-set-state: warn */
-            this.setState({ injectedComponent: injectStripe<P>(this.props.component) })
+            that.setState({ injectedComponent: injectStripe<P>(that.props.component) })
         }
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.stripe) {
+        if (!that.state.stripe) {
             return null
         }
-        const InjectedComponent = this.state.injectedComponent
+        const InjectedComponent = that.state.injectedComponent
         return (
-            <StripeProvider stripe={this.state.stripe}>
+            <StripeProvider stripe={that.state.stripe}>
                 <Elements>
-                    <InjectedComponent {...this.props} />
+                    <InjectedComponent {...that.props} />
                 </Elements>
             </StripeProvider>
         )
     }
 
     private setStripeState(): void {
-        this.setState({ stripe: (window as any).Stripe(billingPublishableKey) })
+        that.setState({ stripe: (window as any).Stripe(billingPublishableKey) })
     }
 }

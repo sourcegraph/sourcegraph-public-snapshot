@@ -163,7 +163,7 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		replyTo = &secureReplyTo
 
 		// Generate a unique message ID. This is used by e.g. Gmail to uniquely
-		// identify this email message and so that we can reference it in later
+		// identify that email message and so that we can reference it in later
 		// messages and have them all properly show up in the same email thread.
 		msgID := func(commentID int64) string {
 			return fmt.Sprintf("%s+%d.%d@%s", emailParts[0], n.thread.ID, commentID, emailParts[1])
@@ -172,7 +172,7 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		messageID = &id
 
 		// Get a list of prior comments in the thread and generate the
-		// references list. This makes e.g. Gmail understand that this email is
+		// references list. This makes e.g. Gmail understand that that email is
 		// part of the thread.
 		comments, err := db.DiscussionComments.List(ctx, &db.DiscussionCommentsListOptions{
 			LimitOffset: &db.LimitOffset{

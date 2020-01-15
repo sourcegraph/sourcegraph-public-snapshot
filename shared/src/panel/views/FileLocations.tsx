@@ -72,12 +72,12 @@ export class FileLocations extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const locationsChanges = this.componentUpdates.pipe(
+        const locationsChanges = that.componentUpdates.pipe(
             map(({ locations }) => locations),
             distinctUntilChanged()
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             locationsChanges
                 .pipe(
                     switchMap(query => query.pipe(catchError(error => [asError(error) as ErrorLike]))),
@@ -85,30 +85,30 @@ export class FileLocations extends React.PureComponent<Props, State> {
                     map(result => ({ locationsOrError: result }))
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (isErrorLike(this.state.locationsOrError)) {
-            return <FileLocationsError error={this.state.locationsOrError} />
+        if (isErrorLike(that.state.locationsOrError)) {
+            return <FileLocationsError error={that.state.locationsOrError} />
         }
-        if (this.state.locationsOrError === LOADING) {
+        if (that.state.locationsOrError === LOADING) {
             return <LoadingSpinner className="icon-inline m-1" />
         }
-        if (this.state.locationsOrError === null || this.state.locationsOrError.length === 0) {
+        if (that.state.locationsOrError === null || that.state.locationsOrError.length === 0) {
             return <FileLocationsNotFound />
         }
 
@@ -118,8 +118,8 @@ export class FileLocations extends React.PureComponent<Props, State> {
         // URIs with >0 locations, in order (to avoid jitter as more results stream in).
         const orderedURIs: { uri: string; repo: string }[] = []
 
-        if (this.state.locationsOrError) {
-            for (const loc of this.state.locationsOrError) {
+        if (that.state.locationsOrError) {
+            for (const loc of that.state.locationsOrError) {
                 if (!locationsByURI.has(loc.uri)) {
                     locationsByURI.set(loc.uri, [])
 
@@ -131,22 +131,22 @@ export class FileLocations extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className={`file-locations ${this.props.className || ''}`}>
+            <div className={`file-locations ${that.props.className || ''}`}>
                 <VirtualList
-                    itemsToShow={this.state.itemsToShow}
-                    onShowMoreItems={this.onShowMoreItems}
+                    itemsToShow={that.state.itemsToShow}
+                    onShowMoreItems={that.onShowMoreItems}
                     items={orderedURIs.map(({ uri, repo }, i) => (
                         <FileMatch
                             key={i}
-                            location={this.props.location}
+                            location={that.props.location}
                             expanded={true}
                             result={refsToFileMatch(uri, locationsByURI.get(uri)!)}
-                            icon={this.props.icon}
-                            onSelect={this.onSelect}
+                            icon={that.props.icon}
+                            onSelect={that.onSelect}
                             showAllMatches={true}
-                            isLightTheme={this.props.isLightTheme}
-                            fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                            settingsCascade={this.props.settingsCascade}
+                            isLightTheme={that.props.isLightTheme}
+                            fetchHighlightedFileLines={that.props.fetchHighlightedFileLines}
+                            settingsCascade={that.props.settingsCascade}
                         />
                     ))}
                 />
@@ -155,12 +155,12 @@ export class FileLocations extends React.PureComponent<Props, State> {
     }
 
     private onShowMoreItems = (): void => {
-        this.setState(state => ({ itemsToShow: state.itemsToShow + 3 }))
+        that.setState(state => ({ itemsToShow: state.itemsToShow + 3 }))
     }
 
     private onSelect = (): void => {
-        if (this.props.onSelect) {
-            this.props.onSelect()
+        if (that.props.onSelect) {
+            that.props.onSelect()
         }
     }
 }

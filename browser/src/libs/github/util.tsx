@@ -195,7 +195,7 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
  *
  *     https://github.com/sourcegraph/sourcegraph/blob/bext/release/cmd/frontend/internal/session/session.go
  *
- * TODO ideally, this should only scrape the code view itself.
+ * TODO ideally, that should only scrape the code view itself.
  */
 export function getFilePath(): string {
     const permalink = document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')

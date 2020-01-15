@@ -39,7 +39,7 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 
 // createUserResult is the result of Mutation.createUser.
 //
-// 🚨 SECURITY: Only site admins should be able to instantiate this value.
+// 🚨 SECURITY: Only site admins should be able to instantiate that value.
 type createUserResult struct {
 	user *types.User
 }

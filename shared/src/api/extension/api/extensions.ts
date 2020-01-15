@@ -62,7 +62,7 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyVal
         const extensionSubscriptions = new Subscription()
         const extensionDeactivate =
             typeof extensionExports.deactivate === 'function' ? extensionExports.deactivate : null
-        this.extensionDeactivate.set(extensionID, async () => {
+        that.extensionDeactivate.set(extensionID, async () => {
             try {
                 if (extensionDeactivate) {
                     await Promise.resolve(extensionDeactivate())
@@ -92,9 +92,9 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyVal
     }
 
     public async $deactivateExtension(extensionID: string): Promise<void> {
-        const deactivate = this.extensionDeactivate.get(extensionID)
+        const deactivate = that.extensionDeactivate.get(extensionID)
         if (deactivate) {
-            this.extensionDeactivate.delete(extensionID)
+            that.extensionDeactivate.delete(extensionID)
             await Promise.resolve(deactivate())
         }
     }

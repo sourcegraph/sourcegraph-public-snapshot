@@ -14,32 +14,32 @@ interface Props {
 
 export class FilterChip extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
-        const truncatedValue = truncate(this.props.value, { length: 50 })
+        const truncatedValue = truncate(that.props.value, { length: 50 })
         return (
             <button
                 type="button"
                 className={
-                    `btn btn-sm text-nowrap filter-chip ${this.props.count ? 'filter-chip-repo' : ''}` +
-                    (this.isScopeSelected(this.props.query, this.props.value) ? ' filter-chip--selected' : '')
+                    `btn btn-sm text-nowrap filter-chip ${that.props.count ? 'filter-chip-repo' : ''}` +
+                    (that.isScopeSelected(that.props.query, that.props.value) ? ' filter-chip--selected' : '')
                 }
                 data-testid="filter-chip"
-                value={this.props.value}
-                title={this.renderTooltip(this.props.value !== truncatedValue)}
-                onMouseDown={this.onMouseDown}
-                onClick={this.onClick}
+                value={that.props.value}
+                title={that.renderTooltip(that.props.value !== truncatedValue)}
+                onMouseDown={that.onMouseDown}
+                onClick={that.onClick}
             >
                 <div>
-                    {this.props.name || truncatedValue}
-                    {!!this.props.count && (
+                    {that.props.name || truncatedValue}
+                    {!!that.props.count && (
                         <span
                             className={`filter-chip__count ${
-                                this.isScopeSelected(this.props.query, this.props.value)
+                                that.isScopeSelected(that.props.query, that.props.value)
                                     ? ' filter-chip__count--selected'
                                     : ''
                             }`}
                         >
-                            {this.props.count}
-                            {this.props.limitHit ? '+' : ''}
+                            {that.props.count}
+                            {that.props.limitHit ? '+' : ''}
                         </span>
                     )}
                 </div>
@@ -48,12 +48,12 @@ export class FilterChip extends React.PureComponent<Props> {
     }
 
     private renderTooltip(valueIsTruncated: boolean): string | undefined {
-        if (this.isScopeSelected(this.props.query, this.props.value)) {
+        if (that.isScopeSelected(that.props.query, that.props.value)) {
             return 'Already added to query'
         }
         // Show filter value in tooltip if chip shows truncated value or scope name
-        if (this.props.name || valueIsTruncated) {
-            return this.props.value
+        if (that.props.name || valueIsTruncated) {
+            return that.props.value
         }
         return undefined
     }
@@ -69,6 +69,6 @@ export class FilterChip extends React.PureComponent<Props> {
 
     private onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
         event.preventDefault()
-        this.props.onFilterChosen(event.currentTarget.value)
+        that.props.onFilterChosen(event.currentTarget.value)
     }
 }

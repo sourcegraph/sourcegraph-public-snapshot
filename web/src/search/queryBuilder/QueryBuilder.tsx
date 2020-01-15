@@ -7,7 +7,7 @@ import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 export interface QueryBuilderProps extends Pick<PatternTypeProps, 'patternType'> {
     /**
-     * Called when there is a change to the query synthesized from this
+     * Called when there is a change to the query synthesized from that
      * component's fields.
      */
     onFieldsQueryChange: (query: string) => void
@@ -82,7 +82,7 @@ export class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilde
                             fieldsQueryParts.push(inputValue)
                         } else if (inputField === 'exactMatch') {
                             // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
-                            fieldsQueryParts.push(formatExactMatchField(inputValue, this.props.patternType))
+                            fieldsQueryParts.push(formatExactMatchField(inputValue, that.props.patternType))
                         } else if (inputField === 'type' && inputValue === 'code') {
                             // code searches don't need to be specified.
                             continue

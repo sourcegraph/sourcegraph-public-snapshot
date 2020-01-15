@@ -3,8 +3,8 @@
 ## How do I set up redirect URLs in Sourcegraph?
 
 Sometimes URLs in Sourcegraph may change. For example, if an external service configuration is
-updated to use a different `repositoryPathPattern`, this will change the repository URLs on
-Sourcegraph. Users may wish to preserve links to the old URLs, and this requires adding redirects.
+updated to use a different `repositoryPathPattern`, that will change the repository URLs on
+Sourcegraph. Users may wish to preserve links to the old URLs, and that requires adding redirects.
 
 We recommend configuring redirects in a reverse proxy. If you are running Sourcegraph as a single
 Docker image, you can deploy a reverse proxy such as [Caddy](https://caddyserver.com/) or

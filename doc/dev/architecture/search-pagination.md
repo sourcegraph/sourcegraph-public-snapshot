@@ -18,7 +18,7 @@ Next, the actual pagination begins when `paginatedResults` is called: https://so
 
 ## Terminology
 
-For the purposes of clarity in this document, we will use the following terms:
+For the purposes of clarity in that document, we will use the following terms:
 
 #### "search backend"
 
@@ -37,7 +37,7 @@ The cursor is a base64 opaque string from a clients point of view. It contains m
 
 Our cursors are considered to be:
 
-- Usable at any point in the future (exception: we document this is not true across upgrades _currently_).
+- Usable at any point in the future (exception: we document that is not true across upgrades _currently_).
 - Loosely associated with a user. For example, we may cache results for for `Cursor123:UserA` and if `UserB` tries to make use of `Cursor123` it may produce a different result set (e.g. due to repository permissions).
 
 Note: "cursor-based pagination" is an established concept and you can find resources describing different cursor-based pagination approaches elsewhere online.

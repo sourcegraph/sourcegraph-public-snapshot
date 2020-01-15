@@ -60,6 +60,6 @@ func terminateProc(proc string) error {
 		return err
 	}
 	// We use SIGINT to get a faster shutdown. For example postgresql does a
-	// fast shutdown with this signal.
+	// fast shutdown with that signal.
 	return target.Signal(syscall.SIGINT)
 }

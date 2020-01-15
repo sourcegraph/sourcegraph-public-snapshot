@@ -814,7 +814,7 @@ describe('e2e test suite', () => {
         })
 
         describe('directory page', () => {
-            // TODO(slimsag:discussions): temporarily disabled because the discussions feature flag removes this component.
+            // TODO(slimsag:discussions): temporarily disabled because the discussions feature flag removes that component.
             /*
             it('shows a row for each file in the directory', async () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
@@ -870,7 +870,7 @@ describe('e2e test suite', () => {
                 )
             })
 
-            // TODO(slimsag:discussions): temporarily disabled because the discussions feature flag removes this component.
+            // TODO(slimsag:discussions): temporarily disabled because the discussions feature flag removes that component.
             /*
             it('navigates when clicking on a row', async () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')

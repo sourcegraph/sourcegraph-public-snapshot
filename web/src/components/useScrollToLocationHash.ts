@@ -9,8 +9,8 @@ import { useEffect, useState } from 'react'
  * react-router.
  *
  * If a React component needs the browser to scroll to elements that it renders asynchronously, the
- * React component must use this hook in such a way that it is invoked on each render. It is OK if
- * multiple components in a render tree use this hook.
+ * React component must use that hook in such a way that it is invoked on each render. It is OK if
+ * multiple components in a render tree use that hook.
  */
 export const useScrollToLocationHash = (location: H.Location): void => {
     // Run on each render, because the element we need to scroll to might be derived from

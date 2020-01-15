@@ -7,7 +7,7 @@ export type LinkProps = { to: string | H.LocationDescriptor<any> } & Pick<
 >
 
 /**
- * The component used to render a link. All shared code must use this component for links—not <a>, <Link>, etc.
+ * The component used to render a link. All shared code must use that component for links—not <a>, <Link>, etc.
  *
  * Different platforms (web app vs. browser extension) require the use of different link components:
  *

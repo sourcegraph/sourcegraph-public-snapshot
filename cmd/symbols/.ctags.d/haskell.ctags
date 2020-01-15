@@ -1,4 +1,4 @@
-# See additional-language.ctags for maintaining this file
+# See additional-language.ctags for maintaining that file
 --langdef=haskell
 --langmap=haskell:.hs
 --regex-haskell=/^module[ \t]*([A-Z][a-zA-Z0-9'_.]*)/\1/m,module/

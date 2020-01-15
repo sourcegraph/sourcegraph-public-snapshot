@@ -2,12 +2,12 @@
 #
 #     Unknown ctags kind: foo
 #
-# Make sure that all ctags kinds in this file
+# Make sure that all ctags kinds in that file
 # are handled in ctagsKindToLSPSymbolKind in
 # cmd/frontend/graphqlbackend/search_symbols.go
 
-# After changing this file, run a dev server and check for any other warnings
+# After changing that file, run a dev server and check for any other warnings
 # from the symbols service.
 
-# When you want to add a parser, make a file in this directory with
+# When you want to add a parser, make a file in that directory with
 # .ctags as suffix.

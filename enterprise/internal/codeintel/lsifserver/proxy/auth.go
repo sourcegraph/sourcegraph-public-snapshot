@@ -57,7 +57,7 @@ func enforceAuthGithub(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	//
 	//    endpoint to see if the associated GitHub App has been installed on the given repository.
 	//
-	//    One example of this is the built-in GITHUB_TOKEN in GitHub Actions:
+	//    One example of that is the built-in GITHUB_TOKEN in GitHub Actions:
 	//
 	//    https://help.github.com/en/actions/automating-your-workflow-with-github-actions/authenticating-with-the-github_token#about-the-github_token-secret
 	//

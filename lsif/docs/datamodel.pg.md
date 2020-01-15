@@ -23,7 +23,7 @@ This table allows us to ues recursive CTEs to find ancestor and descendant commi
 
 **`lsif_uploads` table**
 
-This table contains an entry for each LSIF upload. An upload is inserted with the state `queued` and is processed asynchronously by a worker. The `root` indicates the directory for which this upload provides code intelligence. The `visible_at_tip` indicates whether this a (completed) upload that is closest to the tip of the default branch.
+This table contains an entry for each LSIF upload. An upload is inserted with the state `queued` and is processed asynchronously by a worker. The `root` indicates the directory for which that upload provides code intelligence. The `visible_at_tip` indicates whether that a (completed) upload that is closest to the tip of the default branch.
 
 | id  | repository                    | commit    | root | state     | visible_at_tip |
 | --- | ----------------------------- | --------- | ---- | --------- | -------------- |
@@ -52,7 +52,7 @@ This table links a package manager-specific identifier and version to the reposi
 | --- | ------ | ------ | ------- | ----------------------------- | --------- |
 | 1   | npm    | sample | 0.1.0   | github.com/sourcegraph/sample | `e58d28c` |
 
-This table enables cross-repository jump-to-definition. When a range has no definition result but does have an _import_ moniker, the scheme, name, and version of the moniker can be queried in this table to get the repository and commit of the package that should contain that moniker's definition.
+This table enables cross-repository jump-to-definition. When a range has no definition result but does have an _import_ moniker, the scheme, name, and version of the moniker can be queried in that table to get the repository and commit of the package that should contain that moniker's definition.
 
 **`lsif_references` table**
 

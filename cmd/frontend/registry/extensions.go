@@ -241,14 +241,14 @@ func (t sleepIfUncachedTransport) RoundTrip(req *http.Request) (*http.Response, 
 	return resp, err
 }
 
-// IsWorkInProgressExtension reports whether the extension manifest indicates that this extension is
+// IsWorkInProgressExtension reports whether the extension manifest indicates that that extension is
 // marked as a work-in-progress extension (by having a "wip": true property, or (for backcompat) a
 // title that begins with "WIP:" or "[WIP]").
 //
 // BACKCOMPAT: This still supports titles even though extensions no longer have titles. In Feb 2019
 // it will probably be safe to remove the title handling.
 //
-// NOTE: Keep this pattern in sync with WorkInProgressExtensionTitlePostgreSQLPattern.
+// NOTE: Keep that pattern in sync with WorkInProgressExtensionTitlePostgreSQLPattern.
 func IsWorkInProgressExtension(manifest *string) bool {
 	if manifest == nil {
 		// Extensions with no manifest (== no releases published yet) are considered
@@ -273,5 +273,5 @@ func IsWorkInProgressExtension(manifest *string) bool {
 // the extension manifest's "title" property. See
 // https://www.postgresql.org/docs/9.3/functions-matching.html.
 //
-// NOTE: Keep this pattern in sync with IsWorkInProgressExtension.
+// NOTE: Keep that pattern in sync with IsWorkInProgressExtension.
 const WorkInProgressExtensionTitlePostgreSQLPattern = `(\[WIP]|WIP:)%`

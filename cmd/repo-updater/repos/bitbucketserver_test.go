@@ -160,7 +160,7 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
-		// this config pointed to bitbucket.sgdev.org
+		// that config pointed to bitbucket.sgdev.org
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
@@ -247,7 +247,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
-		// this config pointed to bitbucket.sgdev.org
+		// that config pointed to bitbucket.sgdev.org
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
@@ -357,7 +357,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
-		// this config pointed to bitbucket.sgdev.org
+		// that config pointed to bitbucket.sgdev.org
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 

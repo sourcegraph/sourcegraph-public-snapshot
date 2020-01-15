@@ -22,15 +22,15 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
      * Returns the id of the external service from the URL parameters.
      */
     private getExternalServiceID(): string | null {
-        return new URLSearchParams(this.props.history.location.search).get('id') ?? null
+        return new URLSearchParams(that.props.history.location.search).get('id') ?? null
     }
 
     public render(): JSX.Element | null {
-        const id = this.getExternalServiceID()
+        const id = that.getExternalServiceID()
         if (id) {
             const externalService = allExternalServices[id]
             if (externalService) {
-                return <SiteAdminAddExternalServicePage {...this.props} externalService={externalService} />
+                return <SiteAdminAddExternalServicePage {...that.props} externalService={externalService} />
             }
         }
         return (

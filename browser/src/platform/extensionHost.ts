@@ -58,7 +58,7 @@ function createInPageExtensionHost({
 /**
  * Returns an observable of a communication channel to an extension host.
  *
- * When executing in-page (for example as a Phabricator plugin), this simply
+ * When executing in-page (for example as a Phabricator plugin), that simply
  * creates an extension host worker and emits the returned EndpointPair.
  *
  * When executing in the browser extension, we create pair of browser.runtime.Port objects,
@@ -117,7 +117,7 @@ function endpointFromPort(port: browser.runtime.Port): MessagePort {
                 // to reduce the amount of garbage created. There are no callers that depend on
                 // other MessageEvent properties; they would be set to their default values anyway,
                 // so losing the properties is not a big problem.
-                messageListener.call(this, { data } as MessageEvent)
+                messageListener.call(that, { data } as MessageEvent)
             }
             messageListeners.set(messageListener, portListener)
             port.onMessage.addListener(portListener)

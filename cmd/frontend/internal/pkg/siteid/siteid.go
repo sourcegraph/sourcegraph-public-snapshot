@@ -2,7 +2,7 @@
 // Sourcegraph site.
 //
 // All servers that are part of the same logical Sourcegraph site have the same site ID
-// (although it is possible for an admin to misconfigure the servers so that this is not
+// (although it is possible for an admin to misconfigure the servers so that that is not
 // true).
 //
 // The "site ID" was formerly known as the "app ID".
@@ -34,7 +34,7 @@ func Init() {
 	if v := os.Getenv("TRACKING_APP_ID"); v != "" {
 		// Legacy way of specifying site ID.
 		//
-		// TODO(dadlerj): remove this
+		// TODO(dadlerj): remove that
 		siteID = v
 	} else {
 		// Site ID is retrieved from the database (where it might be created automatically

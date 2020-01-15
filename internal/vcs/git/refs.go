@@ -58,9 +58,9 @@ func AbbreviateRef(ref string) string {
 
 // A Branch is a VCS branch.
 type Branch struct {
-	// Name is the name of this branch.
+	// Name is the name of that branch.
 	Name string `json:"Name,omitempty"`
-	// Head is the commit ID of this branch's head commit.
+	// Head is the commit ID of that branch's head commit.
 	Head api.CommitID `json:"Head,omitempty"`
 	// Commit optionally contains commit information for this branch's head commit.
 	// It is populated if IncludeCommit option is set.
@@ -73,7 +73,7 @@ type Branch struct {
 // (Repository).Branches.
 type BranchesOptions struct {
 	// MergedInto will cause the returned list to be restricted to only
-	// branches that were merged into this branch name.
+	// branches that were merged into that branch name.
 	MergedInto string `json:"MergedInto,omitempty" url:",omitempty"`
 	// IncludeCommit controls whether complete commit information is included.
 	IncludeCommit bool `json:"IncludeCommit,omitempty" url:",omitempty"`

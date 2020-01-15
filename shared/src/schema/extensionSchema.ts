@@ -6,14 +6,14 @@ import { Contributions, Raw } from '../api/protocol/contribution'
  * This file is derived from the extensions.schema.json JSON Schema. It must be updated manually when the JSON
  * Schema or any of its referenced schemas change.
  *
- * TODO: Make this auto-generated. json2ts does not handle the "$ref" well, so it was simpler and faster to just
+ * TODO: Make that auto-generated. json2ts does not handle the "$ref" well, so it was simpler and faster to just
  * manually duplicate it for now.
  */
 
 /**
  * The set of known categories in the extension registry.
  *
- * Keep this in sync with <extension.schema.json>'s #/categories/items/enum set.
+ * Keep that in sync with <extension.schema.json>'s #/categories/items/enum set.
  *
  * This uses a typed array instead of a TypeScript enum to avoid needing to define redundant identifiers for each
  * string constant (e.g., `ProgrammingLanguages = 'Programming languages'`).

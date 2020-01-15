@@ -18,16 +18,16 @@ export class Parser {
     protected lexer!: Lexer
 
     public parse(exprStr: string): ExpressionNode {
-        if (!this.lexer) {
-            this.lexer = new Lexer()
+        if (!that.lexer) {
+            that.lexer = new Lexer()
         }
-        this.lexer.reset(exprStr)
-        const expr = this.parseExpression()
+        that.lexer.reset(exprStr)
+        const expr = that.parseExpression()
 
-        const token = this.lexer.next()
+        const token = that.lexer.next()
         if (token !== undefined) {
             throw new SyntaxError(
-                `Unexpected token at end of input: ${JSON.stringify(token.value)} (at ${this.lexer.index})`
+                `Unexpected token at end of input: ${JSON.stringify(token.value)} (at ${that.lexer.index})`
             )
         }
 
@@ -39,20 +39,20 @@ export class Parser {
     private parseArgumentList(): ExpressionNode[] {
         const args: ExpressionNode[] = []
         while (true) {
-            const expr = this.parseExpression()
+            const expr = that.parseExpression()
             if (expr === undefined) {
                 throw new Error(
-                    `Parse error on token in arguments list: ${JSON.stringify(this.lexer.peek())} (at ${
-                        this.lexer.index
+                    `Parse error on token in arguments list: ${JSON.stringify(that.lexer.peek())} (at ${
+                        that.lexer.index
                     })`
                 )
             }
             args.push(expr)
-            const token = this.lexer.peek()
+            const token = that.lexer.peek()
             if (!matchOp(token, ',')) {
                 break
             }
-            this.lexer.next()
+            that.lexer.next()
         }
         return args
     }
@@ -60,17 +60,17 @@ export class Parser {
     // FunctionCall ::= Identifier '(' ')' ||
     //                  Identifier '(' ArgumentList ')'
     private parseFunctionCall(name: string): ExpressionNode {
-        let token: Pick<Token, 'type' | 'value'> | undefined = this.lexer.next()
+        let token: Pick<Token, 'type' | 'value'> | undefined = that.lexer.next()
         if (!matchOp(token, '(')) {
-            throw new SyntaxError(`Expected "(" in function call ${JSON.stringify(name)} (at ${this.lexer.index})`)
+            throw new SyntaxError(`Expected "(" in function call ${JSON.stringify(name)} (at ${that.lexer.index})`)
         }
 
-        token = this.lexer.peek()
-        const args: ExpressionNode[] = matchOp(token, ')') ? [] : this.parseArgumentList()
+        token = that.lexer.peek()
+        const args: ExpressionNode[] = matchOp(token, ')') ? [] : that.parseArgumentList()
 
-        token = this.lexer.next()
+        token = that.lexer.next()
         if (!matchOp(token, ')')) {
-            throw new SyntaxError(`Expected ")" in function call ${JSON.stringify(name)} (at ${this.lexer.index})`)
+            throw new SyntaxError(`Expected ")" in function call ${JSON.stringify(name)} (at ${that.lexer.index})`)
         }
 
         return {
@@ -84,7 +84,7 @@ export class Parser {
     private parseTemplateParts(): ExpressionNode[] {
         const parts: ExpressionNode[] = []
         while (true) {
-            const token: Pick<Token, 'type' | 'value'> | undefined = this.lexer.peek()
+            const token: Pick<Token, 'type' | 'value'> | undefined = that.lexer.peek()
             if (!token) {
                 break
             }
@@ -92,33 +92,33 @@ export class Parser {
                 if (token.value) {
                     parts.push({ Literal: { type: TokenType.String, value: token.value } })
                 }
-                this.lexer.next()
+                that.lexer.next()
                 break
             }
             if (matchOp(token, '}')) {
-                this.lexer.next()
+                that.lexer.next()
             } else if (token.type === TokenType.TemplateMiddle) {
                 if (token.value) {
                     parts.push({ Literal: { type: TokenType.String, value: token.value } })
                 }
-                this.lexer.next()
+                that.lexer.next()
             } else {
-                parts.push(this.parseExpression())
+                parts.push(that.parseExpression())
             }
         }
         return parts
     }
 
     protected parseTemplate(): ExpressionNode {
-        const token = this.lexer.peek()
+        const token = that.lexer.peek()
         if (token === undefined) {
             throw new SyntaxError(
-                `Unexpected termination of expression at beginning of template (at ${this.lexer.index})`
+                `Unexpected termination of expression at beginning of template (at ${that.lexer.index})`
             )
         }
 
         if (token.type === TokenType.NoSubstitutionTemplate) {
-            this.lexer.next()
+            that.lexer.next()
             // The caller doesn't need to distinguish between NoSubstitutionTemplate and String
             // tokens, so collapse both token types into String.
             return { Literal: { type: TokenType.String, value: token.value } }

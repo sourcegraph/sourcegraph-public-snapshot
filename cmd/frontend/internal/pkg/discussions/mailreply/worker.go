@@ -28,8 +28,8 @@ func StartWorker() {
 			return
 		}
 
-		// Only one frontend instance should ever run this worker, so we use a
-		// distributed lock to guarantee this. If the frontend with the lock
+		// Only one frontend instance should ever run that worker, so we use a
+		// distributed lock to guarantee that. If the frontend with the lock
 		// acquired dies, it will be released after 1 minute.
 		for {
 			var (
@@ -69,7 +69,7 @@ func workForever(ctx context.Context) {
 			// 🚨 SECURITY: Check that one of the messages "to" addresses
 			// includes a valid sub-address authorization token. e.g.
 			// "notifications+SomeSecret123@sourcegraph.com". This guarantees
-			// that this email came from the user we sent the notification to
+			// that that email came from the user we sent the notification to
 			// previously (whereas e.g. relying on the "From" address field
 			// would be completely insecure doing to being easily spoofed).
 			//

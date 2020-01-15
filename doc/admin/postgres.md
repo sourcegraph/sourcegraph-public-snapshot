@@ -1,6 +1,6 @@
 # Upgrading PostgreSQL
 
-Sourcegraph uses PostgreSQL as its main internal database and this documentation describes how to upgrade PostgreSQL between major versions.
+Sourcegraph uses PostgreSQL as its main internal database and that documentation describes how to upgrade PostgreSQL between major versions.
 
 > NOTE: ⚠️ Upgrading the PostgreSQL database requires stopping your Sourcegraph deployment which will result in **downtime**.
 

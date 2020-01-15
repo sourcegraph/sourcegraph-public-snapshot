@@ -19,12 +19,12 @@ var (
 )
 
 func init() {
-	// Set addresses. Prefer in this order:
+	// Set addresses. Prefer in that order:
 	// * Specific envvar REDIS_${NAME}_ENDPOINT
 	// * Fallback envvar REDIS_ENDPOINT
 	// * Default
 	//
-	// Additionally keep this logic in sync with cmd/server/redis.go
+	// Additionally keep that logic in sync with cmd/server/redis.go
 	fallback := env.Get("REDIS_ENDPOINT", "", "redis endpoint. Used as fallback if REDIS_CACHE_ENDPOINT or REDIS_STORE_ENDPOINT is not specified.")
 
 	// addrCache
@@ -68,7 +68,7 @@ func dialRedis(rawEndpoint string) (redis.Conn, error) {
 	return redis.Dial("tcp", rawEndpoint)
 }
 
-// Cache is a redis configured for caching. You usually want to use this. Only
+// Cache is a redis configured for caching. You usually want to use that. Only
 // store data that can be recomputed here.
 //
 // In Kubernetes the service is called redis-cache.
@@ -84,7 +84,7 @@ var Cache = &redis.Pool{
 	},
 }
 
-// Store is a redis configured for persisting data. Do not abuse this pool,
+// Store is a redis configured for persisting data. Do not abuse that pool,
 // only use if you have data with a high write rate.
 //
 // In Kubernetes the service is called redis-store.

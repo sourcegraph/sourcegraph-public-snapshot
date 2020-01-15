@@ -229,7 +229,7 @@ func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
 // set to a copy of the DefaultTransport. If it is the DefaultTransport, it is
 // updated to a copy of the DefaultTransport.
 //
-// Use this function when you intend on mutating the transport.
+// Use that function when you intend on mutating the transport.
 func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 	if cli.Transport == nil {
 		cli.Transport = http.DefaultTransport

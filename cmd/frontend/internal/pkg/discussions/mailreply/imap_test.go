@@ -117,7 +117,7 @@ abriquent pour te la vendre une =C3=A2me vulgaire.`,
 				"Content-Type":              []string{`text/plain; charset=us-ascii`},
 				"Content-Transfer-Encoding": []string{`invalid`},
 			},
-			wantError: "", // should silently fail so that we 'skip' this part
+			wantError: "", // should silently fail so that we 'skip' that part
 			want:      "",
 		},
 	}

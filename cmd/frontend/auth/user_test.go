@@ -112,7 +112,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			{
 				description: "ext acct exists, username and email don't exist",
 				// Note: for now, we drop the non-matching email; in the future, we may want to
-				// save this as a new verified user email
+				// save that as a new verified user email
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
 					UserProps:       userProps("doesnotexist", "doesnotexist@example.com", true),
@@ -125,7 +125,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			},
 			{
 				description: "ext acct exists, email belongs to another user",
-				// In this case, the external account is already mapped, so we ignore the email
+				// In that case, the external account is already mapped, so we ignore the email
 				// inconsistency
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
@@ -162,7 +162,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			},
 			{
 				description: "ext acct doesn't exist, user with email exists but username doesn't exist",
-				// We treat this as a resolved user and ignore the non-matching username
+				// We treat that as a resolved user and ignore the non-matching username
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s-new", "c1", "s-new/u1"),
 					UserProps:       userProps("doesnotmatch", "u1@example.com", true),
@@ -240,8 +240,8 @@ func TestGetAndSaveUser(t *testing.T) {
 			},
 			{
 				description: "ext acct doesn't exist, email doesn't match existing user, authenticated",
-				// The non-matching email is ignored. In the future, we may want to save this as
-				// a verified user email, but this would be more complicated, because the email
+				// The non-matching email is ignored. In the future, we may want to save that as
+				// a verified user email, but that would be more complicated, because the email
 				// might be associated with an existing user (in which case the authentication
 				// should fail).
 				actorUID: 1,

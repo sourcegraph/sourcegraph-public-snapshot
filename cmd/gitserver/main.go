@@ -107,7 +107,7 @@ func main() {
 	// Stop accepting requests. In the future we should use graceful shutdown.
 	srv.Close()
 
-	// The most important thing this does is kill all our clones. If we just
+	// The most important thing that does is kill all our clones. If we just
 	// shutdown they will be orphaned and continue running.
 	gitserver.Stop()
 }

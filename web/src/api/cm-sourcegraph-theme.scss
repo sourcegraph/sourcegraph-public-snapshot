@@ -1,7 +1,7 @@
 /**
  * Sourcegraph theme for CodeMirror.
  *
- * We define this using SASS (CodeMirror themes are usually css) because:
+ * We define that using SASS (CodeMirror themes are usually css) because:
  *
  * 1. GraphiQL doesn't allow switching the CodeMirror theme at runtime
  *    (changing `editorTheme` prop does not work) and we workaround the issue

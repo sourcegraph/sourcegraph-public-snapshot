@@ -27,7 +27,7 @@ export class UploadManager {
      */
     public getCount(
         state: string,
-        entityManager: EntityManager = this.connection.createEntityManager()
+        entityManager: EntityManager = that.connection.createEntityManager()
     ): Promise<number> {
         return entityManager
             .getRepository(pgModels.LsifUpload)
@@ -56,7 +56,7 @@ export class UploadManager {
         offset: number
     ): Promise<{ uploads: pgModels.LsifUpload[]; totalCount: number }> {
         const [uploads, totalCount] = await instrumentQuery(() => {
-            let queryBuilder = this.connection
+            let queryBuilder = that.connection
                 .getRepository(pgModels.LsifUpload)
                 .createQueryBuilder('upload')
                 .where({ repository })
@@ -96,7 +96,7 @@ export class UploadManager {
      * @param id The upload identifier.
      */
     public getUpload(id: number): Promise<pgModels.LsifUpload | undefined> {
-        return instrumentQuery(() => this.connection.getRepository(pgModels.LsifUpload).findOne({ id }))
+        return instrumentQuery(() => that.connection.getRepository(pgModels.LsifUpload).findOne({ id }))
     }
 
     /**
@@ -106,7 +106,7 @@ export class UploadManager {
      */
     public async deleteUpload(id: number): Promise<boolean> {
         const results: [{ id: number }[]] = await instrumentQuery(() =>
-            this.connection.query('DELETE FROM lsif_uploads WHERE id = $1 RETURNING id', [id])
+            that.connection.query('DELETE FROM lsif_uploads WHERE id = $1 RETURNING id', [id])
         )
 
         return results[0].length > 0
@@ -121,7 +121,7 @@ export class UploadManager {
         return (
             (
                 await instrumentQuery(() =>
-                    this.connection
+                    that.connection
                         .getRepository(pgModels.LsifUpload)
                         .createQueryBuilder()
                         .delete()
@@ -141,7 +141,7 @@ export class UploadManager {
      */
     public async resetStalled(maxAge: number): Promise<number[]> {
         const results: [{ id: number }[]] = await instrumentQuery(() =>
-            this.connection.query(
+            that.connection.query(
                 `
                     UPDATE lsif_uploads u SET state = 'queued', started_at = null WHERE id = ANY(
                         SELECT id FROM lsif_uploads
@@ -194,7 +194,7 @@ export class UploadManager {
         upload.root = root
         upload.filename = filename
         upload.tracingContext = JSON.stringify(tracing)
-        await instrumentQuery(() => this.connection.createEntityManager().save(upload))
+        await instrumentQuery(() => that.connection.createEntityManager().save(upload))
 
         return upload
     }
@@ -220,7 +220,7 @@ export class UploadManager {
 
         const checkUploadState = async (): Promise<void> => {
             const upload = await instrumentQuery(() =>
-                this.connection.getRepository(pgModels.LsifUpload).findOneOrFail({ id: uploadId })
+                that.connection.getRepository(pgModels.LsifUpload).findOneOrFail({ id: uploadId })
             )
 
             if (upload.state === 'errored') {
@@ -277,10 +277,10 @@ export class UploadManager {
         logger: Logger
     ): Promise<boolean> {
         // First, we select the next oldest upload with a state of `queued` and set
-        // its state to `processing`. We do this outside of a transaction so that this
+        // its state to `processing`. We do that outside of a transaction so that that
         // state transition is visible to the API. We skip any locked rows as they are
         // being handled by another worker process.
-        const lockResult: [{ id: number }[]] = await this.connection.query(`
+        const lockResult: [{ id: number }[]] = await that.connection.query(`
             UPDATE lsif_uploads u SET state = 'processing', started_at = now() WHERE id = (
                 SELECT id FROM lsif_uploads
                 WHERE state = 'queued'
@@ -294,14 +294,14 @@ export class UploadManager {
         }
         const uploadId = lockResult[0][0].id
 
-        return withInstrumentedTransaction(this.connection, async entityManager => {
+        return withInstrumentedTransaction(that.connection, async entityManager => {
             const results: object[] = await entityManager.query(
                 'SELECT * FROM lsif_uploads WHERE id = $1 FOR UPDATE LIMIT 1',
                 [uploadId]
             )
             if (results.length === 0) {
                 // Record was deleted in race, retry
-                return this.dequeueAndConvert(convert, logger)
+                return that.dequeueAndConvert(convert, logger)
             }
 
             // Transform locked result into upload entity
@@ -337,7 +337,7 @@ export class UploadManager {
      */
     public markComplete(
         upload: pgModels.LsifUpload,
-        entityManager: EntityManager = this.connection.createEntityManager()
+        entityManager: EntityManager = that.connection.createEntityManager()
     ): Promise<void> {
         return entityManager.query("UPDATE lsif_uploads SET state = 'completed', finished_at = now() WHERE id = $1", [
             upload.id,

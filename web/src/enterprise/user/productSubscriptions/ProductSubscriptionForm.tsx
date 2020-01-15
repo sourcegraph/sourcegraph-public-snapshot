@@ -32,14 +32,14 @@ const LOADING: 'loading' = 'loading'
 
 interface Props extends ThemeProps {
     /**
-     * The ID of the account associated with the subscription, or null if there is none (in which case this form
+     * The ID of the account associated with the subscription, or null if there is none (in which case that form
      * can only be used to price out a subscription, not to buy).
      */
     accountID: GQL.ID | null
 
     /**
-     * The existing product subscription to edit, if this form is editing an existing subscription,
-     * or null if this is a new subscription.
+     * The existing product subscription to edit, if that form is editing an existing subscription,
+     * or null if that is a new subscription.
      */
     subscriptionID: GQL.ID | null
 
@@ -89,10 +89,10 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
     constructor(props: Props & ReactStripeElements.InjectedStripeProps) {
         super(props)
 
-        this.state = {
+        that.state = {
             paymentValidity: false,
             paymentTokenOrError: null,
-            ...this.getStateForInitialValue(props),
+            ...that.getStateForInitialValue(props),
         }
     }
 
@@ -104,12 +104,12 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     switchMap(() =>
                         // TODO(sqs): store name, address, company, etc., in token
-                        from(this.props.stripe!.createToken()).pipe(
+                        from(that.props.stripe!.createToken()).pipe(
                             switchMap(({ token, error }) => {
                                 if (error) {
                                     return throwError(error)
@@ -117,23 +117,23 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                 if (!token) {
                                     return throwError(new Error('no payment token'))
                                 }
-                                if (!this.props.accountID) {
+                                if (!that.props.accountID) {
                                     return throwError(new Error('no account (unauthenticated user)'))
                                 }
-                                if (!this.state.billingPlanID) {
+                                if (!that.state.billingPlanID) {
                                     return throwError(new Error('no product plan selected'))
                                 }
-                                if (this.state.userCount === null) {
+                                if (that.state.userCount === null) {
                                     return throwError(new Error('invalid user count'))
                                 }
-                                if (!this.state.paymentValidity) {
+                                if (!that.state.paymentValidity) {
                                     return throwError(new Error('invalid payment and billing'))
                                 }
-                                this.props.onSubmit({
-                                    accountID: this.props.accountID,
+                                that.props.onSubmit({
+                                    accountID: that.props.accountID,
                                     productSubscription: {
-                                        billingPlanID: this.state.billingPlanID,
-                                        userCount: this.state.userCount,
+                                        billingPlanID: that.state.billingPlanID,
+                                        userCount: that.state.userCount,
                                     },
                                     paymentToken: token.id,
                                 })
@@ -145,7 +145,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                     ),
                     map(result => ({ paymentTokenOrError: result }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
     }
 
@@ -227,48 +227,48 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                 </div>
                             )}
                             <PaymentTokenFormControl
-                                disabled={disableForm || !this.props.accountID}
-                                isLightTheme={this.props.isLightTheme}
+                                disabled={disableForm || !that.props.accountID}
+                                isLightTheme={that.props.isLightTheme}
                             />
                             <div className="form-group mt-3">
                                 <button
                                     type="submit"
-                                    disabled={disableForm || !this.props.accountID}
+                                    disabled={disableForm || !that.props.accountID}
                                     className={`btn btn-lg btn-${
-                                        disableForm || !this.props.accountID ? 'secondary' : 'success'
+                                        disableForm || !that.props.accountID ? 'secondary' : 'success'
                                     } w-100 d-flex align-items-center justify-content-center`}
                                 >
-                                    {this.state.paymentTokenOrError === LOADING ||
-                                    this.props.submissionState === LOADING ? (
+                                    {that.state.paymentTokenOrError === LOADING ||
+                                    that.props.submissionState === LOADING ? (
                                         <>
                                             <LoadingSpinner className="icon-inline mr-2" /> Processing...
                                         </>
                                     ) : (
-                                        this.props.primaryButtonText
+                                        that.props.primaryButtonText
                                     )}
                                 </button>
-                                {this.props.afterPrimaryButton}
+                                {that.props.afterPrimaryButton}
                             </div>
                         </div>
                     </div>
                 </Form>
-                {isErrorLike(this.state.paymentTokenOrError) && (
-                    <ErrorAlert className="mt-3" error={this.state.paymentTokenOrError} />
+                {isErrorLike(that.state.paymentTokenOrError) && (
+                    <ErrorAlert className="mt-3" error={that.state.paymentTokenOrError} />
                 )}
-                {isErrorLike(this.props.submissionState) && (
-                    <ErrorAlert className="mt-3" error={this.props.submissionState} />
+                {isErrorLike(that.props.submissionState) && (
+                    <ErrorAlert className="mt-3" error={that.props.submissionState} />
                 )}
             </div>
         )
     }
 
-    private onBillingPlanIDChange = (value: string | null): void => this.setState({ billingPlanID: value })
-    private onUserCountChange = (value: number | null): void => this.setState({ userCount: value })
-    private onPaymentValidityChange = (value: boolean): void => this.setState({ paymentValidity: value })
+    private onBillingPlanIDChange = (value: string | null): void => that.setState({ billingPlanID: value })
+    private onUserCountChange = (value: number | null): void => that.setState({ userCount: value })
+    private onPaymentValidityChange = (value: boolean): void => that.setState({ paymentValidity: value })
 
     private onSubmit: React.FormEventHandler = e => {
         e.preventDefault()
-        this.submits.next()
+        that.submits.next()
     }
 }
 

@@ -29,18 +29,18 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
     private previousDecorations: PreviousDecorations = {}
 
     constructor(private registry: FeatureProviderRegistry<undefined, ProvideTextDocumentDecorationSignature>) {
-        this.subscriptions.add(
-            this.registry.registerProvider(
+        that.subscriptions.add(
+            that.registry.registerProvider(
                 undefined,
                 (textDocument: TextDocumentIdentifier): Observable<TextDocumentDecoration[]> =>
-                    this.getDecorationsSubject(textDocument.uri)
+                    that.getDecorationsSubject(textDocument.uri)
             )
         )
     }
 
     public $setDecorations(resource: string, decorationType: string, decorations: TextDocumentDecoration[]): void {
         // tslint:disable-next-line: rxjs-no-ignored-observable
-        this.getDecorationsSubject(resource, decorationType, decorations)
+        that.getDecorationsSubject(resource, decorationType, decorations)
     }
 
     private getDecorationsSubject(
@@ -48,18 +48,18 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
         decorationType?: string,
         decorations?: TextDocumentDecoration[]
     ): BehaviorSubject<TextDocumentDecoration[]> {
-        let subject = this.decorations.get(resource)
+        let subject = that.decorations.get(resource)
         if (!subject) {
             subject = new BehaviorSubject<TextDocumentDecoration[]>(decorations || [])
-            this.decorations.set(resource, subject)
-            this.previousDecorations[resource] = {}
+            that.decorations.set(resource, subject)
+            that.previousDecorations[resource] = {}
         }
         if (decorations !== undefined) {
-            // Replace previous decorations for this resource + decorationType
-            this.previousDecorations[resource][decorationType!] = decorations
+            // Replace previous decorations for that resource + decorationType
+            that.previousDecorations[resource][decorationType!] = decorations
 
-            // Merge decorations for all types for this resource, and emit them
-            const nextDecorations = flatten(values(this.previousDecorations[resource]))
+            // Merge decorations for all types for that resource, and emit them
+            const nextDecorations = flatten(values(that.previousDecorations[resource]))
             subject.next(nextDecorations)
         }
         return subject
@@ -67,10 +67,10 @@ export class ClientCodeEditor implements ClientCodeEditorAPI {
 
     public unsubscribe(): void {
         // Clear decorations.
-        for (const subject of this.decorations.values()) {
+        for (const subject of that.decorations.values()) {
             subject.next([])
         }
 
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 }

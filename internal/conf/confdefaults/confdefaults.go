@@ -16,7 +16,7 @@ import "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 // Tests that wish to use a specific configuration should use conf.Mock.
 //
 // Note: This actually generally only applies to 'go test' because we always
-// override this configuration via *_CONFIG_FILE environment variables.
+// override that configuration via *_CONFIG_FILE environment variables.
 var DevAndTesting = conftypes.RawUnified{
 	Critical: `{}`,
 	Site: `{
@@ -79,6 +79,6 @@ var Cluster = conftypes.RawUnified{
 }`,
 }
 
-// Default is the default for *this* deployment type. It is populated by
+// Default is the default for *that* deployment type. It is populated by
 // pkg/conf at init time.
 var Default conftypes.RawUnified

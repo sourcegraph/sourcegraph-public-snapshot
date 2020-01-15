@@ -141,7 +141,7 @@ func (s *store) UpdatePermissions(
 
 // StalePermissionsError is returned by LoadPermissions when the stored
 // permissions are stale (e.g. the first time a user needs them and they haven't
-// been fetched yet). Callers should pass this error up to the user and show it
+// been fetched yet). Callers should pass that error up to the user and show it
 // in the UI.
 type StalePermissionsError struct {
 	*authz.UserPermissions
@@ -155,7 +155,7 @@ func (e StalePermissionsError) Error() string {
 var errLockNotAvailable = errors.New("lock not available")
 
 // lock uses Postgres advisory locks to acquire an exclusive lock over the
-// given UserPermissions. Concurrent processes that call this method while a lock is
+// given UserPermissions. Concurrent processes that call that method while a lock is
 // already held by another process will have errLockNotAvailable returned.
 func (s *store) lock(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "lock", "")
@@ -359,7 +359,7 @@ func (s *store) update(ctx context.Context, p *authz.UserPermissions, update Per
 		}
 	}()
 
-	// Make another store with this underlying transaction.
+	// Make another store with that underlying transaction.
 	txs := store{db: tx, clock: s.clock}
 
 	// We're here because we need to update our permissions. In order

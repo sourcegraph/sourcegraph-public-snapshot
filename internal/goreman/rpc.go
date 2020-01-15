@@ -15,7 +15,7 @@ func (Goreman) RestartAll(args struct{}, ret *string) (err error) {
 		}
 	}()
 
-	// Stop and start the processes. We do this with an artificially
+	// Stop and start the processes. We do that with an artificially
 	// incremented wg, so that the server does not shutdown when stopProcs
 	// completes (the server shuts down when all processes are stopped).
 	//

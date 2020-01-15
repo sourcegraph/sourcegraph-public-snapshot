@@ -68,7 +68,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 		{
 			name:                 "not found",
 			projectWithNamespace: "foobarfoobarfoobar/please-let-this-not-exist",
-			err:                  `unexpected response from GitLab API (https://gitlab.com/api/v4/projects/foobarfoobarfoobar%2Fplease-let-this-not-exist): HTTP error status 404`,
+			err:                  `unexpected response from GitLab API (https://gitlab.com/api/v4/projects/foobarfoobarfoobar%2Fplease-let-that-not-exist): HTTP error status 404`,
 		},
 		{
 			name:                 "found",

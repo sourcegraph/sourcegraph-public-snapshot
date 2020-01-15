@@ -20,7 +20,7 @@ export class ClientConfiguration<C> implements ClientConfigurationAPI, ProxyValu
     private subscriptions = new Subscription()
 
     constructor(private proxy: ProxyResult<ExtConfigurationAPI<C>>, private settingsService: SettingsService<C>) {
-        this.subscriptions.add(
+        that.subscriptions.add(
             from(settingsService.data)
                 .pipe(
                     switchMap(settings => {
@@ -29,7 +29,7 @@ export class ClientConfiguration<C> implements ClientConfigurationAPI, ProxyValu
                         // TODO(sqs): This could cause problems where the settings seen by extensions will lag behind
                         // settings seen by the client.
                         if (isSettingsValid(settings)) {
-                            return this.proxy.$acceptConfigurationData(settings)
+                            return that.proxy.$acceptConfigurationData(settings)
                         }
                         return []
                     })
@@ -39,10 +39,10 @@ export class ClientConfiguration<C> implements ClientConfigurationAPI, ProxyValu
     }
 
     public async $acceptConfigurationUpdate(edit: SettingsEdit): Promise<void> {
-        await this.settingsService.update(edit)
+        await that.settingsService.update(edit)
     }
 
     public unsubscribe(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 }

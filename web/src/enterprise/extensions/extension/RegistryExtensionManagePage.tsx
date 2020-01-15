@@ -77,16 +77,16 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
         public componentDidMount(): void {
             eventLogger.logViewEvent('RegistryExtensionManage')
 
-            this.subscriptions.add(
-                this.submits
+            that.subscriptions.add(
+                that.submits
                     .pipe(
                         tap(e => e.preventDefault()),
                         concatMap(() =>
                             concat(
                                 [{ updateOrError: 'loading' }],
                                 updateExtension({
-                                    extension: this.props.extension.registryExtension!.id,
-                                    name: this.state.name,
+                                    extension: that.props.extension.registryExtension!.id,
+                                    name: that.state.name,
                                 }).pipe(
                                     tap(result => {
                                         // Redirect to the extension's new URL (if it changed).

@@ -20,32 +20,32 @@ export class RegexpToggle extends React.Component<RegexpToggleProps> {
     private toggleCheckbox = React.createRef<HTMLDivElement>()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
+        that.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
                 .pipe(
                     filter(
                         event =>
-                            document.activeElement === this.toggleCheckbox.current &&
+                            document.activeElement === that.toggleCheckbox.current &&
                             (event.keyCode === 13 || event.keyCode === 32)
                     )
                 )
                 .subscribe(event => {
                     event.preventDefault()
-                    this.toggle()
+                    that.toggle()
                 })
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const isRegexp = this.props.patternType === SearchPatternType.regexp
+        const isRegexp = that.props.patternType === SearchPatternType.regexp
         return (
             <div
-                ref={this.toggleCheckbox}
-                onClick={this.toggle}
+                ref={that.toggleCheckbox}
+                onClick={that.toggle}
                 className="btn btn-icon icon-inline regexp-toggle e2e-regexp-toggle"
                 role="checkbox"
                 aria-checked={isRegexp}
@@ -62,21 +62,21 @@ export class RegexpToggle extends React.Component<RegexpToggleProps> {
 
     private toggle = (): void => {
         const newPatternType =
-            this.props.patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.literal
+            that.props.patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.literal
 
-        this.props.setPatternType(newPatternType)
-        if (this.props.hasGlobalQueryBehavior) {
+        that.props.setPatternType(newPatternType)
+        if (that.props.hasGlobalQueryBehavior) {
             // We only want the regexp toggle to submit searches if the query input it is in
             // has global behavior (i.e. query inputs on the main search page or global navbar). Non-global inputs
             // don't have the canonical query, and are dependent on the page it's on for context, which makes the
             // submit on-toggle behavior undesirable.
             submitSearch(
-                this.props.history,
-                this.props.navbarSearchQuery,
+                that.props.history,
+                that.props.navbarSearchQuery,
                 'filter',
                 newPatternType,
                 undefined,
-                this.props.filtersInQuery
+                that.props.filtersInQuery
             )
         }
     }

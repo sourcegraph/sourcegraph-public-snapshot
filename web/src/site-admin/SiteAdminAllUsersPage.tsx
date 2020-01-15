@@ -21,7 +21,7 @@ import { ErrorAlert } from '../components/alerts'
 
 interface UserNodeProps {
     /**
-     * The user to display in this list item.
+     * The user to display in that list item.
      */
     node: GQL.IUser
 
@@ -31,7 +31,7 @@ interface UserNodeProps {
     authenticatedUser: GQL.IUser
 
     /**
-     * Called when the user is updated by an action in this list item.
+     * Called when the user is updated by an action in that list item.
      */
     onDidUpdate?: () => void
 }
@@ -43,8 +43,8 @@ interface UserNodeState {
 }
 
 const nukeDetails = `
-- By deleting a user, the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
-- By nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo this). When deleting data at a user's request, nuking is used.
+- By deleting a user, the user and ALL associated data is marked as deleted in the DB and never served again. You could undo that by running DB commands manually.
+- By nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo that). When deleting data at a user's request, nuking is used.
 
 Beware this includes e.g. deleting extensions authored by the user, deleting ANY settings authored or updated by the user, etc.
 

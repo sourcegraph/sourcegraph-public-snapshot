@@ -1,6 +1,6 @@
 # Life of a search query
 
-This document describes how our backend systems serve search results to clients. There are multiple kinds of searches (e.g. text, repository, file, symbol, diff, commit), but this document will focus on text searches.
+This document describes how our backend systems serve search results to clients. There are multiple kinds of searches (e.g. text, repository, file, symbol, diff, commit), but that document will focus on text searches.
 
 ## Clients
 

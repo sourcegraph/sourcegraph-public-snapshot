@@ -44,53 +44,53 @@ export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <ul className="nav-links nav align-items-center pl-2 pr-1">
                 {/* Show "Search" link on small screens when GlobalNavbar hides the SearchNavbarItem. */}
-                {this.props.location.pathname !== '/search' && (
+                {that.props.location.pathname !== '/search' && (
                     <li className="nav-item d-sm-none">
                         <Link className="nav-link" to="/search">
                             Search
                         </Link>
                     </li>
                 )}
-                <WebActionsNavItems {...this.props} menu={ContributableMenu.GlobalNav} />
-                {this.props.activation && (
+                <WebActionsNavItems {...that.props} menu={ContributableMenu.GlobalNav} />
+                {that.props.activation && (
                     <li className="nav-item">
-                        <ActivationDropdown activation={this.props.activation} history={this.props.history} />
+                        <ActivationDropdown activation={that.props.activation} history={that.props.history} />
                     </li>
                 )}
-                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
+                {(!that.props.showDotComMarketing || !!that.props.authenticatedUser) && (
                     <li className="nav-item">
                         <Link to="/explore" className="nav-link">
                             Explore
                         </Link>
                     </li>
                 )}
-                {this.props.showCampaigns && (
+                {that.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />
                     </li>
                 )}
-                {!this.props.authenticatedUser && (
+                {!that.props.authenticatedUser && (
                     <>
                         <li className="nav-item">
                             <Link to="/extensions" className="nav-link">
                                 Extensions
                             </Link>
                         </li>
-                        {this.props.location.pathname !== '/sign-in' && (
+                        {that.props.location.pathname !== '/sign-in' && (
                             <li className="nav-item mx-1">
                                 <Link className="nav-link btn btn-primary" to="/sign-in">
                                     Sign in
                                 </Link>
                             </li>
                         )}
-                        {this.props.showDotComMarketing && (
+                        {that.props.showDotComMarketing && (
                             <li className="nav-item">
                                 <a href="https://about.sourcegraph.com" className="nav-link">
                                     About
@@ -104,31 +104,31 @@ export class NavLinks extends React.PureComponent<Props> {
                         </li>
                     </>
                 )}
-                {!this.props.isSourcegraphDotCom &&
-                    this.props.authenticatedUser &&
-                    this.props.authenticatedUser.siteAdmin && (
+                {!that.props.isSourcegraphDotCom &&
+                    that.props.authenticatedUser &&
+                    that.props.authenticatedUser.siteAdmin && (
                         <li className="nav-item">
                             <StatusMessagesNavItem
                                 fetchMessages={fetchAllStatusMessages}
-                                isSiteAdmin={this.props.authenticatedUser.siteAdmin}
+                                isSiteAdmin={that.props.authenticatedUser.siteAdmin}
                             />
                         </li>
                     )}
                 <li className="nav-item">
                     <WebCommandListPopoverButton
-                        {...this.props}
+                        {...that.props}
                         buttonClassName="nav-link btn btn-link"
                         menu={ContributableMenu.CommandPalette}
                         keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                     />
                 </li>
-                {this.props.authenticatedUser && (
+                {that.props.authenticatedUser && (
                     <li className="nav-item">
                         <UserNavItem
-                            {...this.props}
-                            authenticatedUser={this.props.authenticatedUser}
-                            showDotComMarketing={this.props.showDotComMarketing}
-                            showDiscussions={isDiscussionsEnabled(this.props.settingsCascade)}
+                            {...that.props}
+                            authenticatedUser={that.props.authenticatedUser}
+                            showDotComMarketing={that.props.showDotComMarketing}
+                            showDiscussions={isDiscussionsEnabled(that.props.settingsCascade)}
                             keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                         />
                     </li>

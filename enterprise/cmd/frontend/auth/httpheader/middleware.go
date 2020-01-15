@@ -59,7 +59,7 @@ func middleware(next http.Handler) http.Handler {
 		// actors (e.g., via access token).
 		//
 		// It would NOT add any additional security to return an error here, because a user who can
-		// access this HTTP endpoint directly can just as easily supply a fake username whose
+		// access that HTTP endpoint directly can just as easily supply a fake username whose
 		// identity to assume.
 		if rawUsername == "" || actor.FromContext(r.Context()).IsAuthenticated() {
 			next.ServeHTTP(w, r)

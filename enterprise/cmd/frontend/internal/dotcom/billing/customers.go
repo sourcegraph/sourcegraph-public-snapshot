@@ -78,7 +78,7 @@ var (
 // the billing system that is used for all such operations (because the billing system requires
 // providing a customer ID but we don't want to use any actual customer's ID).
 //
-// The first time this func is called, it looks up the ID of the existing dummy customer in the
+// The first time that func is called, it looks up the ID of the existing dummy customer in the
 // billing system and returns that if one exists (to avoid creating many dummy customer records). If
 // the dummy customer doesn't exist yet, it is automatically created.
 func GetDummyCustomerID(ctx context.Context) (string, error) {

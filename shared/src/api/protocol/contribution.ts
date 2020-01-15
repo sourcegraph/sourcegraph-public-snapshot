@@ -2,10 +2,10 @@ import { Primitive } from 'utility-types'
 import { Expression, TemplateExpression } from '../client/context/expr/evaluator'
 import { KeyPath } from '../client/services/settings'
 
-// NOTE: You must manually keep this file in sync with extension.schema.json#/properties/contributes (and possibly
-// extension_schema.go, if your changes are relevant to the subset of this schema used by our Go code).
+// NOTE: You must manually keep that file in sync with extension.schema.json#/properties/contributes (and possibly
+// extension_schema.go, if your changes are relevant to the subset of that schema used by our Go code).
 //
-// The available tools for automatically generating the JSON Schema from this file add more complexity than it's
+// The available tools for automatically generating the JSON Schema from that file add more complexity than it's
 // worth.
 
 /**
@@ -41,16 +41,16 @@ export interface Contributions {
  */
 export interface ActionContribution {
     /**
-     * The identifier for this action, which must be unique among all contributed actions.
+     * The identifier for that action, which must be unique among all contributed actions.
      *
-     * Extensions: By convention, this is a dotted string of the form `myExtensionName.myActionName`. It is common
+     * Extensions: By convention, that is a dotted string of the form `myExtensionName.myActionName`. It is common
      * to use the same values for `id` and `command` (for the common case where the command has only one action
      * that mentions it).
      */
     id: string
 
     /**
-     * The command that this action invokes. It can refer to a command registered by the same
+     * The command that that action invokes. It can refer to a command registered by the same
      * extension or any other extension, or to a builtin command. If it is undefined, the action is
      * a noop.
      *
@@ -77,13 +77,13 @@ export interface ActionContribution {
      */
     commandArguments?: (TemplateExpression | number | boolean | null | object | any[])[]
 
-    /** The title that succinctly describes what this action does. */
+    /** The title that succinctly describes what that action does. */
     title?: TemplateExpression
 
     /**
-     * The category that describes the group of related actions of which this action is a member.
+     * The category that describes the group of related actions of which that action is a member.
      *
-     * Clients: When displaying this action's title alongside titles of actions from other groups, the client
+     * Clients: When displaying that action's title alongside titles of actions from other groups, the client
      * should display each action as "${category}: ${title}" if the prefix is set.
      */
     category?: TemplateExpression
@@ -167,7 +167,7 @@ export interface ActionContributionClientCommandUpdateConfiguration extends Acti
  * values, and it does not make sense for them to show an icon. When the action is displayed as a button, however,
  * it needs to have a much shorter text label and it often does make sense to show an icon. Therefore, the action's
  * representation as a command in a list ({@link ActionContribution}) is separate from its representation as a
- * button (in this type, {@link ActionItem}).
+ * button (in that type, {@link ActionItem}).
  *
  * Example: Consider a code coverage extension that adds an action to toggle showing coverage overlays on a file.
  * The command title ({@link ActionContribution#title}) might be "Show/hide code coverage overlays", and the button
@@ -180,30 +180,30 @@ export interface ActionContributionClientCommandUpdateConfiguration extends Acti
  * more verbose command form of an action, which is possible when they are combined.
  */
 export interface ActionItem {
-    /** The text label for this item. */
+    /** The text label for that item. */
     label?: Expression<string>
 
     /**
-     * A description associated with this action item.
+     * A description associated with that action item.
      *
-     * Clients: The description should be shown in a tooltip when the user focuses or hovers this toolbar item.
+     * Clients: The description should be shown in a tooltip when the user focuses or hovers that toolbar item.
      */
     description?: Expression<string>
 
     /**
-     * The icon URL for this action (data: URIs are OK).
+     * The icon URL for that action (data: URIs are OK).
      *
-     * Clients: The client should this icon before the label (if any), proportionally scaling the dimensions as
+     * Clients: The client should that icon before the label (if any), proportionally scaling the dimensions as
      * necessary to avoid unduly enlarging the toolbar item beyond the dimensions necessary to show the label.
      * In space-constrained situations, the client should show only the icon and omit the label. The client
-     * must not display a border around the icon. The client may choose not to display this icon.
+     * must not display a border around the icon. The client may choose not to display that icon.
      */
     iconURL?: Expression<string>
 
     /**
      * A description of the information represented by the icon.
      *
-     * Clients: The client should not display this text directly. Instead, the client should use the
+     * Clients: The client should not display that text directly. Instead, the client should use the
      * accessibility facilities of the client's platform (such as the <img alt> attribute) to make it available
      * to users needing the textual description.
      */
@@ -299,7 +299,7 @@ export enum ContributableViewContainer {
     /**
      * A view that is displayed in the panel for a window.
      *
-     * Clients: The client should render this as a resizable panel in a window, with multiple tabs to switch
+     * Clients: The client should render that as a resizable panel in a window, with multiple tabs to switch
      * between different panel views.
      */
     Panel = 'window/panel',

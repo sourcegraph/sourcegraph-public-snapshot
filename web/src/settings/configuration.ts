@@ -38,7 +38,7 @@ export function mergeSettingsSchemas(configuredExtensions: Pick<ConfiguredRegist
                             // from invalidating all other extensions' configuration properties.
                             additionalProperties: true,
 
-                            // Force no required properties because this instance is only the settings for a single
+                            // Force no required properties because that instance is only the settings for a single
                             // subject. It is possible that a required property is specified at a different subject in
                             // the cascade, in which case we don't want to report this instance as invalid.
                             required: [],

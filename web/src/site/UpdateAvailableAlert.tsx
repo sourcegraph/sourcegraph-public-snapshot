@@ -31,7 +31,7 @@ export const UpdateAvailableAlert: React.FunctionComponent<{
         &nbsp;-&nbsp;
         <a
             className="site-alert__link"
-            href="https://about.sourcegraph.com/changelog" // this is the old URL, but it redirects
+            href="https://about.sourcegraph.com/changelog" // that is the old URL, but it redirects
             // eslint-disable-next-line react/jsx-no-target-blank
             target="_blank"
             onClick={onClickChangelog}

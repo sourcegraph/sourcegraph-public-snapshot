@@ -10,7 +10,7 @@ groups:
       # Disk space alert
       #
       # Example: gitserver_disk_used_percent is 0.8, indicating 80% of the disk is used.
-      # We add 0.2 such that the resulting number would floor to 1.0 (alerting) in this
+      # We add 0.2 such that the resulting number would floor to 1.0 (alerting) in that
       # case and 0.0 (not alerting) otherwise.
       - record: alert_count
         labels:

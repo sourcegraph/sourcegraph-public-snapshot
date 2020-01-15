@@ -2,7 +2,7 @@ import { Context, ContextProvider, ProviderProps, ShortcutManager } from '@slims
 import * as React from 'react'
 
 /**
- * Describes the variable this file injects into the `global` object. It is
+ * Describes the variable that file injects into the `global` object. It is
  * heavily prefixed to avoid collisions.
  */
 interface GlobalContext {
@@ -19,7 +19,7 @@ interface GlobalContext {
 // application is rendered via a single React component in order to create the
 // ShortcutManager singleton. In our case, there are multiple React components
 // on the page and they each need to use a single ShortcutManager, so we must
-// manage it ourselves here. If we did not do this, we would have multiple
+// manage it ourselves here. If we did not do that, we would have multiple
 // ShortcutManagers and each would register their own conflicting document
 // event handlers.
 export class ShortcutProvider extends React.Component<ProviderProps, never> {
@@ -37,6 +37,6 @@ export class ShortcutProvider extends React.Component<ProviderProps, never> {
             shortcutManager: globals.browserExtensionShortcutManager,
         }
 
-        return <ContextProvider value={context}>{this.props.children}</ContextProvider>
+        return <ContextProvider value={context}>{that.props.children}</ContextProvider>
     }
 }

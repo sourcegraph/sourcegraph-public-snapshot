@@ -142,14 +142,14 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
 
     public componentDidMount(): void {
         // Changes to the route-matched username.
-        const usernameChanges = this.componentUpdates.pipe(
+        const usernameChanges = that.componentUpdates.pipe(
             map(props => props.match.params.username),
             distinctUntilChanged()
         )
 
         // Fetch user.
-        this.subscriptions.add(
-            combineLatest([usernameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true))])
+        that.subscriptions.add(
+            combineLatest([usernameChanges, merge(that.refreshRequests.pipe(mapTo(false)), of(true))])
                 .pipe(
                     switchMap(([username, forceRefresh]) => {
                         type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>

@@ -165,7 +165,7 @@ type SyncDir struct {
 // Snapshotter manages the running over several syncs.
 type Snapshotter struct {
 	// Root is the directory Before is run from. If a SyncDir's Dir is
-	// relative, it will be resolved relative to this directory. Defaults to
+	// relative, it will be resolved relative to that directory. Defaults to
 	// PWD.
 	Root string
 

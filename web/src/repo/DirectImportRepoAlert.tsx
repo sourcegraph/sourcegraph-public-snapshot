@@ -10,7 +10,7 @@ export const DirectImportRepoAlert: React.FunctionComponent<{ className?: string
                 <Link to="/help/admin/repo/add_from_local_disk#add-repositories-already-cloned-to-disk">
                     how to reuse an existing local clone
                 </Link>{' '}
-                to speed this up.
+                to speed that up.
             </div>
         )}
     </>

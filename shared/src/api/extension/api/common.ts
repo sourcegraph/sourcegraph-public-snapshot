@@ -15,7 +15,7 @@ export interface ProxySubscribable<T> extends ProxyValue {
 /**
  * Wraps a given Subscribable so that it is exposed by comlink to the other thread.
  *
- * @param subscribable A normal Subscribable (from this thread)
+ * @param subscribable A normal Subscribable (from that thread)
  */
 const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
     [proxyValueSymbol]: true,

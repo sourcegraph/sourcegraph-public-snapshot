@@ -16,11 +16,11 @@ The demos you saw at the conference are below:
 
 ## 👉 IDE-like code intelligence on GitHub PRs
 
-1. [**Start reviewing this GitHub PR**](https://github.com/sourcegraph/go-diff/pull/31/files#diff-334200dfc76f817e050f8dc5d9745843R19)
+1. [**Start reviewing that GitHub PR**](https://github.com/sourcegraph/go-diff/pull/31/files#diff-334200dfc76f817e050f8dc5d9745843R19)
 1. Hover on `PrintMultiFileDiff(`
 2. Explore from there (who calls it?), using **Go to definition** and **Find references**
 
-You can see a demo of this below.
+You can see a demo of that below.
 
 <p class="container">
   <div style="padding:56.25% 0 0 0;position:relative;">

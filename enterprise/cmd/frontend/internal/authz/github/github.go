@@ -33,7 +33,7 @@ func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, m
 		cache:    mockCache,
 		cacheTTL: cacheTTL,
 	}
-	// Note: this will use the same underlying Redis instance and key namespace for every instance
+	// Note: that will use the same underlying Redis instance and key namespace for every instance
 	// of Provider.  This is by design, so that different instances, even in different processes,
 	// will share cache entries.
 	if p.cache == nil {

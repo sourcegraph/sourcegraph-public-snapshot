@@ -41,7 +41,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
 
     constructor(props: SignUpFormProps) {
         super(props)
-        this.state = {
+        that.state = {
             email: '',
             username: '',
             password: '',
@@ -52,41 +52,41 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
 
     public render(): JSX.Element | null {
         return (
-            <Form className="signin-signup-form signup-form e2e-signup-form" onSubmit={this.handleSubmit}>
-                {this.state.error && <ErrorAlert className="my-2" error={this.state.error} />}
+            <Form className="signin-signup-form signup-form e2e-signup-form" onSubmit={that.handleSubmit}>
+                {that.state.error && <ErrorAlert className="my-2" error={that.state.error} />}
                 <div className="form-group">
                     <EmailInput
                         className="signin-signup-form__input"
-                        onChange={this.onEmailFieldChange}
+                        onChange={that.onEmailFieldChange}
                         required={true}
-                        value={this.state.email}
-                        disabled={this.state.loading}
+                        value={that.state.email}
+                        disabled={that.state.loading}
                         autoFocus={true}
                     />
                 </div>
                 <div className="form-group">
                     <UsernameInput
                         className="signin-signup-form__input"
-                        onChange={this.onUsernameFieldChange}
-                        value={this.state.username}
+                        onChange={that.onUsernameFieldChange}
+                        value={that.state.username}
                         required={true}
-                        disabled={this.state.loading}
+                        disabled={that.state.loading}
                     />
                 </div>
                 <div className="form-group">
                     <PasswordInput
                         className="signin-signup-form__input"
-                        onChange={this.onPasswordFieldChange}
-                        value={this.state.password}
+                        onChange={that.onPasswordFieldChange}
+                        value={that.state.password}
                         required={true}
-                        disabled={this.state.loading}
+                        disabled={that.state.loading}
                         autoComplete="new-password"
                     />
                 </div>
                 {enterpriseTrial && (
                     <div className="form-group">
                         <label className="signin-signup-form__checkbox-label">
-                            <input className="mr-1" type="checkbox" onChange={this.onRequestTrialFieldChange} />
+                            <input className="mr-1" type="checkbox" onChange={that.onRequestTrialFieldChange} />
                             Try Sourcegraph Enterprise free for 30 days
                             {/* eslint-disable-next-line react/jsx-no-target-blank */}
                             <a className="ml-1" target="_blank" href="https://about.sourcegraph.com/pricing">
@@ -96,11 +96,11 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                     </div>
                 )}
                 <div className="form-group">
-                    <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
-                        {this.state.loading ? (
+                    <button className="btn btn-primary btn-block" type="submit" disabled={that.state.loading}>
+                        {that.state.loading ? (
                             <LoadingSpinner className="icon-inline" />
                         ) : (
-                            this.props.buttonLabel || 'Sign up'
+                            that.props.buttonLabel || 'Sign up'
                         )}
                     </button>
                 </div>
@@ -129,45 +129,45 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
     }
 
     private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ email: e.target.value })
+        that.setState({ email: e.target.value })
     }
 
     private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ username: e.target.value })
+        that.setState({ username: e.target.value })
     }
 
     private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ password: e.target.value })
+        that.setState({ password: e.target.value })
     }
 
     private onRequestTrialFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ requestedTrial: e.target.checked })
+        that.setState({ requestedTrial: e.target.checked })
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        if (this.state.loading) {
+        if (that.state.loading) {
             return
         }
 
-        this.setState({ loading: true })
-        this.subscriptions.add(
+        that.setState({ loading: true })
+        that.subscriptions.add(
             from(
-                this.props
+                that.props
                     .doSignUp({
-                        email: this.state.email,
-                        username: this.state.username,
-                        password: this.state.password,
-                        requestedTrial: this.state.requestedTrial,
+                        email: that.state.email,
+                        username: that.state.username,
+                        password: that.state.password,
+                        requestedTrial: that.state.requestedTrial,
                     })
-                    .catch(error => this.setState({ error: asError(error), loading: false }))
+                    .catch(error => that.setState({ error: asError(error), loading: false }))
             ).subscribe()
         )
         eventLogger.log('InitiateSignUp', {
             signup: {
                 user_info: {
-                    signup_email: this.state.email,
-                    signup_username: this.state.username,
+                    signup_email: that.state.email,
+                    signup_username: that.state.username,
                 },
             },
         })

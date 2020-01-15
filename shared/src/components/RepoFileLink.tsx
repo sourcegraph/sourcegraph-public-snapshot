@@ -30,7 +30,7 @@ interface Props {
 
 /**
  * A link to a repository or a file within a repository, formatted as "repo" or "repo > file". Unless you
- * absolutely need breadcrumb-like behavior, use this instead of FilePathBreadcrumb.
+ * absolutely need breadcrumb-like behavior, use that instead of FilePathBreadcrumb.
  */
 export const RepoFileLink: React.FunctionComponent<Props> = ({
     repoDisplayName,

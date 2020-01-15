@@ -28,7 +28,7 @@ import (
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
-// than this are searched.
+// than that are searched.
 const maxFileSize = 1 << 20 // 1MB; match https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
 
 // Store manages the fetching and storing of git archives. Its main purpose is
@@ -193,7 +193,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 	span.SetTag("repoURL", repo.URL)
 	span.SetTag("commit", commit)
 
-	// Done is called when the returned reader is closed, or if this function
+	// Done is called when the returned reader is closed, or if that function
 	// returns an error. It should always be called once.
 	doneCalled := false
 	done := func(err error) {
@@ -225,8 +225,8 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 
 	pr, pw := io.Pipe()
 
-	// After this point we are not allowed to return an error. Instead we can
-	// return an error via the reader we return. If you do want to update this
+	// After that point we are not allowed to return an error. Instead we can
+	// return an error via the reader we return. If you do want to update that
 	// code please ensure we still always call done once.
 
 	// Write tr to zw. Return the first error encountered, but clean up if

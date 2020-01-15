@@ -55,7 +55,7 @@ interface State {
      */
     productSubscriptionOrError: typeof LOADING | GQL.IProductSubscription | ErrorLike
 
-    /** The result of archiving this subscription: null for done or not started, loading, or an error. */
+    /** The result of archiving that subscription: null for done or not started, loading, or an error. */
     archivalOrError: typeof LOADING | null | ErrorLike
 }
 
@@ -78,31 +78,31 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminProductSubscription')
 
-        const subscriptionUUIDChanges = this.componentUpdates.pipe(
+        const subscriptionUUIDChanges = that.componentUpdates.pipe(
             map(props => props.match.params.subscriptionUUID),
             distinctUntilChanged()
         )
 
         const productSubscriptionChanges = combineLatest([
             subscriptionUUIDChanges,
-            this.updates.pipe(startWith(undefined)),
+            that.updates.pipe(startWith(undefined)),
         ]).pipe(
             switchMap(([subscriptionUUID]) =>
-                this.queryProductSubscription(subscriptionUUID).pipe(
+                that.queryProductSubscription(subscriptionUUID).pipe(
                     catchError(err => [asError(err)]),
                     startWith(LOADING)
                 )
             )
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             productSubscriptionChanges
                 .pipe(map(result => ({ productSubscriptionOrError: result })))
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
 
-        this.subscriptions.add(
-            this.archivals
+        that.subscriptions.add(
+            that.archivals
                 .pipe(
                     withLatestFrom(
                         productSubscriptionChanges.pipe(
@@ -117,7 +117,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                     switchMap(([, { id }]) =>
                         archiveProductSubscription({ id }).pipe(
                             mapTo(null),
-                            tap(() => this.props.history.push('/site-admin/dotcom/product/subscriptions')),
+                            tap(() => that.props.history.push('/site-admin/dotcom/product/subscriptions')),
                             catchError(error => [asError(error)]),
                             map(c => ({ archivalOrError: c })),
                             startWith({ archivalOrError: LOADING })
@@ -125,25 +125,25 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'onDidUpdate' | 'showSubscription'> = {
-            onDidUpdate: this.onDidUpdateProductLicense,
+            onDidUpdate: that.onDidUpdateProductLicense,
             showSubscription: false,
         }
 
@@ -155,24 +155,24 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                         <ArrowLeftIcon className="icon-inline" /> All subscriptions
                     </Link>
                 </div>
-                {this.state.productSubscriptionOrError === LOADING ? (
+                {that.state.productSubscriptionOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline" />
-                ) : isErrorLike(this.state.productSubscriptionOrError) ? (
-                    <ErrorAlert className="my-2" error={this.state.productSubscriptionOrError} />
+                ) : isErrorLike(that.state.productSubscriptionOrError) ? (
+                    <ErrorAlert className="my-2" error={that.state.productSubscriptionOrError} />
                 ) : (
                     <>
-                        <h2>Product subscription {this.state.productSubscriptionOrError.name}</h2>
+                        <h2>Product subscription {that.state.productSubscriptionOrError.name}</h2>
                         <div className="mb-3">
                             <button
                                 type="button"
                                 className="btn btn-danger"
-                                onClick={this.archiveProductSubscription}
-                                disabled={this.state.archivalOrError === null}
+                                onClick={that.archiveProductSubscription}
+                                disabled={that.state.archivalOrError === null}
                             >
                                 Archive
                             </button>
-                            {isErrorLike(this.state.archivalOrError) && (
-                                <ErrorAlert className="mt-2" error={this.state.archivalOrError} />
+                            {isErrorLike(that.state.archivalOrError) && (
+                                <ErrorAlert className="mt-2" error={that.state.archivalOrError} />
                             )}
                         </div>
                         <div className="card mt-3">
@@ -181,30 +181,30 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                                 <tbody>
                                     <tr>
                                         <th className="text-nowrap">ID</th>
-                                        <td className="w-100">{this.state.productSubscriptionOrError.name}</td>
+                                        <td className="w-100">{that.state.productSubscriptionOrError.name}</td>
                                     </tr>
                                     <tr>
                                         <th className="text-nowrap">Plan</th>
                                         <td className="w-100">
                                             <ProductSubscriptionLabel
-                                                productSubscription={this.state.productSubscriptionOrError}
+                                                productSubscription={that.state.productSubscriptionOrError}
                                             />
                                         </td>
                                     </tr>
                                     <tr>
                                         <th className="text-nowrap">Account</th>
                                         <td className="w-100">
-                                            <AccountName account={this.state.productSubscriptionOrError.account} />{' '}
+                                            <AccountName account={that.state.productSubscriptionOrError.account} />{' '}
                                             &mdash;{' '}
-                                            <Link to={this.state.productSubscriptionOrError.url}>View as user</Link>
+                                            <Link to={that.state.productSubscriptionOrError.url}>View as user</Link>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th className="text-nowrap">Account emails</th>
                                         <td className="w-100">
-                                            {this.state.productSubscriptionOrError.account && (
+                                            {that.state.productSubscriptionOrError.account && (
                                                 <AccountEmailAddresses
-                                                    emails={this.state.productSubscriptionOrError.account.emails}
+                                                    emails={that.state.productSubscriptionOrError.account.emails}
                                                 />
                                             )}
                                         </td>
@@ -213,15 +213,15 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                                         <th className="text-nowrap">Billing</th>
                                         <td className="w-100">
                                             <SiteAdminProductSubscriptionBillingLink
-                                                productSubscription={this.state.productSubscriptionOrError}
-                                                onDidUpdate={this.onDidUpdate}
+                                                productSubscription={that.state.productSubscriptionOrError}
+                                                onDidUpdate={that.onDidUpdate}
                                             />
                                         </td>
                                     </tr>
                                     <tr>
                                         <th className="text-nowrap">Created at</th>
                                         <td className="w-100">
-                                            <Timestamp date={this.state.productSubscriptionOrError.createdAt} />
+                                            <Timestamp date={that.state.productSubscriptionOrError.createdAt} />
                                         </td>
                                     </tr>
                                 </tbody>
@@ -231,11 +231,11 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                         <div className="card mt-1">
                             <div className="card-header d-flex align-items-center justify-content-between">
                                 Licenses
-                                {this.state.showGenerate ? (
+                                {that.state.showGenerate ? (
                                     <button
                                         type="button"
                                         className="btn btn-secondary"
-                                        onClick={this.toggleShowGenerate}
+                                        onClick={that.toggleShowGenerate}
                                     >
                                         Dismiss new license form
                                     </button>
@@ -243,17 +243,17 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                                     <button
                                         type="button"
                                         className="btn btn-primary btn-sm"
-                                        onClick={this.toggleShowGenerate}
+                                        onClick={that.toggleShowGenerate}
                                     >
                                         <AddIcon className="icon-inline" /> Generate new license manually
                                     </button>
                                 )}
                             </div>
-                            {this.state.showGenerate && (
+                            {that.state.showGenerate && (
                                 <div className="card-body">
                                     <SiteAdminGenerateProductLicenseForSubscriptionForm
-                                        subscriptionID={this.state.productSubscriptionOrError.id}
-                                        onGenerate={this.onDidUpdateProductLicense}
+                                        subscriptionID={that.state.productSubscriptionOrError.id}
+                                        onGenerate={that.onDidUpdateProductLicense}
                                     />
                                 </div>
                             )}
@@ -261,20 +261,20 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                                 className="list-group list-group-flush"
                                 noun="product license"
                                 pluralNoun="product licenses"
-                                queryConnection={this.queryProductLicenses}
+                                queryConnection={that.queryProductLicenses}
                                 nodeComponent={SiteAdminProductLicenseNode}
                                 nodeComponentProps={nodeProps}
                                 compact={true}
                                 hideSearch={true}
                                 noSummaryIfAllNodesVisible={true}
-                                updates={this.licenseUpdates}
-                                history={this.props.history}
-                                location={this.props.location}
+                                updates={that.licenseUpdates}
+                                history={that.props.history}
+                                location={that.props.location}
                             />
                         </div>
                         <div className="card mt-3">
                             <div className="card-header">History</div>
-                            <ProductSubscriptionHistory productSubscription={this.state.productSubscriptionOrError} />
+                            <ProductSubscriptionHistory productSubscription={that.state.productSubscriptionOrError} />
                         </div>
                     </>
                 )}
@@ -282,7 +282,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
         )
     }
 
-    private toggleShowGenerate = (): void => this.setState(prevState => ({ showGenerate: !prevState.showGenerate }))
+    private toggleShowGenerate = (): void => that.setState(prevState => ({ showGenerate: !prevState.showGenerate }))
 
     private queryProductSubscription = (uuid: string): Observable<GQL.IProductSubscription> =>
         queryGraphQL(
@@ -374,7 +374,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
             `,
             {
                 first: args.first,
-                subscriptionUUID: this.props.match.params.subscriptionUUID,
+                subscriptionUUID: that.props.match.params.subscriptionUUID,
             }
         ).pipe(
             map(({ data, errors }) => {
@@ -391,14 +391,14 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
             })
         )
 
-    private archiveProductSubscription = (): void => this.archivals.next()
+    private archiveProductSubscription = (): void => that.archivals.next()
 
     private onDidUpdateProductLicense = (): void => {
-        this.licenseUpdates.next()
-        this.toggleShowGenerate()
+        that.licenseUpdates.next()
+        that.toggleShowGenerate()
     }
 
-    private onDidUpdate = (): void => this.updates.next()
+    private onDidUpdate = (): void => that.updates.next()
 }
 
 function archiveProductSubscription(args: GQL.IArchiveProductSubscriptionOnDotcomMutationArguments): Observable<void> {

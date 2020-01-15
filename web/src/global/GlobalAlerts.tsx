@@ -81,12 +81,12 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         )}
                         {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
                         {window.context.likelyDockerOnMac && <DockerForMacAlert className="global-alerts__alert" />}
-                        {this.state.siteFlags.alerts.map((alert, i) => (
+                        {that.state.siteFlags.alerts.map((alert, i) => (
                             <GlobalAlert key={i} alert={alert} className="global-alerts__alert" />
                         ))}
-                        {this.state.siteFlags.productSubscription.license &&
+                        {that.state.siteFlags.productSubscription.license &&
                             (() => {
-                                const expiresAt = parseISO(this.state.siteFlags.productSubscription.license.expiresAt)
+                                const expiresAt = parseISO(that.state.siteFlags.productSubscription.license.expiresAt)
                                 return (
                                     differenceInDays(expiresAt, Date.now()) <= 7 && (
                                         <LicenseExpirationAlert
@@ -99,10 +99,10 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             })()}
                     </>
                 )}
-                {isSettingsValid<Settings>(this.props.settingsCascade) &&
-                    this.props.settingsCascade.final.motd &&
-                    Array.isArray(this.props.settingsCascade.final.motd) &&
-                    this.props.settingsCascade.final.motd.map(m => (
+                {isSettingsValid<Settings>(that.props.settingsCascade) &&
+                    that.props.settingsCascade.final.motd &&
+                    Array.isArray(that.props.settingsCascade.final.motd) &&
+                    that.props.settingsCascade.final.motd.map(m => (
                         <DismissibleAlert
                             key={m}
                             partialStorageKey={`motd.${m}`}
@@ -114,7 +114,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                 <Notices
                     alertClassName="global-alerts__alert"
                     location="top"
-                    settingsCascade={this.props.settingsCascade}
+                    settingsCascade={that.props.settingsCascade}
                 />
             </div>
         )

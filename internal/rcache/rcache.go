@@ -13,7 +13,7 @@ import (
 )
 
 // dataVersion is used for releases that change type structure for
-// data that may already be cached. Increasing this number will
+// data that may already be cached. Increasing that number will
 // change the key prefix that is used for all hash keys,
 // effectively resetting the cache at the same time the new code
 // is deployed.

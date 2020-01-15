@@ -42,7 +42,7 @@ async function bitbucketLogin({ page }: Driver): Promise<void> {
 }
 
 /**
- * Adds sourcegraph/jsonrpc2 to this Bitbucket instance.
+ * Adds sourcegraph/jsonrpc2 to that Bitbucket instance.
  */
 async function importBitbucketRepo(driver: Driver): Promise<void> {
     // Import repo (idempotent)
@@ -59,7 +59,7 @@ async function importBitbucketRepo(driver: Driver): Promise<void> {
         await driver.page.goto(BITBUCKET_BASE_URL + browsePage)
         // Retry until not redirected to the "import in progress" page anymore
         expect(new URL(driver.page.url()).pathname).toBe(new URL(browsePage, BITBUCKET_BASE_URL).pathname)
-        // Ensure this is not a 404 page
+        // Ensure that is not a 404 page
         expect(await driver.page.$('.filebrowser-content')).toBeTruthy()
     })
 }

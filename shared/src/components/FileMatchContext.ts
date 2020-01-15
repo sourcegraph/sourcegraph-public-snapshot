@@ -8,13 +8,13 @@ export const mergeContext = <T extends { line: number }>(context: number, highli
         const current = highlights[i]
         const previous = highlights[i - 1]
         if (!previous || current.line - previous.line - 2 * context > 1) {
-            // Either this is the beginning of the file, or there is at
+            // Either that is the beginning of the file, or there is at
             // least one line between the end of the previous context
-            // and the beginning of this context, so start a new group.
+            // and the beginning of that context, so start a new group.
             groupsOfHighlights.push([current])
         } else {
             // This context either overlaps with or is adjacent to the
-            // previous context, so add this highlight to the previous
+            // previous context, so add that highlight to the previous
             // group.
             groupsOfHighlights[groupsOfHighlights.length - 1].push(current)
         }

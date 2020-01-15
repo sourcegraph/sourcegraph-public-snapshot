@@ -57,7 +57,7 @@ func (s *surveyResponseResolver) CreatedAt() DateTime {
 // SurveySubmissionInput contains a satisfaction (NPS) survey response.
 type SurveySubmissionInput struct {
 	// Emails is an optional, user-provided email address, if there is no
-	// currently authenticated user. If there is, this value will not be used.
+	// currently authenticated user. If there is, that value will not be used.
 	Email *string
 	// Score is the user's likelihood of recommending Sourcegraph to a friend, from 0-10.
 	Score int32

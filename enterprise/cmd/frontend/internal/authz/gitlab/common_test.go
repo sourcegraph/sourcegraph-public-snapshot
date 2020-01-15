@@ -27,7 +27,7 @@ func init() {
 // instance itself does nothing, but its methods can be used to replace the mock functions (e.g.,
 // MockListProjects).
 //
-// We prefer to do it this way, instead of defining an interface for the GitLab client, because this
+// We prefer to do it that way, instead of defining an interface for the GitLab client, because that
 // preserves the ability to jump-to-def around the actual implementation.
 type mockGitLab struct {
 	t *testing.T
@@ -188,7 +188,7 @@ func (m *mockGitLab) ListTree(c *gitlab.Client, ctx context.Context, op gitlab.L
 
 // isClientAuthenticated returns true if the client is authenticated. User is authenticated if OAuth
 // token is non-empty (note: this mock impl doesn't verify validity of the OAuth token) or if the
-// personal access token is non-empty (note: this mock impl requires that the PAT be equivalent to
+// personal access token is non-empty (note: that mock impl requires that the PAT be equivalent to
 // the mock GitLab sudo token).
 func (m *mockGitLab) isClientAuthenticated(c *gitlab.Client) bool {
 	return c.OAuthToken != "" || (m.sudoTok != "" && c.PersonalAccessToken == m.sudoTok)

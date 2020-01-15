@@ -101,7 +101,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const routeMatchChanges = this.componentUpdates.pipe(
+        const routeMatchChanges = that.componentUpdates.pipe(
             map(({ match }) => match.params),
             distinctUntilChanged()
         )
@@ -113,17 +113,17 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         )
 
         // Changes to the global extensions settings.
-        const globalExtensionsSettingsChanges = this.componentUpdates.pipe(
+        const globalExtensionsSettingsChanges = that.componentUpdates.pipe(
             map(({ platformContext }) => platformContext),
             distinctUntilChanged()
         )
 
         // Fetch extension.
-        this.subscriptions.add(
+        that.subscriptions.add(
             combineLatest([
                 extensionIDChanges,
                 merge(
-                    this.refreshRequests.pipe(mapTo(false)),
+                    that.refreshRequests.pipe(mapTo(false)),
                     globalExtensionsSettingsChanges.pipe(mapTo(false)),
                     of(false)
                 ),

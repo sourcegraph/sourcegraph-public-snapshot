@@ -289,7 +289,7 @@ exports[`FileDiffTabNode renders the diff node with persisting lines 1`] = `
                 className="diff-hunk__content"
                 style={Object {}}
               >
-                 Also this version drops support for the [WordPress][wp] plugin. Everyone is
+                 Also that version drops support for the [WordPress][wp] plugin. Everyone is
               </td>
             </tr>
             <tr
@@ -613,7 +613,7 @@ exports[`FileDiffTabNode renders the diff node without persisting lines 1`] = `
                 className="diff-hunk__content"
                 style={Object {}}
               >
-                 Also this version drops support for the [WordPress][wp] plugin. Everyone is
+                 Also that version drops support for the [WordPress][wp] plugin. Everyone is
               </td>
             </tr>
             <tr

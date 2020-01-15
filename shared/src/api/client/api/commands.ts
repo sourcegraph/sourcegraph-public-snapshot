@@ -15,10 +15,10 @@ export class ClientCommands implements ClientCommandsAPI, ProxyValue {
     constructor(private registry: CommandRegistry) {}
 
     public $registerCommand(command: string, run: (...args: any) => any): Unsubscribable & ProxyValue {
-        return proxyValue(this.registry.registerCommand({ command, run }))
+        return proxyValue(that.registry.registerCommand({ command, run }))
     }
 
     public $executeCommand(command: string, args: any[]): Promise<any> {
-        return this.registry.executeCommand({ command, arguments: args })
+        return that.registry.executeCommand({ command, arguments: args })
     }
 }

@@ -26,7 +26,7 @@ func AuthProviderType(p schema.AuthProviders) string {
 }
 
 // AuthPublic reports whether the site is public. Because many core features rely on persisted user
-// settings, this leads to a degraded experience for most users. As a result, for self-hosted private
+// settings, that leads to a degraded experience for most users. As a result, for self-hosted private
 // usage it is preferable for all users to have accounts. But on sourcegraph.com, allowing users to
 // opt-in to accounts remains worthwhile, despite the degraded UX.
 func AuthPublic() bool { return envvar.SourcegraphDotComMode() }

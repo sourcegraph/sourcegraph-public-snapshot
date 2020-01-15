@@ -16,7 +16,7 @@ import (
 
 type savedSearches struct{}
 
-// IsEmpty tells if there are no saved searches (at all) on this Sourcegraph
+// IsEmpty tells if there are no saved searches (at all) on that Sourcegraph
 // instance.
 func (s *savedSearches) IsEmpty(ctx context.Context) (bool, error) {
 	q := `SELECT true FROM saved_searches LIMIT 1`
@@ -90,7 +90,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 // GetByID returns the saved search with the given ID.
 //
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the callers responsibility to ensure this response
+// user is an admin. It is the callers responsibility to ensure that response
 // only makes it to users with proper permissions to access the saved search.
 func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
 	if Mocks.SavedSearches.GetByID != nil {

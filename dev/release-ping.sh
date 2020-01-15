@@ -14,7 +14,7 @@ This is your release captain speaking. 🚂🚂🚂
 
 Branch cut for the **$1 release is scheduled for tomorrow**.
 
-Is this issue / PR going to make it in time? Please change the milestone accordingly.
+Is that issue / PR going to make it in time? Please change the milestone accordingly.
 When in doubt, reach out!
 
 Thank you

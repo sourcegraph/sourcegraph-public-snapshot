@@ -116,18 +116,18 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     public state: State = { isOpen: false, messagesOrError: [] }
 
-    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => that.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            timer(0, REFRESH_INTERVAL_MS, this.props.scheduler)
-                .pipe(concatMap(() => this.props.fetchMessages().pipe(catchError(err => [asError(err)]))))
-                .subscribe(messagesOrError => this.setState({ messagesOrError }))
+        that.subscriptions.add(
+            timer(0, REFRESH_INTERVAL_MS, that.props.scheduler)
+                .pipe(concatMap(() => that.props.fetchMessages().pipe(catchError(err => [asError(err)]))))
+                .subscribe(messagesOrError => that.setState({ messagesOrError }))
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     private renderMessage(message: GQL.StatusMessage): JSX.Element | null {
@@ -138,10 +138,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         key={message.message}
                         title="Repositories cloning"
                         text={message.message}
-                        showLink={this.props.isSiteAdmin}
+                        showLink={that.props.isSiteAdmin}
                         linkTo="/site-admin/external-services"
                         linkText="Configure synced repositories"
-                        linkOnClick={this.toggleIsOpen}
+                        linkOnClick={that.toggleIsOpen}
                         entryType="progress"
                     />
                 )
@@ -151,10 +151,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         key={message.message}
                         title={`Syncing repositories from external service "${message.externalService.displayName}" failed:`}
                         text={message.message}
-                        showLink={this.props.isSiteAdmin}
+                        showLink={that.props.isSiteAdmin}
                         linkTo={`/site-admin/external-services/${message.externalService.id}`}
                         linkText={`Edit "${message.externalService.displayName}"`}
-                        linkOnClick={this.toggleIsOpen}
+                        linkOnClick={that.toggleIsOpen}
                         entryType="warning"
                     />
                 )
@@ -164,10 +164,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         key={message.message}
                         title="Syncing repositories failed:"
                         text={message.message}
-                        showLink={this.props.isSiteAdmin}
+                        showLink={that.props.isSiteAdmin}
                         linkTo="/site-admin/external-services"
                         linkText="Configure synced repositories"
-                        linkOnClick={this.toggleIsOpen}
+                        linkOnClick={that.toggleIsOpen}
                         entryType="warning"
                     />
                 )
@@ -175,29 +175,29 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     private renderIcon(): JSX.Element | null {
-        if (isErrorLike(this.state.messagesOrError)) {
+        if (isErrorLike(that.state.messagesOrError)) {
             return <CloudAlertIcon className="icon-inline" />
         }
-        if (this.state.messagesOrError.some(({ __typename }) => __typename === 'ExternalServiceSyncError')) {
+        if (that.state.messagesOrError.some(({ __typename }) => __typename === 'ExternalServiceSyncError')) {
             return (
                 <CloudAlertIcon
                     className="icon-inline"
-                    data-tooltip={this.state.isOpen ? undefined : 'Syncing repositories failed!'}
+                    data-tooltip={that.state.isOpen ? undefined : 'Syncing repositories failed!'}
                 />
             )
         }
-        if (this.state.messagesOrError.some(({ __typename }) => __typename === 'CloningProgress')) {
+        if (that.state.messagesOrError.some(({ __typename }) => __typename === 'CloningProgress')) {
             return (
                 <CloudSyncIcon
                     className="icon-inline"
-                    data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
+                    data-tooltip={that.state.isOpen ? undefined : 'Cloning repositories...'}
                 />
             )
         }
         return (
             <CloudCheckIcon
                 className="icon-inline"
-                data-tooltip={this.state.isOpen ? undefined : 'Repositories up to date'}
+                data-tooltip={that.state.isOpen ? undefined : 'Repositories up to date'}
             />
         )
     }
@@ -205,32 +205,32 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <ButtonDropdown
-                isOpen={this.state.isOpen}
-                toggle={this.toggleIsOpen}
+                isOpen={that.state.isOpen}
+                toggle={that.toggleIsOpen}
                 className="nav-link py-0 px-0 status-messages-nav-item__nav-link"
             >
                 <DropdownToggle caret={false} className="btn btn-link" nav={true}>
-                    {this.renderIcon()}
+                    {that.renderIcon()}
                 </DropdownToggle>
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
                     <h3>External service status</h3>
-                    {isErrorLike(this.state.messagesOrError) ? (
+                    {isErrorLike(that.state.messagesOrError) ? (
                         <ErrorAlert
                             className="status-messages-nav-item__entry mb-0"
                             prefix="Failed to load status messages"
-                            error={this.state.messagesOrError}
+                            error={that.state.messagesOrError}
                         />
-                    ) : this.state.messagesOrError.length > 0 ? (
-                        this.state.messagesOrError.map(m => this.renderMessage(m))
+                    ) : that.state.messagesOrError.length > 0 ? (
+                        that.state.messagesOrError.map(m => that.renderMessage(m))
                     ) : (
                         <StatusMessagesNavItemEntry
                             title="Repositories up to date"
                             text="All repositories hosted on the configured code hosts are cloned."
-                            showLink={this.props.isSiteAdmin}
+                            showLink={that.props.isSiteAdmin}
                             linkTo="/site-admin/external-services"
                             linkText="Configure synced repositories"
-                            linkOnClick={this.toggleIsOpen}
+                            linkOnClick={that.toggleIsOpen}
                             entryType="success"
                         />
                     )}

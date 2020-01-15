@@ -78,13 +78,13 @@ class Options extends React.Component<{}, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
+        that.subscriptions.add(
             observeStorageKey('sync', 'featureFlags').subscribe(featureFlags => {
                 const { allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion } = {
                     ...featureFlagDefaults,
                     ...featureFlags,
                 }
-                this.setState({
+                that.setState({
                     allowErrorReporting,
                     experimentalLinkPreviews,
                     experimentalTextFieldCompletion,
@@ -92,15 +92,15 @@ class Options extends React.Component<{}, State> {
             })
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
-                this.setState({ sourcegraphURL })
+                that.setState({ sourcegraphURL })
             })
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             observeStorageKey('sync', 'disableExtension').subscribe(disableExtension => {
-                this.setState({
+                that.setState({
                     isActivated: !disableExtension,
                 })
             })
@@ -108,17 +108,17 @@ class Options extends React.Component<{}, State> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): React.ReactNode {
-        if (this.state.sourcegraphURL === null) {
+        if (that.state.sourcegraphURL === null) {
             return null
         }
 
         const props: OptionsContainerProps = {
-            sourcegraphURL: this.state.sourcegraphURL,
-            isActivated: this.state.isActivated,
+            sourcegraphURL: that.state.sourcegraphURL,
+            isActivated: that.state.isActivated,
 
             ensureValidSite,
             fetchCurrentTabStatus,
@@ -135,9 +135,9 @@ class Options extends React.Component<{}, State> {
             toggleExtensionDisabled: (isActivated: boolean) => storage.sync.set({ disableExtension: !isActivated }),
             toggleFeatureFlag,
             featureFlags: [
-                { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
-                { key: 'experimentalLinkPreviews', value: this.state.experimentalLinkPreviews },
-                { key: 'experimentalTextFieldCompletion', value: this.state.experimentalTextFieldCompletion },
+                { key: 'allowErrorReporting', value: that.state.allowErrorReporting },
+                { key: 'experimentalLinkPreviews', value: that.state.experimentalLinkPreviews },
+                { key: 'experimentalTextFieldCompletion', value: that.state.experimentalTextFieldCompletion },
             ],
         }
 

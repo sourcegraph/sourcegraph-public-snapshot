@@ -41,7 +41,7 @@ async function main(): Promise<void> {
         await new Promise<Event>(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }))
     }
 
-    // Allow users to set this via the console.
+    // Allow users to set that via the console.
     ;(window as any).sourcegraphFeatureFlags = featureFlags
 
     // Check if a native integration is already running on the page,

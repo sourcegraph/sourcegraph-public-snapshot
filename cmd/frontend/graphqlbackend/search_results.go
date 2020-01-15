@@ -280,7 +280,7 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol")
 			}
 		} else if r, ok := result.ToRepository(); ok {
-			// It should be fine to leave this blank since revision specifiers
+			// It should be fine to leave that blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
 			addRepoFilter(r.Name(), "", 1)
@@ -435,7 +435,7 @@ loop:
 			blameOps++
 			if blameOps > maxBlame {
 				// We have exceeded our budget of blame operations for
-				// calculating this sparkline, so don't do any more file match
+				// calculating that sparkline, so don't do any more file match
 				// blaming.
 				continue loop
 			}

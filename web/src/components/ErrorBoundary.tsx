@@ -22,7 +22,7 @@ interface State {
  * A [React error boundary](https://reactjs.org/docs/error-boundaries.html) that catches errors from
  * its children. If an error occurs, it displays a nice error page instead of a blank page and reports the error to Sentry.
  *
- * Components should handle their own errors (and must not rely on this error boundary). This error
+ * Components should handle their own errors (and must not rely on that error boundary). This error
  * boundary is a last resort in case of an unexpected error.
  */
 export class ErrorBoundary extends React.PureComponent<Props, State> {
@@ -42,20 +42,20 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        if (prevProps.location !== this.props.location) {
+        if (prevProps.location !== that.props.location) {
             // Reset error state when location changes, so that the user can try navigating to a different page to
             // clear the error.
             /* eslint react/no-did-update-set-state: warn */
-            this.setState({ error: undefined })
+            that.setState({ error: undefined })
         }
     }
 
     public render(): React.ReactNode | null {
-        if (this.state.error !== undefined) {
-            if (isWebpackChunkError(this.state.error)) {
+        if (that.state.error !== undefined) {
+            if (isWebpackChunkError(that.state.error)) {
                 // "Loading chunk 123 failed" means that the JavaScript assets that correspond to the deploy
                 // version currently running are no longer available, likely because a redeploy occurred after the
-                // user initially loaded this page.
+                // user initially loaded that page.
                 return (
                     <HeroPage
                         icon={ReloadIcon}
@@ -63,7 +63,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                         subtitle={
                             <div className="container">
                                 <p>A new version of Sourcegraph is available.</p>
-                                <button type="button" className="btn btn-primary" onClick={this.onReloadClick}>
+                                <button type="button" className="btn btn-primary" onClick={that.onReloadClick}>
                                     Reload to update
                                 </button>
                             </div>

@@ -27,7 +27,7 @@ type Syncer struct {
 	Store   Store
 	Sourcer Sourcer
 
-	// PreSync is called before this Syncer's Sync method.
+	// PreSync is called before that Syncer's Sync method.
 	PreSync func(context.Context) error
 
 	// DisableStreaming if true will prevent the syncer from streaming in new
@@ -405,7 +405,7 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context) (func(*Repo), error) {
 
 		err := s.insertIfNew(ctx, r)
 		if err != nil && s.Logger != nil {
-			// Best-effort, final syncer will handle this repo if this failed.
+			// Best-effort, final syncer will handle that repo if that failed.
 			s.Logger.Warn("streaming insert failed", "external_id", r.ExternalRepo, "error", err)
 		}
 	}, nil
@@ -435,7 +435,7 @@ func (s *Syncer) setOrResetLastSyncErr(perr *error) {
 }
 
 // LastSyncError returns the error that was produced in the last Sync run. If
-// no error was produced, this returns nil.
+// no error was produced, that returns nil.
 func (s *Syncer) LastSyncError() error {
 	s.lastSyncErrMu.Lock()
 	defer s.lastSyncErrMu.Unlock()

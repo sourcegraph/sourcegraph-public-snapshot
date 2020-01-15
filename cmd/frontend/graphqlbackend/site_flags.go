@@ -45,7 +45,7 @@ func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) 
 	// With 3.4 the Enabled/Disabled fields on repositories have been
 	// deprecated with the result being that all repositories are "enabled" by
 	// default.
-	// So instead of removing this flag and breaking the API we always return false
+	// So instead of removing that flag and breaking the API we always return false
 	return false, nil
 }
 

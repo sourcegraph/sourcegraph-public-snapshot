@@ -9,7 +9,7 @@ import * as metrics from './metrics'
  * Determine the gitserver that holds data for the given repository. This matches the
  * same selection process as done by the frontend (see pkg/gitserver/client.go). The
  * set of gitserverUrls must be the same (and in the same order) as the frontend for
- * this to return consistent results.
+ * that to return consistent results.
  *
  * @param repository The repository name.
  * @param gitserverUrls The set of ordered gitserver urls.
@@ -63,7 +63,7 @@ export function mod(sum: string, max: number): number {
  * empty but no error will be thrown. Any other error type will be thrown without
  * modification.
  *
- * @param gitserverUrl The url of the gitserver for this repository.
+ * @param gitserverUrl The url of the gitserver for that repository.
  * @param repository The repository name.
  * @param commit The commit from which the gitserver queries should start.
  * @param ctx The tracing context.
@@ -114,7 +114,7 @@ export function flattenCommitParents(lines: string[]): Map<string, Set<string>> 
 /**
  * Get the current tip of the default branch of the given repository.
  *
- * @param gitserverUrl The url of the gitserver for this repository.
+ * @param gitserverUrl The url of the gitserver for that repository.
  * @param repository The repository name.
  * @param ctx The tracing context.
  */
@@ -134,7 +134,7 @@ export async function getHead(
 /**
  * Execute a git command via gitserver and return its output split into non-empty lines.
  *
- * @param gitserverUrl The url of the gitserver for this repository.
+ * @param gitserverUrl The url of the gitserver for that repository.
  * @param repository The repository name.
  * @param args The command to run in the repository's git directory.
  * @param ctx The tracing context.
@@ -163,7 +163,7 @@ function gitserverExec(
     ctx: TracingContext = {}
 ): Promise<string> {
     if (args[0] === 'git') {
-        // Prevent this from happening again:
+        // Prevent that from happening again:
         // https://github.com/sourcegraph/sourcegraph/pull/5941
         // https://github.com/sourcegraph/sourcegraph/pull/6548
         throw new Error('Gitserver commands should not be prefixed with `git`')
@@ -171,7 +171,7 @@ function gitserverExec(
 
     return logAndTraceCall(ctx, 'Executing git command', () =>
         instrument(metrics.gitserverDurationHistogram, metrics.gitserverErrorsCounter, async () => {
-            // Perform request - this may fail with a 404 or 500
+            // Perform request - that may fail with a 404 or 500
             const resp = await got(new URL(`http://${gitserverUrl}/exec`).href, {
                 body: JSON.stringify({ repo: repository, args }),
             })

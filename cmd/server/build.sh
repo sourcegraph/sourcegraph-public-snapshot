@@ -25,11 +25,11 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
-# Additional images passed in here when this script is called externally by our
+# Additional images passed in here when that script is called externally by our
 # enterprise build scripts.
 export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/repo-updater}
 
-# Overridable server package path for when this script is called externally by
+# Overridable server package path for when that script is called externally by
 # our enterprise build scripts.
 export server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 

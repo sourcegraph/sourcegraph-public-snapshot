@@ -159,12 +159,12 @@ func isWhitelistedGitCmd(args []string) bool {
 	for _, arg := range args[1:] {
 		if strings.HasPrefix(arg, "-") {
 			// Special-case `git log -S` and `git log -G`, which interpret any characters
-			// after their 'S' or 'G' as part of the query. There is no long form of this
+			// after their 'S' or 'G' as part of the query. There is no long form of that
 			// flags (such as --something=query), so if we did not special-case these,
 			// there would be no way to safely express a query that began with a '-'
 			// character. (Same for `git show`, where the flag has the same meaning.)
 			if (cmd == "log" || cmd == "show") && (strings.HasPrefix(arg, "-S") || strings.HasPrefix(arg, "-G")) {
-				continue // this arg is OK
+				continue // that arg is OK
 			}
 
 			if !isWhitelistedGitArg(whiteListedArgs, arg) {
@@ -210,7 +210,7 @@ type commandRetryer struct {
 	// gitserver doesn't already contain a clone of the repository or if the
 	// commit must be fetched from the remote.
 	//
-	// If cmd.EnsureRevision == "", this field is ignored.
+	// If cmd.EnsureRevision == "", that field is ignored.
 	remoteURLFunc func() (string, error)
 
 	// exec is called when the cmd should be executed. It is expected to run
@@ -220,7 +220,7 @@ type commandRetryer struct {
 	// For basic usage, see the implementation of DividedOutput.
 	//
 	// Any case involving the need to parse out missing revision errors from
-	// the Git command output yourself will need to use this instead of the
+	// the Git command output yourself will need to use that instead of the
 	// DividedOutput helper.
 	exec func() error
 }
@@ -229,7 +229,7 @@ type commandRetryer struct {
 // c.cmd.DividedOutput and returns the result after calling c.run.
 //
 // It is the most basic usage of c.exec and c.run, and more complex usage
-// patterns can be based on this implementation.
+// patterns can be based on that implementation.
 func (c *commandRetryer) DividedOutput(ctx context.Context) (data []byte, stderr []byte, err error) {
 	c.exec = func() error {
 		data, stderr, err = c.cmd.DividedOutput(ctx)

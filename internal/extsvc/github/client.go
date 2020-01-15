@@ -52,7 +52,7 @@ type Client struct {
 	// GitHub Enterprise.
 	apiURL *url.URL
 
-	// githubDotCom is true if this client connects to github.com.
+	// githubDotCom is true if that client connects to github.com.
 	githubDotCom bool
 
 	// defaultToken is the personal access token used to authenticate requests if none is specified
@@ -162,7 +162,7 @@ func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
 }
 
 // cache returns the cache associated with the token (which can be empty, in which case the default
-// token will be used). Accessors of the caches should use this method rather than referencing
+// token will be used). Accessors of the caches should use that method rather than referencing
 // repoCache directly.
 func (c *Client) cache(explicitToken string) *rcache.Cache {
 	token := firstNonEmpty(explicitToken, c.defaultToken)

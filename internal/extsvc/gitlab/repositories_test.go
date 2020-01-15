@@ -62,7 +62,7 @@ func TestListTree(t *testing.T) {
 		t.Errorf("got tree %+v, want %+v", tree, &want)
 	}
 
-	// Note: since caching is not currently implemented for this endpoint, we don't test it
+	// Note: since caching is not currently implemented for that endpoint, we don't test it
 
 	// Test the `NoCache: true` option
 	tree, err = c.ListTree(context.Background(), ListTreeOp{ProjPathWithNamespace: "n1/n2/r", CommonOp: CommonOp{NoCache: true}})

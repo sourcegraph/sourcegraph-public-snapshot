@@ -49,28 +49,28 @@ export class SiteAdminProductLicenseNode extends React.PureComponent<SiteAdminPr
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
-                    {this.props.showSubscription && (
+                    {that.props.showSubscription && (
                         <div className="mr-3 text-truncate">
                             <strong>
                                 License in{' '}
-                                <LinkOrSpan to={this.props.node.subscription.urlForSiteAdmin} className="mr-3">
-                                    {this.props.node.subscription.name}
+                                <LinkOrSpan to={that.props.node.subscription.urlForSiteAdmin} className="mr-3">
+                                    {that.props.node.subscription.name}
                                 </LinkOrSpan>
                             </strong>
                             <span className="mr-3">
-                                <AccountName account={this.props.node.subscription.account} />
+                                <AccountName account={that.props.node.subscription.account} />
                             </span>
                         </div>
                     )}
                     <div>
-                        {this.props.node.info && (
-                            <ProductLicenseInfoDescription licenseInfo={this.props.node.info} className="mr-3" />
+                        {that.props.node.info && (
+                            <ProductLicenseInfoDescription licenseInfo={that.props.node.info} className="mr-3" />
                         )}
-                        {this.props.node.info &&
-                        this.props.node.subscription.activeLicense &&
-                        this.props.node.subscription.activeLicense.id === this.props.node.id ? (
+                        {that.props.node.info &&
+                        that.props.node.subscription.activeLicense &&
+                        that.props.node.subscription.activeLicense.id === that.props.node.id ? (
                             <ProductLicenseValidity
-                                licenseInfo={this.props.node.info}
+                                licenseInfo={that.props.node.info}
                                 primary={false}
                                 className="d-inline-block mr-3"
                             />
@@ -83,21 +83,21 @@ export class SiteAdminProductLicenseNode extends React.PureComponent<SiteAdminPr
                             </span>
                         )}
                         <span className="text-muted">
-                            Created <Timestamp date={this.props.node.createdAt} />
+                            Created <Timestamp date={that.props.node.createdAt} />
                         </span>
                     </div>
                 </div>
-                {this.props.node.info && this.props.node.info.tags.length > 0 && (
+                {that.props.node.info && that.props.node.info.tags.length > 0 && (
                     <div>
                         Tags:{' '}
-                        {this.props.node.info.tags.map(tag => (
+                        {that.props.node.info.tags.map(tag => (
                             <div className="mr-1 badge badge-secondary" key={tag}>
                                 {tag}
                             </div>
                         ))}
                     </div>
                 )}
-                <CopyableText text={this.props.node.licenseKey} className="mt-2 d-block" />
+                <CopyableText text={that.props.node.licenseKey} className="mt-2 d-block" />
             </li>
         )
     }

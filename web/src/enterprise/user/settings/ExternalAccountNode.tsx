@@ -72,18 +72,18 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.deletes
+        that.subscriptions.add(
+            that.deletes
                 .pipe(
                     filter(() => window.confirm('Really delete the association with this external account?')),
                     switchMap(() =>
-                        deleteExternalAccount(this.props.node.id).pipe(
+                        deleteExternalAccount(that.props.node.id).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
                             map(c => ({ deletionOrError: c })),
                             tap(() => {
-                                if (this.props.onDidUpdate) {
-                                    this.props.onDidUpdate()
+                                if (that.props.onDidUpdate) {
+                                    that.props.onDidUpdate()
                                 }
                             }),
                             startWith<Pick<ExternalAccountNodeState, 'deletionOrError'>>({ deletionOrError: undefined })
@@ -91,82 +91,82 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const loading = this.state.deletionOrError === undefined
+        const loading = that.state.deletionOrError === undefined
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="mr-2 text-truncate">
-                        {this.props.showUser && (
+                        {that.props.showUser && (
                             <>
                                 <strong>
-                                    <Link to={userURL(this.props.node.user.username)}>
-                                        {this.props.node.user.username}
+                                    <Link to={userURL(that.props.node.user.username)}>
+                                        {that.props.node.user.username}
                                     </Link>
                                 </strong>{' '}
                                 &mdash;{' '}
                             </>
                         )}
-                        <span className="badge badge-secondary">{this.props.node.serviceType}</span>{' '}
-                        {this.props.node.accountID}
-                        {(this.props.node.serviceID || this.props.node.clientID) && (
+                        <span className="badge badge-secondary">{that.props.node.serviceType}</span>{' '}
+                        {that.props.node.accountID}
+                        {(that.props.node.serviceID || that.props.node.clientID) && (
                             <small className="text-muted">
                                 <br />
-                                {this.props.node.serviceID}
-                                {this.state.showData && this.props.node.clientID && (
-                                    <> &mdash; {this.props.node.clientID}</>
+                                {that.props.node.serviceID}
+                                {that.state.showData && that.props.node.clientID && (
+                                    <> &mdash; {that.props.node.clientID}</>
                                 )}
                             </small>
                         )}
                         <br />
                         <small className="text-muted">
-                            Updated <Timestamp date={this.props.node.updatedAt} />
+                            Updated <Timestamp date={that.props.node.updatedAt} />
                         </small>
                     </div>
                     <div className="text-nowrap">
-                        {this.props.node.accountData && (
-                            <button type="button" className="btn btn-secondary" onClick={this.toggleShowData}>
-                                {this.state.showData ? 'Hide' : 'Show'} data
+                        {that.props.node.accountData && (
+                            <button type="button" className="btn btn-secondary" onClick={that.toggleShowData}>
+                                {that.state.showData ? 'Hide' : 'Show'} data
                             </button>
                         )}{' '}
-                        {this.props.node.refreshURL && (
-                            <a className="btn btn-secondary" href={this.props.node.refreshURL}>
+                        {that.props.node.refreshURL && (
+                            <a className="btn btn-secondary" href={that.props.node.refreshURL}>
                                 Refresh
                             </a>
                         )}{' '}
                         <button
                             type="button"
                             className="btn btn-danger"
-                            onClick={this.deleteExternalAccount}
+                            onClick={that.deleteExternalAccount}
                             disabled={loading}
                         >
                             Delete
                         </button>
-                        {isErrorLike(this.state.deletionOrError) && (
-                            <ErrorAlert className="mt-2" error={this.state.deletionOrError} />
+                        {isErrorLike(that.state.deletionOrError) && (
+                            <ErrorAlert className="mt-2" error={that.state.deletionOrError} />
                         )}
                     </div>
                 </div>
-                {this.state.showData && (
+                {that.state.showData && (
                     <pre className="p-2 mt-2 mb-4">
-                        <small>{JSON.stringify(this.props.node.accountData, null, 2)}</small>
+                        <small>{JSON.stringify(that.props.node.accountData, null, 2)}</small>
                     </pre>
                 )}
             </li>
         )
     }
 
-    private deleteExternalAccount = (): void => this.deletes.next()
+    private deleteExternalAccount = (): void => that.deletes.next()
 
-    private toggleShowData = (): void => this.setState(prev => ({ showData: !prev.showData }))
+    private toggleShowData = (): void => that.setState(prev => ({ showData: !prev.showData }))
 }

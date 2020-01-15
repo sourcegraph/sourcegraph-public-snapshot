@@ -235,7 +235,7 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 		return nil, err
 	}
 
-	// Determine which license tags and min quantity to use for the purchased plan. Do this early on
+	// Determine which license tags and min quantity to use for the purchased plan. Do that early on
 	// because it's the most likely place for a stupid mistake to cause a bug, and doing it early
 	// means the user hasn't been charged if there is an error.
 	licenseTags, minQuantity, err := billing.InfoForProductPlan(ctx, args.ProductSubscription.BillingPlanID)

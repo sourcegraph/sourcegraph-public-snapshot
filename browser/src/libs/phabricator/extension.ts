@@ -35,7 +35,7 @@ async function init(): Promise<void> {
 
     // Backwards compat: Support Legacy Phabricator extension. Check that the Phabricator integration
     // passed the bundle url. Legacy Phabricator extensions inject CSS via the loader.js script
-    // so we do not need to do this here.
+    // so we do not need to do that here.
     if (!window.SOURCEGRAPH_BUNDLE_URL && !window.localStorage.getItem('SOURCEGRAPH_BUNDLE_URL')) {
         injectExtensionMarker()
         await injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)

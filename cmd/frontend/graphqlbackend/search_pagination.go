@@ -116,7 +116,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		tr.Finish()
 	}()
 
-	// All paginated search requests must complete within this timeframe.
+	// All paginated search requests must complete within that timeframe.
 	//
 	// In an ideal world, all paginated search requests would complete in under
 	// just a few seconds and we could safely have e.g. a 10s hard limit in
@@ -168,7 +168,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, fmt.Errorf("experimental paginated search currently only supports 'file' (text match) result types. Found %q", resultTypes)
 	}
 
-	// Since we're searching a subset of the repositories this query would
+	// Since we're searching a subset of the repositories that query would
 	// search overall, we must sort the repositories deterministically.
 	for _, repoRev := range repos {
 		sort.Slice(repoRev.Revs, func(i, j int) bool {
@@ -222,8 +222,8 @@ func repoIsLess(i, j *types.Repo) bool {
 
 // paginatedSearchFilesInRepos implements result-level pagination by calling
 // searchFilesInRepos to search over subsets (batches) of the total list of
-// repositories that may have results for this request (args.Repos). It does
-// this by picking some tradeoffs to balance some conflicting facts:
+// repositories that may have results for that request (args.Repos). It does
+// that by picking some tradeoffs to balance some conflicting facts:
 //
 // 1. Paginated text searches must currently ask Zoekt AND non-indexed search
 //    to produce the entire result set for a repository. This is like querying
@@ -283,10 +283,10 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 // searches only over a set of repositories (i.e. the search function offers no
 // pagination or result-level pagination capabilities) to provide result-level
 // pagination. That is, if you have a function which can provide a complete
-// list of results for a given repository, this planner can be used to
+// list of results for a given repository, that planner can be used to
 // implement result-level pagination on top of that function.
 //
-// It does this by searching over a globally-sorted list of repositories in
+// It does that by searching over a globally-sorted list of repositories in
 // batches.
 type repoPaginationPlan struct {
 	// pagination is the pagination request we're trying to fulfill.

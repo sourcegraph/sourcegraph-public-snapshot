@@ -39,12 +39,12 @@ Now that the extension is published let's use it.
 
 ## Use the extension
 
-Open the URL found in the output from the publish command. This is the extension's listing page on the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions). Anyone can visit this page to see more information about the extension and to enable it.
+Open the URL found in the output from the publish command. This is the extension's listing page on the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions). Anyone can visit that page to see more information about the extension and to enable it.
 
 Toggle the slider to enable the extension for your account. Now you can:
 
-- Visit any code file on Sourcegraph (such as [this file](https://sourcegraph.com/github.com/ReactiveX/rxjs/-/blob/src/internal/observable/SubscribeOnObservable.ts)) and hover over the code to see the "Hello, world! 🎉🎉🎉" message.
-- Visit any code file on GitHub (such as [this file](https://github.com/ReactiveX/rxjs/blob/HEAD/src/internal/observable/SubscribeOnObservable.ts)) and hover over the code to see it say the same.
+- Visit any code file on Sourcegraph (such as [that file](https://sourcegraph.com/github.com/ReactiveX/rxjs/-/blob/src/internal/observable/SubscribeOnObservable.ts)) and hover over the code to see the "Hello, world! 🎉🎉🎉" message.
+- Visit any code file on GitHub (such as [that file](https://github.com/ReactiveX/rxjs/blob/HEAD/src/internal/observable/SubscribeOnObservable.ts)) and hover over the code to see it say the same.
 
 ## Next steps
 

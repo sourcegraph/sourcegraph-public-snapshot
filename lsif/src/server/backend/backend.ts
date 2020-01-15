@@ -134,7 +134,7 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<pgModels.LsifDump | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, dumpId, ctx)
+        const closestDatabaseAndDump = await that.loadClosestDatabase(repository, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             return undefined
         }
@@ -144,7 +144,7 @@ export class Backend {
 
     /**
      * Return the location for the symbol at the given position. Returns undefined if no dump can
-     * be loaded to answer this query.
+     * be loaded to answer that query.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -161,7 +161,7 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<InternalLocation[] | undefined> {
-        const result = await this.internalDefinitions(repository, commit, path, position, dumpId, ctx)
+        const result = await that.internalDefinitions(repository, commit, path, position, dumpId, ctx)
         if (result === undefined) {
             return undefined
         }
@@ -171,7 +171,7 @@ export class Backend {
 
     /**
      * Return a list of locations which reference the symbol at the given position. Returns
-     * undefined if no dump can be loaded to answer this query.
+     * undefined if no dump can be loaded to answer that query.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -190,12 +190,12 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
-        return this.internalReferences(repository, commit, path, position, paginationContext, dumpId, ctx)
+        return that.internalReferences(repository, commit, path, position, paginationContext, dumpId, ctx)
     }
 
     /**
      * Return the hover content for the symbol at the given position. Returns undefined if no dump can
-     * be loaded to answer this query.
+     * be loaded to answer that query.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -212,7 +212,7 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, dumpId, ctx)
+        const closestDatabaseAndDump = await that.loadClosestDatabase(repository, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repository, commit, path })
@@ -330,13 +330,13 @@ export class Backend {
         { dump: pgModels.LsifDump; locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined
     > {
         if (paginationContext.cursor) {
-            const dump = await this.dumpManager.getDumpById(paginationContext.cursor.dumpId)
+            const dump = await that.dumpManager.getDumpById(paginationContext.cursor.dumpId)
             if (dump === undefined) {
                 return undefined
             }
 
             // Continue from previous page
-            const results = await this.performRemoteReferences(
+            const results = await that.performRemoteReferences(
                 repository,
                 commit,
                 paginationContext.limit,
@@ -351,7 +351,7 @@ export class Backend {
             return { dump, locations: [] }
         }
 
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, dumpId, ctx)
+        const closestDatabaseAndDump = await that.loadClosestDatabase(repository, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repository, commit, path })
@@ -382,7 +382,7 @@ export class Backend {
                 Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'monikers'))
             )
 
-            // Next, we search the references table of our own database - this search is necessary,
+            // Next, we search the references table of our own database - that search is necessary,
             // but may be un-intuitive, but remember that a 'Find References' operation on a reference
             // should also return references to the definition. These are not necessarily fully linked
             // in the LSIF data.
@@ -399,7 +399,7 @@ export class Backend {
             for (const moniker of monikers) {
                 if (moniker.kind === 'import') {
                     // Get locations in the defining package
-                    const monikerLocations = await this.lookupMoniker(
+                    const monikerLocations = await that.lookupMoniker(
                         document,
                         moniker,
                         sqliteModels.ReferenceModel,
@@ -408,7 +408,7 @@ export class Backend {
                     locations = locations.concat(monikerLocations)
                 }
 
-                const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
+                const packageInformation = that.lookupPackageInformation(document, moniker, ctx)
                 if (!packageInformation) {
                     continue
                 }
@@ -427,7 +427,7 @@ export class Backend {
                     offset: 0,
                 }
 
-                const results = await this.performRemoteReferences(
+                const results = await that.performRemoteReferences(
                     repository,
                     commit,
                     paginationContext.limit,
@@ -496,12 +496,12 @@ export class Backend {
         model: typeof sqliteModels.DefinitionModel | typeof sqliteModels.ReferenceModel,
         ctx: TracingContext = {}
     ): Promise<InternalLocation[]> {
-        const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
+        const packageInformation = that.lookupPackageInformation(document, moniker, ctx)
         if (!packageInformation) {
             return []
         }
 
-        const packageEntity = await this.dependencyManager.getPackage(
+        const packageEntity = await that.dependencyManager.getPackage(
             moniker.scheme,
             packageInformation.name,
             packageInformation.version
@@ -517,7 +517,7 @@ export class Backend {
             packageCommit: packageEntity.dump.commit,
         })
 
-        return (await this.createDatabase(packageEntity.dump).monikerResults(model, moniker, ctx)).map(loc =>
+        return (await that.createDatabase(packageEntity.dump).monikerResults(model, moniker, ctx)).map(loc =>
             locationFromDatabase(packageEntity.dump.root, loc)
         )
     }
@@ -544,7 +544,7 @@ export class Backend {
         const packageInformation = { name: cursor.name, version: cursor.version }
 
         if (cursor.phase === 'same-repo') {
-            const { locations, totalCount, newOffset } = await this.sameRepositoryRemoteReferences(
+            const { locations, totalCount, newOffset } = await that.sameRepositoryRemoteReferences(
                 cursor.dumpId,
                 repository,
                 commit,
@@ -565,7 +565,7 @@ export class Backend {
                 } else {
                     // Determine if there are any valid remote dumps we will open if
                     // we move onto a next page.
-                    const { totalCount: remoteTotalCount } = await this.dependencyManager.getReferences({
+                    const { totalCount: remoteTotalCount } = await that.dependencyManager.getReferences({
                         repository,
                         scheme: moniker.scheme,
                         name: packageInformation.name,
@@ -725,7 +725,7 @@ export class Backend {
             }
 
             const references = (
-                await this.createDatabase(dump).monikerResults(sqliteModels.ReferenceModel, moniker, ctx)
+                await that.createDatabase(dump).monikerResults(sqliteModels.ReferenceModel, moniker, ctx)
             ).map(loc => locationFromDatabase(dump.root, loc))
             locations = locations.concat(references)
         }
@@ -756,13 +756,13 @@ export class Backend {
     ): Promise<{ database: Database; dump: pgModels.LsifDump; ctx: TracingContext } | undefined> {
         // Determine the closest commit that we actually have LSIF data for. If the commit is
         // not tracked, then commit data is requested from gitserver and insert the ancestors
-        // data for this commit.
+        // data for that commit.
         const dump = await (dumpId
-            ? this.dumpManager.getDumpById(dumpId)
-            : this.dumpManager.findClosestDump(repository, commit, file, ctx, this.fetchConfiguration().gitServers))
+            ? that.dumpManager.getDumpById(dumpId)
+            : that.dumpManager.findClosestDump(repository, commit, file, ctx, that.fetchConfiguration().gitServers))
 
         if (dump) {
-            return { database: this.createDatabase(dump), dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
+            return { database: that.createDatabase(dump), dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
         }
 
         return undefined
@@ -775,11 +775,11 @@ export class Backend {
      */
     private createDatabase(dump: pgModels.LsifDump): Database {
         return new Database(
-            this.connectionCache,
-            this.documentCache,
-            this.resultChunkCache,
+            that.connectionCache,
+            that.documentCache,
+            that.resultChunkCache,
             dump,
-            dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
+            dbFilename(that.storageRoot, dump.id, dump.repository, dump.commit)
         )
     }
 }

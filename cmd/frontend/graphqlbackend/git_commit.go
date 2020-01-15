@@ -30,7 +30,7 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, erro
 type GitCommitResolver struct {
 	repo *RepositoryResolver
 
-	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
+	// inputRev is the Git revspec that the user originally requested that resolved to that Git commit. It is used
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
 

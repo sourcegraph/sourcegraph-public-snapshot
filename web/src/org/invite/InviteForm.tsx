@@ -137,18 +137,18 @@ export class InviteForm extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const orgChanges = this.componentUpdates.pipe(distinctUntilChanged((a, b) => a.orgID !== b.orgID))
+        const orgChanges = that.componentUpdates.pipe(distinctUntilChanged((a, b) => a.orgID !== b.orgID))
 
         type Update = (prevState: State) => State
 
-        this.subscriptions.add(this.usernameChanges.subscribe(username => this.setState({ username })))
+        that.subscriptions.add(that.usernameChanges.subscribe(username => that.setState({ username })))
 
         // Invite clicks.
-        this.subscriptions.add(
-            merge(this.submits.pipe(filter(() => !this.viewerCanAddUserToOrganization)), this.inviteClicks)
+        that.subscriptions.add(
+            merge(that.submits.pipe(filter(() => !that.viewerCanAddUserToOrganization)), that.inviteClicks)
                 .pipe(
                     tap(e => e.preventDefault()),
-                    withLatestFrom(orgChanges, this.usernameChanges),
+                    withLatestFrom(orgChanges, that.usernameChanges),
                     tap(([, orgId, username]) =>
                         eventLogger.log('InviteOrgMemberClicked', {
                             organization: {
@@ -161,8 +161,8 @@ export class InviteForm extends React.PureComponent<Props, State> {
                     ),
                     mergeMap(([, { orgID }, username]) =>
                         inviteUserToOrganization(username, orgID).pipe(
-                            tap(() => this.props.onOrganizationUpdate()),
-                            tap(() => this.usernameChanges.next('')),
+                            tap(() => that.props.onOrganizationUpdate()),
+                            tap(() => that.usernameChanges.next('')),
                             mergeMap(({ sentInvitationEmail, invitationURL }) =>
                                 // Reset email, reenable submit button, flash "invited" text
                                 of(
@@ -190,22 +190,22 @@ export class InviteForm extends React.PureComponent<Props, State> {
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     err => console.error(err)
                 )
         )
 
         // Adds.
-        this.subscriptions.add(
-            this.submits
-                .pipe(filter(() => this.viewerCanAddUserToOrganization))
+        that.subscriptions.add(
+            that.submits
+                .pipe(filter(() => that.viewerCanAddUserToOrganization))
                 .pipe(
                     tap(e => e.preventDefault()),
-                    withLatestFrom(orgChanges, this.usernameChanges),
+                    withLatestFrom(orgChanges, that.usernameChanges),
                     mergeMap(([, { orgID }, username]) =>
                         addUserToOrganization(username, orgID).pipe(
-                            tap(() => this.props.onDidUpdateOrganizationMembers()),
-                            tap(() => this.usernameChanges.next('')),
+                            tap(() => that.props.onDidUpdateOrganizationMembers()),
+                            tap(() => that.usernameChanges.next('')),
                             mergeMap(() =>
                                 // Reset email, reenable submit button, flash "invited" text
                                 of(
@@ -229,37 +229,37 @@ export class InviteForm extends React.PureComponent<Props, State> {
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     err => console.error(err)
                 )
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     private get viewerCanAddUserToOrganization(): boolean {
-        return !!this.props.authenticatedUser && this.props.authenticatedUser.siteAdmin
+        return !!that.props.authenticatedUser && that.props.authenticatedUser.siteAdmin
     }
 
     public render(): JSX.Element | null {
-        const viewerCanAddUserToOrganization = this.viewerCanAddUserToOrganization
+        const viewerCanAddUserToOrganization = that.viewerCanAddUserToOrganization
 
         return (
             <div className="invite-form">
                 <div className="card invite-form__container">
                     <div className="card-body">
                         <h4 className="card-title">
-                            {this.viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
+                            {that.viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
                         </h4>
-                        <Form className="form-inline align-items-start" onSubmit={this.onSubmit}>
+                        <Form className="form-inline align-items-start" onSubmit={that.onSubmit}>
                             <label className="sr-only" htmlFor="invite-form__username">
                                 Username
                             </label>
@@ -268,8 +268,8 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                 className="form-control mb-2 mr-sm-2"
                                 id="invite-form__username"
                                 placeholder="Username"
-                                onChange={this.onUsernameChange}
-                                value={this.state.username}
+                                onChange={that.onUsernameChange}
+                                value={that.state.username}
                                 autoComplete="off"
                                 autoCapitalize="off"
                                 autoCorrect="off"
@@ -280,11 +280,11 @@ export class InviteForm extends React.PureComponent<Props, State> {
                             {viewerCanAddUserToOrganization && (
                                 <button
                                     type="submit"
-                                    disabled={!!this.state.loading}
+                                    disabled={!!that.state.loading}
                                     className="btn btn-primary mb-2 mr-sm-2"
                                     data-tooltip="Add immediately without sending invitation (site admins only)"
                                 >
-                                    {this.state.loading === 'addUserToOrganization' ? (
+                                    {that.state.loading === 'addUserToOrganization' ? (
                                         <LoadingSpinner className="icon-inline" />
                                     ) : (
                                         <AddIcon className="icon-inline" />
@@ -292,12 +292,12 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                     Add member
                                 </button>
                             )}
-                            {(emailInvitesEnabled || !this.viewerCanAddUserToOrganization) && (
+                            {(emailInvitesEnabled || !that.viewerCanAddUserToOrganization) && (
                                 <div className="form-group flex-column mb-2 mr-sm-2">
                                     {/* eslint-disable-next-line react/button-has-type */}
                                     <button
                                         type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
-                                        disabled={!!this.state.loading}
+                                        disabled={!!that.state.loading}
                                         className={`btn ${
                                             viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'
                                         }`}
@@ -306,15 +306,15 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                                 ? 'Send invitation email with link to join this organization'
                                                 : 'Generate invitation link to manually send to user'
                                         }
-                                        onClick={viewerCanAddUserToOrganization ? this.onInviteClick : undefined}
+                                        onClick={viewerCanAddUserToOrganization ? that.onInviteClick : undefined}
                                     >
-                                        {this.state.loading === 'inviteUserToOrganization' ? (
+                                        {that.state.loading === 'inviteUserToOrganization' ? (
                                             <LoadingSpinner className="icon-inline" />
                                         ) : (
                                             <EmailOpenOutlineIcon className="icon-inline" />
                                         )}{' '}
                                         {emailInvitesEnabled
-                                            ? this.viewerCanAddUserToOrganization
+                                            ? that.viewerCanAddUserToOrganization
                                                 ? 'Send invitation to join'
                                                 : 'Send invitation'
                                             : 'Generate invitation link'}
@@ -324,8 +324,8 @@ export class InviteForm extends React.PureComponent<Props, State> {
                         </Form>
                     </div>
                 </div>
-                {this.props.authenticatedUser &&
-                    this.props.authenticatedUser.siteAdmin &&
+                {that.props.authenticatedUser &&
+                    that.props.authenticatedUser.siteAdmin &&
                     !window.context.emailEnabled && (
                         <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
                             <p className=" mb-0">
@@ -335,8 +335,8 @@ export class InviteForm extends React.PureComponent<Props, State> {
                             </p>
                         </DismissibleAlert>
                     )}
-                {this.state.invited &&
-                    this.state.invited.map(({ username, sentInvitationEmail, invitationURL }, i) => (
+                {that.state.invited &&
+                    that.state.invited.map(({ username, sentInvitationEmail, invitationURL }, i) => (
                         /* eslint-disable react/jsx-no-bind */
                         <InvitedNotification
                             key={i}
@@ -344,21 +344,21 @@ export class InviteForm extends React.PureComponent<Props, State> {
                             username={username}
                             sentInvitationEmail={sentInvitationEmail}
                             invitationURL={invitationURL}
-                            onDismiss={() => this.dismissNotification(i)}
+                            onDismiss={() => that.dismissNotification(i)}
                         />
                         /* eslint-enable react/jsx-no-bind */
                     ))}
-                {this.state.error && <ErrorAlert className="invite-form__alert" error={this.state.error} />}
+                {that.state.error && <ErrorAlert className="invite-form__alert" error={that.state.error} />}
             </div>
         )
     }
 
     private onUsernameChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-        this.usernameChanges.next(e.currentTarget.value)
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
-    private onInviteClick: React.MouseEventHandler<HTMLButtonElement> = e => this.inviteClicks.next(e)
+        that.usernameChanges.next(e.currentTarget.value)
+    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => that.submits.next(e)
+    private onInviteClick: React.MouseEventHandler<HTMLButtonElement> = e => that.inviteClicks.next(e)
 
     private dismissNotification = (i: number): void => {
-        this.setState(prevState => ({ invited: (prevState.invited || []).filter((_, j) => i !== j) }))
+        that.setState(prevState => ({ invited: (prevState.invited || []).filter((_, j) => i !== j) }))
     }
 }

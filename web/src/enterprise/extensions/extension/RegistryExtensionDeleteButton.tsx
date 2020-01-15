@@ -38,14 +38,14 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.deletes
+        that.subscriptions.add(
+            that.deletes
                 .pipe(
                     switchMap(args =>
-                        deleteRegistryExtensionWithConfirmation(this.props.extension.id).pipe(
+                        deleteRegistryExtensionWithConfirmation(that.props.extension.id).pipe(
                             tap(deleted => {
-                                if (deleted && this.props.onDidUpdate) {
-                                    this.props.onDidUpdate()
+                                if (deleted && that.props.onDidUpdate) {
+                                    that.props.onDidUpdate()
                                 }
                             }),
                             mapTo(null),
@@ -58,14 +58,14 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -74,18 +74,18 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                 <button
                     type="button"
                     className="btn btn-danger"
-                    onClick={this.deleteExtension}
-                    disabled={this.props.disabled || this.state.deletionOrError === undefined}
-                    title={this.props.compact ? 'Delete extension' : ''}
+                    onClick={that.deleteExtension}
+                    disabled={that.props.disabled || that.state.deletionOrError === undefined}
+                    title={that.props.compact ? 'Delete extension' : ''}
                 >
-                    <DeleteIcon className="icon-inline" /> {!this.props.compact && 'Delete extension'}
+                    <DeleteIcon className="icon-inline" /> {!that.props.compact && 'Delete extension'}
                 </button>
-                {isErrorLike(this.state.deletionOrError) && (
+                {isErrorLike(that.state.deletionOrError) && (
                     <button
                         type="button"
                         disabled={true}
                         className="btn btn-danger"
-                        title={upperFirst(this.state.deletionOrError.message)}
+                        title={upperFirst(that.state.deletionOrError.message)}
                     >
                         <WarningIcon className="icon-inline" />
                     </button>
@@ -94,5 +94,5 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
         )
     }
 
-    private deleteExtension = (): void => this.deletes.next()
+    private deleteExtension = (): void => that.deletes.next()
 }

@@ -73,15 +73,15 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserProfile')
 
-        const userChanges = this.componentUpdates.pipe(
+        const userChanges = that.componentUpdates.pipe(
             distinctUntilChanged((a, b) => a.user.id === b.user.id),
             map(({ user }) => user)
         )
 
         // Reset the fields upon navigation to a different user.
-        this.subscriptions.add(
+        that.subscriptions.add(
             userChanges.subscribe(() =>
-                this.setState({
+                that.setState({
                     userOrError: undefined,
                     loading: false,
                     saved: false,
@@ -93,8 +93,8 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
         )
 
         // Fetch the user with all of the fields we need (Props.user might not have them all).
-        this.subscriptions.add(
-            combineLatest([userChanges, this.refreshRequests.pipe(startWith<void>(undefined))])
+        that.subscriptions.add(
+            combineLatest([userChanges, that.refreshRequests.pipe(startWith<void>(undefined))])
                 .pipe(
                     switchMap(([user]) =>
                         queryUser(user.id).pipe(
@@ -104,55 +104,55 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     err => console.error(err)
                 )
         )
 
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     tap(event => {
                         event.preventDefault()
                         eventLogger.log('UpdateUserClicked')
                     }),
                     filter(event => event.currentTarget.checkValidity()),
-                    tap(() => this.setState({ loading: true })),
+                    tap(() => that.setState({ loading: true })),
                     mergeMap(event =>
-                        updateUser(this.props.user.id, {
-                            username: this.state.username === undefined ? null : this.state.username,
-                            displayName: this.state.displayName === undefined ? null : this.state.displayName,
-                            avatarURL: this.state.avatarURL === undefined ? null : this.state.avatarURL,
-                        }).pipe(catchError(err => this.handleError(err)))
+                        updateUser(that.props.user.id, {
+                            username: that.state.username === undefined ? null : that.state.username,
+                            displayName: that.state.displayName === undefined ? null : that.state.displayName,
+                            avatarURL: that.state.avatarURL === undefined ? null : that.state.avatarURL,
+                        }).pipe(catchError(err => that.handleError(err)))
                     ),
                     tap(() => {
-                        this.setState({ loading: false, saved: true })
-                        this.props.onDidUpdateUser()
+                        that.setState({ loading: false, saved: true })
+                        that.props.onDidUpdateUser()
 
                         // Handle when username changes.
-                        if (this.state.username !== undefined && this.state.username !== this.props.user.username) {
-                            this.props.history.push(`/users/${this.state.username}/settings/profile`)
+                        if (that.state.username !== undefined && that.state.username !== that.props.user.username) {
+                            that.props.history.push(`/users/${that.state.username}/settings/profile`)
                             return
                         }
 
-                        this.refreshRequests.next()
-                        setTimeout(() => this.setState({ saved: false }), 500)
+                        that.refreshRequests.next()
+                        setTimeout(() => that.setState({ saved: false }), 500)
                     }),
 
                     // In case the edited user is the current user, immediately reflect the changes in the UI.
                     mergeMap(() => concat(refreshAuthenticatedUser(), [null]))
                 )
-                .subscribe({ error: err => this.handleError(err) })
+                .subscribe({ error: err => that.handleError(err) })
         )
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -161,42 +161,42 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                 <PageTitle title="Profile" />
                 <h2>Profile</h2>
 
-                {this.props.activation &&
-                    this.props.activation.completed &&
-                    percentageDone(this.props.activation.completed) < 100 && (
+                {that.props.activation &&
+                    that.props.activation.completed &&
+                    percentageDone(that.props.activation.completed) < 100 && (
                         <div className="card mb-3">
                             <div className="card-body">
                                 <h3 className="mb-0">Almost there!</h3>
                                 <p className="mb-0">Complete the steps below to finish onboarding to Sourcegraph.</p>
                             </div>
                             <ActivationChecklist
-                                history={this.props.history}
-                                steps={this.props.activation.steps}
-                                completed={this.props.activation.completed}
+                                history={that.props.history}
+                                steps={that.props.activation.steps}
+                                completed={that.props.activation.completed}
                             />
                         </div>
                     )}
 
-                {isErrorLike(this.state.userOrError) && <ErrorAlert error={this.state.userOrError.message} />}
-                {this.state.error && <ErrorAlert error={this.state.error.message} />}
-                {this.state.userOrError && !isErrorLike(this.state.userOrError) && (
-                    <Form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
+                {isErrorLike(that.state.userOrError) && <ErrorAlert error={that.state.userOrError.message} />}
+                {that.state.error && <ErrorAlert error={that.state.error.message} />}
+                {that.state.userOrError && !isErrorLike(that.state.userOrError) && (
+                    <Form className="user-settings-profile-page__form" onSubmit={that.handleSubmit}>
                         <div className="form-group">
                             <label htmlFor="user-settings-profile-page__form-username">Username</label>
                             <UsernameInput
                                 id="user-settings-profile-page__form-username"
                                 className="e2e-user-settings-profile-page-username"
                                 value={
-                                    this.state.username === undefined
-                                        ? this.state.userOrError.username
-                                        : this.state.username
+                                    that.state.username === undefined
+                                        ? that.state.userOrError.username
+                                        : that.state.username
                                 }
-                                onChange={this.onUsernameFieldChange}
+                                onChange={that.onUsernameFieldChange}
                                 required={true}
                                 disabled={
-                                    !this.state.userOrError ||
-                                    !this.state.userOrError.viewerCanChangeUsername ||
-                                    this.state.loading
+                                    !that.state.userOrError ||
+                                    !that.state.userOrError.viewerCanChangeUsername ||
+                                    that.state.loading
                                 }
                                 aria-describedby="user-settings-profile-page__form-username-help"
                             />
@@ -212,12 +212,12 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                 type="text"
                                 className="form-control e2e-user-settings-profile-page__display-name"
                                 value={
-                                    this.state.displayName === undefined
-                                        ? this.state.userOrError.displayName || ''
-                                        : this.state.displayName
+                                    that.state.displayName === undefined
+                                        ? that.state.userOrError.displayName || ''
+                                        : that.state.displayName
                                 }
-                                onChange={this.onDisplayNameFieldChange}
-                                disabled={this.state.loading}
+                                onChange={that.onDisplayNameFieldChange}
+                                disabled={that.state.loading}
                                 spellCheck={false}
                                 placeholder="Display name"
                                 maxLength={USER_DISPLAY_NAME_MAX_LENGTH}
@@ -231,35 +231,35 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                     type="url"
                                     className="form-control e2e-user-settings-profile-page__avatar_url"
                                     value={
-                                        this.state.avatarURL === undefined
-                                            ? this.state.userOrError.avatarURL || ''
-                                            : this.state.avatarURL
+                                        that.state.avatarURL === undefined
+                                            ? that.state.userOrError.avatarURL || ''
+                                            : that.state.avatarURL
                                     }
-                                    onChange={this.onAvatarURLFieldChange}
-                                    disabled={this.state.loading}
+                                    onChange={that.onAvatarURLFieldChange}
+                                    disabled={that.state.loading}
                                     spellCheck={false}
                                     placeholder="URL to avatar photo"
                                 />
                             </div>
-                            {this.state.userOrError.avatarURL && (
+                            {that.state.userOrError.avatarURL && (
                                 <div className="user-settings-profile-page__avatar-column">
-                                    <UserAvatar user={this.state.userOrError} />
+                                    <UserAvatar user={that.state.userOrError} />
                                 </div>
                             )}
                         </div>
                         <button
                             className="btn btn-primary user-settings-profile-page__button e2e-user-settings-profile-page-update-profile"
                             type="submit"
-                            disabled={this.state.loading}
+                            disabled={that.state.loading}
                         >
                             Update profile
                         </button>
-                        {this.state.loading && (
+                        {that.state.loading && (
                             <div>
                                 <LoadingSpinner className="icon-inline" />
                             </div>
                         )}
-                        {this.state.saved && (
+                        {that.state.saved && (
                             <p className="alert alert-success user-settings-profile-page__alert e2e-user-settings-profile-page-alert-success">
                                 Profile saved!
                             </p>
@@ -277,24 +277,24 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
     }
 
     private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ username: e.target.value })
+        that.setState({ username: e.target.value })
     }
 
     private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ displayName: e.target.value })
+        that.setState({ displayName: e.target.value })
     }
 
     private onAvatarURLFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ avatarURL: e.target.value })
+        that.setState({ avatarURL: e.target.value })
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        this.submits.next(event)
+        that.submits.next(event)
     }
 
     private handleError = (err: Error): [] => {
         console.error(err)
-        this.setState({ loading: false, saved: false, error: err })
+        that.setState({ loading: false, saved: false, error: err })
         return []
     }
 }

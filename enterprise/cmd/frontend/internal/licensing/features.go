@@ -18,7 +18,7 @@ const (
 	// integration with GitHub/GitLab for user authentication.
 	FeatureACLs Feature = "acls"
 
-	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance is
+	// FeatureExtensionRegistry is whether publishing extensions to that Sourcegraph instance is
 	// allowed. If not, then extensions must be published to Sourcegraph.com. All instances may use
 	// extensions published to Sourcegraph.com.
 	FeatureExtensionRegistry Feature = "private-extension-registry"

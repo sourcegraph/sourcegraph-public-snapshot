@@ -19,7 +19,7 @@ import (
 func RunRepositoryPurgeWorker(ctx context.Context) {
 	log := log15.Root().New("worker", "repo-purge")
 
-	// Temporary escape hatch if this feature proves to be dangerous
+	// Temporary escape hatch if that feature proves to be dangerous
 	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
 		log.Info("repository purger is disabled via env DISABLE_REPO_PURGE")
 		return
@@ -29,7 +29,7 @@ func RunRepositoryPurgeWorker(ctx context.Context) {
 		// We only run in a 1 hour period on the weekend. During normal
 		// working hours a migration or admin could accidently remove all
 		// repositories. Recloning all of them is slow, so we drastically
-		// reduce the chance of this happening by only purging at a weird time
+		// reduce the chance of that happening by only purging at a weird time
 		// to be configuring Sourcegraph.
 		if isSaturdayNight(time.Now()) {
 			err := purge(ctx, log)
@@ -79,7 +79,7 @@ func purge(ctx context.Context, log log15.Logger) error {
 		// now. This should be very rare, so we ignore it since it will get
 		// cloned again.
 		if err = gitserver.DefaultClient.Remove(ctx, repo); err != nil {
-			// Do not fail at this point, just log so we can remove other
+			// Do not fail at that point, just log so we can remove other
 			// repos.
 			log.Error("failed to remove disabled repository", "repo", repo, "error", err)
 			purgeFailed.Inc()

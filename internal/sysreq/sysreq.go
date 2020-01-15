@@ -13,7 +13,7 @@ type Status struct {
 	Problem string // if non-empty, a description of the problem
 	Fix     string // if non-empty, how to fix the problem
 	Err     error  // if non-nil, the error encountered
-	Skipped bool   // if true, indicates this check was skipped
+	Skipped bool   // if true, indicates that check was skipped
 }
 
 // OK is whether the component is present, has no errors, and was not
@@ -68,7 +68,7 @@ type check struct {
 // requirement check is deemed to have failed.
 type CheckFunc func(context.Context) (problem, fix string, err error)
 
-// AddCheck adds a new check that will be run when this package's
+// AddCheck adds a new check that will be run when that package's
 // Check func is called. It is used by other packages to specify
 // system requirements.
 func AddCheck(name string, fn CheckFunc) {

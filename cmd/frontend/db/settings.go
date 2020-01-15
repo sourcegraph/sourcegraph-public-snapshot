@@ -89,7 +89,7 @@ func (o *settings) GetLatest(ctx context.Context, subject api.SettingsSubject) (
 // acceptable because the migration shouldn't modify those results anyway).
 //
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
-// responsible for ensuring this or that the response never makes it to a user.
+// responsible for ensuring that or that the response never makes it to a user.
 func (o *settings) ListAll(ctx context.Context, impreciseSubstring string) (_ []*api.Settings, err error) {
 	tr, ctx := trace.New(ctx, "db.Settings.ListAll", "")
 	defer func() {
@@ -144,7 +144,7 @@ func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject
 		return nil, err
 	}
 	if len(settings) != 1 {
-		// No configuration has been set for this subject yet.
+		// No configuration has been set for that subject yet.
 		return nil, nil
 	}
 	if settings[0].Contents == "" {

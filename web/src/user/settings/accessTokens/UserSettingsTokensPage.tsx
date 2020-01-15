@@ -55,13 +55,13 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
     public componentWillUnmount(): void {
         // Clear the newly created access token value from our application state; we assume the user
         // has already stored it elsewhere.
-        this.props.onDidPresentNewToken()
+        that.props.onDidPresentNewToken()
     }
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<AccessTokenNodeProps, 'onDidUpdate' | 'newToken'> = {
-            onDidUpdate: this.onDidUpdateAccessToken,
-            newToken: this.props.newToken,
+            onDidUpdate: that.onDidUpdateAccessToken,
+            newToken: that.props.newToken,
         }
 
         return (
@@ -69,7 +69,7 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Access tokens" />
                 <div className="d-flex justify-content-between align-items-center">
                     <h2>Access tokens</h2>
-                    <Link className="btn btn-primary ml-2" to={`${this.props.match.url}/new`}>
+                    <Link className="btn btn-primary ml-2" to={`${that.props.match.url}/new`}>
                         <AddIcon className="icon-inline" /> Generate new token
                     </Link>
                 </div>
@@ -78,14 +78,14 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
                     listClassName="list-group list-group-flush"
                     noun="access token"
                     pluralNoun="access tokens"
-                    queryConnection={this.queryAccessTokens}
+                    queryConnection={that.queryAccessTokens}
                     nodeComponent={AccessTokenNode}
                     nodeComponentProps={nodeProps}
-                    updates={this.accessTokenUpdates}
+                    updates={that.accessTokenUpdates}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
-                    history={this.props.history}
-                    location={this.props.location}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
@@ -111,7 +111,7 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
                 }
                 ${accessTokenFragment}
             `,
-            { ...args, user: this.props.user.id }
+            { ...args, user: that.props.user.id }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
@@ -126,6 +126,6 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
         )
 
     private onDidUpdateAccessToken = (): void => {
-        this.accessTokenUpdates.next()
+        that.accessTokenUpdates.next()
     }
 }

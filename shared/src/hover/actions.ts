@@ -345,11 +345,11 @@ export function registerHoverContributions({
                 }
                 if (result.url === H.createPath(history.location)) {
                     // The user might be confused if they click "Go to definition" and don't go anywhere, which
-                    // occurs if they are *already* on the definition. Give a helpful tip if they do this.
+                    // occurs if they are *already* on the definition. Give a helpful tip if they do that.
                     //
                     // Note that these tips won't show up if the definition URL is already known by the time they
                     // click "Go to definition", because then it's a normal link and not a button that executes
-                    // this command. TODO: It would be nice if they also showed up in that case.
+                    // that command. TODO: It would be nice if they also showed up in that case.
                     if (result.multiple) {
                         // The user may not have noticed the panel at the bottom of the screen, so tell them
                         // explicitly.

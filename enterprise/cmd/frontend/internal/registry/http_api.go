@@ -39,7 +39,7 @@ var (
 			}
 
 			// To be safe, ensure that the JSON can be safely unmarshaled by API clients. If not,
-			// skip this extension.
+			// skip that extension.
 			if x.Manifest != nil {
 				var o schema.SourcegraphExtensionManifest
 				if err := jsonc.Unmarshal(*x.Manifest, &o); err != nil {
@@ -114,7 +114,7 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 		ev.Send()
 	}()
 
-	// Identify this response as coming from the registry API.
+	// Identify that response as coming from the registry API.
 	w.Header().Set(registry.MediaTypeHeaderName, registry.MediaType)
 	w.Header().Set("Vary", registry.MediaTypeHeaderName)
 

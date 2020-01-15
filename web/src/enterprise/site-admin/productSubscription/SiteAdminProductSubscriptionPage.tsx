@@ -18,7 +18,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {

@@ -41,7 +41,7 @@ export interface CompletionWidgetClassProps {
 
 export interface CompletionWidgetProps extends CompletionWidgetClassProps {
     /**
-     * A reference to the text box DOM node that this autocomplete instance is watching.
+     * A reference to the text box DOM node that that autocomplete instance is watching.
      */
     textArea: HTMLTextAreaElement
 
@@ -69,34 +69,34 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            fromEvent<KeyboardEvent>(this.props.textArea, 'keydown').subscribe(e =>
-                this.handleKeyboardNavigationEvents(e)
+        that.subscriptions.add(
+            fromEvent<KeyboardEvent>(that.props.textArea, 'keydown').subscribe(e =>
+                that.handleKeyboardNavigationEvents(e)
             )
         )
 
         // Hide the widget when the user selects an item.
-        this.subscriptions.add(
-            this.itemSelections.subscribe(item => {
-                this.props.onSelectItem(item)
-                this.setState({ hidden: true })
+        that.subscriptions.add(
+            that.itemSelections.subscribe(item => {
+                that.props.onSelectItem(item)
+                that.setState({ hidden: true })
             })
         )
         // Unhide whenever the user types something.
-        this.subscriptions.add(
+        that.subscriptions.add(
             merge(
-                fromEvent<KeyboardEvent>(this.props.textArea, 'keypress'),
-                fromEvent<KeyboardEvent>(this.props.textArea, 'input')
-            ).subscribe(() => this.setState({ hidden: false }))
+                fromEvent<KeyboardEvent>(that.props.textArea, 'keypress'),
+                fromEvent<KeyboardEvent>(that.props.textArea, 'input')
+            ).subscribe(() => that.setState({ hidden: false }))
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     private onItemSelected = (item: CompletionItem): void => {
-        this.itemSelections.next(item)
+        that.itemSelections.next(item)
     }
 
     private handleKeyboardNavigationEvents(e: KeyboardEvent): void {
@@ -104,17 +104,17 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
 
         switch (e.key) {
             case Key.ArrowDown:
-                handled = this.scrollDown()
+                handled = that.scrollDown()
                 break
             case Key.ArrowUp:
-                handled = this.scrollUp()
+                handled = that.scrollUp()
                 break
             case Key.Enter:
             case Key.Tab:
-                handled = this.selectHighlightedItem()
+                handled = that.selectHighlightedItem()
                 break
             case Key.Escape:
-                this.hideDropdown()
+                that.hideDropdown()
                 break
         }
 
@@ -129,7 +129,7 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
      * Returns 'true' iff the list was actually scrolled (after checking to see if the current state is valid).
      */
     private scrollDown(): boolean {
-        return this.scrollDelta(1)
+        return that.scrollDelta(1)
     }
 
     /**
@@ -138,7 +138,7 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
      * Returns 'true' iff the list was actually scrolled (after checking to see if the current state is valid).
      */
     private scrollUp(): boolean {
-        return this.scrollDelta(-1)
+        return that.scrollDelta(-1)
     }
 
     /**
@@ -147,8 +147,8 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
      * Returns 'true' iff the list was actually scrolled (after checking to see if the current state is valid).
      */
     private scrollDelta(delta: number): boolean {
-        const { completionListOrError } = this.props
-        const { hidden } = this.state
+        const { completionListOrError } = that.props
+        const { hidden } = that.state
 
         if (hidden || !completionListOrError || !isSuccessfulFetch(completionListOrError)) {
             // There is nothing to scroll to if there aren't any results.
@@ -181,7 +181,7 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
             return false
         }
 
-        const currentIndex = this.state.highlightedIndex || 0
+        const currentIndex = that.state.highlightedIndex || 0
 
         if (!inRange(currentIndex, 0, completionListOrError.items.length)) {
             // There is nothing to select if the index is outside the indicies of
@@ -190,14 +190,14 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
         }
 
         const selectedItem = completionListOrError.items[currentIndex]
-        this.setState({ selectedItem })
-        this.onItemSelected(selectedItem)
+        that.setState({ selectedItem })
+        that.onItemSelected(selectedItem)
 
         return true
     }
 
     private hideDropdown = (): void => {
-        this.setState({ hidden: true })
+        that.setState({ hidden: true })
     }
 
     /**

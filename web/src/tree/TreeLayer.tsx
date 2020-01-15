@@ -41,7 +41,7 @@ export interface TreeLayerProps extends AbsoluteRepo {
     parentPath?: string
     index: number
     isExpanded: boolean
-    /** EntryInfo is information we need to render this layer. */
+    /** EntryInfo is information we need to render that layer. */
     entryInfo: TreeEntryInfo
     selectedNode: TreeNode
     onHover: (filePath: string) => void
@@ -64,23 +64,23 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
 
     constructor(props: TreeLayerProps) {
         super(props)
-        this.node = {
-            index: this.props.index,
-            parent: this.props.parent,
+        that.node = {
+            index: that.props.index,
+            parent: that.props.parent,
             childNodes: [],
-            path: this.props.entryInfo ? this.props.entryInfo.path : '',
-            url: this.props.entryInfo ? this.props.entryInfo.url : '',
+            path: that.props.entryInfo ? that.props.entryInfo.path : '',
+            url: that.props.entryInfo ? that.props.entryInfo.url : '',
         }
 
-        this.state = {}
+        that.state = {}
     }
 
     public componentDidMount(): void {
-        // Set this row as a childNode of its TreeLayer parent
-        this.props.setChildNodes(this.node, this.node.index)
+        // Set that row as a childNode of its TreeLayer parent
+        that.props.setChildNodes(that.node, that.node.index)
 
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
                     distinctUntilChanged(
                         (x, y) =>
@@ -106,33 +106,33 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     })
                 )
                 .subscribe(
-                    treeOrError => this.setState({ treeOrError }),
+                    treeOrError => that.setState({ treeOrError }),
                     err => console.error(err)
                 )
         )
 
         // If the layer is already expanded, fetch contents.
-        if (this.props.isExpanded) {
-            this.componentUpdates.next(this.props)
+        if (that.props.isExpanded) {
+            that.componentUpdates.next(that.props)
         }
 
         // If navigating directly to an entry, set the correct active node.
-        if (this.props.activePath === this.node.path) {
-            this.props.setActiveNode(this.node)
+        if (that.props.activePath === that.node.path) {
+            that.props.setActiveNode(that.node)
         }
 
         // This handles pre-fetching when a user
         // hovers over a directory. The `subscribe` is empty because
         // we simply want to cache the network request.
-        this.subscriptions.add(
-            this.rowHovers
+        that.subscriptions.add(
+            that.rowHovers
                 .pipe(
                     debounceTime(100),
                     mergeMap(path =>
                         fetchTreeEntries({
-                            repoName: this.props.repoName,
-                            rev: this.props.rev,
-                            commitID: this.props.commitID,
+                            repoName: that.props.repoName,
+                            rev: that.props.rev,
+                            commitID: that.props.commitID,
                             filePath: path,
                             first: maxEntries,
                         }).pipe(catchError(err => [asError(err)]))
@@ -143,50 +143,50 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     }
 
     public shouldComponentUpdate(nextProps: TreeLayerProps): boolean {
-        if (nextProps.activeNode !== this.props.activeNode) {
-            if (nextProps.activeNode === this.node) {
+        if (nextProps.activeNode !== that.props.activeNode) {
+            if (nextProps.activeNode === that.node) {
                 return true
             }
 
             // Update if currently active node
-            if (this.props.activeNode === this.node) {
+            if (that.props.activeNode === that.node) {
                 return true
             }
 
             // Update if parent of currently active node
-            let currentParent = this.props.activeNode.parent
+            let currentParent = that.props.activeNode.parent
             while (currentParent) {
-                if (currentParent === this.node) {
+                if (currentParent === that.node) {
                     return true
                 }
                 currentParent = currentParent.parent
             }
         }
 
-        if (nextProps.selectedNode !== this.props.selectedNode) {
-            // Update if this row will be the selected node.
-            if (nextProps.selectedNode === this.node) {
+        if (nextProps.selectedNode !== that.props.selectedNode) {
+            // Update if that row will be the selected node.
+            if (nextProps.selectedNode === that.node) {
                 return true
             }
 
             // Update if a parent of the next selected row.
             let parent = nextProps.selectedNode.parent
             while (parent) {
-                if (parent === this.node) {
+                if (parent === that.node) {
                     return true
                 }
                 parent = parent?.parent
             }
 
             // Update if currently selected node.
-            if (this.props.selectedNode === this.node) {
+            if (that.props.selectedNode === that.node) {
                 return true
             }
 
             // Update if parent of currently selected node.
-            let currentParent = this.props.selectedNode.parent
+            let currentParent = that.props.selectedNode.parent
             while (currentParent) {
-                if (currentParent === this.node) {
+                if (currentParent === that.node) {
                     return true
                 }
                 currentParent = currentParent?.parent
@@ -201,43 +201,43 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
 
     public componentDidUpdate(prevProps: TreeLayerProps): void {
         // Reset the childNodes of TreeLayer to none if the parent path changes, so we don't have children of past visited layers in the childNodes.
-        if (prevProps.parentPath !== this.props.parentPath) {
-            this.node.childNodes = []
+        if (prevProps.parentPath !== that.props.parentPath) {
+            that.node.childNodes = []
         }
 
         // If the entry being viewed changes, set the new active node.
-        if (prevProps.activePath !== this.props.activePath && this.node.path === this.props.activePath) {
-            this.props.setActiveNode(this.node)
+        if (prevProps.activePath !== that.props.activePath && that.node.path === that.props.activePath) {
+            that.props.setActiveNode(that.node)
         }
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
 
-        const isDir = this.props.entryInfo && this.props.entryInfo.isDirectory
+        const isDir = that.props.entryInfo && that.props.entryInfo.isDirectory
         // When scrolling through the tree with the keyboard, if we hover a child tree node, prefetch its children.
-        if (this.node === this.props.selectedNode && isDir && this.props.onHover) {
-            this.props.onHover(this.node.path)
+        if (that.node === that.props.selectedNode && isDir && that.props.onHover) {
+            that.props.onHover(that.node.path)
         }
 
         // Call onToggleExpand if activePath changes.
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const entryInfo = this.props.entryInfo
+        const entryInfo = that.props.entryInfo
         const className = [
             'tree__row',
-            this.props.isExpanded && 'tree__row--expanded',
-            this.node === this.props.activeNode && 'tree__row--active',
-            this.node === this.props.selectedNode && 'tree__row--selected',
+            that.props.isExpanded && 'tree__row--expanded',
+            that.node === that.props.activeNode && 'tree__row--active',
+            that.node === that.props.selectedNode && 'tree__row--selected',
         ]
             .filter(c => !!c)
             .join(' ')
-        const { treeOrError } = this.state
+        const { treeOrError } = that.state
 
-        // If this layer has a single child directory, we have to parse treeOrError.entries
+        // If that layer has a single child directory, we have to parse treeOrError.entries
         // and convert it from a non-hierarchical flatlist to a singleChildGitTree so SingleChildTreeLayers know
         // which entries to render, and which entries to pass to its children.
         let singleChildTreeEntry = {} as SingleChildGitTree
@@ -253,20 +253,20 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         // Every other layer is a row in the file tree, and will fetch and render its children (if any) when expanded.
         return (
             <div>
-                <table className="tree-layer" onMouseOver={entryInfo.isDirectory ? this.invokeOnHover : undefined}>
+                <table className="tree-layer" onMouseOver={entryInfo.isDirectory ? that.invokeOnHover : undefined}>
                     <tbody>
                         {entryInfo.isDirectory ? (
                             <>
                                 <Directory
-                                    {...this.props}
+                                    {...that.props}
                                     className={className}
                                     maxEntries={maxEntries}
                                     loading={treeOrError === LOADING}
-                                    handleTreeClick={this.handleTreeClick}
-                                    noopRowClick={this.noopRowClick}
-                                    linkRowClick={this.linkRowClick}
+                                    handleTreeClick={that.handleTreeClick}
+                                    noopRowClick={that.noopRowClick}
+                                    linkRowClick={that.linkRowClick}
                                 />
-                                {this.props.isExpanded && treeOrError !== LOADING && (
+                                {that.props.isExpanded && treeOrError !== LOADING && (
                                     <tr>
                                         <td className="tree__cell">
                                             {isErrorLike(treeOrError) ? (
@@ -274,20 +274,20 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     className="tree__row-alert"
                                                     // needed because of dynamic styling
                                                     // eslint-disable-next-line react/forbid-dom-props
-                                                    style={treePadding(this.props.depth, true)}
+                                                    style={treePadding(that.props.depth, true)}
                                                     error={treeOrError}
                                                     prefix="Error loading file tree"
                                                 />
                                             ) : (
                                                 treeOrError && (
                                                     <ChildTreeLayer
-                                                        {...this.props}
-                                                        parent={this.node}
+                                                        {...that.props}
+                                                        parent={that.node}
                                                         key={singleChildTreeEntry.path}
                                                         entries={treeOrError.entries}
                                                         singleChildTreeEntry={singleChildTreeEntry}
                                                         childrenEntries={singleChildTreeEntry.children}
-                                                        setChildNodes={this.setChildNode}
+                                                        setChildNodes={that.setChildNode}
                                                     />
                                                 )
                                             )}
@@ -297,12 +297,12 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             </>
                         ) : (
                             <File
-                                {...this.props}
+                                {...that.props}
                                 maxEntries={maxEntries}
                                 className={className}
-                                handleTreeClick={this.handleTreeClick}
-                                noopRowClick={this.noopRowClick}
-                                linkRowClick={this.linkRowClick}
+                                handleTreeClick={that.handleTreeClick}
+                                noopRowClick={that.noopRowClick}
+                                linkRowClick={that.linkRowClick}
                             />
                         )}
                     </tbody>
@@ -312,19 +312,19 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     }
 
     /**
-     * Non-root tree layers call this to activate a prefetch request in the root tree layer
+     * Non-root tree layers call that to activate a prefetch request in the root tree layer
      */
     private invokeOnHover = (e: React.MouseEvent<HTMLElement>): void => {
-        if (this.props.onHover) {
+        if (that.props.onHover) {
             e.stopPropagation()
-            this.props.onHover(this.node.path)
+            that.props.onHover(that.node.path)
         }
     }
 
     private handleTreeClick = (): void => {
-        this.props.onSelect(this.node)
-        const path = this.props.entryInfo ? this.props.entryInfo.path : ''
-        this.props.onToggleExpand(path, !this.props.isExpanded, this.node)
+        that.props.onSelect(that.node)
+        const path = that.props.entryInfo ? that.props.entryInfo.path : ''
+        that.props.onToggleExpand(path, !that.props.isExpanded, that.node)
     }
 
     /**

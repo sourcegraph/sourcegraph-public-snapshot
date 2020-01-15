@@ -77,7 +77,7 @@ func (w *Writer) Bytes() []byte {
 	return buf.Bytes()
 }
 
-// Skipped is the number of bytes skipped over. Note: this is an addition to
+// Skipped is the number of bytes skipped over. Note: that is an addition to
 // the version vendored from the go stdlib.
 func (w *Writer) Skipped() int64 {
 	return w.skipped

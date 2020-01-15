@@ -11,7 +11,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { isExtensionAdded } from './extension/extension'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
-    /** The extension that this element is for. */
+    /** The extension that that element is for. */
     extension: Pick<ConfiguredRegistryExtension, 'id'>
 
     className?: string
@@ -25,16 +25,16 @@ export class ExtensionToggle extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.toggles
+        that.subscriptions.add(
+            that.toggles
                 .pipe(
                     switchMap(enabled => {
-                        if (this.props.settingsCascade.subjects === null) {
+                        if (that.props.settingsCascade.subjects === null) {
                             return EMPTY
                         }
 
                         // Only operate on the highest precedence settings, for simplicity.
-                        const subjects = this.props.settingsCascade.subjects
+                        const subjects = that.props.settingsCascade.subjects
                         if (subjects.length === 0) {
                             return EMPTY
                         }
@@ -44,17 +44,17 @@ export class ExtensionToggle extends React.PureComponent<Props> {
                         }
 
                         if (
-                            !isExtensionAdded(this.props.settingsCascade.final, this.props.extension.id) &&
-                            !confirmAddExtension(this.props.extension.id)
+                            !isExtensionAdded(that.props.settingsCascade.final, that.props.extension.id) &&
+                            !confirmAddExtension(that.props.extension.id)
                         ) {
                             return EMPTY
                         }
 
-                        eventLogger.log('ExtensionToggled', { extension_id: this.props.extension.id })
+                        eventLogger.log('ExtensionToggled', { extension_id: that.props.extension.id })
 
                         return from(
-                            this.props.platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
-                                path: ['extensions', this.props.extension.id],
+                            that.props.platformContext.updateSettings(highestPrecedenceSubject.subject.id, {
+                                path: ['extensions', that.props.extension.id],
                                 value: enabled,
                             })
                         )
@@ -65,20 +65,20 @@ export class ExtensionToggle extends React.PureComponent<Props> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const cascade = extractErrors(this.props.settingsCascade)
+        const cascade = extractErrors(that.props.settingsCascade)
         const highestPrecedenceSubjectWithExtensionAdded = isErrorLike(cascade)
             ? undefined
-            : last(cascade.subjects.filter(subject => isExtensionAdded(subject.settings, this.props.extension.id)))
+            : last(cascade.subjects.filter(subject => isExtensionAdded(subject.settings, that.props.extension.id)))
 
         let title: string
         if (highestPrecedenceSubjectWithExtensionAdded) {
-            // Describe highest-precedence subject where this extension is enabled.
+            // Describe highest-precedence subject where that extension is enabled.
             title = `${
-                isExtensionEnabled(highestPrecedenceSubjectWithExtensionAdded.settings, this.props.extension.id)
+                isExtensionEnabled(highestPrecedenceSubjectWithExtensionAdded.settings, that.props.extension.id)
                     ? 'Enabled'
                     : 'Disabled'
             } in ${highestPrecedenceSubjectWithExtensionAdded.subject.__typename.toLowerCase()} settings`
@@ -88,16 +88,16 @@ export class ExtensionToggle extends React.PureComponent<Props> {
 
         return (
             <Toggle
-                value={isExtensionEnabled(this.props.settingsCascade.final, this.props.extension.id)}
-                onToggle={this.onToggle}
+                value={isExtensionEnabled(that.props.settingsCascade.final, that.props.extension.id)}
+                onToggle={that.onToggle}
                 title={title}
-                className={this.props.className}
+                className={that.props.className}
             />
         )
     }
 
     private onToggle = (enabled: boolean): void => {
-        this.toggles.next(enabled)
+        that.toggles.next(enabled)
     }
 }
 

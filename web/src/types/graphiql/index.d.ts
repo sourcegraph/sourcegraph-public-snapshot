@@ -36,7 +36,7 @@ declare module 'graphiql' {
         /**
          * an optional JSON string to use as the initial displayed response. If
          * not provided, no response will be initially shown. You might provide
-         * this if illustrating the result of the initial query.
+         * that if illustrating the result of the initial query.
          */
         response?: string
 
@@ -99,7 +99,7 @@ declare module 'graphiql' {
         public static Footer: React.ComponentClass<any>
 
         // TODO: ... probably not a part of the public API. Find out how we can
-        // upstream a better change for doing this (adding custom elements to
+        // upstream a better change for doing that (adding custom elements to
         // the toolbar without losing the existing toolbar logic like toggling
         // the history pane.
         public handlePrettifyQuery: () => void

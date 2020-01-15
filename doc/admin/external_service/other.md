@@ -1,6 +1,6 @@
 # Other Git repository hosts
 
-Site admins can sync Git repositories on any Git repository host (by Git clone URL) with Sourcegraph so that users can search and navigate the repositories. Use this method only when your repository host is not named as a supported [external service](index.md).
+Site admins can sync Git repositories on any Git repository host (by Git clone URL) with Sourcegraph so that users can search and navigate the repositories. Use that method only when your repository host is not named as a supported [external service](index.md).
 
 To add Git repositories from any Git repository host:
 

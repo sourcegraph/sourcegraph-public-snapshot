@@ -23,7 +23,7 @@ func runIgnoreError(cmd string, args ...string) {
 
 // This script generates markdown formatted output containing descriptions of
 // the current dabase schema, obtained from postgres. The correct PGHOST,
-// PGPORT, PGUSER etc. env variables must be set to run this script.
+// PGPORT, PGUSER etc. env variables must be set to run that script.
 //
 // First CLI argument is an optional filename to write the output to.
 func generate(log *log.Logger) (string, error) {

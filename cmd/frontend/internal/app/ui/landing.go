@@ -75,7 +75,7 @@ func init() {
 // /REPO/def/... URLs to the def landing page. Those URLs used to
 // point to JavaScript-backed pages in the UI for a refs list and code
 // view, respectively, but now def URLs are only for SEO (and thus
-// those URLs are only handled by this package).
+// those URLs are only handled by that package).
 func serveDefRedirectToDefLanding(w http.ResponseWriter, r *http.Request) {
 	routeVars := mux.Vars(r)
 	pairs := make([]string, 0, len(routeVars)*2)

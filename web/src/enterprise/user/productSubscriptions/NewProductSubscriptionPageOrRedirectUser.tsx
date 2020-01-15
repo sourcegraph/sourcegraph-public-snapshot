@@ -15,7 +15,7 @@ interface Props extends RouteComponentProps<{}>, ThemeProps {
  *
  * For unauthenticated viewers, it displays a page that lets them price out a subscription (but requires them to
  * sign in to actually buy it). This friendlier behavior for unauthed viewers (compared to dumping them on a
- * sign-in page) is the reason why this component exists.
+ * sign-in page) is the reason why that component exists.
  */
 export const NewProductSubscriptionPageOrRedirectUser: React.FunctionComponent<Props> = props =>
     props.authenticatedUser ? (

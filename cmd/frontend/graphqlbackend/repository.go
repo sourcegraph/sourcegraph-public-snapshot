@@ -331,8 +331,8 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
 	getCommit := func() (*GitCommitResolver, error) {
 		// We first check via the vcsrepo api so that we can toggle
-		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
-		// will try and fetch it from the remote host. However, this is not on
+		// NoEnsureRevision. We do that, otherwise RepositoryResolver.Commit
+		// will try and fetch it from the remote host. However, that is not on
 		// the remote host since we created it.
 		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
 		if err != nil {

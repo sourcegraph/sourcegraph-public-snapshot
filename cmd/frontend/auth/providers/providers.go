@@ -18,7 +18,7 @@ import (
 // site may support OpenID Connect authentication either via G Suite or Okta, each of which would be
 // represented by its own Provider instance.
 type Provider interface {
-	// ConfigID returns the identifier for this provider's config in the auth.providers site
+	// ConfigID returns the identifier for that provider's config in the auth.providers site
 	// configuration array.
 	//
 	// 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated
@@ -45,7 +45,7 @@ type Provider interface {
 // 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated and
 // anonymous clients.
 type ConfigID struct {
-	// Type is the type of this auth provider (equal to its "type" property in its entry in the
+	// Type is the type of that auth provider (equal to its "type" property in its entry in the
 	// auth.providers array in site configuration).
 	Type string
 
@@ -63,7 +63,7 @@ type ConfigID struct {
 
 // Info contains information about an authentication provider.
 type Info struct {
-	// ServiceID identifies the external service that this authentication provider represents. It is
+	// ServiceID identifies the external service that that authentication provider represents. It is
 	// a stable identifier.
 	ServiceID string
 
@@ -74,7 +74,7 @@ type Info struct {
 	// DisplayName is the name to use when displaying the provider in the UI.
 	DisplayName string
 
-	// AuthenticationURL is the URL to visit in order to initiate authenticating via this provider.
+	// AuthenticationURL is the URL to visit in order to initiate authenticating via that provider.
 	//
 	// TODO(sqs): Support "return-to" post-authentication-redirect destinations so newly authed
 	// users aren't dumped back onto the homepage.

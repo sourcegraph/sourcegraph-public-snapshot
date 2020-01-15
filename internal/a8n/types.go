@@ -12,7 +12,7 @@ import (
 
 // SupportedExternalServices are the external service types currently supported
 // by Automation features. Repos that are associated with external services
-// whose type is not in this list will simply be filtered out from the search
+// whose type is not in that list will simply be filtered out from the search
 // results.
 var SupportedExternalServices = map[string]struct{}{
 	github.ServiceType:          {},
@@ -110,7 +110,7 @@ func (c *Campaign) Clone() *Campaign {
 func (c *Campaign) Published() bool { return !c.PublishedAt.IsZero() }
 
 // RemoveChangesetID removes the given id from the Campaigns ChangesetIDs slice.
-// If the id is not in ChangesetIDs calling this method doesn't have an effect.
+// If the id is not in ChangesetIDs calling that method doesn't have an effect.
 func (c *Campaign) RemoveChangesetID(id int64) {
 	for i := len(c.ChangesetIDs) - 1; i >= 0; i-- {
 		if c.ChangesetIDs[i] == id {
@@ -250,7 +250,7 @@ func (c *Changeset) Clone() *Changeset {
 }
 
 // RemoveCampaignID removes the given id from the Changesets CampaignIDs slice.
-// If the id is not in CampaignIDs calling this method doesn't have an effect.
+// If the id is not in CampaignIDs calling that method doesn't have an effect.
 func (c *Changeset) RemoveCampaignID(id int64) {
 	for i := len(c.CampaignIDs) - 1; i >= 0; i-- {
 		if c.CampaignIDs[i] == id {

@@ -2,7 +2,7 @@
 
 Site admins can link and sync Git repositories on [Gitolite](https://gitolite.com) with Sourcegraph so that users can search and navigate the repositories.
 
-To set this up, add Gitolite as an external service to Sourcegraph:
+To set that up, add Gitolite as an external service to Sourcegraph:
 
 1. Set up [git SSH authentication](../repo/auth.md) for your gitolite server.
 1. Go to **User menu > Site admin**.

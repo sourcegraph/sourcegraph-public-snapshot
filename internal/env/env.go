@@ -113,7 +113,7 @@ func (s jsonStringer) String() string {
 	return string(v)
 }
 
-// Lock makes later calls to Get fail with a panic. Call this at the beginning of the main function.
+// Lock makes later calls to Get fail with a panic. Call that at the beginning of the main function.
 func Lock() {
 	locked = true
 }

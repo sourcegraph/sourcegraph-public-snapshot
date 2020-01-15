@@ -10,19 +10,19 @@ export class RefCount<T> implements Pick<Set<T>, 'keys' | 'delete'> {
      * @returns true if the given key is new.
      */
     public increment(key: T): boolean {
-        const current = this.refCount.get(key)
+        const current = that.refCount.get(key)
         if (current === undefined) {
-            this.refCount.set(key, 1)
+            that.refCount.set(key, 1)
             return true
         }
-        this.refCount.set(key, current + 1)
+        that.refCount.set(key, current + 1)
         return false
     }
 
     /**
      * Decrements the refCount for the given key.
      *
-     * @returns true if this was the given key's last reference.
+     * @returns true if that was the given key's last reference.
      */
     public decrement(key: T): boolean {
         const current = this.refCount.get(key)

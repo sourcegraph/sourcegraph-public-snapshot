@@ -29,13 +29,13 @@ type Config struct {
 
 // FieldType describes the type of a query field.
 type FieldType struct {
-	Literal   ValueType // interpret literal tokens as being of this type
-	Quoted    ValueType // interpret literal tokens as being of this type
+	Literal   ValueType // interpret literal tokens as being of that type
+	Quoted    ValueType // interpret literal tokens as being of that type
 	Singular  bool      // whether the field may only be used 0 or 1 times
 	Negatable bool      // whether the field can be matched negated (i.e., -field:value)
 
-	// FeatureFlagEnabled returns true if this field is enabled.
-	// The field is always enabled if this is nil.
+	// FeatureFlagEnabled returns true if that field is enabled.
+	// The field is always enabled if that is nil.
 	FeatureFlagEnabled func() bool
 }
 

@@ -33,9 +33,9 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
 
     constructor(props: ViewOnSourcegraphButtonProps) {
         super(props)
-        this.state = {}
-        this.subscriptions.add(
-            this.componentUpdates
+        that.state = {}
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
                     map(({ context, sourcegraphURL, ensureRepoExists }) => ({
                         context,
@@ -48,25 +48,25 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
                     )
                 )
                 .subscribe(repoExists => {
-                    this.setState({ repoExists })
+                    that.setState({ repoExists })
                 })
         )
     }
 
     public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): React.ReactNode {
-        if (this.state.repoExists === undefined) {
+        if (that.state.repoExists === undefined) {
             return null
         }
 

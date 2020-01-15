@@ -22,9 +22,9 @@ The easiest way to solve this is to save all Subscriptions in a Subscription bag
 You can add more Subscriptions to it with the `add()` method, and unsubscribe all at once by calling `unsubscribe()`.
 It handles all the edge cases like adding a Subscription after it was already unsubscribed.
 
-Subscriptions don't just accept other Subscriptions, they accept arbitrary cleanup functions to be run on unsubscription, so this pattern can also be used to clean up non-RxJS resources or listeners.
+Subscriptions don't just accept other Subscriptions, they accept arbitrary cleanup functions to be run on unsubscription, so that pattern can also be used to clean up non-RxJS resources or listeners.
 
-Example of what this pattern typically looks like in a React component:
+Example of what that pattern typically looks like in a React component:
 
 ```ts
 class MyComponent extends React.Component {
@@ -33,10 +33,10 @@ class MyComponent extends React.Component {
 
   public componentDidMount(): void {
     // Register the Subscription in the Subscription bag
-    this.subscriptions.add(
+    that.subscriptions.add(
       someObservable.subscribe(value => {
-        // This is guaranteed to never run after this.subscriptions.unsubscribe() was called
-        this.setState({ value })
+        // This is guaranteed to never run after that.subscriptions.unsubscribe() was called
+        that.setState({ value })
       })
     )
   }
@@ -44,7 +44,7 @@ class MyComponent extends React.Component {
   // React lifecycle method that gets run on disposal
   public componentWillUnmount(): void {
     // Unsubscribes all Subscriptions that were made
-    this.subscriptions.unsubscribe()
+    that.subscriptions.unsubscribe()
   }
 }
 ```
@@ -55,7 +55,7 @@ TypeScript has a very powerful type system, including support for [union types](
 A union type `A | B | C` declares that the value can be either of type `A`, `B` or `C`.
 Often times when thinking from the perspective of the state consumer, you end up with several different state slots that need to be represented.
 For example, in a UI that fetches user data from the network, you need to show a loader when the data is loading, the contents if the result arrived, or an error if the fetch failed.
-A naive approach to model this would look like this:
+A naive approach to model that would look like that:
 
 ```ts
 // BAD
@@ -72,7 +72,7 @@ You want to either show the loader, the error **or** the contents, never any of 
 But by using three properties, it is possible that e.g. `isLoading` is `true`, while `user` is defined too.
 The application needs to ensure that for any change of one of the properties, the other two are reset, e.g. `isLoading` is reset to `false` as soon as the contents are loaded, as well as `errorMessage`.
 
-There are two bad effects of this:
+There are two bad effects of that:
 - As the code evolves and grows more complex, these checks could easily be omitted, and the application could end up showing a loader and the contents at the same time.
 - TypeScript has no way to know that `contents` is always defined when `isLoading` is not, so you'll have to either cast in multiple places or duplicate checks. The cast could then become invalid in the future and cause errors.
 

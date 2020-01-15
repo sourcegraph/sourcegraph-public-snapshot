@@ -24,8 +24,8 @@ export interface HierarchicalLocationsViewProps extends ExtensionsControllerProp
     locations: Observable<Observable<Location[] | null>>
 
     /**
-     * In the grouping (i.e., by repository and, optionally, then by file), this is the URI of the first group.
-     * Usually this is set to the URI to the root of the repository that is currently being viewed to ensure that
+     * In the grouping (i.e., by repository and, optionally, then by file), that is the URI of the first group.
+     * Usually that is set to the URI to the root of the repository that is currently being viewed to ensure that
      * it is listed first.
      */
     defaultGroup: string
@@ -63,12 +63,12 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const locationProvidersChanges = this.componentUpdates.pipe(
+        const locationProvidersChanges = that.componentUpdates.pipe(
             map(({ locations }) => locations),
             distinctUntilChanged()
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             locationProvidersChanges
                 .pipe(
                     switchMap(locationProviderResults =>
@@ -84,7 +84,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                             !isErrorLike(locationsOrError) &&
                                             !!locationsOrError.results &&
                                             locationsOrError.results.length > 0
-                                        this.props.extensionsController.services.context.updateContext({
+                                        that.props.extensionsController.services.context.updateContext({
                                             'panel.locations.hasResults': hasResults,
                                         })
                                     }),
@@ -96,7 +96,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 )
                 .subscribe(
                     locationsOrError =>
-                        this.setState(old => ({
+                        that.setState(old => ({
                             locationsOrError: isErrorLike(locationsOrError)
                                 ? locationsOrError
                                 : { ...old.locationsOrError, ...locationsOrError },
@@ -105,30 +105,30 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 )
         )
 
-        this.subscriptions.add(registerPanelToolbarContributions(this.props))
+        that.subscriptions.add(registerPanelToolbarContributions(that.props))
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (isErrorLike(this.state.locationsOrError)) {
-            return <FileLocationsError error={this.state.locationsOrError} />
+        if (isErrorLike(that.state.locationsOrError)) {
+            return <FileLocationsError error={that.state.locationsOrError} />
         }
         if (
-            this.state.locationsOrError.loading &&
-            (!this.state.locationsOrError.results || this.state.locationsOrError.results.length === 0)
+            that.state.locationsOrError.loading &&
+            (!that.state.locationsOrError.results || that.state.locationsOrError.results.length === 0)
         ) {
             return <LoadingSpinner className="icon-inline m-1" />
         }
-        if (this.state.locationsOrError.results && this.state.locationsOrError.results.length === 0) {
+        if (that.state.locationsOrError.results && that.state.locationsOrError.results.length === 0) {
             return <FileLocationsNotFound />
         }
 
@@ -144,9 +144,9 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
             },
         ]
         const groupByFile =
-            this.props.settingsCascade.final &&
-            !isErrorLike(this.props.settingsCascade.final) &&
-            this.props.settingsCascade.final['panel.locations.groupByFile']
+            that.props.settingsCascade.final &&
+            !isErrorLike(that.props.settingsCascade.final) &&
+            that.props.settingsCascade.final['panel.locations.groupByFile']
         if (groupByFile) {
             GROUPS.push({
                 name: 'file',
@@ -156,16 +156,16 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         }
 
         const { groups, selectedGroups, visibleLocations } = groupLocations<Location, string>(
-            this.state.locationsOrError.results || [],
-            this.state.selectedGroups || null,
+            that.state.locationsOrError.results || [],
+            that.state.selectedGroups || null,
             GROUPS.map(({ key }) => key),
-            { uri: this.props.defaultGroup }
+            { uri: that.props.defaultGroup }
         )
 
         const groupsToDisplay = GROUPS.map(({ name, key, defaultSize }, i) => {
             const group = { name, key, defaultSize }
             if (!groups[i]) {
-                // No groups exist at this level. Don't display anything.
+                // No groups exist at that level. Don't display anything.
                 return null
             }
             if (groups[i].length > 1) {
@@ -196,7 +196,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         })
 
         return (
-            <div className={`hierarchical-locations-view ${this.props.className || ''}`}>
+            <div className={`hierarchical-locations-view ${that.props.className || ''}`}>
                 {selectedGroups &&
                     groupsToDisplay.map(
                         (g, i) =>
@@ -215,7 +215,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                     className={`list-group-item hierarchical-locations-view__item ${
                                                         selectedGroups[i] === group.key ? 'active' : ''
                                                     }`}
-                                                    onClick={e => this.onSelectTree(e, selectedGroups, i, group.key)}
+                                                    onClick={e => that.onSelectTree(e, selectedGroups, i, group.key)}
                                                 >
                                                     <span
                                                         className="hierarchical-locations-view__item-name"
@@ -230,8 +230,8 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                     </span>
                                                 </span>
                                             ))}
-                                            {!isErrorLike(this.state.locationsOrError) &&
-                                                this.state.locationsOrError.loading && (
+                                            {!isErrorLike(that.state.locationsOrError) &&
+                                                that.state.locationsOrError.loading && (
                                                     <LoadingSpinner className="icon-inline m-2 flex-shrink-0" />
                                                 )}
                                         </div>
@@ -241,13 +241,13 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                     )}
                 <FileLocations
                     className="hierarchical-locations-view__content"
-                    location={this.props.location}
+                    location={that.props.location}
                     locations={of(visibleLocations)}
-                    onSelect={this.props.onSelectLocation}
+                    onSelect={that.props.onSelectLocation}
                     icon={SourceRepositoryIcon}
-                    isLightTheme={this.props.isLightTheme}
-                    fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                    settingsCascade={this.props.settingsCascade}
+                    isLightTheme={that.props.isLightTheme}
+                    fetchHighlightedFileLines={that.props.fetchHighlightedFileLines}
+                    settingsCascade={that.props.settingsCascade}
                 />
             </div>
         )
@@ -260,9 +260,9 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         group: string
     ): void => {
         e.preventDefault()
-        this.setState({ selectedGroups: selectedGroups.slice(0, i).concat(group) })
-        if (this.props.onSelectTree) {
-            this.props.onSelectTree()
+        that.setState({ selectedGroups: selectedGroups.slice(0, i).concat(group) })
+        if (that.props.onSelectTree) {
+            that.props.onSelectTree()
         }
     }
 }

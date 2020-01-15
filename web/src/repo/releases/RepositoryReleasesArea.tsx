@@ -48,16 +48,16 @@ export class RepositoryReleasesArea extends React.Component<Props> {
     private subscriptions = new Subscription()
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (this.state.error) {
-            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.error)} />
+        if (that.state.error) {
+            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(that.state.error)} />
         }
 
         const transferProps: { repo: GQL.IRepository } = {
-            repo: this.props.repo,
+            repo: that.props.repo,
         }
 
         return (
@@ -65,14 +65,14 @@ export class RepositoryReleasesArea extends React.Component<Props> {
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>}
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                    repoHeaderContributionsLifecycleProps={that.props.repoHeaderContributionsLifecycleProps}
                 />
                 <div className="container">
                     <div className="container-inner">
                         <Switch>
                             {/* eslint-disable react/jsx-no-bind */}
                             <Route
-                                path={`${this.props.routePrefix}/-/tags`}
+                                path={`${that.props.routePrefix}/-/tags`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
                                 render={routeComponentProps => (

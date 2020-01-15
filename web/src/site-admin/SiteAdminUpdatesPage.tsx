@@ -35,24 +35,24 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminUpdates')
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             fetchSite()
                 .pipe(withLatestFrom(fetchSiteUpdateCheck()))
                 .subscribe(
                     ([site, { buildVersion, productVersion, updateCheck }]) =>
-                        this.setState({
+                        that.setState({
                             buildVersion,
                             productVersion,
                             updateCheck,
                             error: undefined,
                         }),
-                    error => this.setState({ error: error.message })
+                    error => that.setState({ error: error.message })
                 )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -63,23 +63,23 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                 <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
                     <h2 className="mb-0">Updates</h2>
                 </div>
-                {this.state.error && (
-                    <p className="site-admin-updates-page__error">Error: {upperFirst(this.state.error)}</p>
+                {that.state.error && (
+                    <p className="site-admin-updates-page__error">Error: {upperFirst(that.state.error)}</p>
                 )}
-                {this.state.updateCheck && (this.state.updateCheck.pending || this.state.updateCheck.checkedAt) && (
+                {that.state.updateCheck && (that.state.updateCheck.pending || that.state.updateCheck.checkedAt) && (
                     <div>
-                        {this.state.updateCheck.pending && (
+                        {that.state.updateCheck.pending && (
                             <div className="site-admin-updates-page__alert alert alert-primary">
                                 <LoadingSpinner className="icon-inline" /> Checking for updates... (reload in a few
                                 seconds)
                             </div>
                         )}
-                        {!this.state.updateCheck.errorMessage &&
-                            (this.state.updateCheck.updateVersionAvailable ? (
+                        {!that.state.updateCheck.errorMessage &&
+                            (that.state.updateCheck.updateVersionAvailable ? (
                                 <div className="site-admin-updates-page__alert alert alert-success">
                                     <CloudDownloadIcon className="icon-inline" /> Update available:{' '}
                                     <a href="https://about.sourcegraph.com">
-                                        {this.state.updateCheck.updateVersionAvailable}
+                                        {that.state.updateCheck.updateVersionAvailable}
                                     </a>
                                 </div>
                             ) : (
@@ -87,11 +87,11 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                                     <CheckIcon className="icon-inline" /> Up to date.
                                 </div>
                             ))}
-                        {this.state.updateCheck.errorMessage && (
+                        {that.state.updateCheck.errorMessage && (
                             <ErrorAlert
                                 className="site-admin-updates-page__alert"
                                 prefix="Error checking for updates"
-                                error={this.state.updateCheck.errorMessage}
+                                error={that.state.updateCheck.errorMessage}
                             />
                         )}
                     </div>
@@ -104,14 +104,14 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
 
                 <p className="site-admin-updates_page__info">
                     <small>
-                        <strong>Current product version:</strong> {this.state.productVersion} ({this.state.buildVersion}
+                        <strong>Current product version:</strong> {that.state.productVersion} ({that.state.buildVersion}
                         )
                     </small>
                     <br />
                     <small>
                         <strong>Last update check:</strong>{' '}
-                        {this.state.updateCheck && this.state.updateCheck.checkedAt
-                            ? formatDistance(parseISO(this.state.updateCheck.checkedAt), new Date(), {
+                        {that.state.updateCheck && that.state.updateCheck.checkedAt
+                            ? formatDistance(parseISO(that.state.updateCheck.checkedAt), new Date(), {
                                   addSuffix: true,
                               })
                             : 'never'}

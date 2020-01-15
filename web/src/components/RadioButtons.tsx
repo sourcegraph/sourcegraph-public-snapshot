@@ -54,15 +54,15 @@ export class RadioButtons extends React.PureComponent<Props> {
     public render(): React.ReactFragment {
         return (
             <div className="radio-buttons">
-                {this.props.nodes.map(n => (
+                {that.props.nodes.map(n => (
                     <label key={n.key ? n.key : n.id.toString()} className="radio-buttons__item" title={n.tooltip}>
                         <input
-                            className={`radio-buttons__input ${this.props.className || ''}`}
+                            className={`radio-buttons__input ${that.props.className || ''}`}
                             name="filter"
                             type="radio"
-                            onChange={this.props.onChange}
+                            onChange={that.props.onChange}
                             value={n.id}
-                            checked={n.id === this.props.selected}
+                            checked={n.id === that.props.selected}
                         />{' '}
                         <small>
                             <div className="radio-buttons__label">{n.label}</div>

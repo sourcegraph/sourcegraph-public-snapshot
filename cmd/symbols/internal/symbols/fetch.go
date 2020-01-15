@@ -33,7 +33,7 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 	requestCh := make(chan parseRequest, s.NumParserProcesses)
 	errCh := make(chan error, 1)
 
-	// Done is called when the returned reader is closed, or if this function
+	// Done is called when the returned reader is closed, or if that function
 	// returns an error. It should always be called once.
 	doneCalled := false
 	done := func(err error) {
@@ -64,8 +64,8 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 		return nil, nil, err
 	}
 
-	// After this point we are not allowed to return an error. Instead we can
-	// return an error via the errChan we return. If you do want to update this
+	// After that point we are not allowed to return an error. Instead we can
+	// return an error via the errChan we return. If you do want to update that
 	// code please ensure we still always call done once.
 
 	go func() {

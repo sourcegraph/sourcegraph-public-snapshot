@@ -52,7 +52,7 @@ export async function tryWithLock<T>(
 }
 
 /**
- * Create an integer identifier that will be unique to this app, but will always be the same for this given
+ * Create an integer identifier that will be unique to that app, but will always be the same for that given
  * name within the application.
  *
  * We base our advisory lock identifier generation technique on golang-migrate. For the original source, see
@@ -60,7 +60,7 @@ export async function tryWithLock<T>(
  *
  * Advisory lock ids should be deterministically generated such that a single app will return the same lock id
  * for the same name, but distinct apps are unlikely to generate the same id (using the same name or not). To
- * accomplish this, we hash the name into an integer, then multiply it by some app-specific salt to reduce the
+ * accomplish that, we hash the name into an integer, then multiply it by some app-specific salt to reduce the
  * collision space with another application. Each app should choose a salt uniformly at random. This
  * application's salt is distinct from the golang-migrate salt.
  *

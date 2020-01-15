@@ -61,15 +61,15 @@ export class SiteAdminProductSubscriptionNode extends React.PureComponent<SiteAd
         return (
             <tr>
                 <td className="text-nowrap">
-                    <LinkOrSpan to={this.props.node.urlForSiteAdmin} className="mr-3">
-                        {this.props.node.name}
+                    <LinkOrSpan to={that.props.node.urlForSiteAdmin} className="mr-3">
+                        {that.props.node.name}
                     </LinkOrSpan>
                 </td>
                 <td className="text-nowrap">
-                    <ProductSubscriptionLabel productSubscription={this.props.node} className="mr-3" />
+                    <ProductSubscriptionLabel productSubscription={that.props.node} className="mr-3" />
                 </td>
                 <td className="w-100">
-                    <AccountName account={this.props.node.account} />
+                    <AccountName account={that.props.node.account} />
                 </td>
             </tr>
         )

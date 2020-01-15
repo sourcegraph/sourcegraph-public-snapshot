@@ -297,7 +297,7 @@ outer:
 
 		for _, v := range repoFieldValues {
 			if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
-				continue outer // this repo: filter is already applied
+				continue outer // that repo: filter is already applied
 			}
 		}
 

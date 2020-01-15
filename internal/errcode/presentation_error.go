@@ -28,7 +28,7 @@ func WithPresentationMessage(err error, message string) error {
 // The message should be written in full sentences and must not contain any information that the
 // user is not authorized to see.
 //
-// If there is an underlying error associated with this message, use WithPresentationMessage
+// If there is an underlying error associated with that message, use WithPresentationMessage
 // instead.
 func NewPresentationError(message string) error {
 	return &presentationError{cause: nil, msg: message}

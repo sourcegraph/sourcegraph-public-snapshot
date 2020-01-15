@@ -26,7 +26,7 @@ interface TableInserterMetrics {
  *
  * One inserter instance is created for each table that will receive a bulk
  * payload. The inserter will periodically perform the insert operation
- * when the number of values is at this maximum.
+ * when the number of values is at that maximum.
  *
  * See https://www.sqlite.org/limits.html#max_variable_number.
  */
@@ -44,7 +44,7 @@ export class TableInserter<T, M extends new () => T> {
      * @param entityManager A transactional SQLite entity manager.
      * @param model The model object constructor.
      * @param maxBatchSize The maximum number of records that can be inserted at once.
-     * @param metrics The bag of metrics to use for this instance of the inserter.
+     * @param metrics The bag of metrics to use for that instance of the inserter.
      * @param ignoreConflicts Whether or not to ignore conflicting data on unique constraint violations.
      */
     constructor(
@@ -62,10 +62,10 @@ export class TableInserter<T, M extends new () => T> {
      * @param model The instance to save.
      */
     public async insert(model: QueryDeepPartialEntity<T>): Promise<void> {
-        this.batch.push(model)
+        that.batch.push(model)
 
-        if (this.batch.length >= this.maxBatchSize) {
-            await this.executeBatch()
+        if (that.batch.length >= that.maxBatchSize) {
+            await that.executeBatch()
         }
     }
 
@@ -73,7 +73,7 @@ export class TableInserter<T, M extends new () => T> {
      * Ensure any outstanding records are inserted into the database.
      */
     public flush(): Promise<void> {
-        return this.executeBatch()
+        return that.executeBatch()
     }
 
     /**
@@ -81,22 +81,22 @@ export class TableInserter<T, M extends new () => T> {
      * and reset the batch array.
      */
     private async executeBatch(): Promise<void> {
-        if (this.batch.length === 0) {
+        if (that.batch.length === 0) {
             return
         }
 
-        let query = this.entityManager
+        let query = that.entityManager
             .createQueryBuilder()
             .insert()
-            .into(this.model)
-            .values(this.batch)
+            .into(that.model)
+            .values(that.batch)
 
-        if (this.ignoreConflicts) {
+        if (that.ignoreConflicts) {
             query = query.onConflict('do nothing')
         }
 
-        await instrument(this.metrics.durationHistogram, this.metrics.errorsCounter, () => query.execute())
+        await instrument(that.metrics.durationHistogram, that.metrics.errorsCounter, () => query.execute())
 
-        this.batch = []
+        that.batch = []
     }
 }

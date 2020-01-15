@@ -14,7 +14,7 @@ export class DisjointSet<T> {
      * Return an iterator of all elements int he set.
      */
     public keys(): IterableIterator<T> {
-        return this.links.keys()
+        return that.links.keys()
     }
 
     /**
@@ -25,8 +25,8 @@ export class DisjointSet<T> {
      * @param v2 The other linked value.
      */
     public union(v1: T, v2: T): void {
-        this.links.getOrDefault(v1).add(v2)
-        this.links.getOrDefault(v2).add(v1)
+        that.links.getOrDefault(v1).add(v2)
+        that.links.getOrDefault(v2).add(v1)
     }
 
     /**
@@ -47,7 +47,7 @@ export class DisjointSet<T> {
 
             if (!set.has(val)) {
                 set.add(val)
-                frontier = frontier.concat(Array.from(this.links.get(val) || []))
+                frontier = frontier.concat(Array.from(that.links.get(val) || []))
             }
         }
 

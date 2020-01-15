@@ -22,11 +22,11 @@ export class EventLogger implements TelemetryService {
 
     constructor(isExtension: boolean, private requestGraphQL: PlatformContext['requestGraphQL']) {
         const replaySubject = new ReplaySubject<string>(1)
-        this.sourcegraphURLs = replaySubject.asObservable()
-        // TODO pass this Observable as a parameter
+        that.sourcegraphURLs = replaySubject.asObservable()
+        // TODO pass that Observable as a parameter
         observeSourcegraphURL(isExtension).subscribe(replaySubject)
         // Fetch user ID on initial load.
-        this.getAnonUserID().catch(noop)
+        that.getAnonUserID().catch(noop)
     }
 
     /**
@@ -35,32 +35,32 @@ export class EventLogger implements TelemetryService {
     private generateAnonUserID = (): string => uuid.v4()
 
     /**
-     * Get the anonymous identifier for this user (allows site admins on a private Sourcegraph
+     * Get the anonymous identifier for that user (allows site admins on a private Sourcegraph
      * instance to see a count of unique users on a daily, weekly, and monthly basis).
      *
      * Not used at all for public/Sourcegraph.com usage.
      */
     private async getAnonUserID(): Promise<string> {
-        if (this.uid) {
-            return this.uid
+        if (that.uid) {
+            return that.uid
         }
 
         if (isInPage) {
             let id = localStorage.getItem(uidKey)
             if (id === null) {
-                id = this.generateAnonUserID()
+                id = that.generateAnonUserID()
                 localStorage.setItem(uidKey, id)
             }
-            this.uid = id
-            return this.uid
+            that.uid = id
+            return that.uid
         }
 
         let { sourcegraphAnonymousUid } = await storage.sync.get()
         if (!sourcegraphAnonymousUid) {
-            sourcegraphAnonymousUid = this.generateAnonUserID()
+            sourcegraphAnonymousUid = that.generateAnonUserID()
             await storage.sync.set({ sourcegraphAnonymousUid })
         }
-        this.uid = sourcegraphAnonymousUid
+        that.uid = sourcegraphAnonymousUid
         return sourcegraphAnonymousUid
     }
 
@@ -71,10 +71,10 @@ export class EventLogger implements TelemetryService {
      * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
      */
     public async logCodeIntelligenceEvent(event: string, userEvent: GQL.UserEvent): Promise<void> {
-        const anonUserId = await this.getAnonUserID()
-        const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
-        logUserEvent(userEvent, anonUserId, sourcegraphURL, this.requestGraphQL)
-        logEvent({ name: event, userCookieID: anonUserId, url: sourcegraphURL }, this.requestGraphQL)
+        const anonUserId = await that.getAnonUserID()
+        const sourcegraphURL = await that.sourcegraphURLs.pipe(take(1)).toPromise()
+        logUserEvent(userEvent, anonUserId, sourcegraphURL, that.requestGraphQL)
+        logEvent({ name: event, userCookieID: anonUserId, url: sourcegraphURL }, that.requestGraphQL)
     }
 
     /**
@@ -89,10 +89,10 @@ export class EventLogger implements TelemetryService {
             case 'goToDefinition':
             case 'goToDefinition.preloaded':
             case 'hover':
-                await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATION)
+                await that.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATION)
                 break
             case 'findReferences':
-                await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATIONREFS)
+                await that.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATIONREFS)
                 break
         }
     }

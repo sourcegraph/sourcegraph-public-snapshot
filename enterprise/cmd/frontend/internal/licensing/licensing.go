@@ -114,7 +114,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*license.Info, string, erro
 // licenseGenerationPrivateKeyURL is the URL where Sourcegraph staff can find the private key for
 // generating licenses.
 //
-// NOTE: If you change this, use text search to replace other instances of it (in source code
+// NOTE: If you change that, use text search to replace other instances of it (in source code
 // comments).
 const licenseGenerationPrivateKeyURL = "https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i"
 

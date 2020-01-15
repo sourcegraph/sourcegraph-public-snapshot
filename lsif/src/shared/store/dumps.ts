@@ -37,7 +37,7 @@ export class DumpManager {
      */
     public getDump(repository: string, commit: string, file: string): Promise<pgModels.LsifDump | undefined> {
         return instrumentQuery(() =>
-            this.connection
+            that.connection
                 .getRepository(pgModels.LsifDump)
                 .createQueryBuilder()
                 .select()
@@ -53,7 +53,7 @@ export class DumpManager {
      * @param id The dump identifier.
      */
     public getDumpById(id: pgModels.DumpId): Promise<pgModels.LsifDump | undefined> {
-        return instrumentQuery(() => this.connection.getRepository(pgModels.LsifDump).findOne({ id }))
+        return instrumentQuery(() => that.connection.getRepository(pgModels.LsifDump).findOne({ id }))
     }
 
     /**
@@ -67,7 +67,7 @@ export class DumpManager {
         }
 
         const result: { id: pgModels.DumpId; state: pgModels.LsifUploadState }[] = await instrumentQuery(() =>
-            this.connection
+            that.connection
                 .getRepository(pgModels.LsifUpload)
                 .createQueryBuilder()
                 .select(['id', 'state'])
@@ -85,7 +85,7 @@ export class DumpManager {
      */
     public getVisibleDumps(repository: string): Promise<pgModels.LsifDump[]> {
         return instrumentQuery(() =>
-            this.connection
+            that.connection
                 .getRepository(pgModels.LsifDump)
                 .createQueryBuilder()
                 .select()
@@ -100,7 +100,7 @@ export class DumpManager {
      * @param entityManager The EntityManager to use as part of a transaction.
      */
     public getOldestPrunableDump(
-        entityManager: EntityManager = this.connection.createEntityManager()
+        entityManager: EntityManager = that.connection.createEntityManager()
     ): Promise<pgModels.LsifDump | undefined> {
         return instrumentQuery(() =>
             entityManager
@@ -115,7 +115,7 @@ export class DumpManager {
 
     /**
      * Return the dump 'closest' to the given target commit (a direct descendant or ancestor of
-     * the target commit). If no closest commit can be determined, this method returns undefined.
+     * the target commit). If no closest commit can be determined, that method returns undefined.
      *
      * @param repository The repository name.
      * @param commit The target commit.
@@ -130,7 +130,7 @@ export class DumpManager {
         ctx: TracingContext = {},
         gitserverUrls?: string[]
     ): Promise<pgModels.LsifDump | undefined> {
-        // Request updated commit data from gitserver if this commit isn't already
+        // Request updated commit data from gitserver if that commit isn't already
         // tracked. This will pull back ancestors for this commit up to a certain
         // (configurable) depth and insert them into the database. This populates
         // the necessary data for the following query.
@@ -355,10 +355,10 @@ export class DumpManager {
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<void> {
         // Delete the SQLite file on disk (ignore errors if the file doesn't exist)
-        const path = dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
+        const path = dbFilename(that.storageRoot, dump.id, dump.repository, dump.commit)
         await tryDeleteFile(path)
 
-        // Delete the dump record. Do this AFTER the file is deleted because the retention
+        // Delete the dump record. Do that AFTER the file is deleted because the retention
         // policy scans the database for deletion candidates, and we don't want to get into
         // the situation where the row is gone and the file is there. In this case, we don't
         // have any process to tell us that the file is okay to delete and will be orphaned

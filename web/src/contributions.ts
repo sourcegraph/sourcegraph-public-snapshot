@@ -20,12 +20,12 @@ export class GlobalContributions extends React.Component<Props> {
 
     public componentDidMount(): void {
         registerHighlightContributions() // no way to unregister these
-        this.subscriptions.add(registerHoverContributions(this.props))
-        this.subscriptions.add(registerSearchStatsContributions(this.props))
+        that.subscriptions.add(registerHoverContributions(that.props))
+        that.subscriptions.add(registerSearchStatsContributions(that.props))
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {

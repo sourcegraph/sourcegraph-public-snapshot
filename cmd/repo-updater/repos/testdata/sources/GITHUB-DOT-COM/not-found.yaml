@@ -9,7 +9,7 @@ interactions:
       - application/vnd.github.jean-grey-preview+json
       Content-Type:
       - application/json; charset=utf-8
-    url: https://api.github.com/repos/foobarfoobarfoobar/please-let-this-not-exist
+    url: https://api.github.com/repos/foobarfoobarfoobar/please-let-that-not-exist
     method: GET
   response:
     body: '{"message":"Not Found","documentation_url":"https://developer.github.com/v3/repos/#get"}'

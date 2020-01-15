@@ -18,13 +18,13 @@ type Props = FilteredFileDiffConnection['props']
  */
 export class FileDiffConnection extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
-        return <FilteredFileDiffConnection {...this.props} onUpdate={this.onUpdate} />
+        return <FilteredFileDiffConnection {...that.props} onUpdate={that.onUpdate} />
     }
 
     private onUpdate = (
         fileDiffsOrError: Connection<GQL.IFileDiff | GQL.IPreviewFileDiff> | ErrorLike | undefined
     ): void => {
-        const nodeProps = this.props.nodeComponentProps!
+        const nodeProps = that.props.nodeComponentProps!
 
         // TODO(sqs): This reports to extensions that these files are empty. This is wrong, but we don't have any
         // easy way to get the files' full contents here (and doing so would be very slow). Improve the extension

@@ -125,7 +125,7 @@ The following are two recommendations for installing these dependencies:
 
 5. (optional) You can also run Redis using Docker
 
-    In this case you should not enable the `redis-server.service` from the previous step.
+    In that case you should not enable the `redis-server.service` from the previous step.
 
     ```bash
     dockerd # if docker isn't already running
@@ -233,7 +233,7 @@ Navigate your browser to http://localhost:3080 to see if everything worked.
 #### Problems with node_modules or Javascript packages
 
 Noticing problems with <code>node_modules/</code> or package versions? Try
-running this command to clear the local package cache.
+running that command to clear the local package cache.
 
 ```bash
 yarn cache clean
@@ -273,7 +273,7 @@ dev/migrate.sh up
 
 #### Internal Server Error
 
-If you see this error when opening the app:
+If you see that error when opening the app:
 
 `500 Internal Server Error template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/app.bundle.css: no such file or directory`
 

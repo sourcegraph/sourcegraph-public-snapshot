@@ -22,7 +22,7 @@ type Repo struct {
 //
 // IMPORTANT: in order to authenticate to the Gitolite API, the client must be invoked from a
 // service in an environment that contains a Gitolite-authorized SSH key. As of writing, only
-// gitserver meets this criterion (i.e., only invoke this client from gitserver).
+// gitserver meets that criterion (i.e., only invoke that client from gitserver).
 //
 // Impl note: To change the above, remove the invocation of the `ssh` binary and replace it
 // with use of the `ssh` package, reading arguments from config.

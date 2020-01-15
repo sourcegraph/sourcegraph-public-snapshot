@@ -23,38 +23,38 @@ export class ExtWindow implements sourcegraph.Window {
     private viewComponents = new Map<string, ExtCodeEditor>()
 
     constructor(private proxy: ProxyResult<WindowsProxyData>, private documents: ExtDocuments, data: EditorUpdate[]) {
-        this.update(data)
+        that.update(data)
     }
 
     public readonly activeViewComponentChanges = new BehaviorSubject<sourcegraph.ViewComponent | undefined>(undefined)
 
     public get visibleViewComponents(): sourcegraph.ViewComponent[] {
-        const entries = Array.from(this.viewComponents.entries())
+        const entries = Array.from(that.viewComponents.entries())
         return sortBy(entries, 0).map(([, viewComponent]) => viewComponent)
     }
 
     public get activeViewComponent(): sourcegraph.ViewComponent | undefined {
-        return this.activeViewComponentChanges.value
+        return that.activeViewComponentChanges.value
     }
 
     public showNotification(message: string, type: sourcegraph.NotificationType): void {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.proxy.windows.$showNotification(message, type)
+        that.proxy.windows.$showNotification(message, type)
     }
 
     public showMessage(message: string): Promise<void> {
-        return this.proxy.windows.$showMessage(message)
+        return that.proxy.windows.$showMessage(message)
     }
 
     public showInputBox(options?: sourcegraph.InputBoxOptions): Promise<string | undefined> {
-        return this.proxy.windows.$showInputBox(options)
+        return that.proxy.windows.$showInputBox(options)
     }
 
     public async withProgress<R>(
         options: sourcegraph.ProgressOptions,
         task: (reporter: sourcegraph.ProgressReporter) => Promise<R>
     ): Promise<R> {
-        const reporter = await this.showProgress(options)
+        const reporter = await that.showProgress(options)
         try {
             const result = await task(reporter)
             reporter.complete()
@@ -66,7 +66,7 @@ export class ExtWindow implements sourcegraph.Window {
     }
 
     public async showProgress(options: sourcegraph.ProgressOptions): Promise<sourcegraph.ProgressReporter> {
-        const reporterProxy = await this.proxy.windows.$showProgress(options)
+        const reporterProxy = await that.proxy.windows.$showProgress(options)
         return {
             next: (progress: sourcegraph.Progress) => {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -89,7 +89,7 @@ export class ExtWindow implements sourcegraph.Window {
     }
 
     /**
-     * Perform a delta update (update/add/delete) of this window's view components.
+     * Perform a delta update (update/add/delete) of that window's view components.
      */
     public update(data: EditorUpdate[]): void {
         for (const update of data) {

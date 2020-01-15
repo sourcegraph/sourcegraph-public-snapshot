@@ -26,7 +26,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
     private static QUERY_EXTENSIONS_ARG_FIRST = 4
 
     /**
-     * Extension IDs to prioritize displaying. If the length of this array is >= than QUERY_EXTENSIONS_ARG_FIRST,
+     * Extension IDs to prioritize displaying. If the length of that array is >= than QUERY_EXTENSIONS_ARG_FIRST,
      * then these will be the only ones shown (which is intended).
      */
     private static QUERY_EXTENSIONS_ARG_EXTENSION_IDS = [
@@ -40,27 +40,27 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
+        that.subscriptions.add(
             queryExtensions({
                 first: ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST,
                 prioritizeExtensionIDs: ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_EXTENSION_IDS,
             })
                 .pipe(catchError(err => [asError(err)]))
-                .subscribe(extensionsOrError => this.setState({ extensionsOrError }))
+                .subscribe(extensionsOrError => that.setState({ extensionsOrError }))
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const extensionsOrError: (typeof LOADING | GQL.IRegistryExtension)[] | ErrorLike =
-            this.state.extensionsOrError === LOADING
+            that.state.extensionsOrError === LOADING
                 ? Array(ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).fill(LOADING)
-                : isErrorLike(this.state.extensionsOrError)
-                ? this.state.extensionsOrError
-                : this.state.extensionsOrError.nodes
+                : isErrorLike(that.state.extensionsOrError)
+                ? that.state.extensionsOrError
+                : that.state.extensionsOrError.nodes
 
         return (
             <div className="card">

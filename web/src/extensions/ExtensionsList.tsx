@@ -99,8 +99,8 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = {
-            query: this.getQueryFromProps(props),
+        that.state = {
+            query: that.getQueryFromProps(props),
             data: { query: '', resultOrError: LOADING },
         }
     }
@@ -111,16 +111,16 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.queryChanges.subscribe(({ query }) => {
-                this.setState({ query })
+        that.subscriptions.add(
+            that.queryChanges.subscribe(({ query }) => {
+                that.setState({ query })
             })
         )
 
-        const debouncedQueryChanges = this.queryChanges.pipe(debounce(({ immediate }) => timer(immediate ? 0 : 50)))
+        const debouncedQueryChanges = that.queryChanges.pipe(debounce(({ immediate }) => timer(immediate ? 0 : 50)))
 
         // Update URL when query field changes.
-        this.subscriptions.add(
+        that.subscriptions.add(
             debouncedQueryChanges.subscribe(({ query }) => {
                 let search: string
                 if (query) {
@@ -130,30 +130,30 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 } else {
                     search = ''
                 }
-                this.props.history.replace({
+                that.props.history.replace({
                     search,
-                    hash: this.props.location.hash,
+                    hash: that.props.location.hash,
                 })
             })
         )
 
         // Update query field when URL is changed manually.
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
                     filter(({ history }) => history.action !== 'REPLACE'),
-                    map(({ location }) => this.getQueryFromProps({ location })),
+                    map(({ location }) => that.getQueryFromProps({ location })),
                     withLatestFrom(debouncedQueryChanges),
                     filter(([urlQuery, { query: debouncedStateQuery }]) => urlQuery !== debouncedStateQuery)
                 )
-                .subscribe(([urlQuery]) => this.setState({ query: urlQuery }))
+                .subscribe(([urlQuery]) => that.setState({ query: urlQuery }))
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             debouncedQueryChanges
                 .pipe(
                     switchMap(({ query, immediate }) => {
-                        const resultOrError = this.queryRegistryExtensions({ query }).pipe(
+                        const resultOrError = that.queryRegistryExtensions({ query }).pipe(
                             catchError(err => [asError(err)])
                         )
                         return concat(
@@ -162,32 +162,32 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         ).pipe(map(resultOrError => ({ data: { query, resultOrError } })))
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
 
-        this.componentUpdates.next(this.props)
-        this.queryChanges.next({ query: this.state.query, immediate: true })
+        that.componentUpdates.next(that.props)
+        that.queryChanges.next({ query: that.state.query, immediate: true })
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <div className="extensions-list">
-                <Form onSubmit={this.onSubmit} className="form-inline">
+                <Form onSubmit={that.onSubmit} className="form-inline">
                     <input
                         className="form-control flex-grow-1 mr-1 mb-2"
                         type="search"
                         placeholder="Search extensions..."
                         name="query"
-                        value={this.state.query}
-                        onChange={this.onQueryChangeEvent}
+                        value={that.state.query}
+                        onChange={that.onQueryChangeEvent}
                         autoFocus={true}
                         autoComplete="off"
                         autoCorrect="off"
@@ -196,37 +196,37 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                     />
                     <div className="mb-2">
                         <ExtensionsQueryInputToolbar
-                            query={this.state.query}
-                            onQueryChange={this.onQueryChangeImmediate}
+                            query={that.state.query}
+                            onQueryChange={that.onQueryChangeImmediate}
                         />
                     </div>
                 </Form>
-                {this.state.data.resultOrError === LOADING ? (
+                {that.state.data.resultOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline" />
-                ) : isErrorLike(this.state.data.resultOrError) ? (
-                    <ErrorAlert error={this.state.data.resultOrError} />
+                ) : isErrorLike(that.state.data.resultOrError) ? (
+                    <ErrorAlert error={that.state.data.resultOrError} />
                 ) : (
                     <>
-                        {this.state.data.resultOrError.error && (
-                            <ErrorAlert className="mb-2" error={this.state.data.resultOrError.error} />
+                        {that.state.data.resultOrError.error && (
+                            <ErrorAlert className="mb-2" error={that.state.data.resultOrError.error} />
                         )}
-                        {this.state.data.resultOrError.extensions.length === 0 ? (
-                            this.state.data.query ? (
+                        {that.state.data.resultOrError.extensions.length === 0 ? (
+                            that.state.data.query ? (
                                 <div className="text-muted">
-                                    No extensions match <strong>{this.state.data.query}</strong>.
+                                    No extensions match <strong>{that.state.data.query}</strong>.
                                 </div>
                             ) : (
                                 <span className="text-muted">No extensions found</span>
                             )
                         ) : (
                             <div className="extensions-list__cards mt-1">
-                                {this.state.data.resultOrError.extensions.map((e, i) => (
+                                {that.state.data.resultOrError.extensions.map((e, i) => (
                                     <ExtensionCard
                                         key={i}
-                                        subject={this.props.subject}
+                                        subject={that.props.subject}
                                         node={e}
-                                        settingsCascade={this.props.settingsCascade}
-                                        platformContext={this.props.platformContext}
+                                        settingsCascade={that.props.settingsCascade}
+                                        platformContext={that.props.platformContext}
                                     />
                                 ))}
                             </div>
@@ -240,15 +240,15 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
     private onSubmit: React.FormEventHandler = e => e.preventDefault()
 
     private onQueryChangeEvent: React.FormEventHandler<HTMLInputElement> = e =>
-        this.onQueryChange({ query: e.currentTarget.value })
+        that.onQueryChange({ query: e.currentTarget.value })
 
-    private onQueryChangeImmediate = (query: string): void => this.queryChanges.next({ query, immediate: true })
+    private onQueryChangeImmediate = (query: string): void => that.queryChanges.next({ query, immediate: true })
 
     private onQueryChange = ({ query, immediate }: { query: string; immediate?: boolean }): void =>
-        this.queryChanges.next({ query, immediate })
+        that.queryChanges.next({ query, immediate })
 
     private queryRegistryExtensions = (args: { query?: string }): Observable<ExtensionsResult> =>
-        viewerConfiguredExtensions(this.props.platformContext).pipe(
+        viewerConfiguredExtensions(that.props.platformContext).pipe(
             // Avoid refreshing (and changing order) when the user merely interacts with an extension (e.g.,
             // toggling its enablement), to reduce UI jitter.
             take(1),
@@ -289,8 +289,8 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
             map(({ registryExtensions, error }) => ({
                 extensions: applyExtensionsQuery(
                     args.query || '',
-                    this.props.settingsCascade.final && !isErrorLike(this.props.settingsCascade.final)
-                        ? this.props.settingsCascade.final
+                    that.props.settingsCascade.final && !isErrorLike(that.props.settingsCascade.final)
+                        ? that.props.settingsCascade.final
                         : {},
                     registryExtensions
                 ).map(x => toConfiguredRegistryExtension(x)),

@@ -60,10 +60,10 @@ func (p *Provider) Validate() []string {
 }
 
 // ServiceID returns the absolute URL that identifies the Bitbucket Server instance
-// this provider is configured with.
+// that provider is configured with.
 func (p *Provider) ServiceID() string { return p.codeHost.ServiceID }
 
-// ServiceType returns the type of this Provider, namely, "bitbucketServer".
+// ServiceType returns the type of that Provider, namely, "bitbucketServer".
 func (p *Provider) ServiceType() string { return p.codeHost.ServiceType }
 
 // RepoPerms returns the permissions the given external account has in relation to the given set of repos.

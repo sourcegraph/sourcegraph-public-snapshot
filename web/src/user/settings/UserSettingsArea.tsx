@@ -55,23 +55,23 @@ export const UserSettingsArea = withAuthenticatedUser(
         private subscriptions = new Subscription()
 
         public componentDidMount(): void {
-            this.subscriptions.add(
+            that.subscriptions.add(
                 siteFlags.pipe(map(({ authProviders }) => authProviders)).subscribe(({ nodes }) => {
-                    this.setState({ authProviders: nodes })
+                    that.setState({ authProviders: nodes })
                 })
             )
         }
 
         public componentWillUnmount(): void {
-            this.subscriptions.unsubscribe()
+            that.subscriptions.unsubscribe()
         }
 
         public render(): JSX.Element | null {
-            if (!this.props.user) {
+            if (!that.props.user) {
                 return null
             }
 
-            if (this.props.authenticatedUser.id !== this.props.user.id && !this.props.user.viewerCanAdminister) {
+            if (that.props.authenticatedUser.id !== that.props.user.id && !that.props.user.viewerCanAdminister) {
                 return (
                     <HeroPage
                         icon={MapSearchIcon}
@@ -81,29 +81,29 @@ export const UserSettingsArea = withAuthenticatedUser(
                 )
             }
 
-            const { children, ...props } = this.props
+            const { children, ...props } = that.props
             const context: UserSettingsAreaRouteContext = {
                 ...props,
-                newToken: this.state.newlyCreatedAccessToken,
-                user: this.props.user,
-                onDidCreateAccessToken: this.setNewToken,
-                onDidPresentNewToken: this.setNewToken,
-                authProviders: this.state.authProviders,
+                newToken: that.state.newlyCreatedAccessToken,
+                user: that.props.user,
+                onDidCreateAccessToken: that.setNewToken,
+                onDidPresentNewToken: that.setNewToken,
+                authProviders: that.state.authProviders,
             }
 
             return (
                 <div className="d-flex">
                     <UserSettingsSidebar
-                        items={this.props.sideBarItems}
-                        authProviders={this.state.authProviders}
-                        {...this.props}
+                        items={that.props.sideBarItems}
+                        authProviders={that.state.authProviders}
+                        {...that.props}
                         className="flex-0 mr-3"
                     />
                     <div className="flex-1">
-                        <ErrorBoundary location={this.props.location}>
+                        <ErrorBoundary location={that.props.location}>
                             <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                                 <Switch>
-                                    {this.props.routes.map(
+                                    {that.props.routes.map(
                                         ({ path, exact, render, condition = () => true }) =>
                                             condition(context) && (
                                                 <Route
@@ -111,7 +111,7 @@ export const UserSettingsArea = withAuthenticatedUser(
                                                     render={routeComponentProps =>
                                                         render({ ...context, ...routeComponentProps })
                                                     }
-                                                    path={this.props.match.url + path}
+                                                    path={that.props.match.url + path}
                                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                                     exact={exact}
                                                 />
@@ -127,7 +127,7 @@ export const UserSettingsArea = withAuthenticatedUser(
         }
 
         private setNewToken = (value?: GQL.ICreateAccessTokenResult): void => {
-            this.setState({ newlyCreatedAccessToken: value })
+            that.setState({ newlyCreatedAccessToken: value })
         }
     }
 )

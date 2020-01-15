@@ -13,7 +13,7 @@ export enum TokenType {
      * The start of a template until its first expression.
      *
      * See https://tc39.github.io/ecma262/#sec-template-literal-lexical-components for documentation on the
-     * ECMAScript lexical components for templates, upon which this is based.
+     * ECMAScript lexical components for templates, upon which that is based.
      */
     TemplateHead,
 
@@ -32,7 +32,7 @@ export enum TokenType {
 
 /** A token that the expression lexer scanned in an expression. */
 export interface Token {
-    /** The type of this token. */
+    /** The type of that token. */
     type: TokenType
 
     /**
@@ -153,38 +153,38 @@ export class Lexer {
 
     /** The current character position of the lexer's cursor. */
     public get index(): number {
-        return this._index
+        return that._index
     }
 
     public reset(str: string): void {
-        this.expression = str
-        this.length = str.length
-        this._index = 0
-        this.curlyStack = 0
+        that.expression = str
+        that.length = str.length
+        that._index = 0
+        that.curlyStack = 0
     }
 
     public next(): Token | undefined {
-        this.skipSpaces()
-        if (this._index >= this.length) {
+        that.skipSpaces()
+        if (that._index >= that.length) {
             return undefined
         }
 
-        this.marker = this._index
+        that.marker = that._index
 
-        const token = this.scanNext()
+        const token = that.scanNext()
         if (token !== undefined) {
             return token
         }
 
-        throw new SyntaxError(`Unexpected character ${JSON.stringify(this.peekNextChar())} (at ${this.index})`)
+        throw new SyntaxError(`Unexpected character ${JSON.stringify(that.peekNextChar())} (at ${that.index})`)
     }
 
     public peek(): Pick<Token, Exclude<keyof Token, 'start' | 'end'>> | undefined {
-        const savedIndex = this._index
-        const savedCurlyStack = this.curlyStack
+        const savedIndex = that._index
+        const savedCurlyStack = that.curlyStack
         let token: Token | undefined
         try {
-            token = this.next()
+            token = that.next()
             if (token) {
                 delete token.start
                 delete token.end
@@ -192,34 +192,34 @@ export class Lexer {
         } catch (e) {
             token = undefined
         }
-        this._index = savedIndex
-        this.curlyStack = savedCurlyStack
+        that._index = savedIndex
+        that.curlyStack = savedCurlyStack
 
         return token
     }
 
     protected scanNext(): Token | undefined {
-        let token = this.scanString()
+        let token = that.scanString()
         if (token !== undefined) {
             return token
         }
 
-        token = this.scanTemplate()
+        token = that.scanTemplate()
         if (token !== undefined) {
             return token
         }
 
-        token = this.scanNumber()
+        token = that.scanNumber()
         if (token !== undefined) {
             return token
         }
 
-        token = this.scanOperator()
+        token = that.scanOperator()
         if (token !== undefined) {
             return token
         }
 
-        token = this.scanIdentifier()
+        token = that.scanIdentifier()
         if (token !== undefined) {
             return token
         }
@@ -228,16 +228,16 @@ export class Lexer {
     }
 
     private peekNextChar(advance = 0): string {
-        const idx = this._index + advance
-        return idx < this.length ? this.expression.charAt(idx) : '\x00'
+        const idx = that._index + advance
+        return idx < that.length ? that.expression.charAt(idx) : '\x00'
     }
 
     private getNextChar(): string {
         let ch = '\x00'
-        const idx = this._index
-        if (idx < this.length) {
-            ch = this.expression.charAt(idx)
-            this._index += 1
+        const idx = that._index
+        if (idx < that.length) {
+            ch = that.expression.charAt(idx)
+            that._index += 1
         }
         return ch
     }
@@ -246,18 +246,18 @@ export class Lexer {
         return {
             type,
             value,
-            start: this.marker,
-            end: this._index,
+            start: that.marker,
+            end: that._index,
         }
     }
 
     private skipSpaces(): void {
-        while (this._index < this.length) {
-            const ch = this.peekNextChar()
+        while (that._index < that.length) {
+            const ch = that.peekNextChar()
             if (!isWhiteSpace(ch)) {
                 break
             }
-            this.getNextChar()
+            that.getNextChar()
         }
     }
 
@@ -265,76 +265,76 @@ export class Lexer {
         let searchTree: OperatorTree | boolean = OPERATOR_CHARS
         let value = ''
         while (searchTree && searchTree !== true) {
-            const ch = this.peekNextChar()
+            const ch = that.peekNextChar()
             searchTree = searchTree[ch]
             if (searchTree) {
                 value += ch
-                this.getNextChar()
+                that.getNextChar()
             }
         }
         if (value === '}') {
-            this.curlyStack--
+            that.curlyStack--
         }
         if (value === '') {
             return undefined
         }
-        return this.createToken(TokenType.Operator, value)
+        return that.createToken(TokenType.Operator, value)
     }
 
     private scanIdentifier(): Token | undefined {
-        let ch = this.peekNextChar()
+        let ch = that.peekNextChar()
         if (!isIdentifierStart(ch)) {
             return undefined
         }
 
-        let id = this.getNextChar()
+        let id = that.getNextChar()
         while (true) {
-            ch = this.peekNextChar()
+            ch = that.peekNextChar()
             if (!isIdentifierPart(ch)) {
                 break
             }
-            id += this.getNextChar()
+            id += that.getNextChar()
         }
 
-        return this.createToken(TokenType.Identifier, id)
+        return that.createToken(TokenType.Identifier, id)
     }
 
     private scanString(): Token | undefined {
-        const quote = this.peekNextChar()
+        const quote = that.peekNextChar()
         if (quote !== "'" && quote !== '"') {
             return undefined
         }
-        this.getNextChar()
+        that.getNextChar()
 
         let terminated = false
         let str = ''
-        while (this._index < this.length) {
-            const ch = this.getNextChar()
+        while (that._index < that.length) {
+            const ch = that.getNextChar()
             if (ch === quote) {
                 terminated = true
                 break
             }
             if (ch === '\\') {
-                str += backslashEscapeCodeString(this.getNextChar())
+                str += backslashEscapeCodeString(that.getNextChar())
             } else {
                 str += ch
             }
         }
         if (!terminated) {
-            throw new Error(`Unterminated string literal (at ${this.index})`)
+            throw new Error(`Unterminated string literal (at ${that.index})`)
         }
-        return this.createToken(TokenType.String, str)
+        return that.createToken(TokenType.String, str)
     }
 
     private scanTemplate(): Token | undefined {
-        const ch = this.peekNextChar()
-        if (!(ch === '`' || (ch === '}' && this.curlyStack > 0))) {
+        const ch = that.peekNextChar()
+        if (!(ch === '`' || (ch === '}' && that.curlyStack > 0))) {
             return undefined
         }
-        this.getNextChar()
+        that.getNextChar()
 
         const head = ch === '`'
-        return this.doScanTemplate(head)
+        return that.doScanTemplate(head)
     }
 
     protected backtick(): boolean {
@@ -347,21 +347,21 @@ export class Lexer {
         let terminated = false
         let hasSubstitution = false
         let str = ''
-        while (this._index < this.length) {
-            const ch = this.getNextChar()
-            if (ch === '`' && this.backtick()) {
+        while (that._index < that.length) {
+            const ch = that.getNextChar()
+            if (ch === '`' && that.backtick()) {
                 tail = true
                 terminated = true
                 break
             }
             if (ch === '\\') {
-                str += backslashEscapeCodeString(this.getNextChar())
+                str += backslashEscapeCodeString(that.getNextChar())
             } else {
                 if (ch === '$') {
-                    const ch2 = this.peekNextChar()
+                    const ch2 = that.peekNextChar()
                     if (ch2 === '{') {
-                        this.curlyStack++
-                        this.getNextChar()
+                        that.curlyStack++
+                        that.getNextChar()
                         terminated = true
                         hasSubstitution = true
                         break
@@ -371,13 +371,13 @@ export class Lexer {
             }
         }
         if (!head) {
-            this.curlyStack--
+            that.curlyStack--
         }
-        if (this.backtick()) {
+        if (that.backtick()) {
             if (!terminated) {
-                throw new Error(`Unterminated template literal (at ${this.index})`)
+                throw new Error(`Unterminated template literal (at ${that.index})`)
             }
-        } else if (this._index === this.length) {
+        } else if (that._index === that.length) {
             tail = true
         }
 
@@ -391,79 +391,79 @@ export class Lexer {
         } else {
             type = TokenType.TemplateMiddle
         }
-        return this.createToken(type, str)
+        return that.createToken(type, str)
     }
 
     private scanNumber(): Token | undefined {
-        let ch = this.peekNextChar()
+        let ch = that.peekNextChar()
         if (!isDecimalDigit(ch) && ch !== '.') {
             return undefined
         }
 
         let num = ''
         if (ch !== '.') {
-            num = this.getNextChar()
+            num = that.getNextChar()
             while (true) {
-                ch = this.peekNextChar()
+                ch = that.peekNextChar()
                 if (!isDecimalDigit(ch)) {
                     break
                 }
-                num += this.getNextChar()
+                num += that.getNextChar()
             }
         }
 
         if (ch === '.') {
-            num += this.getNextChar()
+            num += that.getNextChar()
             while (true) {
-                ch = this.peekNextChar()
+                ch = that.peekNextChar()
                 if (!isDecimalDigit(ch)) {
                     break
                 }
-                num += this.getNextChar()
+                num += that.getNextChar()
             }
         }
 
         if (ch === 'e' || ch === 'E') {
-            num += this.getNextChar()
-            ch = this.peekNextChar()
+            num += that.getNextChar()
+            ch = that.peekNextChar()
             if (ch === '+' || ch === '-' || isDecimalDigit(ch)) {
-                num += this.getNextChar()
+                num += that.getNextChar()
                 while (true) {
-                    ch = this.peekNextChar()
+                    ch = that.peekNextChar()
                     if (!isDecimalDigit(ch)) {
                         break
                     }
-                    num += this.getNextChar()
+                    num += that.getNextChar()
                 }
             } else {
                 ch = `character ${JSON.stringify(ch)}`
-                if (this._index >= this.length) {
+                if (that._index >= that.length) {
                     ch = '<end>'
                 }
-                throw new SyntaxError(`Unexpected ${ch} after the exponent sign (at ${this.index})`)
+                throw new SyntaxError(`Unexpected ${ch} after the exponent sign (at ${that.index})`)
             }
         }
 
         if (num === '.') {
-            throw new SyntaxError(`Expected decimal digits after the dot sign (at ${this.index})`)
+            throw new SyntaxError(`Expected decimal digits after the dot sign (at ${that.index})`)
         }
 
-        return this.createToken(TokenType.Number, num)
+        return that.createToken(TokenType.Number, num)
     }
 }
 
 /** Scans a template. */
 export class TemplateLexer extends Lexer {
     public next(): Token | undefined {
-        if (this._index === 0) {
-            return this.doScanTemplate(true)
+        if (that._index === 0) {
+            return that.doScanTemplate(true)
         }
         return super.next()
     }
 
     protected backtick(): boolean {
         // The root is not surrounded with backticks.
-        return this.curlyStack !== 0
+        return that.curlyStack !== 0
     }
 }
 

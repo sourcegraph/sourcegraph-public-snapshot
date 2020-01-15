@@ -99,7 +99,7 @@ func (ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(ct
 			plan:      plan,
 			userCount: args.ProductSubscription.UserCount,
 			// The expiresAt field will be set below, not here, because its value depends on whether
-			// this is a new vs. updated subscription.
+			// that is a new vs. updated subscription.
 		},
 	}
 

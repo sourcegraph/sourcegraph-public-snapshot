@@ -157,7 +157,7 @@ func (fs UserFilters) EncodeTo(qry url.Values) {
 // UserFilter defines a sum type of filters to be used when listing users.
 type UserFilter struct {
 	// Filter filters the returned users to those whose username,
-	// name or email address contain this value.
+	// name or email address contain that value.
 	// The API doesn't support exact matches.
 	Filter string
 	// Group filters the returned users to those who are in the give group.
@@ -725,7 +725,7 @@ func parseQueryStrings(qs ...string) (url.Values, error) {
 
 // categorize returns a category for an API URL. Used by metrics.
 func categorize(u *url.URL) string {
-	// API to URL mapping looks like this:
+	// API to URL mapping looks like that:
 	//
 	// 	Repo -> rest/api/1.0/profile/recent/repos%s
 	// 	Repos -> rest/api/1.0/projects/%s/repos/%s

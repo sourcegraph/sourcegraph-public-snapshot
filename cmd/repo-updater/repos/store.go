@@ -34,13 +34,13 @@ type Store interface {
 // StoreListReposArgs is a query arguments type used by
 // the ListRepos method of Store implementations.
 type StoreListReposArgs struct {
-	// Names of repos to list. When zero-valued, this is omitted from the predicate set.
+	// Names of repos to list. When zero-valued, that is omitted from the predicate set.
 	Names []string
-	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
+	// IDs of repos to list. When zero-valued, that is omitted from the predicate set.
 	IDs []uint32
-	// Kinds of repos to list. When zero-valued, this is omitted from the predicate set.
+	// Kinds of repos to list. When zero-valued, that is omitted from the predicate set.
 	Kinds []string
-	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
+	// ExternalRepos of repos to list. When zero-valued, that is omitted from the predicate set.
 	ExternalRepos []api.ExternalRepoSpec
 	// Limit the total number of repos returned. Zero means no limit
 	Limit int64
@@ -56,11 +56,11 @@ type StoreListReposArgs struct {
 //
 // Each defined argument must map to a disjunct (i.e. AND) filter predicate.
 type StoreListExternalServicesArgs struct {
-	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
+	// IDs of external services to list. When zero-valued, that is omitted from the predicate set.
 	IDs []int64
 	// RepoIDs that the listed external services own.
 	RepoIDs []uint32
-	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
+	// Kinds of external services to list. When zero-valued, that is omitted from the predicate set.
 	Kinds []string
 }
 
@@ -659,7 +659,7 @@ AND repo.external_id = batch.external_id
 // delete is a soft-delete. name is unique and the syncer ensures we respect
 // that constraint. However, the syncer is unaware of soft-deleted
 // repositories. So we update the name to something unique to prevent
-// violating this constraint between active and soft-deleted names.
+// violating that constraint between active and soft-deleted names.
 var deleteReposQuery = batchReposQueryFmtstr + `
 UPDATE repo
 SET

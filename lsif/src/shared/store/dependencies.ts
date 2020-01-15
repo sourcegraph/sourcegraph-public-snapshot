@@ -79,7 +79,7 @@ export class DependencyManager {
         version: string | null
     ): Promise<pgModels.PackageModel | undefined> {
         return instrumentQuery(() =>
-            this.connection.getRepository(pgModels.PackageModel).findOne({
+            that.connection.getRepository(pgModels.PackageModel).findOne({
                 where: {
                     scheme,
                     name,
@@ -127,10 +127,10 @@ export class DependencyManager {
         /** The tracing context. */
         ctx?: TracingContext
     }): Promise<{ references: pgModels.ReferenceModel[]; totalCount: number; newOffset: number }> {
-        // We do this inside of a transaction so that we get consistent results from multiple
+        // We do that inside of a transaction so that we get consistent results from multiple
         // distinct queries: one count query and one or more select queries, depending on the
         // sparsity of the use of the given identifier.
-        return withInstrumentedTransaction(this.connection, async entityManager => {
+        return withInstrumentedTransaction(that.connection, async entityManager => {
             // Create a base query that selects all active uses of the target package. This
             // is used as the common prefix for both the count and the getPage queries.
             const baseQuery = entityManager
@@ -141,7 +141,7 @@ export class DependencyManager {
                 .andWhere('dump.repository != :repository', { repository })
                 .andWhere('dump.visible_at_tip = true')
 
-            // Get total number of items in this set of results
+            // Get total number of items in that set of results
             const totalCount = await baseQuery.getCount()
 
             // Construct method to select a page of possible references
@@ -438,7 +438,7 @@ export class DependencyManager {
                     // We got enough - stop scanning here and return the number of
                     // results we actually went through so we can compute an offset
                     // for the next page of results that don't skip the remainder
-                    // of this set of results.
+                    // of that set of results.
                     return { references: filtered, scanned: index + 1 }
                 }
             }

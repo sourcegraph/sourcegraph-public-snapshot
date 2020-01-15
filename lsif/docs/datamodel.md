@@ -17,7 +17,7 @@ This applies to JSON payloads, and a similar shorthand is used for the columns o
 
 ## Running example
 
-The following source files compose the package `sample`, which is used as the running example for this document.
+The following source files compose the package `sample`, which is used as the running example for that document.
 
 **foo.ts**
 
@@ -41,7 +41,7 @@ export function bar(input: string): string {
 
 **`meta` table**
 
-This table is populated with **exactly** one row containing the version of the LSIF input, the version of the software that converted it into a SQLite database, and the number used to determine in which result chunk a result identifier belongs (via hash and modulus over the number of chunks). Generally, this number will be the number of rows in the `resultChunks` table, but this number may be higher as we won't insert empty chunks (in the case that no identifier happened to hash to it).
+This table is populated with **exactly** one row containing the version of the LSIF input, the version of the software that converted it into a SQLite database, and the number used to determine in which result chunk a result identifier belongs (via hash and modulus over the number of chunks). Generally, that number will be the number of rows in the `resultChunks` table, but that number may be higher as we won't insert empty chunks (in the case that no identifier happened to hash to it).
 
 The last value is used in order to achieve a consistent hash of identifiers that map to the correct result chunk row identifier. This will be explained in more detail later in this document.
 
@@ -147,9 +147,9 @@ The `ranges` field holds a map from range identifier range data including the ex
 
 **`resultChunks` table**
 
-Originally, definition and reference results were stored inline in the document payload. However, this caused document payloads to be come massive in some circumstances (for instance, where the reference result of a frequently used symbol includes multiple ranges in every document of the project). In order to keep each row to a manageable and cacheable size, the definition and reference results were moved into a separate table. The size of each result chunk can then be controlled by varying _how many_ result chunks there are available in a database. It may also be worth noting here that hover result and monikers are best left inlined, as normalizing the former would require another SQL lookup on hover queries, and normalizing the latter would require a SQL lookup per moniker attached to a range; normalizing either does not have a large effect on the size of the document payload.
+Originally, definition and reference results were stored inline in the document payload. However, that caused document payloads to be come massive in some circumstances (for instance, where the reference result of a frequently used symbol includes multiple ranges in every document of the project). In order to keep each row to a manageable and cacheable size, the definition and reference results were moved into a separate table. The size of each result chunk can then be controlled by varying _how many_ result chunks there are available in a database. It may also be worth noting here that hover result and monikers are best left inlined, as normalizing the former would require another SQL lookup on hover queries, and normalizing the latter would require a SQL lookup per moniker attached to a range; normalizing either does not have a large effect on the size of the document payload.
 
-This table is populated with gzipped JSON payloads that contains a mapping from definition result or reference result identifiers to the set of ranges that compose that result. A definition or reference result may be referred to by many documents, which is why it is encoded separately. The table is indexed on the common hash of each definition and reference result id inserted in this chunk.
+This table is populated with gzipped JSON payloads that contains a mapping from definition result or reference result identifiers to the set of ranges that compose that result. A definition or reference result may be referred to by many documents, which is why it is encoded separately. The table is indexed on the common hash of each definition and reference result id inserted in that chunk.
 
 | id  | data                         |
 | --- | ---------------------------- |
@@ -199,9 +199,9 @@ Each payload has the following form.
 }
 ```
 
-The `documentIdRangeIds` field store a list of _pairs_ of document identifiers and range identifiers. To look up a range in this format, the `documentId` must be translated into a document path via the `documentPaths` field. This gives the primary key of the document containing the range in the `documents` table, and the range identifier can be looked up in the decoded payload.
+The `documentIdRangeIds` field store a list of _pairs_ of document identifiers and range identifiers. To look up a range in that format, the `documentId` must be translated into a document path via the `documentPaths` field. This gives the primary key of the document containing the range in the `documents` table, and the range identifier can be looked up in the decoded payload.
 
-To retrieve a definition or reference result by its identifier, we must first determine in which result chunk it is defined. This requires that we take the hash of the identifier (modulo the `numResultChunks` field of the `meta` table). This gives us the unique identifier into the `resultChunks` table. In the running example of this document, there is only one result chunk. Larger dumps will have a greater number of result chunks to keep the amount of data encoded in a single database row reasonable.
+To retrieve a definition or reference result by its identifier, we must first determine in which result chunk it is defined. This requires that we take the hash of the identifier (modulo the `numResultChunks` field of the `meta` table). This gives us the unique identifier into the `resultChunks` table. In the running example of that document, there is only one result chunk. Larger dumps will have a greater number of result chunks to keep the amount of data encoded in a single database row reasonable.
 
 **definitions table**
 

@@ -16,27 +16,27 @@ interface ActivationChecklistItemProps extends ActivationStep {
  */
 export class ActivationChecklistItem extends React.PureComponent<ActivationChecklistItemProps, {}> {
     private onClick = (e: React.MouseEvent<HTMLElement>): void => {
-        if (this.props.onClick) {
-            this.props.onClick(e, this.props.history)
+        if (that.props.onClick) {
+            that.props.onClick(e, that.props.history)
         }
     }
 
     public render(): JSX.Element {
         const checkboxElem = (
             <div>
-                {this.props.done ? (
+                {that.props.done ? (
                     <CheckIcon className="icon-inline text-success" />
                 ) : (
                     <CheckboxBlankCircleIcon className="icon-inline text-muted" />
                 )}
-                <span className="mr-2 ml-2">{this.props.title}</span>
+                <span className="mr-2 ml-2">{that.props.title}</span>
             </div>
         )
 
         return (
-            <div onClick={this.onClick} data-tooltip={this.props.detail}>
-                {this.props.link ? (
-                    <Link {...this.props.link}>{checkboxElem}</Link>
+            <div onClick={that.onClick} data-tooltip={that.props.detail}>
+                {that.props.link ? (
+                    <Link {...that.props.link}>{checkboxElem}</Link>
                 ) : (
                     <button type="button" className="btn btn-link text-left w-100 p-0">
                         {checkboxElem}
@@ -59,14 +59,14 @@ export interface ActivationChecklistProps {
  */
 export class ActivationChecklist extends React.PureComponent<ActivationChecklistProps, {}> {
     public render(): JSX.Element {
-        return this.props.completed ? (
-            <div className={`list-group list-group-flush ${this.props.className || ''}`}>
-                {this.props.steps.map(step => (
+        return that.props.completed ? (
+            <div className={`list-group list-group-flush ${that.props.className || ''}`}>
+                {that.props.steps.map(step => (
                     <div key={step.id} className="list-group-item list-group-item-action">
                         <ActivationChecklistItem
                             {...step}
-                            history={this.props.history}
-                            done={(this.props.completed && this.props.completed[step.id]) || false}
+                            history={that.props.history}
+                            done={(that.props.completed && that.props.completed[step.id]) || false}
                         />
                     </div>
                 ))}

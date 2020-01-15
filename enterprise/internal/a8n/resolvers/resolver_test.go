@@ -277,7 +277,7 @@ func TestCampaigns(t *testing.T) {
 	bbsURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if bbsURL == "" {
 		// The test fixtures and golden files were generated with
-		// this config pointed to bitbucket.sgdev.org
+		// that config pointed to bitbucket.sgdev.org
 		bbsURL = "https://bitbucket.sgdev.org"
 	}
 

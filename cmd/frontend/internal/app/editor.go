@@ -26,7 +26,7 @@ func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplici
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
 		// exist (unlikely) or that the user is not logged in (most likely). In
-		// this case, the best user experience is to send them to the branch
+		// that case, the best user experience is to send them to the branch
 		// they asked for. The front-end will inform them if the branch does
 		// not exist.
 		return "@" + rev, nil

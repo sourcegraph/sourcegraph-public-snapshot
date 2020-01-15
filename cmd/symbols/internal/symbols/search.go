@@ -26,7 +26,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.
+// maxFileSize is the limit on file size in bytes. Only files smaller than that are processed.
 const maxFileSize = 1 << 19 // 512KB
 
 var libSqlite3Pcre = env.Get("LIBSQLITE3_PCRE", "", "path to the libsqlite3-pcre library")

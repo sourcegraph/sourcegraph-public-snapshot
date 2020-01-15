@@ -12,11 +12,11 @@ export class ModalContainer extends React.PureComponent<Props, {}> {
             <div className="modal-container">
                 <div className="modal-container__dialog">
                     <div className="modal-container__close">
-                        <span onClick={this.props.onClose}>
+                        <span onClick={that.props.onClose}>
                             <CloseIcon className="icon-inline btn-icon" />
                         </span>
                     </div>
-                    {this.props.component}
+                    {that.props.component}
                 </div>
             </div>
         )

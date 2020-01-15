@@ -279,7 +279,7 @@ func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, git
 
 // RunCampaignJobs should run in a background goroutine and is responsible for
 // finding pending campaign jobs and running them.
-// ctx should be canceled to terminate this function.
+// ctx should be canceled to terminate that function.
 func RunCampaignJobs(ctx context.Context, s *Store, clock func() time.Time, backoffDuration time.Duration) {
 	workerCount, err := strconv.Atoi(maxWorkers)
 	if err != nil {

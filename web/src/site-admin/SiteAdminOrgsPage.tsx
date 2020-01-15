@@ -17,12 +17,12 @@ import { ErrorAlert } from '../components/alerts'
 
 interface OrgNodeProps {
     /**
-     * The org to display in this list item.
+     * The org to display in that list item.
      */
     node: GQL.IOrg
 
     /**
-     * Called when the org is updated by an action in this list item.
+     * Called when the org is updated by an action in that list item.
      */
     onDidUpdate?: () => void
 }
@@ -42,69 +42,69 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <Link to={orgURL(this.props.node.name)}>
-                            <strong>{this.props.node.name}</strong>
+                        <Link to={orgURL(that.props.node.name)}>
+                            <strong>{that.props.node.name}</strong>
                         </Link>
                         <br />
-                        <span className="text-muted">{this.props.node.displayName}</span>
+                        <span className="text-muted">{that.props.node.displayName}</span>
                     </div>
                     <div>
                         <Link
-                            to={`${orgURL(this.props.node.name)}/settings`}
+                            to={`${orgURL(that.props.node.name)}/settings`}
                             className="btn btn-sm btn-secondary"
                             data-tooltip="Organization settings"
                         >
                             <SettingsIcon className="icon-inline" /> Settings
                         </Link>{' '}
                         <Link
-                            to={`${orgURL(this.props.node.name)}/members`}
+                            to={`${orgURL(that.props.node.name)}/members`}
                             className="btn btn-sm btn-secondary"
                             data-tooltip="Organization members"
                         >
                             <UserIcon className="icon-inline" />{' '}
-                            {this.props.node.members && (
+                            {that.props.node.members && (
                                 <>
-                                    {this.props.node.members.totalCount}{' '}
-                                    {pluralize('member', this.props.node.members.totalCount)}
+                                    {that.props.node.members.totalCount}{' '}
+                                    {pluralize('member', that.props.node.members.totalCount)}
                                 </>
                             )}
                         </Link>{' '}
                         <button
                             type="button"
                             className="btn btn-sm btn-danger"
-                            onClick={this.deleteOrg}
-                            disabled={this.state.loading}
+                            onClick={that.deleteOrg}
+                            disabled={that.state.loading}
                             data-tooltip="Delete organization"
                         >
                             <DeleteIcon className="icon-inline" />
                         </button>
                     </div>
                 </div>
-                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
+                {that.state.errorDescription && <ErrorAlert className="mt-2" error={that.state.errorDescription} />}
             </li>
         )
     }
 
     private deleteOrg = (): void => {
-        if (!window.confirm(`Delete the organization ${this.props.node.name}?`)) {
+        if (!window.confirm(`Delete the organization ${that.props.node.name}?`)) {
             return
         }
 
-        this.setState({
+        that.setState({
             errorDescription: undefined,
             loading: true,
         })
 
-        deleteOrganization(this.props.node.id)
+        deleteOrganization(that.props.node.id)
             .toPromise()
             .then(
                 () => {
-                    this.setState({ loading: false })
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
+                    that.setState({ loading: false })
+                    if (that.props.onDidUpdate) {
+                        that.props.onDidUpdate()
                     }
                 },
-                err => this.setState({ loading: false, errorDescription: err.message })
+                err => that.setState({ loading: false, errorDescription: err.message })
             )
     }
 }
@@ -119,7 +119,7 @@ interface State {
 class FilteredOrgConnection extends FilteredConnection<GQL.IOrg, Pick<OrgNodeProps, 'onDidUpdate'>> {}
 
 /**
- * A page displaying the orgs on this site.
+ * A page displaying the orgs on that site.
  */
 export class SiteAdminOrgsPage extends React.Component<Props, State> {
     public state: State = {}
@@ -132,12 +132,12 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<OrgNodeProps, 'onDidUpdate'> = {
-            onDidUpdate: this.onDidUpdateOrg,
+            onDidUpdate: that.onDidUpdateOrg,
         }
 
         return (
@@ -161,13 +161,13 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                     queryConnection={fetchAllOrganizations}
                     nodeComponent={OrgNode}
                     nodeComponentProps={nodeProps}
-                    updates={this.orgUpdates}
-                    history={this.props.history}
-                    location={this.props.location}
+                    updates={that.orgUpdates}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
     }
 
-    private onDidUpdateOrg = (): void => this.orgUpdates.next()
+    private onDidUpdateOrg = (): void => that.orgUpdates.next()
 }

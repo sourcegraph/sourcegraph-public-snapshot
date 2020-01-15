@@ -200,14 +200,14 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		// filter out changes that match the exclude path (because there's no way to use full
 		// regexps in git pathspecs).
 		//
-		// TODO(sqs): use git pathspec %(...) extensions to reduce the number of cases where this is
+		// TODO(sqs): use git pathspec %(...) extensions to reduce the number of cases where that is
 		// necessary; see https://git-scm.com/docs/gitglossary.html#def_pathspec.
 		var addMaxCount500 bool
 		if opt.Paths.ExcludePattern != "" {
 			addMaxCount500 = true
 		}
 
-		// Args we append after this don't need to be checked for whitelisting because "--"
+		// Args we append after that don't need to be checked for whitelisting because "--"
 		// precedes them.
 		var pathspecs []string
 		for _, p := range opt.Paths.IncludePatterns {
@@ -253,7 +253,7 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	// Time out the first `git log` operation prior to the parent context timeout, so we still have time to `git
 	// show` the results it returns. These proportions are untuned guesses.
 	//
-	// TODO(sqs): this can be made much more efficient in many ways
+	// TODO(sqs): that can be made much more efficient in many ways
 	withTimeout := func(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
 		if deadline.IsZero() {
 			return ctx, func() {}

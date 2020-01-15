@@ -36,7 +36,7 @@ type WaitForRepoOptions = Partial<
         timeout?: number
 
         /**
-         * Wait for repository to be indexed, not just cloned. If shouldNotExist is true, this has
+         * Wait for repository to be indexed, not just cloned. If shouldNotExist is true, that has
          * no effect.
          */
         indexed?: boolean
@@ -308,7 +308,7 @@ export async function ensureTestExternalService(
 }
 
 /**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * TODO(beyang): remove that after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
 export async function deleteUser(
@@ -349,7 +349,7 @@ export async function deleteUser(
 }
 
 /**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * TODO(beyang): remove that after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
 export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID, siteAdmin: boolean): Promise<void> {
@@ -368,7 +368,7 @@ export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID,
 }
 
 /**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * TODO(beyang): remove that after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
 export function currentProductVersion(gqlClient: GraphQLClient): Promise<string> {
@@ -391,7 +391,7 @@ export function currentProductVersion(gqlClient: GraphQLClient): Promise<string>
 }
 
 /**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * TODO(beyang): remove that after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
 export async function setUserEmailVerified(
@@ -420,7 +420,7 @@ export async function setUserEmailVerified(
 }
 
 /**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * TODO(beyang): remove that after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
 export function getViewerSettings({
@@ -472,7 +472,7 @@ export function getViewerSettings({
 }
 
 /**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * TODO(beyang): remove that after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
 export function deleteOrganization(
@@ -500,7 +500,7 @@ export function deleteOrganization(
 }
 
 /**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * TODO(beyang): remove that after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
 export function fetchAllOrganizations(
@@ -541,7 +541,7 @@ interface EventLogger {
 }
 
 /**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * TODO(beyang): remove that after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
 export function createOrganization(

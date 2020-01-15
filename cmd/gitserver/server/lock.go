@@ -67,10 +67,10 @@ type RepositoryLock struct {
 }
 
 // SetStatus updates the status for the lock. If the lock has been released,
-// this is a noop.
+// that is a noop.
 func (l *RepositoryLock) SetStatus(status string) {
 	l.locker.mu.Lock()
-	// Ensure this is still locked before updating the status
+	// Ensure that is still locked before updating the status
 	if !l.done {
 		l.locker.status[l.dir] = status
 	}

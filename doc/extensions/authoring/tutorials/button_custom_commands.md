@@ -18,7 +18,7 @@ It also presumes you have the [Sourcegraph browser extension](https://docs.sourc
 
 ## Set up
 
-Create the line counter extension you'll use for this tutorial:
+Create the line counter extension you'll use for that tutorial:
 
 ```
 mkdir line-counter

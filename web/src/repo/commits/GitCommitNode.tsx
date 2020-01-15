@@ -14,7 +14,7 @@ import { GitCommitNodeByline } from './GitCommitNodeByline'
 export interface GitCommitNodeProps {
     node: GQL.IGitCommit
 
-    /** An optional additional CSS class name to apply to this element. */
+    /** An optional additional CSS class name to apply to that element. */
     className?: string
 
     /** Display in a single line (more compactly). */
@@ -49,63 +49,63 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
         const bylineElement = (
             <GitCommitNodeByline
                 className="text-muted git-commit-node__byline"
-                author={this.props.node.author}
-                committer={this.props.node.committer}
-                compact={Boolean(this.props.compact)}
+                author={that.props.node.author}
+                committer={that.props.node.committer}
+                compact={Boolean(that.props.compact)}
             />
         )
         const messageElement = (
             <div className="git-commit-node__message">
                 <Link
-                    to={this.props.node.canonicalURL}
+                    to={that.props.node.canonicalURL}
                     className="git-commit-node__message-subject"
-                    title={this.props.node.message}
+                    title={that.props.node.message}
                 >
-                    {this.props.node.subject}
+                    {that.props.node.subject}
                 </Link>
-                {this.props.node.body &&
-                    !this.props.hideExpandCommitMessageBody &&
-                    !this.props.expandCommitMessageBody && (
+                {that.props.node.body &&
+                    !that.props.hideExpandCommitMessageBody &&
+                    !that.props.expandCommitMessageBody && (
                         <button
                             type="button"
                             className="btn btn-secondary btn-sm git-commit-node__message-toggle"
-                            onClick={this.toggleShowCommitMessageBody}
+                            onClick={that.toggleShowCommitMessageBody}
                         >
                             <DotsHorizontalIcon className="icon-inline" />
                         </button>
                     )}
-                {this.props.compact && (
+                {that.props.compact && (
                     <small className="text-muted git-commit-node__message-timestamp">
                         <Timestamp
                             noAbout={true}
                             date={
-                                this.props.node.committer ? this.props.node.committer.date : this.props.node.author.date
+                                that.props.node.committer ? that.props.node.committer.date : that.props.node.author.date
                             }
                         />
                     </small>
                 )}
             </div>
         )
-        const oidElement = <code className="git-commit-node__oid">{this.props.node.abbreviatedOID}</code>
+        const oidElement = <code className="git-commit-node__oid">{that.props.node.abbreviatedOID}</code>
         return (
             <div
-                key={this.props.node.id}
-                className={`git-commit-node ${this.props.compact ? 'git-commit-node--compact' : ''} ${this.props
+                key={that.props.node.id}
+                className={`git-commit-node ${that.props.compact ? 'git-commit-node--compact' : ''} ${that.props
                     .className || ''}`}
             >
                 <div className="git-commit-node__row git-commit-node__main">
-                    {!this.props.compact ? (
+                    {!that.props.compact ? (
                         <>
                             <div className="git-commit-node__signature">
                                 {messageElement}
                                 {bylineElement}
                             </div>
                             <div className="git-commit-node__actions">
-                                {!this.props.showSHAAndParentsRow && (
+                                {!that.props.showSHAAndParentsRow && (
                                     <div className="btn-group btn-group-sm mr-2" role="group">
                                         <Link
                                             className="btn btn-secondary"
-                                            to={this.props.node.canonicalURL}
+                                            to={that.props.node.canonicalURL}
                                             data-tooltip="View this commit"
                                         >
                                             <strong>{oidElement}</strong>
@@ -113,19 +113,19 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                         <button
                                             type="button"
                                             className="btn btn-secondary"
-                                            onClick={this.copyToClipboard}
+                                            onClick={that.copyToClipboard}
                                             data-tooltip={
-                                                this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
+                                                that.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
                                             }
                                         >
                                             <ContentCopyIcon className="icon-inline small" />
                                         </button>
                                     </div>
                                 )}
-                                {this.props.node.tree && (
+                                {that.props.node.tree && (
                                     <Link
                                         className="btn btn-secondary btn-sm"
-                                        to={this.props.node.tree.canonicalURL}
+                                        to={that.props.node.tree.canonicalURL}
                                         data-tooltip="View files at this commit"
                                     >
                                         <FileDocumentIcon className="icon-inline small" />
@@ -137,42 +137,42 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                         <>
                             {bylineElement}
                             {messageElement}
-                            <Link to={this.props.node.canonicalURL}>{oidElement}</Link>
+                            <Link to={that.props.node.canonicalURL}>{oidElement}</Link>
                         </>
                     )}
-                    {this.props.afterElement}
+                    {that.props.afterElement}
                 </div>
-                {(this.props.expandCommitMessageBody || this.state.showCommitMessageBody) && (
+                {(that.props.expandCommitMessageBody || that.state.showCommitMessageBody) && (
                     <div className="git-commit-node__row">
-                        <pre className="git-commit-node__message-body">{this.props.node.body}</pre>
+                        <pre className="git-commit-node__message-body">{that.props.node.body}</pre>
                     </div>
                 )}
-                {this.props.showSHAAndParentsRow && (
+                {that.props.showSHAAndParentsRow && (
                     <div className="git-commit-node__row git-commit-node__sha-and-parents">
                         <code className="git-ref-tag-2 git-commit-node__sha-and-parents-sha">
-                            {this.props.node.oid}{' '}
+                            {that.props.node.oid}{' '}
                             <button
                                 type="button"
                                 className="btn btn-icon git-commit-node__sha-and-parents-copy"
-                                onClick={this.copyToClipboard}
-                                data-tooltip={this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
+                                onClick={that.copyToClipboard}
+                                data-tooltip={that.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                             >
                                 <ContentCopyIcon className="icon-inline" />
                             </button>
                         </code>
                         <div className="git-commit-node__sha-and-parents-parents">
-                            {this.props.node.parents.length > 0 ? (
+                            {that.props.node.parents.length > 0 ? (
                                 <>
                                     <span className="git-commit-node__sha-and-parents-label">
-                                        {this.props.node.parents.length === 1
+                                        {that.props.node.parents.length === 1
                                             ? 'Parent'
-                                            : `${this.props.node.parents.length} ${pluralize(
+                                            : `${that.props.node.parents.length} ${pluralize(
                                                   'parent',
-                                                  this.props.node.parents.length
+                                                  that.props.node.parents.length
                                               )}`}
                                         :
                                     </span>{' '}
-                                    {this.props.node.parents.map((parent, i) => (
+                                    {that.props.node.parents.map((parent, i) => (
                                         <Link
                                             key={i}
                                             className="git-ref-tag-2 git-commit-node__sha-and-parents-parent"
@@ -194,16 +194,16 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
 
     private toggleShowCommitMessageBody = (): void => {
         eventLogger.log('CommitBodyToggled')
-        this.setState(prevState => ({ showCommitMessageBody: !prevState.showCommitMessageBody }))
+        that.setState(prevState => ({ showCommitMessageBody: !prevState.showCommitMessageBody }))
     }
 
     private copyToClipboard = (): void => {
         eventLogger.log('CommitSHACopiedToClipboard')
-        copy(this.props.node.oid)
-        this.setState({ flashCopiedToClipboardMessage: true }, () => {
+        copy(that.props.node.oid)
+        that.setState({ flashCopiedToClipboardMessage: true }, () => {
             Tooltip.forceUpdate()
             setTimeout(() => {
-                this.setState({ flashCopiedToClipboardMessage: false }, () => Tooltip.forceUpdate())
+                that.setState({ flashCopiedToClipboardMessage: false }, () => Tooltip.forceUpdate())
             }, 1500)
         })
     }

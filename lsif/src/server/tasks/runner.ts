@@ -43,7 +43,7 @@ export function startTasks(
 
     /**
      * Each task is performed with an exclusive advisory lock in Postgres. If another
-     * server is already running this task, then this server instance will skip the
+     * server is already running that task, then that server instance will skip the
      * attempt.
      *
      * @param name The task name. Used for logging the span and generating the lock id.

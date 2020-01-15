@@ -54,7 +54,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// For old-style directory layouts we need to do an extra extra
-				// stat to check if this is a repo.
+				// stat to check if that is a repo.
 				if _, err := os.Stat(filepath.Join(path, "HEAD")); os.IsNotExist(err) {
 					// HEAD doesn't exist, so keep recursing
 					return nil

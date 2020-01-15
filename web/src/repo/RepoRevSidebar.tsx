@@ -53,27 +53,27 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         // Toggle sidebar visibility when the user presses 'alt+s'.
-        this.subscriptions.add(
+        that.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
                 .pipe(filter(event => event.altKey && event.key === 's'))
                 .subscribe(event => {
                     event.preventDefault()
-                    this.setState(prevState => ({ showSidebar: !prevState.showSidebar }))
+                    that.setState(prevState => ({ showSidebar: !prevState.showSidebar }))
                 })
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.showSidebar) {
+        if (!that.state.showSidebar) {
             return (
                 <button
                     type="button"
-                    className={`btn btn-icon repo-rev-sidebar-toggle ${this.props.className}-toggle`}
-                    onClick={this.onSidebarToggle}
+                    className={`btn btn-icon repo-rev-sidebar-toggle ${that.props.className}-toggle`}
+                    onClick={that.onSidebarToggle}
                     data-tooltip="Show sidebar (Alt+S/Opt+S)"
                 >
                     <FormatListBulletedIcon />
@@ -98,7 +98,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 <Spacer />
                                 <button
                                     type="button"
-                                    onClick={this.onSidebarToggle}
+                                    onClick={that.onSidebarToggle}
                                     className={`btn btn-icon tab_bar__close-button ${TabBorderClassName}`}
                                     title="Close sidebar (Alt+S/Opt+S)"
                                 >
@@ -107,31 +107,31 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             </>
                         }
                         id="explorer"
-                        className={`repo-rev-sidebar ${this.props.className} ${
-                            this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
+                        className={`repo-rev-sidebar ${that.props.className} ${
+                            that.state.showSidebar ? `repo-rev-sidebar--open ${that.props.className}--open` : ''
                         } e2e-repo-rev-sidebar`}
                         tabClassName="tab-bar__tab--h5like"
-                        onSelectTab={this.onSelectTab}
+                        onSelectTab={that.onSelectTab}
                     >
                         <Tree
                             key="files"
-                            repoName={this.props.repoName}
-                            rev={this.props.rev}
-                            commitID={this.props.commitID}
-                            history={this.props.history}
-                            location={this.props.location}
+                            repoName={that.props.repoName}
+                            rev={that.props.rev}
+                            commitID={that.props.commitID}
+                            history={that.props.history}
+                            location={that.props.location}
                             scrollRootSelector="#explorer"
-                            activePath={this.props.filePath}
-                            activePathIsDir={this.props.isDir}
+                            activePath={that.props.filePath}
+                            activePathIsDir={that.props.isDir}
                             sizeKey={`Resizable:${STORAGE_KEY}`}
                         />
                         <RepoRevSidebarSymbols
                             key="symbols"
-                            repoID={this.props.repoID}
-                            rev={this.props.rev}
-                            activePath={this.props.filePath}
-                            history={this.props.history}
-                            location={this.props.location}
+                            repoID={that.props.repoID}
+                            rev={that.props.rev}
+                            activePath={that.props.filePath}
+                            history={that.props.history}
+                            location={that.props.location}
                         />
                     </TabsWithLocalStorageViewStatePersistence>
                 }
@@ -140,12 +140,12 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
     }
 
     private onSidebarToggle = (): void => {
-        if (this.state.showSidebar) {
+        if (that.state.showSidebar) {
             localStorage.setItem(RepoRevSidebar.HIDDEN_STORAGE_KEY, 'true')
         } else {
             localStorage.removeItem(RepoRevSidebar.HIDDEN_STORAGE_KEY)
         }
-        this.setState(state => ({ showSidebar: !state.showSidebar }))
+        that.setState(state => ({ showSidebar: !state.showSidebar }))
     }
 
     private onSelectTab = (tab: string): void => {

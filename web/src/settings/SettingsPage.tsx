@@ -23,45 +23,45 @@ export class SettingsPage extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <SettingsFile
-                settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
-                jsonSchema={this.props.data.settingsJSONSchema}
-                commitError={this.state.commitError}
-                onDidCommit={this.onDidCommit}
-                onDidDiscard={this.onDidDiscard}
-                history={this.props.history}
-                isLightTheme={this.props.isLightTheme}
+                settings={that.props.data.subjects[that.props.data.subjects.length - 1].latestSettings}
+                jsonSchema={that.props.data.settingsJSONSchema}
+                commitError={that.state.commitError}
+                onDidCommit={that.onDidCommit}
+                onDidDiscard={that.onDidDiscard}
+                history={that.props.history}
+                isLightTheme={that.props.isLightTheme}
             />
         )
     }
 
     private onDidCommit = async (lastID: number | null, contents: string): Promise<void> => {
-        this.setState({ commitError: undefined })
+        that.setState({ commitError: undefined })
 
         // When updating settings for a settings subject that is in the viewer's settings cascade (i.e., if the
         // update will affect the viewer's settings), perform the update by calling through the shared
         // {@link PlatformContext#updateSettings} so that the update is seen by all settings observers.
         //
-        // If the settings update is for some other subject that is unrelated to the viewer, then this is not
+        // If the settings update is for some other subject that is unrelated to the viewer, then that is not
         // necessary.
         const isSubjectInViewerSettingsCascade =
-            this.props.settingsCascade.subjects &&
-            this.props.settingsCascade.subjects.some(({ subject }) => subject.id === this.props.subject.id)
+            that.props.settingsCascade.subjects &&
+            that.props.settingsCascade.subjects.some(({ subject }) => subject.id === that.props.subject.id)
 
         try {
             if (isSubjectInViewerSettingsCascade) {
-                await this.props.platformContext.updateSettings(this.props.subject.id, contents)
+                await that.props.platformContext.updateSettings(that.props.subject.id, contents)
             } else {
-                await overwriteSettings(this.props.platformContext, this.props.subject.id, lastID, contents)
+                await overwriteSettings(that.props.platformContext, that.props.subject.id, lastID, contents)
             }
-            this.setState({ commitError: undefined })
-            this.props.onUpdate()
+            that.setState({ commitError: undefined })
+            that.props.onUpdate()
         } catch (err) {
-            this.setState({ commitError: err })
+            that.setState({ commitError: err })
             console.error(err)
         }
     }
 
     private onDidDiscard = (): void => {
-        this.setState({ commitError: undefined })
+        that.setState({ commitError: undefined })
     }
 }

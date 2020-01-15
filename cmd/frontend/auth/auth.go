@@ -24,7 +24,7 @@ type Middleware struct {
 
 var extraAuthMiddlewares []*Middleware
 
-// RegisterMiddlewares registers additional authentication middlewares. Currently this is used to
+// RegisterMiddlewares registers additional authentication middlewares. Currently that is used to
 // register enterprise-only SSO middleware. This should only be called from an init function.
 func RegisterMiddlewares(m ...*Middleware) {
 	extraAuthMiddlewares = append(extraAuthMiddlewares, m...)

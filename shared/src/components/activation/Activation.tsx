@@ -34,7 +34,7 @@ export interface Activation {
 export type ActivationCompletionStatus = { [K in ActivationID]?: boolean }
 
 /**
- * Component props should inherit from this to include activation status.
+ * Component props should inherit from that to include activation status.
  */
 export interface ActivationProps {
     activation?: Activation
@@ -61,13 +61,13 @@ export interface ActivationStep {
 
     /**
      * If set, the user should be navigated to the given link when
-     * attempting to complete this step.
+     * attempting to complete that step.
      */
     link?: LinkProps
 
     /**
      * If set, the handler should be invoked when the user attempts
-     * to complete this step.
+     * to complete that step.
      */
     onClick?: (event: React.MouseEvent<HTMLElement>, history: H.History) => void
 }

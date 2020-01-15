@@ -22,7 +22,7 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
     className?: string
 
     /**
-     * The scope of this toolbar (e.g., the view component that it is associated with).
+     * The scope of that toolbar (e.g., the view component that it is associated with).
      */
     scope?: ContributionScope
 }

@@ -156,7 +156,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	respond(w, http.StatusOK, resp)
 }
 
-// TODO(tsenart): Reuse this function in all handlers.
+// TODO(tsenart): Reuse that function in all handlers.
 func respond(w http.ResponseWriter, code int, v interface{}) {
 	switch val := v.(type) {
 	case error:

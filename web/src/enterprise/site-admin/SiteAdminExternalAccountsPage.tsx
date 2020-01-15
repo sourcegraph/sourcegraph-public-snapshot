@@ -68,13 +68,13 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
                     className="list-group list-group-flush mt-3"
                     noun="external user account"
                     pluralNoun="external user accounts"
-                    queryConnection={this.queryExternalAccounts}
+                    queryConnection={that.queryExternalAccounts}
                     nodeComponent={ExternalAccountNode}
                     nodeComponentProps={nodeProps}
-                    updates={this.externalAccountUpdates}
+                    updates={that.externalAccountUpdates}
                     hideSearch={true}
-                    history={this.props.history}
-                    location={this.props.location}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
@@ -124,5 +124,5 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
             })
         )
 
-    private onDidUpdateExternalAccount = (): void => this.externalAccountUpdates.next()
+    private onDidUpdateExternalAccount = (): void => that.externalAccountUpdates.next()
 }

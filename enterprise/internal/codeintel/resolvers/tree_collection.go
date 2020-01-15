@@ -11,7 +11,7 @@ type repositoryCollectionResolver struct {
 }
 
 // resolve returns a GitTreeEntryResolver for the given repository, commit, and path. This will cache
-// the repository, commit, and path resolvers if they have been previously constructed with this same
+// the repository, commit, and path resolvers if they have been previously constructed with that same
 // struct instance. If the commit resolver cannot be constructed, a nil resolver is returned.
 func (r *repositoryCollectionResolver) resolve(ctx context.Context, repoName, commit, path string) (*graphqlbackend.GitTreeEntryResolver, error) {
 	commitCollectionResolver, err := r.resolveRepository(ctx, repoName)

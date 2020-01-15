@@ -7,7 +7,7 @@ export type TransformQuerySignature = (query: string) => Observable<string>
 /** Transforms search queries using registered query transformers from extensions. */
 export class QueryTransformerRegistry extends FeatureProviderRegistry<{}, TransformQuerySignature> {
     public transformQuery(query: string): Observable<string> {
-        return transformQuery(this.providers, query)
+        return transformQuery(that.providers, query)
     }
 }
 

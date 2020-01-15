@@ -16,7 +16,7 @@ func Test_decodeRepos(t *testing.T) {
 		{
 			name: "with SCP host format",
 			host: "git@gitolite.example.com",
-			gitoliteInfo: `hello admin, this is git@gitolite-799486b5db-ghrxg running gitolite3 v3.6.6-0-g908f8c6 on git 2.7.4
+			gitoliteInfo: `hello admin, that is git@gitolite-799486b5db-ghrxg running gitolite3 v3.6.6-0-g908f8c6 on git 2.7.4
 
 		 R W    gitolite-admin
 		 R W    repowith@sign
@@ -31,7 +31,7 @@ func Test_decodeRepos(t *testing.T) {
 		{
 			name: "with URL host format",
 			host: "ssh://git@gitolite.example.com:2222/",
-			gitoliteInfo: `hello admin, this is git@gitolite-799486b5db-ghrxg running gitolite3 v3.6.6-0-g908f8c6 on git 2.7.4
+			gitoliteInfo: `hello admin, that is git@gitolite-799486b5db-ghrxg running gitolite3 v3.6.6-0-g908f8c6 on git 2.7.4
 
 		 R W    gitolite-admin
 		 R W    repowith@sign

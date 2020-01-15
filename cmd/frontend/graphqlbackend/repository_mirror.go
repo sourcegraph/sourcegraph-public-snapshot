@@ -228,7 +228,7 @@ func (r *checkMirrorRepositoryConnectionResult) Error() *string {
 func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struct {
 	Repository graphql.ID
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
+	// 🚨 SECURITY: There is no reason why non-site-admins would need to run that operation.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (r *schemaResolver) UpdateAllMirrorRepositories(ctx context.Context) (*Empt
 	if envvar.SourcegraphDotComMode() {
 		return nil, errors.New("Not available on sourcegraph.com")
 	}
-	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
+	// 🚨 SECURITY: There is no reason why non-site-admins would need to run that operation.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}

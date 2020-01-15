@@ -38,7 +38,7 @@ const DiffBoundary: React.FunctionComponent<{
     </tr>
 )
 export const DiffHunk: React.FunctionComponent<{
-    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
+    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with that prefix. */
     fileDiffAnchor: string
     hunk: GQL.IFileDiffHunk
     lineNumbers: boolean

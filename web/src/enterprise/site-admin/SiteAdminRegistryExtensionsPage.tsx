@@ -40,17 +40,17 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.deletes
+        that.subscriptions.add(
+            that.deletes
                 .pipe(
                     switchMap(() =>
-                        deleteRegistryExtensionWithConfirmation(this.props.node.id).pipe(
+                        deleteRegistryExtensionWithConfirmation(that.props.node.id).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
                             map(c => ({ deletionOrError: c })),
                             tap(() => {
-                                if (this.props.onDidUpdate) {
-                                    this.props.onDidUpdate()
+                                if (that.props.onDidUpdate) {
+                                    that.props.onDidUpdate()
                                 }
                             }),
                             startWith<Pick<RegistryExtensionNodeSiteAdminState, 'deletionOrError'>>({
@@ -60,58 +60,58 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const loading = this.state.deletionOrError === undefined
+        const loading = that.state.deletionOrError === undefined
         return (
             <li className="registry-extension-node-row list-group-item d-block py-2">
                 <div className="d-flex w-100 justify-content-between">
                     <div className="mr-2">
-                        <Link className="font-weight-bold" to={this.props.node.url}>
-                            {this.props.node.extensionID}
+                        <Link className="font-weight-bold" to={that.props.node.url}>
+                            {that.props.node.extensionID}
                         </Link>{' '}
                         <div className="text-muted small">
-                            <RegistryExtensionSourceBadge extension={this.props.node} showText={true} />
-                            {this.props.node.updatedAt && (
+                            <RegistryExtensionSourceBadge extension={that.props.node} showText={true} />
+                            {that.props.node.updatedAt && (
                                 <>
-                                    , updated <Timestamp date={this.props.node.updatedAt} />{' '}
+                                    , updated <Timestamp date={that.props.node.updatedAt} />{' '}
                                 </>
                             )}
                         </div>
                     </div>
                     <div className="d-flex align-items-center">
-                        {this.props.node.viewerCanAdminister && (
+                        {that.props.node.viewerCanAdminister && (
                             <Link
-                                to={`${this.props.node.url}/-/manage`}
+                                to={`${that.props.node.url}/-/manage`}
                                 className="btn btn-secondary btn-sm"
                                 title="Manage extension"
                             >
                                 Manage
                             </Link>
                         )}
-                        {!this.props.node.isLocal && this.props.node.remoteURL && this.props.node.registryName && (
+                        {!that.props.node.isLocal && that.props.node.remoteURL && that.props.node.registryName && (
                             <a
-                                href={this.props.node.remoteURL}
+                                href={that.props.node.remoteURL}
                                 className="btn btn-link text-info btn-sm ml-1"
-                                title={`View extension on ${this.props.node.registryName}`}
+                                title={`View extension on ${that.props.node.registryName}`}
                             >
                                 Visit
                             </a>
                         )}
-                        {this.props.node.viewerCanAdminister && (
+                        {that.props.node.viewerCanAdminister && (
                             <button
                                 type="button"
                                 className="btn btn-danger btn-sm ml-1"
-                                onClick={this.deleteExtension}
+                                onClick={that.deleteExtension}
                                 disabled={loading}
                                 title="Delete extension"
                             >
@@ -120,19 +120,19 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                         )}
                     </div>
                 </div>
-                {isErrorLike(this.state.deletionOrError) && (
-                    <ErrorAlert className="mt-2" error={this.state.deletionOrError} />
+                {isErrorLike(that.state.deletionOrError) && (
+                    <ErrorAlert className="mt-2" error={that.state.deletionOrError} />
                 )}
             </li>
         )
     }
 
-    private deleteExtension = (): void => this.deletes.next()
+    private deleteExtension = (): void => that.deletes.next()
 }
 
 interface Props extends RouteComponentProps<{}> {}
 
-/** Displays all registry extensions on this site. */
+/** Displays all registry extensions on that site. */
 export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> {
     public static FILTERS: FilteredConnectionFilter[] = [
         {
@@ -163,7 +163,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<RegistryExtensionNodeSiteAdminProps, 'onDidUpdate'> = {
-            onDidUpdate: this.onDidUpdateRegistryExtension,
+            onDidUpdate: that.onDidUpdateRegistryExtension,
         }
 
         return (
@@ -189,15 +189,15 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                     listComponent="ul"
                     noun="extension"
                     pluralNoun="extensions"
-                    queryConnection={this.queryRegistryExtensions}
+                    queryConnection={that.queryRegistryExtensions}
                     nodeComponent={RegistryExtensionNodeSiteAdminRow}
                     nodeComponentProps={nodeProps}
-                    updates={this.updates}
+                    updates={that.updates}
                     filters={SiteAdminRegistryExtensionsPage.FILTERS}
                     hideSearch={false}
                     noSummaryIfAllNodesVisible={true}
-                    history={this.props.history}
-                    location={this.props.location}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
@@ -253,5 +253,5 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
             })
         )
 
-    private onDidUpdateRegistryExtension = (): void => this.updates.next()
+    private onDidUpdateRegistryExtension = (): void => that.updates.next()
 }

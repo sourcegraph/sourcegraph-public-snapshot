@@ -19,7 +19,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     /**
      * The user who will own the new subscription when created, or null when there is no
-     * authenticated user and this page is accessed at /subscriptions/new.
+     * authenticated user and that page is accessed at /subscriptions/new.
      */
     user: GQL.IUser | null
 }
@@ -49,14 +49,14 @@ export class UserSubscriptionsNewProductSubscriptionPage extends React.Component
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSubscriptionsNewProductSubscription')
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     switchMap(args =>
                         createPaidProductSubscription(args).pipe(
                             tap(({ productSubscription }) => {
                                 // Redirect to new subscription upon success.
-                                this.props.history.push(productSubscription.url)
+                                that.props.history.push(productSubscription.url)
                             }),
                             mapTo(null),
                             catchError(err => [asError(err)]),
@@ -65,31 +65,31 @@ export class UserSubscriptionsNewProductSubscriptionPage extends React.Component
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (this.props.user && !this.props.user.viewerCanAdminister) {
+        if (that.props.user && !that.props.user.viewerCanAdminister) {
             return <HeroPage icon={AlertCircleIcon} title="Not authorized" />
         }
 
         return (
             <div className="user-subscriptions-new-product-subscription-page">
                 <PageTitle title="New product subscription" />
-                {this.props.user && <BackToAllSubscriptionsLink user={this.props.user} />}
+                {that.props.user && <BackToAllSubscriptionsLink user={that.props.user} />}
                 <h2>New subscription</h2>
                 <ProductSubscriptionForm
-                    accountID={this.props.user ? this.props.user.id : null}
+                    accountID={that.props.user ? that.props.user.id : null}
                     subscriptionID={null}
-                    initialValue={parseProductSubscriptionInputFromLocation(this.props.location) || undefined}
-                    isLightTheme={this.props.isLightTheme}
-                    onSubmit={this.onSubmit}
-                    submissionState={this.state.creationOrError}
+                    initialValue={parseProductSubscriptionInputFromLocation(that.props.location) || undefined}
+                    isLightTheme={that.props.isLightTheme}
+                    onSubmit={that.onSubmit}
+                    submissionState={that.state.creationOrError}
                     primaryButtonText="Buy subscription"
                     afterPrimaryButton={
                         <small className="form-text text-muted">
@@ -111,7 +111,7 @@ export class UserSubscriptionsNewProductSubscriptionPage extends React.Component
     }
 
     private onSubmit = (args: ProductSubscriptionFormData): void => {
-        this.submits.next(args)
+        that.submits.next(args)
     }
 }
 

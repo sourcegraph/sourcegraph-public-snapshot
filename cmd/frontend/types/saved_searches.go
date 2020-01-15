@@ -5,9 +5,9 @@ type SavedSearch struct {
 	ID              int32 // the globally unique DB ID
 	Description     string
 	Query           string  // the literal search query to be ran
-	Notify          bool    // whether or not to notify the owner(s) of this saved search via email
-	NotifySlack     bool    // whether or not to notify the owner(s) of this saved search via Slack
-	UserID          *int32  // if non-nil, the owner is this user. UserID/OrgID are mutually exclusive.
-	OrgID           *int32  // if non-nil, the owner is this organization. UserID/OrgID are mutually exclusive.
-	SlackWebhookURL *string // if non-nil && NotifySlack == true, indicates that this Slack webhook URL should be used instead of the owners default Slack webhook.
+	Notify          bool    // whether or not to notify the owner(s) of that saved search via email
+	NotifySlack     bool    // whether or not to notify the owner(s) of that saved search via Slack
+	UserID          *int32  // if non-nil, the owner is that user. UserID/OrgID are mutually exclusive.
+	OrgID           *int32  // if non-nil, the owner is that organization. UserID/OrgID are mutually exclusive.
+	SlackWebhookURL *string // if non-nil && NotifySlack == true, indicates that that Slack webhook URL should be used instead of the owners default Slack webhook.
 }

@@ -13,7 +13,7 @@ export function activate() {
 }
 ```
 
-A build tool, such as Parcel, bundles this code for module loading and puts the exported file into a `dist` directory. A `package.json` is required for dependencies, configuration, and metadata. Now the extension is ready for publishing.
+A build tool, such as Parcel, bundles that code for module loading and puts the exported file into a `dist` directory. A `package.json` is required for dependencies, configuration, and metadata. Now the extension is ready for publishing.
 
 You can use any build tool you wish, so long as it meets these requirements.
 

@@ -113,7 +113,7 @@ export function getPhabricatorState(
 
             let baseDiffID: number | undefined
             if (comparison) {
-                // urls that looks like this: http://phabricator.aws.sgdev.org/D3?vs=on&id=8&whitespace=ignore-most#toc
+                // urls that looks like that: http://phabricator.aws.sgdev.org/D3?vs=on&id=8&whitespace=ignore-most#toc
                 const comparisonMatch = COMPARISON_REGEX.exec(comparison)
                 const comparisonBase = comparisonMatch?.[1]
                 if (comparisonBase && comparisonBase !== 'on') {
@@ -211,9 +211,9 @@ export function getPhabricatorState(
 
 /**
  * This hacks javelin Stratcom to ignore command + click actions on sg-clickable tokens.
- * Without this, two windows open when a user command + clicks on a token.
+ * Without that, two windows open when a user command + clicks on a token.
  *
- * TODO could this be eliminated with shadow DOM?
+ * TODO could that be eliminated with shadow DOM?
  */
 export function metaClickOverride(): void {
     const JX = (window as any).JX

@@ -59,7 +59,7 @@ export class SearchPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         const queryFromUrl = parseSearchURLQuery(props.location.search, props.interactiveSearchMode) || ''
-        this.state = {
+        that.state = {
             userQueryState: {
                 query: queryFromUrl,
                 cursorPosition: queryFromUrl.length,
@@ -75,11 +75,11 @@ export class SearchPage extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         let logoUrl =
             `${window.context.assetsRoot}/img/sourcegraph` +
-            (this.props.isLightTheme ? '-light' : '') +
+            (that.props.isLightTheme ? '-light' : '') +
             '-head-logo.svg'
         const { branding } = window.context
         if (branding) {
-            if (this.props.isLightTheme) {
+            if (that.props.isLightTheme) {
                 if (branding.light && branding.light.logo) {
                     logoUrl = branding.light.logo
                 }
@@ -87,61 +87,61 @@ export class SearchPage extends React.Component<Props, State> {
                 logoUrl = branding.dark.logo
             }
         }
-        const quickLinks = this.getQuickLinks()
+        const quickLinks = that.getQuickLinks()
         return (
             <div className="search-page">
-                <PageTitle title={this.getPageTitle()} />
+                <PageTitle title={that.getPageTitle()} />
                 <img className="search-page__logo" src={logoUrl} />
                 <div className="search search-page__container">
                     <div className="d-flex flex-row">
-                        {this.props.splitSearchModes && this.props.interactiveSearchMode ? (
+                        {that.props.splitSearchModes && that.props.interactiveSearchMode ? (
                             <InteractiveModeInput
-                                {...this.props}
-                                navbarSearchState={this.state.userQueryState}
-                                onNavbarQueryChange={this.onUserQueryChange}
-                                toggleSearchMode={this.props.toggleSearchMode}
+                                {...that.props}
+                                navbarSearchState={that.state.userQueryState}
+                                onNavbarQueryChange={that.onUserQueryChange}
+                                toggleSearchMode={that.props.toggleSearchMode}
                             />
                         ) : (
                             <>
-                                <Form className="search flex-grow-1" onSubmit={this.onSubmit}>
+                                <Form className="search flex-grow-1" onSubmit={that.onSubmit}>
                                     <div className="search-page__input-container">
-                                        {this.props.splitSearchModes && (
+                                        {that.props.splitSearchModes && (
                                             <SearchModeToggle
-                                                {...this.props}
-                                                interactiveSearchMode={this.props.interactiveSearchMode}
+                                                {...that.props}
+                                                interactiveSearchMode={that.props.interactiveSearchMode}
                                             />
                                         )}
                                         <QueryInput
-                                            {...this.props}
-                                            value={this.state.userQueryState}
-                                            onChange={this.onUserQueryChange}
+                                            {...that.props}
+                                            value={that.state.userQueryState}
+                                            onChange={that.onUserQueryChange}
                                             autoFocus="cursor-at-end"
                                             hasGlobalQueryBehavior={true}
-                                            patternType={this.props.patternType}
-                                            setPatternType={this.props.setPatternType}
-                                            withSearchModeToggle={this.props.splitSearchModes}
+                                            patternType={that.props.patternType}
+                                            setPatternType={that.props.setPatternType}
+                                            withSearchModeToggle={that.props.splitSearchModes}
                                         />
                                         <SearchButton />
                                     </div>
                                     <div className="search-page__input-sub-container">
-                                        {!this.props.splitSearchModes && (
+                                        {!that.props.splitSearchModes && (
                                             <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
                                                 Query builder
                                             </Link>
                                         )}
                                         <SearchScopes
-                                            history={this.props.history}
-                                            query={this.state.userQueryState.query}
-                                            authenticatedUser={this.props.authenticatedUser}
-                                            settingsCascade={this.props.settingsCascade}
-                                            patternType={this.props.patternType}
+                                            history={that.props.history}
+                                            query={that.state.userQueryState.query}
+                                            authenticatedUser={that.props.authenticatedUser}
+                                            settingsCascade={that.props.settingsCascade}
+                                            patternType={that.props.patternType}
                                         />
                                     </div>
                                     <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                                     <Notices
                                         className="my-3"
                                         location="home"
-                                        settingsCascade={this.props.settingsCascade}
+                                        settingsCascade={that.props.settingsCascade}
                                     />
                                 </Form>
                             </>
@@ -153,26 +153,26 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     private onUserQueryChange = (userQueryState: QueryState): void => {
-        this.setState({ userQueryState })
+        that.setState({ userQueryState })
     }
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        const query = [this.state.builderQuery, this.state.userQueryState.query].filter(s => !!s).join(' ')
-        submitSearch(this.props.history, query, 'home', this.props.patternType, this.props.activation)
+        const query = [that.state.builderQuery, that.state.userQueryState.query].filter(s => !!s).join(' ')
+        submitSearch(that.props.history, query, 'home', that.props.patternType, that.props.activation)
     }
 
     private getPageTitle(): string | undefined {
-        const query = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
+        const query = parseSearchURLQuery(that.props.location.search, that.props.interactiveSearchMode)
         if (query) {
-            return `${limitString(this.state.userQueryState.query, 25, true)}`
+            return `${limitString(that.state.userQueryState.query, 25, true)}`
         }
         return undefined
     }
 
     private getQuickLinks(): QuickLink[] {
         return (
-            (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []
+            (isSettingsValid<Settings>(that.props.settingsCascade) && that.props.settingsCascade.final.quicklinks) || []
         )
     }
 }

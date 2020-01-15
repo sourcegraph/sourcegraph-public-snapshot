@@ -20,16 +20,16 @@ export class OrgOverviewPage extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="org-page org-overview-page">
-                <PageTitle title={this.props.org.name} />
+                <PageTitle title={that.props.org.name} />
                 <p>
-                    {this.props.org.displayName ? (
+                    {that.props.org.displayName ? (
                         <>
-                            {this.props.org.displayName} ({this.props.org.name})
+                            {that.props.org.displayName} ({that.props.org.name})
                         </>
                     ) : (
-                        this.props.org.name
+                        that.props.org.name
                     )}{' '}
-                    was created <Timestamp date={this.props.org.createdAt} />.
+                    was created <Timestamp date={that.props.org.createdAt} />.
                 </p>
             </div>
         )

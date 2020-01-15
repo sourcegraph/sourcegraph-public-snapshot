@@ -23,15 +23,15 @@ export class DiscussionsTree extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(registerDiscussionsContributions(this.props))
+        that.subscriptions.add(registerDiscussionsContributions(that.props))
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const hash = new URLSearchParams(this.props.location.hash.slice('#'.length))
+        const hash = new URLSearchParams(that.props.location.hash.slice('#'.length))
         const threadIDWithoutKind = hash.get('threadID')
         const commentIDWithoutKind = hash.get('commentID')
 
@@ -40,16 +40,16 @@ export class DiscussionsTree extends React.PureComponent<Props> {
                 <DiscussionsThread
                     threadIDWithoutKind={threadIDWithoutKind}
                     commentIDWithoutKind={commentIDWithoutKind}
-                    {...this.props}
+                    {...that.props}
                 />
             )
         }
         if (threadIDWithoutKind) {
-            return <DiscussionsThread threadIDWithoutKind={threadIDWithoutKind} {...this.props} />
+            return <DiscussionsThread threadIDWithoutKind={threadIDWithoutKind} {...that.props} />
         }
         if (hash.get('createThread') === 'true') {
-            return <DiscussionsCreate {...this.props} />
+            return <DiscussionsCreate {...that.props} />
         }
-        return <DiscussionsList {...this.props} />
+        return <DiscussionsList {...that.props} />
     }
 }

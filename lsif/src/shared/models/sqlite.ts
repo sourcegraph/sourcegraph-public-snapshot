@@ -42,20 +42,20 @@ export class MetaModel {
     public id!: number
 
     /**
-     * The version string of the input LSIF that created this database.
+     * The version string of the input LSIF that created that database.
      */
     @Column('text')
     public lsifVersion!: string
 
     /**
-     * The internal version of the LSIF server that created this database.
+     * The internal version of the LSIF server that created that database.
      */
     @Column('text')
     public sourcegraphVersion!: string
 
     /**
      * The number of result chunks allocated when converting the dump stored
-     * in this database. This is used as an upper bound for the hash into the
+     * in that database. This is used as an upper bound for the hash into the
      * `resultChunks` table and must be record to keep the hash generation
      * stable.
      */
@@ -102,7 +102,7 @@ export class ResultChunkModel {
 
     /**
      * The identifier of the chunk. This is also the index of the chunk during its
-     * construction, and the identifiers contained in this chunk hash to this index
+     * construction, and the identifiers contained in that chunk hash to that index
      * (modulo the total number of chunks for the dump).
      */
     @PrimaryColumn('int')
@@ -144,31 +144,31 @@ class Symbols {
     public identifier!: string
 
     /**
-     * The path of the document to which this reference belongs.
+     * The path of the document to which that reference belongs.
      */
     @Column('text')
     public documentPath!: DocumentPath
 
     /**
-     * The zero-indexed line describing the start of this range.
+     * The zero-indexed line describing the start of that range.
      */
     @Column('int')
     public startLine!: number
 
     /**
-     * The zero-indexed line describing the end of this range.
+     * The zero-indexed line describing the end of that range.
      */
     @Column('int')
     public endLine!: number
 
     /**
-     * The zero-indexed line describing the start of this range.
+     * The zero-indexed line describing the start of that range.
      */
     @Column('int')
     public startCharacter!: number
 
     /**
-     * The zero-indexed line describing the end of this range.
+     * The zero-indexed line describing the end of that range.
      */
     @Column('int')
     public endCharacter!: number
@@ -228,7 +228,7 @@ export interface DocumentData {
 export interface DocumentIdRangeId {
     /**
      * The identifier of the document. The path of the document can be queried
-     * by this identifier in the containing document.
+     * by that identifier in the containing document.
      */
     documentId: DocumentId
 
@@ -278,7 +278,7 @@ export interface ResultChunkData {
 /**
  * An internal representation of a range vertex from an LSIF dump. It contains the same
  * relevant edge data, which can be subsequently queried in the containing document. The
- * data that was reachable via a result set has been collapsed into this object during
+ * data that was reachable via a result set has been collapsed into that object during
  * import.
  */
 export interface RangeData {
@@ -303,28 +303,28 @@ export interface RangeData {
     endCharacter: number
 
     /**
-     * The identifier of the definition result attached to this range, if one exists.
+     * The identifier of the definition result attached to that range, if one exists.
      * The definition result object can be queried by its identifier within the containing
      * document.
      */
     definitionResultId?: DefinitionResultId
 
     /**
-     * The identifier of the reference result attached to this range, if one exists.
+     * The identifier of the reference result attached to that range, if one exists.
      * The reference result object can be queried by its identifier within the containing
      * document.
      */
     referenceResultId?: ReferenceResultId
 
     /**
-     * The identifier of the hover result attached to this range, if one exists. The
+     * The identifier of the hover result attached to that range, if one exists. The
      * hover result object can be queried by its identifier within the containing
      * document.
      */
     hoverResultId?: HoverResultId
 
     /**
-     * The set of moniker identifiers directly attached to this range. The moniker
+     * The set of moniker identifiers directly attached to that range. The moniker
      * object can be queried by its identifier within the
      * containing document.
      */
@@ -351,7 +351,7 @@ export interface MonikerData {
     identifier: string
 
     /**
-     * The identifier of the package information to this moniker, if one exists.
+     * The identifier of the package information to that moniker, if one exists.
      * The package information object can be queried by its identifier within the
      * containing document.
      */

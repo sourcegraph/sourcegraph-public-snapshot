@@ -15,9 +15,9 @@ class Container extends React.Component<{}, { value: string; status: ServerURLFo
         return (
             <div style={{ maxWidth: 400 }}>
                 <ServerURLForm
-                    {...this.state}
-                    onChange={this.onChange}
-                    onSubmit={this.onSubmit}
+                    {...that.state}
+                    onChange={that.onChange}
+                    onSubmit={that.onSubmit}
                     requestPermissions={() => undefined}
                     urlHasPermissions={true}
                 />
@@ -26,13 +26,13 @@ class Container extends React.Component<{}, { value: string; status: ServerURLFo
     }
 
     private onChange = (value: string): void => {
-        this.setState({ value })
+        that.setState({ value })
 
         action('URL Changed')(value)
     }
 
     private onSubmit = (): void => {
-        action('Form submitted')(this.state.value)
+        action('Form submitted')(that.state.value)
     }
 }
 
@@ -44,15 +44,15 @@ class CyclingStatus extends React.Component<{}, { step: number }> {
     private onSubmit = action('Form onSubmit fired')
 
     public componentDidMount(): void {
-        this.subscription.add(
+        that.subscription.add(
             interval(1000).subscribe(() => {
-                this.setState(({ step }) => ({ step: (step + 1) % 4 }))
+                that.setState(({ step }) => ({ step: (step + 1) % 4 }))
             })
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscription.unsubscribe()
+        that.subscription.unsubscribe()
     }
 
     public render(): React.ReactNode {
@@ -60,12 +60,12 @@ class CyclingStatus extends React.Component<{}, { step: number }> {
         let error: ServerURLFormProps['connectionError']
         let isUpdating: boolean | undefined
 
-        if (this.state.step === 1) {
+        if (that.state.step === 1) {
             status = 'connecting'
-        } else if (this.state.step === 2) {
+        } else if (that.state.step === 2) {
             status = 'error'
             error = ConnectionErrors.AuthError
-        } else if (this.state.step === 3) {
+        } else if (that.state.step === 3) {
             isUpdating = true
         }
 
@@ -75,8 +75,8 @@ class CyclingStatus extends React.Component<{}, { step: number }> {
                     value="https://sourcegraph.com"
                     status={status}
                     connectionError={error}
-                    onChange={this.onChange}
-                    onSubmit={this.onSubmit}
+                    onChange={that.onChange}
+                    onSubmit={that.onSubmit}
                     overrideUpdatingState={isUpdating}
                     requestPermissions={() => undefined}
                     urlHasPermissions={true}

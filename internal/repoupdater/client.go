@@ -136,7 +136,7 @@ type Repo struct {
 	Name api.RepoName // the repository's URI
 
 	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
-	// this field is optional (it will use the last-used Git remote URL). If the repository is not
+	// that field is optional (it will use the last-used Git remote URL). If the repository is not
 	// cloned on the gitserver, the request will fail.
 	URL string
 }

@@ -58,7 +58,7 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
     ]
 
     public state: State = {
-        ...this.emptyState,
+        ...that.emptyState,
         tags: 'true-up', // Default because we expect most licenses will be true-up.
     }
 
@@ -66,54 +66,54 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     switchMap(() => {
-                        if (this.state.expiresAt === null) {
+                        if (that.state.expiresAt === null) {
                             throw new Error('invalid expiresAt')
                         }
                         return generateProductLicenseForSubscription({
-                            productSubscriptionID: this.props.subscriptionID,
+                            productSubscriptionID: that.props.subscriptionID,
                             license: {
-                                tags: this.state.tags ? this.state.tags.split(',') : [],
-                                userCount: this.state.userCount,
-                                expiresAt: Math.ceil(this.state.expiresAt / 1000),
+                                tags: that.state.tags ? that.state.tags.split(',') : [],
+                                userCount: that.state.userCount,
+                                expiresAt: Math.ceil(that.state.expiresAt / 1000),
                             },
                         }).pipe(
-                            tap(() => this.props.onGenerate()),
+                            tap(() => that.props.onGenerate()),
                             catchError(err => [asError(err)]),
                             startWith(LOADING),
                             map(c => ({ creationOrError: c }))
                         )
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const disableForm = Boolean(
-            this.state.creationOrError === LOADING ||
-                (this.state.creationOrError && !isErrorLike(this.state.creationOrError))
+            that.state.creationOrError === LOADING ||
+                (that.state.creationOrError && !isErrorLike(that.state.creationOrError))
         )
 
         return (
             <div className="site-admin-generate-product-license-for-subscription-form">
-                {this.state.creationOrError &&
-                !isErrorLike(this.state.creationOrError) &&
-                this.state.creationOrError !== LOADING ? (
+                {that.state.creationOrError &&
+                !isErrorLike(that.state.creationOrError) &&
+                that.state.creationOrError !== LOADING ? (
                     <div className="border rounded border-success mb-5">
                         <div className="border-top-0 border-left-0 border-right-0 rounded-0 alert alert-success mb-0 d-flex align-items-center justify-content-between px-3 py-2">
                             <span>Generated product license.</span>
                             <button
                                 type="button"
                                 className="btn btn-primary"
-                                onClick={this.dismissAlert}
+                                onClick={that.dismissAlert}
                                 autoFocus={true}
                             >
                                 Dismiss
@@ -121,7 +121,7 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                         </div>
                     </div>
                 ) : (
-                    <Form onSubmit={this.onSubmit}>
+                    <Form onSubmit={that.onSubmit}>
                         <div className="form-group">
                             <label htmlFor="site-admin-create-product-subscription-page__tags">Tags</label>
                             <input
@@ -129,9 +129,9 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                                 className="form-control"
                                 id="site-admin-create-product-subscription-page__tags"
                                 disabled={disableForm}
-                                value={this.state.tags}
+                                value={that.state.tags}
                                 list="knownPlans"
-                                onChange={this.onPlanChange}
+                                onChange={that.onPlanChange}
                             />
                             <datalist id="knownPlans">
                                 <option value="true-up" />
@@ -160,8 +160,8 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                                 className="form-control"
                                 id="site-admin-create-product-subscription-page__userCount"
                                 disabled={disableForm}
-                                value={this.state.userCount || ''}
-                                onChange={this.onUserCountChange}
+                                value={that.state.userCount || ''}
+                                onChange={that.onUserCountChange}
                             />
                         </div>
                         <div className="form-group">
@@ -173,15 +173,15 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                                 className="form-control"
                                 id="site-admin-create-product-subscription-page__validDays"
                                 disabled={disableForm}
-                                value={this.state.validDays || ''}
+                                value={that.state.validDays || ''}
                                 min={1}
                                 max={2000} // avoid overflowing int32
-                                onChange={this.onValidDaysChange}
+                                onChange={that.onValidDaysChange}
                             />
                             <small className="form-text text-muted">
-                                {this.state.expiresAt !== null ? (
+                                {that.state.expiresAt !== null ? (
                                     <ExpirationDate
-                                        date={this.state.expiresAt}
+                                        date={that.state.expiresAt}
                                         showTime={true}
                                         showRelative={true}
                                         showPrefix={true}
@@ -200,7 +200,7 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                                             className="mr-2"
                                             onClick={e => {
                                                 e.preventDefault()
-                                                this.setValidDays(days)
+                                                that.setValidDays(days)
                                             }}
                                         >
                                             {label}
@@ -218,35 +218,35 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                         </button>
                     </Form>
                 )}
-                {isErrorLike(this.state.creationOrError) && (
-                    <ErrorAlert className="mt-3" error={this.state.creationOrError} />
+                {isErrorLike(that.state.creationOrError) && (
+                    <ErrorAlert className="mt-3" error={that.state.creationOrError} />
                 )}
             </div>
         )
     }
 
     private onPlanChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-        this.setState({ tags: e.currentTarget.value })
+        that.setState({ tags: e.currentTarget.value })
 
     private onUserCountChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-        this.setState({ userCount: e.currentTarget.valueAsNumber })
+        that.setState({ userCount: e.currentTarget.valueAsNumber })
 
     private onValidDaysChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-        this.setValidDays(Number.isNaN(e.currentTarget.valueAsNumber) ? null : e.currentTarget.valueAsNumber)
+        that.setValidDays(Number.isNaN(e.currentTarget.valueAsNumber) ? null : e.currentTarget.valueAsNumber)
 
     private onSubmit: React.FormEventHandler = e => {
         e.preventDefault()
-        this.submits.next()
+        that.submits.next()
     }
 
     private setValidDays(validDays: number | null): void {
-        this.setState({
+        that.setState({
             validDays,
             expiresAt: validDays !== null ? addDaysAndRoundToEndOfDay(validDays || 0) : null,
         })
     }
 
-    private dismissAlert = (): void => this.setState(this.emptyState)
+    private dismissAlert = (): void => that.setState(that.emptyState)
 }
 
 /**

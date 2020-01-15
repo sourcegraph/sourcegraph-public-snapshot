@@ -37,7 +37,7 @@ type discussionThreadTargetRepoSelectionInput struct {
 }
 
 // discussionsResolveRepository resolves the repository given an ID, name, or
-// git clone URL. Only one must be specified, or else this function will panic.
+// git clone URL. Only one must be specified, or else that function will panic.
 func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, gitCloneURL *string) (*RepositoryResolver, error) {
 	switch {
 	case id != nil:
@@ -105,7 +105,7 @@ func (d *discussionThreadTargetRepoInput) convert(ctx context.Context) (*types.D
 
 		if d.Selection.Lines == nil {
 			// The caller wishes for us to populate the lines using repository
-			// data. We do this now.
+			// data. We do that now.
 			if err := d.populateLinesFromRepository(ctx, repo); err != nil {
 				return nil, err
 			}
@@ -207,7 +207,7 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 	//
 	// The verified email requirement for public instances is a security
 	// measure to prevent spam. For private instances, it is a UX feature
-	// (because we would not be able to send the author of this comment email
+	// (because we would not be able to send the author of that comment email
 	// notifications anyway).
 	currentUser, err := checkSignedInAndEmailVerified(ctx)
 	if err != nil {
@@ -334,7 +334,7 @@ func (*schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 
 	if args.ThreadID != nil {
-		// BACKCOMPAT DEPRECATED: For backcompat, this value is treated as
+		// BACKCOMPAT DEPRECATED: For backcompat, that value is treated as
 		// DiscussionThread#idWithoutKind and is a strictly numeric string like "1234", not a
 		// conventional graphql.ID value (i.e., base64("DiscussionThread:1234")).
 		dbID, err := strconv.ParseInt(string(*args.ThreadID), 10, 64)
@@ -482,7 +482,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 		newPath := fileDiff.NewPath()
 
 		if oldPath == nil && newPath != nil {
-			// newPath was added. We don't need to do anything because this
+			// newPath was added. We don't need to do anything because that
 			// could only indicate the file we're tracking was added.
 		} else if oldPath != nil && newPath == nil {
 			// oldPath was removed

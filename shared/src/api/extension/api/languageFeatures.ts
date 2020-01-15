@@ -27,11 +27,11 @@ export class ExtLanguageFeatures {
             ClientLanguageFeaturesAPI['$registerHoverProvider']
         >[1]> = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
-                provider.provideHover(await this.documents.getSync(textDocument.uri), toPosition(position)),
+                provider.provideHover(await that.documents.getSync(textDocument.uri), toPosition(position)),
                 hover => (hover ? fromHover(hover) : hover)
             )
         )
-        return syncSubscription(this.proxy.$registerHoverProvider(selector, providerFunction))
+        return syncSubscription(that.proxy.$registerHoverProvider(selector, providerFunction))
     }
 
     public registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Unsubscribable {
@@ -39,11 +39,11 @@ export class ExtLanguageFeatures {
             ClientLanguageFeaturesAPI['$registerDefinitionProvider']
         >[1]> = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
-                provider.provideDefinition(await this.documents.getSync(textDocument.uri), toPosition(position)),
+                provider.provideDefinition(await that.documents.getSync(textDocument.uri), toPosition(position)),
                 toLocations
             )
         )
-        return syncSubscription(this.proxy.$registerDefinitionProvider(selector, providerFunction))
+        return syncSubscription(that.proxy.$registerDefinitionProvider(selector, providerFunction))
     }
 
     public registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Unsubscribable {
@@ -52,14 +52,14 @@ export class ExtLanguageFeatures {
         >[1]> = proxyValue(async ({ textDocument, position, context }: ReferenceParams) =>
             toProxyableSubscribable(
                 provider.provideReferences(
-                    await this.documents.getSync(textDocument.uri),
+                    await that.documents.getSync(textDocument.uri),
                     toPosition(position),
                     context
                 ),
                 toLocations
             )
         )
-        return syncSubscription(this.proxy.$registerReferenceProvider(selector, providerFunction))
+        return syncSubscription(that.proxy.$registerReferenceProvider(selector, providerFunction))
     }
 
     public registerLocationProvider(
@@ -71,11 +71,11 @@ export class ExtLanguageFeatures {
             ClientLanguageFeaturesAPI['$registerLocationProvider']
         >[2]> = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
-                provider.provideLocations(await this.documents.getSync(textDocument.uri), toPosition(position)),
+                provider.provideLocations(await that.documents.getSync(textDocument.uri), toPosition(position)),
                 toLocations
             )
         )
-        return syncSubscription(this.proxy.$registerLocationProvider(idStr, selector, proxyValue(providerFunction)))
+        return syncSubscription(that.proxy.$registerLocationProvider(idStr, selector, proxyValue(providerFunction)))
     }
 
     public registerCompletionItemProvider(
@@ -86,11 +86,11 @@ export class ExtLanguageFeatures {
             ClientLanguageFeaturesAPI['$registerCompletionItemProvider']
         >[1]> = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
-                provider.provideCompletionItems(await this.documents.getSync(textDocument.uri), toPosition(position)),
+                provider.provideCompletionItems(await that.documents.getSync(textDocument.uri), toPosition(position)),
                 items => items
             )
         )
-        return syncSubscription(this.proxy.$registerCompletionItemProvider(selector, providerFunction))
+        return syncSubscription(that.proxy.$registerCompletionItemProvider(selector, providerFunction))
     }
 }
 

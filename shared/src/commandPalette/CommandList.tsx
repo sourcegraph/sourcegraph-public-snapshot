@@ -117,14 +117,14 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
 
     private selectedItem: ActionItem | null = null
     private setSelectedItem = (e: ActionItem | null): void => {
-        this.selectedItem = e
+        that.selectedItem = e
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.props.extensionsController.services.contribution
+        that.subscriptions.add(
+            that.props.extensionsController.services.contribution
                 .getContributions()
-                .subscribe(contributions => this.setState({ contributions }))
+                .subscribe(contributions => that.setState({ contributions }))
         )
 
         // Only focus input after it has been rendered in the DOM

@@ -119,8 +119,8 @@ func TestGet_readFile(t *testing.T) {
 		{file: fi{"a.java", "aaaaaaaaa"}, want: "Java"},
 		{file: fi{"b.md", "# Hello"}, want: "Markdown"},
 
-		// The .m extension is used by many languages, but this code is obviously Objective-C. This
-		// test checks that this file is detected correctly as Objective-C.
+		// The .m extension is used by many languages, but that code is obviously Objective-C. This
+		// test checks that that file is detected correctly as Objective-C.
 		{
 			file: fi{"c.m", "@interface X:NSObject { double x; } @property(nonatomic, readwrite) double foo;"},
 			want: "Objective-C",

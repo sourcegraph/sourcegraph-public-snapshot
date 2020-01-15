@@ -96,7 +96,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         // We are finished saving when we receive the new settings ID and it's
         // higher than the one we saved on top of.
-        const refreshedAfterSave = this.componentUpdates.pipe(
+        const refreshedAfterSave = that.componentUpdates.pipe(
             filter(({ settings }) => !!settings),
             distinctUntilChanged(
                 (a, b) =>
@@ -111,13 +111,13 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 ({ settings, commitError }) =>
                     !!settings &&
                     !commitError &&
-                    ((typeof this.state.editingLastID === 'number' && settings.id > this.state.editingLastID) ||
-                        (typeof settings.id === 'number' && this.state.editingLastID === null))
+                    ((typeof that.state.editingLastID === 'number' && settings.id > that.state.editingLastID) ||
+                        (typeof settings.id === 'number' && that.state.editingLastID === null))
             )
         )
-        this.subscriptions.add(
+        that.subscriptions.add(
             refreshedAfterSave.subscribe(({ settings }) =>
-                this.setState({
+                that.setState({
                     saving: false,
                     editingLastID: undefined,
                     contents: settings ? settings.contents : undefined,
@@ -128,12 +128,12 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         // Prevent navigation when dirty.
-        this.subscriptions.add(
-            this.props.history.block((location: H.Location, action: H.Action) => {
+        that.subscriptions.add(
+            that.props.history.block((location: H.Location, action: H.Action) => {
                 if (action === 'REPLACE') {
                     return undefined
                 }
-                if (this.state.saving || this.dirty) {
+                if (that.state.saving || that.dirty) {
                     return 'Discard settings changes?'
                 }
                 return undefined // allow navigation
@@ -142,31 +142,31 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     private get dirty(): boolean {
-        return this.state.contents !== undefined && this.state.contents !== this.getPropsSettingsContentsOrEmpty()
+        return that.state.contents !== undefined && that.state.contents !== that.getPropsSettingsContentsOrEmpty()
     }
 
     public render(): JSX.Element | null {
-        const dirty = this.dirty
+        const dirty = that.dirty
         const contents =
-            this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
+            that.state.contents === undefined ? that.getPropsSettingsContentsOrEmpty() : that.state.contents
 
         return (
             <div className="settings-file e2e-settings-file d-flex flex-grow-1 flex-column">
                 <SaveToolbar
                     dirty={dirty}
-                    disabled={this.state.saving || !dirty}
-                    error={this.props.commitError}
-                    saving={this.state.saving}
-                    onSave={this.save}
-                    onDiscard={this.discard}
+                    disabled={that.state.saving || !dirty}
+                    error={that.props.commitError}
+                    saving={that.state.saving}
+                    onSave={that.save}
+                    onDiscard={that.discard}
                 />
                 <div className="site-admin-configuration-page__action-groups">
                     <div className="site-admin-configuration-page__actions">
@@ -175,7 +175,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                                 type="button"
                                 key={id}
                                 className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                onClick={() => this.runAction(id)}
+                                onClick={() => that.runAction(id)}
                             >
                                 {label}
                             </button>
@@ -185,12 +185,12 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
-                        jsonSchema={this.props.jsonSchema}
-                        onChange={this.onEditorChange}
-                        readOnly={this.state.saving}
-                        monacoRef={this.monacoRef}
-                        isLightTheme={this.props.isLightTheme}
-                        onDidSave={this.save}
+                        jsonSchema={that.props.jsonSchema}
+                        onChange={that.onEditorChange}
+                        readOnly={that.state.saving}
+                        monacoRef={that.monacoRef}
+                        isLightTheme={that.props.isLightTheme}
+                        onDidSave={that.save}
                     />
                 </React.Suspense>
             </div>
@@ -198,25 +198,25 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     private monacoRef = (monacoValue: typeof _monaco | null): void => {
-        this.monaco = monacoValue
-        if (this.monaco) {
-            this.subscriptions.add(
+        that.monaco = monacoValue
+        if (that.monaco) {
+            that.subscriptions.add(
                 disposableToFn(
-                    this.monaco.editor.onDidCreateEditor(editor => {
-                        this.editor = editor
+                    that.monaco.editor.onDidCreateEditor(editor => {
+                        that.editor = editor
                     })
                 )
             )
-            this.subscriptions.add(
+            that.subscriptions.add(
                 disposableToFn(
-                    this.monaco.editor.onDidCreateModel(async model => {
+                    that.monaco.editor.onDidCreateModel(async model => {
                         // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
-                        // so this import call will not incur another load.
+                        // so that import call will not incur another load.
                         const { MonacoSettingsEditor } = await import('./MonacoSettingsEditor')
 
-                        if (this.editor && MonacoSettingsEditor.isStandaloneCodeEditor(this.editor)) {
+                        if (that.editor && MonacoSettingsEditor.isStandaloneCodeEditor(that.editor)) {
                             for (const { id, label, run } of settingsActions) {
-                                MonacoSettingsEditor.addEditorAction(this.editor, model, label, id, run)
+                                MonacoSettingsEditor.addEditorAction(that.editor, model, label, id, run)
                             }
                         }
                     })
@@ -226,8 +226,8 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     private runAction(id: string): void {
-        if (this.editor) {
-            const action = this.editor.getAction(id)
+        if (that.editor) {
+            const action = that.editor.getAction(id)
             action.run().then(
                 () => undefined,
                 (err: any) => console.error(err)
@@ -237,41 +237,41 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         }
     }
 
-    private getPropsSettingsContentsOrEmpty(settings = this.props.settings): string {
+    private getPropsSettingsContentsOrEmpty(settings = that.props.settings): string {
         return settings ? settings.contents : emptySettings
     }
 
     private getPropsSettingsID(): number | null {
-        return this.props.settings ? this.props.settings.id : null
+        return that.props.settings ? that.props.settings.id : null
     }
 
     private discard = (): void => {
         if (
-            this.getPropsSettingsContentsOrEmpty() === this.state.contents ||
+            that.getPropsSettingsContentsOrEmpty() === that.state.contents ||
             window.confirm('Discard settings edits?')
         ) {
             eventLogger.log('SettingsFileDiscard')
-            this.setState({
+            that.setState({
                 contents: undefined,
                 editingLastID: undefined,
             })
-            this.props.onDidDiscard()
+            that.props.onDidDiscard()
         } else {
             eventLogger.log('SettingsFileDiscardCanceled')
         }
     }
 
     private onEditorChange = (newValue: string): void => {
-        if (newValue !== this.getPropsSettingsContentsOrEmpty()) {
-            this.setState({ editingLastID: this.getPropsSettingsID() })
+        if (newValue !== that.getPropsSettingsContentsOrEmpty()) {
+            that.setState({ editingLastID: that.getPropsSettingsID() })
         }
-        this.setState({ contents: newValue })
+        that.setState({ contents: newValue })
     }
 
     private save = (): void => {
         eventLogger.log('SettingsFileSaved')
-        this.setState({ saving: true }, () => {
-            this.props.onDidCommit(this.getPropsSettingsID(), this.state.contents!)
+        that.setState({ saving: true }, () => {
+            that.props.onDidCommit(that.getPropsSettingsID(), that.state.contents!)
         })
     }
 }

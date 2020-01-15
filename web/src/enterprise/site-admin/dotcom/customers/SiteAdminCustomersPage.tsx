@@ -37,11 +37,11 @@ class SiteAdminCustomerNode extends React.PureComponent<SiteAdminCustomerNodePro
                 <div className="d-flex align-items-center justify-content-between">
                     <span className="mr-3">
                         <AccountName
-                            account={this.props.node}
-                            link={`${userURL(this.props.node.username)}/subscriptions`}
+                            account={that.props.node}
+                            link={`${userURL(that.props.node.username)}/subscriptions`}
                         />
                     </span>
-                    <SiteAdminCustomerBillingLink customer={this.props.node} onDidUpdate={this.props.onDidUpdate} />
+                    <SiteAdminCustomerBillingLink customer={that.props.node} onDidUpdate={that.props.onDidUpdate} />
                 </div>
             </li>
         )
@@ -67,12 +67,12 @@ export class SiteAdminProductCustomersPage extends React.Component<Props> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>> = {
-            onDidUpdate: this.onUserUpdate,
+            onDidUpdate: that.onUserUpdate,
         }
 
         return (
@@ -86,13 +86,13 @@ export class SiteAdminProductCustomersPage extends React.Component<Props> {
                     className="list-group list-group-flush mt-3"
                     noun="customer"
                     pluralNoun="customers"
-                    queryConnection={this.queryCustomers}
+                    queryConnection={that.queryCustomers}
                     nodeComponent={SiteAdminCustomerNode}
                     nodeComponentProps={nodeProps}
                     noSummaryIfAllNodesVisible={true}
-                    updates={this.updates}
-                    history={this.props.history}
-                    location={this.props.location}
+                    updates={that.updates}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
@@ -127,5 +127,5 @@ export class SiteAdminProductCustomersPage extends React.Component<Props> {
             })
         )
 
-    private onUserUpdate = (): void => this.updates.next()
+    private onUserUpdate = (): void => that.updates.next()
 }

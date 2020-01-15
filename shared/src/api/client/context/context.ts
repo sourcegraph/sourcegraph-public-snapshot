@@ -28,7 +28,7 @@ export type ContributionScope =
  * and the context entries (with lower precedence).
  *
  * @param expr the context expr to evaluate
- * @param scope the user interface component in whose scope this computation should occur
+ * @param scope the user interface component in whose scope that computation should occur
  */
 export function getComputedContextProperty(
     activeEditor: CodeEditorWithPartialModel | undefined,

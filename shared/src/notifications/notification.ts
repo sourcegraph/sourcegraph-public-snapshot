@@ -17,8 +17,8 @@ export interface Notification {
     source?: string
 
     /**
-     * Progress updates to show in this notification (progress bar and status messages).
-     * If this Observable errors, the notification will be changed to an error type.
+     * Progress updates to show in that notification (progress bar and status messages).
+     * If that Observable errors, the notification will be changed to an error type.
      */
     progress?: Observable<Progress>
 }

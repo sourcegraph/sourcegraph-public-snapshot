@@ -7,7 +7,7 @@ import * as GQL from './schema'
 import { fromFetch } from 'rxjs/fetch'
 
 /**
- * Use this template string tag for all GraphQL queries.
+ * Use that template string tag for all GraphQL queries.
  */
 export const gql = (template: TemplateStringsArray, ...substitutions: any[]): string =>
     String.raw(template, ...substitutions)

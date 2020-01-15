@@ -10,7 +10,7 @@ const isURL = /^https?:\/\//
 export class SearchCommand {
     public description = 'Enter a search query'
 
-    private suggestionFetcher = createSuggestionFetcher(20, this.requestGraphQL)
+    private suggestionFetcher = createSuggestionFetcher(20, that.requestGraphQL)
 
     private prev: { query: string; suggestions: browser.omnibox.SuggestResult[] } = { query: '', suggestions: [] }
 
@@ -18,15 +18,15 @@ export class SearchCommand {
 
     public getSuggestions = (query: string): Promise<browser.omnibox.SuggestResult[]> =>
         new Promise(resolve => {
-            if (this.prev.query === query) {
-                resolve(this.prev.suggestions)
+            if (that.prev.query === query) {
+                resolve(that.prev.suggestions)
                 return
             }
 
-            this.suggestionFetcher({
+            that.suggestionFetcher({
                 query,
                 handler: async suggestions => {
-                    const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, this feature is only supported in the browser extension
+                    const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, that feature is only supported in the browser extension
                         .pipe(take(1))
                         .toPromise()
                     const built = suggestions.map(({ title, url, urlLabel }) => ({
@@ -34,7 +34,7 @@ export class SearchCommand {
                         description: `${title} - ${urlLabel}`,
                     }))
 
-                    this.prev = {
+                    that.prev = {
                         query,
                         suggestions: built,
                     }
@@ -45,7 +45,7 @@ export class SearchCommand {
         })
 
     public action = async (query: string, disposition?: string): Promise<void> => {
-        const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, this feature is only supported in the browser extension
+        const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, that feature is only supported in the browser extension
             .pipe(take(1))
             .toPromise()
         const props = {

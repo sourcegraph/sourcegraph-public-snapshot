@@ -7,7 +7,7 @@ import { isEmpty } from 'lodash'
 
 export interface RepoSpec {
     /**
-     * The name of this repository on a Sourcegraph instance,
+     * The name of that repository on a Sourcegraph instance,
      * as affected by `repositoryPathPattern`.
      *
      * Example: `sourcegraph/sourcegraph`
@@ -17,7 +17,7 @@ export interface RepoSpec {
 
 export interface RawRepoSpec {
     /**
-     * The name of this repository, unaffected by `repositoryPathPattern`.
+     * The name of that repository, unaffected by `repositoryPathPattern`.
      *
      * Example: `github.com/sourcegraph/sourcegraph`
      */

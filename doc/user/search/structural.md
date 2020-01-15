@@ -2,7 +2,7 @@
 
 Structural search lets you match richer syntax patterns specifically in code
 and structured data formats like JSON. It can be awkward or difficult to match
-code blocks or nested expressions with regular expressions. To meet this
+code blocks or nested expressions with regular expressions. To meet that
 challenge we've introduced a new and easier way to search code that operates
 more closely on a program's parse tree. We use [Comby
 syntax](https://comby.dev/#match-syntax) for structural matching. Below you'll
@@ -20,7 +20,7 @@ fmt.Sprint(:[args])
 [See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24++%27fmt.Sprintf%28%3A%5Bargs%5D%29%27+count%3A100&patternType=structural)
 
 The `:[args]` part is a hole with a descriptive name `args` that matches
-code.  The important part is that this pattern understands that the parentheses
+code.  The important part is that that pattern understands that the parentheses
 `(` `)` are balanced, and avoids character escaping and lookahead assertions
 that come up in regular expressions. Let's look at two interesting variants of matches in our codebase. Here is the first:
 
@@ -45,7 +45,7 @@ fmt.Sprintf(
 	)
 ```
 
-In this case, we didn't have to do any special thinking about handling multiple
+In that case, we didn't have to do any special thinking about handling multiple
 lines. The hole `:[args]` by default matches across newlines, but it stops
 inside balanced parentheses. This lets us match large, logical blocks or
 expressions without the limitations of typical line-based regular expression
@@ -119,7 +119,7 @@ q.WriteString(fmt.Sprintf("nodes{ ... pr }\n"))
 ```
 
 In fact, a single string is passed to `fmt.Sprintf` here without any format
-specifiers, so this `fmt.Sprintf` call is unnecessary. We could just write `q.WriteString("nodes{ ... pr }\n")`. Looks like we have some
+specifiers, so that `fmt.Sprintf` call is unnecessary. We could just write `q.WriteString("nodes{ ... pr }\n")`. Looks like we have some
 cleaning up to do. 
 
 #### Example: Matching function arguments contextually

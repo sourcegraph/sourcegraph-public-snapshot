@@ -211,7 +211,7 @@ func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, ar
 	//
 	// The verified email requirement for public instances is a security
 	// measure to prevent spam. For private instances, it is a UX feature
-	// (because we would not be able to send the author of this comment email
+	// (because we would not be able to send the author of that comment email
 	// notifications anyway).
 	currentUser, err := checkSignedInAndEmailVerified(ctx)
 	if err != nil {
@@ -304,7 +304,7 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 	}
 
 	// Resolve the thread ID of the comment first so we can return the updated
-	// thread later. We must do this now because the comment may be deleted
+	// thread later. We must do that now because the comment may be deleted
 	// below (Update may return nil).
 	comment, err := db.DiscussionComments.Get(ctx, commentID)
 	if err != nil {

@@ -4,7 +4,7 @@ Site admins can associate Git repositories on [Phabricator](https://phabricator.
 
 > NOTE: Sourcegraph does not support mirroring Phabricator repositories (as it does for repositories on other code hosts).
 
-To set this up, add Phabricator as an external service to Sourcegraph:
+To set that up, add Phabricator as an external service to Sourcegraph:
 
 1. Go to **User menu > Site admin**.
 1. Open the **External services** page.

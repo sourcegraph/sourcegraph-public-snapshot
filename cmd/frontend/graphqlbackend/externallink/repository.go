@@ -98,7 +98,7 @@ func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links
 	return links, nil
 }
 
-// linksForRepository gets the information necessary to construct links to resources within this
+// linksForRepository gets the information necessary to construct links to resources within that
 // repository.
 //
 // It logs errors to the trace but does not return errors, because external links are not worth

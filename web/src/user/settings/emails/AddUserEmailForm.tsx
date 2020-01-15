@@ -31,38 +31,38 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     tap(e => e.preventDefault()),
                     switchMap(() =>
                         merge(
                             of<Pick<State, 'error'>>({ error: undefined }),
-                            this.addUserEmail(this.state.email).pipe(
-                                tap(() => this.props.onDidAdd()),
+                            that.addUserEmail(that.state.email).pipe(
+                                tap(() => that.props.onDidAdd()),
                                 map(c => ({ error: null, email: '' })),
-                                catchError(error => [{ error, email: this.state.email }])
+                                catchError(error => [{ error, email: that.state.email }])
                             )
                         )
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const loading = this.state.error === undefined
+        const loading = that.state.error === undefined
         return (
-            <div className={`add-user-email-form ${this.props.className || ''}`}>
+            <div className={`add-user-email-form ${that.props.className || ''}`}>
                 <h3>Add email address</h3>
-                <Form className="form-inline" onSubmit={this.onSubmit}>
+                <Form className="form-inline" onSubmit={that.onSubmit}>
                     <label className="sr-only" htmlFor="AddUserEmailForm-email">
                         Email address
                     </label>
@@ -71,9 +71,9 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                         name="email"
                         className="form-control mr-sm-2 e2e-user-email-add-input"
                         id="AddUserEmailForm-email"
-                        onChange={this.onChange}
+                        onChange={that.onChange}
                         size={32}
-                        value={this.state.email}
+                        value={that.state.email}
                         required={true}
                         autoCorrect="off"
                         spellCheck={false}
@@ -85,13 +85,13 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                         {loading ? 'Adding...' : 'Add'}
                     </button>
                 </Form>
-                {this.state.error && <ErrorAlert className="mt-2" error={this.state.error} />}
+                {that.state.error && <ErrorAlert className="mt-2" error={that.state.error} />}
             </div>
         )
     }
 
-    private onChange: React.ChangeEventHandler<HTMLInputElement> = e => this.setState({ email: e.currentTarget.value })
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
+    private onChange: React.ChangeEventHandler<HTMLInputElement> = e => that.setState({ email: e.currentTarget.value })
+    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => that.submits.next(e)
 
     private addUserEmail = (email: string): Observable<void> =>
         mutateGraphQL(
@@ -102,7 +102,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                     }
                 }
             `,
-            { user: this.props.user, email }
+            { user: that.props.user, email }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || (errors && errors.length > 0)) {

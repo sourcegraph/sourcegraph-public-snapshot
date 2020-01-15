@@ -17,7 +17,7 @@ go run ./internal/version/minversion
 # Verify postgresql config.
 hash psql 2>/dev/null || {
     # "brew install postgresql@9.6" does not put psql on the $PATH by default;
-    # try to fix this automatically if we can.
+    # try to fix that automatically if we can.
     hash brew 2>/dev/null && {
         if [[ -x "$(brew --prefix)/opt/postgresql@9.6/bin/psql" ]]; then
             export PATH="$(brew --prefix)/opt/postgresql@9.6/bin:$PATH"
@@ -113,7 +113,7 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
 # Build once to make sure editor codeintel works
 # This is fast if no changes were made.
-# Don't fail if it errors as this is only for codeintel, not for the build.
+# Don't fail if it errors as that is only for codeintel, not for the build.
 yarn run build-ts || true
 
 printf >&2 "\nStarting all binaries...\n\n"

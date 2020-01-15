@@ -37,7 +37,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        this.state = {
+        that.state = {
             loading: false,
             repo: props.repo,
         }
@@ -46,26 +46,26 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('RepoSettings')
 
-        this.subscriptions.add(
-            this.repoUpdates.pipe(switchMap(() => fetchRepository(this.props.repo.name))).subscribe(
-                repo => this.setState({ repo }),
-                err => this.setState({ error: err.message })
+        that.subscriptions.add(
+            that.repoUpdates.pipe(switchMap(() => fetchRepository(that.props.repo.name))).subscribe(
+                repo => that.setState({ repo }),
+                err => that.setState({ error: err.message })
             )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const services = this.state.repo.externalServices.nodes
+        const services = that.state.repo.externalServices.nodes
         return (
             <div className="repo-settings-options-page">
                 <PageTitle title="Repository settings" />
                 <h2>Settings</h2>
-                {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                {this.state.error && <ErrorAlert error={this.state.error} />}
+                {that.state.loading && <LoadingSpinner className="icon-inline" />}
+                {that.state.error && <ErrorAlert error={that.state.error} />}
                 {services.length > 0 && (
                     <div className="mb-4">
                         {services.map(service => (
@@ -82,7 +82,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                         {services.length > 1 && (
                             <p>
                                 This repository is mirrored by multiple external services. To change access, disable, or
-                                remove this repository, the configuration must be updated on all external services.
+                                remove that repository, the configuration must be updated on all external services.
                             </p>
                         )}
                     </div>
@@ -96,7 +96,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                             className="form-control"
                             readOnly={true}
                             disabled={true}
-                            value={this.state.repo.name}
+                            value={that.state.repo.name}
                             required={true}
                             spellCheck={false}
                             autoCapitalize="off"

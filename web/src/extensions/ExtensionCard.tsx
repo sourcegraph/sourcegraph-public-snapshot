@@ -34,7 +34,7 @@ const stopPropagation: React.MouseEventHandler<HTMLElement> = e => {
 /** Displays an extension as a card. */
 export class ExtensionCard extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
-        const { node, ...props } = this.props
+        const { node, ...props } = that.props
         const manifest: ExtensionManifest | undefined =
             node.manifest && !isErrorLike(node.manifest) ? node.manifest : undefined
         let iconURL: URL | undefined
@@ -87,8 +87,8 @@ export class ExtensionCard extends React.PureComponent<Props> {
                                         (props.subject.viewerCanAdminister ? (
                                             <ExtensionToggle
                                                 extension={node}
-                                                settingsCascade={this.props.settingsCascade}
-                                                platformContext={this.props.platformContext}
+                                                settingsCascade={that.props.settingsCascade}
+                                                platformContext={that.props.platformContext}
                                                 className="extension-card__toggle"
                                             />
                                         ) : (

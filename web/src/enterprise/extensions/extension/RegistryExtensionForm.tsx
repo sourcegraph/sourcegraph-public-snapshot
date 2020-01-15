@@ -76,6 +76,6 @@ export const RegistryExtensionNameFormGroup: React.FunctionComponent<{
             maxLength={EXTENSION_NAME_MAX_LENGTH}
             disabled={disabled}
         />
-        <small className="form-help text-muted">The name for this extension.</small>
+        <small className="form-help text-muted">The name for that extension.</small>
     </div>
 )

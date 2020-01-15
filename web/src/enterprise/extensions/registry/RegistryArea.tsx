@@ -28,21 +28,21 @@ export class RegistryArea extends React.Component<Props> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const transferProps: RegistryAreaPageProps = {
-            authenticatedUser: this.props.authenticatedUser,
-            platformContext: this.props.platformContext,
+            authenticatedUser: that.props.authenticatedUser,
+            platformContext: that.props.platformContext,
         }
 
         return (
@@ -50,7 +50,7 @@ export class RegistryArea extends React.Component<Props> {
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
                     <Route
-                        path={`${this.props.match.url}/new`}
+                        path={`${that.props.match.url}/new`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
                         render={routeComponentProps => (

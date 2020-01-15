@@ -33,7 +33,7 @@ describe('LinkPreviewProviderRegistry', () => {
         ) {
             super()
             if (entries) {
-                entries.subscribe(entries => this.entries.next(entries))
+                entries.subscribe(entries => that.entries.next(entries))
             }
         }
 

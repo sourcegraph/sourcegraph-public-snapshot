@@ -16,7 +16,7 @@ import (
 type ShortLogOptions struct {
 	Range string // the range for which stats will be fetched
 	After string // the date after which to collect commits
-	Path  string // compute stats for commits that touch this path
+	Path  string // compute stats for commits that touch that path
 }
 
 // A PersonCount is a contributor to a repository.

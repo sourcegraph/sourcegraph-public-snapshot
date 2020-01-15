@@ -26,7 +26,7 @@ All authentication providers support the (optional) `displayName` property, whic
 
 Defines an authentication provider that stores and validates passwords for each user account. It also allows users (and site admins) to reset passwords.
 
-To use this authentication method, add an element to the `auth.providers` array with the following shape:
+To use that authentication method, add an element to the `auth.providers` array with the following shape:
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/config/critical.schema.json" jsonschemadoc:ref="#/definitions/BuiltinAuthProvider">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/doc/admin/config/critical_config) to see rendered content.</div>
 
@@ -36,7 +36,7 @@ Defines an authentication provider backed by SAML.
 
 Note: if you are using IdP-initiated login, you must have _at most one_ SAML authentication provider in the `auth.providers` array.
 
-To use this authentication method, add an element to the `auth.providers` array with the following shape:
+To use that authentication method, add an element to the `auth.providers` array with the following shape:
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/config/critical.schema.json" jsonschemadoc:ref="#/definitions/SAMLAuthProvider">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/doc/admin/config/critical_config) to see rendered content.</div>
 
@@ -44,7 +44,7 @@ To use this authentication method, add an element to the `auth.providers` array 
 
 Defines an authentication provider backed by OpenID Connect. The most common case is G Suite (Google) authentication.
 
-To use this authentication method, add an element to the `auth.providers` array with the following shape:
+To use that authentication method, add an element to the `auth.providers` array with the following shape:
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/config/critical.schema.json" jsonschemadoc:ref="#/definitions/OpenIDConnectAuthProvider">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/doc/admin/config/critical_config) to see rendered content.</div>
 
@@ -52,7 +52,7 @@ To use this authentication method, add an element to the `auth.providers` array 
 
 Defines an authentication provider that authenticates users by consulting an HTTP request header set by an authentication proxy, such as https://github.com/bitly/oauth2_proxy.
 
-To use this authentication method, add an element to the `auth.providers` array with the following shape:
+To use that authentication method, add an element to the `auth.providers` array with the following shape:
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/config/critical.schema.json" jsonschemadoc:ref="#/definitions/HTTPHeaderAuthProvider">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/doc/admin/config/critical_config) to see rendered content.</div>
 

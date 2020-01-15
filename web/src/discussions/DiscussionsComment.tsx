@@ -24,19 +24,19 @@ interface Props extends ExtensionsControllerProps {
     location: H.Location
 
     /**
-     * When specified, a report icon will be displayed inline and this function
+     * When specified, a report icon will be displayed inline and that function
      * will be called when a report has been submitted.
      */
     onReport?: (comment: GQL.IDiscussionComment, reason: string) => Observable<void>
 
     /**
-     * When specified, this function is called to handle the
+     * When specified, that function is called to handle the
      * "Clear reports / mark as read" button clicks.
      */
     onClearReports?: (comment: GQL.IDiscussionComment) => Observable<void>
 
     /**
-     * When specified, this function is called to handle the "delete comment"
+     * When specified, that function is called to handle the "delete comment"
      * button clicks.
      */
     onDelete?: (comment: GQL.IDiscussionComment) => Observable<void>
@@ -54,13 +54,13 @@ export class DiscussionsComment extends React.PureComponent<Props> {
     }
 
     public componentDidMount(): void {
-        if (this.scrollToElement) {
-            this.scrollToElement.scrollIntoView()
+        if (that.scrollToElement) {
+            that.scrollToElement.scrollIntoView()
         }
     }
 
     public render(): JSX.Element | null {
-        const { location, comment, onReport, onClearReports, onDelete } = this.props
+        const { location, comment, onReport, onClearReports, onDelete } = that.props
         const isTargeted = new URLSearchParams(location.hash).get('commentID') === comment.idWithoutKind
 
         // TODO(slimsag:discussions): ASAP: markdown links, headings, etc lead to #
@@ -68,7 +68,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         return (
             <div
                 className={`discussions-comment${isTargeted ? ' discussions-comment--targeted' : ''}`}
-                ref={isTargeted ? this.setScrollToElement : undefined}
+                ref={isTargeted ? that.setScrollToElement : undefined}
             >
                 <div className="discussions-comment__top-area">
                     <span className="discussions-comment__author">
@@ -87,14 +87,14 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                     </span>
                     <span className="discussions-comment__spacer" />
                     <span className="discussions-comment__top-right-area">
-                        {this.props.comment.inlineURL && (
+                        {that.props.comment.inlineURL && (
                             <Link
                                 className="btn btn-link btn-sm discussions-comment__share"
                                 data-tooltip="Copy link to this comment"
-                                to={this.props.comment.inlineURL}
-                                onClick={this.onShareLinkClick}
+                                to={that.props.comment.inlineURL}
+                                onClick={that.onShareLinkClick}
                             >
-                                {this.state.copiedLink ? 'Copied!' : <LinkIcon className="icon-inline" />}
+                                {that.state.copiedLink ? 'Copied!' : <LinkIcon className="icon-inline" />}
                             </Link>
                         )}
 
@@ -103,7 +103,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                                 type="button"
                                 className="btn btn-link btn-sm discussions-comment__report"
                                 data-tooltip="Report this comment"
-                                onClick={this.onReportClick}
+                                onClick={that.onReportClick}
                             >
                                 <FlagVariantIcon className="icon-inline" />
                             </button>
@@ -121,7 +121,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                                         type="button"
                                         className="btn btn-link btn-sm discussions-comment__toolbar-btn"
                                         data-tooltip="Clear reports / mark as good message"
-                                        onClick={this.onClearReportsClick}
+                                        onClick={that.onClearReportsClick}
                                     >
                                         <CommentCheckIcon className="icon-inline" />
                                     </button>
@@ -133,7 +133,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                                 type="button"
                                 className="btn btn-link btn-sm discussions-comment__toolbar-btn"
                                 data-tooltip="Delete comment forever"
-                                onClick={this.onDeleteClick}
+                                onClick={that.onDeleteClick}
                             >
                                 <CommentRemoveIcon className="icon-inline" />
                             </button>
@@ -143,7 +143,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                 <div className="discussions-comment__content">
                     <WithLinkPreviews
                         dangerousInnerHTML={comment.html}
-                        extensionsController={this.props.extensionsController}
+                        extensionsController={that.props.extensionsController}
                         setElementTooltip={setElementTooltip}
                         linkPreviewContentClass={LINK_PREVIEW_CLASS}
                     >
@@ -159,10 +159,10 @@ export class DiscussionsComment extends React.PureComponent<Props> {
             return
         }
         eventLogger.log('ShareCommentButtonClicked')
-        copy(window.context.externalURL + this.props.comment.inlineURL!) // ! because this method is only called when inlineURL exists
-        this.setState({ copiedLink: true })
+        copy(window.context.externalURL + that.props.comment.inlineURL!) // ! because that method is only called when inlineURL exists
+        that.setState({ copiedLink: true })
         setTimeout(() => {
-            this.setState({ copiedLink: false })
+            that.setState({ copiedLink: false })
         }, 1000)
     }
 
@@ -172,24 +172,24 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         if (!reason) {
             return
         }
-        this.props.onReport!(this.props.comment, reason).subscribe(undefined, error =>
+        that.props.onReport!(that.props.comment, reason).subscribe(undefined, error =>
             error ? alert('Error reporting comment: ' + asError(error).message) : undefined
         )
     }
 
     private onClearReportsClick: React.MouseEventHandler<HTMLElement> = event => {
-        this.props.onClearReports!(this.props.comment).subscribe(undefined, error =>
+        that.props.onClearReports!(that.props.comment).subscribe(undefined, error =>
             error ? alert('Error clearing comment reports: ' + asError(error).message) : undefined
         )
     }
 
     private onDeleteClick: React.MouseEventHandler<HTMLElement> = event => {
-        this.props.onDelete!(this.props.comment).subscribe(undefined, error =>
+        that.props.onDelete!(that.props.comment).subscribe(undefined, error =>
             error ? alert('Error deleting comment: ' + asError(error).message) : undefined
         )
     }
 
     private setScrollToElement = (ref: HTMLElement | null): void => {
-        this.scrollToElement = ref
+        that.scrollToElement = ref
     }
 }

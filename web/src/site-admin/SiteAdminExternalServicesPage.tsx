@@ -36,14 +36,14 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
         return (
             <li
                 className="external-service-node list-group-item py-2"
-                data-e2e-external-service-name={this.props.node.displayName}
+                data-e2e-external-service-name={that.props.node.displayName}
             >
                 <div className="d-flex align-items-center justify-content-between">
-                    <div>{this.props.node.displayName}</div>
+                    <div>{that.props.node.displayName}</div>
                     <div>
                         <Link
                             className="btn btn-secondary btn-sm e2e-edit-external-service-button"
-                            to={`/site-admin/external-services/${this.props.node.id}`}
+                            to={`/site-admin/external-services/${that.props.node.id}`}
                             data-tooltip="External service settings"
                         >
                             <SettingsIcon className="icon-inline" /> Edit
@@ -51,30 +51,30 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                         <button
                             type="button"
                             className="btn btn-sm btn-danger e2e-delete-external-service-button"
-                            onClick={this.deleteExternalService}
-                            disabled={this.state.loading}
+                            onClick={that.deleteExternalService}
+                            disabled={that.state.loading}
                             data-tooltip="Delete external service"
                         >
                             <DeleteIcon className="icon-inline" />
                         </button>
                     </div>
                 </div>
-                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
+                {that.state.errorDescription && <ErrorAlert className="mt-2" error={that.state.errorDescription} />}
             </li>
         )
     }
 
     private deleteExternalService = (): void => {
-        if (!window.confirm(`Delete the external service ${this.props.node.displayName}?`)) {
+        if (!window.confirm(`Delete the external service ${that.props.node.displayName}?`)) {
             return
         }
 
-        this.setState({
+        that.setState({
             errorDescription: undefined,
             loading: true,
         })
 
-        deleteExternalService(this.props.node.id)
+        deleteExternalService(that.props.node.id)
             .toPromise()
             .then(
                 () => {
@@ -82,12 +82,12 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                     // reflect the latest configuration.
                     refreshSiteFlags().subscribe({ error: err => console.error(err) })
 
-                    this.setState({ loading: false })
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
+                    that.setState({ loading: false })
+                    if (that.props.onDidUpdate) {
+                        that.props.onDidUpdate()
                     }
                 },
-                err => this.setState({ loading: false, errorDescription: err.message })
+                err => that.setState({ loading: false, errorDescription: err.message })
             )
     }
 }
@@ -124,7 +124,7 @@ class FilteredExternalServiceConnection extends FilteredConnection<
 > {}
 
 /**
- * A page displaying the external services on this site.
+ * A page displaying the external services on that site.
  */
 export class SiteAdminExternalServicesPage extends React.PureComponent<Props, State> {
     private updates = new Subject<void>()
@@ -132,16 +132,16 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
 
     constructor(props: Props) {
         super(props)
-        this.state = {}
+        that.state = {}
     }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminExternalServices')
-        this.subscriptions.add(
-            this.queryExternalServices({ first: 1 })
+        that.subscriptions.add(
+            that.queryExternalServices({ first: 1 })
                 .pipe(
                     tap(externalServicesResult =>
-                        this.setState({ noExternalServices: externalServicesResult.totalCount === 0 })
+                        that.setState({ noExternalServices: externalServicesResult.totalCount === 0 })
                     )
                 )
                 .subscribe()
@@ -149,8 +149,8 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
     }
 
     private completeConnectedCodeHostActivation = (externalServices: GQL.IExternalServiceConnection): void => {
-        if (this.props.activation && externalServices.totalCount > 0) {
-            this.props.activation.update({ ConnectedCodeHost: true })
+        if (that.props.activation && externalServices.totalCount > 0) {
+            that.props.activation.update({ ConnectedCodeHost: true })
         }
     }
 
@@ -182,15 +182,15 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
                 }
                 return data.externalServices
             }),
-            tap(externalServices => this.completeConnectedCodeHostActivation(externalServices))
+            tap(externalServices => that.completeConnectedCodeHostActivation(externalServices))
         )
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<ExternalServiceNodeProps, 'onDidUpdate'> = {
-            onDidUpdate: this.onDidUpdateExternalServices,
+            onDidUpdate: that.onDidUpdateExternalServices,
         }
 
-        if (this.state.noExternalServices) {
+        if (that.state.noExternalServices) {
             return <Redirect to="/site-admin/external-services/new" />
         }
         return (
@@ -210,18 +210,18 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
                     className="list-group list-group-flush mt-3"
                     noun="external service"
                     pluralNoun="external services"
-                    queryConnection={this.queryExternalServices}
+                    queryConnection={that.queryExternalServices}
                     nodeComponent={ExternalServiceNode}
                     nodeComponentProps={nodeProps}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
-                    updates={this.updates}
-                    history={this.props.history}
-                    location={this.props.location}
+                    updates={that.updates}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
     }
 
-    private onDidUpdateExternalServices = (): void => this.updates.next()
+    private onDidUpdateExternalServices = (): void => that.updates.next()
 }

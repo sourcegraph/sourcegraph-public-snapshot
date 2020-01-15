@@ -33,7 +33,7 @@ func NewStore() *Store {
 	}
 }
 
-// LastValid returns the last valid site configuration that this
+// LastValid returns the last valid site configuration that that
 // store was updated with.
 func (s *Store) LastValid() *Unified {
 	s.WaitUntilInitialized()
@@ -48,7 +48,7 @@ func (s *Store) LastValid() *Unified {
 	return s.lastValid
 }
 
-// Raw returns the last raw configuration that this store was updated with.
+// Raw returns the last raw configuration that that store was updated with.
 func (s *Store) Raw() conftypes.RawUnified {
 	s.WaitUntilInitialized()
 

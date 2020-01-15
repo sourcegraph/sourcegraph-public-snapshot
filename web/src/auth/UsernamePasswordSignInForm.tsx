@@ -26,7 +26,7 @@ interface State {
 export class UsernamePasswordSignInForm extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        this.state = {
+        that.state = {
             email: '',
             password: '',
             loading: false,
@@ -35,9 +35,9 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <Form className="signin-signup-form signin-form e2e-signin-form" onSubmit={this.handleSubmit}>
+            <Form className="signin-signup-form signin-form e2e-signin-form" onSubmit={that.handleSubmit}>
                 {window.context.allowSignup ? (
-                    <Link className="signin-signup-form__mode" to={`/sign-up${this.props.location.search}`}>
+                    <Link className="signin-signup-form__mode" to={`/sign-up${that.props.location.search}`}>
                         Don't have an account? Sign up.
                     </Link>
                 ) : (

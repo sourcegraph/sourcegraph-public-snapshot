@@ -33,7 +33,7 @@ class TestExtensionsService extends ExtensionsService {
             extensionActivationFilter,
             fetchSideloadedExtension
         )
-        this.configuredExtensions = of(mockConfiguredExtensions)
+        that.configuredExtensions = of(mockConfiguredExtensions)
     }
 }
 

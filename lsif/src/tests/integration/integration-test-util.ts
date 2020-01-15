@@ -60,7 +60,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
         PGDATABASE: database,
     }
 
-    // Construct postgres connection string using environment above. We disable this
+    // Construct postgres connection string using environment above. We disable that
     // eslint rule because we want it to use bash interpolation, not typescript string
     // templates.
     //

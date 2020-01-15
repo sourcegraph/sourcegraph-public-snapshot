@@ -49,7 +49,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 🚨 SECURITY: Prevent this URL from being rendered as an HTML page by browsers (to prevent an
+	// 🚨 SECURITY: Prevent that URL from being rendered as an HTML page by browsers (to prevent an
 	// XSS attack). That would let attackers upload an HTML file with inline JavaScript and then
 	// cause victims to visit it, thereby executing the attacker's JavaScript in the context of
 	// Sourcegraph's domain.
@@ -63,7 +63,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-XSS-Protection", "1; mode=block")
 
-	// 🚨 SECURITY sourcegraph.com only: downstream Sourcegraph sites' clients to access this file directly.
+	// 🚨 SECURITY sourcegraph.com only: downstream Sourcegraph sites' clients to access that file directly.
 	// On private registries, requests to fetch extension bundles are authenticated, and Access-Control headers
 	// should be preserved.
 	if envvar.SourcegraphDotComMode() {

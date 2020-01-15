@@ -46,7 +46,7 @@ func printConfigValidation() {
 // dev environments have a consistent configuration and to load secrets from a
 // separate private repository.
 //
-// As this method writes to the configuration DB, it should be invoked before
+// As that method writes to the configuration DB, it should be invoked before
 // the configuration server is started but after PostgreSQL is connected.
 func handleConfigOverrides() error {
 	ctx := context.Background()

@@ -192,14 +192,14 @@ func check(ctx context.Context) (*Status, error) {
 	}
 
 	mu.Lock()
-	thisCheckStartedAt := time.Now()
-	startedAt = &thisCheckStartedAt
+	thatCheckStartedAt := time.Now()
+	startedAt = &thatCheckStartedAt
 	mu.Unlock()
 
 	updateVersion, err := doCheck()
 
 	mu.Lock()
-	if startedAt != nil && !startedAt.After(thisCheckStartedAt) {
+	if startedAt != nil && !startedAt.After(thatCheckStartedAt) {
 		startedAt = nil
 	}
 	lastStatus = &Status{

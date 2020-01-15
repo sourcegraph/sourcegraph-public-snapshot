@@ -23,7 +23,7 @@ interface State {
 export class SavedSearchUpdateForm extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        this.state = {
+        that.state = {
             savedSearchOrError: LOADING,
             updatedOrError: null,
         }
@@ -34,8 +34,8 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
     private submits = new Subject<SavedQueryFields>()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
                     map(props => props.match.params.id),
                     distinctUntilChanged(),
@@ -47,11 +47,11 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                     ),
                     map(result => ({ savedSearchOrError: result }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
 
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     switchMap(input =>
                         concat(
@@ -62,8 +62,8 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                                 input.query,
                                 input.notify,
                                 input.notifySlack,
-                                this.props.namespace.__typename === 'User' ? this.props.namespace.id : null,
-                                this.props.namespace.__typename === 'Org' ? this.props.namespace.id : null
+                                that.props.namespace.__typename === 'User' ? that.props.namespace.id : null,
+                                that.props.namespace.__typename === 'Org' ? that.props.namespace.id : null
                             ).pipe(
                                 mapTo(null),
                                 mergeMap(() =>
@@ -79,26 +79,26 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate as State))
+                .subscribe(stateUpdate => that.setState(stateUpdate as State))
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public render(): JSX.Element | null {
         const savedSearch =
-            (!isErrorLike(this.state.savedSearchOrError) &&
-                this.state.savedSearchOrError !== LOADING &&
-                this.state.savedSearchOrError) ||
+            (!isErrorLike(that.state.savedSearchOrError) &&
+                that.state.savedSearchOrError !== LOADING &&
+                that.state.savedSearchOrError) ||
             undefined
 
         return (
             <div>
-                {this.state.savedSearchOrError === LOADING && <LoadingSpinner className="icon-inline" />}
-                {this.props.authenticatedUser && savedSearch && (
+                {that.state.savedSearchOrError === LOADING && <LoadingSpinner className="icon-inline" />}
+                {that.props.authenticatedUser && savedSearch && (
                     /* eslint-disable react/jsx-no-bind */
                     <SavedSearchForm
-                        {...this.props}
+                        {...that.props}
                         submitLabel="Update saved search"
                         title="Manage saved search"
                         defaultValues={{
@@ -109,15 +109,15 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                             notifySlack: savedSearch.notifySlack,
                             slackWebhookURL: savedSearch.slackWebhookURL,
                         }}
-                        loading={this.state.updatedOrError === LOADING}
+                        loading={that.state.updatedOrError === LOADING}
                         onSubmit={(fields: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>): void =>
-                            this.onSubmit({ id: savedSearch.id, ...fields })
+                            that.onSubmit({ id: savedSearch.id, ...fields })
                         }
-                        error={isErrorLike(this.state.updatedOrError) ? this.state.updatedOrError : undefined}
+                        error={isErrorLike(that.state.updatedOrError) ? that.state.updatedOrError : undefined}
                     />
                     /* eslint-enable react/jsx-no-bind */
                 )}
-                {this.state.updatedOrError === true && (
+                {that.state.updatedOrError === true && (
                     <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>
                 )}
             </div>
@@ -125,6 +125,6 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
     }
 
     private onSubmit = (fields: SavedQueryFields): void => {
-        this.submits.next(fields)
+        that.submits.next(fields)
     }
 }

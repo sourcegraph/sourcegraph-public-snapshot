@@ -29,29 +29,29 @@ export class PanelView extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div
-                onClick={createLinkClickHandler(this.props.history)}
+                onClick={createLinkClickHandler(that.props.history)}
                 className="panel__tabs-content panel__tabs-content--scroll"
             >
-                {this.props.panelView.content && (
+                {that.props.panelView.content && (
                     <div className="px-2 pt-2">
-                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.panelView.content)} />
+                        <Markdown dangerousInnerHTML={renderMarkdown(that.props.panelView.content)} />
                     </div>
                 )}
-                {this.props.panelView.reactElement}
-                {this.props.panelView.locationProvider && this.props.repoName && (
+                {that.props.panelView.reactElement}
+                {that.props.panelView.locationProvider && that.props.repoName && (
                     <HierarchicalLocationsView
-                        location={this.props.location}
-                        locations={this.props.panelView.locationProvider}
-                        defaultGroup={this.props.repoName}
-                        isLightTheme={this.props.isLightTheme}
-                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                        extensionsController={this.props.extensionsController}
-                        settingsCascade={this.props.settingsCascade}
+                        location={that.props.location}
+                        locations={that.props.panelView.locationProvider}
+                        defaultGroup={that.props.repoName}
+                        isLightTheme={that.props.isLightTheme}
+                        fetchHighlightedFileLines={that.props.fetchHighlightedFileLines}
+                        extensionsController={that.props.extensionsController}
+                        settingsCascade={that.props.settingsCascade}
                     />
                 )}
-                {!this.props.panelView.content &&
-                    !this.props.panelView.reactElement &&
-                    !this.props.panelView.locationProvider && <EmptyPanelView className="mt-3" />}
+                {!that.props.panelView.content &&
+                    !that.props.panelView.reactElement &&
+                    !that.props.panelView.locationProvider && <EmptyPanelView className="mt-3" />}
             </div>
         )
     }

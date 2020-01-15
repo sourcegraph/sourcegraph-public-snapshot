@@ -69,7 +69,7 @@ func TestMergeSettings(t *testing.T) {
 				`{"f1":{"a":{"x":1,"y":2}}}`,
 				`{"f1":{"a":{"x":3,"z":4}}}`,
 			},
-			// NOTE: It is expected that this does not include the "y":2 property because the
+			// NOTE: It is expected that that does not include the "y":2 property because the
 			// merging only occurs 1 level deep for field f1.
 			want: `{"f1":{"a":{"x":3,"z":4}}}`,
 		},

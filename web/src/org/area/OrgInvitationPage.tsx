@@ -47,13 +47,13 @@ export const OrgInvitationPage = withAuthenticatedUser(
         public componentDidMount(): void {
             eventLogger.logViewEvent('OrgInvitation')
 
-            const orgChanges = this.componentUpdates.pipe(
+            const orgChanges = that.componentUpdates.pipe(
                 distinctUntilKeyChanged('org'),
                 map(({ org }) => org)
             )
 
-            this.subscriptions.add(
-                this.responses
+            that.subscriptions.add(
+                that.responses
                     .pipe(
                         withLatestFrom(orgChanges),
                         concatMap(([responseType, org]) =>
@@ -64,12 +64,12 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                         lastResponse: responseType,
                                     },
                                 ],
-                                this.respondToOrganizationInvitation({
+                                that.respondToOrganizationInvitation({
                                     organizationInvitation: org.viewerPendingInvitation!.id,
                                     responseType,
                                 }).pipe(
                                     tap(() => eventLogger.log('OrgInvitationRespondedTo')),
-                                    tap(() => this.props.onDidRespondToInvitation()),
+                                    tap(() => that.props.onDidRespondToInvitation()),
                                     concatMap(() => [
                                         // Refresh current user's list of organizations.
                                         refreshAuthenticatedUser(),
@@ -104,9 +104,9 @@ export const OrgInvitationPage = withAuthenticatedUser(
                 return (
                     <Redirect
                         to={
-                            this.state.lastResponse
-                                ? orgURL(this.props.org.name)
-                                : userURL(this.props.authenticatedUser.username)
+                            that.state.lastResponse
+                                ? orgURL(that.props.org.name)
+                                : userURL(that.props.authenticatedUser.username)
                         }
                     />
                 )
@@ -114,9 +114,9 @@ export const OrgInvitationPage = withAuthenticatedUser(
 
             return (
                 <>
-                    <PageTitle title={`Invitation - ${this.props.org.name}`} />
-                    {this.props.org.viewerPendingInvitation ? (
-                        <ModalPage icon={<OrgAvatar org={this.props.org.name} className="mt-2 mb-3" size="lg" />}>
+                    <PageTitle title={`Invitation - ${that.props.org.name}`} />
+                    {that.props.org.viewerPendingInvitation ? (
+                        <ModalPage icon={<OrgAvatar org={that.props.org.name} className="mt-2 mb-3" size="lg" />}>
                             <Form className="text-center">
                                 <h3 className="my-0 font-weight-normal">
                                     You've been invited to the{' '}
@@ -150,16 +150,16 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     <button
                                         type="button"
                                         className="btn btn-link btn-sm"
-                                        disabled={this.state.submissionOrError === 'loading'}
-                                        onClick={this.onDeclineInvitation}
+                                        disabled={that.state.submissionOrError === 'loading'}
+                                        onClick={that.onDeclineInvitation}
                                     >
                                         Decline invitation
                                     </button>
                                 </div>
-                                {isErrorLike(this.state.submissionOrError) && (
-                                    <ErrorAlert className="my-2" error={this.state.submissionOrError} />
+                                {isErrorLike(that.state.submissionOrError) && (
+                                    <ErrorAlert className="my-2" error={that.state.submissionOrError} />
                                 )}
-                                {this.state.submissionOrError === 'loading' && (
+                                {that.state.submissionOrError === 'loading' && (
                                     <LoadingSpinner className="icon-inline" />
                                 )}
                             </Form>
@@ -173,12 +173,12 @@ export const OrgInvitationPage = withAuthenticatedUser(
 
         private onAcceptInvitation: React.MouseEventHandler<HTMLButtonElement> = e => {
             e.preventDefault()
-            this.responses.next(GQL.OrganizationInvitationResponseType.ACCEPT)
+            that.responses.next(GQL.OrganizationInvitationResponseType.ACCEPT)
         }
 
         private onDeclineInvitation: React.MouseEventHandler<HTMLButtonElement> = e => {
             e.preventDefault()
-            this.responses.next(GQL.OrganizationInvitationResponseType.REJECT)
+            that.responses.next(GQL.OrganizationInvitationResponseType.REJECT)
         }
 
         private respondToOrganizationInvitation = (

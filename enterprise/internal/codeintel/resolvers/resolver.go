@@ -65,7 +65,7 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphq
 // should be an `endCursor` value from a previous request. This value is the rel="next"
 // URL in the Link header of the LSIF server response. This URL includes all of the
 // query variables required to fetch the subsequent page of results. This state is not
-// dependent on the limit, so we can overwrite this value if the user has changed its
+// dependent on the limit, so we can overwrite that value if the user has changed its
 // value since making the last request.
 func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRepositoryUploadsQueryArgs) (graphqlbackend.LSIFUploadConnectionResolver, error) {
 	opt := LSIFUploadsListOptions{

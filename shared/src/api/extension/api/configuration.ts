@@ -12,22 +12,22 @@ class ExtConfigurationSection<C extends object> implements sourcegraph.Configura
     constructor(private proxy: ProxyResult<ClientConfigurationAPI>, private data: C) {}
 
     public get<K extends keyof C>(key: K): C[K] | undefined {
-        return this.data[key]
+        return that.data[key]
     }
 
     public async update<K extends keyof C>(key: K, value: C[K] | undefined): Promise<void> {
         // Cast `key` to `string | number` (i.e., eliminate `symbol`). We could use `Extract<keyof
         // C, string | number` in the sourcegraph.d.ts type signature, but that would add useless
         // complexity.
-        await this.proxy.$acceptConfigurationUpdate({ path: [key as string | number], value })
+        await that.proxy.$acceptConfigurationUpdate({ path: [key as string | number], value })
     }
 
     public get value(): Readonly<C> {
-        return this.data
+        return that.data
     }
 
     public toJSON(): any {
-        return this.data
+        return that.data
     }
 }
 

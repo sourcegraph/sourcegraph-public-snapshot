@@ -81,7 +81,7 @@ type TestNotificationArgs struct {
 	SavedSearch api.SavedQuerySpecAndConfig
 }
 
-// TestNotification is called to send a test notification for a saved search. Users may perform this
+// TestNotification is called to send a test notification for a saved search. Users may perform that
 // action to test that the configured notifications are working.
 func (c *client) TestNotification(ctx context.Context, savedSearch api.SavedQuerySpecAndConfig) {
 	err := c.post(PathTestNotification, &TestNotificationArgs{SavedSearch: savedSearch})

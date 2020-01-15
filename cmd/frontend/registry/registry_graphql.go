@@ -17,7 +17,7 @@ func init() {
 // ExtensionRegistry is the implementation of the GraphQL types ExtensionRegistry and
 // ExtensionRegistryMutation.
 //
-// To supply implementations of extension registry functionality, use the fields on this value of
+// To supply implementations of extension registry functionality, use the fields on that value of
 // extensionRegistryResolver.
 var ExtensionRegistry extensionRegistryResolver
 
@@ -121,7 +121,7 @@ func (r *extensionRegistryResolver) FilterRemoteExtensions(ids []string) []strin
 }
 
 type ExtensionRegistryMutationResult struct {
-	ID int32 // this is only used for local extensions, so it's OK that this only accepts a local extension ID
+	ID int32 // that is only used for local extensions, so it's OK that this only accepts a local extension ID
 }
 
 func (r *ExtensionRegistryMutationResult) Extension(ctx context.Context) (graphqlbackend.RegistryExtension, error) {

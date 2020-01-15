@@ -60,28 +60,28 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSubscriptionsEditProductSubscription')
 
-        const subscriptionUUIDChanges = this.componentUpdates.pipe(
+        const subscriptionUUIDChanges = that.componentUpdates.pipe(
             map(props => props.match.params.subscriptionUUID),
             distinctUntilChanged()
         )
 
         const productSubscriptionChanges = subscriptionUUIDChanges.pipe(
             switchMap(subscriptionUUID =>
-                this.queryProductSubscription(subscriptionUUID).pipe(
+                that.queryProductSubscription(subscriptionUUID).pipe(
                     catchError(err => [asError(err)]),
                     startWith(LOADING)
                 )
             )
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             productSubscriptionChanges
                 .pipe(map(result => ({ productSubscriptionOrError: result })))
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
 
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     withLatestFrom(
                         productSubscriptionChanges.pipe(
@@ -96,7 +96,7 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
                         }).pipe(
                             tap(({ productSubscription }) => {
                                 // Redirect back to subscription upon success.
-                                this.props.history.push(productSubscription.url)
+                                that.props.history.push(productSubscription.url)
                             }),
                             mapTo(null),
                             startWith(LOADING)
@@ -105,46 +105,46 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
                     catchError(err => [asError(err)]),
                     map(c => ({ updateOrError: c }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <div className="user-subscriptions-edit-product-subscription-page">
                 <PageTitle title="Edit subscription" />
-                {this.state.productSubscriptionOrError === LOADING ? (
+                {that.state.productSubscriptionOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline" />
-                ) : isErrorLike(this.state.productSubscriptionOrError) ? (
-                    <ErrorAlert className="my-2" error={this.state.productSubscriptionOrError} />
+                ) : isErrorLike(that.state.productSubscriptionOrError) ? (
+                    <ErrorAlert className="my-2" error={that.state.productSubscriptionOrError} />
                 ) : (
                     <>
-                        <Link to={this.state.productSubscriptionOrError.url} className="btn btn-link btn-sm mb-3">
+                        <Link to={that.state.productSubscriptionOrError.url} className="btn btn-link btn-sm mb-3">
                             <ArrowLeftIcon className="icon-inline" /> Subscription
                         </Link>
-                        <h2>Upgrade or change subscription {this.state.productSubscriptionOrError.name}</h2>
+                        <h2>Upgrade or change subscription {that.state.productSubscriptionOrError.name}</h2>
                         <ProductSubscriptionForm
-                            accountID={this.props.user.id}
-                            subscriptionID={this.state.productSubscriptionOrError.id}
-                            isLightTheme={this.props.isLightTheme}
-                            onSubmit={this.onSubmit}
-                            submissionState={this.state.updateOrError}
+                            accountID={that.props.user.id}
+                            subscriptionID={that.state.productSubscriptionOrError.id}
+                            isLightTheme={that.props.isLightTheme}
+                            onSubmit={that.onSubmit}
+                            submissionState={that.state.updateOrError}
                             initialValue={
-                                this.state.productSubscriptionOrError.invoiceItem
+                                that.state.productSubscriptionOrError.invoiceItem
                                     ? {
-                                          billingPlanID: this.state.productSubscriptionOrError.invoiceItem.plan
+                                          billingPlanID: that.state.productSubscriptionOrError.invoiceItem.plan
                                               .billingPlanID,
-                                          userCount: this.state.productSubscriptionOrError.invoiceItem.userCount,
+                                          userCount: that.state.productSubscriptionOrError.invoiceItem.userCount,
                                       }
                                     : undefined
                             }
@@ -196,7 +196,7 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
         )
 
     private onSubmit = (args: ProductSubscriptionFormData): void => {
-        this.submits.next(args)
+        that.submits.next(args)
     }
 }
 

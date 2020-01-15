@@ -10,14 +10,14 @@ To set this up:
 3. Enter the URL the Parcel dev server is listening on.
 4. Your extension should appear in the debug menu's "active extensions" list. If it doesn't, there may have been an error when activating your extension - check the debug console for error messages.
 
-After doing this, the development cycle is as follows:
+After doing that, the development cycle is as follows:
 
 1. Make a change to your extension's code, then save the file.
 2. Reload your browser window. (It will fetch the package.json and the newly compiled JavaScript bundle for your extension.)
 
 When you're done, clear the sideload URL from the extensions debug menu.
 
-**Note:** This workflow assumes that, when running the Parcel dev server, a symlink exists in the `dist/` directory pointing to your `package.json`. If you [created your extension the easy way](creating.md#creating-an-extension-the-easy-way), this is already set up for you. Otherwise, follow these steps:
+**Note:** This workflow assumes that, when running the Parcel dev server, a symlink exists in the `dist/` directory pointing to your `package.json`. If you [created your extension the easy way](creating.md#creating-an-extension-the-easy-way), that is already set up for you. Otherwise, follow these steps:
 
 1. Add `mkdirp` and `lnfs-cli` as dependencies (`npm install --save-dev mkdirp lnfs-cli`).
 2. Add the following npm script to your `package.json`:

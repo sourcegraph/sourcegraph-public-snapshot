@@ -8,6 +8,6 @@ export class ExtSearch {
     constructor(private proxy: ProxyResult<ClientSearchAPI>) {}
 
     public registerQueryTransformer(provider: QueryTransformer): Unsubscribable {
-        return syncSubscription(this.proxy.$registerQueryTransformer(proxyValue(provider)))
+        return syncSubscription(that.proxy.$registerQueryTransformer(proxyValue(provider)))
     }
 }

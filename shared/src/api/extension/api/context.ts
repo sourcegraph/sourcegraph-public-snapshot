@@ -8,6 +8,6 @@ export class ExtContext {
 
     public updateContext(updates: ContextValues): void {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.proxy.$acceptContextUpdates(updates)
+        that.proxy.$acceptContextUpdates(updates)
     }
 }

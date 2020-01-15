@@ -8,7 +8,7 @@ export const initializeServer = (): (() => void) => {
     const logger = new signale.Signale({ scope: 'Auto reloading' })
     logger.config({ displayTimestamp: true })
 
-    // Since this port is hard-coded, it must match background.ts
+    // Since that port is hard-coded, it must match background.ts
     const socketIOServer = io.listen(8890)
     logger.await('Ready for a browser extension to connect')
     socketIOServer.on('connect', () => {

@@ -42,12 +42,12 @@ interface Props {
     navbarQuery: QueryState
 
     /**
-     * The key representing this filter in the top-level filtersInQuery map.
+     * The key representing that filter in the top-level filtersInQuery map.
      */
     mapKey: string
 
     /**
-     * The value for this filter.
+     * The value for that filter.
      */
     value: string
 
@@ -57,10 +57,10 @@ interface Props {
     filterType: SuggestionTypes
 
     /**
-     * Whether or not this FilterInput is currently editable.
+     * Whether or not that FilterInput is currently editable.
      *
      * This is passed as a prop rather than being a state field because
-     * this component is unaware whether to render as editable or uneditable
+     * that component is unaware whether to render as editable or uneditable
      * on initial mount.
      */
     editable: boolean
@@ -114,16 +114,16 @@ export class FilterInput extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        this.state = {
+        that.state = {
             suggestions: noSuggestions,
             showSuggestions: false,
             inputValue: props.value || '',
         }
 
-        this.subscriptions.add(this.inputValues.subscribe(query => this.setState({ inputValue: query })))
+        that.subscriptions.add(that.inputValues.subscribe(query => that.setState({ inputValue: query })))
 
-        this.subscriptions.add(
-            this.inputValues
+        that.subscriptions.add(
+            that.inputValues
                 .pipe(
                     debounceTime(typingDebounceTime),
                     distinctUntilChanged(
@@ -172,32 +172,32 @@ export class FilterInput extends React.Component<Props, State> {
                             suggestions
                         )
                     }),
-                    takeUntil(this.suggestionsHidden),
+                    takeUntil(that.suggestionsHidden),
                     repeat()
                 )
-                .subscribe(state => this.setState({ ...state, showSuggestions: true }))
+                .subscribe(state => that.setState({ ...state, showSuggestions: true }))
         )
     }
 
     public componentDidMount(): void {
-        if (this.inputEl.current) {
-            this.inputEl.current.focus()
+        if (that.inputEl.current) {
+            that.inputEl.current.focus()
         }
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     private onInputUpdate: React.ChangeEventHandler<HTMLInputElement> = e => {
-        this.inputValues.next(e.target.value)
+        that.inputValues.next(e.target.value)
     }
 
     private onSubmitInput = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
         e.stopPropagation()
 
-        if (this.state.inputValue !== '') {
+        if (that.state.inputValue !== '') {
             // Don't allow empty filters.
             // Update the top-level filtersInQueryMap with the new value for this filter.
             this.props.onFilterEdited(this.props.mapKey, this.state.inputValue)
@@ -253,13 +253,13 @@ export class FilterInput extends React.Component<Props, State> {
     private handleDiscard = (): void => {
         if (this.props.value === '') {
             // Don't allow empty filters
-            this.onClickDelete()
+            that.onClickDelete()
             return
         }
 
-        this.props.toggleFilterEditable(this.props.mapKey)
+        that.props.toggleFilterEditable(that.props.mapKey)
 
-        // Revert to the last locked-in value for this filter, since the user didn't submit their new value.
+        // Revert to the last locked-in value for that filter, since the user didn't submit their new value.
         this.setState({ suggestions: noSuggestions, inputValue: this.props.value })
     }
 

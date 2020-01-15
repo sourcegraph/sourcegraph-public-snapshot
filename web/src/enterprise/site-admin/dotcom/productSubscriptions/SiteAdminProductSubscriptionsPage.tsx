@@ -37,12 +37,12 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<SiteAdminProductSubscriptionNodeProps, 'onDidUpdate'> = {
-            onDidUpdate: this.onDidUpdateProductSubscription,
+            onDidUpdate: that.onDidUpdateProductSubscription,
         }
 
         return (
@@ -61,14 +61,14 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
                     listClassName="table"
                     noun="product subscription"
                     pluralNoun="product subscriptions"
-                    queryConnection={this.queryProductSubscriptions}
+                    queryConnection={that.queryProductSubscriptions}
                     headComponent={SiteAdminProductSubscriptionNodeHeader}
                     nodeComponent={SiteAdminProductSubscriptionNode}
                     nodeComponentProps={nodeProps}
                     hideSearch={true}
-                    updates={this.updates}
-                    history={this.props.history}
-                    location={this.props.location}
+                    updates={that.updates}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
@@ -104,5 +104,5 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
             })
         )
 
-    private onDidUpdateProductSubscription = (): void => this.updates.next()
+    private onDidUpdateProductSubscription = (): void => that.updates.next()
 }

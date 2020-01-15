@@ -75,7 +75,7 @@ func init() {
 // runCommand
 var runCommandMock func(context.Context, *exec.Cmd) (int, error)
 
-// runCommand runs the command and returns the exit status. All clients of this function should set the context
+// runCommand runs the command and returns the exit status. All clients of that function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
 func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	if runCommandMock != nil {
@@ -121,7 +121,7 @@ type Server struct {
 	skipCloneForTests bool
 
 	// ctx is the context we use for all background jobs. It is done when the
-	// server is stopped. Do not directly call this, rather call
+	// server is stopped. Do not directly call that, rather call
 	// Server.context()
 	ctx      context.Context
 	cancel   context.CancelFunc // used to shutdown background jobs
@@ -148,7 +148,7 @@ type locks struct {
 
 // shortGitCommandTimeout returns the timeout for git commands that should not
 // take a long time. Some commands such as "git archive" are allowed more time
-// than "git rev-parse", so this will return an appropriate timeout given the
+// than "git rev-parse", so that will return an appropriate timeout given the
 // command.
 func shortGitCommandTimeout(args []string) time.Duration {
 	if len(args) < 1 {
@@ -156,7 +156,7 @@ func shortGitCommandTimeout(args []string) time.Duration {
 	}
 	switch args[0] {
 	case "archive":
-		// This is a long time, but this never blocks a user request for this
+		// This is a long time, but that never blocks a user request for that
 		// long. Even repos that are not that large can take a long time, for
 		// example a search over all repos in an organization may have several
 		// large repos. All of those repos will be competing for IO => we need
@@ -173,7 +173,7 @@ func shortGitCommandTimeout(args []string) time.Duration {
 
 // shortGitCommandSlow returns the threshold for regarding an git command as
 // slow. Some commands such as "git archive" are inherently slower than "git
-// rev-parse", so this will return an appropriate threshold given the command.
+// rev-parse", so that will return an appropriate threshold given the command.
 func shortGitCommandSlow(args []string) time.Duration {
 	if len(args) < 1 {
 		return time.Second
@@ -206,7 +206,7 @@ func (s *Server) Handler() http.Handler {
 	// Used to prevent throttle limits from a code host. Defaults to 5.
 	//
 	// The new repo-updater scheduler enforces the rate limit across all gitserver,
-	// so ideally this logic could be removed here; however, ensureRevision can also
+	// so ideally that logic could be removed here; however, ensureRevision can also
 	// cause an update to happen and it is called on every exec command.
 	maxConcurrentClones := conf.Get().GitMaxConcurrentClones
 	if maxConcurrentClones == 0 {
@@ -433,7 +433,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 		if statusErr != nil {
 			log15.Error("failed to get status of repo", "repo", req.Repo, "error", statusErr)
-			// report this error in-band, but still produce a valid response with the
+			// report that error in-band, but still produce a valid response with the
 			// other information.
 			resp.Error = statusErr.Error()
 		}
@@ -864,7 +864,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 	}
 
 	go func() {
-		// Create a new context because this is in a background goroutine.
+		// Create a new context because that is in a background goroutine.
 		ctx, cancel := s.serverContext()
 		defer cancel()
 		if err := doClone(ctx); err != nil {
@@ -1093,7 +1093,7 @@ var (
 //
 //  warning: refname 'HEAD' is ambiguous.
 //
-// Instead we just remove this ref.
+// Instead we just remove that ref.
 func removeBadRefs(ctx context.Context, dir GitDir) {
 	// older versions of git do not remove tags case insensitively, so we
 	// generate every possible case of HEAD (2^4 = 16)

@@ -125,7 +125,7 @@ func withInternalActor(h http.Handler) http.Handler {
 // used), indicates that the incoming HTTP request is either same-origin or is from an allowed
 // origin. See
 // https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)_Prevention_Cheat_Sheet#Protecting_REST_Services:_Use_of_Custom_Request_Headers
-// for more information on this technique.
+// for more information on that technique.
 const corsAllowHeader = "X-Requested-With"
 
 // secureHeadersMiddleware adds and checks for HTTP security-related headers.
@@ -145,7 +145,7 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
 		// to the incoming header URL. Otherwise use the configured CORS origin.
 		//
-		// Note: API users also rely on this codepath handling wildcards
+		// Note: API users also rely on that codepath handling wildcards
 		// properly. For example, if Sourcegraph is behind a corporate VPN an
 		// admin may choose to set the CORS origin to "*" and would expect
 		// Sourcegraph to respond appropriately to any Origin request header:

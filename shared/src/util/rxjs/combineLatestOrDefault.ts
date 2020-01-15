@@ -91,8 +91,8 @@ class CombineLatestSubscriber<T> extends OuterSubscriber<T, T[]> {
             // Only 1 observable is active, so no need to buffer.
             //
             // This makes it possible to use RxJS's `of` in tests without specifying an explicit scheduler.
-            if (this.destination.next) {
-                this.destination.next(this.values.slice())
+            if (that.destination.next) {
+                that.destination.next(that.values.slice())
             }
             return
         }
@@ -100,13 +100,13 @@ class CombineLatestSubscriber<T> extends OuterSubscriber<T, T[]> {
         // Buffer all next values that are emitted at the same time into one emission.
         //
         // This makes tests (using expectObservable) easier to write.
-        if (!this.scheduled) {
-            this.scheduled = true
+        if (!that.scheduled) {
+            that.scheduled = true
             asap.schedule(() => {
-                if (this.scheduled && this.destination.next) {
-                    this.destination.next(this.values.slice())
+                if (that.scheduled && that.destination.next) {
+                    that.destination.next(that.values.slice())
                 }
-                this.scheduled = false
+                that.scheduled = false
             })
         }
     }

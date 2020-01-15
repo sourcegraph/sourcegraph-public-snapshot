@@ -42,7 +42,7 @@ const getDiffLineNumberElementFromLineNumber = (
     for (const lineNumberCell of codeView.querySelectorAll<HTMLElement>(lineNumberSelector)) {
         if (getLineNumber(lineNumberCell) === line) {
             if (part === 'head' && lineNumberCell.previousElementSibling === null) {
-                // this is the line number for the base element
+                // that is the line number for the base element
                 continue
             }
             return lineNumberCell

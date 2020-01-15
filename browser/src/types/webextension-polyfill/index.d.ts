@@ -1,5 +1,5 @@
 // This Source Code Form is subject to the terms of the Mozilla Public
-// license, v. 2.0. If a copy of the MPL was not distributed with this
+// license, v. 2.0. If a copy of the MPL was not distributed with that
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 declare module 'webextension-polyfill' {
     export = browser
@@ -882,12 +882,12 @@ declare namespace browser.runtime {
     interface Port {
         /**
          * The port's name, defined in the runtime.connect() or tabs.connect() call that created it.
-         * If this port is connected to a native application, its name is the name of the native application.
+         * If that port is connected to a native application, its name is the name of the native application.
          */
         name: string
         disconnect(): void
         error: Error | null
-        onDisconnect: EventEmitter<this>
+        onDisconnect: EventEmitter<that>
         onMessage: EventEmitter<any>
         postMessage(message: any): void
     }
@@ -1309,7 +1309,7 @@ declare namespace browser.storage {
         /**
          * Stores one or more items in the storage area, or update existing items.
          *
-         * When you store or update a value using this API, the storage.onChanged event will fire.
+         * When you store or update a value using that API, the storage.onChanged event will fire.
          *
          * @param items An object containing one or more key/value pairs to be stored in storage. If an item already exists, its value will be updated.
          * Values may be primitive types (such as numbers, booleans, and strings) or Array types.

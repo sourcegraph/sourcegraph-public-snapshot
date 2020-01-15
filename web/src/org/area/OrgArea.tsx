@@ -143,67 +143,67 @@ export class OrgArea extends React.Component<Props> {
                     })
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     err => console.error(err)
                 )
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.orgOrError) {
+        if (!that.state.orgOrError) {
             return null // loading
         }
-        if (isErrorLike(this.state.orgOrError)) {
+        if (isErrorLike(that.state.orgOrError)) {
             return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.orgOrError.message)} />
+                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(that.state.orgOrError.message)} />
             )
         }
 
         const context: OrgAreaPageProps = {
-            authenticatedUser: this.props.authenticatedUser,
-            org: this.state.orgOrError,
-            onOrganizationUpdate: this.onDidUpdateOrganization,
-            extensionsController: this.props.extensionsController,
-            platformContext: this.props.platformContext,
-            settingsCascade: this.props.settingsCascade,
-            isLightTheme: this.props.isLightTheme,
-            namespace: this.state.orgOrError,
-            patternType: this.props.patternType,
+            authenticatedUser: that.props.authenticatedUser,
+            org: that.state.orgOrError,
+            onOrganizationUpdate: that.onDidUpdateOrganization,
+            extensionsController: that.props.extensionsController,
+            platformContext: that.props.platformContext,
+            settingsCascade: that.props.settingsCascade,
+            isLightTheme: that.props.isLightTheme,
+            namespace: that.state.orgOrError,
+            patternType: that.props.patternType,
         }
 
-        if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
+        if (that.props.location.pathname === `${that.props.match.url}/invitation`) {
             // The OrgInvitationPage is displayed without the OrgHeader because it is modal-like.
-            return <OrgInvitationPage {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
+            return <OrgInvitationPage {...context} onDidRespondToInvitation={that.onDidRespondToInvitation} />
         }
 
         return (
             <div className="org-area w-100">
                 <OrgHeader
-                    {...this.props}
+                    {...that.props}
                     {...context}
-                    navItems={this.props.orgAreaHeaderNavItems}
+                    navItems={that.props.orgAreaHeaderNavItems}
                     className="border-bottom mt-4"
                 />
                 <div className="container mt-3">
-                    <ErrorBoundary location={this.props.location}>
+                    <ErrorBoundary location={that.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
-                                {this.props.orgAreaRoutes.map(
+                                {that.props.orgAreaRoutes.map(
                                     /* eslint-disable react/jsx-no-bind */
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
-                                                path={this.props.match.url + path}
+                                                path={that.props.match.url + path}
                                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                                 exact={exact}
                                                 render={routeComponentProps =>
@@ -222,7 +222,7 @@ export class OrgArea extends React.Component<Props> {
         )
     }
 
-    private onDidRespondToInvitation = (): void => this.refreshRequests.next()
+    private onDidRespondToInvitation = (): void => that.refreshRequests.next()
 
-    private onDidUpdateOrganization = (): void => this.refreshRequests.next()
+    private onDidUpdateOrganization = (): void => that.refreshRequests.next()
 }

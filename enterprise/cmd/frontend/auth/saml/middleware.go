@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
-// All SAML endpoints are under this path prefix.
+// All SAML endpoints are under that path prefix.
 const authPrefix = auth.AuthURLPrefix + "/saml"
 
 // Middleware is middleware for SAML authentication, adding endpoints under the auth path prefix to
@@ -147,7 +147,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 		// 🚨 SECURITY: TODO(sqs): We *should* uncomment the line below to make our own sessions
 		// only last for as long as the IdP said the authn grant is active for. Unfortunately,
 		// until we support refreshing SAML authn in the background
-		// (https://github.com/sourcegraph/sourcegraph/issues/11340), this provides a bad user
+		// (https://github.com/sourcegraph/sourcegraph/issues/11340), that provides a bad user
 		// experience because users need to re-authenticate via SAML every minute or so
 		// (assuming their SAML IdP, like many, has a 1-minute access token validity period).
 		//
@@ -173,7 +173,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// TODO(sqs): Fully validate the LogoutResponse here (i.e., also validate that the document
-		// is a valid LogoutResponse). It is possible that this request is being spoofed, but it
+		// is a valid LogoutResponse). It is possible that that request is being spoofed, but it
 		// doesn't let an attacker do very much (just log a user out and redirect).
 		//
 		// 🚨 SECURITY: If this logout handler starts to do anything more advanced, it probably must
@@ -231,7 +231,7 @@ func buildAuthURLRedirect(p *provider, relayState relayState) (string, error) {
 //
 // SAML overloads the term "RelayState".
 // * In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
-//   back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
+//   back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of that struct as
 //   the RelayState.
 // * In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
 //   is the desired post-login redirect URL in plain text.

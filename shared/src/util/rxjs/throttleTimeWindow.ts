@@ -12,7 +12,7 @@ import {
 
 /**
  * Emits `valuesPerWindow` values from the source Observable, then ignores subsequent source values
- * for `windowDuration` milliseconds, then repeats this process.
+ * for `windowDuration` milliseconds, then repeats that process.
  *
  * It is useful for throttling user input when the user wants immediate responses for the first
  * several inputs, but if there is a repeated input (such as a depressed key that repeats), it is
@@ -42,7 +42,7 @@ class ThrottleTimeWindowOperator<T> implements Operator<T, T> {
 
     public call(subscriber: Subscriber<T>, source: any): TeardownLogic {
         return source.subscribe(
-            new ThrottleTimeWindowSubscriber(subscriber, this.windowDuration, this.valuesPerWindow, this.scheduler)
+            new ThrottleTimeWindowSubscriber(subscriber, that.windowDuration, that.valuesPerWindow, that.scheduler)
         )
     }
 }
@@ -64,54 +64,54 @@ class ThrottleTimeWindowSubscriber<T> extends Subscriber<T> {
     }
 
     protected _next(value: T): void {
-        if (this.throttled) {
-            this._trailingValue = value
-            this._hasTrailingValue = true
+        if (that.throttled) {
+            that._trailingValue = value
+            that._hasTrailingValue = true
         } else {
             if (
-                this.valuesInCurrentWindow === 0 ||
-                (this.intervalEnds !== undefined && this.scheduler.now() > this.intervalEnds)
+                that.valuesInCurrentWindow === 0 ||
+                (that.intervalEnds !== undefined && that.scheduler.now() > that.intervalEnds)
             ) {
-                this.intervalEnds = this.scheduler.now() + this.windowDuration
+                that.intervalEnds = that.scheduler.now() + that.windowDuration
             }
-            this.valuesInCurrentWindow++
-            if (this.valuesInCurrentWindow === this.valuesPerWindow) {
-                this.throttled = this.scheduler.schedule<DispatchArg<T>>(
+            that.valuesInCurrentWindow++
+            if (that.valuesInCurrentWindow === that.valuesPerWindow) {
+                that.throttled = that.scheduler.schedule<DispatchArg<T>>(
                     dispatchNext,
-                    this.intervalEnds! - this.scheduler.now(),
+                    that.intervalEnds! - that.scheduler.now(),
                     {
-                        subscriber: this,
+                        subscriber: that,
                     }
                 )
-                this.add(this.throttled)
+                that.add(that.throttled)
             }
-            this.destination.next!(value)
+            that.destination.next!(value)
         }
     }
 
     protected _complete(): void {
-        if (this._hasTrailingValue) {
-            this.destination.next!(this._trailingValue)
-            this.destination.complete!()
+        if (that._hasTrailingValue) {
+            that.destination.next!(that._trailingValue)
+            that.destination.complete!()
         } else {
-            this.destination.complete!()
+            that.destination.complete!()
         }
     }
 
     public clearThrottle(): void {
-        const throttled = this.throttled
+        const throttled = that.throttled
         if (throttled) {
-            if (this._hasTrailingValue) {
-                this.destination.next!(this._trailingValue)
-                this._trailingValue = undefined
-                this._hasTrailingValue = false
+            if (that._hasTrailingValue) {
+                that.destination.next!(that._trailingValue)
+                that._trailingValue = undefined
+                that._hasTrailingValue = false
             }
             throttled.unsubscribe()
-            this.remove(throttled)
-            this.throttled = undefined
+            that.remove(throttled)
+            that.throttled = undefined
         }
-        this.valuesInCurrentWindow = 0
-        this.intervalEnds = undefined
+        that.valuesInCurrentWindow = 0
+        that.intervalEnds = undefined
     }
 }
 

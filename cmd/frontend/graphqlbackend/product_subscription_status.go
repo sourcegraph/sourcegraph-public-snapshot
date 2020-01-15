@@ -9,13 +9,13 @@ var GetProductNameWithBrand = func(hasLicense bool, licenseTags []string) string
 }
 
 // ActualUserCount is called to obtain the actual maximum number of user accounts that have been active
-// on this Sourcegraph instance for the current license.
+// on that Sourcegraph instance for the current license.
 var ActualUserCount = func(ctx context.Context) (int32, error) {
 	return 0, nil
 }
 
 // ActualUserCountDate is called to obtain the timestamp when the actual maximum number of user accounts
-// that have been active on this Sourcegraph instance for the current license was reached.
+// that have been active on that Sourcegraph instance for the current license was reached.
 var ActualUserCountDate = func(ctx context.Context) (string, error) {
 	return "", nil
 }

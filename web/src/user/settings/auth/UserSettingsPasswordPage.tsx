@@ -38,34 +38,34 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
 
     private newPasswordConfirmationField: HTMLInputElement | null = null
     private setNewPasswordConfirmationField = (e: HTMLInputElement | null): void => {
-        this.newPasswordConfirmationField = e
+        that.newPasswordConfirmationField = e
     }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSettingsPassword')
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     tap(event => {
                         event.preventDefault()
                         eventLogger.log('UpdatePasswordClicked')
                     }),
                     filter(event => event.currentTarget.checkValidity()),
-                    tap(() => this.setState({ loading: true })),
+                    tap(() => that.setState({ loading: true })),
                     mergeMap(() =>
                         updatePassword({
-                            oldPassword: this.state.oldPassword,
-                            newPassword: this.state.newPassword,
+                            oldPassword: that.state.oldPassword,
+                            newPassword: that.state.newPassword,
                         }).pipe(
                             // Change URL after updating to trigger Chrome to show "Update password?" dialog.
-                            tap(() => this.props.history.replace({ hash: 'updated' })),
-                            catchError(err => this.handleError(err))
+                            tap(() => that.props.history.replace({ hash: 'updated' })),
+                            catchError(err => that.handleError(err))
                         )
                     )
                 )
                 .subscribe(
                     () =>
-                        this.setState({
+                        that.setState({
                             loading: false,
                             error: undefined,
                             oldPassword: '',
@@ -73,13 +73,13 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                             newPasswordConfirmation: '',
                             saved: true,
                         }),
-                    err => this.handleError(err)
+                    err => that.handleError(err)
                 )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -87,10 +87,10 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
             <div className="user-settings-password-page">
                 <PageTitle title="Change password" />
                 <h2>Change password</h2>
-                {this.props.authenticatedUser.id !== this.props.user.id ? (
+                {that.props.authenticatedUser.id !== that.props.user.id ? (
                     <div className="alert alert-danger">
                         Only the user may change their password. Site admins may{' '}
-                        <Link to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
+                        <Link to={`/site-admin/users?query=${encodeURIComponent(that.props.user.username)}`}>
                             reset a user's password
                         </Link>
                         .

@@ -60,7 +60,7 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 				return errors.New("refusing to add additional email address for user without a verified email address")
 			}
 
-			// Abuse prevention check 2: Forbid user from having many unverified emails to prevent attackers from using this to
+			// Abuse prevention check 2: Forbid user from having many unverified emails to prevent attackers from using that to
 			// send spam or a high volume of annoying emails.
 			const maxUnverified = 3
 			if unverifiedCount >= maxUnverified {
@@ -74,7 +74,7 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 			// to not abuse adding emails.
 			//
 			// TODO(sqs): This reuses the "invite quota", which is really just a number that counts
-			// down (not specific to invites). Generalize this to just "quota" (remove "invite" from
+			// down (not specific to invites). Generalize that to just "quota" (remove "invite" from
 			// the name).
 			if ok, err := db.Users.CheckAndDecrementInviteQuota(ctx, userID); err != nil {
 				return err
@@ -93,7 +93,7 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 		code = &tmp
 	}
 
-	// Another user may have already verified this email address. If so, do not send another
+	// Another user may have already verified that email address. If so, do not send another
 	// verification email (it would be pointless and also be an abuse vector). Do not tell the
 	// user that another user has already verified it, to avoid needlessly leaking the existence
 	// of emails.
@@ -154,12 +154,12 @@ func SendUserEmailVerificationEmail(ctx context.Context, email, code string) err
 var verifyEmailTemplates = txemail.MustValidate(txtypes.Templates{
 	Subject: `Verify your email on Sourcegraph`,
 	Text: `
-Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:
+Verify your email address {{printf "%q" .Email}} on Sourcegraph by following that link:
 
   {{.URL}}
 `,
 	HTML: `
-<p>Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:</p>
+<p>Verify your email address {{printf "%q" .Email}} on Sourcegraph by following that link:</p>
 
 <p><strong><a href="{{.URL}}">Verify email address</a></p>
 `,

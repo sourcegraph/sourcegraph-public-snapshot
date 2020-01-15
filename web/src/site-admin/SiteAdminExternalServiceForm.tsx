@@ -28,15 +28,15 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
 export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
-            <Form className="external-service-form" onSubmit={this.props.onSubmit}>
-                {this.props.error && <ErrorAlert error={this.props.error} />}
-                {this.props.warning && (
+            <Form className="external-service-form" onSubmit={that.props.onSubmit}>
+                {that.props.error && <ErrorAlert error={that.props.error} />}
+                {that.props.warning && (
                     <div className="alert alert-warning">
                         <h4>Warning</h4>
-                        <ErrorMessage error={this.props.warning} />
+                        <ErrorMessage error={that.props.warning} />
                     </div>
                 )}
-                {this.props.hideDisplayNameField || (
+                {that.props.hideDisplayNameField || (
                     <div className="form-group">
                         <label className="font-weight-bold" htmlFor="e2e-external-service-form-display-name">
                             Display name:
@@ -50,9 +50,9 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                             autoComplete="off"
                             autoFocus={true}
                             spellCheck={false}
-                            value={this.props.input.displayName}
-                            onChange={this.onDisplayNameChange}
-                            disabled={this.props.loading}
+                            value={that.props.input.displayName}
+                            onChange={that.onDisplayNameChange}
+                            disabled={that.props.loading}
                         />
                     </div>
                 )}
@@ -62,15 +62,15 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
                         // if it thinks the config is dirty. We want to always replace the config if the kind changes
                         // so the editor is keyed on the kind.
-                        value={this.props.input.config}
-                        jsonSchema={this.props.jsonSchema}
+                        value={that.props.input.config}
+                        jsonSchema={that.props.jsonSchema}
                         canEdit={false}
-                        loading={this.props.loading}
+                        loading={that.props.loading}
                         height={350}
-                        isLightTheme={this.props.isLightTheme}
-                        onChange={this.onConfigChange}
-                        history={this.props.history}
-                        actions={this.props.editorActions}
+                        isLightTheme={that.props.isLightTheme}
+                        onChange={that.onConfigChange}
+                        history={that.props.history}
+                        actions={that.props.editorActions}
                     />
                     <p className="form-text text-muted">
                         <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
@@ -79,24 +79,24 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                 <button
                     type="submit"
                     className={`btn btn-primary ${
-                        this.props.mode === 'create'
+                        that.props.mode === 'create'
                             ? 'e2e-add-external-service-button'
                             : 'e2e-update-external-service-button'
                     }`}
-                    disabled={this.props.loading}
+                    disabled={that.props.loading}
                 >
-                    {this.props.loading && <LoadingSpinner className="icon-inline" />}
-                    {this.props.submitName ?? (this.props.mode === 'edit' ? 'Update repositories' : 'Add repositories')}
+                    {that.props.loading && <LoadingSpinner className="icon-inline" />}
+                    {that.props.submitName ?? (that.props.mode === 'edit' ? 'Update repositories' : 'Add repositories')}
                 </button>
             </Form>
         )
     }
 
     private onDisplayNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        this.props.onChange({ ...this.props.input, displayName: event.currentTarget.value })
+        that.props.onChange({ ...that.props.input, displayName: event.currentTarget.value })
     }
 
     private onConfigChange = (config: string): void => {
-        this.props.onChange({ ...this.props.input, config })
+        that.props.onChange({ ...that.props.input, config })
     }
 }

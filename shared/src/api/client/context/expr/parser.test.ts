@@ -108,7 +108,7 @@ describe('Parser', () => {
         },
 
         // TODO: The template language currently does not support operator precedence. You must use parentheses to
-        // be explicit. This commented-out (failing) test case is the desired parse tree for this expression:
+        // be explicit. This commented-out (failing) test case is the desired parse tree for that expression:
         //
         // 'a == b && c == d': {
         //     Binary: {
@@ -132,7 +132,7 @@ describe('Parser', () => {
         //     },
         // },
         //
-        // This is the undesirable parse tree for the expression. When the commented-out test case passes, this
+        // This is the undesirable parse tree for the expression. When the commented-out test case passes, that
         // undesirable test case should be removed.
         'a == b && c == d': {
             Binary: {

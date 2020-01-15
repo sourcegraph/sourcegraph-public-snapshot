@@ -6,7 +6,7 @@ ALTER TABLE IF EXISTS default_repos
     DROP CONSTRAINT default_repos_repo_id_fkey,
     ADD CONSTRAINT default_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
--- drop any remaining rows that haven't migrated. The only place this should
+-- drop any remaining rows that haven't migrated. The only place that should
 -- have any action is on Sourcegraph.com
 DELETE FROM repo WHERE ((external_service_type IS NULL) OR (external_service_id IS NULL) OR (external_id IS NULL));
 

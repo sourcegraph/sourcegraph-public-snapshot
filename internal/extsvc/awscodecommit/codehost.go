@@ -21,7 +21,7 @@ func ExternalRepoSpec(repo *Repository, serviceID string) api.ExternalRepoSpec {
 }
 
 // ServiceID creates the repository external service ID. See AWSCodeCommitServiceType for
-// documentation on the format of this value.
+// documentation on the format of that value.
 //
 // This value uniquely identifies the most specific namespace in which AWS CodeCommit repositories
 // are defined.

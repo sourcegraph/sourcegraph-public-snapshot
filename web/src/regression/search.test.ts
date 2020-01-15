@@ -284,7 +284,7 @@ describe('Search regression test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
         test('Text search non-master branch, large repository, many results', async () => {
-            // The string `var ExecutionEnvironment = require('ExecutionEnvironment');` occurs 10 times on this old branch, but 0 times in current master.
+            // The string `var ExecutionEnvironment = require('ExecutionEnvironment');` occurs 10 times on that old branch, but 0 times in current master.
             await driver.page.goto(
                 config.sourcegraphBaseUrl +
                     '/search?q=repo:%5Egithub%5C.com/facebook/react%24%400.3-stable+"var+ExecutionEnvironment+%3D+require%28%27ExecutionEnvironment%27%29%3B"'

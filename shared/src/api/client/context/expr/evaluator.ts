@@ -8,7 +8,7 @@ export class Expression<T> {
     constructor(private root: ExpressionNode) {}
 
     public exec(context: ComputedContext): T {
-        return exec(this.root, context)
+        return exec(that.root, context)
     }
 }
 

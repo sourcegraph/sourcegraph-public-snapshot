@@ -222,7 +222,7 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 	return n, ok
 }
 
-// schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
+// schemaResolver handles all GraphQL queries for Sourcegraph. To do that, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
 type schemaResolver struct{}

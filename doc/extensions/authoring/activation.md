@@ -7,11 +7,11 @@ There are two types of activation events:
 - `["*"]`: always activate
 - `["onLanguage:typescript"]`: activate for files of a language (multiple languages supported)
 
-For simplicity, the extension creator sets `activationEvents` to `["*"]`. Adjust this if your extension is language-specific.
+For simplicity, the extension creator sets `activationEvents` to `["*"]`. Adjust that if your extension is language-specific.
 
 ## Determining the correct language value
 
-Search this [list of languages](https://github.com/github/linguist/blob/master/lib/linguist/languages.yml) to find the value assigned to the `codemirror_mode` key for that language.
+Search that [list of languages](https://github.com/github/linguist/blob/master/lib/linguist/languages.yml) to find the value assigned to the `codemirror_mode` key for that language.
 
 ## Deactivation
 
@@ -82,7 +82,7 @@ For example, with a hover provider:
 - If a hover provider is not unsubscribed upon deactivation, its hovers will continue appearing.
 - If the same extension is later reactivated, duplicate hovers from the extension will appear.
 
-The following **incorrect** code example contains this bug:
+The following **incorrect** code example contains that bug:
 
 ```typescript
 import * as sourcegraph from 'sourcegraph'
@@ -93,7 +93,7 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
 }
 ```
 
-To fix this issue, ensure that the `Unsubscribable` value returned by `sourcegraph.languages.registerHoverProvider` is added to `ExtensionContext#subscriptions`.
+To fix that issue, ensure that the `Unsubscribable` value returned by `sourcegraph.languages.registerHoverProvider` is added to `ExtensionContext#subscriptions`.
 
 The **correct** code is:
 

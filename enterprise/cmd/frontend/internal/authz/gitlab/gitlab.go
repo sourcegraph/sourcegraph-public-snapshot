@@ -54,7 +54,7 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 
 	switch idp := a.IdentityProvider; {
 	case idp.Oauth != nil:
-		// Check that there is a GitLab authn provider corresponding to this GitLab instance
+		// Check that there is a GitLab authn provider corresponding to that GitLab instance
 		foundAuthProvider := false
 		for _, authnProvider := range ps {
 			if authnProvider.Gitlab == nil {

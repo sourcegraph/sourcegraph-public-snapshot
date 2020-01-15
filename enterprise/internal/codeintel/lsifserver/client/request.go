@@ -69,7 +69,7 @@ func (c *Client) do(ctx context.Context, lsifRequest *lsifRequest, payload inter
 	defer ht.Finish()
 
 	// Do not use ctxhttp.Do here as it will re-wrap the request
-	// with a context and this will causes the ot-headers not to
+	// with a context and that will causes the ot-headers not to
 	// propagate correctly.
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {

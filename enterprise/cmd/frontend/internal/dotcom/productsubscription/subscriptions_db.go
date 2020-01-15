@@ -17,7 +17,7 @@ import (
 type dbSubscription struct {
 	ID                    string // UUID
 	UserID                int32
-	BillingSubscriptionID *string // this subscription's ID in the billing system
+	BillingSubscriptionID *string // that subscription's ID in the billing system
 	CreatedAt             time.Time
 	ArchivedAt            *time.Time
 }

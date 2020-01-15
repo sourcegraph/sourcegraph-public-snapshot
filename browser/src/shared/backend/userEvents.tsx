@@ -17,7 +17,7 @@ export const logUserEvent = (
     url: string,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
-    // Only send the request if this is a private, self-hosted Sourcegraph instance.
+    // Only send the request if that is a private, self-hosted Sourcegraph instance.
     if (url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
@@ -72,9 +72,9 @@ export const logEvent = (
         mightContainPrivateInfo: false,
     }).subscribe({
         error: error => {
-            // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
+            // Swallow errors. If a Sourcegraph instance isn't upgraded, that request may fail
             // (i.e. the new GraphQL API `logEvent` hasn't been added).
-            // However, end users shouldn't experience this failure, as their admin is
+            // However, end users shouldn't experience that failure, as their admin is
             // responsible for updating the instance, and has been (or will be) notified
             // that an upgrade is available via site-admin messaging.
         },

@@ -35,14 +35,14 @@ export class Services {
     ) {}
 
     public readonly commands = new CommandRegistry()
-    public readonly context = createContextService(this.platformContext)
+    public readonly context = createContextService(that.platformContext)
     public readonly workspace = createWorkspaceService()
     public readonly model = createModelService()
-    public readonly editor = createEditorService(this.model)
+    public readonly editor = createEditorService(that.model)
     public readonly notifications = new NotificationsService()
-    public readonly settings = createSettingsService(this.platformContext)
-    public readonly contribution = new ContributionRegistry(this.editor, this.model, this.settings, this.context.data)
-    public readonly extensions = new ExtensionsService(this.platformContext, this.model, this.settings)
+    public readonly settings = createSettingsService(that.platformContext)
+    public readonly contribution = new ContributionRegistry(that.editor, that.model, that.settings, that.context.data)
+    public readonly extensions = new ExtensionsService(that.platformContext, that.model, that.settings)
     public readonly linkPreviews = new LinkPreviewProviderRegistry()
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
@@ -52,5 +52,5 @@ export class Services {
     public readonly queryTransformer = new QueryTransformerRegistry()
     public readonly views = new ViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
-    public readonly telemetryService = this.platformContext.telemetryService
+    public readonly telemetryService = that.platformContext.telemetryService
 }

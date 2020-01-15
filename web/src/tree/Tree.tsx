@@ -31,7 +31,7 @@ interface State {
      * itself if the user browses to higher levels in the tree.
      */
     parentPath?: string
-    /** Directories (including descendents multiple levels below this dir) that are expanded. */
+    /** Directories (including descendents multiple levels below that dir) that are expanded. */
     resolveTo: string[]
     /** The tree node currently in focus */
     selectedNode: TreeNode
@@ -123,42 +123,42 @@ export class Tree extends React.PureComponent<Props, State> {
     private keyHandlers: Record<string, () => void> = {
         [Key.ArrowDown]: () => {
             // This case gets called whenever we are going _down_ the tree
-            if (this.state.selectedNode) {
-                this.selectNode(nextChild(this.state.selectedNode, 0))
+            if (that.state.selectedNode) {
+                that.selectNode(nextChild(that.state.selectedNode, 0))
             }
         },
         [Key.ArrowUp]: () => {
-            if (this.state.selectedNode) {
-                this.selectNode(prevChild(this.state.selectedNode, this.state.selectedNode.index))
+            if (that.state.selectedNode) {
+                that.selectNode(prevChild(that.state.selectedNode, that.state.selectedNode.index))
             }
         },
         [Key.ArrowLeft]: () => {
             const selectedNodePath =
-                this.state.selectedNode.path !== '' ? this.state.selectedNode.path : this.props.activePath
-            const isOpenDir = this.isExpanded(selectedNodePath)
+                that.state.selectedNode.path !== '' ? that.state.selectedNode.path : that.props.activePath
+            const isOpenDir = that.isExpanded(selectedNodePath)
             if (isOpenDir) {
-                this.expandDirectoryChanges.next({
+                that.expandDirectoryChanges.next({
                     path: selectedNodePath,
                     expanded: false,
-                    node: this.state.selectedNode,
+                    node: that.state.selectedNode,
                 })
                 return
             }
-            const parent = this.state.selectedNode.parent
+            const parent = that.state.selectedNode.parent
             if (parent?.parent) {
-                this.selectNode(parent)
+                that.selectNode(parent)
                 return
             }
 
-            this.selectNode(prevChild(this.state.selectedNode, this.state.selectedNode.index))
+            that.selectNode(prevChild(that.state.selectedNode, that.state.selectedNode.index))
         },
         [Key.ArrowRight]: () => {
             const selectedNodePath =
-                this.state.selectedNode.path !== '' ? this.state.selectedNode.path : this.props.activePath
+                that.state.selectedNode.path !== '' ? that.state.selectedNode.path : that.props.activePath
             const nodeDomElement = getDomElement(selectedNodePath)
             if (nodeDomElement) {
                 const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-is-directory'))
-                if (!this.isExpanded(selectedNodePath) && isDirectory) {
+                if (!that.isExpanded(selectedNodePath) && isDirectory) {
                     // First, show the group (but don't update selection)
                     this.expandDirectoryChanges.next({
                         path: selectedNodePath,
@@ -229,20 +229,20 @@ export class Tree extends React.PureComponent<Props, State> {
                 }))
                 if (!expanded) {
                     // For directory nodes that are collapsed, unset the childNodes so we don't traverse them.
-                    if (this.treeElement) {
-                        this.treeElement.focus()
+                    if (that.treeElement) {
+                        that.treeElement.focus()
                     }
                     node.childNodes = []
                 }
             })
         )
 
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(startWith(this.props), distinctUntilChanged(isEqual))
+        that.subscriptions.add(
+            that.componentUpdates
+                .pipe(startWith(that.props), distinctUntilChanged(isEqual))
                 .subscribe((props: Props) => {
                     const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
-                    const queryParams = new URLSearchParams(this.props.history.location.search)
+                    const queryParams = new URLSearchParams(that.props.history.location.search)
                     // If we're updating due to a file or directory suggestion, load the relevant partial tree and jump to the file.
                     // This case is only used when going from an ancestor to a child file/directory, or equal.
                     if (queryParams.has('suggestion') && dotPathAsUndefined(newParentPath)) {
@@ -255,12 +255,12 @@ export class Tree extends React.PureComponent<Props, State> {
                     // Recompute with new paths and parent path. But if the new active path is below where we are now,
                     // preserve the current parent path, so that it's easy for the user to go back up. Also resets the selectedNode
                     // to the top-level Tree component and resets resolveTo so no directories are expanded.
-                    if (!pathEqualToOrAncestor(this.state.parentPath || '', newParentPath)) {
-                        this.setState({
+                    if (!pathEqualToOrAncestor(that.state.parentPath || '', newParentPath)) {
+                        that.setState({
                             parentPath: dotPathAsUndefined(
                                 props.activePathIsDir ? props.activePath : dirname(props.activePath)
                             ),
-                            selectedNode: this.node,
+                            selectedNode: that.node,
                             resolveTo: [],
                         })
                     }
@@ -268,37 +268,37 @@ export class Tree extends React.PureComponent<Props, State> {
                     // Strip the ?suggestion query param. Handle both when going from ancestor -> child and child -> ancestor.
                     if (queryParams.has('suggestion')) {
                         queryParams.delete('suggestion')
-                        this.props.history.replace({ search: queryParams.toString() })
+                        that.props.history.replace({ search: queryParams.toString() })
                     }
                 })
         )
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
-            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
+            <div className="tree" tabIndex={1} onKeyDown={that.onKeyDown} ref={that.setTreeElement}>
                 <TreeRoot
                     ref={ref => {
                         if (ref) {
-                            this.node = ref.node
+                            that.node = ref.node
                         }
                     }}
-                    activeNode={this.state.activeNode}
-                    activePath={this.props.activePath}
+                    activeNode={that.state.activeNode}
+                    activePath={that.props.activePath}
                     depth={0}
-                    history={this.props.history}
-                    location={this.props.location}
-                    repoName={this.props.repoName}
-                    rev={this.props.rev}
-                    commitID={this.props.commitID}
+                    history={that.props.history}
+                    location={that.props.location}
+                    repoName={that.props.repoName}
+                    rev={that.props.rev}
+                    commitID={that.props.commitID}
                     index={0}
                     // The root is always expanded so it loads the top level
                     isExpanded={true}

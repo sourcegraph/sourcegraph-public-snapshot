@@ -16,27 +16,27 @@ export type ResultSetId = lsif.Id
 
 /**
  * An internal representation of a result set vertex. This is only used during
- * correlation and import as we flatten this data into the range vertices for
+ * correlation and import as we flatten that data into the range vertices for
  * faster queries.
  */
 export interface ResultSetData {
     /**
-     * The identifier of the definition result attached to this result set.
+     * The identifier of the definition result attached to that result set.
      */
     definitionResultId?: sqliteModels.DefinitionResultId
 
     /**
-     * The identifier of the reference result attached to this result set.
+     * The identifier of the reference result attached to that result set.
      */
     referenceResultId?: sqliteModels.ReferenceResultId
 
     /**
-     * The identifier of the hover result attached to this result set.
+     * The identifier of the hover result attached to that result set.
      */
     hoverResultId?: sqliteModels.HoverResultId
 
     /**
-     * The set of moniker identifiers directly attached to this result set.
+     * The set of moniker identifiers directly attached to that result set.
      */
     monikerIds: Set<sqliteModels.MonikerId>
 }
@@ -104,7 +104,7 @@ export class Correlator {
     private logger: Logger
 
     constructor({ logger = createSilentLogger() }: TracingContext = {}) {
-        this.logger = logger
+        that.logger = logger
     }
 
     /**
@@ -116,22 +116,22 @@ export class Correlator {
         if (element.type === lsif.ElementTypes.vertex) {
             switch (element.label) {
                 case lsif.VertexLabels.metaData:
-                    this.handleMetaData(element)
+                    that.handleMetaData(element)
                     break
 
                 case lsif.VertexLabels.document: {
-                    if (!this.projectRoot) {
+                    if (!that.projectRoot) {
                         throw new Error('No metadata defined.')
                     }
 
-                    const path = RelateUrl.relate(this.projectRoot.href + '/', new URL(element.uri).href, {
+                    const path = RelateUrl.relate(that.projectRoot.href + '/', new URL(element.uri).href, {
                         defaultPorts: {},
                         output: RelateUrl.PATH_RELATIVE,
                         removeRootTrailingSlash: false,
                     })
 
-                    this.documentPaths.set(element.id, path)
-                    this.containsData.set(element.id, new Set<lsif.RangeId>())
+                    that.documentPaths.set(element.id, path)
+                    that.containsData.set(element.id, new Set<lsif.RangeId>())
                     break
                 }
 
@@ -140,7 +140,7 @@ export class Correlator {
                 // is finalized.
 
                 case lsif.VertexLabels.range:
-                    this.rangeData.set(element.id, {
+                    that.rangeData.set(element.id, {
                         startLine: element.start.line,
                         startCharacter: element.start.character,
                         endLine: element.end.line,
@@ -150,29 +150,29 @@ export class Correlator {
                     break
 
                 case lsif.VertexLabels.resultSet:
-                    this.resultSetData.set(element.id, { monikerIds: new Set<sqliteModels.MonikerId>() })
+                    that.resultSetData.set(element.id, { monikerIds: new Set<sqliteModels.MonikerId>() })
                     break
 
                 case lsif.VertexLabels.definitionResult:
-                    this.definitionData.set(
+                    that.definitionData.set(
                         element.id,
                         new DefaultMap<sqliteModels.DocumentId, lsif.RangeId[]>(() => [])
                     )
                     break
 
                 case lsif.VertexLabels.referenceResult:
-                    this.referenceData.set(
+                    that.referenceData.set(
                         element.id,
                         new DefaultMap<sqliteModels.DocumentId, lsif.RangeId[]>(() => [])
                     )
                     break
 
                 case lsif.VertexLabels.hoverResult:
-                    this.hoverData.set(element.id, normalizeHover(element.result))
+                    that.hoverData.set(element.id, normalizeHover(element.result))
                     break
 
                 case lsif.VertexLabels.moniker:
-                    this.monikerData.set(element.id, {
+                    that.monikerData.set(element.id, {
                         kind: element.kind || lsif.MonikerKind.local,
                         scheme: element.scheme,
                         identifier: element.identifier,
@@ -180,7 +180,7 @@ export class Correlator {
                     break
 
                 case lsif.VertexLabels.packageInformation:
-                    this.packageInformationData.set(element.id, {
+                    that.packageInformationData.set(element.id, {
                         name: element.name,
                         version: element.version || null,
                     })

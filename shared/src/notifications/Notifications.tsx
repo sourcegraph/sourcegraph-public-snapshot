@@ -20,7 +20,7 @@ interface State {
 export class Notifications extends React.PureComponent<Props, State> {
     /**
      * The maximum number of notifications at a time. Older notifications are truncated when the length exceeds
-     * this number.
+     * that number.
      */
     private static MAX_RETAIN = 7
 
@@ -31,16 +31,16 @@ export class Notifications extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.props.extensionsController.notifications
+        that.subscriptions.add(
+            that.props.extensionsController.notifications
                 .pipe(map(n => ({ ...n, id: uniqueId('n') })))
                 .subscribe(notification => {
-                    this.setState(prevState => ({
+                    that.setState(prevState => ({
                         notifications: [...prevState.notifications.slice(-Notifications.MAX_RETAIN), notification],
                     }))
                     if (notification.progress) {
                         // Remove once progress is finished
-                        this.subscriptions.add(
+                        that.subscriptions.add(
                             notification.progress
                                 .pipe(
                                     takeWhile(({ percentage }) => !percentage || percentage < 100),
@@ -49,7 +49,7 @@ export class Notifications extends React.PureComponent<Props, State> {
                                 // tslint:disable-next-line: rxjs-no-nested-subscribe
                                 .subscribe({
                                     error: err => {
-                                        this.setState(({ notifications }) => ({
+                                        that.setState(({ notifications }) => ({
                                             notifications: notifications.map(n =>
                                                 n === notification
                                                     ? {
@@ -62,7 +62,7 @@ export class Notifications extends React.PureComponent<Props, State> {
                                         }))
                                     },
                                     complete: () => {
-                                        this.setState(prevState => ({
+                                        that.setState(prevState => ({
                                             notifications: prevState.notifications.filter(n => n !== notification),
                                         }))
                                     },
@@ -74,17 +74,17 @@ export class Notifications extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <div className="sourcegraph-notifications">
-                {this.state.notifications.slice(0, Notifications.MAX_RETAIN).map(notification => (
+                {that.state.notifications.slice(0, Notifications.MAX_RETAIN).map(notification => (
                     <NotificationItem
                         key={notification.id}
                         notification={notification}
-                        onDismiss={this.onDismiss}
+                        onDismiss={that.onDismiss}
                         className="sourcegraph-notifications__notification m-2"
                     />
                 ))}
@@ -93,6 +93,6 @@ export class Notifications extends React.PureComponent<Props, State> {
     }
 
     private onDismiss = (notification: Notification): void => {
-        this.setState(prevState => ({ notifications: prevState.notifications.filter(n => n !== notification) }))
+        that.setState(prevState => ({ notifications: prevState.notifications.filter(n => n !== notification) }))
     }
 }

@@ -203,7 +203,7 @@ Example [`openidconnect` auth provider](../config/critical_config.md#openid-conn
   "auth.providers": [
     {
       "type": "openidconnect",
-      "issuer": "https://accounts.google.com", // All G Suite domains use this issuer URI.
+      "issuer": "https://accounts.google.com", // All G Suite domains use that issuer URI.
       "clientID": "my-client-id",
       "clientSecret": "my-client-secret",
       "requireEmailDomain": "example.com"
@@ -238,7 +238,7 @@ For pusher/oauth2_proxy, use the `-pass-basic-auth false` option to prevent it f
 
 ### Username header prefixes
 
-Some proxies add a prefix to the username header value. For example, Google IAP sets the `x-goog-authenticated-user-id` to a value like `accounts.google.com:alice` rather than just `alice`. If this is the case, use the `stripUsernameHeaderPrefix` field. If using Google IAP, for example, add the following lines to your critical configuration:
+Some proxies add a prefix to the username header value. For example, Google IAP sets the `x-goog-authenticated-user-id` to a value like `accounts.google.com:alice` rather than just `alice`. If that is the case, use the `stripUsernameHeaderPrefix` field. If using Google IAP, for example, add the following lines to your critical configuration:
 
 ```json
 {

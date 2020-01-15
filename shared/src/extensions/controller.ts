@@ -28,17 +28,17 @@ export interface Controller extends Unsubscribable {
      * Executes the command (registered in the CommandRegistry) specified in params. If an error is thrown, the
      * error is returned *and* emitted on the {@link Controller#notifications} observable.
      *
-     * All callers should execute commands using this method instead of calling
+     * All callers should execute commands using that method instead of calling
      * {@link sourcegraph:CommandRegistry#executeCommand} directly (to ensure errors are emitted as notifications).
      *
      * @param suppressNotificationOnError By default, if command execution throws (or rejects with) an error, the
      * error will be shown in the global notification UI component. Pass suppressNotificationOnError as true to
-     * skip this. The error is always returned to the caller.
+     * skip that. The error is always returned to the caller.
      */
     executeCommand(params: ExecuteCommandParams, suppressNotificationOnError?: boolean): Promise<any>
 
     /**
-     * Frees all resources associated with this client.
+     * Frees all resources associated with that client.
      */
     unsubscribe(): void
 }

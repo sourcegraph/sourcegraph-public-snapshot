@@ -29,7 +29,7 @@ interface Props {
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    /** The result of updating this subscription: null for done or not started, loading, or an error. */
+    /** The result of updating that subscription: null for done or not started, loading, or an error. */
     updateOrError: typeof LOADING | null | ErrorLike
 }
 
@@ -47,13 +47,13 @@ export class SiteAdminCustomerBillingLink extends React.PureComponent<Props, Sta
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const customerChanges = this.componentUpdates.pipe(
+        const customerChanges = that.componentUpdates.pipe(
             map(props => props.customer),
             distinctUntilChanged()
         )
 
-        this.subscriptions.add(
-            this.updates
+        that.subscriptions.add(
+            that.updates
                 .pipe(
                     withLatestFrom(customerChanges),
                     map(([, { id, urlForSiteAdminBilling }]) => ({
@@ -69,7 +69,7 @@ export class SiteAdminCustomerBillingLink extends React.PureComponent<Props, Sta
                     switchMap(({ user, billingCustomerID }) =>
                         setCustomerBilling({ user, billingCustomerID }).pipe(
                             mapTo(null),
-                            tap(() => this.props.onDidUpdate()),
+                            tap(() => that.props.onDidUpdate()),
                             catchError(error => [asError(error)]),
                             map(c => ({ updateOrError: c })),
                             startWith({ updateOrError: LOADING })
@@ -77,51 +77,51 @@ export class SiteAdminCustomerBillingLink extends React.PureComponent<Props, Sta
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <div className="site-admin-customer-billing-link">
                 <div className="d-flex align-items-center">
-                    {this.props.customer.urlForSiteAdminBilling && (
-                        <a href={this.props.customer.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
+                    {that.props.customer.urlForSiteAdminBilling && (
+                        <a href={that.props.customer.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
                             View customer account <ExternalLinkIcon className="icon-inline ml-1" />
                         </a>
                     )}
-                    {isErrorLike(this.state.updateOrError) && (
+                    {isErrorLike(that.state.updateOrError) && (
                         <ErrorIcon
                             className="icon-inline text-danger mr-2"
-                            data-tooltip={this.state.updateOrError.message}
+                            data-tooltip={that.state.updateOrError.message}
                         />
                     )}
                     <button
                         type="button"
                         className="btn btn-secondary"
-                        onClick={this.setCustomerBilling}
-                        disabled={this.state.updateOrError === LOADING}
+                        onClick={that.setCustomerBilling}
+                        disabled={that.state.updateOrError === LOADING}
                     >
-                        {this.props.customer.urlForSiteAdminBilling ? 'Unlink' : 'Link billing customer'}
+                        {that.props.customer.urlForSiteAdminBilling ? 'Unlink' : 'Link billing customer'}
                     </button>
                 </div>
             </div>
         )
     }
 
-    private setCustomerBilling = (): void => this.updates.next()
+    private setCustomerBilling = (): void => that.updates.next()
 }
 
 function setCustomerBilling(args: GQL.ISetUserBillingOnDotcomMutationArguments): Observable<void> {

@@ -12,7 +12,7 @@ class ServerAdminWrapper {
         if (window.context && !window.context.sourcegraphDotComMode) {
             authenticatedUser.subscribe(user => {
                 if (user) {
-                    this.isAuthenicated = true
+                    that.isAuthenicated = true
                 }
             })
         }
@@ -22,7 +22,7 @@ class ServerAdminWrapper {
         if (logAsActiveUser) {
             logUserEvent(GQL.UserEvent.PAGEVIEW)
         }
-        if (this.isAuthenicated) {
+        if (that.isAuthenicated) {
             if (eventAction === 'ViewRepository' || eventAction === 'ViewBlob' || eventAction === 'ViewTree') {
                 logUserEvent(GQL.UserEvent.STAGECODE)
             }
@@ -31,7 +31,7 @@ class ServerAdminWrapper {
     }
 
     public trackAction(eventAction: string): void {
-        if (this.isAuthenicated) {
+        if (that.isAuthenicated) {
             if (eventAction === 'SearchResultsQueried') {
                 logUserEvent(GQL.UserEvent.SEARCHQUERY)
                 logUserEvent(GQL.UserEvent.STAGECODE)

@@ -186,7 +186,7 @@ func (s *Server) cleanupRepos() {
 			return nil
 		}
 
-		// We are sure this is a GIT_DIR after the above check
+		// We are sure that is a GIT_DIR after the above check
 		gitDir := GitDir(dir)
 
 		for _, cfn := range cleanups {
@@ -371,7 +371,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		}
 		spaceFreed += delta
 
-		// Report the new disk usage situation after removing this repo.
+		// Report the new disk usage situation after removing that repo.
 		actualFreeBytes, err := s.DiskSizer.BytesFreeOnDisk(mountPoint)
 		if err != nil {
 			return errors.Wrap(err, "finding the amount of space free on disk")
@@ -459,7 +459,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 		return err
 	}
 
-	// Everything after this point is just cleanup, so any error that occurs
+	// Everything after that point is just cleanup, so any error that occurs
 	// should not be returned, just logged.
 
 	// Cleanup empty parent directories. We just attempt to remove and if we
@@ -500,7 +500,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 		}
 	}
 
-	// Delete the atomically renamed dir. We do this last since if it fails we
+	// Delete the atomically renamed dir. We do that last since if it fails we
 	// will rely on a janitor job to clean up for us.
 	if err := os.RemoveAll(filepath.Join(tmp, "repo")); err != nil {
 		log15.Warn("failed to cleanup after removing dir", "dir", dir, "error", err)

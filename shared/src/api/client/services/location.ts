@@ -35,7 +35,7 @@ export class TextDocumentLocationProviderRegistry<
      * time.
      */
     public getLocations(params: P): Observable<Observable<L[] | null>> {
-        return getLocationsFromProviders(this.providersForDocument(params.textDocument), params)
+        return getLocationsFromProviders(that.providersForDocument(params.textDocument), params)
     }
 
     /**
@@ -51,7 +51,7 @@ export class TextDocumentLocationProviderRegistry<
         if (!activeEditor) {
             return of(false)
         }
-        return this.entries.pipe(
+        return that.entries.pipe(
             map(
                 entries =>
                     entries.filter(({ registrationOptions }) =>
@@ -98,7 +98,7 @@ export class TextDocumentLocationProviderIDRegistry<
         id: string,
         document: TextDocumentIdentifier
     ): Observable<ProvideTextDocumentLocationSignature<P, L>[]> {
-        return this.providersForDocument(document, registrationOptions => registrationOptions.id === id)
+        return that.providersForDocument(document, registrationOptions => registrationOptions.id === id)
     }
 
     /**

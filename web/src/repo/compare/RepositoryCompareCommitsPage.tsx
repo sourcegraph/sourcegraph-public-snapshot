@@ -61,24 +61,24 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
-                    startWith(this.props),
+                    startWith(that.props),
                     distinctUntilChanged(
                         (a, b) => a.repo.id === b.repo.id && a.base.rev === b.base.rev && a.head.rev === b.head.rev
                     )
                 )
-                .subscribe(() => this.updates.next())
+                .subscribe(() => that.updates.next())
         )
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -91,7 +91,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                         noun="commit"
                         pluralNoun="commits"
                         compact={true}
-                        queryConnection={this.queryCommits}
+                        queryConnection={that.queryCommits}
                         nodeComponent={GitCommitNode}
                         nodeComponentProps={{
                             className: 'list-group-item',
@@ -100,9 +100,9 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                         defaultFirst={50}
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
-                        updates={this.updates}
-                        history={this.props.history}
-                        location={this.props.location}
+                        updates={that.updates}
+                        history={that.props.history}
+                        location={that.props.location}
                     />
                 </div>
             </div>
@@ -112,8 +112,8 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
     private queryCommits = (args: { first?: number }): Observable<GQL.IGitCommitConnection> =>
         queryRepositoryComparisonCommits({
             ...args,
-            repo: this.props.repo.id,
-            base: this.props.base.rev || null,
-            head: this.props.head.rev || null,
+            repo: that.props.repo.id,
+            base: that.props.base.rev || null,
+            head: that.props.head.rev || null,
         })
 }

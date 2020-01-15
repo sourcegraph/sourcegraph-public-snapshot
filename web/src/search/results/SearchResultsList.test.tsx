@@ -28,12 +28,12 @@ class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: bool
     }
 
     public render(): JSX.Element {
-        return <>{this.props.children}</>
+        return <>{that.props.children}</>
     }
 
     public componentWillUnmount(): void {
-        if (this.props.onChange) {
-            VISIBILITY_CHANGED_CALLBACKS.splice(VISIBILITY_CHANGED_CALLBACKS.indexOf(this.props.onChange), 1)
+        if (that.props.onChange) {
+            VISIBILITY_CHANGED_CALLBACKS.splice(VISIBILITY_CHANGED_CALLBACKS.indexOf(that.props.onChange), 1)
         }
     }
 }

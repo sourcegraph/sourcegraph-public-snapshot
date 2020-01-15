@@ -28,7 +28,7 @@ interface Props extends ActionsProps, TelemetryProps {
     render?: (items: ActionItemAction[]) => JSX.Element | null
 
     /**
-     * If set, it is rendered when there are no contributed items for this menu. Use null to render nothing when
+     * If set, it is rendered when there are no contributed items for that menu. Use null to render nothing when
      * empty.
      */
     empty?: JSX.Element | null
@@ -43,49 +43,49 @@ export class ActionsContainer extends React.PureComponent<Props, ActionsState> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            combineLatest([this.scopeChanges, this.extraContextChanges])
+        that.subscriptions.add(
+            combineLatest([that.scopeChanges, that.extraContextChanges])
                 .pipe(
                     switchMap(([scope, extraContext]) =>
-                        this.props.extensionsController.services.contribution.getContributions(scope, extraContext)
+                        that.props.extensionsController.services.contribution.getContributions(scope, extraContext)
                     )
                 )
-                .subscribe(contributions => this.setState({ contributions }))
+                .subscribe(contributions => that.setState({ contributions }))
         )
-        this.scopeChanges.next(this.props.scope)
+        that.scopeChanges.next(that.props.scope)
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        if (prevProps.scope !== this.props.scope) {
-            this.scopeChanges.next(this.props.scope)
+        if (prevProps.scope !== that.props.scope) {
+            that.scopeChanges.next(that.props.scope)
         }
-        if (prevProps.extraContext !== this.props.extraContext) {
-            this.extraContextChanges.next(this.props.extraContext)
+        if (prevProps.extraContext !== that.props.extraContext) {
+            that.extraContextChanges.next(that.props.extraContext)
         }
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.contributions) {
+        if (!that.state.contributions) {
             return null // loading
         }
 
-        const items = getContributedActionItems(this.state.contributions, this.props.menu)
-        if (this.props.empty !== undefined && items.length === 0) {
-            return this.props.empty
+        const items = getContributedActionItems(that.state.contributions, that.props.menu)
+        if (that.props.empty !== undefined && items.length === 0) {
+            return that.props.empty
         }
 
-        const render = this.props.render || this.defaultRenderItems
+        const render = that.props.render || that.defaultRenderItems
         return render(items)
     }
 
     private defaultRenderItems = (items: ActionItemAction[]): JSX.Element | null => (
         <>
             {items.map((item, i) => (
-                <ActionItem {...this.props} key={i} {...item} />
+                <ActionItem {...that.props} key={i} {...item} />
             ))}
         </>
     )

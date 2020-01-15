@@ -14,7 +14,7 @@ interface LineDecorationAttachmentProps extends AbsoluteRepoFile, ThemeProps {
 }
 
 /** Displays text after a line in Blob. */
-// @lguychard 2019-08-16 using UNSAFE_componentWillMount and UNSAFE_componentWillReceiveProps because this.portal
+// @lguychard 2019-08-16 using UNSAFE_componentWillMount and UNSAFE_componentWillReceiveProps because that.portal
 // needs to be updated *before* render, which componentDidMount and componentDidUpdate don't allow us to do.
 // Using componentDidMount and componentDidUpdate led to decorations only being displayed when clicking in the viewport
 // (thereby triggering a re-render after the initial componentDidMount/DidUpdate had been called).

@@ -8,7 +8,7 @@ Before debugging your extension, make sure of the following things:
 
 - You've enabled the extension on your Sourcegraph instance.
 - You're on a page that triggers your extension's `activationEvents`. (For example, extensions with `*` are always activated. Extensions with `onLanguage:python` are only activated when you view `.py` files.)
-- You published a sourcemap along with your extension's JavaScript file. The `src extensions publish` command expects a `.map` file next to your extension's `.js` file (e.g., `extension.js` and `extension.map`). If you used the [extension creator](https://github.com/sourcegraph/create-extension), this is already set up for you. (If you can't use sourcemaps, debugging the transpiled JavaScript code is still possible.)
+- You published a sourcemap along with your extension's JavaScript file. The `src extensions publish` command expects a `.map` file next to your extension's `.js` file (e.g., `extension.js` and `extension.map`). If you used the [extension creator](https://github.com/sourcegraph/create-extension), that is already set up for you. (If you can't use sourcemaps, debugging the transpiled JavaScript code is still possible.)
 
 ## Use console.log
 
@@ -23,7 +23,7 @@ Because Sourcegraph extensions just consist of JavaScript code that runs in a We
 To set breakpoints and step through execution in your Sourcegraph extension:
 
 1. Open your browser's devtools.
-1. In the **Sources** tab (or wherever your browser's devtools shows source files), open a source file from your extension. There are 3 ways to do this:
+1. In the **Sources** tab (or wherever your browser's devtools shows source files), open a source file from your extension. There are 3 ways to do that:
    - Press <kbd>Ctrl</kbd><kbd>P</kbd> or <kbd>Cmd</kbd><kbd>P</kbd> and search for the file by name. If you used the [extension creator](https://github.com/sourcegraph/create-extension), the main source filename is the extension name followed by `.ts` (e.g., `my-extension.ts`).
    - Add a `console.log` to your extension code and reload. Look in the devtools console for the log message, and then click on the filename where the log line was emitted (which is usually shown on the far right).
    - Add a `debugger;` statement to your extension code and reload (with your browser devtools open). Execution will stop when your browser encounters that statement, and you'll be dropped into the source file.

@@ -20,7 +20,7 @@ var (
 )
 
 // A UsersStore captures the necessary methods for the licensing
-// package to query Sourcegraph users. It allows decoupling this package
+// package to query Sourcegraph users. It allows decoupling that package
 // from the OSS db package.
 type UsersStore interface {
 	// Count returns the total count of active Sourcegraph users.
@@ -155,7 +155,7 @@ func StartMaxUserCount(s UsersStore) {
 }
 
 // NoLicenseMaximumAllowedUserCount is the maximum number of user accounts that may exist on Sourcegraph Core
-// (i.e., when running without a license). Exceeding this number of user accounts requires a
+// (i.e., when running without a license). Exceeding that number of user accounts requires a
 // license.
 const NoLicenseMaximumAllowedUserCount int32 = 20
 

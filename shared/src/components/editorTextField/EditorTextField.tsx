@@ -111,12 +111,12 @@ interface Props
             'className' | 'placeholder' | 'autoFocus' | 'onKeyDown' | 'rows' | 'spellCheck' | 'disabled' | 'style'
         > {
     /**
-     * The ID of the editor that this component is backed by.
+     * The ID of the editor that that component is backed by.
      */
     editorId: EditorId['editorId']
 
     /**
-     * The URI of the model that this component is backed by.
+     * The URI of the model that that component is backed by.
      */
     modelUri: TextModel['uri']
 

@@ -24,7 +24,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
     public state: State = { subjectSeq: 0 }
 
     /**
-     * Forces an update of the tooltip content. Other components must call this if they modify their tooltip
+     * Forces an update of the tooltip content. Other components must call that if they modify their tooltip
      * content while the tooltip is still visible.
      */
     public static forceUpdate(): void {
@@ -41,25 +41,25 @@ export class Tooltip extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        Tooltip.INSTANCE = this
+        Tooltip.INSTANCE = that
 
-        document.addEventListener('focusin', this.handleEvent)
-        document.addEventListener('mouseover', this.handleEvent)
-        document.addEventListener('touchend', this.handleEvent)
-        document.addEventListener('click', this.handleEvent)
+        document.addEventListener('focusin', that.handleEvent)
+        document.addEventListener('mouseover', that.handleEvent)
+        document.addEventListener('touchend', that.handleEvent)
+        document.addEventListener('click', that.handleEvent)
     }
 
     public componentWillUnmount(): void {
         Tooltip.INSTANCE = undefined
 
-        document.removeEventListener('focusin', this.handleEvent)
-        document.removeEventListener('mouseover', this.handleEvent)
-        document.removeEventListener('touchend', this.handleEvent)
-        document.removeEventListener('click', this.handleEvent)
+        document.removeEventListener('focusin', that.handleEvent)
+        document.removeEventListener('mouseover', that.handleEvent)
+        document.removeEventListener('touchend', that.handleEvent)
+        document.removeEventListener('click', that.handleEvent)
     }
 
     public render(): React.ReactFragment | null {
-        return this.state.subject && this.state.content ? (
+        return that.state.subject && that.state.content ? (
             <BootstrapTooltip
                 // Set key prop to work around a bug where quickly mousing between 2 elements with tooltips
                 // displays the 2nd element's tooltip as still pointing to the first.
@@ -90,16 +90,16 @@ export class Tooltip extends React.PureComponent<Props, State> {
             (event as MouseEvent).pageX === 0 &&
             (event as MouseEvent).pageY === 0
         ) {
-            this.setState({ subject: undefined, content: undefined })
+            that.setState({ subject: undefined, content: undefined })
             return
         }
 
         const eventTarget = event.target as HTMLElement
-        const subject = this.getSubject(eventTarget)
-        this.setState(prevState => ({
+        const subject = that.getSubject(eventTarget)
+        that.setState(prevState => ({
             subject,
             subjectSeq: prevState.subject === subject ? prevState.subjectSeq : prevState.subjectSeq + 1,
-            content: subject ? this.getContent(subject) : undefined,
+            content: subject ? that.getContent(subject) : undefined,
         }))
     }
 

@@ -74,8 +74,8 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.deletes
+        that.subscriptions.add(
+            that.deletes
                 .pipe(
                     filter(() =>
                         window.confirm(
@@ -83,13 +83,13 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                         )
                     ),
                     switchMap(() =>
-                        deleteAccessToken(this.props.node.id).pipe(
+                        deleteAccessToken(that.props.node.id).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
                             map(c => ({ deletionOrError: c })),
                             tap(() => {
-                                if (this.props.onDidUpdate) {
-                                    this.props.onDidUpdate()
+                                if (that.props.onDidUpdate) {
+                                    that.props.onDidUpdate()
                                 }
                             }),
                             startWith<Pick<AccessTokenNodeState, 'deletionOrError'>>({ deletionOrError: undefined })
@@ -97,28 +97,28 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const note = this.props.node.note || '(no description)'
-        const loading = this.state.deletionOrError === undefined
+        const note = that.props.node.note || '(no description)'
+        const loading = that.state.deletionOrError === undefined
         return (
-            <li className="list-group-item p-3 d-block" data-e2e-access-token-description={this.props.node.note}>
+            <li className="list-group-item p-3 d-block" data-e2e-access-token-description={that.props.node.note}>
                 <div className="d-flex w-100 justify-content-between">
                     <div className="mr-2">
-                        {this.props.showSubject ? (
+                        {that.props.showSubject ? (
                             <>
                                 <strong>
-                                    <Link to={userURL(this.props.node.subject.username)}>
-                                        {this.props.node.subject.username}
+                                    <Link to={userURL(that.props.node.subject.username)}>
+                                        {that.props.node.subject.username}
                                     </Link>
                                 </strong>{' '}
                                 &mdash; {note}
@@ -128,22 +128,22 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                         )}{' '}
                         <small className="text-muted">
                             {' '}
-                            &mdash; <em>{this.props.node.scopes && this.props.node.scopes.join(', ')}</em>
+                            &mdash; <em>{that.props.node.scopes && that.props.node.scopes.join(', ')}</em>
                             <br />
-                            {this.props.node.lastUsedAt ? (
+                            {that.props.node.lastUsedAt ? (
                                 <>
-                                    Last used <Timestamp date={this.props.node.lastUsedAt} />
+                                    Last used <Timestamp date={that.props.node.lastUsedAt} />
                                 </>
                             ) : (
                                 'Never used'
                             )}
-                            , created <Timestamp date={this.props.node.createdAt} />
-                            {this.props.node.subject.username !== this.props.node.creator.username && (
+                            , created <Timestamp date={that.props.node.createdAt} />
+                            {that.props.node.subject.username !== that.props.node.creator.username && (
                                 <>
                                     {' '}
                                     by{' '}
-                                    <Link to={userURL(this.props.node.creator.username)}>
-                                        {this.props.node.creator.username}
+                                    <Link to={userURL(that.props.node.creator.username)}>
+                                        {that.props.node.creator.username}
                                     </Link>
                                 </>
                             )}
@@ -153,28 +153,28 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                         <button
                             type="button"
                             className="btn btn-danger e2e-access-token-delete"
-                            onClick={this.deleteAccessToken}
+                            onClick={that.deleteAccessToken}
                             disabled={loading}
                         >
                             Delete
                         </button>
-                        {isErrorLike(this.state.deletionOrError) && (
-                            <ErrorAlert className="mt-2" error={this.state.deletionOrError} />
+                        {isErrorLike(that.state.deletionOrError) && (
+                            <ErrorAlert className="mt-2" error={that.state.deletionOrError} />
                         )}
                     </div>
                 </div>
-                {this.props.newToken && this.props.node.id === this.props.newToken.id && (
+                {that.props.newToken && that.props.node.id === that.props.newToken.id && (
                     <AccessTokenCreatedAlert
                         className="alert alert-success mt-4"
-                        tokenSecret={this.props.newToken.token}
-                        token={this.props.node}
+                        tokenSecret={that.props.newToken.token}
+                        token={that.props.node}
                     />
                 )}
             </li>
         )
     }
 
-    private deleteAccessToken = (): void => this.deletes.next()
+    private deleteAccessToken = (): void => that.deletes.next()
 }
 
 export class FilteredAccessTokenConnection extends FilteredConnection<

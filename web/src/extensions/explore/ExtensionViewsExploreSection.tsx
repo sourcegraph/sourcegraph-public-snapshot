@@ -29,29 +29,29 @@ export class ExtensionViewsExploreSection extends React.PureComponent<Props, Sta
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.props.extensionsController.services.views
+        that.subscriptions.add(
+            that.props.extensionsController.services.views
                 .getViews(ContributableViewContainer.Panel)
                 .pipe(map(views => ({ views })))
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (!this.state || !this.state.views) {
+        if (!that.state || !that.state.views) {
             return null
         }
 
         return (
             <div className="extension-views-explore-section">
-                {this.state.views.map((view, i) => (
+                {that.state.views.map((view, i) => (
                     <div key={i} className="mt-5">
                         <h2>{view.title}</h2>
-                        <div onClick={createLinkClickHandler(this.props.history)}>
+                        <div onClick={createLinkClickHandler(that.props.history)}>
                             <Markdown dangerousInnerHTML={renderMarkdown(view.content)} />
                         </div>
                     </div>

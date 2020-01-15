@@ -11,9 +11,9 @@ export class ClientContext implements ClientContextAPI, Unsubscribable {
     public readonly [proxyValueSymbol] = true
 
     /**
-     * Context keys set by this server. To ensure that context values are cleaned up, all context properties that
+     * Context keys set by that server. To ensure that context values are cleaned up, all context properties that
      * the server set are cleared upon deinitialization. This errs on the side of clearing too much (if another
-     * server set the same context keys after this server, then those keys would also be cleared when this server's
+     * server set the same context keys after that server, then those keys would also be cleared when that server's
      * client deinitializes).
      */
     private keys = new Set<string>()

@@ -29,15 +29,15 @@ const animationDurationMillis = 3260
  */
 export class ActivationDropdown extends React.PureComponent<Props, State> {
     public state: State = { isOpen: false, animate: false, displayEvenIfFullyCompleted: false }
-    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => that.setState(prevState => ({ isOpen: !prevState.isOpen }))
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
-                    startWith(this.props),
+                    startWith(that.props),
                     map(props => props.activation.completed),
                     pairwise(),
                     filter(([prev, cur]) => {
@@ -48,28 +48,28 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                     }),
                     tap(didIncrease => {
                         if (didIncrease) {
-                            this.setState({ displayEvenIfFullyCompleted: true })
+                            that.setState({ displayEvenIfFullyCompleted: true })
                         }
                     }),
                     concatMap(() => concat(of(true), of(false).pipe(delay(animationDurationMillis))))
                 )
-                .subscribe(animate => this.setState({ animate }))
+                .subscribe(animate => that.setState({ animate }))
         )
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element {
         const show =
-            this.state.displayEvenIfFullyCompleted ||
-            this.state.animate ||
-            (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
+            that.state.displayEvenIfFullyCompleted ||
+            that.state.animate ||
+            (that.props.activation.completed !== undefined && percentageDone(that.props.activation.completed) < 100)
         const confettiConfig = {
             spread: 68,
             startVelocity: 12,
@@ -83,19 +83,19 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
         }
         return (
             <ButtonDropdown
-                isOpen={this.state.isOpen}
-                toggle={this.toggleIsOpen}
+                isOpen={that.state.isOpen}
+                toggle={that.toggleIsOpen}
                 className={`${show ? '' : 'activation-dropdown-button--hidden'} nav-link p-0`}
             >
                 <DropdownToggle
                     caret={false}
                     className={`${
-                        this.state.animate ? 'animate' : ''
+                        that.state.animate ? 'animate' : ''
                     } activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle`}
                     nav={true}
                 >
                     <Confetti
-                        active={this.state.animate}
+                        active={that.state.animate}
                         config={{
                             angle: 210,
                             ...confettiConfig,
@@ -103,7 +103,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                     />
                     Get started
                     <Confetti
-                        active={this.state.animate}
+                        active={that.state.animate}
                         config={{
                             angle: 330,
                             ...confettiConfig,
@@ -113,7 +113,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         <CircularProgressbar
                             className="activation-dropdown-button__circular-progress-bar"
                             strokeWidth={12}
-                            percentage={percentageDone(this.props.activation.completed)}
+                            percentage={percentageDone(that.props.activation.completed)}
                         />
                     </span>
                 </DropdownToggle>
@@ -123,18 +123,18 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         <p className="mb-1">Complete the steps below to finish onboarding!</p>
                     </Link>
                     <DropdownItem divider={true} />
-                    {this.props.activation && this.props.activation.completed ? (
-                        this.props.activation.steps.map(step => (
+                    {that.props.activation && that.props.activation.completed ? (
+                        that.props.activation.steps.map(step => (
                             <div
                                 key={step.id}
                                 className="activation-dropdown-item dropdown-item"
-                                onClick={this.toggleIsOpen}
+                                onClick={that.toggleIsOpen}
                             >
                                 <ActivationChecklistItem
                                     {...step}
-                                    history={this.props.history}
+                                    history={that.props.history}
                                     done={
-                                        (this.props.activation.completed && this.props.activation.completed[step.id]) ||
+                                        (that.props.activation.completed && that.props.activation.completed[step.id]) ||
                                         false
                                     }
                                 />

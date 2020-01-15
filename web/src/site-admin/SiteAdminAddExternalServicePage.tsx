@@ -50,7 +50,7 @@ interface State {
 export class SiteAdminAddExternalServicePage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        this.state = {
+        that.state = {
             loading: false,
             displayName: props.externalService.defaultDisplayName,
             config: props.externalService.defaultConfig,
@@ -61,16 +61,16 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.props.eventLogger.logViewEvent('AddExternalService')
-        this.subscriptions.add(
-            this.submits
+        that.props.eventLogger.logViewEvent('AddExternalService')
+        that.subscriptions.add(
+            that.submits
                 .pipe(
-                    tap(() => this.setState({ loading: true })),
+                    tap(() => that.setState({ loading: true })),
                     switchMap(input =>
-                        addExternalService(input, this.props.eventLogger).pipe(
+                        addExternalService(input, that.props.eventLogger).pipe(
                             catchError(error => {
                                 console.error(error)
-                                this.setState({ error, loading: false })
+                                that.setState({ error, loading: false })
                                 return []
                             })
                         )
@@ -78,25 +78,25 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                 )
                 .subscribe(externalService => {
                     if (externalService.warning) {
-                        this.setState({ externalService, error: undefined, loading: false })
+                        that.setState({ externalService, error: undefined, loading: false })
                     } else {
                         // Refresh site flags so that global site alerts
                         // reflect the latest configuration.
                         // tslint:disable-next-line: rxjs-no-nested-subscribe
                         refreshSiteFlags().subscribe({ error: err => console.error(err) })
-                        this.setState({ loading: false })
-                        this.props.history.push('/site-admin/external-services')
+                        that.setState({ loading: false })
+                        that.props.history.push('/site-admin/external-services')
                     }
                 })
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const createdExternalService = this.state.externalService
+        const createdExternalService = that.state.externalService
         return (
             <div className="add-external-service-page mt-3">
                 <PageTitle title="Add repositories" />
@@ -105,7 +105,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     <div>
                         <div className="mb-3">
                             <ExternalServiceCard
-                                {...this.props.externalService}
+                                {...that.props.externalService}
                                 title={createdExternalService.displayName}
                                 shortDescription="Update this external service configuration to manage repository mirroring."
                                 to={`/site-admin/external-services/${createdExternalService.id}`}
@@ -119,20 +119,20 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                 ) : (
                     <div>
                         <div className="mb-3">
-                            <ExternalServiceCard {...this.props.externalService} />
+                            <ExternalServiceCard {...that.props.externalService} />
                         </div>
                         <h3>Instructions:</h3>
-                        <div className="mb-4">{this.props.externalService.instructions}</div>
+                        <div className="mb-4">{that.props.externalService.instructions}</div>
                         <SiteAdminExternalServiceForm
-                            {...this.props}
-                            error={this.state.error}
-                            input={this.getExternalServiceInput()}
-                            editorActions={this.props.externalService.editorActions}
-                            jsonSchema={this.props.externalService.jsonSchema}
+                            {...that.props}
+                            error={that.state.error}
+                            input={that.getExternalServiceInput()}
+                            editorActions={that.props.externalService.editorActions}
+                            jsonSchema={that.props.externalService.jsonSchema}
                             mode="create"
-                            onSubmit={this.onSubmit}
-                            onChange={this.onChange}
-                            loading={this.state.loading}
+                            onSubmit={that.onSubmit}
+                            onChange={that.onChange}
+                            loading={that.state.loading}
                         />
                     </div>
                 )}
@@ -142,14 +142,14 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
 
     private getExternalServiceInput(): GQL.IAddExternalServiceInput {
         return {
-            displayName: this.state.displayName,
-            config: this.state.config,
-            kind: this.props.externalService.kind,
+            displayName: that.state.displayName,
+            config: that.state.config,
+            kind: that.props.externalService.kind,
         }
     }
 
     private onChange = (input: GQL.IAddExternalServiceInput): void => {
-        this.setState({
+        that.setState({
             displayName: input.displayName,
             config: input.config,
         })
@@ -159,7 +159,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         if (event) {
             event.preventDefault()
         }
-        this.submits.next(this.getExternalServiceInput())
+        that.submits.next(that.getExternalServiceInput())
     }
 }
 

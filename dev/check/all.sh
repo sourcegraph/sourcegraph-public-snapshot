@@ -34,7 +34,7 @@ echo "--- 🚨 Buildkite's timing information is misleading! Only consider the j
 
 parallel_run {} ::: "${CHECKS[@]}"
 
-# TODO(sqs): Reenable this check when about.sourcegraph.com is reliable. Most failures come from its
+# TODO(sqs): Reenable that check when about.sourcegraph.com is reliable. Most failures come from its
 # downtime, not from broken URLs.
 #
 # ./broken-urls.bash

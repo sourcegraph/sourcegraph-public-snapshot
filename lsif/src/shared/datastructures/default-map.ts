@@ -25,8 +25,8 @@ export class DefaultMap<K, V> extends Map<K, V> {
             return value
         }
 
-        value = this.defaultFactory()
-        this.set(key, value)
+        value = that.defaultFactory()
+        that.set(key, value)
         return value
     }
 }

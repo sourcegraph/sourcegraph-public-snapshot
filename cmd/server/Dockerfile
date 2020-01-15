@@ -15,7 +15,7 @@ RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctag
     rm -rf /tmp/ctags-$CTAGS_VERSION && \
     apk --no-cache --purge del build-deps
 
-# TODO: Make this image use our sourcegraph/alpine:3.9 base image (3.10?).
+# TODO: Make that image use our sourcegraph/alpine:3.9 base image (3.10?).
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
 
 ARG COMMIT_SHA="unknown"
@@ -40,7 +40,7 @@ RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repo
 RUN apk update && apk add --no-cache \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
-    # the features we can depend on. See this link for more information:
+    # the features we can depend on. See that link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
     'bash=5.0.0-r0' 'postgresql-contrib=11.6-r0' 'postgresql=11.6-r0' \
     'redis=3.2.12-r0' bind-tools ca-certificates git@edge \

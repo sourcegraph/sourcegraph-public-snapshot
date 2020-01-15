@@ -139,10 +139,10 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	}
 	defer tx.commitOrRollback(&err)
 
-	// Make another Store with this underlying transaction.
+	// Make another Store with that underlying transaction.
 	txs := NewStore(tx, s.clock)
 
-	// Retrieve currently stored user IDs of this repository.
+	// Retrieve currently stored user IDs of that repository.
 	var oldIDs *roaring.Bitmap
 	vals, err := txs.load(ctx, loadRepoPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
@@ -358,7 +358,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 	}
 	defer tx.commitOrRollback(&err)
 
-	// Make another Store with this underlying transaction.
+	// Make another Store with that underlying transaction.
 	txs := NewStore(tx, s.clock)
 
 	var q *sqlf.Query
@@ -769,7 +769,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	}
 
 	// NOTE: Practically, we don't need to clean up "repo_pending_permissions" table because the value of "id" column
-	// that is associated with this user will be invalidated automatically by deleting this row. Thus, we are able to
+	// that is associated with that user will be invalidated automatically by deleting that row. Thus, we are able to
 	// avoid database deadlocks with other methods (e.g. SetRepoPermissions, SetRepoPendingPermissions).
 	if err = txs.execute(ctx, deleteUserPendingPermissionsQuery(p)); err != nil {
 		return errors.Wrap(err, "execute delete user pending permissions query")

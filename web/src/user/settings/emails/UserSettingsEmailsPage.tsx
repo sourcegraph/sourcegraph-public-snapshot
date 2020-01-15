@@ -35,9 +35,9 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
 
     public render(): JSX.Element | null {
         let verifiedFragment: React.ReactFragment
-        if (this.props.node.verified) {
+        if (that.props.node.verified) {
             verifiedFragment = <span className="badge badge-success">Verified</span>
-        } else if (this.props.node.verificationPending) {
+        } else if (that.props.node.verificationPending) {
             verifiedFragment = <span className="badge badge-info">Verification pending</span>
         } else {
             verifiedFragment = <span className="badge badge-secondary">Not verified</span>
@@ -47,42 +47,42 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <strong>{this.props.node.email}</strong> &nbsp;{verifiedFragment}&nbsp;
-                        {this.props.node.isPrimary && <span className="badge badge-primary">Primary</span>}
+                        <strong>{that.props.node.email}</strong> &nbsp;{verifiedFragment}&nbsp;
+                        {that.props.node.isPrimary && <span className="badge badge-primary">Primary</span>}
                     </div>
                     <div>
                         <button
                             type="button"
                             className="btn btn-sm btn-danger"
-                            onClick={this.remove}
-                            disabled={this.state.loading}
+                            onClick={that.remove}
+                            disabled={that.state.loading}
                             data-tooltip="Remove email address"
                         >
                             <DeleteIcon className="icon-inline" />
                         </button>{' '}
-                        {this.props.node.viewerCanManuallyVerify && (
+                        {that.props.node.viewerCanManuallyVerify && (
                             <button
                                 type="button"
                                 className="btn btn-sm btn-secondary"
-                                onClick={this.props.node.verified ? this.setAsUnverified : this.setAsVerified}
-                                disabled={this.state.loading}
+                                onClick={that.props.node.verified ? that.setAsUnverified : that.setAsVerified}
+                                disabled={that.state.loading}
                             >
-                                {this.props.node.verified ? 'Mark as unverified' : 'Mark as verified'}
+                                {that.props.node.verified ? 'Mark as unverified' : 'Mark as verified'}
                             </button>
                         )}
                     </div>
                 </div>
-                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
+                {that.state.errorDescription && <ErrorAlert className="mt-2" error={that.state.errorDescription} />}
             </li>
         )
     }
 
     private remove = (): void => {
-        if (!window.confirm(`Remove the email address ${this.props.node.email}?`)) {
+        if (!window.confirm(`Remove the email address ${that.props.node.email}?`)) {
             return
         }
 
-        this.setState({
+        that.setState({
             errorDescription: undefined,
             loading: true,
         })
@@ -95,7 +95,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                     }
                 }
             `,
-            { user: this.props.user.id, email: this.props.node.email }
+            { user: that.props.user.id, email: that.props.node.email }
         )
             .pipe(
                 map(({ data, errors }) => {
@@ -106,38 +106,38 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
             )
             .subscribe(
                 () => {
-                    this.setState({ loading: false })
+                    that.setState({ loading: false })
                     eventLogger.log('UserEmailAddressDeleted')
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
+                    if (that.props.onDidUpdate) {
+                        that.props.onDidUpdate()
                     }
                 },
-                error => this.setState({ loading: false, errorDescription: error.message })
+                error => that.setState({ loading: false, errorDescription: error.message })
             )
     }
 
-    private setAsVerified = (): void => this.setVerified(true)
-    private setAsUnverified = (): void => this.setVerified(false)
+    private setAsVerified = (): void => that.setVerified(true)
+    private setAsUnverified = (): void => that.setVerified(false)
 
     private setVerified(verified: boolean): void {
-        this.setState({
+        that.setState({
             errorDescription: undefined,
             loading: true,
         })
 
-        setUserEmailVerified(this.props.user.id, this.props.node.email, verified).subscribe(
+        setUserEmailVerified(that.props.user.id, that.props.node.email, verified).subscribe(
             () => {
-                this.setState({ loading: false })
+                that.setState({ loading: false })
                 if (verified) {
                     eventLogger.log('UserEmailAddressMarkedVerified')
                 } else {
                     eventLogger.log('UserEmailAddressMarkedUnverified')
                 }
-                if (this.props.onDidUpdate) {
-                    this.props.onDidUpdate()
+                if (that.props.onDidUpdate) {
+                    that.props.onDidUpdate()
                 }
             },
-            error => this.setState({ loading: false, errorDescription: error.message })
+            error => that.setState({ loading: false, errorDescription: error.message })
         )
     }
 }

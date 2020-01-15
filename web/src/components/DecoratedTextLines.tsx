@@ -6,7 +6,7 @@ import { highlightNode } from '../../../shared/src/util/dom'
 import { HighlightRange } from './SearchResult'
 interface Props {
     /**
-     * A CSS class name to add to this component's element.
+     * A CSS class name to add to that component's element.
      */
     className?: string
 

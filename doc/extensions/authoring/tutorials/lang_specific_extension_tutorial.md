@@ -4,7 +4,7 @@
 
 Extensions can be configured to activate and contribute UI elements only upon the presence of a specific language, languages or glob pattern. This improves performance by only using the network and CPU for extensions that are needed.
 
-In this tutorial, you'll build an extension that activates, displays a button, and hover content, but only if a Python file is present.
+In that tutorial, you'll build an extension that activates, displays a button, and hover content, but only if a Python file is present.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ It also presumes you have the [Sourcegraph browser extension](https://docs.sourc
 
 ## Set up
 
-Create the extension you'll use for this tutorial:
+Create the extension you'll use for that tutorial:
 
 ```
 mkdir py-button
@@ -41,7 +41,7 @@ To activate only for Python files, the contents of the `activationEvents` field 
 "activationEvents": ["onLanguage:python"]
 ```
 
-Publish your extension to apply this change and now, you will see hovers only when [viewing a Python file](https://sourcegraph.com/github.com/django/django/-/blob/django/core/wsgi.py).
+Publish your extension to apply that change and now, you will see hovers only when [viewing a Python file](https://sourcegraph.com/github.com/django/django/-/blob/django/core/wsgi.py).
 
 ## Conditional button display
 
@@ -92,7 +92,7 @@ The button when clicked will call the built-in [`open command`](../builtin_comma
 
 Language providers e.g. the `HoverProvider`, control if they provide content by accepting an array of language filters when registered.
 
-In the extension code, replace the contents of the array supplied to `registerHoverProvider` from `'*'` to `{ language: 'python' }`. It should now look like this:
+In the extension code, replace the contents of the array supplied to `registerHoverProvider` from `'*'` to `{ language: 'python' }`. It should now look like that:
 
 ```typescript
 sourcegraph.languages.registerHoverProvider([{ language: 'python' }], {

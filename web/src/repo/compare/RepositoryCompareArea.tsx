@@ -82,31 +82,31 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
-    private nextOverlayElement = (element: HTMLElement | null): void => this.hoverOverlayElements.next(element)
+    private nextOverlayElement = (element: HTMLElement | null): void => that.hoverOverlayElements.next(element)
 
     /** Emits whenever the ref callback for the hover element is called */
     private repositoryCompareAreaElements = new Subject<HTMLElement | null>()
     private nextRepositoryCompareAreaElement = (element: HTMLElement | null): void =>
-        this.repositoryCompareAreaElements.next(element)
+        that.repositoryCompareAreaElements.next(element)
 
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
-    private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
+    private nextCloseButtonClick = (event: MouseEvent): void => that.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 
     constructor(props: RepositoryCompareAreaProps) {
         super(props)
-        this.hoverifier = createHoverifier<
+        that.hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
             ActionItemAction
         >({
-            closeButtonClicks: this.closeButtonClicks,
-            hoverOverlayElements: this.hoverOverlayElements,
-            hoverOverlayRerenders: this.componentUpdates.pipe(
-                withLatestFrom(this.hoverOverlayElements, this.repositoryCompareAreaElements),
+            closeButtonClicks: that.closeButtonClicks,
+            hoverOverlayElements: that.hoverOverlayElements,
+            hoverOverlayRerenders: that.componentUpdates.pipe(
+                withLatestFrom(that.hoverOverlayElements, that.repositoryCompareAreaElements),
                 map(([, hoverOverlayElement, repositoryCompareAreaElement]) => ({
                     hoverOverlayElement,
                     // The root component element is guaranteed to be rendered after a componentDidUpdate
@@ -115,13 +115,13 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
-            getActions: context => getHoverActions(this.props, context),
+            getHover: hoveredToken => getHover(that.getLSPTextDocumentPositionParams(hoveredToken), that.props),
+            getActions: context => getHoverActions(that.props, context),
             pinningEnabled: true,
         })
-        this.subscriptions.add(this.hoverifier)
-        this.state = this.hoverifier.hoverState
-        this.subscriptions.add(this.hoverifier.hoverStateUpdates.subscribe(update => this.setState(update)))
+        that.subscriptions.add(that.hoverifier)
+        that.state = that.hoverifier.hoverState
+        that.subscriptions.add(that.hoverifier.hoverStateUpdates.subscribe(update => that.setState(update)))
     }
 
     private getLSPTextDocumentPositionParams(
@@ -138,50 +138,50 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
     }
 
     public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public shouldComponentUpdate(nextProps: Readonly<RepositoryCompareAreaProps>, nextState: Readonly<State>): boolean {
-        return !isEqual(this.props, nextProps) || !isEqual(this.state, nextState)
+        return !isEqual(that.props, nextProps) || !isEqual(that.state, nextState)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (this.state.error) {
-            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.error)} />
+        if (that.state.error) {
+            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(that.state.error)} />
         }
 
         let spec: { base: string | null; head: string | null } | null | undefined
-        if (this.props.match.params.spec) {
-            spec = parseComparisonSpec(decodeURIComponent(this.props.match.params.spec))
+        if (that.props.match.params.spec) {
+            spec = parseComparisonSpec(decodeURIComponent(that.props.match.params.spec))
         }
 
         const commonProps: RepositoryCompareAreaPageProps = {
-            repo: this.props.repo,
-            base: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec?.base },
-            head: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec?.head },
-            routePrefix: this.props.match.url,
-            platformContext: this.props.platformContext,
+            repo: that.props.repo,
+            base: { repoID: that.props.repo.id, repoName: that.props.repo.name, rev: spec?.base },
+            head: { repoID: that.props.repo.id, repoName: that.props.repo.name, rev: spec?.head },
+            routePrefix: that.props.match.url,
+            platformContext: that.props.platformContext,
         }
 
         return (
-            <div className="repository-compare-area container" ref={this.nextRepositoryCompareAreaElement}>
+            <div className="repository-compare-area container" ref={that.nextRepositoryCompareAreaElement}>
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="compare">Compare</RepoHeaderBreadcrumbNavItem>}
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                    repoHeaderContributionsLifecycleProps={that.props.repoHeaderContributionsLifecycleProps}
                 />
                 <RepositoryCompareHeader
                     className="my-3"
                     {...commonProps}
-                    onUpdateComparisonSpec={this.onUpdateComparisonSpec}
+                    onUpdateComparisonSpec={that.onUpdateComparisonSpec}
                 />
                 {spec === null ? (
                     <div className="alert alert-danger">Invalid comparison specifier</div>
@@ -189,16 +189,16 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
                         <Route
-                            path={`${this.props.match.url}`}
+                            path={`${that.props.match.url}`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
                             render={routeComponentProps => (
                                 <RepositoryCompareOverviewPage
                                     {...routeComponentProps}
                                     {...commonProps}
-                                    hoverifier={this.hoverifier}
-                                    isLightTheme={this.props.isLightTheme}
-                                    extensionsController={this.props.extensionsController}
+                                    hoverifier={that.hoverifier}
+                                    isLightTheme={that.props.isLightTheme}
+                                    extensionsController={that.props.extensionsController}
                                 />
                             )}
                         />
@@ -206,13 +206,13 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                         {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 )}
-                {this.state.hoverOverlayProps && (
+                {that.state.hoverOverlayProps && (
                     <WebHoverOverlay
-                        {...this.props}
-                        {...this.state.hoverOverlayProps}
-                        telemetryService={this.props.telemetryService}
-                        hoverRef={this.nextOverlayElement}
-                        onCloseButtonClick={this.nextCloseButtonClick}
+                        {...that.props}
+                        {...that.state.hoverOverlayProps}
+                        telemetryService={that.props.telemetryService}
+                        hoverRef={that.nextOverlayElement}
+                        onCloseButtonClick={that.nextCloseButtonClick}
                     />
                 )}
             </div>
@@ -220,8 +220,8 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
     }
 
     private onUpdateComparisonSpec = (newBaseSpec: string, newHeadSpec: string): void => {
-        this.props.history.push(
-            `/${this.props.repo.name}/-/compare${
+        that.props.history.push(
+            `/${that.props.repo.name}/-/compare${
                 newBaseSpec || newHeadSpec
                     ? `/${escapeRevspecForURL(newBaseSpec || '')}...${escapeRevspecForURL(newHeadSpec || '')}`
                     : ''

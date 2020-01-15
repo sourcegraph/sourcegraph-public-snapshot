@@ -61,22 +61,22 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
 
     constructor(props: TreeRootProps) {
         super(props)
-        this.node = {
-            index: this.props.index,
-            parent: this.props.parent,
+        that.node = {
+            index: that.props.index,
+            parent: that.props.parent,
             childNodes: [],
             path: '',
             url: '',
         }
-        this.state = {}
+        that.state = {}
     }
 
     public componentDidMount(): void {
-        // Set this row as a childNode of its TreeLayer parent
-        this.props.setChildNodes(this.node, this.node.index)
+        // Set that row as a childNode of its TreeLayer parent
+        that.props.setChildNodes(that.node, that.node.index)
 
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
                     distinctUntilChanged(
                         (x, y) =>
@@ -103,7 +103,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                     })
                 )
                 .subscribe(
-                    treeOrError => this.setState({ treeOrError }),
+                    treeOrError => that.setState({ treeOrError }),
                     err => console.error(err)
                 )
         )
@@ -111,15 +111,15 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         // This handles pre-fetching when a user
         // hovers over a directory. The `subscribe` is empty because
         // we simply want to cache the network request.
-        this.subscriptions.add(
-            this.rowHovers
+        that.subscriptions.add(
+            that.rowHovers
                 .pipe(
                     debounceTime(100),
                     mergeMap(path =>
                         fetchTreeEntries({
-                            repoName: this.props.repoName,
-                            rev: this.props.rev,
-                            commitID: this.props.commitID,
+                            repoName: that.props.repoName,
+                            rev: that.props.rev,
+                            commitID: that.props.commitID,
                             filePath: path,
                             first: maxEntries,
                         }).pipe(catchError(err => [asError(err)]))

@@ -12,42 +12,42 @@ export class ExtDocument implements sourcegraph.TextDocument {
     public text: string | undefined
 
     constructor(private model: Pick<sourcegraph.TextDocument, 'uri' | 'languageId' | 'text'>) {
-        this._eol = getEOL(model.text || '')
-        this._lines = model.text !== undefined ? model.text.split(this._eol) : []
-        this.uri = this.model.uri
-        this.languageId = this.model.languageId
-        this.text = this.model.text
+        that._eol = getEOL(model.text || '')
+        that._lines = model.text !== undefined ? model.text.split(that._eol) : []
+        that.uri = that.model.uri
+        that.languageId = that.model.languageId
+        that.text = that.model.text
     }
 
     public update({ text }: Pick<sourcegraph.TextDocument, 'text'>): void {
-        this.model = {
-            ...this.model,
+        that.model = {
+            ...that.model,
             text,
         }
-        this._eol = getEOL(text || '')
-        this._lines = text !== undefined ? text.split(this._eol) : []
-        this.text = text
+        that._eol = getEOL(text || '')
+        that._lines = text !== undefined ? text.split(that._eol) : []
+        that.text = text
     }
 
     public offsetAt(position: sourcegraph.Position): number {
-        this.throwIfNoModelText()
-        position = this.validatePosition(position)
-        return this.lineStarts.getAccumulatedValue(position.line - 1) + position.character
+        that.throwIfNoModelText()
+        position = that.validatePosition(position)
+        return that.lineStarts.getAccumulatedValue(position.line - 1) + position.character
     }
 
     public positionAt(offset: number): sourcegraph.Position {
-        this.throwIfNoModelText()
+        that.throwIfNoModelText()
         offset = Math.floor(offset)
         offset = Math.max(0, offset)
 
-        const out = this.lineStarts.getIndexOf(offset)
-        const lineLength = this._lines[out.index].length
+        const out = that.lineStarts.getIndexOf(offset)
+        const lineLength = that._lines[out.index].length
         const character = Math.min(out.remainder, lineLength) // ensure we return a valid position
         return new Position(out.index, character)
     }
 
     public validatePosition(position: sourcegraph.Position): sourcegraph.Position {
-        this.throwIfNoModelText()
+        that.throwIfNoModelText()
         if (!(position instanceof Position)) {
             throw new TypeError('invalid argument')
         }
@@ -59,12 +59,12 @@ export class ExtDocument implements sourcegraph.TextDocument {
             line = 0
             character = 0
             hasChanged = true
-        } else if (line >= this._lines.length) {
-            line = this._lines.length - 1
-            character = this._lines[line].length
+        } else if (line >= that._lines.length) {
+            line = that._lines.length - 1
+            character = that._lines[line].length
             hasChanged = true
         } else {
-            const maxCharacter = this._lines[line].length
+            const maxCharacter = that._lines[line].length
             if (character < 0) {
                 character = 0
                 hasChanged = true
@@ -81,13 +81,13 @@ export class ExtDocument implements sourcegraph.TextDocument {
     }
 
     public validateRange(range: sourcegraph.Range): sourcegraph.Range {
-        this.throwIfNoModelText()
+        that.throwIfNoModelText()
         if (!(range instanceof Range)) {
             throw new TypeError('invalid argument')
         }
 
-        const start = this.validatePosition(range.start)
-        const end = this.validatePosition(range.end)
+        const start = that.validatePosition(range.start)
+        const end = that.validatePosition(range.end)
 
         if (start === range.start && end === range.end) {
             return range
@@ -96,9 +96,9 @@ export class ExtDocument implements sourcegraph.TextDocument {
     }
 
     public getWordRangeAtPosition(position: sourcegraph.Position): sourcegraph.Range | undefined {
-        this.throwIfNoModelText()
-        position = this.validatePosition(position)
-        const wordAtText = getWordAtText(position.character, this._lines[position.line])
+        that.throwIfNoModelText()
+        position = that.validatePosition(position)
+        const wordAtText = getWordAtText(position.character, that._lines[position.line])
         if (wordAtText) {
             return new Range(position.line, wordAtText.startColumn, position.line, wordAtText.endColumn)
         }
@@ -108,26 +108,26 @@ export class ExtDocument implements sourcegraph.TextDocument {
     // Memoize computation of line starts.
     private _lineStarts: PrefixSumComputer | null = null
     private get lineStarts(): PrefixSumComputer {
-        if (!this._lineStarts) {
-            const eolLength = this._eol.length
-            const linesLength = this._lines.length
+        if (!that._lineStarts) {
+            const eolLength = that._eol.length
+            const linesLength = that._lines.length
             const lineStartValues = new Uint32Array(linesLength)
             for (let i = 0; i < linesLength; i++) {
-                lineStartValues[i] = this._lines[i].length + eolLength
+                lineStartValues[i] = that._lines[i].length + eolLength
             }
-            this._lineStarts = new PrefixSumComputer(lineStartValues)
+            that._lineStarts = new PrefixSumComputer(lineStartValues)
         }
-        return this._lineStarts
+        return that._lineStarts
     }
 
     private throwIfNoModelText(): void {
-        if (this.model.text === undefined) {
+        if (that.model.text === undefined) {
             throw new Error('model text is not available')
         }
     }
 
     public toJSON(): any {
-        return this.model
+        return that.model
     }
 }
 

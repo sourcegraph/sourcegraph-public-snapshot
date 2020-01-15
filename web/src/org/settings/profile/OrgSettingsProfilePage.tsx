@@ -31,7 +31,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        this.state = {
+        that.state = {
             displayName: props.org.displayName || '',
             loading: false,
             updated: false,
@@ -39,8 +39,8 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
                     map(props => props.org),
                     distinctUntilKeyChanged('id')
@@ -50,12 +50,12 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                 })
         )
 
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     switchMap(() =>
-                        updateOrganization(this.props.org.id, this.state.displayName).pipe(
-                            tap(() => this.props.onOrganizationUpdate()),
+                        updateOrganization(that.props.org.id, that.state.displayName).pipe(
+                            tap(() => that.props.onOrganizationUpdate()),
                             mergeMap(() =>
                                 concat(
                                     // Reset email, reenable submit button, flash "updated" text
@@ -70,67 +70,67 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-                .subscribe(state => this.setState(state as State))
+                .subscribe(state => that.setState(state as State))
         )
         // TODO(sqs): handle errors
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <div className="org-settings-profile-page">
-                <PageTitle title={this.props.org.name} />
+                <PageTitle title={that.props.org.name} />
                 <h2>Organization profile</h2>
-                <Form className="org-settings-profile-page" onSubmit={this.onSubmit}>
+                <Form className="org-settings-profile-page" onSubmit={that.onSubmit}>
                     <div className="form-group">
                         <label>Display name</label>
                         <input
                             type="text"
                             className="form-control org-settings-profile-page__display-name"
                             placeholder="Organization name"
-                            onChange={this.onDisplayNameFieldChange}
-                            value={this.state.displayName}
+                            onChange={that.onDisplayNameFieldChange}
+                            value={that.state.displayName}
                             spellCheck={false}
                             maxLength={ORG_DISPLAY_NAME_MAX_LENGTH}
                         />
                     </div>
                     <button
                         type="submit"
-                        disabled={this.state.loading}
+                        disabled={that.state.loading}
                         className="btn btn-primary org-settings-profile-page__submit-button"
                     >
                         Update
                     </button>
-                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
+                    {that.state.loading && <LoadingSpinner className="icon-inline" />}
                     <div
                         className={
                             'org-settings-profile-page__updated-text' +
-                            (this.state.updated ? ' org-settings-profile-page__updated-text--visible' : '')
+                            (that.state.updated ? ' org-settings-profile-page__updated-text--visible' : '')
                         }
                     >
                         <small>Updated!</small>
                     </div>
-                    {this.state.error && <ErrorAlert error={this.state.error} />}
+                    {that.state.error && <ErrorAlert error={that.state.error} />}
                 </Form>
             </div>
         )
     }
 
     private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ displayName: e.target.value })
+        that.setState({ displayName: e.target.value })
     }
 
     private onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
-        this.submits.next()
+        that.submits.next()
     }
 }

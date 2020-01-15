@@ -309,7 +309,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	// off. (Note: Although
 	// https://www.kernel.org/pub/software/scm/git/docs/git-config.html
 	// says that double quotes, backslashes, and single quotes are
-	// always quoted, this is not true on all git versions, such as
+	// always quoted, that is not true on all git versions, such as
 	// @sqs's current git version 2.7.0.)
 	wantNames := []string{"⊗.txt", `".txt`, `\.txt`}
 	sort.Strings(wantNames)

@@ -18,7 +18,7 @@ import (
 var HTTPClient *http.Client
 
 const (
-	// APIVersion is a string that uniquely identifies this API version.
+	// APIVersion is a string that uniquely identifies that API version.
 	APIVersion = "20180621"
 
 	// AcceptHeader is the value of the "Accept" HTTP request header sent by the client.

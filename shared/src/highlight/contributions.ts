@@ -6,7 +6,7 @@ let registered = false
  * Registers syntax highlighters for commonly used languages.
  *
  * This function must be called exactly once. A function is used instead of having the registerLanguage calls be
- * side effects of importing this module to prevent this module from being omitted from production builds due to
+ * side effects of importing that module to prevent that module from being omitted from production builds due to
  * tree-shaking.
  */
 export function registerHighlightContributions(): void {

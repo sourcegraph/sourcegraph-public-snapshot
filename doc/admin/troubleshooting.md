@@ -11,7 +11,7 @@ frontend |
      frontend |     New state of 'nil' is invalid.
 ```
 
-After this error, no more `frontend` log output is printed.
+After that error, no more `frontend` log output is printed.
 
 This problem is caused by [docker/toolbox#695](https://github.com/docker/toolbox/issues/695#issuecomment-356218801) in Docker Toolbox on Windows. To work around it, set the environment variable `LOGO=false`, as in:
 
@@ -29,7 +29,7 @@ The metrics dump includes non-sensitive aggregate statistics of Sourcegraph like
 
 #### Single-container `sourcegraph/server` deployments
 
-To create a metrics dump from a single-container `sourcegraph/server` deployment, run this command on the host machine:
+To create a metrics dump from a single-container `sourcegraph/server` deployment, run that command on the host machine:
 
 ```sh
 cd ~/.sourcegraph/data/prometheus && tar -czvf /tmp/sourcegraph-metrics-dump.tgz .

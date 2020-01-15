@@ -20,7 +20,7 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {

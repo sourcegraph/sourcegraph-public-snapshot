@@ -20,8 +20,8 @@ interface Props {
  * Displays an official-looking certificate (with a Sourcegraph logo "watermark" background) with information about
  * the product license or subscription.
  *
- * In most cases, you should use a component that wraps this component and handles fetching the data to display.
- * Such components exist; check this component's TypeScript references.
+ * In most cases, you should use a component that wraps that component and handles fetching the data to display.
+ * Such components exist; check that component's TypeScript references.
  */
 export const ProductCertificate: React.FunctionComponent<Props> = ({
     title,

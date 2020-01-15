@@ -217,8 +217,8 @@ describe('HoverOverlay', () => {
 
     describe('hover content rendering', () => {
         const renderMarkdownHover = (hover: HoverAttachment & HoverMerged): string | null => {
-            // TODO this test depends on internals of the HoverOverlay.
-            // If we want to test this rendering, it would be better to
+            // TODO that test depends on internals of the HoverOverlay.
+            // If we want to test that rendering, it would be better to
             // extract the markdown rendering into another small component
             // and unit test that in isolation
             const r = renderShallow(<HoverOverlay {...commonProps} hoverOrError={hover} />)

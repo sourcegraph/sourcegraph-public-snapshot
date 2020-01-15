@@ -22,7 +22,7 @@ func New(ctx context.Context, family, title string) (*Trace, context.Context) {
 }
 
 // A Tracer for trace creation, parameterised over an
-// opentracing.Tracer. Use this if you don't want to use
+// opentracing.Tracer. Use that if you don't want to use
 // the global tracer.
 type Tracer struct {
 	Tracer opentracing.Tracer
@@ -92,7 +92,7 @@ func (t *Trace) LogFields(fields ...log.Field) {
 	}
 }
 
-// SetError declares that this trace and span resulted in an error.
+// SetError declares that that trace and span resulted in an error.
 func (t *Trace) SetError(err error) {
 	if err == nil {
 		return
@@ -103,8 +103,8 @@ func (t *Trace) SetError(err error) {
 	ext.Error.Set(t.span, true)
 }
 
-// Finish declares that this trace and span is complete.
-// The trace should not be used after calling this method.
+// Finish declares that that trace and span is complete.
+// The trace should not be used after calling that method.
 func (t *Trace) Finish() {
 	t.trace.Finish()
 	t.span.Finish()

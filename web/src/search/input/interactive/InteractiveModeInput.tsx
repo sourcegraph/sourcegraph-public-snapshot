@@ -48,7 +48,7 @@ interface InteractiveModeProps
 }
 
 interface InteractiveModeState {
-    /** Count of the total number of filters ever added in this component.*/
+    /** Count of the total number of filters ever added in that component.*/
     numFiltersAdded: number
 }
 
@@ -65,7 +65,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
             })
         }
 
-        this.props.onFiltersInQueryChange(filtersInQuery)
+        that.props.onFiltersInQueryChange(filtersInQuery)
     }
 
     /**
@@ -73,8 +73,8 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
      */
     private addNewFilter = (filterType: SuggestionTypes): void => {
         const filterKey = uniqueId(filterType)
-        this.props.onFiltersInQueryChange({
-            ...this.props.filtersInQuery,
+        that.props.onFiltersInQueryChange({
+            ...that.props.filtersInQuery,
             [filterKey]: { type: filterType, value: '', editable: true },
         })
     }
@@ -87,39 +87,39 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
      */
     private onFilterEdited = (filterKey: string, value: string): void => {
         const newFiltersInQuery = {
-            ...this.props.filtersInQuery,
+            ...that.props.filtersInQuery,
             [filterKey]: {
-                ...this.props.filtersInQuery[filterKey],
+                ...that.props.filtersInQuery[filterKey],
                 value,
                 editable: false,
             },
         }
         // Update the top-level filtersInQuery with the new values
-        this.props.onFiltersInQueryChange(newFiltersInQuery)
+        that.props.onFiltersInQueryChange(newFiltersInQuery)
 
         // Submit a search with the new values
         submitSearch(
-            this.props.history,
-            this.props.navbarSearchState.query,
+            that.props.history,
+            that.props.navbarSearchState.query,
             'nav',
-            this.props.patternType,
+            that.props.patternType,
             undefined,
             newFiltersInQuery
         )
     }
 
     private onFilterDeleted = (filterKey: string): void => {
-        const newFiltersInQuery = { ...this.props.filtersInQuery }
+        const newFiltersInQuery = { ...that.props.filtersInQuery }
         delete newFiltersInQuery[filterKey]
 
-        this.props.onFiltersInQueryChange(newFiltersInQuery)
+        that.props.onFiltersInQueryChange(newFiltersInQuery)
 
         // Submit a search with the new values
         submitSearch(
-            this.props.history,
-            this.props.navbarSearchState.query,
+            that.props.history,
+            that.props.navbarSearchState.query,
             'nav',
-            this.props.patternType,
+            that.props.patternType,
             undefined,
             newFiltersInQuery
         )
@@ -131,11 +131,11 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
      * being toggled.
      */
     private toggleFilterEditable = (filterKey: string): void => {
-        this.props.onFiltersInQueryChange({
-            ...this.props.filtersInQuery,
+        that.props.onFiltersInQueryChange({
+            ...that.props.filtersInQuery,
             [filterKey]: {
-                ...this.props.filtersInQuery[filterKey],
-                editable: !this.props.filtersInQuery[filterKey].editable,
+                ...that.props.filtersInQuery[filterKey],
+                editable: !that.props.filtersInQuery[filterKey].editable,
             },
         })
     }
@@ -144,25 +144,25 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         e.preventDefault()
 
         submitSearch(
-            this.props.history,
-            this.props.navbarSearchState.query,
+            that.props.history,
+            that.props.navbarSearchState.query,
             'nav',
-            this.props.patternType,
+            that.props.patternType,
             undefined,
-            this.props.filtersInQuery
+            that.props.filtersInQuery
         )
     }
 
     public render(): JSX.Element | null {
         const isSearchHomepage =
-            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search, true)
+            that.props.location.pathname === '/search' && !parseSearchURLQuery(that.props.location.search, true)
 
         let logoSrc = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
 
         const { branding } = window.context
         if (branding) {
-            if (this.props.isLightTheme) {
+            if (that.props.isLightTheme) {
                 if (branding.light && branding.light.symbol) {
                     logoSrc = branding.light.symbol
                 }
@@ -180,7 +180,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
             <div className="interactive-mode-input e2e-interactive-mode-input">
                 <div className={!isSearchHomepage ? 'interactive-mode-input__top-nav' : ''}>
                     {!isSearchHomepage &&
-                        (this.props.authRequired ? (
+                        (that.props.authRequired ? (
                             <div className={logoLinkClassName}>{logo}</div>
                         ) : (
                             <Link to="/search" className={logoLinkClassName}>
@@ -192,19 +192,19 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             !isSearchHomepage ? 'interactive-mode-input__search-box-container' : ''
                         }`}
                     >
-                        <Form onSubmit={this.onSubmit} className="flex-grow-1">
+                        <Form onSubmit={that.onSubmit} className="flex-grow-1">
                             <div className="d-flex align-items-start">
-                                <SearchModeToggle {...this.props} interactiveSearchMode={true} />
+                                <SearchModeToggle {...that.props} interactiveSearchMode={true} />
                                 <QueryInput
-                                    location={this.props.location}
-                                    history={this.props.history}
-                                    value={this.props.navbarSearchState}
+                                    location={that.props.location}
+                                    history={that.props.history}
+                                    value={that.props.navbarSearchState}
                                     hasGlobalQueryBehavior={true}
-                                    onChange={this.props.onNavbarQueryChange}
-                                    patternType={this.props.patternType}
-                                    setPatternType={this.props.setPatternType}
+                                    onChange={that.props.onNavbarQueryChange}
+                                    patternType={that.props.patternType}
+                                    setPatternType={that.props.setPatternType}
                                     autoFocus={true}
-                                    filterQuery={this.props.filtersInQuery}
+                                    filterQuery={that.props.filtersInQuery}
                                     withoutSuggestions={true}
                                     withSearchModeToggle={true}
                                 />
@@ -212,21 +212,21 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             </div>
                         </Form>
                     </div>
-                    {!this.props.authRequired && !isSearchHomepage && (
-                        <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
+                    {!that.props.authRequired && !isSearchHomepage && (
+                        <NavLinks {...that.props} showDotComMarketing={showDotComMarketing} />
                     )}
                 </div>
                 <div>
                     <SelectedFiltersRow
-                        filtersInQuery={this.props.filtersInQuery}
-                        navbarQuery={this.props.navbarSearchState}
-                        onSubmit={this.onSubmit}
-                        onFilterEdited={this.onFilterEdited}
-                        onFilterDeleted={this.onFilterDeleted}
-                        toggleFilterEditable={this.toggleFilterEditable}
+                        filtersInQuery={that.props.filtersInQuery}
+                        navbarQuery={that.props.navbarSearchState}
+                        onSubmit={that.onSubmit}
+                        onFilterEdited={that.onFilterEdited}
+                        onFilterDeleted={that.onFilterDeleted}
+                        toggleFilterEditable={that.toggleFilterEditable}
                         isHomepage={isSearchHomepage}
                     />
-                    <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={isSearchHomepage} />
+                    <AddFilterRow onAddNewFilter={that.addNewFilter} isHomepage={isSearchHomepage} />
                 </div>
             </div>
         )

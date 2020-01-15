@@ -26,29 +26,29 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = { fileDiff: undefined }
+        that.state = { fileDiff: undefined }
     }
 
     public componentDidMount(): void {
-        const { requestGraphQL } = this.props.platformContext
-        this.subscriptions.add(
+        const { requestGraphQL } = that.props.platformContext
+        that.subscriptions.add(
             // Fetch all fileDiffs in a given comparison. We rely on queryRepositoryComparisonFileDiffs
             // being memoized so that there is at most one network request when viewing
-            // a commit/comparison on GitHub to get this information, despite this request occuring in
-            // this component, which appears for each file in a diff.
-            this.componentUpdates
+            // a commit/comparison on GitHub to get that information, despite that request occuring in
+            // that component, which appears for each file in a diff.
+            that.componentUpdates
                 .pipe(
                     switchMap(props =>
                         queryRepositoryComparisonFileDiffs({
-                            repo: this.props.openProps.repoName,
-                            base: this.props.openProps.commit.baseRev,
-                            head: this.props.openProps.commit.headRev,
+                            repo: that.props.openProps.repoName,
+                            base: that.props.openProps.commit.baseRev,
+                            head: that.props.openProps.commit.headRev,
                             requestGraphQL,
                         }).pipe(
                             map(fileDiff => ({
                                 ...fileDiff,
                                 // Only include the relevant file diff.
-                                nodes: fileDiff.nodes.filter(node => node.oldPath === this.props.openProps.filePath),
+                                nodes: fileDiff.nodes.filter(node => node.oldPath === that.props.openProps.filePath),
                             })),
                             catchError(err => {
                                 console.error(err)
@@ -58,23 +58,23 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
                     )
                 )
                 .subscribe(result => {
-                    this.setState({ fileDiff: result })
+                    that.setState({ fileDiff: result })
                 })
         )
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element {
-        const url = this.getOpenInSourcegraphUrl(this.props.openProps)
+        const url = that.getOpenInSourcegraphUrl(that.props.openProps)
         return (
             <SourcegraphIconButton
-                {...this.props}
-                className={`open-on-sourcegraph ${this.props.className}`}
-                iconClassName={this.props.iconClassName}
+                {...that.props}
+                className={`open-on-sourcegraph ${that.props.className}`}
+                iconClassName={that.props.iconClassName}
                 url={url}
             />
         )
@@ -87,16 +87,16 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
             props.commit.headRev
         }?utm_source=${getPlatformName()}`
 
-        if (this.state.fileDiff && this.state.fileDiff.nodes.length > 0) {
+        if (that.state.fileDiff && that.state.fileDiff.nodes.length > 0) {
             // If the total number of files in the diff exceeds 25 (the default shown on commit pages),
             // make sure the commit page loads all files to make sure we can get to the file.
             const first =
-                this.state.fileDiff.totalCount && this.state.fileDiff.totalCount > 25
-                    ? `&first=${this.state.fileDiff.totalCount}`
+                that.state.fileDiff.totalCount && that.state.fileDiff.totalCount > 25
+                    ? `&first=${that.state.fileDiff.totalCount}`
                     : ''
 
             // Go to the specfic file in the commit diff using the internalID of the matched file diff.
-            return `${urlToCommit}${first}#diff-${this.state.fileDiff.nodes[0].internalID}`
+            return `${urlToCommit}${first}#diff-${that.state.fileDiff.nodes[0].internalID}`
         }
         // If the request for fileDiffs fails, and we can't get the internal ID, just go to the comparison page.
         return urlToCommit

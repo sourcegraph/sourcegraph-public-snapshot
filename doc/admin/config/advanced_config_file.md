@@ -2,7 +2,7 @@
 
 Some teams require Sourcegraph configuration to be stored in version control as opposed to editing via the Site admin UI.
 
-As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md), [critical configuration](critical_config.md), [external services configuration](../external_service/index.md), and global settings.
+As of Sourcegraph v3.4+, that is possible for [site configuration](site_config.md), [critical configuration](critical_config.md), [external services configuration](../external_service/index.md), and global settings.
 
 ## Benefits
 
@@ -11,7 +11,7 @@ As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.m
 
 ## Drawbacks
 
-Loading configuration in this manner has two significant drawbacks:
+Loading configuration in that manner has two significant drawbacks:
 
 1. You will no longer be able to save configuration edits through the web UI by default (you can use the web UI as scratch space, though).
 1. Sourcegraph sometimes performs automatic migrations of configuration when upgrading versions. This process will now be more manual for you (see below).
@@ -30,7 +30,7 @@ SITE_CONFIG_FILE=site.json
 
 `site.json` contains the [site configuration](site_config.md), which you would otherwise edit through the in-app site configuration editor.
 
-If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`. **Note** that if you do enable this, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
+If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`. **Note** that if you do enable that, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
 
 ## External services configuration
 
@@ -69,7 +69,7 @@ EXTSVC_CONFIG_FILE=extsvc.json
 
 You can find a full list of [valid top-level keys here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b7ebb9024e3a95109fdedfb8057795b9a7c638bc/-/blob/cmd/frontend/graphqlbackend/schema.graphql#L1104-1110).
 
-If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `EXTSVC_CONFIG_ALLOW_EDITS=true`. **Note** that if you do enable this, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
+If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `EXTSVC_CONFIG_ALLOW_EDITS=true`. **Note** that if you do enable that, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
 
 ## Global settings
 
@@ -81,7 +81,7 @@ GLOBAL_SETTINGS_FILE=global-settings.json
 
 `global-settings.json` contains the global settings, which you would otherwise edit through the in-app global settings editor.
 
-If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `GLOBAL_SETTINGS_ALLOW_EDITS=true`. Note that if you do enable this, it is your responsibility to ensure the global settings on your instance and in the file remain in sync.
+If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `GLOBAL_SETTINGS_ALLOW_EDITS=true`. Note that if you do enable that, it is your responsibility to ensure the global settings on your instance and in the file remain in sync.
 
 ## Upgrades and Migrations
 

@@ -29,15 +29,15 @@ interface State {
 export class DiscussionsCreate extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
-        this.state = {}
+        that.state = {}
     }
 
     public render(): JSX.Element | null {
         return (
             <div className="discussions-create">
-                <DiscussionsNavbar {...this.props} threadTitle={this.state.title} />
+                <DiscussionsNavbar {...that.props} threadTitle={that.state.title} />
                 <div className="discussions-create__content">
-                    {this.state.title && this.state.title.length > 60 && (
+                    {that.state.title && that.state.title.length > 60 && (
                         <div className="alert alert-info p-1 mt-3 ml-3 mr-3 mb-0">
                             <small>
                                 <InformationVariantIcon className="icon-inline" />
@@ -49,9 +49,9 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                     <DiscussionsInput
                         submitLabel="Create discussion"
                         titleMode={TitleMode.Implicit}
-                        onTitleChange={this.onTitleChange}
-                        onSubmit={this.onSubmit}
-                        {...this.props}
+                        onTitleChange={that.onTitleChange}
+                        onSubmit={that.onSubmit}
+                        {...that.props}
                     />
                 </div>
             </div>
@@ -74,10 +74,10 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
             title,
             contents,
             targetRepo: {
-                repositoryID: this.props.repoID,
-                path: this.props.filePath,
-                branch: this.props.rev,
-                revision: this.props.commitID,
+                repositoryID: that.props.repoID,
+                path: that.props.filePath,
+                branch: that.props.rev,
+                revision: that.props.commitID,
                 selection: {
                     startLine,
                     startCharacter,
@@ -96,7 +96,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
             },
         }).pipe(
             tap(thread => {
-                const location = this.props.location
+                const location = that.props.location
                 const hash = new URLSearchParams(location.hash.slice('#'.length))
                 hash.set('tab', 'discussions')
                 hash.set('threadID', thread.idWithoutKind)

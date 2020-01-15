@@ -46,8 +46,8 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                 <div className="form-group">
                     <input
                         className="form-control"
-                        onChange={this.onEmailFieldChange}
-                        value={this.state.email}
+                        onChange={that.onEmailFieldChange}
+                        value={that.state.email}
                         type="email"
                         name="email"
                         autoFocus={true}
@@ -55,31 +55,31 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                         placeholder="Email"
                         required={true}
                         autoComplete="email"
-                        disabled={this.state.submitOrError === 'loading'}
+                        disabled={that.state.submitOrError === 'loading'}
                     />
                 </div>
                 <button
                     className="btn btn-primary btn-block"
                     type="submit"
-                    disabled={this.state.submitOrError === 'loading'}
+                    disabled={that.state.submitOrError === 'loading'}
                 >
                     Send reset password link
                 </button>
-                {this.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
-                {isErrorLike(this.state.submitOrError) && (
-                    <ErrorAlert className="mt-2" error={this.state.submitOrError} />
+                {that.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
+                {isErrorLike(that.state.submitOrError) && (
+                    <ErrorAlert className="mt-2" error={that.state.submitOrError} />
                 )}
             </Form>
         )
     }
 
     private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ email: e.target.value })
+        that.setState({ email: e.target.value })
     }
 
     private handleSubmitResetPasswordInit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
-        this.setState({ submitOrError: 'loading' })
+        that.setState({ submitOrError: 'loading' })
         fetch('/-/reset-password-init', {
             credentials: 'same-origin',
             method: 'POST',
@@ -88,24 +88,24 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                email: this.state.email,
+                email: that.state.email,
             }),
         })
             .then(resp => {
                 if (resp.status === 200) {
-                    this.setState({ submitOrError: null })
+                    that.setState({ submitOrError: null })
                 } else if (resp.status === 429) {
-                    this.setState({
+                    that.setState({
                         submitOrError: new Error('Too many password reset requests. Try again in a few minutes.'),
                     })
                 } else {
                     resp.text()
                         .catch(err => null)
-                        .then(text => this.setState({ submitOrError: new Error(text || 'Unknown error') }))
+                        .then(text => that.setState({ submitOrError: new Error(text || 'Unknown error') }))
                         .catch(err => console.error(err))
                 }
             })
-            .catch(err => this.setState({ submitOrError: asError(err) }))
+            .catch(err => that.setState({ submitOrError: asError(err) }))
     }
 }
 

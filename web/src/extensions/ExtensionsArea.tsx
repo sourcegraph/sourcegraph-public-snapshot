@@ -56,31 +56,31 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
 
     public render(): JSX.Element | null {
         const context: ExtensionsAreaRouteContext = {
-            authenticatedUser: this.props.authenticatedUser,
-            settingsCascade: this.props.settingsCascade,
-            platformContext: this.props.platformContext,
-            subject: this.props.viewerSubject,
-            extensionAreaRoutes: this.props.extensionAreaRoutes,
-            extensionAreaHeaderNavItems: this.props.extensionAreaHeaderNavItems,
-            isLightTheme: this.props.isLightTheme,
+            authenticatedUser: that.props.authenticatedUser,
+            settingsCascade: that.props.settingsCascade,
+            platformContext: that.props.platformContext,
+            subject: that.props.viewerSubject,
+            extensionAreaRoutes: that.props.extensionAreaRoutes,
+            extensionAreaHeaderNavItems: that.props.extensionAreaHeaderNavItems,
+            isLightTheme: that.props.isLightTheme,
         }
 
         return (
             <div className="extensions-area">
                 <ExtensionsAreaHeader
-                    {...this.props}
+                    {...that.props}
                     {...context}
-                    actionButtons={this.props.extensionsAreaHeaderActionButtons}
-                    isPrimaryHeader={this.props.location.pathname === this.props.match.path}
+                    actionButtons={that.props.extensionsAreaHeaderActionButtons}
+                    isPrimaryHeader={that.props.location.pathname === that.props.match.path}
                 />
                 <Switch>
-                    {this.props.routes.map(
+                    {that.props.routes.map(
                         /* eslint-disable react/jsx-no-bind */
                         ({ path, exact, condition = () => true, render }) =>
                             condition(context) && (
                                 <Route
                                     key="hardcoded-key"
-                                    path={this.props.match.url + path}
+                                    path={that.props.match.url + path}
                                     exact={exact}
                                     render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                 />

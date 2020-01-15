@@ -29,7 +29,7 @@ GitLab permissions can be configured in three ways:
 1. Set up GitLab as an OAuth sign-on provider for Sourcegraph (recommended)
 2. Use a GitLab sudo-level personal access token in conjunction with another SSO provider
    (recommended only if the first option is not possible)
-3. Assume username equivalency between Sourcegraph and GitLab (warning: this is generally unsafe and
+3. Assume username equivalency between Sourcegraph and GitLab (warning: that is generally unsafe and
    should only be used if you are using strictly `http-header` authentication).
 
 ### OAuth application
@@ -82,7 +82,7 @@ match the fields specified in the authentication provider config
 ### Username
 
 Prerequisite: Ensure that `http-header` is the *only* authentication provider type configured for
-Sourcegraph. If this is not the case, then it will be possible for users to escalate privileges,
+Sourcegraph. If that is not the case, then it will be possible for users to escalate privileges,
 because Sourcegraph usernames are mutable.
 
 [Add or edit a GitLab external service](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:

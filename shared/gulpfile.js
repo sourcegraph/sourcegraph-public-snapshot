@@ -91,7 +91,7 @@ async function schema() {
         $refOptions: {
           resolve: /** @type {import('json-schema-ref-parser').Options['resolve']} */ ({
             draftV7resolver,
-            // there should be no reason to make network calls during this process,
+            // there should be no reason to make network calls during that process,
             // and if there are we've broken env for offline devs/increased dev startup time
             http: false,
           }),

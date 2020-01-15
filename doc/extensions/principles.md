@@ -1,10 +1,10 @@
 # Principles of extensibility for Sourcegraph
 
-[Sourcegraph](https://sourcegraph.com) provides IDE-like code intelligence (definitions, references, hover tooltips, and search) anywhere you view and review code, such as in GitHub files and pull requests. To do this, we built a way to show information from [language servers](http://langserver.org) (for 20+ languages) in the places you view and review code.
+[Sourcegraph](https://sourcegraph.com) provides IDE-like code intelligence (definitions, references, hover tooltips, and search) anywhere you view and review code, such as in GitHub files and pull requests. To do that, we built a way to show information from [language servers](http://langserver.org) (for 20+ languages) in the places you view and review code.
 
 Sometimes that info is enough. But sometimes you need to see other kinds of info: error logs, test coverage, performance, authorship, reachability, lint warnings, etc. For example, if you're reviewing a PR that changes code for which there is [OpenTracing](https://opentracing.io/) trace information or that adds calls to untested code, you should be aware of that while reviewing without having to check an external system.
 
-Existing APIs for code hosts and editors don't make this easy or possible.
+Existing APIs for code hosts and editors don't make that easy or possible.
 
 ## The state of extension APIs for code hosts
 
@@ -22,13 +22,13 @@ As a result, all of the great work that goes into building editor extensions is 
 
 To solve this problem (of seeing important contextual info when you're viewing and reviewing code), we made a way for you to write something like an editor extension--except that it can be used on GitHub, Sourcegraph, and (soon) other tools. Check out the code for [an example extension that shows a hello message in hover tooltips](https://sourcegraph.com/github.com/sourcegraph/sourcegraph-hello-world-hover@master/-/blob/src/extension.ts).
 
-After writing and publishing an extension (using `src extensions publish` in the [`src` CLI tool](https://github.com/sourcegraph/src-cli)), anyone can add it and use it on GitHub or Sourcegraph. Behind the scenes (but in open source), 2 other components make this possible:
+After writing and publishing an extension (using `src extensions publish` in the [`src` CLI tool](https://github.com/sourcegraph/src-cli)), anyone can add it and use it on GitHub or Sourcegraph. Behind the scenes (but in open source), 2 other components make that possible:
 
 ### Sourcegraph extension API
 
-The Sourcegraph extension API (this repository) is the open-source extension API that Sourcegraph extensions are written against. It exposes concepts present in all clients, such as notifications of opened/closed documents, adding buttons to toolbars, changing the background or gutter color of lines, showing hover tooltips, etc.
+The Sourcegraph extension API (that repository) is the open-source extension API that Sourcegraph extensions are written against. It exposes concepts present in all clients, such as notifications of opened/closed documents, adding buttons to toolbars, changing the background or gutter color of lines, showing hover tooltips, etc.
 
-The [sourcegraph](https://npmjs.com/package/sourcegraph) npm package (published from this repository) exposes this as a TypeScript/JavaScript API that is familiar to anyone who has written a [VS Code](https://code.visualstudio.com/) extension.
+The [sourcegraph](https://npmjs.com/package/sourcegraph) npm package (published from that repository) exposes that as a TypeScript/JavaScript API that is familiar to anyone who has written a [VS Code](https://code.visualstudio.com/) extension.
 
 ### Adapters to "polyfill" existing tools to run Sourcegraph extensions
 

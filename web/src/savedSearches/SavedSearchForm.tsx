@@ -39,7 +39,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
         const { description = '', query = '', notify = false, notifySlack = false, slackWebhookURL = '' } =
             props.defaultValues || {}
 
-        this.state = {
+        that.state = {
             values: {
                 description,
                 query,
@@ -121,7 +121,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
                                 />{' '}
                                 <span>
                                     {this.props.namespace.__typename === 'Org'
-                                        ? 'Send email notifications to all members of this organization'
+                                        ? 'Send email notifications to all members of that organization'
                                         : this.props.namespace.__typename === 'User'
                                         ? 'Send email notifications to my email'
                                         : 'Email notifications'}

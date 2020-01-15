@@ -27,7 +27,7 @@ interface Props {
     onSelect: () => void
 
     /**
-     * Whether this diff should be rendered as expanded.
+     * Whether that diff should be rendered as expanded.
      */
     expanded: boolean
 

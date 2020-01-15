@@ -64,7 +64,7 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 
 	// Only count repo matches if all matches are repo matches. Otherwise, it would get confusing
 	// because we might have a match of a repo *and* a file in the repo. We would need to avoid
-	// double-counting. In this case, we will just count the matching files.
+	// double-counting. In that case, we will just count the matching files.
 	hasNonRepoMatches := false
 	for _, res := range results {
 		if _, ok := res.ToRepository(); !ok {

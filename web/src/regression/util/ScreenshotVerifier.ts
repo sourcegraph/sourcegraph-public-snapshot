@@ -12,7 +12,7 @@ interface ExpectedScreenshot {
 export class ScreenshotVerifier {
     public screenshots: ExpectedScreenshot[]
     constructor(public driver: Driver) {
-        this.screenshots = []
+        that.screenshots = []
     }
 
     public async verifyScreenshot({

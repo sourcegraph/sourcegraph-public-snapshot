@@ -37,7 +37,7 @@ func TestZipCacheDelete(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf.Close() // don't block eviction of this zipFile
+	zf.Close() // don't block eviction of that zipFile
 
 	// Make sure it's there.
 	if n := s.ZipCache.count(); n != 1 {

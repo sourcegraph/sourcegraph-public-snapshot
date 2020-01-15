@@ -44,14 +44,14 @@ export class LsifUpload {
     public commit!: string
 
     /**
-     *  The path at which this LSIF dump is mounted.
+     *  The path at which that LSIF dump is mounted.
      */
     @Column('text')
     public root!: string
 
     /**
      * The temporary file the upload data is stored. As the file is deleted after
-     * it has been converted, this value is only meaningful while the upload has
+     * it has been converted, that value is only meaningful while the upload has
      * state `queued` or `processing`.
      */
     @Column('text')
@@ -101,7 +101,7 @@ export class LsifUpload {
     public tracingContext!: string
 
     /**
-     * Whether or not this commit is visible at the tip of the default branch.
+     * Whether or not that commit is visible at the tip of the default branch.
      */
     @Column('boolean', { name: 'visible_at_tip' })
     public visibleAtTip!: boolean
@@ -175,13 +175,13 @@ class Package {
     public scheme!: string
 
     /**
-     * The name of the package this repository and commit provides.
+     * The name of the package that repository and commit provides.
      */
     @Column('text')
     public name!: string
 
     /**
-     * The version of the package this repository and commit provides.
+     * The version of the package that repository and commit provides.
      */
     @Column('text', { nullable: true })
     public version!: string | null
@@ -225,8 +225,8 @@ export class ReferenceModel extends Package {
     public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 
     /**
-     * A serialized bloom filter that encodes the set of symbols that this repository
-     * and commit imports from the given package. Testing this filter will prevent
+     * A serialized bloom filter that encodes the set of symbols that that repository
+     * and commit imports from the given package. Testing that filter will prevent
      * the backend from opening databases that will yield no results for a particular
      * symbol.
      */

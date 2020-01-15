@@ -76,7 +76,7 @@ interface RepoRevContainerProps
     routePrefix: string
 
     /**
-     * The resolved rev or an error if it could not be resolved. This value lives in RepoContainer (this
+     * The resolved rev or an error if it could not be resolved. This value lives in RepoContainer (that
      * component's parent) but originates from this component.
      */
     resolvedRevOrError?: ResolvedRev | ErrorLike
@@ -98,18 +98,18 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const repoRevChanges = this.propsUpdates.pipe(
+        const repoRevChanges = that.propsUpdates.pipe(
             // Pick repoName and rev out of the props
             map(props => ({ repoName: props.repo.name, rev: props.rev })),
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
 
         // Fetch repository revision.
-        this.subscriptions.add(
+        that.subscriptions.add(
             repoRevChanges
                 .pipe(
                     // Reset resolved rev / error state
-                    tap(() => this.props.onResolvedRevOrError(undefined)),
+                    tap(() => that.props.onResolvedRevOrError(undefined)),
                     switchMap(({ repoName, rev }) =>
                         defer(() => resolveRev({ repoName, rev })).pipe(
                             // On a CloneInProgress error, retry after 1s
@@ -119,7 +119,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                         switch (error.code) {
                                             case ECLONEINPROGESS:
                                                 // Display cloning screen to the user and retry
-                                                this.props.onResolvedRevOrError(error)
+                                                that.props.onResolvedRevOrError(error)
                                                 return
                                             default:
                                                 // Display error to the user and do not retry
@@ -131,7 +131,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             ),
                             // Save any error in the sate to display to the user
                             catchError(error => {
-                                this.props.onResolvedRevOrError(error)
+                                that.props.onResolvedRevOrError(error)
                                 return []
                             })
                         )
@@ -139,7 +139,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 )
                 .subscribe(
                     resolvedRev => {
-                        this.props.onResolvedRevOrError(resolvedRev)
+                        that.props.onResolvedRevOrError(resolvedRev)
                     },
                     error => {
                         // Should never be reached because errors are caught above
@@ -148,31 +148,31 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 )
         )
 
-        this.propsUpdates.next(this.props)
+        that.propsUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.propsUpdates.next(this.props)
+        that.propsUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (!this.props.resolvedRevOrError) {
+        if (!that.props.resolvedRevOrError) {
             // Render nothing while loading
             return null
         }
 
-        if (isErrorLike(this.props.resolvedRevOrError)) {
+        if (isErrorLike(that.props.resolvedRevOrError)) {
             // Show error page
-            switch (this.props.resolvedRevOrError.code) {
+            switch (that.props.resolvedRevOrError.code) {
                 case ECLONEINPROGESS:
                     return (
                         <RepositoryCloningInProgressPage
-                            repoName={this.props.repo.name}
-                            progress={(this.props.resolvedRevOrError as CloneInProgressError).progress}
+                            repoName={that.props.repo.name}
+                            progress={(that.props.resolvedRevOrError as CloneInProgressError).progress}
                         />
                     )
                 case EREPONOTFOUND:
@@ -184,7 +184,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         />
                     )
                 case EREVNOTFOUND:
-                    if (!this.props.rev) {
+                    if (!that.props.rev) {
                         return <EmptyRepositoryPage />
                     }
 
@@ -200,29 +200,29 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         <HeroPage
                             icon={AlertCircleIcon}
                             title="Error"
-                            subtitle={upperFirst(this.props.resolvedRevOrError.message)}
+                            subtitle={upperFirst(that.props.resolvedRevOrError.message)}
                         />
                     )
             }
         }
 
         const context: RepoRevContainerContext = {
-            platformContext: this.props.platformContext,
-            extensionsController: this.props.extensionsController,
-            isLightTheme: this.props.isLightTheme,
-            telemetryService: this.props.telemetryService,
-            activation: this.props.activation,
-            repo: this.props.repo,
-            repoHeaderContributionsLifecycleProps: this.props.repoHeaderContributionsLifecycleProps,
-            resolvedRev: this.props.resolvedRevOrError,
-            rev: this.props.rev,
-            routePrefix: this.props.routePrefix,
-            authenticatedUser: this.props.authenticatedUser,
-            settingsCascade: this.props.settingsCascade,
-            patternType: this.props.patternType,
-            setPatternType: this.props.setPatternType,
-            repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
-            repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
+            platformContext: that.props.platformContext,
+            extensionsController: that.props.extensionsController,
+            isLightTheme: that.props.isLightTheme,
+            telemetryService: that.props.telemetryService,
+            activation: that.props.activation,
+            repo: that.props.repo,
+            repoHeaderContributionsLifecycleProps: that.props.repoHeaderContributionsLifecycleProps,
+            resolvedRev: that.props.resolvedRevOrError,
+            rev: that.props.rev,
+            routePrefix: that.props.routePrefix,
+            authenticatedUser: that.props.authenticatedUser,
+            settingsCascade: that.props.settingsCascade,
+            patternType: that.props.patternType,
+            setPatternType: that.props.setPatternType,
+            repoSettingsAreaRoutes: that.props.repoSettingsAreaRoutes,
+            repoSettingsSidebarItems: that.props.repoSettingsSidebarItems,
         }
 
         return (
@@ -234,10 +234,10 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     element={
                         <div className="d-flex align-items-center" key="repo-rev">
                             <span className="e2e-revision">
-                                {(this.props.rev && this.props.rev === this.props.resolvedRevOrError.commitID
-                                    ? this.props.resolvedRevOrError.commitID.slice(0, 7)
-                                    : this.props.rev) ||
-                                    this.props.resolvedRevOrError.defaultBranch ||
+                                {(that.props.rev && that.props.rev === that.props.resolvedRevOrError.commitID
+                                    ? that.props.resolvedRevOrError.commitID.slice(0, 7)
+                                    : that.props.rev) ||
+                                    that.props.resolvedRevOrError.defaultBranch ||
                                     'HEAD'}
                             </span>
                             <button type="button" id="repo-rev-popover" className="btn btn-link px-0">
@@ -245,26 +245,26 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             </button>
                             <UncontrolledPopover placement="bottom-start" target="repo-rev-popover" trigger="legacy">
                                 <RevisionsPopover
-                                    repo={this.props.repo.id}
-                                    repoName={this.props.repo.name}
-                                    defaultBranch={this.props.resolvedRevOrError.defaultBranch}
-                                    currentRev={this.props.rev}
-                                    currentCommitID={this.props.resolvedRevOrError.commitID}
-                                    history={this.props.history}
-                                    location={this.props.location}
+                                    repo={that.props.repo.id}
+                                    repoName={that.props.repo.name}
+                                    defaultBranch={that.props.resolvedRevOrError.defaultBranch}
+                                    currentRev={that.props.rev}
+                                    currentCommitID={that.props.resolvedRevOrError.commitID}
+                                    history={that.props.history}
+                                    location={that.props.location}
                                 />
                             </UncontrolledPopover>
                         </div>
                     }
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                    repoHeaderContributionsLifecycleProps={that.props.repoHeaderContributionsLifecycleProps}
                 />
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
-                    {this.props.routes.map(
+                    {that.props.routes.map(
                         ({ path, render, exact, condition = () => true }) =>
                             condition(context) && (
                                 <Route
-                                    path={this.props.routePrefix + path}
+                                    path={that.props.routePrefix + path}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     exact={exact}
                                     render={routeComponentProps => render({ ...context, ...routeComponentProps })}
@@ -275,8 +275,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 </Switch>
                 <RepoHeaderContributionPortal
                     position="left"
-                    element={<CopyLinkAction key="copy-link" location={this.props.location} />}
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                    element={<CopyLinkAction key="copy-link" location={that.props.location} />}
+                    repoHeaderContributionsLifecycleProps={that.props.repoHeaderContributionsLifecycleProps}
                 />
                 <RepoHeaderContributionPortal
                     position="right"
@@ -284,13 +284,13 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     element={
                         <GoToPermalinkAction
                             key="go-to-permalink"
-                            rev={this.props.rev}
-                            commitID={this.props.resolvedRevOrError.commitID}
-                            location={this.props.location}
-                            history={this.props.history}
+                            rev={that.props.rev}
+                            commitID={that.props.resolvedRevOrError.commitID}
+                            location={that.props.location}
+                            history={that.props.history}
                         />
                     }
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                    repoHeaderContributionsLifecycleProps={that.props.repoHeaderContributionsLifecycleProps}
                 />
             </div>
         )

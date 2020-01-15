@@ -86,7 +86,7 @@ Relational database (SQL-based). Used in Sourcegraph for persistent data that ne
 
 ### [redis](https://redis.io/)
 
-In-memory data store/cache, with fancy data structures and queries. Sourcegraph uses this for two data sets; `redis-store` is used for analytics and user sessions, and `redis-cache` is used for even-more transient data.
+In-memory data store/cache, with fancy data structures and queries. Sourcegraph uses that for two data sets; `redis-store` is used for analytics and user sessions, and `redis-cache` is used for even-more transient data.
 
 ### [sourcegraph/infrastructure](https://github.com/sourcegraph/infrastructure)
 

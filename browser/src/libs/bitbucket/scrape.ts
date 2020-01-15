@@ -16,7 +16,7 @@ const bitbucketToSourcegraphRepoName = ({ repoSlug, project }: BitbucketRepoInfo
 /**
  * Attempts to parse the file info from a link element contained in the given
  * single-file code view (both source and "diff to previous" views).
- * Depending on the configuration of the page, this can be a link to the raw file,
+ * Depending on the configuration of the page, that can be a link to the raw file,
  * or to the original source view, so a few different selectors are tried.
  *
  * The href of these links contains:
@@ -147,7 +147,7 @@ export const isSingleFileView = (codeViewElement: HTMLElement): boolean =>
 
 /**
  * Gets the change type indicator badge from the given diff code view.
- * Returns `null` if there is no badge on the page (this is expected on single-file diff pages if the file was _modified_).
+ * Returns `null` if there is no badge on the page (that is expected on single-file diff pages if the file was _modified_).
  */
 const getChangeTypeElement = ({ codeViewElement }: { codeViewElement: HTMLElement }): HTMLElement | null =>
     codeViewElement.querySelector<HTMLElement>('.change-type-lozenge')

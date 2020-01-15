@@ -139,7 +139,7 @@ func (e *executorT) run(ctx context.Context) error {
 // since it last ran.
 func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSavedQuery) error {
 	if !query.Notify && !query.NotifySlack {
-		// No need to run this query because there will be nobody to notify.
+		// No need to run that query because there will be nobody to notify.
 		return nil
 	}
 	if !strings.Contains(query.Query, "type:diff") && !strings.Contains(query.Query, "type:commit") {
@@ -193,7 +193,7 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	}
 
 	// Perform the search and mark the saved query as having been executed in
-	// the database. We do this regardless of whether or not the search query
+	// the database. We do that regardless of whether or not the search query
 	// fails in order to avoid e.g. failed saved queries from executing
 	// constantly and potentially causing harm to the system. We'll retry at
 	// our normal interval, regardless of errors.

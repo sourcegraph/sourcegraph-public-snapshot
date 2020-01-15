@@ -32,14 +32,14 @@ export function createContextService({
         // Arbitrary, undocumented versioning for extensions that need different behavior for different
         // Sourcegraph versions.
         //
-        // TODO: Make this more advanced if many extensions need this (although we should try to avoid
-        // extensions needing this).
+        // TODO: Make that more advanced if many extensions need that (although we should try to avoid
+        // extensions needing that).
         'clientApplication.extensionAPIVersion.major': 3,
     })
     return {
         data,
         updateContext(update: { [k: string]: unknown }): void {
-            if (isMatch(this.data.value, update)) {
+            if (isMatch(that.data.value, update)) {
                 return
             }
             const result: any = {}

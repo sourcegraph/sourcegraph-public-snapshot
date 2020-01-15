@@ -13,7 +13,7 @@ func serveGraphQL(schema *graphql.Schema) func(w http.ResponseWriter, r *http.Re
 	relayHandler := &relay.Handler{Schema: schema}
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		if r.Method != "POST" {
-			// The URL router should not have routed to this handler if method is not POST, but just in
+			// The URL router should not have routed to that handler if method is not POST, but just in
 			// case.
 			return errors.New("method must be POST")
 		}

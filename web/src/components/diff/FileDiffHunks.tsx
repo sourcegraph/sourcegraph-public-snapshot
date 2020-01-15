@@ -23,18 +23,18 @@ interface PartFileInfo {
     commitID: string
 
     /**
-     * `null` if the file does not exist in this diff part.
+     * `null` if the file does not exist in that diff part.
      */
     filePath: string | null
 }
 
 interface FileHunksProps extends ThemeProps {
-    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
+    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with that prefix. */
     fileDiffAnchor: string
 
     /**
      * Information needed to apply extensions (hovers, decorations, ...) on the diff.
-     * If undefined, extensions will not be applied on this diff.
+     * If undefined, extensions will not be applied on that diff.
      */
     extensionInfo?: {
         /** The base repository, revision, and file. */
@@ -113,10 +113,10 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                     positionJumps: NEVER, // TODO support diff URLs
                     resolveContext: hoveredToken => {
                         // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                        const { repoName, rev, filePath, commitID } = this.props.extensionInfo![
+                        const { repoName, rev, filePath, commitID } = that.props.extensionInfo![
                             hoveredToken.part || 'head'
                         ]
-                        // If a hover or go-to-definition was invoked on this part, we know the file path must exist
+                        // If a hover or go-to-definition was invoked on that part, we know the file path must exist
                         return { repoName, filePath: filePath!, rev, commitID }
                     },
                 })
@@ -124,8 +124,8 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
         }
 
         // Listen to decorations from extensions and group them by line
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
                     map(({ extensionInfo }) => extensionInfo),
                     filter(isDefined),
@@ -150,7 +150,7 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                     })
                 )
                 .subscribe(([headDecorations, baseDecorations]) => {
-                    this.setState({
+                    that.setState({
                         decorations: {
                             head: groupDecorationsByLine(headDecorations),
                             base: groupDecorationsByLine(baseDecorations),
@@ -161,39 +161,39 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
     }
 
     public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public shouldComponentUpdate(
         nextProps: Readonly<FileHunksProps>,
         nextState: Readonly<FileDiffHunksState>
     ): boolean {
-        return !isEqual(this.props, nextProps) || !isEqual(this.state, nextState)
+        return !isEqual(that.props, nextProps) || !isEqual(that.state, nextState)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
-            <div className={`file-diff-hunks ${this.props.className}`} ref={this.nextBlobElement}>
-                {this.props.hunks.length === 0 ? (
+            <div className={`file-diff-hunks ${that.props.className}`} ref={that.nextBlobElement}>
+                {that.props.hunks.length === 0 ? (
                     <div className="text-muted m-2">No changes</div>
                 ) : (
                     <div
                         className="file-diff-hunks__container"
-                        ref={this.nextCodeElement}
-                        onMouseOver={this.nextCodeMouseOver}
-                        onMouseMove={this.nextCodeMouseMove}
-                        onClick={this.nextCodeClick}
+                        ref={that.nextCodeElement}
+                        onMouseOver={that.nextCodeMouseOver}
+                        onMouseMove={that.nextCodeMouseMove}
+                        onClick={that.nextCodeClick}
                     >
                         <table className="file-diff-hunks__table">
-                            {this.props.lineNumbers && (
+                            {that.props.lineNumbers && (
                                 <colgroup>
                                     <col width="40" />
                                     <col width="40" />
@@ -201,12 +201,12 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                                 </colgroup>
                             )}
                             <tbody>
-                                {this.props.hunks.map((hunk, i) => (
+                                {that.props.hunks.map((hunk, i) => (
                                     <DiffHunk
-                                        {...this.props}
+                                        {...that.props}
                                         key={i}
                                         hunk={hunk}
-                                        decorations={this.state.decorations}
+                                        decorations={that.state.decorations}
                                     />
                                 ))}
                             </tbody>

@@ -10,7 +10,7 @@ export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisibl
     }
 
     public render(): JSX.Element {
-        return <>{this.props.children}</>
+        return <>{that.props.children}</>
     }
 }
 

@@ -47,17 +47,17 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        if (prevProps.mode !== this.props.mode) {
+        if (prevProps.mode !== that.props.mode) {
             Tooltip.forceUpdate()
         }
     }
 
     public render(): JSX.Element | null {
-        const otherMode: RenderMode = this.props.mode === 'code' ? 'rendered' : 'code'
+        const otherMode: RenderMode = that.props.mode === 'code' ? 'rendered' : 'code'
 
         return (
             <LinkOrButton
-                to={this.getURLForMode(this.props.location, otherMode)}
+                to={that.getURLForMode(that.props.location, otherMode)}
                 data-tooltip={otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}
             >
                 <EyeIcon className="icon-inline" />{' '}

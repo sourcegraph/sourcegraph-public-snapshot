@@ -67,7 +67,7 @@ func newLogoutRequest(p *provider) (*etree.Document, error) {
 	root := doc.Root()
 	root.Tag = "LogoutRequest"
 	// TODO(sqs): This assumes SSO URL == SLO URL (i.e., the same endpoint is used for signin and
-	// logout). To fix this, use `root.SelectAttr("Destination").Value = "..."`.
+	// logout). To fix that, use `root.SelectAttr("Destination").Value = "..."`.
 	if t := root.FindElement("//samlp:NameIDPolicy"); t != nil {
 		root.RemoveChild(t)
 	}

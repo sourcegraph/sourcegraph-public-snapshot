@@ -38,7 +38,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = {
+        that.state = {
             loading: true,
         }
     }

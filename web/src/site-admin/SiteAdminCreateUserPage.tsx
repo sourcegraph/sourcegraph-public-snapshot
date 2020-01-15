@@ -44,11 +44,11 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminCreateUser')
 
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     tap(() =>
-                        this.setState({
+                        that.setState({
                             createUserResult: undefined,
                             loading: true,
                             errorDescription: undefined,
@@ -58,7 +58,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                         createUser(username, email).pipe(
                             catchError(error => {
                                 console.error(error)
-                                this.setState({
+                                that.setState({
                                     createUserResult: undefined,
                                     loading: false,
                                     errorDescription: error.message,
@@ -70,7 +70,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                 )
                 .subscribe(
                     createUserResult =>
-                        this.setState({
+                        that.setState({
                             loading: false,
                             errorDescription: undefined,
                             createUserResult,
@@ -81,7 +81,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -99,15 +99,15 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                     For information about configuring SSO authentication, see{' '}
                     <Link to="/help/admin/auth">User authentication</Link> in the Sourcegraph documentation.
                 </p>
-                {this.state.createUserResult ? (
+                {that.state.createUserResult ? (
                     <div className="alert alert-success">
                         <p>
-                            Account created for <strong>{this.state.username}</strong>.
+                            Account created for <strong>{that.state.username}</strong>.
                         </p>
-                        {this.state.createUserResult.resetPasswordURL !== null ? (
+                        {that.state.createUserResult.resetPasswordURL !== null ? (
                             <>
-                                <p>You must manually send this password reset link to the new user:</p>
-                                <CopyableText text={this.state.createUserResult.resetPasswordURL} size={40} />
+                                <p>You must manually send that password reset link to the new user:</p>
+                                <CopyableText text={that.state.createUserResult.resetPasswordURL} size={40} />
                             </>
                         ) : (
                             <p>The user must authenticate using a configured authentication provider.</p>
@@ -115,22 +115,22 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                         <button
                             type="button"
                             className="btn btn-primary mt-2"
-                            onClick={this.dismissAlert}
+                            onClick={that.dismissAlert}
                             autoFocus={true}
                         >
                             Create another user
                         </button>
                     </div>
                 ) : (
-                    <Form onSubmit={this.onSubmit} className="site-admin-create-user-page__form">
+                    <Form onSubmit={that.onSubmit} className="site-admin-create-user-page__form">
                         <div className="form-group site-admin-create-user-page__form-group">
                             <label htmlFor="site-admin-create-user-page__form-username">Username</label>
                             <UsernameInput
                                 id="site-admin-create-user-page__form-username"
-                                onChange={this.onUsernameFieldChange}
-                                value={this.state.username}
+                                onChange={that.onUsernameFieldChange}
+                                value={that.state.username}
                                 required={true}
-                                disabled={this.state.loading}
+                                disabled={that.state.loading}
                                 autoFocus={true}
                             />
                             <small className="form-text text-muted">
@@ -142,19 +142,19 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                             <label htmlFor="site-admin-create-user-page__form-email">Email</label>
                             <EmailInput
                                 id="site-admin-create-user-page__form-email"
-                                onChange={this.onEmailFieldChange}
-                                value={this.state.email}
-                                disabled={this.state.loading}
+                                onChange={that.onEmailFieldChange}
+                                value={that.state.email}
+                                disabled={that.state.loading}
                                 aria-describedby="site-admin-create-user-page__form-email-help"
                             />
                             <small id="site-admin-create-user-page__form-email-help" className="form-text text-muted">
                                 Optional verified email for the user.
                             </small>
                         </div>
-                        {this.state.errorDescription && (
-                            <ErrorAlert className="my-2" error={this.state.errorDescription} />
+                        {that.state.errorDescription && (
+                            <ErrorAlert className="my-2" error={that.state.errorDescription} />
                         )}
-                        <button className="btn btn-primary" disabled={this.state.loading} type="submit">
+                        <button className="btn btn-primary" disabled={that.state.loading} type="submit">
                             {window.context.resetPasswordEnabled
                                 ? 'Create account & generate password reset link'
                                 : 'Create account'}
@@ -166,21 +166,21 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
     }
 
     private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ email: e.target.value, errorDescription: undefined })
+        that.setState({ email: e.target.value, errorDescription: undefined })
     }
 
     private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ username: e.target.value, errorDescription: undefined })
+        that.setState({ username: e.target.value, errorDescription: undefined })
     }
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         event.stopPropagation()
-        this.submits.next({ username: this.state.username, email: this.state.email })
+        that.submits.next({ username: that.state.username, email: that.state.email })
     }
 
     private dismissAlert = (): void =>
-        this.setState({
+        that.setState({
             createUserResult: undefined,
             errorDescription: undefined,
             username: '',

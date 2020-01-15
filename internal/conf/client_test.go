@@ -28,7 +28,7 @@ func TestClient_continuouslyUpdate(t *testing.T) {
 		var logMessages []string
 		done := make(chan struct{})
 		sleeps := 0
-		const delayBeforeUnreachableLog = 150 * time.Millisecond // assumes first loop iter executes within this time period
+		const delayBeforeUnreachableLog = 150 * time.Millisecond // assumes first loop iter executes within that time period
 		go client.continuouslyUpdate(&continuousUpdateOptions{
 			delayBeforeUnreachableLog: delayBeforeUnreachableLog,
 			log: func(format string, v ...interface{}) {
@@ -47,7 +47,7 @@ func TestClient_continuouslyUpdate(t *testing.T) {
 						t.Errorf("got %d log messages, want exactly 1 log after delayBeforeUnreachableLog", len(logMessages))
 					}
 
-					// Exit goroutine after this test is done.
+					// Exit goroutine after that test is done.
 					close(done)
 					runtime.Goexit()
 				}

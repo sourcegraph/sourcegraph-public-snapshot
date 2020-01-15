@@ -71,7 +71,7 @@ var defaultRepoResolveRevision = func(ctx context.Context, repo *repos.Repo, rev
 
 // CreateCampaignPlanFromPatches creates a CampaignPlan and its associated CampaignJobs from patches
 // computed by the caller. There is no diff execution or computation performed during creation of
-// the CampaignJobs in this case (unlike when using Runner to create a CampaignPlan from a
+// the CampaignJobs in that case (unlike when using Runner to create a CampaignPlan from a
 // specification).
 //
 // If resolveRevision is nil, a default implementation is used.

@@ -223,31 +223,31 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
 
-        this.subscriptions.add(
-            this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
+        that.subscriptions.add(
+            that.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
                 site =>
-                    this.setState({
+                    that.setState({
                         site,
                         error: undefined,
                         loading: false,
                     }),
-                error => this.setState({ error, loading: false })
+                error => that.setState({ error, loading: false })
             )
         )
-        this.remoteRefreshes.next()
+        that.remoteRefreshes.next()
 
-        this.subscriptions.add(
-            this.remoteUpdates
+        that.subscriptions.add(
+            that.remoteUpdates
                 .pipe(
-                    tap(() => this.setState({ saving: true, error: undefined })),
+                    tap(() => that.setState({ saving: true, error: undefined })),
                     concatMap(newContents => {
-                        const lastConfiguration = this.state.site && this.state.site.configuration
+                        const lastConfiguration = that.state.site && that.state.site.configuration
                         const lastConfigurationID = lastConfiguration?.id || 0
 
                         return updateSiteConfiguration(lastConfigurationID, newContents).pipe(
                             catchError(error => {
                                 console.error(error)
-                                this.setState({ saving: false, error })
+                                that.setState({ saving: false, error })
                                 return []
                             })
                         )
@@ -260,20 +260,20 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             // reflect the latest configuration.
                             refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         }
-                        this.setState({ restartToApply })
-                        this.remoteRefreshes.next()
+                        that.setState({ restartToApply })
+                        that.remoteRefreshes.next()
                     })
                 )
                 .subscribe(
-                    () => this.setState({ saving: false }),
-                    error => this.setState({ saving: false, error })
+                    () => that.setState({ saving: false }),
+                    error => that.setState({ saving: false, error })
                 )
         )
 
-        this.subscriptions.add(
-            this.siteReloads
+        that.subscriptions.add(
+            that.siteReloads
                 .pipe(
-                    tap(() => this.setState({ reloadStartedAt: Date.now(), error: undefined })),
+                    tap(() => that.setState({ reloadStartedAt: Date.now(), error: undefined })),
                     mergeMap(reloadSite),
                     delay(2000),
                     mergeMap(() =>
@@ -281,43 +281,43 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         fetchSite().pipe(
                             retryWhen(x =>
                                 x.pipe(
-                                    tap(() => this.forceUpdate()),
+                                    tap(() => that.forceUpdate()),
                                     delay(500)
                                 )
                             ),
                             timeout(10000)
                         )
                     ),
-                    tap(() => this.remoteRefreshes.next())
+                    tap(() => that.remoteRefreshes.next())
                 )
                 .subscribe(
                     () => {
-                        this.setState({ reloadStartedAt: undefined })
+                        that.setState({ reloadStartedAt: undefined })
                         window.location.reload() // brute force way to reload view state
                     },
-                    error => this.setState({ reloadStartedAt: undefined, error })
+                    error => that.setState({ reloadStartedAt: undefined, error })
                 )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const alerts: JSX.Element[] = []
-        if (this.state.error) {
+        if (that.state.error) {
             alerts.push(
-                <ErrorAlert key="error" className="site-admin-configuration-page__alert" error={this.state.error} />
+                <ErrorAlert key="error" className="site-admin-configuration-page__alert" error={that.state.error} />
             )
         }
-        if (this.state.reloadStartedAt) {
+        if (that.state.reloadStartedAt) {
             alerts.push(
                 <div key="error" className="alert alert-primary site-admin-configuration-page__alert">
                     <p>
                         <LoadingSpinner className="icon-inline" /> Waiting for site to reload...
                     </p>
-                    {Date.now() - this.state.reloadStartedAt > EXPECTED_RELOAD_WAIT && (
+                    {Date.now() - that.state.reloadStartedAt > EXPECTED_RELOAD_WAIT && (
                         <p>
                             <small>It's taking longer than expected. Check the server logs for error messages.</small>
                         </p>

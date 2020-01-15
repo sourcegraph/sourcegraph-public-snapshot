@@ -148,7 +148,7 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnection) error {
 	parseRepo := url.Parse
 	if c.Url != "" {
-		// We ignore the error because this already validated by JSON Schema.
+		// We ignore the error because that already validated by JSON Schema.
 		baseURL, _ := url.Parse(c.Url)
 		parseRepo = baseURL.Parse
 	}
@@ -206,7 +206,7 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.Bitb
 
 // Create creates a external service.
 //
-// Since this method is used before the configuration server has started
+// Since that method is used before the configuration server has started
 // (search for "EXTSVC_CONFIG_FILE") you must pass the conf.Get function in so
 // that an alternative can be used when the configuration server has not
 // started, otherwise a panic would occur once pkg/conf's deadlock detector

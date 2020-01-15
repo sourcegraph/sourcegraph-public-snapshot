@@ -206,9 +206,9 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
         // submitted the form.
         const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b || (!a && !b)
         const stateDiffers =
-            !equalOrEmpty(this.state.revisionRange, revisionRange) ||
-            !equalOrEmpty(this.state.after, after) ||
-            !equalOrEmpty(this.state.path, path)
+            !equalOrEmpty(that.state.revisionRange, revisionRange) ||
+            !equalOrEmpty(that.state.after, after) ||
+            !equalOrEmpty(that.state.path, path)
 
         return (
             <div className="repository-stats-page">
@@ -216,7 +216,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                 <div className="card repository-stats-page__card repository-stats-page__card--form">
                     <div className="card-header">Contributions filter</div>
                     <div className="card-body">
-                        <Form onSubmit={this.onSubmit}>
+                        <Form onSubmit={that.onSubmit}>
                             <div className="repository-stats-page__row form-inline">
                                 <div className="input-group mb-2 mr-sm-2">
                                     <div className="input-group-prepend">
@@ -233,43 +233,43 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         name="after"
                                         size={12}
                                         id={RepositoryStatsContributorsPage.AFTER_INPUT_ID}
-                                        value={this.state.after || ''}
+                                        value={that.state.after || ''}
                                         placeholder="All time"
-                                        onChange={this.onChange}
+                                        onChange={that.onChange}
                                     />
                                     <div className="input-group-append">
                                         <div className="btn-group">
                                             <button
                                                 type="button"
                                                 className={`btn btn-secondary ${
-                                                    this.state.after === '7 days ago' ? 'active' : ''
+                                                    that.state.after === '7 days ago' ? 'active' : ''
                                                 } repository-stats-page__btn-no-left-rounded-corners`}
-                                                onClick={() => this.setStateAfterAndSubmit('7 days ago')}
+                                                onClick={() => that.setStateAfterAndSubmit('7 days ago')}
                                             >
                                                 Last 7 days
                                             </button>
                                             <button
                                                 type="button"
                                                 className={`btn btn-secondary ${
-                                                    this.state.after === '30 days ago' ? 'active' : ''
+                                                    that.state.after === '30 days ago' ? 'active' : ''
                                                 }`}
-                                                onClick={() => this.setStateAfterAndSubmit('30 days ago')}
+                                                onClick={() => that.setStateAfterAndSubmit('30 days ago')}
                                             >
                                                 Last 30 days
                                             </button>
                                             <button
                                                 type="button"
                                                 className={`btn btn-secondary ${
-                                                    this.state.after === '1 year ago' ? 'active' : ''
+                                                    that.state.after === '1 year ago' ? 'active' : ''
                                                 }`}
-                                                onClick={() => this.setStateAfterAndSubmit('1 year ago')}
+                                                onClick={() => that.setStateAfterAndSubmit('1 year ago')}
                                             >
                                                 Last year
                                             </button>
                                             <button
                                                 type="button"
-                                                className={`btn btn-secondary ${!this.state.after ? 'active' : ''}`}
-                                                onClick={() => this.setStateAfterAndSubmit(null)}
+                                                className={`btn btn-secondary ${!that.state.after ? 'active' : ''}`}
+                                                onClick={() => that.setStateAfterAndSubmit(null)}
                                             >
                                                 All time
                                             </button>
@@ -293,9 +293,9 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         name="revision-range"
                                         size={18}
                                         id={RepositoryStatsContributorsPage.REVISION_RANGE_INPUT_ID}
-                                        value={this.state.revisionRange || ''}
+                                        value={that.state.revisionRange || ''}
                                         placeholder="Default branch"
-                                        onChange={this.onChange}
+                                        onChange={that.onChange}
                                         autoCapitalize="off"
                                         autoCorrect="off"
                                         autoComplete="off"
@@ -317,9 +317,9 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         name="path"
                                         size={18}
                                         id={RepositoryStatsContributorsPage.PATH_INPUT_ID}
-                                        value={this.state.path || ''}
+                                        value={that.state.path || ''}
                                         placeholder="All files"
-                                        onChange={this.onChange}
+                                        onChange={that.onChange}
                                         autoCapitalize="off"
                                         autoCorrect="off"
                                         autoComplete="off"
@@ -331,7 +331,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         <button type="submit" className="btn btn-primary mr-2 mt-2">
                                             Update
                                         </button>
-                                        <button type="reset" className="btn btn-secondary mt-2" onClick={this.onCancel}>
+                                        <button type="reset" className="btn btn-secondary mt-2" onClick={that.onCancel}>
                                             Cancel
                                         </button>
                                     </div>
@@ -344,21 +344,21 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                     listClassName="list-group list-group-flush"
                     noun="contributor"
                     pluralNoun="contributors"
-                    queryConnection={this.queryRepositoryContributors}
+                    queryConnection={that.queryRepositoryContributors}
                     nodeComponent={RepositoryContributorNode}
                     nodeComponentProps={{
-                        repoName: this.props.repo.name,
+                        repoName: that.props.repo.name,
                         revisionRange,
                         after,
                         path,
-                        patternType: this.props.patternType,
+                        patternType: that.props.patternType,
                     }}
                     defaultFirst={20}
                     hideSearch={true}
                     useURLQuery={false}
-                    updates={this.specChanges}
-                    history={this.props.history}
-                    location={this.props.location}
+                    updates={that.specChanges}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
@@ -367,36 +367,36 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
         switch (e.currentTarget.id) {
             case RepositoryStatsContributorsPage.REVISION_RANGE_INPUT_ID:
-                this.setState({ revisionRange: e.currentTarget.value })
+                that.setState({ revisionRange: e.currentTarget.value })
                 return
 
             case RepositoryStatsContributorsPage.AFTER_INPUT_ID:
-                this.setState({ after: e.currentTarget.value })
+                that.setState({ after: e.currentTarget.value })
                 return
 
             case RepositoryStatsContributorsPage.PATH_INPUT_ID:
-                this.setState({ path: e.currentTarget.value })
+                that.setState({ path: e.currentTarget.value })
                 return
         }
     }
 
     private onSubmit: React.FormEventHandler<HTMLFormElement> = e => {
         e.preventDefault()
-        this.props.history.push({ search: this.urlQuery(this.state) })
+        that.props.history.push({ search: that.urlQuery(that.state) })
     }
 
     private onCancel: React.MouseEventHandler<HTMLButtonElement> = e => {
         e.preventDefault()
-        this.setState(this.getDerivedProps())
+        that.setState(that.getDerivedProps())
     }
 
     private queryRepositoryContributors = (args: {
         first?: number
     }): Observable<GQL.IRepositoryContributorConnection> => {
-        const { revisionRange, after, path } = this.getDerivedProps()
+        const { revisionRange, after, path } = that.getDerivedProps()
         return queryRepositoryContributors({
             ...args,
-            repo: this.props.repo.id,
+            repo: that.props.repo.id,
             revisionRange: revisionRange || undefined,
             after: after || undefined,
             path: path || undefined,
@@ -418,6 +418,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
     }
 
     private setStateAfterAndSubmit(after: string | null): void {
-        this.setState({ after }, () => this.props.history.push({ search: this.urlQuery(this.state) }))
+        that.setState({ after }, () => that.props.history.push({ search: that.urlQuery(that.state) }))
     }
 }

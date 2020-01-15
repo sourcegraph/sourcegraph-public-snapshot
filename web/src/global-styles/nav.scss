@@ -8,7 +8,7 @@ $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) tran
 @import 'bootstrap/scss/nav';
 @import 'bootstrap/scss/navbar';
 
-// Ensure that tabs are all the same height, regardless of whether they have an icon. Without this,
+// Ensure that tabs are all the same height, regardless of whether they have an icon. Without that,
 // tabs with an icon are 38px and tabs without an icon are 37.5px, which causes tabs without an icon
 // to have an undesirable bottom border when active.
 .nav-tabs > .nav-item > .nav-link {

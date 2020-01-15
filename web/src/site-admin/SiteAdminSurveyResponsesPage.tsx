@@ -20,7 +20,7 @@ import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
 
 interface SurveyResponseNodeProps {
     /**
-     * The survey response to display in this list item.
+     * The survey response to display in that list item.
      */
     node: GQL.ISurveyResponse
 }
@@ -49,33 +49,33 @@ class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, Su
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <strong>
-                            {this.props.node.user ? (
-                                <Link to={userURL(this.props.node.user.username)}>{this.props.node.user.username}</Link>
-                            ) : this.props.node.email ? (
-                                this.props.node.email
+                            {that.props.node.user ? (
+                                <Link to={userURL(that.props.node.user.username)}>{that.props.node.user.username}</Link>
+                            ) : that.props.node.email ? (
+                                that.props.node.email
                             ) : (
                                 'anonymous user'
                             )}
                         </strong>
-                        <ScoreBadge score={this.props.node.score} />
+                        <ScoreBadge score={that.props.node.score} />
                     </div>
                     <div>
-                        <Timestamp date={this.props.node.createdAt} />
+                        <Timestamp date={that.props.node.createdAt} />
                     </div>
                 </div>
-                {(this.props.node.reason || this.props.node.better) && (
+                {(that.props.node.reason || that.props.node.better) && (
                     <dl className="mt-3">
-                        {this.props.node.reason && this.props.node.reason !== '' && (
+                        {that.props.node.reason && that.props.node.reason !== '' && (
                             <>
                                 <dt>What is the most important reason for the score you gave Sourcegraph?</dt>
-                                <dd>{this.props.node.reason}</dd>
+                                <dd>{that.props.node.reason}</dd>
                             </>
                         )}
-                        {this.props.node.reason && this.props.node.better && <div className="mt-2" />}
-                        {this.props.node.better && this.props.node.better !== '' && (
+                        {that.props.node.reason && that.props.node.better && <div className="mt-2" />}
+                        {that.props.node.better && that.props.node.better !== '' && (
                             <>
                                 <dt>What could Sourcegraph do to provide a better product?</dt>
-                                <dd>{this.props.node.better}</dd>
+                                <dd>{that.props.node.better}</dd>
                             </>
                         )}
                     </dl>
@@ -98,7 +98,7 @@ const UserSurveyResponsesHeader: React.FunctionComponent<{ nodes: GQL.IUser[] }>
 
 interface UserSurveyResponseNodeProps {
     /**
-     * The survey response to display in this list item.
+     * The survey response to display in that list item.
      */
     node: GQL.IUser
 }
@@ -112,21 +112,21 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
         displayAll: false,
     }
 
-    private showMoreClicked = (): void => this.setState(state => ({ displayAll: !state.displayAll }))
+    private showMoreClicked = (): void => that.setState(state => ({ displayAll: !state.displayAll }))
 
     public render(): JSX.Element | null {
-        const responses = this.props.node.surveyResponses
+        const responses = that.props.node.surveyResponses
         return (
             <>
                 <tr>
                     <td>
                         <strong>
-                            <Link to={userURL(this.props.node.username)}>{this.props.node.username}</Link>
+                            <Link to={userURL(that.props.node.username)}>{that.props.node.username}</Link>
                         </strong>
                     </td>
                     <td>
-                        {this.props.node.usageStatistics && this.props.node.usageStatistics.lastActiveTime ? (
-                            <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
+                        {that.props.node.usageStatistics && that.props.node.usageStatistics.lastActiveTime ? (
+                            <Timestamp date={that.props.node.usageStatistics.lastActiveTime} />
                         ) : (
                             '?'
                         )}
@@ -143,13 +143,13 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                     </td>
                     <td>
                         {responses.length > 0 && (
-                            <button type="button" className="btn btn-sm btn-secondary" onClick={this.showMoreClicked}>
-                                {this.state.displayAll ? 'Hide' : 'See all'}
+                            <button type="button" className="btn btn-sm btn-secondary" onClick={that.showMoreClicked}>
+                                {that.state.displayAll ? 'Hide' : 'See all'}
                             </button>
                         )}
                     </td>
                 </tr>
-                {this.state.displayAll && (
+                {that.state.displayAll && (
                     <tr>
                         <td colSpan={4}>
                             {responses.map((response, i) => (
@@ -195,38 +195,38 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
     public state: SiteAdminSurveyResponsesSummaryState = {}
     constructor(props: {}) {
         super(props)
-        this.subscriptions.add(fetchSurveyResponseAggregates().subscribe(summary => this.setState({ summary })))
+        that.subscriptions.add(fetchSurveyResponseAggregates().subscribe(summary => that.setState({ summary })))
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.summary) {
+        if (!that.state.summary) {
             return null
         }
-        const anyResults = this.state.summary.last30DaysCount > 0
-        let npsText = `${this.state.summary.netPromoterScore}`
-        if (this.state.summary.netPromoterScore > 0) {
+        const anyResults = that.state.summary.last30DaysCount > 0
+        let npsText = `${that.state.summary.netPromoterScore}`
+        if (that.state.summary.netPromoterScore > 0) {
             npsText = `+${npsText}`
-        } else if (this.state.summary.netPromoterScore < 0) {
+        } else if (that.state.summary.netPromoterScore < 0) {
             npsText = `${npsText}`
         }
         const npsClass =
-            this.state.summary.netPromoterScore > 0
+            that.state.summary.netPromoterScore > 0
                 ? 'text-success'
-                : this.state.summary.netPromoterScore < 0
+                : that.state.summary.netPromoterScore < 0
                 ? 'text-danger'
                 : 'text-info'
-        const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
+        const roundAvg = Math.round(that.state.summary.averageScore * 10) / 10
         return (
             <div className="msite-admin-survey-responses-summary mb-2">
                 <h3>Summary</h3>
                 <div className="site-admin-survey-responses-summary__container">
                     <SingleValueCard
                         className="site-admin-survey-responses-summary__item"
-                        value={this.state.summary.last30DaysCount}
+                        value={that.state.summary.last30DaysCount}
                         title="Number of submissions"
                         subTitle="Last 30 days"
                     />
@@ -262,7 +262,7 @@ class FilteredSurveyResponseConnection extends FilteredConnection<GQL.ISurveyRes
 class FilteredUserSurveyResponseConnection extends FilteredConnection<GQL.IUser, {}> {}
 
 /**
- * A page displaying the survey responses on this site.
+ * A page displaying the survey responses on that site.
  */
 export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> {
     public state: State = {}
@@ -306,8 +306,8 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
                         pluralNoun="survey responses"
                         queryConnection={fetchAllSurveyResponses}
                         nodeComponent={SurveyResponseNode}
-                        history={this.props.history}
-                        location={this.props.location}
+                        history={that.props.history}
+                        location={that.props.location}
                     />
                     <FilteredUserSurveyResponseConnection
                         key="by-user"
@@ -320,8 +320,8 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
                         pluralNoun="users"
                         queryConnection={fetchAllUsersWithSurveyResponses}
                         nodeComponent={UserSurveyResponseNode}
-                        history={this.props.history}
-                        location={this.props.location}
+                        history={that.props.history}
+                        location={that.props.location}
                     />
                 </TabsWithLocalStorageViewStatePersistence>
             </div>

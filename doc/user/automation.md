@@ -30,7 +30,7 @@ Manual campaigns keep track of existing changesets from various code hosts. You 
 
 We currently offer search and replace functionality using [Comby](https://comby.dev), which is a tailored solution for syntactic, lint-like code changes (if you're interested in general text or regex search and replace then stay tuned, it's in the works!)
 
-> Run Comby across all of your repositories that match a specified scope query. Currently GitHub and Bitbucket Server are supported Codehosts for this campaign type. Other repositories **won't** be matched by the `scopeQuery` parameter. Also, a maximum of 200 repositories applies at this time.
+> Run Comby across all of your repositories that match a specified scope query. Currently GitHub and Bitbucket Server are supported Codehosts for that campaign type. Other repositories **won't** be matched by the `scopeQuery` parameter. Also, a maximum of 200 repositories applies at this time.
 
 Parameters:
 

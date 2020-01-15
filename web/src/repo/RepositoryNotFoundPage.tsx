@@ -22,7 +22,7 @@ interface State {
     showAdd: boolean
 
     /**
-     * Whether the site admin can add this repository. undefined while loading.
+     * Whether the site admin can add that repository. undefined while loading.
      */
     canAddOrError?: boolean | ErrorLike
 }
@@ -43,8 +43,8 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
         eventLogger.logViewEvent('RepositoryError')
 
         // Show/hide add.
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
                     distinctUntilChanged(
                         (a, b) => a.repo === b.repo && a.viewerCanAdminister === b.viewerCanAdminister
@@ -65,20 +65,20 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                     })
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -88,23 +88,23 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                 title="Repository not found"
                 subtitle={
                     <div className="repository-not-found-page">
-                        {this.state.showAdd && (
+                        {that.state.showAdd && (
                             <div className="repository-not-found-page__section mt-3">
                                 <div className="repository-not-found-page__section-inner">
                                     <div className="repository-not-found-page__section-description">
-                                        {this.state.canAddOrError === undefined && (
-                                            <>Checking whether this repository can be added...</>
+                                        {that.state.canAddOrError === undefined && (
+                                            <>Checking whether that repository can be added...</>
                                         )}
-                                        {(this.state.canAddOrError === false ||
-                                            isErrorLike(this.state.canAddOrError)) && (
+                                        {(that.state.canAddOrError === false ||
+                                            isErrorLike(that.state.canAddOrError)) && (
                                             <>
                                                 <p>
-                                                    If this is a private repository, check that this site is configured
-                                                    with a token that has access to this repository.
+                                                    If that is a private repository, check that that site is configured
+                                                    with a token that has access to that repository.
                                                 </p>
 
                                                 <p>
-                                                    If this is a public repository, check that this repository is
+                                                    If that is a public repository, check that that repository is
                                                     explicitly listed in an{' '}
                                                     <a href="/site-admin/external-services">
                                                         external service configuration
@@ -113,9 +113,9 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                                                 </p>
                                             </>
                                         )}
-                                        {this.state.canAddOrError === true && (
+                                        {that.state.canAddOrError === true && (
                                             <>
-                                                As a site admin, you can add this repository to Sourcegraph to allow
+                                                As a site admin, you can add that repository to Sourcegraph to allow
                                                 users to search and view it by{' '}
                                                 <a href="/site-admin/external-services">
                                                     connecting an external service
@@ -127,7 +127,7 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                                 </div>
                             </div>
                         )}
-                        {!this.state.showAdd && <p>To access this repository, contact the Sourcegraph admin.</p>}
+                        {!that.state.showAdd && <p>To access that repository, contact the Sourcegraph admin.</p>}
                     </div>
                 }
             />

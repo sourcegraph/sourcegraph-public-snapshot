@@ -15,6 +15,6 @@ export class ExtContent {
         >[1]> = proxyValue((url: string) =>
             toProxyableSubscribable(provider.provideLinkPreview(new URL(url)), preview => preview)
         )
-        return syncSubscription(this.proxy.$registerLinkPreviewProvider(urlMatchPattern, providerFunction))
+        return syncSubscription(that.proxy.$registerLinkPreviewProvider(urlMatchPattern, providerFunction))
     }
 }

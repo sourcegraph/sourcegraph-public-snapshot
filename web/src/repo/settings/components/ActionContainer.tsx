@@ -52,50 +52,50 @@ export class ActionContainer extends React.PureComponent<Props, State> {
     private timeoutHandle?: number
 
     public componentWillUnmount(): void {
-        if (this.timeoutHandle) {
-            window.clearTimeout(this.timeoutHandle)
+        if (that.timeoutHandle) {
+            window.clearTimeout(that.timeoutHandle)
         }
     }
 
     public render(): JSX.Element | null {
         return (
             <BaseActionContainer
-                title={this.props.title}
-                description={this.props.description}
+                title={that.props.title}
+                description={that.props.description}
                 action={
                     <>
                         <button
                             type="button"
-                            className={`btn ${this.props.buttonClassName || 'btn-primary'} action-container__btn`}
-                            onClick={this.onClick}
-                            data-tooltip={this.props.buttonSubtitle}
-                            disabled={this.props.buttonDisabled || this.state.loading}
+                            className={`btn ${that.props.buttonClassName || 'btn-primary'} action-container__btn`}
+                            onClick={that.onClick}
+                            data-tooltip={that.props.buttonSubtitle}
+                            disabled={that.props.buttonDisabled || that.state.loading}
                         >
-                            {this.props.buttonLabel}
+                            {that.props.buttonLabel}
                         </button>
-                        {this.props.buttonSubtitle && (
+                        {that.props.buttonSubtitle && (
                             <div className="action-container__btn-subtitle">
-                                <small>{this.props.buttonSubtitle}</small>
+                                <small>{that.props.buttonSubtitle}</small>
                             </div>
                         )}
-                        {!this.props.buttonSubtitle && this.props.flashText && (
+                        {!that.props.buttonSubtitle && that.props.flashText && (
                             <div
                                 className={
                                     'action-container__flash' +
-                                    (this.state.flash ? ' action-container__flash--visible' : '')
+                                    (that.state.flash ? ' action-container__flash--visible' : '')
                                 }
                             >
-                                <small>{this.props.flashText}</small>
+                                <small>{that.props.flashText}</small>
                             </div>
                         )}
                     </>
                 }
                 details={
                     <>
-                        {this.state.error ? (
-                            <ErrorAlert className="mb-0 mt-3" error={this.state.error} />
+                        {that.state.error ? (
+                            <ErrorAlert className="mb-0 mt-3" error={that.state.error} />
                         ) : (
-                            this.props.info
+                            that.props.info
                         )}
                     </>
                 }
@@ -104,20 +104,20 @@ export class ActionContainer extends React.PureComponent<Props, State> {
     }
 
     private onClick = (): void => {
-        this.setState({
+        that.setState({
             error: undefined,
             loading: true,
         })
 
-        this.props.run().then(
+        that.props.run().then(
             () => {
-                this.setState({ loading: false, flash: true })
-                if (typeof this.timeoutHandle === 'number') {
-                    window.clearTimeout(this.timeoutHandle)
+                that.setState({ loading: false, flash: true })
+                if (typeof that.timeoutHandle === 'number') {
+                    window.clearTimeout(that.timeoutHandle)
                 }
-                this.timeoutHandle = window.setTimeout(() => this.setState({ flash: false }), 1000)
+                that.timeoutHandle = window.setTimeout(() => that.setState({ flash: false }), 1000)
             },
-            err => this.setState({ loading: false, error: err.message })
+            err => that.setState({ loading: false, error: err.message })
         )
     }
 }

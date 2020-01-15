@@ -32,7 +32,7 @@ export class IntegrationsToast extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = {
+        that.state = {
             visible: false,
         }
     }
@@ -45,7 +45,7 @@ export class IntegrationsToast extends React.Component<Props, State> {
         // Check if we explictily set the toast to be visible.
         const parsedQuery = new URLSearchParams(location.search)
         if (parsedQuery && parsedQuery.get('toast') === 'integrations') {
-            this.showToast()
+            that.showToast()
             return
         }
 
@@ -55,31 +55,31 @@ export class IntegrationsToast extends React.Component<Props, State> {
             return
         }
 
-        this.showToast()
+        that.showToast()
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
-        this.updateToastVisibility(this.props.history.location.search)
-        this.unlisten = this.props.history.listen(location => {
-            this.updateToastVisibility(location.search)
+        that.subscriptions.add(siteFlags.subscribe(siteFlags => that.setState({ siteFlags })))
+        that.updateToastVisibility(that.props.history.location.search)
+        that.unlisten = that.props.history.listen(location => {
+            that.updateToastVisibility(location.search)
         })
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-        if (this.unlisten) {
-            this.unlisten()
+        that.subscriptions.unsubscribe()
+        if (that.unlisten) {
+            that.unlisten()
         }
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.visible) {
+        if (!that.state.visible) {
             return null
         }
 
-        if (this.state.siteFlags) {
-            if (this.state.siteFlags.needsRepositoryConfiguration) {
+        if (that.state.siteFlags) {
+            if (that.state.siteFlags.needsRepositoryConfiguration) {
                 return null
             }
         }
@@ -94,37 +94,37 @@ export class IntegrationsToast extends React.Component<Props, State> {
                         <Link
                             to="/help/integration/browser_extension"
                             className="btn btn-primary mr-2"
-                            onClick={this.onClickConfigure}
+                            onClick={that.onClickConfigure}
                         >
                             Install
                         </Link>
-                        <Link to="/help/integration/browser_extension" onClick={this.onClickConfigure}>
+                        <Link to="/help/integration/browser_extension" onClick={that.onClickConfigure}>
                             Learn more
                         </Link>
                     </>
                 }
-                onDismiss={this.onDismiss}
+                onDismiss={that.onDismiss}
             />
         )
     }
 
     private showToast = (): void => {
-        this.setState(() => ({ visible: true }))
+        that.setState(() => ({ visible: true }))
         eventLogger.log('IntegrationsToastViewed')
     }
 
     private onClickConfigure = (): void => {
         eventLogger.log('IntegrationsToastClicked')
-        this.dismissToast()
+        that.dismissToast()
     }
 
     private onDismiss = (): void => {
         eventLogger.log('IntegrationsToastDismissed')
-        this.dismissToast()
+        that.dismissToast()
     }
 
     private dismissToast = (): void => {
         localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'true')
-        this.setState({ visible: false })
+        that.setState({ visible: false })
     }
 }

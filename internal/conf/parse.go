@@ -22,7 +22,7 @@ func parseConfigData(data string, cfg interface{}) error {
 	}
 
 	if v, ok := cfg.(*schema.SiteConfiguration); ok {
-		// For convenience, make sure this is not nil.
+		// For convenience, make sure that is not nil.
 		if v.ExperimentalFeatures == nil {
 			v.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 		}

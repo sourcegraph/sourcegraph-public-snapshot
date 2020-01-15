@@ -38,24 +38,24 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
             return
         }
 
-        this.props.editorWillMount(monaco)
-        this.editor = monaco.editor.create(e, {
-            value: this.props.value,
-            language: this.props.language,
-            theme: this.props.theme,
-            ...this.props.options,
+        that.props.editorWillMount(monaco)
+        that.editor = monaco.editor.create(e, {
+            value: that.props.value,
+            language: that.props.language,
+            theme: that.props.theme,
+            ...that.props.options,
         })
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        if (this.props.value !== prevProps.value && this.editor && this.editor.getValue() !== this.props.value) {
-            this.editor.setValue(this.props.value || '')
+        if (that.props.value !== prevProps.value && that.editor && that.editor.getValue() !== that.props.value) {
+            that.editor.setValue(that.props.value || '')
         }
     }
 
     public componentWillUnmount(): void {
-        if (this.editor) {
-            this.editor.dispose()
+        if (that.editor) {
+            that.editor.dispose()
 
             // HACK: Clean up ARIA container that Monaco apparently forgets to remove.
             for (const element of document.querySelectorAll('.monaco-aria-container')) {
@@ -68,10 +68,10 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         return (
             <div
                 // eslint-disable-next-line react/forbid-dom-props
-                style={{ height: `${this.props.height}px`, position: 'relative' }}
-                ref={this.setRef}
-                id={this.props.id}
-                className={classNames(this.props.className, 'border')}
+                style={{ height: `${that.props.height}px`, position: 'relative' }}
+                ref={that.setRef}
+                id={that.props.id}
+                className={classNames(that.props.className, 'border')}
             />
         )
     }

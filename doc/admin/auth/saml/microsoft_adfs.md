@@ -32,7 +32,7 @@ These steps should be completed on the Windows Server instance with ADFS install
     - Select Data Source (Page 2)
       - Select "Import data about the relying party published online or on a local network" and set
         the Federation metadata address: `https://sourcegraph.example.com/.auth/saml/metadata`.<br>
-        If this step fails, see [Troubleshooting: Add Relying Party Trust fails on Select Data
+        If that step fails, see [Troubleshooting: Add Relying Party Trust fails on Select Data
         Source](#add-relying-party-trust-fails-on-select-data-source-page).
     - Specify Display Name (Page 3)
       - Enter "Sourcegraph" as the display name (any value will do) and click **Next**.
@@ -45,7 +45,7 @@ These steps should be completed on the Windows Server instance with ADFS install
 
 If the last step did NOT open the **Edit Claim Issuance Policy** or **Edit Claim Rules** window,
 right-click the item ("Sourcegraph" or whatever you set as the display name) in the Relying Party
-Trusts list and click **Edit Claim Issuance Policy**. In the "Issuance Transform Rules" tab of this
+Trusts list and click **Edit Claim Issuance Policy**. In the "Issuance Transform Rules" tab of that
 window, add the 2 following rules:
 
 #### Claim Rule 1: Send User Info
@@ -136,7 +136,7 @@ Party Trust Wizard**.
 
 First, check that the Federation metadata address value (which should look like
 `https://sourcegraph.example.com/.auth/saml/metadata`) is accessible by navigating to it in your web
-browser. If this fails, then something is likely misconfigured in Sourcegraph. Check that you have
+browser. If that fails, then something is likely misconfigured in Sourcegraph. Check that you have
 at most 1 SAML auth provider configured (`auth.providers` in [site
 config](../../config/site_config.md)) or contact support for further guidance.
 
@@ -164,8 +164,8 @@ Certificate Authority). If this is the case, you have a few options:
 ### Error prefetching SAML service provider metadata
 
 If you notice `Error prefetching SAML service provider metadata` errors in the Sourcegraph logs,
-this indicates that Sourcegraph cannot fetch the URL specified in the `identityProviderMetadataURL`
-field of the ADFS SAML auth provider config. Navigate to this URL in your web browser. If it errors,
+that indicates that Sourcegraph cannot fetch the URL specified in the `identityProviderMetadataURL`
+field of the ADFS SAML auth provider config. Navigate to that URL in your web browser. If it errors,
 check the URL for typos, or there might be an issue with the accessibility of ADFS.
 
 If it succeeds, it should download a `federationmetadata.xml` file. This indicates that ADFS is

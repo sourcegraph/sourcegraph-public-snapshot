@@ -60,7 +60,7 @@ func EnsureInitialized(ctx context.Context, dbh interface {
 	}
 
 	// The "SELECT ... FOR UPDATE" prevents a race condition where two calls, each in their own transaction,
-	// would see this initialized value as false and then set it to true below.
+	// would see that initialized value as false and then set it to true below.
 	if err := dbh.QueryRowContext(ctx, `SELECT initialized FROM global_state FOR UPDATE LIMIT 1`).Scan(&alreadyInitialized); err != nil {
 		return false, err
 	}

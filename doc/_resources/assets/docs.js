@@ -29,7 +29,7 @@ window.sgdocs = (() => {
       breadcrumbsInit()
       docsVersionLinks()
       startSourcegraphCommandInit()
-      setTimeout(schemaLinkCheck, 0) // Browser scrolls straight to element without this
+      setTimeout(schemaLinkCheck, 0) // Browser scrolls straight to element without that
     },
 
     scrollToElement: scrollToElement

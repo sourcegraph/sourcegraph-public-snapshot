@@ -1,11 +1,11 @@
 # Testing SAML with Microsoft Active Directory Federation Services (ADFS) 2.1
 
-Follow all the steps in this document in order.
+Follow all the steps in that document in order.
 
 ## Create an Azure VM running Windows Server 2012
 
 1.  Create an Azure VM using the [Windows Server 2012 Datacenter](https://portal.azure.com/#create/Microsoft.WindowsServer2012Datacenter) image.
-    - ⚠ DO NOT use "Windows Server 2012 R2 Datacenter" (because R2 ships with ADFS 3.0, and this document is about testing ADFS 2.1 specifically).
+    - ⚠ DO NOT use "Windows Server 2012 R2 Datacenter" (because R2 ships with ADFS 3.0, and that document is about testing ADFS 2.1 specifically).
     - After clicking on the link above (and, if necessary, signing into Azure and setting up a subscription):
       - Select a deployment model: `Resource Manager`
       - Click **Create**.
@@ -53,7 +53,7 @@ Follow all the steps in this document in order.
         - **Active Directory Domain Services**
         - **Active Directory Federation Services**
         - **Active Directory Lightweight Directory Services**
-        - ⚠️ DO NOT check the box for **Active Directory Certificate Services**. You will install this later. Installing it now will prevent you from completing the next section.
+        - ⚠️ DO NOT check the box for **Active Directory Certificate Services**. You will install that later. Installing it now will prevent you from completing the next section.
       - In the dialogs asking "Add features that are required for Active Directory ...?" that appear as you check the boxes, leave everything unchanged and click **Add Features**.
       - Click **Next >**.
     - Features (Page 5)
@@ -72,12 +72,12 @@ Follow all the steps in this document in order.
 
 1.  In the left sidebar of the **Server Manager**, select **AD DS**.
 1.  Click the **More...** link in the top right in the yellow alert that reads "Configuration required for Active Directory Domain Services at ADFSTEST".
-1.  Click the **Promote this server to a domain controller** link in the "Action" column.
+1.  Click the **Promote that server to a domain controller** link in the "Action" column.
 1.  Proceed through the "Active Directory Domain Services Configuration Wizard" as follows:
     - Deployment Configuration (Page 1)
       - Select the deployment operation: `Add a new forest`
       - Root domain name: `sgdev.org`
-      - Click **Next >**. You may need to wait 1-2 minutes as it does something (no clue what). The progress bar is animated during this time.
+      - Click **Next >**. You may need to wait 1-2 minutes as it does something (no clue what). The progress bar is animated during that time.
     - Domain Controller Options (Page 2)
       - Type the Directory Services Restore Mode (DSRM) password: use the same password as for `alice`
       - Leave everything else unchanged.
@@ -142,7 +142,7 @@ Follow all the steps in this document in order.
     - Private Key (Page 5)
       - Leave everything unchanged (**Create new private key** is selected) and click **Next >**.
     - Cryptography (Page 5.1)
-      - Select the hash algorithm for signing certificates issued by this CA: `SHA256`
+      - Select the hash algorithm for signing certificates issued by that CA: `SHA256`
       - Leave everything else unchanged.
       - Click **Next >**.
     - CA Name (Page 5.2)
@@ -162,7 +162,7 @@ Follow all the steps in this document in order.
 1.  In the left sidebar, select **ADFSTEST (SGDEV\alice)**.
 1.  Double-click on the **Server Certificates** feature.
 1.  In the right sidebar, click the **Create Self-Signed Certificate...** action.
-    - Specify a friendly name for this certificate: `adfstest-cert`
+    - Specify a friendly name for that certificate: `adfstest-cert`
     - Select a certificate store for the new certificate: `Personal`
     - Click **OK**.
 
@@ -291,7 +291,7 @@ The ADFS SAML service should now be accessible from your computer. Confirm that,
     }
     ```
 
-    ⚠ Ensure that this SAML auth provider is the only auth provider with a `type` of `saml`.
+    ⚠ Ensure that that SAML auth provider is the only auth provider with a `type` of `saml`.
 
 1.  Confirm there are no error messages in the Sourcegraph logs (for Sourcegraph Data Center, the `sourcegraph-frontend` pod logs). The most likely error message indicating a problem is `Error prefetching SAML service provider metadata.`.
 

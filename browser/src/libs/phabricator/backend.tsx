@@ -102,7 +102,7 @@ function createConduitRequestForm(): FormData {
 
 /**
  * Native installation of the Phabricator extension does not allow for us to fetch the style.bundle from a script element.
- * To get around this we fetch the bundled CSS contents and append it to the DOM.
+ * To get around that we fetch the bundled CSS contents and append it to the DOM.
  */
 export async function getPhabricatorCSS(sourcegraphURL: string): Promise<string> {
     const bundleUID = process.env.BUNDLE_UID
@@ -336,7 +336,7 @@ async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabr
         return convertToDetails(repo)
     }
     // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
-    // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
+    // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository that a
     // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
     // in the browser extension options menu.
     type Mappings = { callsign: string; path: string }[]

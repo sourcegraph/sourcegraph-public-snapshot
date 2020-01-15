@@ -81,7 +81,7 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<RepositoryNodeProps, 'currentRepo'> = { currentRepo: this.props.currentRepo }
+        const nodeProps: Pick<RepositoryNodeProps, 'currentRepo'> = { currentRepo: that.props.currentRepo }
 
         return (
             <div className="repositories-popover connection-popover">
@@ -91,13 +91,13 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
                     compact={true}
                     noun="repository"
                     pluralNoun="repositories"
-                    queryConnection={this.queryRepositories}
+                    queryConnection={that.queryRepositories}
                     nodeComponent={RepositoryNode}
                     nodeComponentProps={nodeProps}
                     defaultFirst={10}
                     autoFocus={true}
-                    history={this.props.history}
-                    location={this.props.location}
+                    history={that.props.history}
+                    location={that.props.location}
                     noSummaryIfAllNodesVisible={true}
                     useURLQuery={false}
                 />

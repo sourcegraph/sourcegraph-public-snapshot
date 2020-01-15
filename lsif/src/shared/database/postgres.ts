@@ -10,7 +10,7 @@ import { readEnvInt } from '../settings'
 import { TlsOptions } from 'tls'
 
 /**
- * The minimum migration version required by this instance of the LSIF process.
+ * The minimum migration version required by that instance of the LSIF process.
  * This should be updated any time a new lsif-server migration is added to the
  * migrations/ directory, as we watch the DB to ensure we're on at least this
  * version prior to making use of the DB (which the frontend may still be

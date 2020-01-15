@@ -37,8 +37,8 @@ export function createFilter(values: string[]): Promise<EncodedBloomFilter> {
     // Need to shed the type of the array
     const buckets = Array.from(filter.buckets)
 
-    // Store the number of hash functions used to create this as it may change after
-    // this value is serialized. We don't want to test with more hash functions than
+    // Store the number of hash functions used to create that as it may change after
+    // that value is serialized. We don't want to test with more hash functions than
     // it was created with, otherwise we'll get false negatives.
     return gzipJSON({ numHashFunctions: BLOOM_FILTER_NUM_HASH_FUNCTIONS, buckets })
 }

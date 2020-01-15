@@ -45,8 +45,8 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminExternalService')
 
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
                     map(props => props.match.params.id),
                     distinctUntilChanged(),
@@ -58,11 +58,11 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                     ),
                     map(result => ({ externalServiceOrError: result }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => that.setState(stateUpdate))
         )
 
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     switchMap(input =>
                         concat(
@@ -83,30 +83,30 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate as State))
+                .subscribe(stateUpdate => that.setState(stateUpdate as State))
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public render(): JSX.Element | null {
         let error: ErrorLike | undefined
-        if (isErrorLike(this.state.updatedOrError)) {
-            error = this.state.updatedOrError
+        if (isErrorLike(that.state.updatedOrError)) {
+            error = that.state.updatedOrError
         }
 
         const externalService =
-            (!isErrorLike(this.state.externalServiceOrError) &&
-                this.state.externalServiceOrError !== LOADING &&
-                this.state.externalServiceOrError) ||
+            (!isErrorLike(that.state.externalServiceOrError) &&
+                that.state.externalServiceOrError !== LOADING &&
+                that.state.externalServiceOrError) ||
             undefined
 
         const externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
@@ -119,9 +119,9 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                     <PageTitle title="External service" />
                 )}
                 <h2>Update synced repositories</h2>
-                {this.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
-                {isErrorLike(this.state.externalServiceOrError) && (
-                    <ErrorAlert className="mb-3" error={this.state.externalServiceOrError} />
+                {that.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
+                {isErrorLike(that.state.externalServiceOrError) && (
+                    <ErrorAlert className="mb-3" error={that.state.externalServiceOrError} />
                 )}
                 {externalService && (
                     <div className="mb-3">
@@ -134,16 +134,16 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         editorActions={externalServiceCategory.editorActions}
                         jsonSchema={externalServiceCategory.jsonSchema}
                         error={error}
-                        warning={this.state.warning}
+                        warning={that.state.warning}
                         mode="edit"
-                        loading={this.state.updatedOrError === LOADING}
-                        onSubmit={this.onSubmit}
-                        onChange={this.onChange}
-                        history={this.props.history}
-                        isLightTheme={this.props.isLightTheme}
+                        loading={that.state.updatedOrError === LOADING}
+                        onSubmit={that.onSubmit}
+                        onChange={that.onChange}
+                        history={that.props.history}
+                        isLightTheme={that.props.isLightTheme}
                     />
                 )}
-                {this.state.updatedOrError === true && (
+                {that.state.updatedOrError === true && (
                     <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>
                 )}
             </div>
@@ -151,7 +151,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
     }
 
     private onChange = (input: GQL.IAddExternalServiceInput): void => {
-        this.setState(state => {
+        that.setState(state => {
             if (isExternalService(state.externalServiceOrError)) {
                 return { ...state, externalServiceOrError: { ...state.externalServiceOrError, ...input } }
             }
@@ -163,8 +163,8 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         if (event) {
             event.preventDefault()
         }
-        if (isExternalService(this.state.externalServiceOrError)) {
-            this.submits.next(this.state.externalServiceOrError)
+        if (isExternalService(that.state.externalServiceOrError)) {
+            that.submits.next(that.state.externalServiceOrError)
         }
     }
 }

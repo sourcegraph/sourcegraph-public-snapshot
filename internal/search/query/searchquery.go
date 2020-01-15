@@ -90,7 +90,7 @@ var (
 
 // A Query is the parsed representation of a search query.
 type Query struct {
-	conf *types.Config // the typechecker config used to produce this query
+	conf *types.Config // the typechecker config used to produce that query
 
 	*types.Query // the underlying query
 }

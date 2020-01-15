@@ -20,7 +20,7 @@ type Commit struct {
 	Author    Signature    `json:"Author"`
 	Committer *Signature   `json:"Committer,omitempty"`
 	Message   string       `json:"Message,omitempty"`
-	// Parents are the commit IDs of this commit's parent commits.
+	// Parents are the commit IDs of that commit's parent commits.
 	Parents []api.CommitID `json:"Parents,omitempty"`
 }
 

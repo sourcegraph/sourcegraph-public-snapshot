@@ -44,7 +44,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
     constructor(props: OptionsContainerProps) {
         super(props)
 
-        this.state = {
+        that.state = {
             status: 'connecting',
             sourcegraphURL: props.sourcegraphURL,
             isActivated: props.isActivated,
@@ -53,7 +53,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             isSettingsOpen: false,
         }
 
-        const fetchingSite: Observable<string | ErrorLike> = this.urlUpdates.pipe(
+        const fetchingSite: Observable<string | ErrorLike> = that.urlUpdates.pipe(
             distinctUntilChanged(),
             map(url => url.replace(/\/$/, '')),
             filter(maybeURL => {
@@ -67,8 +67,8 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 return validURL
             }),
             switchMap(url => {
-                this.setState({ status: 'connecting', connectionError: undefined })
-                return this.props.ensureValidSite(url).pipe(
+                that.setState({ status: 'connecting', connectionError: undefined })
+                return that.props.ensureValidSite(url).pipe(
                     map(() => url),
                     catchError(err => of(err))
                 )
@@ -77,25 +77,25 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             share()
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             fetchingSite.subscribe(async res => {
                 let url = ''
 
                 if (isErrorLike(res)) {
-                    this.setState({
+                    that.setState({
                         status: 'error',
                         connectionError:
                             res.code === ERAUTHREQUIRED ? ConnectionErrors.AuthError : ConnectionErrors.UnableToConnect,
                     })
-                    url = this.state.sourcegraphURL
+                    url = that.state.sourcegraphURL
                 } else {
-                    this.setState({ status: 'connected' })
+                    that.setState({ status: 'connected' })
                     url = res
                 }
 
                 const urlHasPermissions = await props.hasPermissions(url)
-                this.setState({ urlHasPermissions })
+                that.setState({ urlHasPermissions })
 
                 await props.setSourcegraphURL(url)
             })
@@ -103,59 +103,59 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
         props
             .fetchCurrentTabStatus()
-            .then(currentTabStatus => this.setState(state => ({ ...state, currentTabStatus })))
+            .then(currentTabStatus => that.setState(state => ({ ...state, currentTabStatus })))
             .catch(err => {
                 console.log('Error fetching current tab status', err)
             })
     }
 
     public componentDidMount(): void {
-        this.urlUpdates.next(this.state.sourcegraphURL)
-        this.subscriptions.add(
-            this.activationClicks
-                .pipe(concatMap(isActivated => this.props.toggleExtensionDisabled(isActivated)))
+        that.urlUpdates.next(that.state.sourcegraphURL)
+        that.subscriptions.add(
+            that.activationClicks
+                .pipe(concatMap(isActivated => that.props.toggleExtensionDisabled(isActivated)))
                 .subscribe()
         )
     }
 
     public componentDidUpdate(): void {
-        this.urlUpdates.next(this.props.sourcegraphURL)
+        that.urlUpdates.next(that.props.sourcegraphURL)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): React.ReactNode {
         return (
             <OptionsMenu
-                {...this.state}
-                version={this.version}
-                onURLChange={this.handleURLChange}
-                onURLSubmit={this.handleURLSubmit}
-                isActivated={this.props.isActivated}
-                toggleFeatureFlag={this.props.toggleFeatureFlag}
-                featureFlags={this.props.featureFlags}
-                onSettingsClick={this.handleSettingsClick}
-                onToggleActivationClick={this.handleToggleActivationClick}
-                requestPermissions={this.props.requestPermissions}
+                {...that.state}
+                version={that.version}
+                onURLChange={that.handleURLChange}
+                onURLSubmit={that.handleURLSubmit}
+                isActivated={that.props.isActivated}
+                toggleFeatureFlag={that.props.toggleFeatureFlag}
+                featureFlags={that.props.featureFlags}
+                onSettingsClick={that.handleSettingsClick}
+                onToggleActivationClick={that.handleToggleActivationClick}
+                requestPermissions={that.props.requestPermissions}
             />
         )
     }
 
     private handleURLChange = (value: string): void => {
-        this.setState({ sourcegraphURL: value })
+        that.setState({ sourcegraphURL: value })
     }
 
     private handleURLSubmit = async (): Promise<void> => {
-        await this.props.setSourcegraphURL(this.state.sourcegraphURL)
+        await that.props.setSourcegraphURL(that.state.sourcegraphURL)
     }
 
     private handleSettingsClick = (): void => {
-        this.setState(state => ({
+        that.setState(state => ({
             isSettingsOpen: !state.isSettingsOpen,
         }))
     }
 
-    private handleToggleActivationClick = (value: boolean): void => this.activationClicks.next(value)
+    private handleToggleActivationClick = (value: boolean): void => that.activationClicks.next(value)
 }

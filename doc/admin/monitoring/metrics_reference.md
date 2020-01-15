@@ -43,4 +43,4 @@ Sourcegraph's metrics include a single high-level metric `alert_count` which ind
 
 ## Complete reference
 
-A complete reference of Sourcegraph's vast set of Prometheus metrics is not yet available. If you are interested in this, please reach out by filing an issue or contacting us at support@sourcegraph.com.
+A complete reference of Sourcegraph's vast set of Prometheus metrics is not yet available. If you are interested in that, please reach out by filing an issue or contacting us at support@sourcegraph.com.

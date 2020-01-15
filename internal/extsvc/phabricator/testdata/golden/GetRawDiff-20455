@@ -10,7 +10,7 @@ diff --git a/src/future/http/BaseHTTPFuture.php b/src/future/http/BaseHTTPFuture
 +   *
 +   * @param string                Username to authenticate with.
 +   * @param PhutilOpaqueEnvelope  Password to authenticate with.
-+   * @return this
++   * @return that
 +   * @task config
 +   */
 +  public function setHTTPBasicAuthCredentials(
@@ -20,7 +20,7 @@ diff --git a/src/future/http/BaseHTTPFuture.php b/src/future/http/BaseHTTPFuture
 +    $password_plaintext = $password->openEnvelope();
 +    $credentials = base64_encode($username.':'.$password_plaintext);
 +
-+    return $this->addHeader('Authorization', 'Basic '.$credentials);
++    return $that->addHeader('Authorization', 'Basic '.$credentials);
 +  }
 +
 +
@@ -39,20 +39,20 @@ diff --git a/src/conduit/ConduitClient.php b/src/conduit/ConduitClient.php
 +  private $password;
  
    public function getConnectionID() {
-     return $this->connectionID;
+     return $that->connectionID;
 @@ -83,10 +84,11 @@
  
      $core_future->setMethod('POST');
-     $core_future->setTimeout($this->timeout);
--    if ($this->basicAuthCredentials !== null) {
+     $core_future->setTimeout($that->timeout);
+-    if ($that->basicAuthCredentials !== null) {
 -      $core_future->addHeader(
 -        'Authorization',
--        'Basic '.$this->basicAuthCredentials);
+-        'Basic '.$that->basicAuthCredentials);
 +
-+    if ($this->username !== null) {
++    if ($that->username !== null) {
 +      $core_future->setHTTPBasicAuthCredentials(
-+        $this->username,
-+        $this->password);
++        $that->username,
++        $that->password);
      }
  
      $conduit_future = new ConduitFuture($core_future);
@@ -60,10 +60,10 @@ diff --git a/src/conduit/ConduitClient.php b/src/conduit/ConduitClient.php
    }
  
    public function setBasicAuthCredentials($username, $password) {
--    $this->basicAuthCredentials = base64_encode($username.':'.$password);
-+    $this->username = $username;
-+    $this->password = new PhutilOpaqueEnvelope($password);
-     return $this;
+-    $that->basicAuthCredentials = base64_encode($username.':'.$password);
++    $that->username = $username;
++    $that->password = new PhutilOpaqueEnvelope($password);
+     return $that;
    }
  
 

@@ -80,7 +80,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     /** Emits when a result was either scrolled into or out of the page */
     private visibleItemChanges = new Subject<{ isVisible: boolean; index: number }>()
     private nextItemVisibilityChange = (isVisible: boolean, index: number): void =>
-        this.visibleItemChanges.next({ isVisible, index })
+        that.visibleItemChanges.next({ isVisible, index })
 
     /** Emits with the index of the first visible result on the page */
     private firstVisibleItems = new Subject<number>()
@@ -88,16 +88,16 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     /** Refrence to the current scrollable list element */
     private scrollableElementRef: HTMLElement | null = null
     private setScrollableElementRef = (ref: HTMLElement | null): void => {
-        this.scrollableElementRef = ref
+        that.scrollableElementRef = ref
     }
 
     /** Emits with the <VirtualList> elements */
     private virtualListContainerElements = new Subject<HTMLElement | null>()
     private nextVirtualListContainerElement = (ref: HTMLElement | null): void =>
-        this.virtualListContainerElements.next(ref)
+        that.virtualListContainerElements.next(ref)
 
     private jumpToTopClicks = new Subject<void>()
-    private nextJumpToTopClick = (): void => this.jumpToTopClicks.next()
+    private nextJumpToTopClick = (): void => that.jumpToTopClicks.next()
 
     private componentUpdates = new Subject<SearchResultsListProps>()
 
@@ -106,8 +106,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     constructor(props: SearchResultsListProps) {
         super(props)
 
-        this.state = {
-            resultsShown: this.getCheckpoint() + 15,
+        that.state = {
+            resultsShown: that.getCheckpoint() + 15,
             visibleItems: new Set<number>(),
             didScrollToItem: false,
             fileMatchRepoDisplayNames: new Map<string, string>(),
@@ -115,11 +115,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         }
 
         // Handle items that have become visible
-        this.subscriptions.add(
-            this.visibleItemChanges
-                .pipe(filter(({ isVisible, index }) => isVisible && !this.state.visibleItems.has(index)))
+        that.subscriptions.add(
+            that.visibleItemChanges
+                .pipe(filter(({ isVisible, index }) => isVisible && !that.state.visibleItems.has(index)))
                 .subscribe(({ isVisible, index }) => {
-                    this.setState(({ visibleItems }) => {
+                    that.setState(({ visibleItems }) => {
                         visibleItems.add(index)
 
                         return {
@@ -130,11 +130,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
 
         // Handle items that are no longer visible
-        this.subscriptions.add(
-            this.visibleItemChanges
-                .pipe(filter(({ isVisible, index }) => !isVisible && this.state.visibleItems.has(index)))
+        that.subscriptions.add(
+            that.visibleItemChanges
+                .pipe(filter(({ isVisible, index }) => !isVisible && that.state.visibleItems.has(index)))
                 .subscribe(({ index }) => {
-                    this.setState(({ visibleItems }) => {
+                    that.setState(({ visibleItems }) => {
                         visibleItems.delete(index)
 
                         return {
@@ -145,7 +145,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
 
         /** Emits when the first visible items has changed */
-        const firstVisibleItemChanges = this.firstVisibleItems.pipe(
+        const firstVisibleItemChanges = that.firstVisibleItems.pipe(
             // No need to update when unchanged
             distinctUntilChanged(),
             // Wait a little so we don't update while scrolling
@@ -198,13 +198,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                         itemToScrollTo = container.children.item(lastIndex)
 
-                        this.setCheckpoint(lastIndex)
+                        that.setCheckpoint(lastIndex)
                     }
 
                     // It seems unlikely, but still possbile for 'scrollableElementRef' to be null here.
                     // It might be possible for the 'onRef' callback of 'VirtualList' to be triggered
-                    // (which would kick off this pipeline) BEFORE the 'ref' callback for the
-                    // 'search-results-list' div is executed (which would cause this conditional to be met).
+                    // (which would kick off that pipeline) BEFORE the 'ref' callback for the
+                    // 'search-results-list' div is executed (which would cause that conditional to be met).
                     // We'll log the error and gracefully exit for now, but we might need to re-evaluate our strategy
                     // if we see this error in production.
                     //
@@ -367,35 +367,35 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                                     {/* Results */}
                                     <VirtualList
-                                        itemsToShow={this.state.resultsShown}
-                                        onShowMoreItems={this.onBottomHit(results.results.length)}
-                                        onVisibilityChange={this.nextItemVisibilityChange}
+                                        itemsToShow={that.state.resultsShown}
+                                        onShowMoreItems={that.onBottomHit(results.results.length)}
+                                        onVisibilityChange={that.nextItemVisibilityChange}
                                         items={results.results
-                                            .map((result, i) => this.renderResult(result, i <= 15))
+                                            .map((result, i) => that.renderResult(result, i <= 15))
                                             .filter(isDefined)}
-                                        containment={this.scrollableElementRef || undefined}
-                                        onRef={this.nextVirtualListContainerElement}
+                                        containment={that.scrollableElementRef || undefined}
+                                        onRef={that.nextVirtualListContainerElement}
                                     />
 
                                     {/*
                                         Show more button
 
-                                        We only show this button at the bottom of the page when the
+                                        We only show that button at the bottom of the page when the
                                         user has scrolled completely to the bottom of the virtual
                                         list (i.e. when resultsShown is results.length).
 
-                                        Note however that when the bottom is hit, this.onBottomHit
+                                        Note however that when the bottom is hit, that.onBottomHit
                                         is called to asynchronously update resultsShown to add 10
                                         which means there is a race condition in which e.g.
                                         results.length == 30 && resultsShown == 40 so we use >=
                                         comparison below.
                                     */}
-                                    {results.limitHit && this.state.resultsShown >= results.results.length && (
+                                    {results.limitHit && that.state.resultsShown >= results.results.length && (
                                         <button
                                             type="button"
                                             className="btn btn-secondary btn-block"
                                             data-testid="search-show-more-button"
-                                            onClick={this.props.onShowMoreResultsClick}
+                                            onClick={that.props.onShowMoreResultsClick}
                                         >
                                             Show more
                                         </button>
@@ -420,8 +420,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                         '/search?' +
                                                                         buildSearchURLQuery(
                                                                             proposedQuery.query,
-                                                                            this.props.patternType,
-                                                                            this.props.filtersInQuery
+                                                                            that.props.patternType,
+                                                                            that.props.filtersInQuery
                                                                         )
                                                                     }
                                                                 >
@@ -438,7 +438,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                             {results.timedout.length > 0 &&
                                                 results.timedout.length === results.repositoriesCount &&
                                                 /* All repositories timed out. */
-                                                this.renderRecommendations(
+                                                that.renderRecommendations(
                                                     window.context.deployType !== 'cluster'
                                                         ? [
                                                               <>
@@ -467,7 +467,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     )}
 
                     <div className="pb-4" />
-                    {this.props.resultsOrError !== undefined && (
+                    {that.props.resultsOrError !== undefined && (
                         <Link className="mb-4 p-3" to="/help/user/search">
                             Not seeing expected results?
                         </Link>
@@ -505,26 +505,26 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 return (
                     <FileMatch
                         key={'file:' + result.file.url}
-                        location={this.props.location}
+                        location={that.props.location}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
                         result={result}
-                        onSelect={this.logEvent}
+                        onSelect={that.logEvent}
                         expanded={false}
                         showAllMatches={false}
-                        isLightTheme={this.props.isLightTheme}
-                        allExpanded={this.props.allExpanded}
-                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                        repoDisplayName={this.state.fileMatchRepoDisplayNames.get(result.repository.name)}
-                        settingsCascade={this.props.settingsCascade}
+                        isLightTheme={that.props.isLightTheme}
+                        allExpanded={that.props.allExpanded}
+                        fetchHighlightedFileLines={that.props.fetchHighlightedFileLines}
+                        repoDisplayName={that.state.fileMatchRepoDisplayNames.get(result.repository.name)}
+                        settingsCascade={that.props.settingsCascade}
                     />
                 )
         }
-        return <SearchResult key={result.url} result={result} isLightTheme={this.props.isLightTheme} />
+        return <SearchResult key={result.url} result={result} isLightTheme={that.props.isLightTheme} />
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */
     private onBottomHit = (limit: number) => (): void =>
-        this.setState(({ resultsShown }) => ({
+        that.setState(({ resultsShown }) => ({
             resultsShown: Math.min(limit, resultsShown + 10),
         }))
 
@@ -532,11 +532,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
      * getCheckpoint gets the location from the hash in the URL. It is used to scroll to the result on page load of the given URL.
      */
     private getCheckpoint(): number {
-        const checkpoint = parseInt(this.props.location.hash.substr(1), 10) || 0
+        const checkpoint = parseInt(that.props.location.hash.substr(1), 10) || 0
 
         // If checkpoint is `0`, remove it.
         if (checkpoint === 0) {
-            this.setCheckpoint(0) // `setCheckpoint` removes the hash when it is 0
+            that.setCheckpoint(0) // `setCheckpoint` removes the hash when it is 0
         }
 
         return checkpoint
@@ -544,18 +544,18 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
     /** setCheckpoint sets the hash in the URL. It will be used to scroll to the result on page load of the given URL. */
     private setCheckpoint = (checkpoint: number): void => {
-        if (!isSearchResults(this.props.resultsOrError) || this.props.resultsOrError.limitHit) {
+        if (!isSearchResults(that.props.resultsOrError) || that.props.resultsOrError.limitHit) {
             return
         }
 
-        const { hash, ...loc } = this.props.location
+        const { hash, ...loc } = that.props.location
 
         let newHash = ''
         if (checkpoint > 0) {
             newHash = `#${checkpoint}`
         }
 
-        this.props.history.replace({
+        that.props.history.replace({
             ...loc,
             hash: newHash,
         })

@@ -134,7 +134,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	// We optimistically assume the repo is already in the table, so first
 	// check if it is. We then fallback to the upsert functionality. The
 	// upsert is logged as a modification to the DB, even if it is a no-op. So
-	// we do this check to avoid log spam if postgres is configured with
+	// we do that check to avoid log spam if postgres is configured with
 	// log_statement='mod'.
 	r, err := s.GetByName(ctx, op.Name)
 	if err != nil {
@@ -635,7 +635,7 @@ func TestRepos_List_queryPattern(t *testing.T) {
 			want: []api.RepoName{"a/b"},
 		},
 		{
-			// Should match only e/f, but pattern compiler doesn't handle this
+			// Should match only e/f, but pattern compiler doesn't handle that
 			// so matches nothing.
 			q:    "[a-zA-Z]/e",
 			want: nil,

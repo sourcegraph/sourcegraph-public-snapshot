@@ -13,7 +13,7 @@ Enabling federation has the following benefits:
 - It offloads the work of mirroring, analyzing, and indexing public code to Sourcegraph.com, so your own instance's performance and resource consumption are unaffected.
 - Users get full code intelligence for all supported languages on Sourcegraph.com, even if your instance only has code intelligence enabled for a subset of languages.
 - Sourcegraph.com will show users more cross-repository references to code (via the "Find references" feature) than your instance because Sourcegraph.com's index is already very large. Building a comparable index of public code on your instance would require a lot of time and resources.
-- It eliminates the risk of cloning and building public, untrusted code on your own instance (which may be running inside your private network). Sourcegraph.com applies strict isolation and resource quotas to mitigate this risk on our own infrastructure.
+- It eliminates the risk of cloning and building public, untrusted code on your own instance (which may be running inside your private network). Sourcegraph.com applies strict isolation and resource quotas to mitigate that risk on our own infrastructure.
 
 ### Configuration
 

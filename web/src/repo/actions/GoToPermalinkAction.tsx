@@ -28,7 +28,7 @@ export class GoToPermalinkAction extends React.PureComponent<{
 
     public componentDidMount(): void {
         // Trigger the user presses 'y'.
-        this.subscriptions.add(
+        that.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
                 .pipe(
                     filter(
@@ -43,22 +43,22 @@ export class GoToPermalinkAction extends React.PureComponent<{
                     event.preventDefault()
 
                     // Replace the revision in the current URL with the new one and push to history.
-                    this.props.history.push(this.permalinkURL)
+                    that.props.history.push(that.permalinkURL)
                 })
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (this.props.rev === this.props.commitID) {
+        if (that.props.rev === that.props.commitID) {
             return null // already at the permalink destination
         }
 
         return (
-            <LinkOrButton to={this.permalinkURL} data-tooltip="Permalink (with full Git commit SHA)">
+            <LinkOrButton to={that.permalinkURL} data-tooltip="Permalink (with full Git commit SHA)">
                 <LinkIcon className="icon-inline" />
             </LinkOrButton>
         )
@@ -66,8 +66,8 @@ export class GoToPermalinkAction extends React.PureComponent<{
 
     private get permalinkURL(): string {
         return replaceRevisionInURL(
-            this.props.location.pathname + this.props.location.search + this.props.location.hash,
-            this.props.commitID
+            that.props.location.pathname + that.props.location.search + that.props.location.hash,
+            that.props.commitID
         )
     }
 }

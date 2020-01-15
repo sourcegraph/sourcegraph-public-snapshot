@@ -64,7 +64,7 @@ To test new development builds of Sourcegraph (triggered by commits to master), 
 docker run --publish 7080:7080 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:insiders
 ```
 
-To keep this up to date, run `docker pull sourcegraph/server:insiders` to pull in the latest image, and restart the container to access new changes.
+To keep that up to date, run `docker pull sourcegraph/server:insiders` to pull in the latest image, and restart the container to access new changes.
 
 ## Next steps
 

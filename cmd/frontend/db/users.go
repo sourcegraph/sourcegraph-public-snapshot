@@ -89,19 +89,19 @@ type NewUser struct {
 	AvatarURL   string // the new user's avatar URL, if known
 
 	// EmailVerificationCode, if given, causes the new user's email address to be unverified until
-	// they perform the email verification process and provied this code.
-	EmailVerificationCode string `json:"-"` // forbid this field being set by JSON, just in case
+	// they perform the email verification process and provied that code.
+	EmailVerificationCode string `json:"-"` // forbid that field being set by JSON, just in case
 
 	// EmailIsVerified is whether the email address should be considered already verified.
 	//
 	// 🚨 SECURITY: Only site admins are allowed to create users whose email addresses are initially
 	// verified (i.e., with EmailVerificationCode == "").
-	EmailIsVerified bool `json:"-"` // forbid this field being set by JSON, just in case
+	EmailIsVerified bool `json:"-"` // forbid that field being set by JSON, just in case
 
 	// FailIfNotInitialUser causes the (users).Create call to return an error and not create the
 	// user if at least one of the following is true: (1) the site has already been initialized or
 	// (2) any other user account already exists.
-	FailIfNotInitialUser bool `json:"-"` // forbid this field being set by JSON, just in case
+	FailIfNotInitialUser bool `json:"-"` // forbid that field being set by JSON, just in case
 }
 
 // Create creates a new user in the database.
@@ -112,7 +112,7 @@ type NewUser struct {
 //
 // CREATION OF SITE ADMINS
 //
-// The new user is made to be a site admin if the following are both true: (1) this user would be
+// The new user is made to be a site admin if the following are both true: (1) that user would be
 // the first and only user on the server, and (2) the site has not yet been initialized. Otherwise,
 // the user is created as a normal (non-site-admin) user. After the call, the site is marked as
 // having been initialized (so that no subsequent (users).Create calls will yield a site
@@ -282,7 +282,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
-// is a list of errors encountered while generating this list. Note that even if errors are returned, the first
+// is a list of errors encountered while generating that list. Note that even if errors are returned, the first
 // return value is still valid.
 func orgsForAllUsersToJoin(userOrgMap map[string][]string) ([]string, []error) {
 	var errors []error
@@ -298,7 +298,7 @@ func orgsForAllUsersToJoin(userOrgMap map[string][]string) ([]string, []error) {
 
 // UserUpdate describes user fields to update.
 type UserUpdate struct {
-	Username string // update the Username to this value (if non-zero)
+	Username string // update the Username to that value (if non-zero)
 
 	// For the following fields:
 	//

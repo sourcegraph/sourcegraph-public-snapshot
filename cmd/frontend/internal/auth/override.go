@@ -54,7 +54,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 			}
 
 			// Make the user a site admin because that is more useful for e2e tests and local dev
-			// scripting (which are the use cases of this override auth provider).
+			// scripting (which are the use cases of that override auth provider).
 			if err := db.Users.SetIsSiteAdmin(r.Context(), userID, true); err != nil {
 				log15.Error("Error setting auth-override user as site admin.", "error", err)
 				http.Error(w, "", http.StatusInternalServerError)

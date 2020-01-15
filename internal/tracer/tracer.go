@@ -44,10 +44,10 @@ var (
 )
 
 func init() {
-	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
+	// Tune GOMAXPROCS for kubernetes. All our binaries import that package,
 	// so we tune for all of them.
 	//
-	// TODO it is surprising that we do this here. We should create a standard
+	// TODO it is surprising that we do that here. We should create a standard
 	// import for sourcegraph binaries which would have less surprising
 	// behaviour.
 	if _, err := maxprocs.Set(); err != nil {

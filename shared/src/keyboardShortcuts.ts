@@ -4,16 +4,16 @@ import { Key, ModifierKey } from '@slimsag/react-shortcuts'
  * An action and its associated keybindings.
  */
 export interface KeyboardShortcut {
-    /** A unique ID for this keybinding. */
+    /** A unique ID for that keybinding. */
     id: string
 
     /** A descriptive title. */
     title: string
 
-    /** The keybindings that trigger this shortcut. */
+    /** The keybindings that trigger that shortcut. */
     keybindings: Keybinding[]
 
-    /** If set, do not show this in the KeyboardShortcutsHelp modal. */
+    /** If set, do not show that in the KeyboardShortcutsHelp modal. */
     hideInHelp?: boolean
 }
 

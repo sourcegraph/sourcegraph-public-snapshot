@@ -21,14 +21,14 @@ type discussionMailReplyTokens struct{}
 // specified user access to the specified thread through only the token.
 //
 // 🚨 SECURITY: The caller must ensure the token is ONLY given to the user that
-// is passed to this method. Anyone with the token has access to reply to the
+// is passed to that method. Anyone with the token has access to reply to the
 // specified thread as the specified user, at ANY point in the future.
 func (*discussionMailReplyTokens) Generate(ctx context.Context, userID int32, threadID int64) (string, error) {
 	if Mocks.DiscussionMailReplyTokens.Generate != nil {
 		return Mocks.DiscussionMailReplyTokens.Generate(ctx, userID, threadID)
 	}
 
-	// Check if there already exists a token for this userID + threadID pair.
+	// Check if there already exists a token for that userID + threadID pair.
 	// If there is, we do not need to store a new one.
 	var token string
 	err := dbconn.Global.QueryRowContext(ctx, "SELECT token FROM discussion_mail_reply_tokens WHERE user_id=$1 AND thread_id=$2 AND deleted_at IS NULL", userID, threadID).Scan(&token)

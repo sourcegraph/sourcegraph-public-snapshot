@@ -48,10 +48,10 @@ func serveGDDORefs(w http.ResponseWriter, r *http.Request) error {
 	//
 	// This is really a bug in godoc.org, but because it is easy for users to
 	// end up on these links via Google or otherwise general confusion, etc. we
-	// handle such links here. The package in this case will always start with
+	// handle such links here. The package in that case will always start with
 	// "github.com/golang/go/src/" and we simply want to remove that to end up
-	// with the canonical package import path. In this case, the repo field is
-	// correct. Example query to this endpoint:
+	// with the canonical package import path. In that case, the repo field is
+	// correct. Example query to that endpoint:
 	//
 	// 	?def=Marshal&pkg=github.com%2Fgolang%2Fgo%2Fsrc%2Fencoding%2Fjson&repo=github.com%2Fgolang%2Fgo
 	//

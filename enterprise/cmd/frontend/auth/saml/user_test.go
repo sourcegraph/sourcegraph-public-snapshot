@@ -30,7 +30,7 @@ func TestReadAuthnResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	info.accountData = nil // skip checking this field
+	info.accountData = nil // skip checking that field
 	if want := (&authnResponseInfo{
 		spec: extsvc.ExternalAccountSpec{
 			ServiceType: "saml",

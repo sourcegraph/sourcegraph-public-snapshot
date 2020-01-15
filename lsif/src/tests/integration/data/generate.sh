@@ -20,7 +20,7 @@ function generate() {
     current=`pwd`
     cleanup() {
         # we cd into repos to generate, ensure that
-        # if we trap a signal not in this directory
+        # if we trap a signal not in that directory
         # we still clean up the correct one.
         rm -rf "$current/repos";
     }

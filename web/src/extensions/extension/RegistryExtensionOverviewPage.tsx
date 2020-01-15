@@ -22,20 +22,20 @@ interface Props extends Pick<ExtensionAreaRouteContext, 'extension'> {
 /** A page that displays overview information about a registry extension. */
 export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
     public componentDidMount(): void {
-        this.props.eventLogger.logViewEvent('RegistryExtension')
+        that.props.eventLogger.logViewEvent('RegistryExtension')
     }
 
     public render(): JSX.Element | null {
         let repositoryURL: URL | undefined
         try {
             if (
-                this.props.extension.manifest &&
-                !isErrorLike(this.props.extension.manifest) &&
-                this.props.extension.manifest.repository &&
-                isObject(this.props.extension.manifest.repository) &&
-                typeof this.props.extension.manifest.repository.url === 'string'
+                that.props.extension.manifest &&
+                !isErrorLike(that.props.extension.manifest) &&
+                that.props.extension.manifest.repository &&
+                isObject(that.props.extension.manifest.repository) &&
+                typeof that.props.extension.manifest.repository.url === 'string'
             ) {
-                repositoryURL = new URL(this.props.extension.manifest.repository.url)
+                repositoryURL = new URL(that.props.extension.manifest.repository.url)
             }
         } catch (e) {
             // noop
@@ -43,11 +43,11 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
 
         let categories: ExtensionCategory[] | undefined
         if (
-            this.props.extension.manifest &&
-            !isErrorLike(this.props.extension.manifest) &&
-            this.props.extension.manifest.categories
+            that.props.extension.manifest &&
+            !isErrorLike(that.props.extension.manifest) &&
+            that.props.extension.manifest.categories
         ) {
-            const cs = validCategories(this.props.extension.manifest.categories)
+            const cs = validCategories(that.props.extension.manifest.categories)
             if (cs && cs.length > 0) {
                 categories = cs
             }
@@ -55,9 +55,9 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
 
         return (
             <div className="registry-extension-overview-page d-flex flex-wrap">
-                <PageTitle title={this.props.extension.id} />
+                <PageTitle title={that.props.extension.id} />
                 <div className="registry-extension-overview-page__readme mr-3">
-                    <ExtensionREADME extension={this.props.extension} />
+                    <ExtensionREADME extension={that.props.extension} />
                 </div>
                 <aside className="registry-extension-overview-page__sidebar">
                     {categories && (
@@ -77,14 +77,14 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                             </ul>
                         </div>
                     )}
-                    {this.props.extension.manifest &&
-                        !isErrorLike(this.props.extension.manifest) &&
-                        this.props.extension.manifest.tags &&
-                        this.props.extension.manifest.tags.length > 0 && (
+                    {that.props.extension.manifest &&
+                        !isErrorLike(that.props.extension.manifest) &&
+                        that.props.extension.manifest.tags &&
+                        that.props.extension.manifest.tags.length > 0 && (
                             <div className="mb-3">
                                 <h3 className="mb-0">Tags</h3>
                                 <ul className="list-inline registry-extension-overview-page__tags">
-                                    {this.props.extension.manifest.tags.map((t, i) => (
+                                    {that.props.extension.manifest.tags.map((t, i) => (
                                         <li key={i} className="list-inline-item mb-2 small">
                                             <Link
                                                 to={urlToExtensionsQuery(extensionsQuery({ tag: t }))}
@@ -99,15 +99,15 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                         )}
                     <small className="text-muted">
                         <dl className="border-top pt-2">
-                            {this.props.extension.registryExtension &&
-                                this.props.extension.registryExtension.publisher && (
+                            {that.props.extension.registryExtension &&
+                                that.props.extension.registryExtension.publisher && (
                                     <>
                                         <dt>Publisher</dt>
                                         <dd>
-                                            {this.props.extension.registryExtension.publisher ? (
-                                                <Link to={this.props.extension.registryExtension.publisher.url}>
+                                            {that.props.extension.registryExtension.publisher ? (
+                                                <Link to={that.props.extension.registryExtension.publisher.url}>
                                                     {extensionIDPrefix(
-                                                        this.props.extension.registryExtension.publisher
+                                                        that.props.extension.registryExtension.publisher
                                                     )}
                                                 </Link>
                                             ) : (
@@ -116,12 +116,12 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                         </dd>
                                     </>
                                 )}
-                            {this.props.extension.registryExtension &&
-                                this.props.extension.registryExtension.registryName && (
+                            {that.props.extension.registryExtension &&
+                                that.props.extension.registryExtension.registryName && (
                                     <>
                                         <dt
                                             className={
-                                                this.props.extension.registryExtension.publisher
+                                                that.props.extension.registryExtension.publisher
                                                     ? 'border-top pt-2'
                                                     : ''
                                             }
@@ -130,29 +130,29 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                         </dt>
                                         <dd>
                                             <LinkOrSpan
-                                                to={this.props.extension.registryExtension.remoteURL}
+                                                to={that.props.extension.registryExtension.remoteURL}
                                                 target={
-                                                    this.props.extension.registryExtension.isLocal ? undefined : '_self'
+                                                    that.props.extension.registryExtension.isLocal ? undefined : '_self'
                                                 }
                                             >
-                                                {this.props.extension.registryExtension.registryName}
+                                                {that.props.extension.registryExtension.registryName}
                                             </LinkOrSpan>
                                         </dd>
                                     </>
                                 )}
                             <dt className="border-top pt-2">Extension ID</dt>
-                            <dd>{this.props.extension.id}</dd>
-                            {this.props.extension.registryExtension &&
-                                (this.props.extension.registryExtension.updatedAt ||
-                                    this.props.extension.registryExtension.publishedAt) && (
+                            <dd>{that.props.extension.id}</dd>
+                            {that.props.extension.registryExtension &&
+                                (that.props.extension.registryExtension.updatedAt ||
+                                    that.props.extension.registryExtension.publishedAt) && (
                                     <>
                                         <dt className="border-top pt-2">Last updated</dt>
                                         <dd>
                                             <Timestamp
                                                 date={maxDate(
                                                     [
-                                                        this.props.extension.registryExtension.updatedAt,
-                                                        this.props.extension.registryExtension.publishedAt,
+                                                        that.props.extension.registryExtension.updatedAt,
+                                                        that.props.extension.registryExtension.publishedAt,
                                                     ]
                                                         .filter(isDefined)
                                                         .map(date => parseISO(date))
@@ -163,19 +163,19 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                 )}
                             <dt className="border-top pt-2">Resources</dt>
                             <dd className="border-bottom pb-2">
-                                {this.props.extension.registryExtension && (
+                                {that.props.extension.registryExtension && (
                                     <Link
-                                        to={`${this.props.extension.registryExtension.url}/-/manifest`}
+                                        to={`${that.props.extension.registryExtension.url}/-/manifest`}
                                         className="d-block"
                                     >
                                         Manifest (package.json)
                                     </Link>
                                 )}
-                                {this.props.extension.manifest &&
-                                    !isErrorLike(this.props.extension.manifest) &&
-                                    this.props.extension.manifest.url && (
+                                {that.props.extension.manifest &&
+                                    !isErrorLike(that.props.extension.manifest) &&
+                                    that.props.extension.manifest.url && (
                                         <a
-                                            href={this.props.extension.manifest.url}
+                                            href={that.props.extension.manifest.url}
                                             target="_blank"
                                             rel="nofollow noopener noreferrer"
                                             className="d-block"

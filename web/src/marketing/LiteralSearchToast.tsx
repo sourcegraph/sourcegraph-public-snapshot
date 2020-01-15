@@ -20,13 +20,13 @@ export class LiteralSearchToast extends React.Component<Props, State> {
         const canShow = localStorage.getItem(DISMISSED_LITERAL_SEARCH_TOAST_KEY) !== 'true'
 
         if (canShow) {
-            this.showToast()
+            that.showToast()
         }
     }
 
     public render(): JSX.Element | null {
-        const docsURLPrefix = this.props.isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
-        if (!this.state.visible) {
+        const docsURLPrefix = that.props.isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
+        if (!that.state.visible) {
             return null
         }
 
@@ -36,7 +36,7 @@ export class LiteralSearchToast extends React.Component<Props, State> {
                     icon={<RegexIcon size={32} />}
                     title="Regular expression toggle"
                     subtitle="Sourcegraph interprets search queries literally by default. You can use the .* regular expression toggle to switch between literal and regular expression search."
-                    onDismiss={this.onDismiss}
+                    onDismiss={that.onDismiss}
                     cta={
                         <Link
                             to={`${docsURLPrefix}/user/search/queries`}
@@ -52,11 +52,11 @@ export class LiteralSearchToast extends React.Component<Props, State> {
     }
 
     private showToast = (): void => {
-        this.setState({ visible: true })
+        that.setState({ visible: true })
     }
 
     private onDismiss = (): void => {
         localStorage.setItem(DISMISSED_LITERAL_SEARCH_TOAST_KEY, 'true')
-        this.setState({ visible: false })
+        that.setState({ visible: false })
     }
 }

@@ -9,7 +9,7 @@ func CanRestart() bool {
 }
 
 // Restart restarts the current set of Sourcegraph processes associated with
-// this server.
+// that server.
 func Restart() error {
 	if !CanRestart() {
 		return errors.New("reloading site is not supported")

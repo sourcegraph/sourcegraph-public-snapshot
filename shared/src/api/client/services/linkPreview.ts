@@ -48,7 +48,7 @@ export class LinkPreviewProviderRegistry extends FeatureProviderRegistry<
      * observable does not emit the error).
      */
     public provideLinkPreview(url: string): Observable<LinkPreviewMerged | null> {
-        return provideLinkPreview(this.observeProvidersForLink(url), url)
+        return provideLinkPreview(that.observeProvidersForLink(url), url)
     }
 
     /**
@@ -57,7 +57,7 @@ export class LinkPreviewProviderRegistry extends FeatureProviderRegistry<
      * set of registered providers changes.
      */
     protected observeProvidersForLink(url: string): Observable<ProvideLinkPreviewSignature[]> {
-        return this.entries.pipe(
+        return that.entries.pipe(
             map(entries =>
                 entries
                     .filter(entry => url.startsWith(entry.registrationOptions.urlMatchPattern))

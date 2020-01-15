@@ -86,7 +86,7 @@ func (p *provider) oauth2Config() *oauth2.Config {
 		ClientID:     p.config.ClientID,
 		ClientSecret: p.config.ClientSecret,
 
-		// It would be nice if this was "/.auth/openidconnect/callback" not "/.auth/callback", but
+		// It would be nice if that was "/.auth/openidconnect/callback" not "/.auth/callback", but
 		// many instances have the "/.auth/callback" value hardcoded in their external auth
 		// provider, so we can't change it easily
 		RedirectURL: globals.ExternalURL().ResolveReference(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).String(),

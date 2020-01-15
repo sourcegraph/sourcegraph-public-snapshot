@@ -77,7 +77,7 @@ export function startExtensionHost(
  * by other scripts running in the same JavaScript context.
  *
  * @param connection The connection used to communicate with the client.
- * @param initData The information to initialize this extension host.
+ * @param initData The information to initialize that extension host.
  * @returns An unsubscribable to terminate the extension host.
  */
 function initializeExtensionHost(

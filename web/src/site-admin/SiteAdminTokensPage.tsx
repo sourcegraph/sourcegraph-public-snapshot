@@ -38,7 +38,7 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         const nodeProps: Pick<AccessTokenNodeProps, 'showSubject' | 'onDidUpdate'> = {
             showSubject: true,
-            onDidUpdate: this.onDidUpdateAccessToken,
+            onDidUpdate: that.onDidUpdateAccessToken,
         }
 
         const accessTokensEnabled = window.context.accessTokensAllow !== 'none'
@@ -50,7 +50,7 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
                     <LinkOrSpan
                         title={accessTokensEnabled ? '' : 'Access token creation is disabled in site configuration'}
                         className={`btn btn-primary ml-2 ${accessTokensEnabled ? '' : 'disabled'}`}
-                        to={accessTokensEnabled ? `${this.props.authenticatedUser.settingsURL!}/tokens/new` : null}
+                        to={accessTokensEnabled ? `${that.props.authenticatedUser.settingsURL!}/tokens/new` : null}
                     >
                         <AddIcon className="icon-inline" /> Generate access token
                     </LinkOrSpan>

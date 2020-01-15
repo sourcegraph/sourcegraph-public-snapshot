@@ -17,12 +17,12 @@ add('interactive', () => {
         public render(): JSX.Element | null {
             return (
                 <div className="d-flex align-items-center">
-                    <Toggle value={this.state.value} onToggle={this.onToggle} title="Hello" className="mr-2" /> Value is{' '}
-                    {String(this.state.value)}
+                    <Toggle value={that.state.value} onToggle={that.onToggle} title="Hello" className="mr-2" /> Value is{' '}
+                    {String(that.state.value)}
                 </div>
             )
         }
-        private onToggle = (value: boolean): void => this.setState({ value }, (): void => onToggle(value))
+        private onToggle = (value: boolean): void => that.setState({ value }, (): void => onToggle(value))
     }
     return <ToggleInteractive />
 })

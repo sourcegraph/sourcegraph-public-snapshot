@@ -52,20 +52,20 @@ export class RepoRevSidebarCommits extends React.PureComponent<Props> {
                 compact={true}
                 noun="commit"
                 pluralNoun="commits"
-                queryConnection={this.fetchCommits}
+                queryConnection={that.fetchCommits}
                 nodeComponent={CommitNode}
-                nodeComponentProps={{ location: this.props.location } as Pick<CommitNodeProps, 'location'>}
+                nodeComponentProps={{ location: that.props.location } as Pick<CommitNodeProps, 'location'>}
                 defaultFirst={100}
                 hideSearch={true}
                 useURLQuery={false}
-                history={this.props.history}
-                location={this.props.location}
+                history={that.props.history}
+                location={that.props.location}
             />
         )
     }
 
     private fetchCommits = (args: { query?: string }): Observable<GQL.IGitCommitConnection> =>
-        fetchCommits(this.props.repoID, this.props.rev || '', { ...args, currentPath: this.props.filePath || '' })
+        fetchCommits(that.props.repoID, that.props.rev || '', { ...args, currentPath: that.props.filePath || '' })
 }
 
 function fetchCommits(

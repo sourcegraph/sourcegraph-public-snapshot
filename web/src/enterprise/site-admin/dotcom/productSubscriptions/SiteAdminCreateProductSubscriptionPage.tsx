@@ -17,7 +17,7 @@ import { useEventObservable } from '../../../../util/useObservable'
 
 interface UserCreateSubscriptionNodeProps {
     /**
-     * The user to display in this list item.
+     * The user to display in that list item.
      */
     node: GQL.IUser
 

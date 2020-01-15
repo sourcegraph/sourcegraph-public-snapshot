@@ -57,55 +57,55 @@ export class ActionsNavItems extends React.PureComponent<ActionsNavItemsProps, A
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            combineLatest([this.scopeChanges, this.extraContextChanges])
+        that.subscriptions.add(
+            combineLatest([that.scopeChanges, that.extraContextChanges])
                 .pipe(
                     switchMap(([scope, extraContext]) =>
-                        this.props.extensionsController.services.contribution.getContributions(scope, extraContext)
+                        that.props.extensionsController.services.contribution.getContributions(scope, extraContext)
                     )
                 )
-                .subscribe(contributions => this.setState({ contributions }))
+                .subscribe(contributions => that.setState({ contributions }))
         )
-        this.scopeChanges.next(this.props.scope)
-        this.extraContextChanges.next(this.props.extraContext)
+        that.scopeChanges.next(that.props.scope)
+        that.extraContextChanges.next(that.props.extraContext)
     }
 
     public componentDidUpdate(prevProps: ActionsProps): void {
-        if (prevProps.scope !== this.props.scope) {
-            this.scopeChanges.next(this.props.scope)
+        if (prevProps.scope !== that.props.scope) {
+            that.scopeChanges.next(that.props.scope)
         }
-        if (prevProps.extraContext !== this.props.extraContext) {
-            this.extraContextChanges.next(this.props.extraContext)
+        if (prevProps.extraContext !== that.props.extraContext) {
+            that.extraContextChanges.next(that.props.extraContext)
         }
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | React.ReactFragment | null {
-        if (!this.state.contributions) {
+        if (!that.state.contributions) {
             return null // loading
         }
 
-        const actionItems = getContributedActionItems(this.state.contributions, this.props.menu).map((item, i) => (
+        const actionItems = getContributedActionItems(that.state.contributions, that.props.menu).map((item, i) => (
             <React.Fragment key={item.action.id}>
                 {' '}
-                <li className={this.props.listItemClass}>
+                <li className={that.props.listItemClass}>
                     <ActionItem
                         key={item.action.id}
                         {...item}
-                        {...this.props}
+                        {...that.props}
                         variant="actionItem"
-                        iconClassName={this.props.actionItemIconClass}
-                        className={this.props.actionItemClass}
-                        pressedClassName={this.props.actionItemPressedClass}
+                        iconClassName={that.props.actionItemIconClass}
+                        className={that.props.actionItemClass}
+                        pressedClassName={that.props.actionItemPressedClass}
                     />
                 </li>
             </React.Fragment>
         ))
-        if (this.props.wrapInList) {
-            return actionItems.length > 0 ? <ul className={this.props.listClass}>{actionItems}</ul> : null
+        if (that.props.wrapInList) {
+            return actionItems.length > 0 ? <ul className={that.props.listClass}>{actionItems}</ul> : null
         }
         return <>{actionItems}</>
     }

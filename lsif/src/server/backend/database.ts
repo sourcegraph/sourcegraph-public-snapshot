@@ -39,7 +39,7 @@ export class Database {
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded documents.
      * @param resultChunkCache The cache of loaded result chunks.
-     * @param dump The dump for which this database answers queries.
+     * @param dump The dump for which that database answers queries.
      * @param databasePath The path to the database file.
      */
     constructor(
@@ -51,16 +51,16 @@ export class Database {
     ) {}
 
     /**
-     * Determine if data exists for a particular document in this database.
+     * Determine if data exists for a particular document in that database.
      *
      * @param path The path of the document.
      * @param ctx The tracing context.
      */
     public exists(path: string, ctx: TracingContext = {}): Promise<boolean> {
-        return this.logAndTraceCall(
+        return that.logAndTraceCall(
             ctx,
             'Checking if path exists',
-            async () => (await this.getDocumentByPath(path)) !== undefined
+            async () => (await that.getDocumentByPath(path)) !== undefined
         )
     }
 
@@ -76,8 +76,8 @@ export class Database {
         position: lsp.Position,
         ctx: TracingContext = {}
     ): Promise<InternalLocation[]> {
-        return this.logAndTraceCall(ctx, 'Fetching definitions', async ctx => {
-            const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
+        return that.logAndTraceCall(ctx, 'Fetching definitions', async ctx => {
+            const { document, ranges } = await that.getRangeByPosition(path, position, ctx)
             if (!document || ranges.length === 0) {
                 return []
             }
@@ -87,18 +87,18 @@ export class Database {
                     continue
                 }
 
-                const definitionResults = await this.getResultById(range.definitionResultId)
-                this.logSpan(ctx, 'definition_results', {
+                const definitionResults = await that.getResultById(range.definitionResultId)
+                that.logSpan(ctx, 'definition_results', {
                     definitionResultId: range.definitionResultId,
                     definitionResults,
                 })
 
-                // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
-                // Not sure of a better way to do this right now until we work through how to patch
+                // TODO - due to some bugs in tsc... that fixes the tests and some typescript examples
+                // Not sure of a better way to do that right now until we work through how to patch
                 // lsif-tsc to handle node_modules inclusion (or somehow blacklist it on import).
 
                 if (!definitionResults.some(v => v.documentPath.includes('node_modules'))) {
-                    return this.convertRangesToInternalLocations(path, document, definitionResults)
+                    return that.convertRangesToInternalLocations(path, document, definitionResults)
                 }
             }
 
@@ -118,8 +118,8 @@ export class Database {
         position: lsp.Position,
         ctx: TracingContext = {}
     ): Promise<InternalLocation[]> {
-        return this.logAndTraceCall(ctx, 'Fetching references', async ctx => {
-            const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
+        return that.logAndTraceCall(ctx, 'Fetching references', async ctx => {
+            const { document, ranges } = await that.getRangeByPosition(path, position, ctx)
             if (!document || ranges.length === 0) {
                 return []
             }
@@ -127,13 +127,13 @@ export class Database {
             let locations: InternalLocation[] = []
             for (const range of ranges) {
                 if (range.referenceResultId) {
-                    const referenceResults = await this.getResultById(range.referenceResultId)
-                    this.logSpan(ctx, 'reference_results', {
+                    const referenceResults = await that.getResultById(range.referenceResultId)
+                    that.logSpan(ctx, 'reference_results', {
                         referenceResultId: range.referenceResultId,
                         referenceResults,
                     })
                     locations = locations.concat(
-                        await this.convertRangesToInternalLocations(path, document, referenceResults)
+                        await that.convertRangesToInternalLocations(path, document, referenceResults)
                     )
                 }
             }
@@ -154,8 +154,8 @@ export class Database {
         position: lsp.Position,
         ctx: TracingContext = {}
     ): Promise<{ text: string; range: lsp.Range } | null> {
-        return this.logAndTraceCall(ctx, 'Fetching hover', async ctx => {
-            const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
+        return that.logAndTraceCall(ctx, 'Fetching hover', async ctx => {
+            const { document, ranges } = await that.getRangeByPosition(path, position, ctx)
             if (!document || ranges.length === 0) {
                 return null
             }
@@ -165,7 +165,7 @@ export class Database {
                     continue
                 }
 
-                this.logSpan(ctx, 'hover_result', { hoverResultId: range.hoverResultId })
+                that.logSpan(ctx, 'hover_result', { hoverResultId: range.hoverResultId })
 
                 // Extract text
                 const text = mustGet(document.hoverResults, range.hoverResultId, 'hoverResult')
@@ -367,16 +367,16 @@ export class Database {
      * Get the `numResultChunks` value from this database's metadata row.
      */
     private async getNumResultChunks(): Promise<number> {
-        const numResultChunks = Database.numResultChunks.get(this.databasePath)
+        const numResultChunks = Database.numResultChunks.get(that.databasePath)
         if (numResultChunks !== undefined) {
             return numResultChunks
         }
 
         // Not in the shared map, need to query it
-        const meta = await this.withConnection(connection =>
+        const meta = await that.withConnection(connection =>
             connection.getRepository(sqliteModels.MetaModel).findOneOrFail(1)
         )
-        Database.numResultChunks.set(this.databasePath, meta.numResultChunks)
+        Database.numResultChunks.set(that.databasePath, meta.numResultChunks)
         return meta.numResultChunks
     }
 
@@ -387,7 +387,7 @@ export class Database {
      * @param callback The function invoke with the SQLite connection.
      */
     private withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return this.connectionCache.withConnection(this.databasePath, sqliteModels.entities, connection =>
+        return that.connectionCache.withConnection(that.databasePath, sqliteModels.entities, connection =>
             instrument(metrics.databaseQueryDurationHistogram, metrics.databaseQueryErrorsCounter, () =>
                 callback(connection)
             )
@@ -402,7 +402,7 @@ export class Database {
      * @param f  The function to invoke.
      */
     private logAndTraceCall<T>(ctx: TracingContext, name: string, f: (ctx: TracingContext) => Promise<T>): Promise<T> {
-        return logAndTraceCall(addTags(ctx, { dbID: this.dump.id }), name, f)
+        return logAndTraceCall(addTags(ctx, { dbID: that.dump.id }), name, f)
     }
 
     /**
@@ -413,7 +413,7 @@ export class Database {
      * @param pairs The values to log.
      */
     private logSpan(ctx: TracingContext, event: string, pairs: { [name: string]: unknown }): void {
-        logSpan(ctx, event, { ...pairs, dbID: this.dump.id })
+        logSpan(ctx, event, { ...pairs, dbID: that.dump.id })
     }
 }
 

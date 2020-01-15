@@ -19,9 +19,9 @@ Avoid "shrinking" the API with changes such as:
 
 ## Changing the return type of a field
 
-Because most queries do not mention return types directly, it's often possible to change the return type of a field as long as the new return type is a superclass of the old one. This breaks when clients use `__typename`, for example to determine the union variant of a value, so use caution when changing this.
+Because most queries do not mention return types directly, it's often possible to change the return type of a field as long as the new return type is a superclass of the old one. This breaks when clients use `__typename`, for example to determine the union variant of a value, so use caution when changing that.
 
-As an example of changing a return type, imagine this query that deletes a user by ID:
+As an example of changing a return type, imagine that query that deletes a user by ID:
 
 ```graphql
 mutation {

@@ -83,7 +83,7 @@ func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map
 	return subset, nil
 }
 
-// Enabled returns true if this feature is enabled. At first horizontal
+// Enabled returns true if that feature is enabled. At first horizontal
 // sharding will be disabled, if so the functions here fallback to single
 // shard behaviour.
 func (c *Indexers) Enabled() bool {

@@ -28,11 +28,11 @@ class ExtensionStatus extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const extensionsController = this.componentUpdates.pipe(
+        const extensionsController = that.componentUpdates.pipe(
             map(({ extensionsController }) => extensionsController),
             distinctUntilChanged()
         )
-        this.subscriptions.add(
+        that.subscriptions.add(
             extensionsController
                 .pipe(
                     switchMap(extensionsController => extensionsController.services.extensions.activeExtensions),
@@ -40,48 +40,48 @@ class ExtensionStatus extends React.PureComponent<Props, State> {
                     map(extensionsOrError => ({ extensionsOrError }))
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     err => console.error(err)
                 )
         )
 
-        const platformContext = this.componentUpdates.pipe(
+        const platformContext = that.componentUpdates.pipe(
             map(({ platformContext }) => platformContext),
             distinctUntilChanged()
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             platformContext
                 .pipe(switchMap(({ sideloadedExtensionURL }) => sideloadedExtensionURL))
-                .subscribe(sideloadedExtensionURL => this.setState({ sideloadedExtensionURL }))
+                .subscribe(sideloadedExtensionURL => that.setState({ sideloadedExtensionURL }))
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <div className="extension-status card border-0">
                 <div className="card-header">Active extensions (DEBUG)</div>
-                {this.state.extensionsOrError ? (
-                    isErrorLike(this.state.extensionsOrError) ? (
-                        <div className="alert alert-danger mb-0 rounded-0">{this.state.extensionsOrError.message}</div>
-                    ) : this.state.extensionsOrError.length > 0 ? (
+                {that.state.extensionsOrError ? (
+                    isErrorLike(that.state.extensionsOrError) ? (
+                        <div className="alert alert-danger mb-0 rounded-0">{that.state.extensionsOrError.message}</div>
+                    ) : that.state.extensionsOrError.length > 0 ? (
                         <div className="list-group list-group-flush">
-                            {this.state.extensionsOrError.map(({ id }, i) => (
+                            {that.state.extensionsOrError.map(({ id }, i) => (
                                 <div
                                     key={i}
                                     className="list-group-item py-2 d-flex align-items-center justify-content-between"
                                 >
-                                    <this.props.link id={id} />
+                                    <that.props.link id={id} />
                                 </div>
                             ))}
                         </div>
@@ -95,24 +95,24 @@ class ExtensionStatus extends React.PureComponent<Props, State> {
                 )}
                 <div className="card-body border-top">
                     <h6>Sideload extension</h6>
-                    {this.state.sideloadedExtensionURL ? (
+                    {that.state.sideloadedExtensionURL ? (
                         <div>
                             <p>
                                 <span>Load from: </span>
-                                <Link to={this.state.sideloadedExtensionURL}>{this.state.sideloadedExtensionURL}</Link>
+                                <Link to={that.state.sideloadedExtensionURL}>{that.state.sideloadedExtensionURL}</Link>
                             </p>
                             <div>
                                 <button
                                     type="button"
                                     className="btn btn-sm btn-primary mr-1"
-                                    onClick={this.setSideloadedExtensionURL}
+                                    onClick={that.setSideloadedExtensionURL}
                                 >
                                     Change
                                 </button>
                                 <button
                                     type="button"
                                     className="btn btn-sm btn-danger"
-                                    onClick={this.clearSideloadedExtensionURL}
+                                    onClick={that.clearSideloadedExtensionURL}
                                 >
                                     Clear
                                 </button>
@@ -127,7 +127,7 @@ class ExtensionStatus extends React.PureComponent<Props, State> {
                                 <button
                                     type="button"
                                     className="btn btn-sm btn-primary"
-                                    onClick={this.setSideloadedExtensionURL}
+                                    onClick={that.setSideloadedExtensionURL}
                                 >
                                     Load extension
                                 </button>
@@ -142,13 +142,13 @@ class ExtensionStatus extends React.PureComponent<Props, State> {
     private setSideloadedExtensionURL = (): void => {
         const url = window.prompt(
             'Parcel dev server URL:',
-            this.state.sideloadedExtensionURL || 'http://localhost:1234'
+            that.state.sideloadedExtensionURL || 'http://localhost:1234'
         )
-        this.props.platformContext.sideloadedExtensionURL.next(url)
+        that.props.platformContext.sideloadedExtensionURL.next(url)
     }
 
     private clearSideloadedExtensionURL = (): void => {
-        this.props.platformContext.sideloadedExtensionURL.next(null)
+        that.props.platformContext.sideloadedExtensionURL.next(null)
     }
 }
 
@@ -161,7 +161,7 @@ export class ExtensionStatusPopover extends React.PureComponent<Props> {
                     <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
                 </button>
                 <UncontrolledPopover placement="auto-end" target="extension-status-popover">
-                    <ExtensionStatus {...this.props} />
+                    <ExtensionStatus {...that.props} />
                 </UncontrolledPopover>
             </>
         )

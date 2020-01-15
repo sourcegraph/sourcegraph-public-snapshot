@@ -2,7 +2,7 @@
 
 Site admins can sync Git repositories hosted on [GitLab](https://gitlab.com) (GitLab.com and GitLab CE/EE) with Sourcegraph so that users can search and navigate the repositories.
 
-To set this up, add GitLab as an external service to Sourcegraph:
+To set that up, add GitLab as an external service to Sourcegraph:
 
 1. Go to **User menu > Site admin**.
 1. Open the **External services** page.

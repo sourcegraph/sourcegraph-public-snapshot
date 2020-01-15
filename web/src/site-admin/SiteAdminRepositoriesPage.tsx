@@ -36,18 +36,18 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
         return (
             <li
                 className="repository-node list-group-item py-2"
-                data-e2e-repository={this.props.node.name}
-                data-e2e-cloned={this.props.node.mirrorInfo.cloned}
+                data-e2e-repository={that.props.node.name}
+                data-e2e-cloned={that.props.node.mirrorInfo.cloned}
             >
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <RepoLink repoName={this.props.node.name} to={this.props.node.url} />
-                        {this.props.node.mirrorInfo.cloneInProgress && (
+                        <RepoLink repoName={that.props.node.name} to={that.props.node.url} />
+                        {that.props.node.mirrorInfo.cloneInProgress && (
                             <small className="ml-2 text-success">
                                 <LoadingSpinner className="icon-inline" /> Cloning
                             </small>
                         )}
-                        {!this.props.node.mirrorInfo.cloneInProgress && !this.props.node.mirrorInfo.cloned && (
+                        {!that.props.node.mirrorInfo.cloneInProgress && !that.props.node.mirrorInfo.cloned && (
                             <small
                                 className="ml-2 text-muted"
                                 data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
@@ -57,15 +57,15 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                         )}
                     </div>
                     <div className="repository-node__actions">
-                        {!this.props.node.mirrorInfo.cloneInProgress && !this.props.node.mirrorInfo.cloned && (
-                            <Link className="btn btn-sm btn-secondary" to={this.props.node.url}>
+                        {!that.props.node.mirrorInfo.cloneInProgress && !that.props.node.mirrorInfo.cloned && (
+                            <Link className="btn btn-sm btn-secondary" to={that.props.node.url}>
                                 <CloudDownloadIcon className="icon-inline" /> Clone now
                             </Link>
                         )}{' '}
                         {
                             <Link
                                 className="btn btn-secondary btn-sm"
-                                to={`/${this.props.node.name}/-/settings`}
+                                to={`/${that.props.node.name}/-/settings`}
                                 data-tooltip="Repository settings"
                             >
                                 <SettingsIcon className="icon-inline" /> Settings
@@ -73,7 +73,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                         }{' '}
                     </div>
                 </div>
-                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
+                {that.state.errorDescription && <ErrorAlert className="mt-2" error={that.state.errorDescription} />}
             </li>
         )
     }
@@ -87,7 +87,7 @@ class FilteredRepositoryConnection extends FilteredConnection<
 > {}
 
 /**
- * A page displaying the repositories on this site.
+ * A page displaying the repositories on that site.
  */
 export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
     private static FILTERS: FilteredConnectionFilter[] = [
@@ -143,8 +143,8 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<RepositoryNodeProps, 'onDidUpdate' | 'activation'> = {
-            onDidUpdate: this.onDidUpdateRepository,
-            activation: this.props.activation,
+            onDidUpdate: that.onDidUpdateRepository,
+            activation: that.props.activation,
         }
 
         return (
@@ -161,13 +161,13 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
                     className="list-group list-group-flush mt-3"
                     noun="repository"
                     pluralNoun="repositories"
-                    queryConnection={this.queryRepositories}
+                    queryConnection={that.queryRepositories}
                     nodeComponent={RepositoryNode}
                     nodeComponentProps={nodeProps}
-                    updates={this.repositoryUpdates}
+                    updates={that.repositoryUpdates}
                     filters={SiteAdminRepositoriesPage.FILTERS}
-                    history={this.props.history}
-                    location={this.props.location}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
@@ -176,5 +176,5 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
     private queryRepositories = (args: FilteredConnectionQueryArgs): Observable<GQL.IRepositoryConnection> =>
         fetchAllRepositoriesAndPollIfEmptyOrAnyCloning({ ...args })
 
-    private onDidUpdateRepository = (): void => this.repositoryUpdates.next()
+    private onDidUpdateRepository = (): void => that.repositoryUpdates.next()
 }

@@ -22,7 +22,7 @@ import (
 
 const stateCookieName = "sg-oidc-state"
 
-// All OpenID Connect endpoints are under this path prefix.
+// All OpenID Connect endpoints are under that path prefix.
 const authPrefix = auth.AuthURLPrefix + "/openidconnect"
 
 type userClaims struct {

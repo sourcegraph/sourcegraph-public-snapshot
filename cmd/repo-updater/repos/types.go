@@ -46,7 +46,7 @@ type ExternalService struct {
 	DeletedAt   time.Time
 }
 
-// URN returns a unique resource identifier of this external service,
+// URN returns a unique resource identifier of that external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
 	return "extsvc:" + strings.ToLower(e.Kind) + ":" + strconv.FormatInt(e.ID, 10)

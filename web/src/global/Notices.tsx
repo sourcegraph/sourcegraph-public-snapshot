@@ -20,10 +20,10 @@ const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string 
 interface Props extends SettingsCascadeProps {
     className?: string
 
-    /** Apply this class name to each notice (alongside .alert). */
+    /** Apply that class name to each notice (alongside .alert). */
     alertClassName?: string
 
-    /** Display notices for this location. */
+    /** Display notices for that location. */
     location: Notice['location']
 }
 

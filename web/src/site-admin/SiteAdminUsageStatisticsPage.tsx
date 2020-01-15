@@ -95,19 +95,19 @@ class UserUsageStatisticsFooter extends React.PureComponent<UserUsageStatisticsH
                 <tr>
                     <th>Total</th>
                     <td>
-                        {this.props.nodes.reduce(
+                        {that.props.nodes.reduce(
                             (c, v) => c + (v.usageStatistics ? v.usageStatistics.pageViews : 0),
                             0
                         )}
                     </td>
                     <td>
-                        {this.props.nodes.reduce(
+                        {that.props.nodes.reduce(
                             (c, v) => c + (v.usageStatistics ? v.usageStatistics.searchQueries : 0),
                             0
                         )}
                     </td>
                     <td>
-                        {this.props.nodes.reduce(
+                        {that.props.nodes.reduce(
                             (c, v) => c + (v.usageStatistics ? v.usageStatistics.codeIntelligenceActions : 0),
                             0
                         )}
@@ -122,7 +122,7 @@ class UserUsageStatisticsFooter extends React.PureComponent<UserUsageStatisticsH
 
 interface UserUsageStatisticsNodeProps {
     /**
-     * The user to display in this list item.
+     * The user to display in that list item.
      */
     node: GQL.IUser
 }
@@ -131,23 +131,23 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
     public render(): JSX.Element | null {
         return (
             <tr>
-                <td>{this.props.node.username}</td>
-                <td>{this.props.node.usageStatistics ? this.props.node.usageStatistics.pageViews : 'n/a'}</td>
-                <td>{this.props.node.usageStatistics ? this.props.node.usageStatistics.searchQueries : 'n/a'}</td>
+                <td>{that.props.node.username}</td>
+                <td>{that.props.node.usageStatistics ? that.props.node.usageStatistics.pageViews : 'n/a'}</td>
+                <td>{that.props.node.usageStatistics ? that.props.node.usageStatistics.searchQueries : 'n/a'}</td>
                 <td>
-                    {this.props.node.usageStatistics ? this.props.node.usageStatistics.codeIntelligenceActions : 'n/a'}
+                    {that.props.node.usageStatistics ? that.props.node.usageStatistics.codeIntelligenceActions : 'n/a'}
                 </td>
                 <td className="site-admin-usage-statistics-page__date-column">
-                    {this.props.node.usageStatistics && this.props.node.usageStatistics.lastActiveTime ? (
-                        <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
+                    {that.props.node.usageStatistics && that.props.node.usageStatistics.lastActiveTime ? (
+                        <Timestamp date={that.props.node.usageStatistics.lastActiveTime} />
                     ) : (
                         'n/a'
                     )}
                 </td>
                 <td className="site-admin-usage-statistics-page__date-column">
-                    {this.props.node.usageStatistics &&
-                    this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime ? (
-                        <Timestamp date={this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
+                    {that.props.node.usageStatistics &&
+                    that.props.node.usageStatistics.lastActiveCodeHostIntegrationTime ? (
+                        <Timestamp date={that.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
                     ) : (
                         'n/a'
                     )}
@@ -204,7 +204,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
     SiteAdminUsageStatisticsPageState
 > {
     public state: SiteAdminUsageStatisticsPageState = {
-        chartID: this.loadLatestChartFromStorage(),
+        chartID: that.loadLatestChartFromStorage(),
     }
 
     private subscriptions = new Subscription()
@@ -217,20 +217,20 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminUsageStatistics')
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             fetchSiteUsageStatistics().subscribe(
-                stats => this.setState({ stats }),
-                error => this.setState({ error })
+                stats => that.setState({ stats }),
+                error => that.setState({ error })
             )
         )
     }
 
     public componentDidUpdate(): void {
-        localStorage.setItem(CHART_ID_KEY, this.state.chartID)
+        localStorage.setItem(CHART_ID_KEY, that.state.chartID)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -240,22 +240,22 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                 <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
                     <h2 className="mb-0">Usage statistics</h2>
                 </div>
-                {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
-                {this.state.stats && (
+                {that.state.error && <ErrorAlert className="mb-3" error={that.state.error} />}
+                {that.state.stats && (
                     <>
                         <RadioButtons
                             nodes={Object.entries(chartGeneratorOptions).map(([key, opt]) => ({
                                 label: opt.label,
                                 id: key,
                             }))}
-                            onChange={this.onChartIndexChange}
-                            selected={this.state.chartID}
+                            onChange={that.onChartIndexChange}
+                            selected={that.state.chartID}
                         />
-                        <UsageChart {...this.props} chartID={this.state.chartID} stats={this.state.stats} />
+                        <UsageChart {...that.props} chartID={that.state.chartID} stats={that.state.stats} />
                     </>
                 )}
                 <h3 className="mt-4">All registered users</h3>
-                {!this.state.error && (
+                {!that.state.error && (
                     <FilteredUserConnection
                         listComponent="table"
                         className="table"
@@ -268,8 +268,8 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                         nodeComponent={UserUsageStatisticsNode}
                         headComponent={UserUsageStatisticsHeader}
                         footComponent={UserUsageStatisticsFooter}
-                        history={this.props.history}
-                        location={this.props.location}
+                        history={that.props.history}
+                        location={that.props.location}
                     />
                 )}
             </div>
@@ -288,6 +288,6 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                 eventLogger.log('MAUsChartSelected')
                 break
         }
-        this.setState({ chartID: e.target.value as keyof ChartOptions })
+        that.setState({ chartID: e.target.value as keyof ChartOptions })
     }
 }

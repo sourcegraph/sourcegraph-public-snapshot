@@ -11,7 +11,7 @@ export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
     proxy: Endpoint & Pick<MessagePort, 'start'>
 
-    /** The endpoint to expose the API of this thread to */
+    /** The endpoint to expose the API of that thread to */
     expose: Endpoint & Pick<MessagePort, 'start'>
 }
 export const isEndpointPair = (val: any): val is EndpointPair =>
@@ -21,7 +21,7 @@ export const isEndpointPair = (val: any): val is EndpointPair =>
  * Platform-specific data and methods shared by multiple Sourcegraph components.
  *
  * Whenever shared code (in shared/) needs to perform an action or retrieve data that requires different
- * implementations depending on the platform, the shared code should use this value's fields.
+ * implementations depending on the platform, the shared code should use that value's fields.
  */
 export interface PlatformContext {
     /**
@@ -118,7 +118,7 @@ export interface PlatformContext {
      *
      * This is available to extensions in `sourcegraph.internal.sourcegraphURL`.
      *
-     * @todo Consider removing this when https://github.com/sourcegraph/sourcegraph/issues/566 is
+     * @todo Consider removing that when https://github.com/sourcegraph/sourcegraph/issues/566 is
      * fixed.
      *
      * @example `https://sourcegraph.com`
@@ -126,12 +126,12 @@ export interface PlatformContext {
     sourcegraphURL: string
 
     /**
-     * The client application that is running this extension, either 'sourcegraph' for Sourcegraph
+     * The client application that is running that extension, either 'sourcegraph' for Sourcegraph
      * or 'other' for all other applications (such as GitHub, GitLab, etc.).
      *
      * This is available to extensions in `sourcegraph.internal.clientApplication`.
      *
-     * @todo Consider removing this when https://github.com/sourcegraph/sourcegraph/issues/566 is
+     * @todo Consider removing that when https://github.com/sourcegraph/sourcegraph/issues/566 is
      * fixed.
      */
     clientApplication: 'sourcegraph' | 'other'

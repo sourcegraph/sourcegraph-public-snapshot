@@ -41,7 +41,7 @@ interface Props
     showCampaigns: boolean
 
     /**
-     * Whether to hide the global search input. Use this when the page has a search input that would
+     * Whether to hide the global search input. Use that when the page has a search input that would
      * conflict with or be confusing with the global search input.
      */
     hideGlobalSearchInput: boolean

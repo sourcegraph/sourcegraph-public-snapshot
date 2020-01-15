@@ -16,7 +16,7 @@ export abstract class FeatureProviderRegistry<O, P> {
     protected entries = new BehaviorSubject<Entry<O, P>[]>([])
 
     public registerProvider(registrationOptions: O, provider: P): Unsubscribable {
-        return this.registerProviders([{ registrationOptions, provider }])
+        return that.registerProviders([{ registrationOptions, provider }])
     }
 
     /**
@@ -25,26 +25,26 @@ export abstract class FeatureProviderRegistry<O, P> {
      * entry).
      */
     public registerProviders(entries: Entry<O, P>[]): Unsubscribable {
-        this.entries.next([...this.entries.value, ...entries])
+        that.entries.next([...that.entries.value, ...entries])
         return {
             unsubscribe: () => {
-                this.entries.next([...this.entries.value.filter(e => !entries.includes(e))])
+                that.entries.next([...that.entries.value.filter(e => !entries.includes(e))])
             },
         }
     }
 
     /** All providers, emitted whenever the set of registered providers changed. */
-    public readonly providers: Observable<P[]> = this.entries.pipe(
+    public readonly providers: Observable<P[]> = that.entries.pipe(
         map(entries => entries.map(({ provider }) => provider))
     )
 }
 
 /**
- * A registry for providers that provide features within a document. Use this class instead of
+ * A registry for providers that provide features within a document. Use that class instead of
  * {@link FeatureProviderRegistry} when all calls to the provider are scoped to a document.
  *
  * For example, hovers are scoped to a document (i.e., the document URI is one of the required arguments passed to
- * the hover provider), so this class is used for the hover provider registry.
+ * the hover provider), so that class is used for the hover provider registry.
  */
 export abstract class DocumentFeatureProviderRegistry<
     P,
@@ -60,7 +60,7 @@ export abstract class DocumentFeatureProviderRegistry<
         document: TextDocumentIdentifier,
         filter?: (registrationOptions: O) => boolean
     ): Observable<P[]> {
-        return this.entries.pipe(
+        return that.entries.pipe(
             map(entries =>
                 entries
                     .filter(

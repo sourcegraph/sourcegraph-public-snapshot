@@ -58,16 +58,16 @@ type Mutation {
     # CreateCampaignInput.plan field.
     createCampaignPlanFromPatches(
         # A list of patches (diffs) to apply to repositories (in new branches) when a campaign is
-        # created from this campaign plan.
+        # created from that campaign plan.
         patches: [CampaignPlanPatch!]!
     ): CampaignPlan!
     # Cancel a campaign plan that is being generated.
     # Cancellation expresses a desinterest in the campaign plan and is best-effort.
     # It may not be relied upon.
-    # The return of this mutation does not mean the plan was fully cancelled yet,
+    # The return of that mutation does not mean the plan was fully cancelled yet,
     # only that the desinterest in the campaign plan was acknowledged.
     # This mutation is idempotent and a noop if called for a completed campaign plan.
-    # There is no requirement to call this mutation, it is a performance optimization.
+    # There is no requirement to call that mutation, it is a performance optimization.
     cancelCampaignPlan(plan: ID!): EmptyResponse
     # Updates a campaign.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
@@ -77,7 +77,7 @@ type Mutation {
     # Deletes a campaign.
     deleteCampaign(
         campaign: ID!
-        # Whether to close the changesets associated with this campaign on their
+        # Whether to close the changesets associated with that campaign on their
         # respective codehosts, where "close" means the appropriate final state
         # on the codehost (e.g. "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
@@ -139,7 +139,7 @@ type Mutation {
     # Tests the connection to a mirror repository's original source repository. This is an
     # expensive and slow operation, so it should only be used for interactive diagnostics.
     #
-    # Only site admins may perform this mutation.
+    # Only site admins may perform that mutation.
     checkMirrorRepositoryConnection(
         # The ID of the existing repository whose mirror to check.
         repository: ID
@@ -148,9 +148,9 @@ type Mutation {
         name: String
     ): CheckMirrorRepositoryConnectionResult!
     # Schedule the mirror repository to be updated from its original source repository. Updating
-    # occurs automatically, so this should not normally be needed.
+    # occurs automatically, so that should not normally be needed.
     #
-    # Only site admins may perform this mutation.
+    # Only site admins may perform that mutation.
     updateMirrorRepository(
         # The mirror repository to update.
         repository: ID!
@@ -159,14 +159,14 @@ type Mutation {
     # mutation will be removed in 3.6.
     #
     # Schedules all repositories to be updated from their original source
-    # repositories. Updating occurs automatically, so this should not normally
+    # repositories. Updating occurs automatically, so that should not normally
     # be needed.
     #
-    # Only site admins may perform this mutation.
+    # Only site admins may perform that mutation.
     updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
     # Creates a new user account.
     #
-    # Only site admins may perform this mutation.
+    # Only site admins may perform that mutation.
     createUser(
         # The new user's username.
         username: String!
@@ -180,7 +180,7 @@ type Mutation {
     # Adds an email address to the user's account. The email address will be marked as unverified until the user
     # has followed the email verification process.
     #
-    # Only the user and site admins may perform this mutation.
+    # Only the user and site admins may perform that mutation.
     addUserEmail(user: ID!, email: String!): EmptyResponse!
     # Removes an email address from the user's account.
     #
@@ -189,16 +189,16 @@ type Mutation {
     # Manually set the verification status of a user's email, without going through the normal verification process
     # (of clicking on a link in the email with a verification code).
     #
-    # Only site admins may perform this mutation.
+    # Only site admins may perform that mutation.
     setUserEmailVerified(user: ID!, email: String!, verified: Boolean!): EmptyResponse!
-    # Deletes a user account. Only site admins may perform this mutation.
+    # Deletes a user account. Only site admins may perform that mutation.
     #
     # If hard == true, a hard delete is performed. By default, deletes are
     # 'soft deletes' and could theoretically be undone with manual DB commands.
     # If a hard delete is performed, the data is truly removed from the
     # database and deletion can NEVER be undone.
     #
-    # Data that is deleted as part of this operation:
+    # Data that is deleted as part of that operation:
     #
     # - All user data (access tokens, email addresses, external account info, survey responses, etc)
     # - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
@@ -680,9 +680,9 @@ enum ChangesetReviewState {
 
 # The input to the createChangesets mutation.
 input CreateChangesetInput {
-    # The repository ID that this Changeset belongs to.
+    # The repository ID that that Changeset belongs to.
     repository: ID!
-    # The external ID that uniquely identifies this Changeset in the above repository.
+    # The external ID that uniquely identifies that Changeset in the above repository.
     # Github: PR number
     externalID: String!
 }
@@ -704,17 +704,17 @@ type ExternalChangeset implements Node {
     # The unique ID for the changeset.
     id: ID!
 
-    # The external ID that uniquely identifies this ExternalChangeset on the
-    # codehost. For example, on GitHub this is the PR number.
+    # The external ID that uniquely identifies that ExternalChangeset on the
+    # codehost. For example, on GitHub that is the PR number.
     externalID: String!
 
-    # The repository changed by this changeset.
+    # The repository changed by that changeset.
     repository: Repository!
 
-    # The campaigns that have this changeset in them.
+    # The campaigns that have that changeset in them.
     campaigns(first: Int): CampaignConnection!
 
-    # The events belonging to this changeset.
+    # The events belonging to that changeset.
     events(first: Int): ChangesetEventConnection!
 
     # The date and time when the changeset was created.
@@ -735,7 +735,7 @@ type ExternalChangeset implements Node {
     # The external URL of the changeset on the code host.
     externalURL: ExternalLink!
 
-    # The review state of this changeset.
+    # The review state of that changeset.
     reviewState: ChangesetReviewState!
 
     # The head of the diff ("new" or "right-hand side").
@@ -744,7 +744,7 @@ type ExternalChangeset implements Node {
     # The base of the diff ("old" or "left-hand side").
     base: GitRef!
 
-    # The diff of this changeset.
+    # The diff of that changeset.
     # Only returned if the changeset has not been merged or closed.
     diff: RepositoryComparison
 }
@@ -778,7 +778,7 @@ type ChangesetEvent implements Node {
     # The unique ID for the changeset event.
     id: ID!
 
-    # The changeset this event belongs to.
+    # The changeset that event belongs to.
     changeset: ExternalChangeset!
 
     # The date and time when the changeset was created.
@@ -836,7 +836,7 @@ input DiscussionThreadTargetRepoSelectionInput {
     #
     # This is an arbitrary number of lines, and may be zero lines, but typically 3.
     #
-    # If null, this information will be gathered from the repository itself
+    # If null, that information will be gathered from the repository itself
     # automatically. This will result in an error if the selection is invalid or
     # the DiscussionThreadTargetRepoInput specified an invalid path or
     # branch/revision.
@@ -845,7 +845,7 @@ input DiscussionThreadTargetRepoSelectionInput {
     # The literal textual (UTF-8) lines of the selection. i.e. all lines
     # startLine through endLine.
     #
-    # If null, this information will be gathered from the repository itself
+    # If null, that information will be gathered from the repository itself
     # automatically. This will result in an error if the selection is invalid or
     # the DiscussionThreadTargetRepoInput specified an invalid path or
     # branch/revision.
@@ -855,7 +855,7 @@ input DiscussionThreadTargetRepoSelectionInput {
     #
     # This is an arbitrary number of lines, and may be zero lines, but typically 3.
     #
-    # If null, this information will be gathered from the repository itself
+    # If null, that information will be gathered from the repository itself
     # automatically. This will result in an error if the selection is invalid or
     # the DiscussionThreadTargetRepoInput specified an invalid path or
     # branch/revision.
@@ -928,7 +928,7 @@ input DiscussionThreadUpdateInput {
     archive: Boolean
 
     # When non-null, indicates that the thread should be deleted. Only admins
-    # can perform this action.
+    # can perform that action.
     delete: Boolean
 }
 
@@ -951,7 +951,7 @@ input DiscussionCommentUpdateInput {
     report: String
 
     # When non-null, indicates that the reports on the thread should be
-    # cleared. Only admins can perform this action.
+    # cleared. Only admins can perform that action.
     #
     # An error will be returned if the comment's canClearReports field is false.
     clearReports: Boolean
@@ -1099,7 +1099,7 @@ type CreateUserResult {
 # The result for Mutation.randomizeUserPassword.
 type RandomizeUserPasswordResult {
     # The reset password URL that the user must visit to sign into their account again. If the builtin
-    # username-password authentication provider is not enabled, this field's value is null.
+    # username-password authentication provider is not enabled, that field's value is null.
     resetPasswordURL: String
 }
 
@@ -1218,25 +1218,25 @@ type Query {
         first: Int
         # Return discussion threads matching the query.
         query: String
-        # When present, lists only the thread with this ID.
+        # When present, lists only the thread with that ID.
         #
         # DEPRECATED: use Query#node instead.
         threadID: ID
-        # When present, lists only the threads created by this author.
+        # When present, lists only the threads created by that author.
         authorUserID: ID
-        # When present, lists only the threads whose target is a repository with this ID.
+        # When present, lists only the threads whose target is a repository with that ID.
         #
         # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
         targetRepositoryID: ID
-        # When present, lists only the threads whose target is a repository with this name.
+        # When present, lists only the threads whose target is a repository with that name.
         #
         # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
         targetRepositoryName: String
-        # When present, lists only the threads whose target is a repository with this Git clone URL.
+        # When present, lists only the threads whose target is a repository with that Git clone URL.
         #
         # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
         targetRepositoryGitCloneURL: String
-        # When present, lists only the threads whose target is a repository with this file path.
+        # When present, lists only the threads whose target is a repository with that file path.
         #
         # If the path ends with "/**", any path below that is matched.
         targetRepositoryPath: String
@@ -1249,7 +1249,7 @@ type Query {
     discussionComments(
         # Returns the first n comments from the list.
         first: Int
-        # When present, lists only the comments created by this author.
+        # When present, lists only the comments created by that author.
         authorUserID: ID
     ): DiscussionCommentConnection!
     # Renders Markdown to HTML. The returned HTML is already sanitized and
@@ -1619,7 +1619,7 @@ type CommitSearchResult implements GenericSearchResultInterface {
     commit: GitCommit!
     # The ref names of the commit.
     refs: [GitRef!]!
-    # The refs by which this commit was reached.
+    # The refs by which that commit was reached.
     sourceRefs: [GitRef!]!
     # The matching portion of the commit message, if any.
     messagePreview: HighlightedString
@@ -1637,7 +1637,7 @@ type CodemodResult implements GenericSearchResultInterface {
     url: String!
     # A markdown string that is rendered less prominently.
     detail: Markdown!
-    # A list of matches in this search result.
+    # A list of matches in that search result.
     matches: [SearchResultMatch!]!
     # The commit whose contents the codemod was run against.
     commit: GitCommit!
@@ -1722,7 +1722,7 @@ type RepositoryConnection {
     # A list of repositories.
     nodes: [Repository!]!
     # The total count of repositories in the connection. This total count may be larger
-    # than the number of nodes in this object when the result is paginated.
+    # than the number of nodes in that object when the result is paginated.
     # This requires admin permissions and will return null for all non-admin users.
     #
     # In some cases, the total count can't be computed quickly; if so, it is null. Pass
@@ -1775,26 +1775,26 @@ type Repository implements Node & GenericSearchResultInterface {
         # SHAs) but also preserve the user input rev (for user friendliness).
         inputRevspec: String
     ): GitCommit
-    # Information and status related to mirroring, if this repository is a mirror of another repository (e.g., on
-    # some code host). In this case, the remote source repository is external to Sourcegraph and the mirror is
+    # Information and status related to mirroring, if that repository is a mirror of another repository (e.g., on
+    # some code host). In that case, the remote source repository is external to Sourcegraph and the mirror is
     # maintained by the Sourcegraph site (not the other way around).
     mirrorInfo: MirrorRepositoryInfo!
-    # Information about this repository from the external service that it originates from (such as GitHub, GitLab,
+    # Information about that repository from the external service that it originates from (such as GitHub, GitLab,
     # Phabricator, etc.).
     externalRepository: ExternalRepository
-    # Lists all external services which yield this repository.
+    # Lists all external services which yield that repository.
     externalServices(
         # Returns the first n external services from the list.
         first: Int
     ): ExternalServiceConnection!
     # Whether the repository is currently being cloned.
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")
-    # Information about the text search index for this repository, or null if text search indexing
-    # is not enabled or supported for this repository.
+    # Information about the text search index for that repository, or null if text search indexing
+    # is not enabled or supported for that repository.
     textSearchIndex: RepositoryTextSearchIndex
-    # The URL to this repository.
+    # The URL to that repository.
     url: String!
-    # The URLs to this repository on external services associated with it.
+    # The URLs to that repository on external services associated with it.
     externalURLs: [ExternalLink!]!
     # The repository's default Git branch (HEAD symbolic ref). If the repository is currently being cloned or is
     # empty, this field will be null.
@@ -1837,7 +1837,7 @@ type Repository implements Node & GenericSearchResultInterface {
         # Return Git tags whose names match the query.
         query: String
     ): GitRefConnection!
-    # A Git comparison in this repository between a base and head commit.
+    # A Git comparison in that repository between a base and head commit.
     comparison(
         # The base of the diff ("old" or "left-hand side"), or "HEAD" if not specified.
         base: String
@@ -1882,24 +1882,24 @@ type Repository implements Node & GenericSearchResultInterface {
         # When specified, shows only uploads that are latest for the given repository.
         isLatestForRepo: Boolean
 
-        # When specified, indicates that this request should be paginated and
+        # When specified, indicates that that request should be paginated and
         # the first N results (relative to the cursor) should be returned. i.e.
         # how many results to return per page. It must be in the range of 0-5000.
         first: Int
 
-        # When specified, indicates that this request should be paginated and
-        # to fetch results starting at this cursor.
+        # When specified, indicates that that request should be paginated and
+        # to fetch results starting at that cursor.
         #
         # A future request can be made for more results by passing in the
         # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         after: String
     ): LSIFUploadConnection!
 
-    # A list of authorized users to access this repository with the given permission.
+    # A list of authorized users to access that repository with the given permission.
     # This API currently only returns permissions from the Sourcegraph provider, i.e.
     # "permissions.userMapping" in site configuration.
     authorizedUsers(
-        # Permission that the user has on this repository.
+        # Permission that the user has on that repository.
         perm: RepositoryPermission = READ
         # Number of users to return after the given cursor.
         first: Int!
@@ -1917,7 +1917,7 @@ type ExternalLink {
     serviceType: String
 }
 
-# Information and status about the mirroring of a repository. In this case, the remote source repository
+# Information and status about the mirroring of a repository. In that case, the remote source repository
 # is external to Sourcegraph and the mirror is maintained by the Sourcegraph site (not the other way
 # around).
 type MirrorRepositoryInfo {
@@ -1936,9 +1936,9 @@ type MirrorRepositoryInfo {
     cloned: Boolean!
     # When the repository was last successfully updated from the remote source repository..
     updatedAt: DateTime
-    # The state of this repository in the update schedule.
+    # The state of that repository in the update schedule.
     updateSchedule: UpdateSchedule
-    # The state of this repository in the update queue.
+    # The state of that repository in the update queue.
     updateQueue: UpdateQueue
 }
 
@@ -1970,7 +1970,7 @@ type UpdateQueue {
 type ExternalRepository {
     # The repository's ID on the external service.
     #
-    # Example: For GitHub, this is the GitHub GraphQL API's node ID for the repository.
+    # Example: For GitHub, that is the GitHub GraphQL API's node ID for the repository.
     id: String!
     # The type of external service where this repository resides.
     #
@@ -2013,7 +2013,7 @@ type RepositoryTextSearchIndexedRef {
     # SHA that was indexed, use RepositoryTextSearchIndexedRef.indexedCommit; this field's ref target resolves to
     # the current target, not the target at the time of indexing.
     ref: GitRef!
-    # Whether a text search index exists for this ref.
+    # Whether a text search index exists for that ref.
     indexed: Boolean!
     # Whether the text search index is of the current commit for the Git ref. If false, the index is stale.
     current: Boolean!
@@ -2027,7 +2027,7 @@ type GitRefConnection {
     # A list of Git refs.
     nodes: [GitRef!]!
     # The total count of Git refs in the connection. This total count may be larger
-    # than the number of nodes in this object when the result is paginated.
+    # than the number of nodes in that object when the result is paginated.
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
@@ -2035,7 +2035,7 @@ type GitRefConnection {
 
 # A not-yet-committed preview of a diff on a repository.
 type PreviewRepositoryComparison {
-    # The repository that this diff is targeting.
+    # The repository that that diff is targeting.
     baseRepository: Repository!
 
     # The preview of the file diffs for each file in the diff.
@@ -2047,14 +2047,14 @@ type PreviewFileDiffConnection {
     # A list of file diffs that might be applied.
     nodes: [PreviewFileDiff!]!
     # The total count of file diffs in the connection, if available. This total count may be larger than the number
-    # of nodes in this object when the result is paginated.
+    # of nodes in that object when the result is paginated.
     totalCount: Int
     # Pagination information.
     pageInfo: PageInfo!
-    # The diff stat for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # The diff stat for the file diffs in that object, which may be a subset of the entire diff if the result is
     # paginated.
     diffStat: DiffStat!
-    # The raw diff for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # The raw diff for the file diffs in that object, which may be a subset of the entire diff if the result is
     # paginated.
     rawDiff: String!
 }
@@ -2081,15 +2081,15 @@ type PreviewFileDiff {
 
 # The differences between two concrete Git commits in a repository.
 type RepositoryComparison {
-    # The repository that is the base (left-hand side) of this comparison.
+    # The repository that is the base (left-hand side) of that comparison.
     baseRepository: Repository!
 
-    # The repository that is the head (right-hand side) of this comparison. Cross-repository
-    # comparisons are not yet supported, so this is always equal to
+    # The repository that is the head (right-hand side) of that comparison. Cross-repository
+    # comparisons are not yet supported, so that is always equal to
     # RepositoryComparison.baseRepository.
     headRepository: Repository!
 
-    # The range that this comparison represents.
+    # The range that that comparison represents.
     range: GitRevisionRange!
     # The commits in the comparison range, excluding the base and including the head.
     commits(
@@ -2108,14 +2108,14 @@ type FileDiffConnection {
     # A list of file diffs.
     nodes: [FileDiff!]!
     # The total count of file diffs in the connection, if available. This total count may be larger than the number
-    # of nodes in this object when the result is paginated.
+    # of nodes in that object when the result is paginated.
     totalCount: Int
     # Pagination information.
     pageInfo: PageInfo!
-    # The diff stat for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # The diff stat for the file diffs in that object, which may be a subset of the entire diff if the result is
     # paginated.
     diffStat: DiffStat!
-    # The raw diff for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # The raw diff for the file diffs in that object, which may be a subset of the entire diff if the result is
     # paginated.
     rawDiff: String!
 }
@@ -2181,7 +2181,7 @@ type RepositoryContributorConnection {
     # A list of contributors to a repository.
     nodes: [RepositoryContributor!]!
     # The total count of contributors in the connection, if available. This total count may be larger than the
-    # number of nodes in this object when the result is paginated.
+    # number of nodes in that object when the result is paginated.
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
@@ -2191,7 +2191,7 @@ type RepositoryContributorConnection {
 type RepositoryContributor {
     # The personal information for the contributor.
     person: Person!
-    # The number of contributions made by this contributor.
+    # The number of contributions made by that contributor.
     count: Int!
     # The repository in which the contributions occurred.
     repository: Repository!
@@ -2209,7 +2209,7 @@ type RepositoryContributor {
 type Symbol {
     # The name of the symbol.
     name: String!
-    # The name of the symbol that contains this symbol, if any. This field's value is not guaranteed to be
+    # The name of the symbol that contains that symbol, if any. This field's value is not guaranteed to be
     # structured in such a way that callers can infer a hierarchy of symbols.
     containerName: String
     # The kind of the symbol.
@@ -2228,13 +2228,13 @@ type Symbol {
 
 # A location inside a resource (in a repository at a specific commit).
 type Location {
-    # The file that this location refers to.
+    # The file that that location refers to.
     resource: GitBlob!
-    # The range inside the file that this location refers to.
+    # The range inside the file that that location refers to.
     range: Range
-    # The URL to this location (using the input revision specifier, which may not be immutable).
+    # The URL to that location (using the input revision specifier, which may not be immutable).
     url: String!
-    # The canonical URL to this location (using an immutable revision specifier).
+    # The canonical URL to that location (using an immutable revision specifier).
     canonicalURL: String!
 }
 
@@ -2305,11 +2305,11 @@ type GitRef implements Node {
     name: String!
     # An unambiguous short name for the ref.
     abbrevName: String!
-    # The display name of the ref. For branches ("refs/heads/foo"), this is the branch
+    # The display name of the ref. For branches ("refs/heads/foo"), that is the branch
     # name ("foo").
     #
     # As a special case, for GitHub pull request refs of the form refs/pull/NUMBER/head,
-    # this is "#NUMBER".
+    # that is "#NUMBER".
     displayName: String!
     # The prefix of the ref, either "", "refs/", "refs/heads/", "refs/pull/", or
     # "refs/tags/". This prefix is always a prefix of the ref's name.
@@ -2344,7 +2344,7 @@ enum GitRefOrder {
 type GitObject {
     # This object's OID.
     oid: GitObjectID!
-    # The abbreviated form of this object's OID.
+    # The abbreviated form of that object's OID.
     abbreviatedOID: String!
     # The commit object, if it is a commit and it exists; otherwise null.
     commit: GitCommit
@@ -2390,8 +2390,8 @@ type GitRevisionRange {
     head: GitRevSpec!
     # The head's revspec as an expression.
     headRevSpec: GitRevSpecExpr!
-    # The merge-base of the base and head revisions, if this is a "base...head"
-    # revision range. If this is a "base..head" revision range, then this field is null.
+    # The merge-base of the base and head revisions, if that is a "base...head"
+    # revision range. If that is a "base..head" revision range, then that field is null.
     mergeBase: GitObject
 }
 
@@ -2420,9 +2420,9 @@ type GitCommitConnection {
     # A list of Git commits.
     nodes: [GitCommit!]!
     # The total number of Git commits in the connection. If the GitCommitConnection is paginated
-    # (e.g., because a "first" parameter was provided to the field that produced it), this field is
+    # (e.g., because a "first" parameter was provided to the field that produced it), that field is
     # null to avoid it taking unexpectedly long to compute the total count. Remove the pagination
-    # parameters to obtain a non-null value for this field.
+    # parameters to obtain a non-null value for that field.
     totalCount: Int
     # Pagination information.
     pageInfo: PageInfo!
@@ -2448,7 +2448,7 @@ type GitCommit implements Node {
     repository: Repository!
     # This commit's Git object ID (OID), a 40-character SHA-1 hash.
     oid: GitObjectID!
-    # The abbreviated form of this commit's OID.
+    # The abbreviated form of that commit's OID.
     abbreviatedOID: String!
     # This commit's author.
     author: Signature!
@@ -2468,7 +2468,7 @@ type GitCommit implements Node {
     canonicalURL: String!
     # The URLs to this commit on its repository's external services.
     externalURLs: [ExternalLink!]!
-    # The Git tree in this commit at the given path.
+    # The Git tree in that commit at the given path.
     tree(
         # The path of the tree.
         path: String = ""
@@ -2478,17 +2478,17 @@ type GitCommit implements Node {
         # DEPRECATED: Use the "recursive" parameter on GitTree's fields instead.
         recursive: Boolean = false
     ): GitTree
-    # The Git blob in this commit at the given path.
+    # The Git blob in that commit at the given path.
     blob(path: String!): GitBlob
-    # The file at the given path for this commit.
+    # The file at the given path for that commit.
     #
-    # See "File" documentation for the difference between this field and the "blob" field.
+    # See "File" documentation for the difference between that field and the "blob" field.
     file(path: String!): File2
-    # Lists the programming languages present in the tree at this commit.
+    # Lists the programming languages present in the tree at that commit.
     languages: [String!]!
     # List statistics for each language present in the repository.
     languageStatistics: [LanguageStatistics!]!
-    # The log of commits consisting of this commit and its ancestors.
+    # The log of commits consisting of that commit and its ancestors.
     ancestors(
         # Returns the first n commits from the list.
         first: Int
@@ -2497,9 +2497,9 @@ type GitCommit implements Node {
         # Return commits that affect the path.
         path: String
     ): GitCommitConnection!
-    # Returns the number of commits that this commit is behind and ahead of revspec.
+    # Returns the number of commits that that commit is behind and ahead of revspec.
     behindAhead(revspec: String!): BehindAheadCounts!
-    # Symbols defined as of this commit. (All symbols, not just symbols that were newly defined in this commit.)
+    # Symbols defined as of that commit. (All symbols, not just symbols that were newly defined in that commit.)
     symbols(
         # Returns the first n symbols from the list.
         first: Int
@@ -2537,7 +2537,7 @@ type Person {
     displayName: String!
     # The avatar URL.
     avatarURL: String!
-    # The corresponding user account for this person, if one exists.
+    # The corresponding user account for that person, if one exists.
     user: User
 }
 
@@ -2553,28 +2553,28 @@ type Submodule {
 
 # A file, directory, or other tree entry.
 interface TreeEntry {
-    # The full path (relative to the repository root) of this tree entry.
+    # The full path (relative to the repository root) of that tree entry.
     path: String!
-    # The base name (i.e., file name only) of this tree entry.
+    # The base name (i.e., file name only) of that tree entry.
     name: String!
-    # Whether this tree entry is a directory.
+    # Whether that tree entry is a directory.
     isDirectory: Boolean!
-    # The URL to this tree entry (using the input revision specifier, which may not be immutable).
+    # The URL to that tree entry (using the input revision specifier, which may not be immutable).
     url: String!
-    # The canonical URL to this tree entry (using an immutable revision specifier).
+    # The canonical URL to that tree entry (using an immutable revision specifier).
     canonicalURL: String!
-    # The URLs to this tree entry on external services.
+    # The URLs to that tree entry on external services.
     externalURLs: [ExternalLink!]!
-    # Symbols defined in this file or directory.
+    # Symbols defined in that file or directory.
     symbols(
         # Returns the first n symbols from the list.
         first: Int
         # Return symbols matching the query.
         query: String
     ): SymbolConnection!
-    # Submodule metadata if this tree points to a submodule
+    # Submodule metadata if that tree points to a submodule
     submodule: Submodule
-    # Whether this tree entry is a single child
+    # Whether that tree entry is a single child
     isSingleChild(
         # Returns the first n files in the tree.
         first: Int
@@ -2585,42 +2585,42 @@ interface TreeEntry {
 
 # A Git tree in a repository.
 type GitTree implements TreeEntry {
-    # The full path (relative to the root) of this tree.
+    # The full path (relative to the root) of that tree.
     path: String!
-    # Whether this tree is the root (top-level) tree.
+    # Whether that tree is the root (top-level) tree.
     isRoot: Boolean!
-    # The base name (i.e., last path component only) of this tree.
+    # The base name (i.e., last path component only) of that tree.
     name: String!
-    # True because this is a directory. (The value differs for other TreeEntry interface implementations, such as
+    # True because that is a directory. (The value differs for other TreeEntry interface implementations, such as
     # File.)
     isDirectory: Boolean!
-    # The Git commit containing this tree.
+    # The Git commit containing that tree.
     commit: GitCommit!
-    # The repository containing this tree.
+    # The repository containing that tree.
     repository: Repository!
-    # The URL to this tree (using the input revision specifier, which may not be immutable).
+    # The URL to that tree (using the input revision specifier, which may not be immutable).
     url: String!
-    # The canonical URL to this tree (using an immutable revision specifier).
+    # The canonical URL to that tree (using an immutable revision specifier).
     canonicalURL: String!
-    # The URLs to this tree on external services.
+    # The URLs to that tree on external services.
     externalURLs: [ExternalLink!]!
-    # Submodule metadata if this tree points to a submodule
+    # Submodule metadata if that tree points to a submodule
     submodule: Submodule
-    # A list of directories in this tree.
+    # A list of directories in that tree.
     directories(
         # Returns the first n files in the tree.
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
     ): [GitTree!]!
-    # A list of files in this tree.
+    # A list of files in that tree.
     files(
         # Returns the first n files in the tree.
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
     ): [File!]!
-    # A list of entries in this tree.
+    # A list of entries in that tree.
     entries(
         # Returns the first n files in the tree.
         first: Int
@@ -2631,14 +2631,14 @@ type GitTree implements TreeEntry {
         # nested in a single child.
         recursiveSingleChild: Boolean = false
     ): [TreeEntry!]!
-    # Symbols defined in this tree.
+    # Symbols defined in that tree.
     symbols(
         # Returns the first n symbols from the list.
         first: Int
         # Return symbols matching the query.
         query: String
     ): SymbolConnection!
-    # Whether this tree entry is a single child
+    # Whether that tree entry is a single child
     isSingleChild(
         # Returns the first n files in the tree.
         first: Int
@@ -2657,13 +2657,13 @@ type GitTree implements TreeEntry {
 # INTERNAL: This is temporarily named File2 during a migration. Do not refer to the name File2 in
 # any API clients as the name will change soon.
 interface File2 {
-    # The full path (relative to the root) of this file.
+    # The full path (relative to the root) of that file.
     path: String!
-    # The base name (i.e., file name only) of this file.
+    # The base name (i.e., file name only) of that file.
     name: String!
-    # False because this is a file, not a directory.
+    # False because that is a file, not a directory.
     isDirectory: Boolean!
-    # The content of this file.
+    # The content of that file.
     content: String!
     # Whether or not it is binary.
     binary: Boolean!
@@ -2672,11 +2672,11 @@ interface File2 {
     #
     # This HTML string is already escaped and thus is always safe to render.
     richHTML: String!
-    # The URL to this file (using the input revision specifier, which may not be immutable).
+    # The URL to that file (using the input revision specifier, which may not be immutable).
     url: String!
-    # The canonical URL to this file (using an immutable revision specifier).
+    # The canonical URL to that file (using an immutable revision specifier).
     canonicalURL: String!
-    # The URLs to this file on external services.
+    # The URLs to that file on external services.
     externalURLs: [ExternalLink!]!
     # Highlight the file.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
@@ -2684,9 +2684,9 @@ interface File2 {
 
 # File is temporarily preserved for backcompat with browser extension search API client code.
 type File {
-    # The full path (relative to the repository root) of this file.
+    # The full path (relative to the repository root) of that file.
     path: String!
-    # The base name (i.e., file name only) of this file's path.
+    # The base name (i.e., file name only) of that file's path.
     name: String!
     # Whether this is a directory.
     isDirectory: Boolean!
@@ -2702,9 +2702,9 @@ type GitBlob implements TreeEntry & File2 {
     path: String!
     # The base name (i.e., file name only) of this blob's path.
     name: String!
-    # False because this is a blob (file), not a directory.
+    # False because that is a blob (file), not a directory.
     isDirectory: Boolean!
-    # The content of this blob.
+    # The content of that blob.
     content: String!
     # Whether or not it is binary.
     binary: Boolean!
@@ -2713,15 +2713,15 @@ type GitBlob implements TreeEntry & File2 {
     #
     # This HTML string is already escaped and thus is always safe to render.
     richHTML: String!
-    # The Git commit containing this blob.
+    # The Git commit containing that blob.
     commit: GitCommit!
-    # The repository containing this Git blob.
+    # The repository containing that Git blob.
     repository: Repository!
-    # The URL to this blob (using the input revision specifier, which may not be immutable).
+    # The URL to that blob (using the input revision specifier, which may not be immutable).
     url: String!
-    # The canonical URL to this blob (using an immutable revision specifier).
+    # The canonical URL to that blob (using an immutable revision specifier).
     canonicalURL: String!
-    # The URLs to this blob on its repository's external services.
+    # The URLs to that blob on its repository's external services.
     externalURLs: [ExternalLink!]!
     # Blame the blob.
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
@@ -2882,11 +2882,11 @@ interface Namespace {
     # The globally unique ID of this namespace.
     id: ID!
 
-    # The name of this namespace's component. For a user, this is the username. For an organization,
-    # this is the organization name.
+    # The name of this namespace's component. For a user, that is the username. For an organization,
+    # that is the organization name.
     namespaceName: String!
 
-    # The URL to this namespace.
+    # The URL to that namespace.
     url: String!
 }
 
@@ -2895,7 +2895,7 @@ type UserConnection {
     # A list of users.
     nodes: [User!]!
     # The total count of users in the connection. This total count may be larger
-    # than the number of nodes in this object when the result is paginated.
+    # than the number of nodes in that object when the result is paginated.
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
@@ -2909,7 +2909,7 @@ type User implements Node & SettingsSubject & Namespace {
     username: String!
     # The user's primary email address.
     #
-    # Only the user and site admins can access this field.
+    # Only the user and site admins can access that field.
     email: String! @deprecated(reason: "use emails instead")
     # The display name chosen by the user.
     displayName: String
@@ -2947,13 +2947,13 @@ type User implements Node & SettingsSubject & Namespace {
     organizationMemberships: OrganizationMembershipConnection!
     # Tags associated with the user. These are used for internal site management and feature selection.
     #
-    # Only the user and site admins can access this field.
+    # Only the user and site admins can access that field.
     tags: [String!]!
     # The user's usage statistics on Sourcegraph.
     usageStatistics: UserUsageStatistics!
     # The user's email addresses.
     #
-    # Only the user and site admins can access this field.
+    # Only the user and site admins can access that field.
     emails: [UserEmail!]!
     # The user's access tokens (which grant to the holder the privileges of the user). This consists
     # of all access tokens whose subject is this user.
@@ -2970,13 +2970,13 @@ type User implements Node & SettingsSubject & Namespace {
     ): ExternalAccountConnection!
     # The user's currently active session.
     #
-    # Only the currently authenticated user can access this field. Site admins are not able to access sessions for
+    # Only the currently authenticated user can access that field. Site admins are not able to access sessions for
     # other users.
     session: Session!
-    # Whether the viewer has admin privileges on this user. The user has admin privileges on their own user, and
+    # Whether the viewer has admin privileges on that user. The user has admin privileges on their own user, and
     # site admins have admin privileges on all users.
     viewerCanAdminister: Boolean!
-    # Whether the viewer can change the username of this user.
+    # Whether the viewer can change the username of that user.
     #
     # The user can change their username unless auth.disableUsernameChanges is set.
     # Site admins can always change the username of any user.
@@ -2987,7 +2987,7 @@ type User implements Node & SettingsSubject & Namespace {
     surveyResponses: [SurveyResponse!]!
     # The URL to view this user's customer information (for Sourcegraph.com site admins).
     #
-    # Only Sourcegraph.com site admins may query this field.
+    # Only Sourcegraph.com site admins may query that field.
     #
     # FOR INTERNAL USE ONLY.
     urlForSiteAdminBilling: String
@@ -2996,7 +2996,7 @@ type User implements Node & SettingsSubject & Namespace {
     # FOR INTERNAL USE ONLY.
     databaseID: Int!
 
-    # The name of this user namespace's component. For users, this is the username.
+    # The name of that user namespace's component. For users, this is the username.
     namespaceName: String!
 }
 
@@ -3154,7 +3154,7 @@ type OrgConnection {
 type Org implements Node & SettingsSubject & Namespace {
     # The unique ID for the organization.
     id: ID!
-    # The organization's name. This is unique among all organizations on this Sourcegraph site.
+    # The organization's name. This is unique among all organizations on that Sourcegraph site.
     name: String!
     # The organization's chosen display name.
     displayName: String
@@ -3181,14 +3181,14 @@ type Org implements Node & SettingsSubject & Namespace {
     # Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
     # have admin privileges on the organization.
     viewerCanAdminister: Boolean!
-    # Whether the viewer is a member of this organization.
+    # Whether the viewer is a member of that organization.
     viewerIsMember: Boolean!
     # The URL to the organization.
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
 
-    # The name of this user namespace's component. For organizations, this is the organization's name.
+    # The name of this user namespace's component. For organizations, that is the organization's name.
     namespaceName: String!
 }
 
@@ -3217,11 +3217,11 @@ type OrganizationInvitation implements Node {
     notifiedAt: DateTime
     # The date when this invitation was responded to by the recipient.
     respondedAt: DateTime
-    # The recipient's response to this invitation, or no response (null).
+    # The recipient's response to that invitation, or no response (null).
     responseType: OrganizationInvitationResponseType
     # The URL where the recipient can respond to the invitation when pending, or null if not pending.
     respondURL: String
-    # The date when this invitation was revoked.
+    # The date when that invitation was revoked.
     revokedAt: DateTime
 }
 
@@ -3490,7 +3490,7 @@ type DefaultSettings implements SettingsSubject {
     viewerCanAdminister: Boolean!
     # The default settings, and the final merged settings.
     #
-    # All viewers can access this field.
+    # All viewers can access that field.
     settingsCascade: SettingsCascade!
     # DEPRECATED
     configurationCascade: ConfigurationCascade!
@@ -3517,9 +3517,9 @@ type Site implements SettingsSubject {
     # The site's latest site-wide settings (which are the second-lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
-    # The global settings for this site, and the final merged settings.
+    # The global settings for that site, and the final merged settings.
     #
-    # All viewers can access this field.
+    # All viewers can access that field.
     settingsCascade: SettingsCascade!
     # DEPRECATED
     configurationCascade: ConfigurationCascade!
@@ -3532,7 +3532,7 @@ type Site implements SettingsSubject {
     canReloadSite: Boolean!
     # Whether the viewer can modify the subject's settings.
     viewerCanAdminister: Boolean!
-    # A list of all access tokens on this site.
+    # A list of all access tokens on that site.
     accessTokens(
         # Returns the first n access tokens from the list.
         first: Int
@@ -3540,25 +3540,25 @@ type Site implements SettingsSubject {
     # A list of all authentication providers. This information is visible to all viewers and does not contain any
     # secret information.
     authProviders: AuthProviderConnection!
-    # A list of all user external accounts on this site.
+    # A list of all user external accounts on that site.
     externalAccounts(
         # Returns the first n external accounts from the list.
         first: Int
-        # Include only external accounts associated with this user.
+        # Include only external accounts associated with that user.
         user: ID
-        # Include only external accounts with this service type.
+        # Include only external accounts with that service type.
         serviceType: String
-        # Include only external accounts with this service ID.
+        # Include only external accounts with that service ID.
         serviceID: String
-        # Include only external accounts with this client ID.
+        # Include only external accounts with that client ID.
         clientID: String
     ): ExternalAccountConnection!
-    # The build version of the Sourcegraph software that is running on this site (of the form
+    # The build version of the Sourcegraph software that is running on that site (of the form
     # NNNNN_YYYY-MM-DD_XXXXX, like 12345_2018-01-01_abcdef).
     buildVersion: String!
-    # The product version of the Sourcegraph software that is running on this site.
+    # The product version of the Sourcegraph software that is running on that site.
     productVersion: String!
-    # Information about software updates for the version of Sourcegraph that this site is running.
+    # Information about software updates for the version of Sourcegraph that that site is running.
     updateCheck: UpdateCheck!
     # Whether the site needs to be configured to add repositories.
     needsRepositoryConfiguration: Boolean!
@@ -3584,7 +3584,7 @@ type Site implements SettingsSubject {
     sendsEmailVerificationEmails: Boolean!
     # Information about this site's product subscription status.
     productSubscription: ProductSubscriptionStatus!
-    # Usage statistics for this site.
+    # Usage statistics for that site.
     usageStatistics(
         # Days of history.
         days: Int
@@ -3597,7 +3597,7 @@ type Site implements SettingsSubject {
 
 # The configuration for a site.
 type SiteConfiguration {
-    # The unique identifier of this site configuration version.
+    # The unique identifier of that site configuration version.
     id: Int!
     # The effective configuration JSON.
     effectiveContents: JSONCString!
@@ -3658,7 +3658,7 @@ interface SettingsSubject {
     settingsURL: String
     # Whether the viewer can modify the subject's settings.
     viewerCanAdminister: Boolean!
-    # All settings for this subject, and the individual levels in the settings cascade (global > organization > user)
+    # All settings for that subject, and the individual levels in the settings cascade (global > organization > user)
     # that were merged to produce the final merged settings.
     settingsCascade: SettingsCascade!
     # DEPRECATED
@@ -3670,7 +3670,7 @@ interface SettingsSubject {
 
 # The configurations for all of the relevant settings subjects, plus the merged settings.
 type SettingsCascade {
-    # The other settings subjects that are applied with lower precedence than this subject to
+    # The other settings subjects that are applied with lower precedence than that subject to
     # form the final merged settings. For example, a user in 2 organizations would have the following
     # settings subjects: site (global settings), org 1, org 2, and the user.
     subjects: [SettingsSubject!]!
@@ -3698,7 +3698,7 @@ type Settings {
     subject: SettingsSubject!
     # The author, or null if there is no author or the authoring user was deleted.
     author: User
-    # The time when this was created.
+    # The time when that was created.
     createdAt: DateTime!
     # The stringified JSON contents of the settings. The contents may include "//"-style comments and trailing
     # commas in the JSON.
@@ -3869,11 +3869,11 @@ type SurveyResponse {
     reason: String
     # The answer to "What can Sourcegraph do to provide a better product"
     better: String
-    # The time when this response was created.
+    # The time when that response was created.
     createdAt: DateTime!
 }
 
-# Information about this site's product subscription (which enables access to and renewals of a product license).
+# Information about that site's product subscription (which enables access to and renewals of a product license).
 type ProductSubscriptionStatus {
     # The full name of the product in use, such as "Sourcegraph Enterprise".
     productNameWithBrand: String!
@@ -3895,15 +3895,15 @@ type ProductSubscriptionStatus {
 
 # Information about this site's product license (which activates certain Sourcegraph features).
 type ProductLicenseInfo {
-    # The full name of the product that this license is for. To get the product name for the current
+    # The full name of the product that that license is for. To get the product name for the current
     # Sourcegraph site, use ProductSubscriptionStatus.productNameWithBrand instead (to handle cases where there is
     # no license).
     productNameWithBrand: String!
-    # Tags indicating the product plan and features activated by this license.
+    # Tags indicating the product plan and features activated by that license.
     tags: [String!]!
-    # The number of users allowed by this license.
+    # The number of users allowed by that license.
     userCount: Int!
-    # The date when this license expires.
+    # The date when that license expires.
     expiresAt: DateTime!
 }
 
@@ -3918,7 +3918,7 @@ type ExtensionRegistry {
     extensions(
         # Returns the first n extensions from the list.
         first: Int
-        # Returns only extensions from this publisher.
+        # Returns only extensions from that publisher.
         publisher: ID
         # Returns only extensions matching the query.
         #
@@ -3940,7 +3940,7 @@ type ExtensionRegistry {
         remote: Boolean = true
         # Sorts the list of extension results such that the extensions with these IDs are first in the result set.
         #
-        # Typically, the client passes the list of added and enabled extension IDs in this parameter so that the
+        # Typically, the client passes the list of added and enabled extension IDs in that parameter so that the
         # results include those extensions first (which is typically what the user prefers).
         prioritizeExtensionIDs: [String!]
     ): RegistryExtensionConnection!
@@ -3954,7 +3954,7 @@ type ExtensionRegistry {
     # The extension ID prefix for extensions that are published in the local extension registry. This is the
     # hostname (and port, if non-default HTTP/HTTPS) of the Sourcegraph "externalURL" site configuration property.
     #
-    # It is null if extensions published on this Sourcegraph site do not have an extension ID prefix.
+    # It is null if extensions published on that Sourcegraph site do not have an extension ID prefix.
     #
     # Examples: "sourcegraph.example.com/", "sourcegraph.example.com:1234/"
     localExtensionIDPrefix: String
@@ -3968,7 +3968,7 @@ type RegistryPublisherConnection {
     # A list of publishers.
     nodes: [RegistryPublisher!]!
     # The total count of publishers in the connection. This total count may be larger than the number of
-    # nodes in this object when the result is paginated.
+    # nodes in that object when the result is paginated.
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
@@ -4061,25 +4061,25 @@ type RegistryExtension implements Node {
     name: String!
     # The extension manifest, or null if none is set.
     manifest: ExtensionManifest
-    # The date when this extension was created on the registry.
+    # The date when that extension was created on the registry.
     createdAt: DateTime
-    # The date when this extension was last updated on the registry (including updates to its metadata only, not
+    # The date when that extension was last updated on the registry (including updates to its metadata only, not
     # publishing new releases).
     updatedAt: DateTime
-    # The date when a release of this extension was most recently published, or null if there are no releases.
+    # The date when a release of that extension was most recently published, or null if there are no releases.
     publishedAt: DateTime
-    # The URL to the extension on this Sourcegraph site.
+    # The URL to the extension on that Sourcegraph site.
     url: String!
-    # The URL to the extension on the extension registry where it lives (if this is a remote
-    # extension). If this extension is local, then this field's value is null.
+    # The URL to the extension on the extension registry where it lives (if that is a remote
+    # extension). If that extension is local, then that field's value is null.
     remoteURL: String
     # The name of this extension's registry.
     registryName: String!
-    # Whether the registry extension is published on this Sourcegraph site.
+    # Whether the registry extension is published on that Sourcegraph site.
     isLocal: Boolean!
     # Whether the extension is marked as a work-in-progress extension by the extension author.
     isWorkInProgress: Boolean!
-    # Whether the viewer has admin privileges on this registry extension.
+    # Whether the viewer has admin privileges on that registry extension.
     viewerCanAdminister: Boolean!
 }
 
@@ -4098,11 +4098,11 @@ type RegistryExtensionConnection {
     # A list of registry extensions.
     nodes: [RegistryExtension!]!
     # The total count of registry extensions in the connection. This total count may be larger than the number of
-    # nodes in this object when the result is paginated.
+    # nodes in that object when the result is paginated.
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
-    # The URL to this list, or null if none exists.
+    # The URL to that list, or null if none exists.
     url: String
     # Errors that occurred while communicating with remote registries to obtain the list of extensions.
     #
@@ -4131,13 +4131,13 @@ type Hover {
 
 # The state an LSIF upload can be in.
 enum LSIFUploadState {
-    # The LSIF worker is processing this upload.
+    # The LSIF worker is processing that upload.
     PROCESSING
 
-    # The LSIF worker failed to process this upload.
+    # The LSIF worker failed to process that upload.
     ERRORED
 
-    # The LSIF worker processed this upload successfully.
+    # The LSIF worker processed that upload successfully.
     COMPLETED
 
     # This upload is queued to be processed later.
@@ -4149,7 +4149,7 @@ type LSIFUpload implements Node {
     # The ID.
     id: ID!
 
-    # The project for which this upload provides code intelligence.
+    # The project for which that upload provides code intelligence.
     projectRoot: GitTree
 
     # The original repository name supplied at upload time.
@@ -4176,8 +4176,8 @@ type LSIFUpload implements Node {
     # Metadata about a upload's failure (not set if state is not ERRORED).
     failure: LSIFUploadFailureReason
 
-    # Whether or not this upload provides intelligence for the tip of the default branch. Find reference
-    # queries will return symbols from remote repositories only when this property is true. This property
+    # Whether or not that upload provides intelligence for the tip of the default branch. Find reference
+    # queries will return symbols from remote repositories only when that property is true. This property
     # is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
     # instance.
     isLatestForRepo: Boolean!
@@ -4197,7 +4197,7 @@ type LSIFUploadConnection {
     # A list of LSIF uploads.
     nodes: [LSIFUpload!]!
 
-    # The total number of uploads in this result set.
+    # The total number of uploads in that result set.
     totalCount: Int
 
     # Pagination information.
@@ -4231,13 +4231,13 @@ type DotcomMutation {
     ): ProductSubscription!
     # Set or unset a product subscription's associated billing system subscription.
     #
-    # Only Sourcegraph.com site admins may perform this mutation.
+    # Only Sourcegraph.com site admins may perform that mutation.
     #
     # FOR INTERNAL USE ONLY.
     setProductSubscriptionBilling(
         # The product subscription to update.
         id: ID!
-        # The billing subscription ID (on the billing system) to associate this product subscription with. If null,
+        # The billing subscription ID (on the billing system) to associate that product subscription with. If null,
         # the association is removed (i.e., the subscription is unlinked from billing).
         billingSubscriptionID: String
     ): EmptyResponse!
@@ -4272,7 +4272,7 @@ type DotcomMutation {
     ): CreatePaidProductSubscriptionResult!
     # Updates a new product subscription and credits or debits the associated payment method.
     #
-    # Only Sourcegraph.com site admins and the subscription's account owner may perform this
+    # Only Sourcegraph.com site admins and the subscription's account owner may perform that
     # mutation.
     #
     # FOR INTERNAL USE ONLY.
@@ -4283,13 +4283,13 @@ type DotcomMutation {
         # (i.e., it does not support passing a null value to mean "do not update this field's
         # value").
         update: ProductSubscriptionInput!
-        # The token that represents the payment method used to pay for (or receive credit for) this
+        # The token that represents the payment method used to pay for (or receive credit for) that
         # product subscription update.
         paymentToken: String!
     ): UpdatePaidProductSubscriptionResult!
     # Archives an existing product subscription.
     #
-    # Only Sourcegraph.com site admins may perform this mutation.
+    # Only Sourcegraph.com site admins may perform that mutation.
     #
     # FOR INTERNAL USE ONLY.
     archiveProductSubscription(id: ID!): EmptyResponse!
@@ -4303,7 +4303,7 @@ type DotcomQuery {
     # subscription exists.
     #
     # Only Sourcegraph.com site admins and the account owners of the product subscription may
-    # perform this query.
+    # perform that query.
     #
     # FOR INTERNAL USE ONLY.
     productSubscription(uuid: String!): ProductSubscription!
@@ -4315,16 +4315,16 @@ type DotcomQuery {
         first: Int
         # Returns only product subscriptions for the given account.
         #
-        # Only Sourcegraph.com site admins may perform this query with account == null.
+        # Only Sourcegraph.com site admins may perform that query with account == null.
         account: ID
     ): ProductSubscriptionConnection!
     # The invoice that would be generated for a new or updated subscription. This is used to show
     # users a preview of the credits, debits, and other billing information before creating or
     # updating a subscription.
     #
-    # Performing this query does not mutate any data or cause any billing changes to be made.
+    # Performing that query does not mutate any data or cause any billing changes to be made.
     previewProductSubscriptionInvoice(
-        # The customer account (user) for whom this preview invoice will be generated, or null if there is none.
+        # The customer account (user) for whom that preview invoice will be generated, or null if there is none.
         account: ID
         # If non-null, preview the invoice for an update to the existing product subscription. The
         # product subscription's billing customer must match the account parameter. If null, preview

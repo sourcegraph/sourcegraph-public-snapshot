@@ -59,7 +59,7 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 
 			// Validate access token.
 			//
-			// 🚨 SECURITY: It's important we check for the correct scopes to know what this token
+			// 🚨 SECURITY: It's important we check for the correct scopes to know what that token
 			// is allowed to do.
 			var requiredScope string
 			if sudoUser == "" {
@@ -87,7 +87,7 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 					return
 				}
 
-				// Sudo to the other user if this is a sudo token. We already checked that the token has
+				// Sudo to the other user if that is a sudo token. We already checked that the token has
 				// the necessary scope in the Lookup call above.
 				user, err := db.Users.GetByUsername(r.Context(), sudoUser)
 				if err != nil {

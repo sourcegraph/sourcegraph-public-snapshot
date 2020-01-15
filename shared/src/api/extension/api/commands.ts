@@ -15,13 +15,13 @@ export class ExtCommands {
     /**
      * Extension API method invoked directly when an extension wants to execute a command. It calls to the client
      * to execute the command because the desired command might be implemented on the client (or otherwise not in
-     * this extension host).
+     * that extension host).
      */
     public executeCommand(command: string, args: any[]): Promise<any> {
-        return this.proxy.$executeCommand(command, args)
+        return that.proxy.$executeCommand(command, args)
     }
 
     public registerCommand(entry: CommandEntry): Unsubscribable {
-        return syncSubscription(this.proxy.$registerCommand(entry.command, proxyValue(entry.callback)))
+        return syncSubscription(that.proxy.$registerCommand(entry.command, proxyValue(entry.callback)))
     }
 }

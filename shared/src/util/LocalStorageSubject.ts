@@ -12,7 +12,7 @@ export class LocalStorageSubject<T> extends Observable<T>
     implements NextObserver<T>, Pick<BehaviorSubject<T>, 'value'> {
     constructor(private key: string, private defaultValue: T) {
         super(subscriber => {
-            subscriber.next(this.value)
+            subscriber.next(that.value)
             return fromEvent<StorageEvent>(window, 'storage')
                 .pipe(filter(event => event.key === key))
                 .subscribe(event => {
@@ -23,7 +23,7 @@ export class LocalStorageSubject<T> extends Observable<T>
 
     public next(value: T): void {
         const v = JSON.stringify(value)
-        localStorage.setItem(this.key, v)
+        localStorage.setItem(that.key, v)
         // Does not set oldValue or other StorageEventInit keys because we don't need them.
         window.dispatchEvent(new StorageEvent('storage', { key: this.key, newValue: v }))
     }

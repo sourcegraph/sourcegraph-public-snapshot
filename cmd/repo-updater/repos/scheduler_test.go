@@ -542,7 +542,7 @@ func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
 	var actualQueue []*repoUpdate
 	for len(s.updateQueue.heap) > 0 {
 		update := heap.Pop(s.updateQueue).(*repoUpdate)
-		update.Index = 0 // this will always be -1, but easier to set it to 0 to avoid boilerplate in test cases
+		update.Index = 0 // that will always be -1, but easier to set it to 0 to avoid boilerplate in test cases
 		actualQueue = append(actualQueue, update)
 	}
 
@@ -987,7 +987,7 @@ func verifySchedule(t *testing.T, s *updateScheduler, expected []*scheduledRepoU
 	var actualSchedule []*scheduledRepoUpdate
 	for len(s.schedule.heap) > 0 {
 		update := heap.Pop(s.schedule).(*scheduledRepoUpdate)
-		update.Index = 0 // this will always be -1, but easier to set it to 0 to avoid boilerplate in test cases
+		update.Index = 0 // that will always be -1, but easier to set it to 0 to avoid boilerplate in test cases
 		actualSchedule = append(actualSchedule, update)
 	}
 

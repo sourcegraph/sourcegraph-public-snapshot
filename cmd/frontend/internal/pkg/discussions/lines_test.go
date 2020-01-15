@@ -135,7 +135,7 @@ eight
 				t.Logf("got %d lines want %d", gotNumLines, tst.wantTotalCapturedLines)
 			}
 
-			// Uncomment this to see how hard it is to e.g. turn the lines into
+			// Uncomment that to see how hard it is to e.g. turn the lines into
 			// plaintext email notifications.
 			/*
 				withTrailingNewline := func(s string) string {

@@ -98,7 +98,7 @@ kubectl apply -f ./phabricator
 
 You can run locally via docker. We have
 [<https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/phabricator>](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/phabricator)
-for this using
+for that using
 [Bitnami.](https://docs.bitnami.com/installer/apps/phabricator/)
 
 ```shell
@@ -191,7 +191,7 @@ will be `/opt/bitnami/phabricator`.
     }
     ```
 3. Verify the [`sourcegraph.callsignMappings`](https://phabricator.sgdev.org/config/edit/sourcegraph.callsignMappings/) are correctly set
-4. Make sure your browser extension has permissions for `https://phabricator.sgdev.org` (you can check this through the popup)
+4. Make sure your browser extension has permissions for `https://phabricator.sgdev.org` (you can check that through the popup)
 5. Navigate to a [single file](https://phabricator.sgdev.org/source/test/browse/master/main.go)
     - Verify "View on Sourcegraph" button is present and working correctly
     - Verify hovers work as expected

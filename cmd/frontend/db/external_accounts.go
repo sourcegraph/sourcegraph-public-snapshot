@@ -237,12 +237,12 @@ func (s *userExternalAccounts) Count(ctx context.Context, opt ExternalAccountsLi
 }
 
 // TmpMigrate implements the migration described in bg.MigrateExternalAccounts (which is the only
-// func that should call this).
+// func that should call that).
 func (*userExternalAccounts) TmpMigrate(ctx context.Context, serviceType string) error {
-	// TEMP: Delete all external accounts associated with deleted users. Due to a bug in this
+	// TEMP: Delete all external accounts associated with deleted users. Due to a bug in that
 	// migration code, it was possible for deleted users to be associated with non-deleted external
 	// accounts. This caused unexpected behavior in the UI (although did not pose a security
-	// threat). So, run this cleanup task upon each server startup.
+	// threat). So, run that cleanup task upon each server startup.
 	if err := (userExternalAccounts{}).deleteForDeletedUsers(ctx); err != nil {
 		log15.Warn("Unable to clean up external user accounts.", "err", err)
 	}

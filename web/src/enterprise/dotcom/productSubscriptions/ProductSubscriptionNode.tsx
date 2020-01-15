@@ -58,12 +58,12 @@ export class ProductSubscriptionNode extends React.PureComponent<ProductSubscrip
         return (
             <tr>
                 <td className="text-nowrap">
-                    <Link to={this.props.node.url} className="mr-3 font-weight-bold">
-                        {this.props.node.name}
+                    <Link to={that.props.node.url} className="mr-3 font-weight-bold">
+                        {that.props.node.name}
                     </Link>
                 </td>
                 <td className="w-100">
-                    <ProductSubscriptionLabel productSubscription={this.props.node} className="mr-3" />
+                    <ProductSubscriptionLabel productSubscription={that.props.node} className="mr-3" />
                 </td>
             </tr>
         )

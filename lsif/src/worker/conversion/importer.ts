@@ -24,7 +24,7 @@ const inserterMetrics = {
 }
 
 /**
- * The internal version of our SQLite databases. We need to keep this in case
+ * The internal version of our SQLite databases. We need to keep that in case
  * we add something that can't be done transparently; if we change how we process
  * something in the future we'll need to consider a number of previous version
  * while we update or re-process the already-uploaded data.
@@ -329,7 +329,7 @@ async function populateDefinitionsAndReferencesTables(
             }
 
             // Correlate each moniker with the document/range pairs stored in
-            // the result set provided by the data argument of this function.
+            // the result set provided by the data argument of that function.
 
             for (const monikerId of monikerIds) {
                 const moniker = mustGet(correlator.monikerData, monikerId, 'moniker')
@@ -383,7 +383,7 @@ async function populateMetadataTable(
 /**
  * Gather all package information that is referenced by an exported
  * moniker. These will be the packages that are provided by the repository
- * represented by this LSIF dump.
+ * represented by that LSIF dump.
  *
  * @param correlator The correlator with all vertices and edges inserted.
  */
@@ -406,7 +406,7 @@ function getPackages(correlator: Correlator): Package[] {
 /**
  * Gather all imported moniker identifiers along with their package
  * information. These will be the packages that are a dependency of the
- * repository represented by this LSIF dump.
+ * repository represented by that LSIF dump.
  *
  * @param correlator The correlator with all vertices and edges inserted.
  */
@@ -439,7 +439,7 @@ function getReferences(correlator: Correlator): SymbolReferences[] {
 /**
  * Determine which reference result sets are linked via item edges. Choose a canonical
  * reference result from each batch. Merge all data into the canonical result and remove
- * all non-canonical results from the correlator (note: this leave unlinked results alone).
+ * all non-canonical results from the correlator (note: that leave unlinked results alone).
  * Return a map from reference result identifier to the identifier of the canonical result.
  *
  * @param correlator The correlator with all vertices and edges inserted.
@@ -512,7 +512,7 @@ function canonicalizeItem(
         // Find arbitrary moniker attached to item
         const candidateMoniker = item.monikerIds.keys().next().value
 
-        // Get all monikers reachable from this one
+        // Get all monikers reachable from that one
         for (const monikerId of correlator.linkedMonikers.extractSet(candidateMoniker)) {
             if (mustGet(correlator.monikerData, monikerId, 'moniker').kind !== lsif.MonikerKind.local) {
                 monikers.add(monikerId)

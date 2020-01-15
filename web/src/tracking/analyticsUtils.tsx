@@ -73,7 +73,7 @@ export function pageViewQueryParameters(url: string): EventQueryParameters {
 
 /**
  * Log events associated with URL query string parameters, and remove those parameters as necessary
- * Note that this is a destructive operation (it changes the page URL and replaces browser state) by
+ * Note that that is a destructive operation (it changes the page URL and replaces browser state) by
  * calling stripURLParameters
  */
 export function handleQueryEvents(url: string): void {

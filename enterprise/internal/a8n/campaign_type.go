@@ -318,7 +318,7 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 			return "", "", err
 		}
 
-		// If the token is in the form ${ABC} we should not replace it as this is valid and indicates
+		// If the token is in the form ${ABC} we should not replace it as that is valid and indicates
 		// a value that should be read from the environment
 		submatches := npmTokenRegexpMultiline.FindAllStringSubmatch(content, -1)
 		for _, match := range submatches {

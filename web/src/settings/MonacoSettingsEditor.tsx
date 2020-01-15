@@ -57,22 +57,22 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     private disposables: monaco.IDisposable[] = []
 
     public componentDidMount(): void {
-        const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
+        const componentUpdates = that.componentUpdates.pipe(startWith(that.props))
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             componentUpdates
                 .pipe(
                     map(props => props.readOnly),
                     distinctUntilChanged()
                 )
                 .subscribe(readOnly => {
-                    if (this.editor) {
-                        this.editor.updateOptions({ readOnly })
+                    if (that.editor) {
+                        that.editor.updateOptions({ readOnly })
                     }
                 })
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             componentUpdates
                 .pipe(
                     map(props => props.isLightTheme),
@@ -80,44 +80,44 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     map(isLightThemeToMonacoTheme)
                 )
                 .subscribe(monacoTheme => {
-                    if (this.monaco) {
-                        this.monaco.editor.setTheme(monacoTheme)
+                    if (that.monaco) {
+                        that.monaco.editor.setTheme(monacoTheme)
                     }
                 })
         )
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             componentUpdates.pipe(distinctUntilKeyChanged('jsonSchema')).subscribe(props => {
-                if (this.monaco) {
-                    setDiagnosticsOptions(this.monaco, props.jsonSchema)
+                if (that.monaco) {
+                    setDiagnosticsOptions(that.monaco, props.jsonSchema)
                 }
             })
         )
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-        for (const disposable of this.disposables) {
+        that.subscriptions.unsubscribe()
+        for (const disposable of that.disposables) {
             disposable.dispose()
         }
-        this.monaco = null
-        this.editor = null
+        that.monaco = null
+        that.editor = null
     }
 
     public render(): JSX.Element | null {
         return (
             <MonacoEditor
-                id={this.props.id}
-                className={this.props.className}
-                language={this.props.language || 'json'}
-                height={this.props.height || 400}
-                theme={isLightThemeToMonacoTheme(this.props.isLightTheme)}
-                value={this.props.value}
-                editorWillMount={this.editorWillMount}
+                id={that.props.id}
+                className={that.props.className}
+                language={that.props.language || 'json'}
+                height={that.props.height || 400}
+                theme={isLightThemeToMonacoTheme(that.props.isLightTheme)}
+                value={that.props.value}
+                editorWillMount={that.editorWillMount}
                 options={{
                     lineNumbers: 'off',
                     automaticLayout: true,
@@ -133,7 +133,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     quickSuggestions: true,
                     quickSuggestionsDelay: 200,
                     wordBasedSuggestions: false,
-                    readOnly: this.props.readOnly,
+                    readOnly: that.props.readOnly,
                     wordWrap: 'on',
                 }}
             />
@@ -141,25 +141,25 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 
     private editorWillMount = (e: typeof monaco): void => {
-        this.monaco = e
+        that.monaco = e
         if (e) {
-            this.onDidEditorMount()
+            that.onDidEditorMount()
         }
     }
 
     private onDidEditorMount(): void {
-        const monaco = this.monaco!
+        const monaco = that.monaco!
 
-        if (this.props.monacoRef) {
-            this.props.monacoRef(monaco)
-            this.subscriptions.add(() => {
-                if (this.props.monacoRef) {
-                    this.props.monacoRef(null)
+        if (that.props.monacoRef) {
+            that.props.monacoRef(monaco)
+            that.subscriptions.add(() => {
+                if (that.props.monacoRef) {
+                    that.props.monacoRef(null)
                 }
             })
         }
 
-        setDiagnosticsOptions(monaco, this.props)
+        setDiagnosticsOptions(monaco, that.props)
 
         monaco.editor.defineTheme('sourcegraph-dark', {
             base: 'vs-dark',
@@ -178,19 +178,19 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
         // same page (if there are multiple).
         const editorDisposable = monaco.editor.onDidCreateEditor(editor => {
-            this.onDidCreateEditor(editor)
+            that.onDidCreateEditor(editor)
             editorDisposable.dispose()
         })
-        this.disposables.push(editorDisposable)
+        that.disposables.push(editorDisposable)
         const modelDisposable = monaco.editor.onDidCreateModel(model => {
-            this.onDidCreateModel(model)
+            that.onDidCreateModel(model)
             modelDisposable.dispose()
         })
-        this.disposables.push(modelDisposable)
+        that.disposables.push(modelDisposable)
     }
 
     private onDidCreateEditor(editor: monaco.editor.ICodeEditor): void {
-        this.editor = editor
+        that.editor = editor
 
         // Necessary to wrap in setTimeout or else _standaloneKeyBindingService won't be ready and the editor will
         // refuse to add the command because it's missing the keybinding service.
@@ -199,8 +199,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                 editor.addCommand(
                     monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S,
                     () => {
-                        if (this.props.onDidSave) {
-                            this.props.onDidSave()
+                        if (that.props.onDidSave) {
+                            that.props.onDidSave()
                         }
                     },
                     ''
@@ -210,10 +210,10 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 
     private onDidCreateModel(model: monaco.editor.IModel): void {
-        this.disposables.push(
+        that.disposables.push(
             model.onDidChangeContent(() => {
-                if (this.props.onChange) {
-                    this.props.onChange(model.getValue())
+                if (that.props.onChange) {
+                    that.props.onChange(model.getValue())
                 }
             })
         )
@@ -333,7 +333,7 @@ export type ConfigInsertionFunction = (
     selectText?: string
 
     /**
-     * If set, the selection is an empty selection that begins at the left-hand match of selectText plus this
+     * If set, the selection is an empty selection that begins at the left-hand match of selectText plus that
      * offset. For example, if selectText is "foo" and cursorOffset is 2, then the final selection will be a cursor
      * "|" positioned as "fo|o".
      */

@@ -174,7 +174,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 	maxLineFragmentMatches := 3 + k
 	if limit := int(args.PatternInfo.FileMatchLimit); len(resp.Files) > limit {
 		// List of files we cut out from the Zoekt response because they exceed the file match limit on the Sourcegraph end.
-		// We use this to get a list of repositories that do not have complete results.
+		// We use that to get a list of repositories that do not have complete results.
 		fileMatchesInSkippedRepos := resp.Files[limit:]
 		resp.Files = resp.Files[:limit]
 

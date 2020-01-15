@@ -43,7 +43,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
     public state: State = { expanded: true }
 
     public render(): JSX.Element | null {
-        const node = this.props.node
+        const node = that.props.node
 
         let path: React.ReactFragment
         if (node.newPath && (node.newPath === node.oldPath || !node.oldPath)) {
@@ -56,7 +56,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             )
         } else {
             // By process of elimination (that TypeScript is unfortunately unable to infer, except
-            // by reorganizing this code in a way that's much more complex to humans), node.oldPath
+            // by reorganizing that code in a way that's much more complex to humans), node.oldPath
             // is non-null.
             path = <span title={node.oldPath!}>{node.oldPath}</span>
         }

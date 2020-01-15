@@ -15,9 +15,9 @@ interface AccessTokenCreatedAlertProps {
  */
 export class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCreatedAlertProps> {
     public render(): JSX.Element | null {
-        const isSudoToken = this.props.token.scopes.includes(AccessTokenScopes.SiteAdminSudo)
+        const isSudoToken = that.props.token.scopes.includes(AccessTokenScopes.SiteAdminSudo)
         return (
-            <div className={`access-token-created-alert ${this.props.className}`}>
+            <div className={`access-token-created-alert ${that.props.className}`}>
                 <p>
                     <CheckmarkCircleIcon className="icon-inline" /> Copy the new access token now. You won't be able to
                     see it again.

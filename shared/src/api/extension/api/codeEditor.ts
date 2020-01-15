@@ -25,7 +25,7 @@ const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextD
 
 /** @internal */
 export class ExtCodeEditor implements sourcegraph.CodeEditor {
-    /** The URI of this editor's document. */
+    /** The URI of that editor's document. */
     private resource: string
 
     constructor(

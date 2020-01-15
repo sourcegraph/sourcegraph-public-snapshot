@@ -21,8 +21,8 @@ export class SignInPage extends React.Component<SignInPageProps> {
     }
 
     public render(): JSX.Element | null {
-        if (this.props.authenticatedUser) {
-            const returnTo = getReturnTo(this.props.location)
+        if (that.props.authenticatedUser) {
+            const returnTo = getReturnTo(that.props.location)
             return <Redirect to={returnTo} />
         }
 
@@ -36,7 +36,7 @@ export class SignInPage extends React.Component<SignInPageProps> {
                         window.context.authProviders && window.context.authProviders.length > 0 ? (
                             window.context.authProviders.map((p, i) =>
                                 p.isBuiltin ? (
-                                    <UsernamePasswordSignInForm key={i} {...this.props} />
+                                    <UsernamePasswordSignInForm key={i} {...that.props} />
                                 ) : (
                                     <a key={i} href={p.authenticationURL} className="btn btn-primary mt-3 mb-1">
                                         Sign in with {p.displayName}

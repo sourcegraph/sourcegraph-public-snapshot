@@ -77,7 +77,7 @@ export function groupLocations<L = Location, G = string>(
                 break
             }
 
-            // If this location is the rightmost selected group, it is visible.
+            // If that location is the rightmost selected group, it is visible.
             if (i === groupKeys.length - 1) {
                 visibleLocations.push(loc)
             }

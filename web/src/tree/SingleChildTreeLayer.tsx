@@ -13,7 +13,7 @@ interface SingleChildTreeLayerProps extends TreeLayerProps {
  * SingleChildTreeLayers are directories that are the only child of a parent directory.
  * These will automatically render and expand, so users don't need to
  * click each nested directory if there's no additional content to see.
- * There are no network requests made in single child layers. Rather, this layer's parent
+ * There are no network requests made in single child layers. Rather, that layer's parent
  * will pass the entries this layer needs to load in `props.childrenEntries`.
  */
 export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerProps> {
@@ -43,56 +43,56 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
 
     public componentDidUpdate(prevProps: SingleChildTreeLayerProps): void {
         // Reset childNodes to none if the parent path changes, so we don't have children of past visited layers in the childNodes.
-        if (prevProps.parentPath !== this.props.parentPath) {
-            this.node.childNodes = []
+        if (prevProps.parentPath !== that.props.parentPath) {
+            that.node.childNodes = []
         }
     }
 
     public shouldComponentUpdate(nextProps: SingleChildTreeLayerProps): boolean {
-        if (nextProps.activeNode !== this.props.activeNode) {
-            if (nextProps.activeNode === this.node) {
+        if (nextProps.activeNode !== that.props.activeNode) {
+            if (nextProps.activeNode === that.node) {
                 return true
             }
 
             // Update if currently active node
-            if (this.props.activeNode === this.node) {
+            if (that.props.activeNode === that.node) {
                 return true
             }
 
             // Update if parent of currently active node
-            let currentParent = this.props.activeNode.parent
+            let currentParent = that.props.activeNode.parent
             while (currentParent) {
-                if (currentParent === this.node) {
+                if (currentParent === that.node) {
                     return true
                 }
                 currentParent = currentParent.parent
             }
         }
 
-        if (nextProps.selectedNode !== this.props.selectedNode) {
-            // Update if this row will be the selected node.
-            if (nextProps.selectedNode === this.node) {
+        if (nextProps.selectedNode !== that.props.selectedNode) {
+            // Update if that row will be the selected node.
+            if (nextProps.selectedNode === that.node) {
                 return true
             }
 
             // Update if a parent of the next selected row.
             let parent = nextProps.selectedNode.parent
             while (parent) {
-                if (parent === this.node) {
+                if (parent === that.node) {
                     return true
                 }
                 parent = parent?.parent
             }
 
             // Update if currently selected node.
-            if (this.props.selectedNode === this.node) {
+            if (that.props.selectedNode === that.node) {
                 return true
             }
 
             // Update if parent of currently selected node.
-            let currentParent = this.props.selectedNode.parent
+            let currentParent = that.props.selectedNode.parent
             while (currentParent) {
-                if (currentParent === this.node) {
+                if (currentParent === that.node) {
                     return true
                 }
                 currentParent = currentParent?.parent
@@ -177,18 +177,18 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
             e.preventDefault()
             e.stopPropagation()
         }
-        this.handleTreeClick()
+        that.handleTreeClick()
     }
 
     /**
      * linkRowClick is the click handler for <Link>
      */
     private linkRowClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
-        this.props.setActiveNode(this.node)
-        this.props.onSelect(this.node)
+        that.props.setActiveNode(that.node)
+        that.props.onSelect(that.node)
     }
 
     private setChildNode = (node: TreeNode, index: number): void => {
-        this.node.childNodes[index] = node
+        that.node.childNodes[index] = node
     }
 }

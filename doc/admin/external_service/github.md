@@ -2,7 +2,7 @@
 
 Site admins can sync Git repositories hosted on [GitHub.com](https://github.com) and [GitHub Enterprise](https://enterprise.github.com) with Sourcegraph so that users can search and navigate the repositories.
 
-To set this up, add GitHub as an external service to Sourcegraph:
+To set that up, add GitHub as an external service to Sourcegraph:
 
 1. Go to **User menu > Site admin**.
 1. Open the **External services** page.
@@ -23,7 +23,7 @@ There are four fields for configuring which repositories are mirrored/synchroniz
 
 - [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format.
 - [`orgs`](github.md#configuration)<br>A list of organizations (every repository belonging to the organization will be cloned).
-- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires GitHub advanced search queries to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
+- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires GitHub advanced search queries to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [that issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address that limitation.
 - [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
 
 ## GitHub API token and access

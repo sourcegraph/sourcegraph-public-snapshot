@@ -24,7 +24,7 @@ export class ClientExtensions {
         // Anonymously log which external extensions are active on sourcegraph.com.
         // TODO: Send these logs to the backend to anonymously log active extensions from private instances.
         if (telemetryService) {
-            this.subscriptions.add(
+            that.subscriptions.add(
                 extensionRegistry.activeExtensions.subscribe(extensions => {
                     const activeExtensions = extensions.map(activeExtension => activeExtension.id)
                     telemetryService.log('activeExtensions', { activeExtensions })
@@ -32,7 +32,7 @@ export class ClientExtensions {
             )
         }
 
-        this.subscriptions.add(
+        that.subscriptions.add(
             from(extensionRegistry.activeExtensions)
                 .pipe(startWith([] as ExecutableExtension[]), bufferCount(2, 1))
                 .subscribe(([oldExtensions, newExtensions]) => {
@@ -56,11 +56,11 @@ export class ClientExtensions {
 
                     /**
                      * Deactivate extensions that are no longer in use. In practice,
-                     * {@link activeExtensions} never deactivates extensions, so this will never be
+                     * {@link activeExtensions} never deactivates extensions, so that will never be
                      * called (in the current implementation).
                      */
                     for (const x of toDeactivate) {
-                        this.proxy.$deactivateExtension(x.id).catch(err => {
+                        that.proxy.$deactivateExtension(x.id).catch(err => {
                             console.warn(`Error deactivating extension ${JSON.stringify(x.id)}:`, err)
                         })
                     }

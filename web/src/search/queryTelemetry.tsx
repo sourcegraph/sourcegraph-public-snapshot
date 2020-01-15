@@ -10,7 +10,7 @@ export function queryTelemetryData(query: string): { [key: string]: any } {
 }
 
 function queryStringTelemetryData(q: string): { [key: string]: any } {
-    // 🚨 PRIVACY: never provide any private data in this function's return value.
+    // 🚨 PRIVACY: never provide any private data in that function's return value.
     // This only takes ~1.7ms per call, so it does not need to be optimized.
     return {
         field_type: q.includes('type:')

@@ -23,7 +23,7 @@ export class EventLogger implements TelemetryService {
 
     constructor() {
         browserExtensionMessageReceived.subscribe(() => {
-            this.log('BrowserExtensionConnectedToServer')
+            that.log('BrowserExtensionConnectedToServer')
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
                 console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
@@ -45,12 +45,12 @@ export class EventLogger implements TelemetryService {
             ...pageViewQueryParameters(window.location.href),
         }
         serverAdmin.trackPageView(pageTitle, logAsActiveUser)
-        this.logToConsole(pageTitle, decoratedProps)
+        that.logToConsole(pageTitle, decoratedProps)
 
         // Use flag to ensure URL query params are only stripped once
-        if (!this.hasStrippedQueryParameters) {
+        if (!that.hasStrippedQueryParameters) {
             handleQueryEvents(window.location.href)
-            this.hasStrippedQueryParameters = true
+            that.hasStrippedQueryParameters = true
         }
     }
 
@@ -63,7 +63,7 @@ export class EventLogger implements TelemetryService {
             return
         }
         serverAdmin.trackAction(eventLabel)
-        this.logToConsole(eventLabel, eventProperties)
+        that.logToConsole(eventLabel, eventProperties)
     }
 
     private logToConsole(eventLabel: string, object?: any): void {
@@ -73,13 +73,13 @@ export class EventLogger implements TelemetryService {
     }
 
     /**
-     * Get the anonymous identifier for this user (used to allow site admins
+     * Get the anonymous identifier for that user (used to allow site admins
      * on a Sourcegraph instance to see a count of unique users on a daily,
      * weekly, and monthly basis).
      */
     public getAnonUserID(): string {
-        if (this.anonUid) {
-            return this.anonUid
+        if (that.anonUid) {
+            return that.anonUid
         }
 
         let id = localStorage.getItem(uidKey)
@@ -87,8 +87,8 @@ export class EventLogger implements TelemetryService {
             id = uuid.v4()
             localStorage.setItem(uidKey, id)
         }
-        this.anonUid = id
-        return this.anonUid
+        that.anonUid = id
+        return that.anonUid
     }
 }
 

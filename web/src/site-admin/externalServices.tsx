@@ -92,11 +92,11 @@ const editorActionComments = {
     // GitLab as an OAuth identity provider for Sourcegraph, we recommend that
     // option instead.
     //
-    // 1. Ensure the personal access token in this config has admin privileges
+    // 1. Ensure the personal access token in that config has admin privileges
     //    (https://docs.gitlab.com/ee/api/#sudo).
     // 2. Update the site configuration to include the SSO auth provider for GitLab
     //    (https://docs.sourcegraph.com/admin/auth).
-    // 3. Update the fields below to match the properties of this auth provider
+    // 3. Update the fields below to match the properties of that auth provider
     //    (https://docs.sourcegraph.com/admin/repo/permissions#sudo-access-token).`,
 }
 

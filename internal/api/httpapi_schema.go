@@ -8,7 +8,7 @@ package api
 //
 // NOTE: Some fields are only used during creation (and are not used to update an existing repository).
 type RepoCreateOrUpdateRequest struct {
-	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// ExternalRepo identifies that repository by its ID on the external service where it resides (and the external
 	// service itself).
 	ExternalRepo ExternalRepoSpec
 
@@ -26,10 +26,10 @@ type RepoCreateOrUpdateRequest struct {
 	// Description is the repository's description on its external origin.
 	Description string `json:"description"`
 
-	// Fork is whether this repository is a fork (according to its external origin).
+	// Fork is whether that repository is a fork (according to its external origin).
 	Fork bool `json:"fork"`
 
-	// Archived is whether this repository is archived (according to its external origin).
+	// Archived is whether that repository is archived (according to its external origin).
 	Archived bool `json:"archived"`
 }
 
@@ -44,8 +44,8 @@ type ExternalServiceConfigsRequest struct {
 }
 
 type ExternalServicesListRequest struct {
-	// NOTE(tsenart): We must keep this field in addition to the
-	// Kinds field until after we roll-out this change, for backwards compatibility.
+	// NOTE(tsenart): We must keep that field in addition to the
+	// Kinds field until after we roll-out that change, for backwards compatibility.
 	Kind  string   `json:"kind"`
 	Kinds []string `json:"kinds"`
 }

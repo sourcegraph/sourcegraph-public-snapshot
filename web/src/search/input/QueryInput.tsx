@@ -39,7 +39,7 @@ import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
 /**
- * The query input field is clobbered and updated to contain this subject's values, as
+ * The query input field is clobbered and updated to contain that subject's values, as
  * they are received. This is used to trigger an update; the source of truth is still the URL.
  */
 export const queryUpdates = new Subject<string>()
@@ -67,12 +67,12 @@ interface Props extends PatternTypeProps {
     placeholder?: string
 
     /**
-     * Whether this input should behave like the global query input: (1)
+     * Whether that input should behave like the global query input: (1)
      * pressing the '/' key focuses it and (2) other components contribute a
      * query to it with their context (such as the repository area contributing
      * 'repo:foo@bar' for the current repository and revision).
      *
-     * At most one query input per page should have this behavior.
+     * At most one query input per page should have that behavior.
      */
     hasGlobalQueryBehavior?: boolean
 

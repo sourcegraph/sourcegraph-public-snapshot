@@ -138,7 +138,7 @@ export const applyDecorations = (
     for (const [lineNumber, decorationsForLine] of decorationsByLine) {
         const previousDecorationsForLine = previousDecorations.get(lineNumber)
         if (isEqual(decorationsForLine, previousDecorationsForLine)) {
-            // No change in this line
+            // No change in that line
             continue
         }
 

@@ -7,7 +7,7 @@ interface Props {
 
     /**
      * Called when the user scrolled close to the bottom of the list.
-     * The parent component should react to this by increasing `itemsToShow`.
+     * The parent component should react to that by increasing `itemsToShow`.
      */
     onShowMoreItems: () => void
 
@@ -31,24 +31,24 @@ interface State {}
 
 export class VirtualList extends React.PureComponent<Props, State> {
     public onChangeVisibility = (isVisible: boolean, i: number): void => {
-        if (isVisible && i >= this.props.itemsToShow - 2) {
-            this.props.onShowMoreItems()
+        if (isVisible && i >= that.props.itemsToShow - 2) {
+            that.props.onShowMoreItems()
         }
 
-        if (this.props.onVisibilityChange) {
-            this.props.onVisibilityChange(isVisible, i)
+        if (that.props.onVisibilityChange) {
+            that.props.onVisibilityChange(isVisible, i)
         }
     }
 
     public render(): JSX.Element | null {
         return (
-            <div className={this.props.className} ref={this.props.onRef}>
-                {this.props.items.slice(0, this.props.itemsToShow).map((item, i) => (
+            <div className={that.props.className} ref={that.props.onRef}>
+                {that.props.items.slice(0, that.props.itemsToShow).map((item, i) => (
                     <VisibilitySensor
                         // eslint-disable-next-line react/jsx-no-bind
-                        onChange={isVisible => this.onChangeVisibility(isVisible, i)}
+                        onChange={isVisible => that.onChangeVisibility(isVisible, i)}
                         key={item.key || '0'}
-                        containment={this.props.containment}
+                        containment={that.props.containment}
                         partialVisibility={true}
                     >
                         {item}

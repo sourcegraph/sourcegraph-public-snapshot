@@ -45,12 +45,12 @@ export class RepositoryStatsArea extends React.Component<Props> {
     private subscriptions = new Subscription()
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const transferProps: RepositoryStatsAreaPageProps = {
-            repo: this.props.repo,
+            repo: that.props.repo,
         }
 
         return (
@@ -58,20 +58,20 @@ export class RepositoryStatsArea extends React.Component<Props> {
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="stats">Contributors</RepoHeaderBreadcrumbNavItem>}
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                    repoHeaderContributionsLifecycleProps={that.props.repoHeaderContributionsLifecycleProps}
                 />
-                {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={this.props.repo.name} />}
+                {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={that.props.repo.name} />}
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
                     <Route
-                        path={`${this.props.match.url}/contributors`}
+                        path={`${that.props.match.url}/contributors`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
                         render={routeComponentProps => (
                             <RepositoryStatsContributorsPage
                                 {...routeComponentProps}
                                 {...transferProps}
-                                patternType={this.props.patternType}
+                                patternType={that.props.patternType}
                             />
                         )}
                     />

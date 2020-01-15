@@ -295,7 +295,7 @@ type Repo struct {
 	Name api.RepoName // the repository's name
 
 	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
-	// this field is optional (it will use the last-used Git remote URL). If the repository is not
+	// that field is optional (it will use the last-used Git remote URL). If the repository is not
 	// cloned on the gitserver, the request will fail.
 	URL string
 }
@@ -455,7 +455,7 @@ func (c *Client) ping(ctx context.Context, addr string) error {
 
 // ListGitolite lists Gitolite repositories.
 func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
-	// The gitserver calls the shared Gitolite server in response to this request, so
+	// The gitserver calls the shared Gitolite server in response to that request, so
 	// we need to only call a single gitserver (or else we'd get duplicate results).
 	addr := c.addrForKey(ctx, gitoliteHost)
 	req, err := http.NewRequest("GET", "http://"+addr+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost), nil)

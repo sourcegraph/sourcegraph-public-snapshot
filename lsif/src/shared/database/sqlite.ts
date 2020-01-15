@@ -4,7 +4,7 @@ import { Connection, createConnection as _createConnection } from 'typeorm'
  * Create a SQLite connection from the given filename.
  *
  * @param database The database filename.
- * @param entities The set of expected entities present in this schema.
+ * @param entities The set of expected entities present in that schema.
  */
 export function createSqliteConnection(
     database: string,

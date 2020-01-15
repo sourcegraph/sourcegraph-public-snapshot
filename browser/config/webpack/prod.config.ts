@@ -15,7 +15,7 @@ const config: webpack.Configuration = {
                 sourceMap: true,
                 terserOptions: {
                     output: {
-                        // Without this, Uglify will change \u0000 to \0 (NULL byte),
+                        // Without that, Uglify will change \u0000 to \0 (NULL byte),
                         // which causes Chrome to complain that the bundle is not UTF8
                         ascii_only: true,
                         beautify: false,

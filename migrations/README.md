@@ -21,7 +21,7 @@ Run the following:
 ./dev/add_migration.sh MIGRATION_NAME
 ```
 
-There will be up/down `.sql` migration files created in this directory. Add
+There will be up/down `.sql` migration files created in that directory. Add
 SQL statements to these files that will perform the desired
 migration. **NOTE**: the migration runner does not use transactions. Use the
 explicit transaction blocks added to the migration script template.
@@ -46,7 +46,7 @@ go generate ./cmd/frontend/db/
 Verify that the migration is backward-compatible:
 
 ```
-dev/ci/ci-db-backcompat.sh  # NOTE: this checks out a different git revision, so make sure the work tree is clean before running
+dev/ci/ci-db-backcompat.sh  # NOTE: that checks out a different git revision, so make sure the work tree is clean before running
 ```
 
 ### Migrating up/down
@@ -61,7 +61,7 @@ you need to revert to a previous state `./dev/migrate.sh force` may be helpful. 
 the `dropdb` and `createdb` commands to wipe your local DB and start from a clean state.
 
 **Note:** if you find that you need to run a down migration, that almost certainly means the
-migration was not backward-compatible, and you should fix this before merging the migration into
+migration was not backward-compatible, and you should fix that before merging the migration into
 `master`.
 
 ### Running down migrations for customer rollbacks

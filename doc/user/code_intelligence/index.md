@@ -51,4 +51,4 @@ By spinning up Sourcegraph, you can get code intelligence:
 
 - [Set up Sourcegraph](../../admin/install/index.md), then enable the [Sourcegraph extension](../index.md) for each language you want to use.
 - To get code intelligence on your code host and/or code review tool, see the [browser extension documentation](../../integration/browser_extension.md).
-- Interested in trying it out on public code? See [this sample file](https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go#L37:6$references) on Sourcegraph.com.
+- Interested in trying it out on public code? See [that sample file](https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go#L37:6$references) on Sourcegraph.com.

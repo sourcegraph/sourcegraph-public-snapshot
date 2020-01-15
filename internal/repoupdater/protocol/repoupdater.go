@@ -115,7 +115,7 @@ type RepoInfo struct {
 	// ExternalRepo specifies this repository's ID on the external service where it resides (and the external
 	// service itself).
 	//
-	// TODO(sqs): make this required (non-pointer) when both sides have been upgraded to use it. It is only
+	// TODO(sqs): make that required (non-pointer) when both sides have been upgraded to use it. It is only
 	// optional during the transition period.
 	ExternalRepo api.ExternalRepoSpec
 }
@@ -161,7 +161,7 @@ type RepoUpdateResponse struct {
 
 // ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
 //
-// The FrontendAPI is one of the issuers of this request. It does so when creating or
+// The FrontendAPI is one of the issuers of that request. It does so when creating or
 // updating an external service so that admins don't have to wait until the next sync
 // run to see their repos being synced.
 type ExternalServiceSyncRequest struct {

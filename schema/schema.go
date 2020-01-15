@@ -19,7 +19,7 @@ type AWSCodeCommitConnection struct {
 	// GitCredentials description: The Git credentials used for authentication when cloning an AWS CodeCommit repository over HTTPS.
 	//
 	// See the AWS CodeCommit documentation on Git credentials for CodeCommit: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_ssh-keys.html#git-credentials-code-commit.
-	// For detailed instructions on how to create the credentials in IAM, see this page: https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html
+	// For detailed instructions on how to create the credentials in IAM, see that page: https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html
 	GitCredentials AWSCodeCommitGitCredentials `json:"gitCredentials"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. AWS CodeCommit repositories can no longer be enabled or disabled explicitly. Configure which repositories should not be mirrored via "exclude" instead.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
@@ -38,7 +38,7 @@ type AWSCodeCommitConnection struct {
 // AWSCodeCommitGitCredentials description: The Git credentials used for authentication when cloning an AWS CodeCommit repository over HTTPS.
 //
 // See the AWS CodeCommit documentation on Git credentials for CodeCommit: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_ssh-keys.html#git-credentials-code-commit.
-// For detailed instructions on how to create the credentials in IAM, see this page: https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html
+// For detailed instructions on how to create the credentials in IAM, see that page: https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html
 type AWSCodeCommitGitCredentials struct {
 	// Password description: The Git password
 	Password string `json:"password"`
@@ -54,7 +54,7 @@ type AuthAccessTokens struct {
 
 // AuthProviderCommon description: Common properties for authentication providers.
 type AuthProviderCommon struct {
-	// DisplayName description: The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).
+	// DisplayName description: The name to use when displaying that authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).
 	DisplayName string `json:"displayName,omitempty"`
 }
 type AuthProviders struct {
@@ -119,7 +119,7 @@ type BitbucketCloudConnection struct {
 	//
 	// Supports excluding by name ({"name": "myorg/myrepo"}) or by UUID ({"uuid": "{fceb73c7-cef6-4abe-956d-e471281126bd}"}).
 	Exclude []*ExcludedBitbucketCloudRepo `json:"exclude,omitempty"`
-	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Cloud.
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on that Bitbucket Cloud.
 	//
 	// If "http", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form https://bitbucket.org/myteam/myproject.git.
 	//
@@ -131,7 +131,7 @@ type BitbucketCloudConnection struct {
 	//
 	// For example, if your Bitbucket Cloud is https://bitbucket.org and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of "{host}/{nameWithOwner}" would mean that a Bitbucket Cloud repository at https://bitbucket.org/alice/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.org/alice/my-repo.
 	//
-	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
+	// It is important that the Sourcegraph repository name generated with that pattern be unique to that code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	// Teams description: An array of team names identifying Bitbucket Cloud teams whose repositories should be mirrored on Sourcegraph.
 	Teams []string `json:"teams,omitempty"`
@@ -163,19 +163,19 @@ type BitbucketServerConnection struct {
 	Authorization *BitbucketServerAuthorization `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the Bitbucket Server instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
-	// Exclude description: A list of repositories to never mirror from this Bitbucket Server instance. Takes precedence over "repos" and "repositoryQuery".
+	// Exclude description: A list of repositories to never mirror from that Bitbucket Server instance. Takes precedence over "repos" and "repositoryQuery".
 	//
 	// Supports excluding by name ({"name": "projectKey/repositorySlug"}) or by ID ({"id": 42}).
 	Exclude []*ExcludedBitbucketServerRepo `json:"exclude,omitempty"`
 	// ExcludePersonalRepositories description: Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://docs.sourcegraph.com/integration/bitbucket_server#excluding-personal-repositories for more information.
 	ExcludePersonalRepositories bool `json:"excludePersonalRepositories,omitempty"`
-	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on that Bitbucket Server instance.
 	//
 	// If "http", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).
 	//
 	// If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
-	// InitialRepositoryEnablement description: Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.
+	// InitialRepositoryEnablement description: Defines whether repositories from that Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
 	// Password description: The password to use when authenticating to the Bitbucket Server instance. Also set the corresponding "username" field.
 	//
@@ -191,7 +191,7 @@ type BitbucketServerConnection struct {
 	//
 	// For example, if your Bitbucket Server is https://bitbucket.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of "{host}/{projectKey}/{repositorySlug}" would mean that a Bitbucket Server repository at https://bitbucket.example.com/projects/PRJ/repos/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.example.com/PRJ/my-repo.
 	//
-	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
+	// It is important that the Sourcegraph repository name generated with that pattern be unique to that code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	// RepositoryQuery description: An array of strings specifying which repositories to mirror on Sourcegraph. Each string is a URL query string with parameters that filter the list of returned repos. Examples: "?name=my-repo&projectname=PROJECT&visibility=private".
 	//
@@ -312,7 +312,7 @@ type ExcludedBitbucketServerRepo struct {
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitHubRepo struct {
-	// Id description: The node ID of a GitHub repository (as returned by the GitHub instance's API) to exclude from mirroring. Use this to exclude the repository, even if renamed. Note: This is the GraphQL ID, not the GitHub database ID. eg: "curl https://api.github.com/repos/vuejs/vue | jq .node_id"
+	// Id description: The node ID of a GitHub repository (as returned by the GitHub instance's API) to exclude from mirroring. Use that to exclude the repository, even if renamed. Note: This is the GraphQL ID, not the GitHub database ID. eg: "curl https://api.github.com/repos/vuejs/vue | jq .node_id"
 	Id string `json:"id,omitempty"`
 	// Name description: The name of a GitHub repository ("owner/name") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
@@ -364,12 +364,12 @@ type ExternalIdentity struct {
 	AuthProviderID string `json:"authProviderID"`
 	// AuthProviderType description: The `type` field of the targeted authentication provider.
 	AuthProviderType string `json:"authProviderType"`
-	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
+	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what that value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
 	GitlabProvider string `json:"gitlabProvider"`
 	Type           string `json:"type"`
 }
 
-// GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
+// GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying that configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
 type GitHubAuthProvider struct {
 	// AllowOrgs description: Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.
 	AllowOrgs []string `json:"allowOrgs,omitempty"`
@@ -397,17 +397,17 @@ type GitHubAuthorization struct {
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
 type GitHubConnection struct {
-	// Authorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
+	// Authorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in that `GitHubConnection`.
 	Authorization *GitHubAuthorization `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
-	// Exclude description: A list of repositories to never mirror from this GitHub instance. Takes precedence over "orgs", "repos", and "repositoryQuery" configuration.
+	// Exclude description: A list of repositories to never mirror from that GitHub instance. Takes precedence over "orgs", "repos", and "repositoryQuery" configuration.
 	//
 	// Supports excluding by name ({"name": "owner/name"}) or by ID ({"id": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg=="}).
 	//
 	// Note: ID is the GitHub GraphQL ID, not the GitHub database ID. eg: "curl https://api.github.com/repos/vuejs/vue | jq .node_id"
 	Exclude []*ExcludedGitHubRepo `json:"exclude,omitempty"`
-	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on that GitHub instance.
 	//
 	// If "http", Sourcegraph will access GitHub repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).
 	//
@@ -482,19 +482,19 @@ type GitLabAuthorization struct {
 
 // GitLabConnection description: Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).
 type GitLabConnection struct {
-	// Authorization description: If non-null, enforces GitLab repository permissions. This requires that there be an item in the `auth.providers` field of type "gitlab" with the same `url` field as specified in this `GitLabConnection`.
+	// Authorization description: If non-null, enforces GitLab repository permissions. This requires that there be an item in the `auth.providers` field of type "gitlab" with the same `url` field as specified in that `GitLabConnection`.
 	Authorization *GitLabAuthorization `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the GitLab instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
-	// Exclude description: A list of projects to never mirror from this GitLab instance. Takes precedence over "projects" and "projectQuery" configuration. Supports excluding by name ({"name": "group/name"}) or by ID ({"id": 42}).
+	// Exclude description: A list of projects to never mirror from that GitLab instance. Takes precedence over "projects" and "projectQuery" configuration. Supports excluding by name ({"name": "group/name"}) or by ID ({"id": 42}).
 	Exclude []*ExcludedGitLabProject `json:"exclude,omitempty"`
-	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on that GitLab instance.
 	//
 	// If "http", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).
 	//
 	// If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
-	// InitialRepositoryEnablement description: Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.
+	// InitialRepositoryEnablement description: Defines whether repositories from that GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
 	// NameTransformations description: An array of transformations will apply to the repository name. Currently, only regex replacement is supported. All transformations happen after "repositoryPathPattern" is processed.
 	NameTransformations []*GitLabNameTransformation `json:"nameTransformations,omitempty"`
@@ -510,7 +510,7 @@ type GitLabConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Token description: A GitLab access token with "api" scope. If you are enabling permissions with identity provider type "external", this token should also have "sudo" scope.
+	// Token description: A GitLab access token with "api" scope. If you are enabling permissions with identity provider type "external", that token should also have "sudo" scope.
 	Token string `json:"token"`
 	// Url description: URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.
 	Url string `json:"url"`
@@ -548,10 +548,10 @@ type GitoliteConnection struct {
 
 // HTTPHeaderAuthProvider description: Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
 type HTTPHeaderAuthProvider struct {
-	// StripUsernameHeaderPrefix description: The prefix that precedes the username portion of the HTTP header specified in `usernameHeader`. If specified, the prefix will be stripped from the header value and the remainder will be used as the username. For example, if using Google Identity-Aware Proxy (IAP) with Google Sign-In, set this value to `accounts.google.com:`.
+	// StripUsernameHeaderPrefix description: The prefix that precedes the username portion of the HTTP header specified in `usernameHeader`. If specified, the prefix will be stripped from the header value and the remainder will be used as the username. For example, if using Google Identity-Aware Proxy (IAP) with Google Sign-In, set that value to `accounts.google.com:`.
 	StripUsernameHeaderPrefix string `json:"stripUsernameHeaderPrefix,omitempty"`
 	Type                      string `json:"type"`
-	// UsernameHeader description: The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
+	// UsernameHeader description: The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set that value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
 	UsernameHeader string `json:"usernameHeader"`
 }
 
@@ -650,7 +650,7 @@ type OtherExternalServiceConnection struct {
 	//
 	// For example, if your Git clone base URL is https://git.example.com/repos and `repos` contains the value "my/repo", then a repositoryPathPattern of "{base}/{repo}" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.
 	//
-	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
+	// It is important that the Sourcegraph repository name generated with that pattern be unique to that code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	Url                   string `json:"url,omitempty"`
 }
@@ -662,17 +662,17 @@ type ParentSourcegraph struct {
 
 // PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 type PermissionsUserMapping struct {
-	// BindID description: The type of identifier to identify a user. The default is "email", which uses the email address to identify a user. Use "username" to identify a user by their username. Changing this setting will erase any permissions created for users that do not yet exist.
+	// BindID description: The type of identifier to identify a user. The default is "email", which uses the email address to identify a user. Use "username" to identify a user by their username. Changing that setting will erase any permissions created for users that do not yet exist.
 	BindID string `json:"bindID,omitempty"`
-	// Enabled description: Whether permissions user mapping is enabled. There must be no `authorization` field in any external service configuration before enabling this.
+	// Enabled description: Whether permissions user mapping is enabled. There must be no `authorization` field in any external service configuration before enabling that.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
-// Phabricator description: Phabricator instance that integrates with this Gitolite instance
+// Phabricator description: Phabricator instance that integrates with that Gitolite instance
 type Phabricator struct {
-	// CallsignCommand description:  Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires `bash` to be installed.)
+	// CallsignCommand description:  Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: that requires `bash` to be installed.)
 	CallsignCommand string `json:"callsignCommand"`
-	// Url description: URL of the Phabricator instance that integrates with this Gitolite instance. This should be set
+	// Url description: URL of the Phabricator instance that integrates with that Gitolite instance. This should be set
 	Url string `json:"url"`
 }
 
@@ -686,11 +686,11 @@ type PhabricatorConnection struct {
 	Url string `json:"url,omitempty"`
 }
 type QuickLink struct {
-	// Description description: A description for this quick link
+	// Description description: A description for that quick link
 	Description string `json:"description,omitempty"`
-	// Name description: The human-readable name for this quick link
+	// Name description: The human-readable name for that quick link
 	Name string `json:"name"`
-	// Url description: The URL of this quick link (absolute or relative)
+	// Url description: The URL of that quick link (absolute or relative)
 	Url string `json:"url"`
 }
 type Repos struct {
@@ -704,10 +704,10 @@ type Repos struct {
 //
 // Note: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the `auth.providers` array.
 type SAMLAuthProvider struct {
-	// ConfigID description: An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.
+	// ConfigID description: An identifier that can be used to reference that authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate that authentication provider as the identity provider for the code host.
 	ConfigID    string `json:"configID,omitempty"`
 	DisplayName string `json:"displayName,omitempty"`
-	// IdentityProviderMetadata description: The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is `<EntityDescriptor>` or `<EntityDescriptors>`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
+	// IdentityProviderMetadata description: The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of that field should be an XML document whose root element is `<EntityDescriptor>` or `<EntityDescriptors>`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	IdentityProviderMetadata string `json:"identityProviderMetadata,omitempty"`
 	// IdentityProviderMetadataURL description: The SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).
 	IdentityProviderMetadataURL string `json:"identityProviderMetadataURL,omitempty"`
@@ -717,7 +717,7 @@ type SAMLAuthProvider struct {
 	NameIDFormat string `json:"nameIDFormat,omitempty"`
 	// ServiceProviderCertificate description: The SAML Service Provider certificate in X.509 encoding (begins with "-----BEGIN CERTIFICATE-----"). This certificate is used by the Identity Provider to validate the Service Provider's AuthnRequests and LogoutRequests. It corresponds to the Service Provider's private key (`serviceProviderPrivateKey`). To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	ServiceProviderCertificate string `json:"serviceProviderCertificate,omitempty"`
-	// ServiceProviderIssuer description: The SAML Service Provider name, used to identify this Service Provider. This is required if the "externalURL" field is not set (as the SAML metadata endpoint is computed as "<externalURL>.auth/saml/metadata"), or when using multiple SAML authentication providers.
+	// ServiceProviderIssuer description: The SAML Service Provider name, used to identify that Service Provider. This is required if the "externalURL" field is not set (as the SAML metadata endpoint is computed as "<externalURL>.auth/saml/metadata"), or when using multiple SAML authentication providers.
 	ServiceProviderIssuer string `json:"serviceProviderIssuer,omitempty"`
 	// ServiceProviderPrivateKey description: The SAML Service Provider private key in PKCS#8 encoding (begins with "-----BEGIN PRIVATE KEY-----"). This private key is used to sign AuthnRequests and LogoutRequests. It corresponds to the Service Provider's certificate (`serviceProviderCertificate`). To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	ServiceProviderPrivateKey string `json:"serviceProviderPrivateKey,omitempty"`
@@ -742,11 +742,11 @@ type SMTPServerConfig struct {
 	Username string `json:"username,omitempty"`
 }
 type SearchSavedQueries struct {
-	// Description description: Description of this saved query
+	// Description description: Description of that saved query
 	Description string `json:"description"`
-	// Key description: Unique key for this query in this file
+	// Key description: Unique key for that query in that file
 	Key string `json:"key"`
-	// Notify description: Notify the owner of this configuration file when new results are available
+	// Notify description: Notify the owner of that configuration file when new results are available
 	Notify bool `json:"notify,omitempty"`
 	// NotifySlack description: Notify Slack via the organization's Slack webhook URL when new results are available
 	NotifySlack bool `json:"notifySlack,omitempty"`
@@ -792,11 +792,11 @@ type Settings struct {
 	//
 	// Usually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)
 	//
-	// MOTD stands for "message of the day" (which is the conventional Unix name for this type of message).
+	// MOTD stands for "message of the day" (which is the conventional Unix name for that type of message).
 	Motd []string `json:"motd,omitempty"`
 	// Notices description: Custom informational messages to display to users at specific locations in the Sourcegraph user interface.
 	//
-	// Usually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.
+	// Usually that setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.
 	Notices []*Notice `json:"notices,omitempty"`
 	// Quicklinks description: Links that should be accessible quickly from the home and search pages.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
@@ -826,17 +826,17 @@ type SettingsExperimentalFeatures struct {
 type SiteConfiguration struct {
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
-	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
+	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting that to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set that to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
 	AuthEnableUsernameChanges bool `json:"auth.enableUsernameChanges,omitempty"`
-	// AuthProviders description: The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).
+	// AuthProviders description: The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in that array).
 	AuthProviders []AuthProviders `json:"auth.providers,omitempty"`
 	// AuthPublic description: WARNING: This option has been removed as of 3.8.
 	AuthPublic bool `json:"auth.public,omitempty"`
-	// AuthSessionExpiry description: The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.
+	// AuthSessionExpiry description: The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set that, but some users may have specific internal security requirements.
 	//
 	// The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). E.g., "720h", "43200m", "2592000s" all indicate a timespan of 30 days.
 	//
-	// Note: changing this field does not affect the expiration of existing sessions. If you would like to enforce this limit for existing sessions, you must log out currently signed-in users. You can force this by removing all keys beginning with "session_" from the Redis store:
+	// Note: changing that field does not affect the expiration of existing sessions. If you would like to enforce that limit for existing sessions, you must log out currently signed-in users. You can force that by removing all keys beginning with "session_" from the Redis store:
 	//
 	// * For deployments using `sourcegraph/server`: `docker exec $CONTAINER_ID redis-cli --raw keys 'session_*' | xargs docker exec $CONTAINER_ID redis-cli del`
 	// * For cluster deployments:
@@ -854,7 +854,7 @@ type SiteConfiguration struct {
 	Branding *Branding `json:"branding,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
-	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
+	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change that outside of debugging scenarios. This option will be removed in a future version.
 	DebugSearchSymbolsParallelism int `json:"debug.search.symbolsParallelism,omitempty"`
 	// DisableAutoGitUpdates description: Disable periodically fetching git contents for existing repositories.
 	DisableAutoGitUpdates bool `json:"disableAutoGitUpdates,omitempty"`
@@ -914,7 +914,7 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// SearchIndexEnabled description: Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
 	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
-	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
+	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling that will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`

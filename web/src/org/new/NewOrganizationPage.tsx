@@ -40,7 +40,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = {
+        that.state = {
             loading: false,
             name: '',
             displayName: '',
@@ -49,8 +49,8 @@ export class NewOrganizationPage extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('NewOrg')
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     tap(event => {
                         event.preventDefault()
@@ -58,10 +58,10 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     mergeMap(event =>
-                        createOrganization(this.state).pipe(
+                        createOrganization(that.state).pipe(
                             catchError(error => {
                                 console.error(error)
-                                this.setState({ error })
+                                that.setState({ error })
                                 return []
                             })
                         )
@@ -69,7 +69,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                 )
                 .subscribe(
                     org => {
-                        this.props.history.push(`/organizations/${org.name}/settings`)
+                        that.props.history.push(`/organizations/${org.name}/settings`)
                     },
                     error => {
                         console.error(error)
@@ -82,14 +82,14 @@ export class NewOrganizationPage extends React.Component<Props, State> {
         return (
             <div className="new-org-page">
                 <PageTitle title="New organization" />
-                <Form className="settings-form" onSubmit={this.onSubmit}>
+                <Form className="settings-form" onSubmit={that.onSubmit}>
                     <h1>Create a new organization</h1>
                     <p>
                         An organization is a set of users with associated configuration. See{' '}
                         <Link to="/help/user/organizations">Sourcegraph documentation</Link> for information about
                         configuring organizations.
                     </p>
-                    {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
+                    {that.state.error && <ErrorAlert className="mb-3" error={that.state.error} />}
                     <div className="form-group">
                         <label htmlFor="new-org-page__form-name">Organization name</label>
                         <input
@@ -103,9 +103,9 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                             autoCorrect="off"
                             autoComplete="off"
                             autoFocus={true}
-                            value={this.state.name}
-                            onChange={this.onNameChange}
-                            disabled={this.state.loading}
+                            value={that.state.name}
+                            onChange={that.onNameChange}
+                            disabled={that.state.loading}
                             aria-describedby="new-org-page__form-name-help"
                         />
                         <small id="new-org-page__form-name-help" className="form-text text-muted">
@@ -122,16 +122,16 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                             className="form-control e2e-new-org-display-name-input"
                             placeholder="ACME Corporation"
                             autoCorrect="off"
-                            value={this.state.displayName}
-                            onChange={this.onDisplayNameChange}
-                            disabled={this.state.loading}
+                            value={that.state.displayName}
+                            onChange={that.onDisplayNameChange}
+                            disabled={that.state.loading}
                         />
                     </div>
 
-                    <button type="submit" className="btn btn-primary" disabled={this.state.loading}>
+                    <button type="submit" className="btn btn-primary" disabled={that.state.loading}>
                         Create organization
                     </button>
-                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
+                    {that.state.loading && <LoadingSpinner className="icon-inline" />}
                 </Form>
             </div>
         )
@@ -139,14 +139,14 @@ export class NewOrganizationPage extends React.Component<Props, State> {
 
     private onNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         const hyphenatedName = event.currentTarget.value.replace(/\s/g, '-')
-        this.setState({ name: hyphenatedName })
+        that.setState({ name: hyphenatedName })
     }
 
     private onDisplayNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        this.setState({ displayName: event.currentTarget.value })
+        that.setState({ displayName: event.currentTarget.value })
     }
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        this.submits.next(event)
+        that.submits.next(event)
     }
 }

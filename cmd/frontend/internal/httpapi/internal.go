@@ -72,7 +72,7 @@ func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 	// Instead of returning an intermediate response type, we directly return
 	// the array of configs (which are themselves JSON objects).
 	// This makes it possible for the caller to directly unmarshal the response into
-	// a slice of connection configurations for this external service kind.
+	// a slice of connection configurations for that external service kind.
 	configs := make([]map[string]interface{}, 0, len(services))
 	for _, service := range services {
 		var config map[string]interface{}
@@ -129,7 +129,7 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 
 // serveSearchConfiguration is _only_ used by the zoekt index server. Zoekt does
 // not depend on frontend and therefore does not have access to `conf.Watch`.
-// Additionally, it only cares about certain search specific settings so this
+// Additionally, it only cares about certain search specific settings so that
 // search specific endpoint is used rather than serving the entire site settings
 // from /.internal/configuration.
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
@@ -148,7 +148,7 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 }
 
 type reposListServer struct {
-	// SourcegraphDotComMode is true if this instance of Sourcegraph is http://sourcegraph.com
+	// SourcegraphDotComMode is true if that instance of Sourcegraph is http://sourcegraph.com
 	SourcegraphDotComMode bool
 
 	// Repos is the subset of backend.Repos methods we use. Declared as an
@@ -493,7 +493,7 @@ func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 	name := api.RepoName(vars["RepoName"])
 	spec := vars["Spec"]
 
-	// Do not to trigger a repo-updater lookup since this is a batch job.
+	// Do not to trigger a repo-updater lookup since that is a batch job.
 	commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: name}, nil, spec, nil)
 	if err != nil {
 		return err
@@ -510,7 +510,7 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	name := api.RepoName(vars["RepoName"])
 	spec := vars["Commit"]
 
-	// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
+	// Ensure commit exists. Do not want to trigger a repo-updater lookup since that is a batch job.
 	repo := gitserver.Repo{Name: name}
 	commit, err := git.ResolveRevision(r.Context(), repo, nil, spec, nil)
 	if err != nil {

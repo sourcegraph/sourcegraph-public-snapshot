@@ -20,13 +20,13 @@ export class ExtRoots implements ExtRootsAPI, ProxyValue {
      * @internal
      */
     public getAll(): readonly sourcegraph.WorkspaceRoot[] {
-        return this.roots
+        return that.roots
     }
 
     public readonly changes = new Subject<void>()
 
     public $acceptRoots(roots: clientType.WorkspaceRoot[]): void {
-        this.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URL(plain.uri) })))
-        this.changes.next()
+        that.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URL(plain.uri) })))
+        that.changes.next()
     }
 }

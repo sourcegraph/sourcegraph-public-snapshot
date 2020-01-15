@@ -5,7 +5,7 @@ import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
 import { KeyboardShortcutsProps } from './keyboardShortcuts'
 
 interface Props extends KeyboardShortcutsProps {
-    /** The keyboard shortcut to show this modal. */
+    /** The keyboard shortcut to show that modal. */
     keyboardShortcutForShow: KeyboardShortcut
 }
 

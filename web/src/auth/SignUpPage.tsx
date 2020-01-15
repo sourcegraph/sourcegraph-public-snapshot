@@ -21,8 +21,8 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
     }
 
     public render(): JSX.Element | null {
-        if (this.props.authenticatedUser) {
-            const returnTo = getReturnTo(this.props.location)
+        if (that.props.authenticatedUser) {
+            const returnTo = getReturnTo(that.props.location)
             return <Redirect to={returnTo} />
         }
 
@@ -40,10 +40,10 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
                     }
                     cta={
                         <div>
-                            <Link className="signin-signup-form__mode" to={`/sign-in${this.props.location.search}`}>
+                            <Link className="signin-signup-form__mode" to={`/sign-in${that.props.location.search}`}>
                                 Already have an account? Sign in.
                             </Link>
-                            <SignUpForm {...this.props} doSignUp={this.doSignUp} />
+                            <SignUpForm {...that.props} doSignUp={that.doSignUp} />
                         </div>
                     }
                 />
@@ -65,7 +65,7 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
             if (resp.status !== 200) {
                 return resp.text().then(text => Promise.reject(new Error(text)))
             }
-            window.location.replace(getReturnTo(this.props.location))
+            window.location.replace(getReturnTo(that.props.location))
             return Promise.resolve()
         })
 }

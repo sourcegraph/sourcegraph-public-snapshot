@@ -83,7 +83,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const patternType = parseSearchURLPatternType(this.props.location.search)
+        const patternType = parseSearchURLPatternType(that.props.location.search)
 
         if (!patternType) {
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
@@ -91,19 +91,19 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             const newLoc =
                 '/search?' +
                 buildSearchURLQuery(
-                    this.props.navbarSearchQueryState.query,
+                    that.props.navbarSearchQueryState.query,
                     GQL.SearchPatternType.regexp,
-                    this.props.filtersInQuery
+                    that.props.filtersInQuery
                 )
             window.location.replace(newLoc)
         }
 
-        this.props.telemetryService.logViewEvent('SearchResults')
+        that.props.telemetryService.logViewEvent('SearchResults')
 
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
-                    startWith(this.props),
+                    startWith(that.props),
                     map(props => [
                         parseSearchURLQuery(props.location.search, props.interactiveSearchMode),
                         parseSearchURLPatternType(props.location.search),
@@ -116,7 +116,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     ),
                     tap(([query]) => {
                         const query_data = queryTelemetryData(query)
-                        this.props.telemetryService.log('SearchResultsQueried', {
+                        that.props.telemetryService.log('SearchResultsQueried', {
                             code_search: { query_data },
                         })
                         if (
@@ -124,7 +124,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             query_data.query.field_type &&
                             query_data.query.field_type.value_diff > 0
                         ) {
-                            this.props.telemetryService.log('DiffSearchResultsQueried')
+                            that.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
                     switchMap(([query, patternType]) =>
@@ -138,11 +138,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 },
                             ],
                             // Do async search request
-                            this.props.searchRequest(query, LATEST_VERSION, patternType, this.props).pipe(
+                            that.props.searchRequest(query, LATEST_VERSION, patternType, that.props).pipe(
                                 // Log telemetry
                                 tap(
                                     results => {
-                                        this.props.telemetryService.log('SearchResultsFetched', {
+                                        that.props.telemetryService.log('SearchResultsFetched', {
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
                                                 results: {
@@ -153,12 +153,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                                 },
                                             },
                                         })
-                                        if (patternType && patternType !== this.props.patternType) {
-                                            this.props.setPatternType(patternType)
+                                        if (patternType && patternType !== that.props.patternType) {
+                                            that.props.setPatternType(patternType)
                                         }
                                     },
                                     error => {
-                                        this.props.telemetryService.log('SearchResultsFetchFailed', {
+                                        that.props.telemetryService.log('SearchResultsFetchFailed', {
                                             code_search: { error_message: error.message },
                                         })
                                         console.error(error)
@@ -172,77 +172,77 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     )
                 )
                 .subscribe(
-                    newState => this.setState(newState as SearchResultsState),
+                    newState => that.setState(newState as SearchResultsState),
                     err => console.error(err)
                 )
         )
 
-        this.props.extensionsController.services.contribution
+        that.props.extensionsController.services.contribution
             .getContributions()
-            .subscribe(contributions => this.setState({ contributions }))
+            .subscribe(contributions => that.setState({ contributions }))
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     private showSaveQueryModal = (): void => {
-        this.setState({ showSavedQueryModal: true, didSaveQuery: false })
+        that.setState({ showSavedQueryModal: true, didSaveQuery: false })
     }
 
     private onDidCreateSavedQuery = (): void => {
-        this.props.telemetryService.log('SavedQueryCreated')
-        this.setState({ showSavedQueryModal: false, didSaveQuery: true })
+        that.props.telemetryService.log('SavedQueryCreated')
+        that.setState({ showSavedQueryModal: false, didSaveQuery: true })
     }
 
     private onModalClose = (): void => {
-        this.props.telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
-        this.setState({ didSaveQuery: false, showSavedQueryModal: false })
+        that.props.telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
+        that.setState({ didSaveQuery: false, showSavedQueryModal: false })
     }
 
     public render(): JSX.Element | null {
-        const query = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
-        const filters = this.getFilters()
-        const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
+        const query = parseSearchURLQuery(that.props.location.search, that.props.interactiveSearchMode)
+        const filters = that.getFilters()
+        const extensionFilters = that.state.contributions && that.state.contributions.searchFilters
 
         const quickLinks =
-            (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []
+            (isSettingsValid<Settings>(that.props.settingsCascade) && that.props.settingsCascade.final.quicklinks) || []
 
         return (
             <div className="e2e-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                {!this.props.interactiveSearchMode && (
+                {!that.props.interactiveSearchMode && (
                     <SearchResultsFilterBars
-                        navbarSearchQuery={this.props.navbarSearchQueryState.query}
-                        results={this.state.resultsOrError}
+                        navbarSearchQuery={that.props.navbarSearchQueryState.query}
+                        results={that.state.resultsOrError}
                         filters={filters}
                         extensionFilters={extensionFilters}
                         quickLinks={quickLinks}
-                        onFilterClick={this.onDynamicFilterClicked}
-                        onShowMoreResultsClick={this.showMoreResults}
-                        calculateShowMoreResultsCount={this.calculateCount}
+                        onFilterClick={that.onDynamicFilterClicked}
+                        onShowMoreResultsClick={that.showMoreResults}
+                        calculateShowMoreResultsCount={that.calculateCount}
                     />
                 )}
                 <SearchResultTypeTabs
-                    {...this.props}
-                    query={this.props.navbarSearchQueryState.query}
-                    filtersInQuery={this.props.filtersInQuery}
+                    {...that.props}
+                    query={that.props.navbarSearchQueryState.query}
+                    filtersInQuery={that.props.filtersInQuery}
                 />
                 <SearchResultsList
-                    {...this.props}
-                    resultsOrError={this.state.resultsOrError}
-                    onShowMoreResultsClick={this.showMoreResults}
-                    onExpandAllResultsToggle={this.onExpandAllResultsToggle}
-                    allExpanded={this.state.allExpanded}
-                    showSavedQueryModal={this.state.showSavedQueryModal}
-                    onSaveQueryClick={this.showSaveQueryModal}
-                    onSavedQueryModalClose={this.onModalClose}
-                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                    didSave={this.state.didSaveQuery}
+                    {...that.props}
+                    resultsOrError={that.state.resultsOrError}
+                    onShowMoreResultsClick={that.showMoreResults}
+                    onExpandAllResultsToggle={that.onExpandAllResultsToggle}
+                    allExpanded={that.state.allExpanded}
+                    showSavedQueryModal={that.state.showSavedQueryModal}
+                    onSaveQueryClick={that.showSaveQueryModal}
+                    onSavedQueryModalClose={that.onModalClose}
+                    onDidCreateSavedQuery={that.onDidCreateSavedQuery}
+                    didSave={that.state.didSaveQuery}
                 />
             </div>
         )
@@ -252,18 +252,18 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     private getFilters(): SearchScopeWithOptionalName[] {
         const filters = new Map<string, SearchScopeWithOptionalName>()
 
-        if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
-            let dynamicFilters = this.state.resultsOrError.dynamicFilters
-            dynamicFilters = this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
+        if (isSearchResults(that.state.resultsOrError) && that.state.resultsOrError.dynamicFilters) {
+            let dynamicFilters = that.state.resultsOrError.dynamicFilters
+            dynamicFilters = that.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
             for (const d of dynamicFilters) {
                 filters.set(d.value, d)
             }
         }
         const scopes =
-            (isSettingsValid<Settings>(this.props.settingsCascade) &&
-                this.props.settingsCascade.final['search.scopes']) ||
+            (isSettingsValid<Settings>(that.props.settingsCascade) &&
+                that.props.settingsCascade.final['search.scopes']) ||
             []
-        if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
+        if (isSearchResults(that.state.resultsOrError) && that.state.resultsOrError.dynamicFilters) {
             for (const scope of scopes) {
                 if (!filters.has(scope.value)) {
                     filters.set(scope.value, scope)

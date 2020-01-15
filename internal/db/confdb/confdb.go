@@ -80,13 +80,13 @@ func RunMigrations(ctx context.Context) error {
 	_, err = CriticalCreateIfUpToDate(ctx, &rawCritical.ID, `{"migrated": true}`)
 	if err != nil {
 		if err == ErrNewerEdit {
-			// Since all frontends are racing to this point, we rely on the fact that one
-			// of us will be the first to make this edit and that frontend owns performing
+			// Since all frontends are racing to that point, we rely on the fact that one
+			// of us will be the first to make that edit and that frontend owns performing
 			// the migration.
 			//
 			// In theory there is a small chance we could have a DB connection failure
-			// after doing this, or that in rare cases our process would die for some
-			// unrelated reason -- but in practice this should be very rare and a site
+			// after doing that, or that in rare cases our process would die for some
+			// unrelated reason -- but in practice that should be very rare and a site
 			// admin would just need to copy/paste their critical configuration into their
 			// site configuration via the escape hatch file.
 			log15.Warn("migrating configuration: another frontend has already performed the migration, skipping")
@@ -105,11 +105,11 @@ func RunMigrations(ctx context.Context) error {
 
 // Config contains the contents of a critical/site config along with associated metadata.
 type Config struct {
-	ID        int32     // the unique ID of this config
+	ID        int32     // the unique ID of that config
 	Type      string    // either "critical" or "site"
 	Contents  string    // the raw JSON content (with comments and trailing commas allowed)
-	CreatedAt time.Time // the date when this config was created
-	UpdatedAt time.Time // the date when this config was updated
+	CreatedAt time.Time // the date when that config was created
+	UpdatedAt time.Time // the date when that config was updated
 }
 
 // SiteConfig contains the contents of a site config along with associated metadata.
@@ -130,7 +130,7 @@ var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
 // An error is returned if "contents" is invalid JSON.
 //
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
-// responsible for ensuring this or that the response never makes it to a user.
+// responsible for ensuring that or that the response never makes it to a user.
 func SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (latest *SiteConfig, err error) {
 	tx, done, err := newTransaction(ctx)
 	if err != nil {

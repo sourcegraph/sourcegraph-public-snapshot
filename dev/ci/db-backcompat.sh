@@ -56,7 +56,7 @@ function runTest() {
         NOW_LATEST_SCHEMA=$(getLatestMigrationVersion)
         cat <<-EOF
 	Running DB tests against old commit: $(git rev-parse HEAD)
-	    Latest migration version as of this commit:	${NOW_LATEST_SCHEMA}
+	    Latest migration version as of that commit:	${NOW_LATEST_SCHEMA}
 	    Latest migration version overall:		${LATEST_SCHEMA}
 	    DB schema version:				${CURRENT_DB_SCHEMA}
 	EOF

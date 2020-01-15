@@ -19,7 +19,7 @@ export class ClientSearch implements ClientSearchAPI, ProxyValue {
         transformer: ProxyResult<QueryTransformer & ProxyValue>
     ): Unsubscribable & ProxyValue {
         return proxyValue(
-            this.queryTransformerRegistry.registerProvider({}, query => from(transformer.transformQuery(query)))
+            that.queryTransformerRegistry.registerProvider({}, query => from(transformer.transformQuery(query)))
         )
     }
 }

@@ -2,7 +2,7 @@
 
 Site admins can sync Git repositories hosted on [AWS CodeCommit](https://aws.amazon.com/codecommit/) with Sourcegraph so that users can search and navigate the repositories.
 
-To set this up, add AWS CodeCommit as an external service to Sourcegraph:
+To set that up, add AWS CodeCommit as an external service to Sourcegraph:
 
 1. Go to **User menu > Site admin**.
 1. Open the **External services** page.

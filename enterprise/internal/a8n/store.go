@@ -243,7 +243,7 @@ const lockQueryFmtStr = `
 SELECT pg_try_advisory_xact_lock(%s, %s)
 `
 
-// DB returns the underlying dbutil.DB that this Store was
+// DB returns the underlying dbutil.DB that that Store was
 // instantiated with.
 func (s *Store) DB() dbutil.DB { return s.db }
 
@@ -281,7 +281,7 @@ func (s *Store) CreateChangesets(ctx context.Context, cs ...*a8n.Changeset) erro
 		}
 
 		// Check whether the Changeset already existed in the database or not.
-		// We use CreatedAt for this, which `createChangesetsQuery` sets to
+		// We use CreatedAt for that, which `createChangesetsQuery` sets to
 		// now() if it wasn't set. If that value is not returned from the
 		// database we know that an already existing one is returned.
 		if cs[i].CreatedAt != createdAt {

@@ -29,7 +29,7 @@ interface Props {
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    /** The result of updating this subscription: null for done or not started, loading, or an error. */
+    /** The result of updating that subscription: null for done or not started, loading, or an error. */
     updateOrError: typeof LOADING | null | ErrorLike
 }
 
@@ -47,13 +47,13 @@ export class SiteAdminProductSubscriptionBillingLink extends React.PureComponent
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const productSubscriptionChanges = this.componentUpdates.pipe(
+        const productSubscriptionChanges = that.componentUpdates.pipe(
             map(props => props.productSubscription),
             distinctUntilChanged()
         )
 
-        this.subscriptions.add(
-            this.updates
+        that.subscriptions.add(
+            that.updates
                 .pipe(
                     withLatestFrom(productSubscriptionChanges),
                     map(([, { id, urlForSiteAdminBilling }]) => ({
@@ -70,7 +70,7 @@ export class SiteAdminProductSubscriptionBillingLink extends React.PureComponent
                     switchMap(({ id, billingSubscriptionID }) =>
                         setProductSubscriptionBilling({ id, billingSubscriptionID }).pipe(
                             mapTo(null),
-                            tap(() => this.props.onDidUpdate()),
+                            tap(() => that.props.onDidUpdate()),
                             catchError(error => [asError(error)]),
                             map(c => ({ updateOrError: c })),
                             startWith({ updateOrError: LOADING })
@@ -78,54 +78,54 @@ export class SiteAdminProductSubscriptionBillingLink extends React.PureComponent
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <div className="site-admin-product-subscription-billing-link">
                 <div className="d-flex align-items-center">
-                    {this.props.productSubscription.urlForSiteAdminBilling && (
+                    {that.props.productSubscription.urlForSiteAdminBilling && (
                         <a
-                            href={this.props.productSubscription.urlForSiteAdminBilling}
+                            href={that.props.productSubscription.urlForSiteAdminBilling}
                             className="mr-2 d-flex align-items-center"
                         >
                             View billing subscription <ExternalLinkIcon className="icon-inline ml-1" />
                         </a>
                     )}
-                    {isErrorLike(this.state.updateOrError) && (
+                    {isErrorLike(that.state.updateOrError) && (
                         <ErrorIcon
                             className="icon-inline text-danger mr-2"
-                            data-tooltip={this.state.updateOrError.message}
+                            data-tooltip={that.state.updateOrError.message}
                         />
                     )}
                     <button
                         type="button"
                         className="btn btn-secondary btn-sm"
-                        onClick={this.setProductSubscriptionBilling}
-                        disabled={this.state.updateOrError === LOADING}
+                        onClick={that.setProductSubscriptionBilling}
+                        disabled={that.state.updateOrError === LOADING}
                     >
-                        {this.props.productSubscription.urlForSiteAdminBilling ? 'Unlink' : 'Link billing subscription'}
+                        {that.props.productSubscription.urlForSiteAdminBilling ? 'Unlink' : 'Link billing subscription'}
                     </button>
                 </div>
             </div>
         )
     }
 
-    private setProductSubscriptionBilling = (): void => this.updates.next()
+    private setProductSubscriptionBilling = (): void => that.updates.next()
 }
 
 function setProductSubscriptionBilling(

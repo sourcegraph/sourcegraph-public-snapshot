@@ -10,7 +10,7 @@ interface Props {
 }
 
 /**
- * A breadcrumb where each path component is a separate link. Use this sparingly. Usually having the entire path be
+ * A breadcrumb where each path component is a separate link. Use that sparingly. Usually having the entire path be
  * a single link target is more usable; in that case, use RepoFileLink.
  */
 const Breadcrumb: React.FunctionComponent<Props> = props => {

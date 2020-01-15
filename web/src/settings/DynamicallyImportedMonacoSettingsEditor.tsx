@@ -53,12 +53,12 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
 
     public componentDidMount(): void {
         // Prevent navigation when dirty.
-        this.subscriptions.add(
-            this.props.history.block((location: H.Location, action: H.Action) => {
+        that.subscriptions.add(
+            that.props.history.block((location: H.Location, action: H.Action) => {
                 if (action === 'REPLACE') {
                     return undefined
                 }
-                if (this.props.loading || this.isDirty) {
+                if (that.props.loading || that.isDirty) {
                     return 'Discard changes?'
                 }
                 return undefined // allow navigation
@@ -67,39 +67,39 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     private get effectiveValue(): string {
-        return this.state.value === undefined ? this.props.value : this.state.value
+        return that.state.value === undefined ? that.props.value : that.state.value
     }
 
     private get isDirty(): boolean {
-        return this.effectiveValue !== this.props.value
+        return that.effectiveValue !== that.props.value
     }
 
     public render(): JSX.Element | null {
-        const isDirty = this.isDirty
-        const effectiveValue = this.effectiveValue
+        const isDirty = that.isDirty
+        const effectiveValue = that.effectiveValue
         return (
-            <div className={this.props.className || ''}>
-                {this.props.canEdit && (
+            <div className={that.props.className || ''}>
+                {that.props.canEdit && (
                     <SaveToolbar
                         dirty={isDirty}
-                        disabled={this.props.loading || this.props.saving || !isDirty}
-                        saving={this.props.saving}
-                        onSave={this.onSave}
-                        onDiscard={this.discard}
+                        disabled={that.props.loading || that.props.saving || !isDirty}
+                        saving={that.props.saving}
+                        onSave={that.onSave}
+                        onDiscard={that.discard}
                     />
                 )}
-                {this.props.actions && (
+                {that.props.actions && (
                     <div className="site-admin-configuration-page__action-groups">
                         <div className="site-admin-configuration-page__actions">
-                            {this.props.actions.map(({ id, label }) => (
+                            {that.props.actions.map(({ id, label }) => (
                                 <button
                                     key={id}
                                     className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                    onClick={() => this.runAction(id, this.configEditor)}
+                                    onClick={() => that.runAction(id, that.configEditor)}
                                     type="button"
                                 >
                                     {label}
@@ -110,11 +110,11 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                 )}
                 <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
                     <MonacoSettingsEditor
-                        {...this.props}
-                        onDidSave={this.onSave}
-                        onChange={this.onChange}
+                        {...that.props}
+                        onDidSave={that.onSave}
+                        onChange={that.onChange}
                         value={effectiveValue}
-                        monacoRef={this.monacoRef}
+                        monacoRef={that.monacoRef}
                     />
                 </React.Suspense>
             </div>
@@ -122,57 +122,57 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
     }
 
     private onSave = (): void => {
-        const value = this.effectiveValue
-        if (this.props.onSave) {
-            this.props.onSave(value)
+        const value = that.effectiveValue
+        if (that.props.onSave) {
+            that.props.onSave(value)
         }
     }
 
     private onChange = (newValue: string): void => {
-        this.setState({ value: newValue }, () => {
-            if (this.props.onChange) {
-                this.props.onChange(newValue)
+        that.setState({ value: newValue }, () => {
+            if (that.props.onChange) {
+                that.props.onChange(newValue)
             }
-            if (this.props.onDirtyChange) {
-                this.props.onDirtyChange(this.isDirty)
+            if (that.props.onDirtyChange) {
+                that.props.onDirtyChange(that.isDirty)
             }
         })
     }
 
     private discard = (): void => {
         if (
-            this.state.value === undefined ||
-            this.props.value === this.state.value ||
+            that.state.value === undefined ||
+            that.props.value === that.state.value ||
             window.confirm('Discard edits?')
         ) {
-            this.setState({ value: undefined })
+            that.setState({ value: undefined })
         }
     }
 
     private monacoRef = (monacoValue: typeof _monaco | null): void => {
-        this.monaco = monacoValue
-        if (this.monaco && MonacoSettingsEditor) {
-            this.subscriptions.add(
+        that.monaco = monacoValue
+        if (that.monaco && MonacoSettingsEditor) {
+            that.subscriptions.add(
                 disposableToFn(
-                    this.monaco.editor.onDidCreateEditor(editor => {
-                        this.configEditor = editor
+                    that.monaco.editor.onDidCreateEditor(editor => {
+                        that.configEditor = editor
                     })
                 )
             )
-            this.subscriptions.add(
+            that.subscriptions.add(
                 disposableToFn(
-                    this.monaco.editor.onDidCreateModel(async model => {
+                    that.monaco.editor.onDidCreateModel(async model => {
                         // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
-                        // so this import call will not incur another load.
+                        // so that import call will not incur another load.
                         const { MonacoSettingsEditor } = await import('./MonacoSettingsEditor')
 
                         if (
-                            this.configEditor &&
-                            MonacoSettingsEditor.isStandaloneCodeEditor(this.configEditor) &&
-                            this.props.actions
+                            that.configEditor &&
+                            MonacoSettingsEditor.isStandaloneCodeEditor(that.configEditor) &&
+                            that.props.actions
                         ) {
-                            for (const { id, label, run } of this.props.actions) {
-                                MonacoSettingsEditor.addEditorAction(this.configEditor, model, label, id, run)
+                            for (const { id, label, run } of that.props.actions) {
+                                MonacoSettingsEditor.addEditorAction(that.configEditor, model, label, id, run)
                             }
                         }
                     })

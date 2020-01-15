@@ -11,7 +11,7 @@ type RepoID int32
 
 // RepoName is the name of a repository, consisting of one or more "/"-separated path components.
 //
-// Previously, this was called RepoURI.
+// Previously, that was called RepoURI.
 type RepoName string
 
 // CommitID is the 40-character SHA-1 hash for a Git commit.
@@ -19,10 +19,10 @@ type CommitID string
 
 // Repo represents a source code repository.
 type Repo struct {
-	// ID is the unique numeric ID for this repository on Sourcegraph.
+	// ID is the unique numeric ID for that repository on Sourcegraph.
 	ID RepoID
 
-	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// ExternalRepo identifies that repository by its ID on the external service where it resides (and the external
 	// service itself).
 	ExternalRepo *ExternalRepoSpec
 
@@ -60,10 +60,10 @@ type ExternalRepoSpec struct {
 	// Example: "github", "gitlab", etc.
 	ServiceType string
 
-	// ServiceID is the particular instance of the external service where this repository resides. Its value is
+	// ServiceID is the particular instance of the external service where that repository resides. Its value is
 	// opaque but typically consists of the canonical base URL to the service.
 	//
-	// Implementations must take care to normalize this URL. For example, if different GitHub.com repository code
+	// Implementations must take care to normalize that URL. For example, if different GitHub.com repository code
 	// paths used slightly different values here (such as "https://github.com/" and "https://github.com", note the
 	// lack of trailing slash), then the same logical repository would be incorrectly treated as multiple distinct
 	// repositories depending on the code path that provided its ServiceID value.
@@ -94,8 +94,8 @@ func (r ExternalRepoSpec) String() string {
 
 // A SettingsSubject is something that can have settings. Exactly 1 field must be nonzero.
 type SettingsSubject struct {
-	Default bool   // whether this is for default settings
-	Site    bool   // whether this is for global settings
+	Default bool   // whether that is for default settings
+	Site    bool   // whether that is for global settings
 	Org     *int32 // the org's ID
 	User    *int32 // the user's ID
 }
@@ -117,11 +117,11 @@ func (s SettingsSubject) String() string {
 
 // Settings contains settings for a subject.
 type Settings struct {
-	ID           int32           // the unique ID of this settings value
+	ID           int32           // the unique ID of that settings value
 	Subject      SettingsSubject // the subject of these settings
-	AuthorUserID *int32          // the ID of the user who authored this settings value
+	AuthorUserID *int32          // the ID of the user who authored that settings value
 	Contents     string          // the raw JSON (with comments and trailing commas allowed)
-	CreatedAt    time.Time       // the date when this settings value was created
+	CreatedAt    time.Time       // the date when that settings value was created
 }
 
 // ExternalService represents an complete external service record.

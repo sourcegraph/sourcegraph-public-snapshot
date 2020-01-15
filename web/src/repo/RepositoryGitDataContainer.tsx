@@ -59,12 +59,12 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
 
     public componentDidMount(): void {
         // Fetch repository revision.
-        this.subscriptions.add(
-            this.propsUpdates
+        that.subscriptions.add(
+            that.propsUpdates
                 .pipe(
                     map(({ repoName }) => repoName),
                     distinctUntilChanged(),
-                    tap(() => this.setState({ gitDataPresentOrError: undefined })),
+                    tap(() => that.setState({ gitDataPresentOrError: undefined })),
                     switchMap(repoName =>
                         defer(() => resolveRev({ repoName })).pipe(
                             // On a CloneInProgress error, retry after 1s
@@ -74,7 +74,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                                         switch (error.code) {
                                             case ECLONEINPROGESS:
                                                 // Display cloning screen to the user and retry
-                                                this.setState({ gitDataPresentOrError: error })
+                                                that.setState({ gitDataPresentOrError: error })
                                                 return
                                             default:
                                                 // Display error to the user and do not retry
@@ -86,42 +86,42 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                             ),
                             // Save any error in the state to display to the user
                             catchError(error => {
-                                this.setState({ gitDataPresentOrError: error })
+                                that.setState({ gitDataPresentOrError: error })
                                 return []
                             })
                         )
                     )
                 )
                 .subscribe(
-                    resolvedRev => this.setState({ gitDataPresentOrError: true }),
+                    resolvedRev => that.setState({ gitDataPresentOrError: true }),
                     error => console.error(error)
                 )
         )
-        this.propsUpdates.next(this.props)
+        that.propsUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.propsUpdates.next(this.props)
+        that.propsUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): React.ReactNode | React.ReactNode[] | null {
-        if (!this.state.gitDataPresentOrError) {
+        if (!that.state.gitDataPresentOrError) {
             // Render nothing while loading
             return null
         }
 
-        if (isErrorLike(this.state.gitDataPresentOrError)) {
+        if (isErrorLike(that.state.gitDataPresentOrError)) {
             // Show error page
-            switch (this.state.gitDataPresentOrError.code) {
+            switch (that.state.gitDataPresentOrError.code) {
                 case ECLONEINPROGESS:
                     return (
                         <RepositoryCloningInProgressPage
-                            repoName={this.props.repoName}
-                            progress={(this.state.gitDataPresentOrError as CloneInProgressError).progress}
+                            repoName={that.props.repoName}
+                            progress={(that.state.gitDataPresentOrError as CloneInProgressError).progress}
                         />
                     )
                 case EREVNOTFOUND:
@@ -131,12 +131,12 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                         <HeroPage
                             icon={AlertCircleIcon}
                             title="Error"
-                            subtitle={upperFirst(this.state.gitDataPresentOrError.message)}
+                            subtitle={upperFirst(that.state.gitDataPresentOrError.message)}
                         />
                     )
             }
         }
 
-        return this.props.children
+        return that.props.children
     }
 }

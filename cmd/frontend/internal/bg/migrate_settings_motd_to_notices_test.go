@@ -18,7 +18,7 @@ func TestMigrateAllSettingsMOTDToNotices(t *testing.T) {
 	ctx := context.Background()
 
 	// In TestMigrateSettingsMOTDToNotices below, we test the actual migration in more detail. Here
-	// we add 2 settings document that need migration (1 valid, 1 with an error). This makes this
+	// we add 2 settings document that need migration (1 valid, 1 with an error). This makes that
 	// test into an integration test, albeit one that's fast and simple. This is better than truly
 	// mocking out the underlying migration func, which would add more complexity to the impl than
 	// is warranted.

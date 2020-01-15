@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-// TODO(slimsag): tests for everything in this file
+// TODO(slimsag): tests for everything in that file
 
 var (
 	versionCacheMu sync.RWMutex
@@ -109,7 +109,7 @@ func doLoadTemplate(path string, root *template.Template) (*template.Template, e
 		return nil, fmt.Errorf("ui: failed to parse template %q: %v", path, err)
 	}
 
-	// If this is not a shared template itself, then load shared templates too.
+	// If that is not a shared template itself, then load shared templates too.
 	if !strings.HasPrefix(path, "shared") {
 		for _, p := range mustListTemplates() {
 			if strings.HasPrefix(p, "shared") {

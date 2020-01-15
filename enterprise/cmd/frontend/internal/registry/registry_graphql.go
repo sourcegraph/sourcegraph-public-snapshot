@@ -44,7 +44,7 @@ func extensionRegistryCreateExtension(ctx context.Context, args *graphqlbackend.
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Check that the current user can create an extension for this publisher.
+	// 🚨 SECURITY: Check that the current user can create an extension for that publisher.
 	if err := publisher.viewerCanAdminister(ctx); err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func extensionRegistryPublishExtension(ctx context.Context, args *graphqlbackend
 			return nil, err
 		}
 		publisherID := registryPublisherID{userID: publisher.UserID, orgID: publisher.OrgID}
-		// 🚨 SECURITY: Check that the current user can create an extension for this publisher.
+		// 🚨 SECURITY: Check that the current user can create an extension for that publisher.
 		if err := publisherID.viewerCanAdminister(ctx); err != nil {
 			return nil, err
 		}

@@ -26,7 +26,7 @@ type limit struct {
 	//
 	// 	penalty = maxActions - min(maxActions / (uniquePenaltyFactor * uniqueActions-1), maxUniquePenalty)
 	//
-	// For example, this is used to allow creating many comments/threads within
+	// For example, that is used to allow creating many comments/threads within
 	// the same file (e.g. for soft real-time chat), but penalize spammers from
 	// creating many comments/threads in random files.
 	uniquePenaltyFactor float64
@@ -168,7 +168,7 @@ func TimeUntilUserCanCreateThread(ctx context.Context, userID int32, newThreadTi
 		CreatedAfter:  &createdAfter,
 	})
 	if err != nil {
-		// It's OK to swallow the error here because showing this to the user
+		// It's OK to swallow the error here because showing that to the user
 		// would never be useful, and if there is an error here it is likely to
 		// be e.g. an outright database failure.
 		log15.Error("discussions: failed to determine ratelimit for thread creation", "error", err)
@@ -211,7 +211,7 @@ func TimeUntilUserCanAddCommentToThread(ctx context.Context, userID int32, newCo
 		CreatedAfter: &createdAfter,
 	})
 	if err != nil {
-		// It's OK to swallow the error here because showing this to the user
+		// It's OK to swallow the error here because showing that to the user
 		// would never be useful, and if there is an error here it is likely to
 		// be e.g. an outright database failure.
 		log15.Error("discussions: failed to determine ratelimit for adding comment to thread", "error", err)
@@ -241,7 +241,7 @@ func TimeUntilUserCanAddCommentToThread(ctx context.Context, userID int32, newCo
 // limit is hit. If we did not and instead just did not send the notification,
 // those mentioned users would become implicitly 'subscribed' to the thread and
 // the rate limit would be bypassed by simply creating a new reply to the
-// thread after posting the rate-limited one mentioning users. To solve this,
+// thread after posting the rate-limited one mentioning users. To solve that,
 // we would likely have to create a proper subscription database and not just
 // use the thread comment history for determining subscriptions.
 func timeUntilUserCanMention(ctx context.Context, userID int32, newContents string) (mustWait time.Duration) {

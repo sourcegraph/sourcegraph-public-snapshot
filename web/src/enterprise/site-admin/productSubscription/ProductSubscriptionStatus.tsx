@@ -40,29 +40,29 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.queryProductLicenseInfo()
+        that.subscriptions.add(
+            that.queryProductLicenseInfo()
                 .pipe(
                     catchError(err => [asError(err)]),
                     map(v => ({ statusOrError: v }))
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     err => console.error(err)
                 )
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (this.state.statusOrError === undefined) {
+        if (that.state.statusOrError === undefined) {
             return null
         }
-        if (isErrorLike(this.state.statusOrError)) {
-            return <ErrorAlert error={this.state.statusOrError} prefix="Error checking product license" />
+        if (isErrorLike(that.state.statusOrError)) {
+            return <ErrorAlert error={that.state.statusOrError} prefix="Error checking product license" />
         }
 
         const {
@@ -71,9 +71,9 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
             actualUserCountDate,
             noLicenseWarningUserCount,
             license,
-        } = this.state.statusOrError
+        } = that.state.statusOrError
 
-        // No license means Sourcegraph Core. For that, show the user that they can use this for free
+        // No license means Sourcegraph Core. For that, show the user that they can use that for free
         // forever, and show them how to upgrade.
 
         return (
@@ -133,10 +133,10 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                             )}
                         </div>
                     }
-                    className={this.props.className}
+                    className={that.props.className}
                 />
                 {license &&
-                    (this.props.showTrueUpStatus ? (
+                    (that.props.showTrueUpStatus ? (
                         <TrueUpStatusSummary
                             actualUserCount={actualUserCount}
                             actualUserCountDate={actualUserCountDate}

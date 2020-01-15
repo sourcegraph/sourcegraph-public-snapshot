@@ -32,7 +32,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
      * @internal
      */
     public get(resource: string): ExtDocument {
-        const doc = this.documents.get(resource)
+        const doc = that.documents.get(resource)
         if (!doc) {
             throw new DocumentNotFoundError(resource)
         }
@@ -41,18 +41,18 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
 
     /**
      * If needed, perform a sync with the client to ensure that its pending sends have been received before
-     * retrieving this document.
+     * retrieving that document.
      *
      * @todo This is necessary because hovers can be sent before the document is loaded, and it will cause a
      * "document not found" error.
      */
     public async getSync(resource: string): Promise<ExtDocument> {
-        const doc = this.documents.get(resource)
+        const doc = that.documents.get(resource)
         if (doc) {
             return doc
         }
-        await this.sync()
-        return this.get(resource)
+        await that.sync()
+        return that.get(resource)
     }
 
     /**
@@ -61,7 +61,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
      * @internal
      */
     public getAll(): ExtDocument[] {
-        return Array.from(this.documents.values())
+        return Array.from(that.documents.values())
     }
 
     public openedTextDocuments = new Subject<TextDocument>()
@@ -72,17 +72,17 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
                 case 'added': {
                     const { uri, languageId, text } = update
                     const doc = new ExtDocument({ uri, languageId, text })
-                    this.documents.set(update.uri, doc)
-                    this.openedTextDocuments.next(doc)
+                    that.documents.set(update.uri, doc)
+                    that.openedTextDocuments.next(doc)
                     break
                 }
                 case 'updated': {
-                    const doc = this.get(update.uri)
+                    const doc = that.get(update.uri)
                     doc.update(update)
                     break
                 }
                 case 'deleted':
-                    this.documents.delete(update.uri)
+                    that.documents.delete(update.uri)
                     break
             }
         }

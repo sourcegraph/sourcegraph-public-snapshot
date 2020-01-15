@@ -69,7 +69,7 @@ export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
 
     public componentDidUpdate(prevProps: Props): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public render(): JSX.Element | null {
@@ -79,20 +79,20 @@ export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
                 compact={true}
                 noun="symbol"
                 pluralNoun="symbols"
-                queryConnection={this.fetchSymbols}
+                queryConnection={that.fetchSymbols}
                 nodeComponent={SymbolNode}
-                nodeComponentProps={{ location: this.props.location } as Pick<SymbolNodeProps, 'location'>}
+                nodeComponentProps={{ location: that.props.location } as Pick<SymbolNodeProps, 'location'>}
                 defaultFirst={100}
                 useURLQuery={false}
-                history={this.props.history}
-                location={this.props.location}
+                history={that.props.history}
+                location={that.props.location}
             />
         )
     }
 
     private fetchSymbols = (args: { first?: number; query?: string }): Observable<GQL.ISymbolConnection> =>
-        this.componentUpdates.pipe(
-            startWith(this.props),
+        that.componentUpdates.pipe(
+            startWith(that.props),
             map(props => ({ repoID: props.repoID, rev: props.rev, activePath: props.activePath })),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             switchMap(props =>

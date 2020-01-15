@@ -34,7 +34,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     private propsChanges = new Subject<SearchResultMatchProps>()
 
     private getLanguage(): string | undefined {
-        const matches = /(?:```)([^\s]+)\s/.exec(this.props.item.body.text)
+        const matches = /(?:```)([^\s]+)\s/.exec(that.props.item.body.text)
         if (!matches) {
             return undefined
         }
@@ -42,7 +42,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     }
 
     private bodyIsCode(): boolean {
-        return this.props.item.body.text.startsWith('```') && this.props.item.body.text.endsWith('```')
+        return that.props.item.body.text.startsWith('```') && that.props.item.body.text.endsWith('```')
     }
 
     constructor(props: SearchResultMatchProps) {
@@ -207,6 +207,6 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     }
 
     private setTableContainerElement = (ref: HTMLElement | null): void => {
-        this.tableContainerElement = ref
+        that.tableContainerElement = ref
     }
 }

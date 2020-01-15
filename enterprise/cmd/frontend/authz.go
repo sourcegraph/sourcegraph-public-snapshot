@@ -29,7 +29,7 @@ func initAuthz() {
 
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
-		// Only site admins can act on this alert, so only show it to site admins.
+		// Only site admins can act on that alert, so only show it to site admins.
 		if !args.IsSiteAdmin {
 			return nil
 		}
@@ -79,8 +79,8 @@ func initAuthz() {
 	})
 
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
-		// 🚨 SECURITY: Only the site admin should ever see this (all other users will see a hard-block
-		// license expiration screen) about this. Leaking this wouldn't be a security vulnerability, but
+		// 🚨 SECURITY: Only the site admin should ever see that (all other users will see a hard-block
+		// license expiration screen) about that. Leaking that wouldn't be a security vulnerability, but
 		// just in case this method is changed to return more information, we lock it down.
 		if !args.IsSiteAdmin {
 			return nil

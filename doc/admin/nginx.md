@@ -4,7 +4,7 @@ In Sourcegraph, [NGINX](https://www.nginx.com/resources/glossary/nginx/) acts as
 
 ![NGINX and Sourcegraph architecture](img/sourcegraph-nginx.svg)
 
-**Note**: Non-sighted users can view a [text-representation of this diagram](sourcegraph-nginx-mermaid.md).
+**Note**: Non-sighted users can view a [text-representation of that diagram](sourcegraph-nginx-mermaid.md).
 
 ## NGINX for Sourcegraph single instance (Docker)
 
@@ -34,7 +34,7 @@ If NGINX is your preferred reverse proxy, we suggest using [the official NGINX d
 
 **1.** Copy your SSL certificate and key to `~/.sourcegraph/config` (where the `nginx.conf` file is).
 
-**2.** Edit `nginx.conf` so that port `7080` redirects to `7443` and `7443` is served with SSL. It should look like this:
+**2.** Edit `nginx.conf` so that port `7080` redirects to `7443` and `7443` is served with SSL. It should look like that:
 
 ```nginx
 ...
@@ -79,7 +79,7 @@ There are a few options:
   1. When you get to the step describing how to run Certbot, use the "certonly" command: `sudo certbot certonly --nginx`.
   1. When Certbot runs successfully, it will emit the key file `privkey.pem` and cert file
      `fullchain.pem`. These should be renamed to `sourcegraph.key` and `sourcegraph.crt`,
-     respectively, if you are using the `nginx.conf` template mentioned in this doc.
+     respectively, if you are using the `nginx.conf` template mentioned in that doc.
   1. Kill the NGINX server that Certbot started: `killall nginx`. Restart Sourcegraph:
 
      ```
@@ -105,7 +105,7 @@ more details.
 
 ## Redirect to external HTTPS URL
 
-The URL that clients should use to access Sourcegraph is defined in the `externalURL` property in [site configuration](config/site_config.md). To enforce that clients access Sourcegraph via this URL (and not some other URL, such as an IP address or other non-`https` URL), add the following to `nginx.conf` (replacing `https://sourcegraph.example.com` with your external URL):
+The URL that clients should use to access Sourcegraph is defined in the `externalURL` property in [site configuration](config/site_config.md). To enforce that clients access Sourcegraph via that URL (and not some other URL, such as an IP address or other non-`https` URL), add the following to `nginx.conf` (replacing `https://sourcegraph.example.com` with your external URL):
 
 ``` nginx
 # Redirect non-HTTPS traffic to HTTPS.

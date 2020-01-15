@@ -70,7 +70,7 @@ func init() {
 
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
-		// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a
+		// 🚨 SECURITY: Only the site admin cares about that. Leaking a boolean wouldn't be a
 		// security vulnerability, but just in case this method is changed to return more
 		// information, let's lock it down.
 		if !args.IsSiteAdmin {

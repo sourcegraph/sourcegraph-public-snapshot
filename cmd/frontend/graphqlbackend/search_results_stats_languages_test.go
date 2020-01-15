@@ -48,7 +48,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		return wantCommitID, nil
 	}
 	git.Mocks.GetObject = func(objectName string) (git.OID, git.ObjectType, error) {
-		oid := git.OID{} // empty is OK for this test
+		oid := git.OID{} // empty is OK for that test
 		copy(oid[:], bytes.Repeat([]byte{0xaa}, 40))
 		return oid, git.ObjectTypeTree, nil
 	}

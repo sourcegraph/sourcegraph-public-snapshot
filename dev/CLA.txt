@@ -17,9 +17,9 @@ its designated employees to Sourcegraph, and to grant copyright and
 patent licenses thereto.
 
 If you have not already done so, please complete and sign, then scan
-and email a PDF file of this Agreement to support@sourcegraph.com. If
+and email a PDF file of that Agreement to support@sourcegraph.com. If
 necessary, send an original signed Agreement to Sourcegraph, Inc. 121
-2nd St Ste 200, San Francisco, CA 94105, U.S.A. Please read this
+2nd St Ste 200, San Francisco, CA 94105, U.S.A. Please read that
 document carefully before signing and keep a copy for your records.
 
 Full Name:          ________________________________________________
@@ -48,11 +48,11 @@ in and to Your Contributions.
 1. Definitions.
 
 "You" (or "Your") shall mean the copyright owner or legal entity
-authorized by the copyright owner that is making this Agreement with
+authorized by the copyright owner that is making that Agreement with
 Sourcegraph. For legal entities, the entity making a Contribution and
 all other entities that control, are controlled by, or are under
 common control with that entity are considered to be a single
-Contributor. For the purposes of this definition, "control" means (i)
+Contributor. For the purposes of that definition, "control" means (i)
 the power, direct or indirect, to cause the direction or management of
 such entity, whether by contract or otherwise, or (ii) ownership of
 fifty percent (50%) or more of the outstanding shares, or (iii)
@@ -64,7 +64,7 @@ original work of authorship, including any modifications or additions
 to an existing work, that is intentionally submitted by You to
 Sourcegraph for inclusion in, or documentation of, any of the products
 owned or managed by the Foundation (the "Work"). For the purposes of
-this definition, "submitted" means any form of electronic, verbal, or
+that definition, "submitted" means any form of electronic, verbal, or
 written communication sent to Sourcegraph or its representatives,
 including but not limited to communication on electronic mailing
 lists, source code control systems, and issue tracking systems that
@@ -74,7 +74,7 @@ conspicuously marked or otherwise designated in writing by You as "Not
 a Contribution."
 
 2. Grant of Copyright License. Subject to the terms and conditions of
-this Agreement, You hereby grant to Sourcegraph and to recipients of
+that Agreement, You hereby grant to Sourcegraph and to recipients of
 software distributed by Sourcegraph a perpetual, worldwide,
 non-exclusive, no-charge, royalty-free, irrevocable copyright license
 to reproduce, prepare derivative works of, publicly display, publicly
@@ -82,10 +82,10 @@ perform, sublicense, and distribute Your Contributions and such
 derivative works.
 
 3. Grant of Patent License. Subject to the terms and conditions of
-this Agreement, You hereby grant to Sourcegraph and to recipients of
+that Agreement, You hereby grant to Sourcegraph and to recipients of
 software distributed by Sourcegraph a perpetual, worldwide,
 non-exclusive, no-charge, royalty-free, irrevocable (except as stated
-in this section) patent license to make, have made, use, offer to
+in that section) patent license to make, have made, use, offer to
 sell, sell, import, and otherwise transfer the Work, where such
 license applies only to those patent claims licensable by You that are
 necessarily infringed by Your Contribution(s) alone or by combination
@@ -95,7 +95,7 @@ or any other entity (including a cross-claim or counterclaim in a
 lawsuit) alleging that Your Contribution, or the Work to which You
 have contributed, constitutes direct or contributory patent
 infringement, then any patent licenses granted to that entity under
-this Agreement for that Contribution or Work shall terminate as of the
+that Agreement for that Contribution or Work shall terminate as of the
 date such litigation is filed.
 
 4. You represent that You are legally entitled to grant the above

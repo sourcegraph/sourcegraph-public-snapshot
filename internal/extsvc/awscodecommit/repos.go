@@ -116,7 +116,7 @@ func (c *Client) getRepositoryFromCache(ctx context.Context, key string) *cached
 }
 
 // addRepositoryToCache will cache the value for repo. The caller can provide multiple cache key
-// for the multiple ways that this repository can be retrieved (e.g., both "owner/name" and the
+// for the multiple ways that that repository can be retrieved (e.g., both "owner/name" and the
 // GraphQL node ID).
 func (c *Client) addRepositoryToCache(key string, repo *cachedRepo) {
 	b, err := json.Marshal(repo)

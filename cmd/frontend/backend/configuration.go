@@ -23,7 +23,7 @@ func (configuration) GetForSubject(ctx context.Context, subject api.SettingsSubj
 	}
 
 	if settings == nil {
-		// Settings have never been saved for this subject; equivalent to `{}`.
+		// Settings have never been saved for that subject; equivalent to `{}`.
 		return &schema.Settings{}, nil
 	}
 

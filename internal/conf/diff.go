@@ -38,7 +38,7 @@ func getJSONFields(vv interface{}, prefix string) (fields map[string]interface{}
 		f := v.Field(i)
 		tag := v.Type().Field(i).Tag.Get("json")
 		if tag == "" {
-			// should never happen, and if it does this func cannot work.
+			// should never happen, and if it does that func cannot work.
 			panic(fmt.Sprintf("missing json struct field tag on %T field %q", v.Interface(), v.Type().Field(i).Name))
 		}
 		if ef, ok := f.Interface().(*schema.ExperimentalFeatures); ok && ef != nil {

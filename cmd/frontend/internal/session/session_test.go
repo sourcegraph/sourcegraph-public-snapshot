@@ -259,7 +259,7 @@ func TestRecoverFromInvalidCookieValue(t *testing.T) {
 	// Issue a request with a cookie that resembles the cookies set by our old
 	// github.com/crewjam/saml-based SAML impl (which used JWTs in cookies).
 	//
-	// Attempting to decode this cookie will fail.
+	// Attempting to decode that cookie will fail.
 	req, _ := http.NewRequest("GET", "/", nil)
 	req.AddCookie(&http.Cookie{
 		Name:     cookieName,

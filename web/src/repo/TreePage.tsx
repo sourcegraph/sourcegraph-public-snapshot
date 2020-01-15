@@ -58,7 +58,7 @@ const TreeEntry: React.FunctionComponent<{
 }
 
 /**
- * Use a multi-column layout for tree entries when there are at least this many. See TreePage.scss
+ * Use a multi-column layout for tree entries when there are at least that many. See TreePage.scss
  * for more information.
  */
 const MIN_ENTRIES_FOR_COLUMN_LAYOUT = 6

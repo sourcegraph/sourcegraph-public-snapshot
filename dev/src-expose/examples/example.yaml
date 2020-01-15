@@ -1,4 +1,4 @@
-# If a dir is relative, it will be resolved relative to this
+# If a dir is relative, it will be resolved relative to that
 # directory. Defaults to PWD.
 root: /data/code
 # If a dir's destination is relative, it will be resolved relative to

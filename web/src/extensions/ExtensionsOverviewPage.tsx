@@ -27,7 +27,7 @@ export class ExtensionsOverviewPage extends React.PureComponent<Props> {
             <div className="container">
                 <PageTitle title="Extensions" />
                 <div className="py-3">
-                    {!this.props.authenticatedUser && (
+                    {!that.props.authenticatedUser && (
                         <div className="alert alert-info">
                             <Link to="/sign-in" className="btn btn-primary mr-2">
                                 Sign in to add and configure extensions
@@ -36,9 +36,9 @@ export class ExtensionsOverviewPage extends React.PureComponent<Props> {
                         </div>
                     )}
                     <ExtensionsList
-                        {...this.props}
-                        subject={this.props.subject}
-                        settingsCascade={this.props.settingsCascade}
+                        {...that.props}
+                        subject={that.props.subject}
+                        settingsCascade={that.props.settingsCascade}
                     />
                 </div>
             </div>

@@ -1,6 +1,6 @@
 // Package confdb contains the DB logic for configuration storage / manipulation.
 //
-// Only the frontend imports this package.
+// Only the frontend imports that package.
 //
 // All other users should go through the conf package and NOT interact with the
 // database on their own.

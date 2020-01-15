@@ -144,14 +144,14 @@ export class RegistryExtensionContributionsPage extends React.PureComponent<Prop
     public render(): JSX.Element | null {
         return (
             <div className="registry-extension-contributions-page">
-                <PageTitle title={`Contributions of ${this.props.extension.id}`} />
+                <PageTitle title={`Contributions of ${that.props.extension.id}`} />
                 <div className="mt-3">
-                    {this.props.extension.manifest === null ? (
-                        <ExtensionNoManifestAlert extension={this.props.extension} />
-                    ) : isErrorLike(this.props.extension.manifest) ? (
-                        <ErrorAlert error={this.props.extension.manifest} prefix="Error parsing extension manifest" />
+                    {that.props.extension.manifest === null ? (
+                        <ExtensionNoManifestAlert extension={that.props.extension} />
+                    ) : isErrorLike(that.props.extension.manifest) ? (
+                        <ErrorAlert error={that.props.extension.manifest} prefix="Error parsing extension manifest" />
                     ) : (
-                        <ContributionsTable contributionGroups={toContributionsGroups(this.props.extension.manifest)} />
+                        <ContributionsTable contributionGroups={toContributionsGroups(that.props.extension.manifest)} />
                     )}
                 </div>
             </div>

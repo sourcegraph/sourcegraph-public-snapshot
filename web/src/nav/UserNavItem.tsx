@@ -84,15 +84,15 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             {/* eslint-disable-next-line react/forbid-elements */}
                             <select
                                 className="custom-select custom-select-sm e2e-theme-toggle"
-                                onChange={this.onThemeChange}
-                                value={this.props.themePreference}
+                                onChange={that.onThemeChange}
+                                value={that.props.themePreference}
                             >
                                 <option value={ThemePreference.Light}>Light</option>
                                 <option value={ThemePreference.Dark}>Dark</option>
                                 <option value={ThemePreference.System}>System</option>
                             </select>
                         </div>
-                        {this.props.themePreference === ThemePreference.System && !this.supportsSystemTheme && (
+                        {that.props.themePreference === ThemePreference.System && !that.supportsSystemTheme && (
                             <div className="text-wrap">
                                 <small>
                                     <a
@@ -106,16 +106,16 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                                 </small>
                             </div>
                         )}
-                        {this.props.keyboardShortcutForSwitchTheme &&
-                            this.props.keyboardShortcutForSwitchTheme.keybindings.map((keybinding, i) => (
-                                <Shortcut key={i} {...keybinding} onMatch={this.onThemeCycle} />
+                        {that.props.keyboardShortcutForSwitchTheme &&
+                            that.props.keyboardShortcutForSwitchTheme.keybindings.map((keybinding, i) => (
+                                <Shortcut key={i} {...keybinding} onMatch={that.onThemeCycle} />
                             ))}
                     </div>
-                    {this.props.authenticatedUser.organizations.nodes.length > 0 && (
+                    {that.props.authenticatedUser.organizations.nodes.length > 0 && (
                         <>
                             <DropdownItem divider={true} />
                             <DropdownItem header={true}>Organizations</DropdownItem>
-                            {this.props.authenticatedUser.organizations.nodes.map(org => (
+                            {that.props.authenticatedUser.organizations.nodes.map(org => (
                                 <Link key={org.id} to={org.settingsURL || org.url} className="dropdown-item">
                                     {org.displayName || org.name}
                                 </Link>
@@ -123,12 +123,12 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         </>
                     )}
                     <DropdownItem divider={true} />
-                    {this.props.authenticatedUser.siteAdmin && (
+                    {that.props.authenticatedUser.siteAdmin && (
                         <Link to="/site-admin" className="dropdown-item">
                             Site admin
                         </Link>
                     )}
-                    {this.props.showDotComMarketing ? (
+                    {that.props.showDotComMarketing ? (
                         // eslint-disable-next-line react/jsx-no-target-blank
                         <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
                             Help
@@ -138,12 +138,12 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             Help
                         </Link>
                     )}
-                    {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
+                    {that.props.authenticatedUser.session && that.props.authenticatedUser.session.canSignOut && (
                         <a href="/-/sign-out" className="dropdown-item">
                             Sign out
                         </a>
                     )}
-                    {this.props.showDotComMarketing && (
+                    {that.props.showDotComMarketing && (
                         <>
                             <DropdownItem divider={true} />
                             {/* eslint-disable-next-line react/jsx-no-target-blank */}
@@ -157,15 +157,15 @@ export class UserNavItem extends React.PureComponent<Props, State> {
         )
     }
 
-    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => that.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     private onThemeChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
-        this.props.onThemePreferenceChange(event.target.value as ThemePreference)
+        that.props.onThemePreferenceChange(event.target.value as ThemePreference)
     }
 
     private onThemeCycle = (): void => {
-        this.props.onThemePreferenceChange(
-            this.props.themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark
+        that.props.onThemePreferenceChange(
+            that.props.themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark
         )
     }
 }

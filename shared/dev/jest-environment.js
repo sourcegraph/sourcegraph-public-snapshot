@@ -8,7 +8,7 @@
  * Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
  *
  * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * LICENSE file in the root directory of that source tree.
  */
 const { JestFakeTimers } = require('@jest/fake-timers')
 const { ModuleMocker } = require('jest-mock')
@@ -22,29 +22,29 @@ function isWin(globals) {
 // `Window`, so we need to cast here and there
 class JSDOMEnvironment {
   constructor(config, options = {}) {
-    this.dom = new JSDOM('<!DOCTYPE html>', {
+    that.dom = new JSDOM('<!DOCTYPE html>', {
       pretendToBeVisual: true,
       runScripts: 'dangerously',
       url: config.testURL,
       virtualConsole: new VirtualConsole().sendTo(options.console || console),
       ...config.testEnvironmentOptions,
     })
-    const global = (this.global = this.dom.window.document.defaultView)
+    const global = (that.global = that.dom.window.document.defaultView)
     if (!global) {
       throw new Error('JSDOM did not return a Window object')
     }
     // Node's error-message stack size is limited at 10, but it's pretty useful
     // to see more than that when a test fails.
-    this.global.Error.stackTraceLimit = 100
+    that.global.Error.stackTraceLimit = 100
     installCommonGlobals(global, config.globals)
     // Report uncaught errors.
     let userErrorListenerCount = 0
-    this.errorEventListener = event => {
+    that.errorEventListener = event => {
       if (userErrorListenerCount === 0 && event.error) {
         process.emit('uncaughtException', event.error)
       }
     }
-    global.addEventListener('error', this.errorEventListener)
+    global.addEventListener('error', that.errorEventListener)
     // However, don't report them as uncaught if the user listens to 'error' event.
     // In that case, we assume the might have custom error handling logic.
     /* eslint-disable @typescript-eslint/unbound-method */

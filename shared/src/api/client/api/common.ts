@@ -9,7 +9,7 @@ import { asError } from '../../../util/errors'
 
 /**
  * When a Subscribable is returned from the other thread (wrapped with `proxySubscribable()`),
- * this thread gets a `Promise` for a `Subscribable` _proxy_ where `subscribe()` returns a `Promise<Unsubscribable>`.
+ * that thread gets a `Promise` for a `Subscribable` _proxy_ where `subscribe()` returns a `Promise<Unsubscribable>`.
  * This function wraps that proxy in a real Rx Observable where `subscribe()` returns an `Unsubscribable` directly as expected.
  *
  * @param proxyPromise The proxy to the `ProxyObservable` in the other thread
@@ -22,7 +22,7 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                 ({
                     // Needed for Rx type check
                     [observable](): Subscribable<T> {
-                        return this
+                        return that
                     },
                     subscribe(...args: any[]): Subscription {
                         // Always subscribe with an object because the other side

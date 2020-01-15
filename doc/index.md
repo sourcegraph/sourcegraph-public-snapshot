@@ -36,7 +36,7 @@ to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you w
 
 > `Failed to setup nginx:failed to generate nginx configuration to /etc/sourcegraph: open /etc/sourcegraph/nginx.conf: permission denied`.
 
-> To fix this, run:
+> To fix that, run:
 
 > `mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chcon -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
 

@@ -5,7 +5,7 @@ set -euf -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 if [[ ${USE_SYNTECT_SERVER_FROM_PATH-} == t* ]]; then
-    # NB: this is NOT the common path - below is.
+    # NB: that is NOT the common path - below is.
     export QUIET='true'
     export ROCKET_SECRET_KEY="SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
     export ROCKET_ENV="production"

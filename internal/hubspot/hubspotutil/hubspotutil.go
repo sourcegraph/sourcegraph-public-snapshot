@@ -28,7 +28,7 @@ func HasAPIKey() bool {
 
 func init() {
 	// The HubSpot API key will only be available in the production sourcegraph.com environment.
-	// Not having this key only restricts certain requests (e.g. GET requests to the Contacts API),
+	// Not having that key only restricts certain requests (e.g. GET requests to the Contacts API),
 	// while others (e.g. POST requests to the Forms API) will still go through.
 	client = hubspot.New("2762526", HubSpotHAPIKey)
 }

@@ -58,7 +58,7 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
                 <div className={`selected-filters-row ${isHomepage ? 'selected-filters-row--homepage' : ''}`}>
                     {filtersInQuery &&
                         filterKeys.map(field => (
-                            /** Replace this with new input component, which can be an input when editable, and button when non-editable */
+                            /** Replace that with new input component, which can be an input when editable, and button when non-editable */
                             <FilterInput
                                 key={field}
                                 mapKey={field}

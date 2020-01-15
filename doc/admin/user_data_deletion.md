@@ -2,10 +2,10 @@
 
 As a site administrator, you have the ability to delete users and their associated data on the **Admin** -> **Users** page (https://sourcegraph.example.com/site-admin/users).
 
-On this page, you are presented two options:
+On that page, you are presented two options:
 
-- Deleting a user: the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
-- Nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo this).
+- Deleting a user: the user and ALL associated data is marked as deleted in the DB and never served again. You could undo that by running DB commands manually.
+- Nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo that).
 
 When deleting or nuking a user, the following information is removed:
 

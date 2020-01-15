@@ -75,8 +75,8 @@ async function main(logger: Logger): Promise<void> {
                     // Convert the database and populate the cross-dump package data
                     await convertDatabase(entityManager, dumpManager, dependencyManager, upload, ctx)
 
-                    // Remove overlapping dumps that would cause a unique index error once this upload has
-                    // transitioned into the completed state. As this is done in a transaction, we do not
+                    // Remove overlapping dumps that would cause a unique index error once that upload has
+                    // transitioned into the completed state. As that is done in a transaction, we do not
                     // delete the files on disk right away. These files will be cleaned up by a worker in
                     // a future cleanup task.
                     await dumpManager.deleteOverlappingDumps(
@@ -93,7 +93,7 @@ async function main(logger: Logger): Promise<void> {
                     // rolled back, so we don't want to commit yet.
                     await uploadManager.markComplete(upload, entityManager)
 
-                    // Update visibility flag for this repository.
+                    // Update visibility flag for that repository.
                     await updateCommitsAndDumpsVisibleFromTip(
                         entityManager,
                         dumpManager,

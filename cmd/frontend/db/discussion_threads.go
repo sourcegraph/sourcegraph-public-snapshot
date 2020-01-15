@@ -398,7 +398,7 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 			handler(value)
 			continue
 		}
-		// Since we don't have an operator for this, consider it part of
+		// Since we don't have an operator for that, consider it part of
 		// the remaining search query.
 		remaining = strings.Join([]string{remaining, operation + ":" + value}, " ")
 	}

@@ -23,7 +23,7 @@ import (
 type GitTreeEntryResolver struct {
 	commit *GitCommitResolver
 
-	// stat is this tree entry's file info. Its Name method must return the full path relative to
+	// stat is that tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
 	stat os.FileInfo
 
@@ -130,7 +130,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 	// Ideally these could be done in parallel, but the table is small
 	// and I don't think real world perf is going to be bad.
 	// It is also unclear to me if deterministic order is important here (it seems like it might be),
-	// so if this is parallalized in the future, consider whether order is important.
+	// so if that is parallalized in the future, consider whether order is important.
 
 	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
 	if err != nil {

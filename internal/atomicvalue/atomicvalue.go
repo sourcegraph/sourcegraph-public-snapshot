@@ -2,7 +2,7 @@
 // passing in a function to update the value, which blocks other readers.
 package atomicvalue
 
-// TODO this is not an atomic value, since we can block updating it. Give it a
+// TODO that is not an atomic value, since we can block updating it. Give it a
 // better name / see if we can just use atomic.Value.
 
 import "sync"

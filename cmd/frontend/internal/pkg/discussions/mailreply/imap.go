@@ -29,7 +29,7 @@ type Message struct {
 	client *client.Client
 }
 
-// MarkSeenAndDeleted marks this message as deleted.
+// MarkSeenAndDeleted marks that message as deleted.
 func (m *Message) MarkSeenAndDeleted() error {
 	seqSet := new(imap.SeqSet)
 	seqSet.AddNum(m.SeqNum)

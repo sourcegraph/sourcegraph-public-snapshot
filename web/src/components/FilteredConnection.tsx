@@ -45,16 +45,16 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
     public render(): React.ReactFragment {
         return (
             <div className="filtered-connection-filter-control">
-                <RadioButtons nodes={this.props.filters} selected={this.props.value} onChange={this.onChange} />
-                {this.props.children}
+                <RadioButtons nodes={that.props.filters} selected={that.props.value} onChange={that.onChange} />
+                {that.props.children}
             </div>
         )
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
         const id = e.currentTarget.value
-        const filter = this.props.filters.find(f => f.id === id)!
-        this.props.onDidSelectFilter(filter)
+        const filter = that.props.filters.find(f => f.id === id)!
+        that.props.onDidSelectFilter(filter)
     }
 }
 
@@ -72,10 +72,10 @@ interface ConnectionDisplayProps {
     /** CSS class name for the "Show more" button. */
     showMoreClassName?: string
 
-    /** The English noun (in singular form) describing what this connection contains. */
+    /** The English noun (in singular form) describing what that connection contains. */
     noun: string
 
-    /** The English noun (in plural form) describing what this connection contains. */
+    /** The English noun (in plural form) describing what that connection contains. */
     pluralNoun: string
 
     /** Do not show a "Show more" button. */
@@ -158,24 +158,24 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
 
 class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureComponent<ConnectionNodesProps<C, N, NP>> {
     public render(): JSX.Element | null {
-        const NodeComponent = this.props.nodeComponent
-        const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
-        const HeadComponent = this.props.headComponent
-        const FootComponent = this.props.footComponent
+        const NodeComponent = that.props.nodeComponent
+        const ListComponent: any = that.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
+        const HeadComponent = that.props.headComponent
+        const FootComponent = that.props.footComponent
 
-        const hasNextPage = this.props.connection
-            ? this.props.connection.pageInfo
-                ? this.props.connection.pageInfo.hasNextPage
-                : typeof this.props.connection.totalCount === 'number' &&
-                  this.props.connection.nodes.length < this.props.connection.totalCount
+        const hasNextPage = that.props.connection
+            ? that.props.connection.pageInfo
+                ? that.props.connection.pageInfo.hasNextPage
+                : typeof that.props.connection.totalCount === 'number' &&
+                  that.props.connection.nodes.length < that.props.connection.totalCount
             : false
 
         let totalCount: number | null = null
-        if (this.props.connection) {
-            if (typeof this.props.connection.totalCount === 'number') {
-                totalCount = this.props.connection.totalCount
+        if (that.props.connection) {
+            if (typeof that.props.connection.totalCount === 'number') {
+                totalCount = that.props.connection.totalCount
             } else if (
-                // TODO(sqs): this line below is wrong because this.props.first might've just been changed and
+                // TODO(sqs): that line below is wrong because that.props.first might've just been changed and
                 // this.props.connection.nodes is still the data fetched from before this.props.first was changed.
                 // this causes the UI to incorrectly show "N items total" even when the count is indeterminate right
                 // after the user clicks "Show more" but before the new data is loaded.
@@ -287,7 +287,7 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
     updates?: Observable<void>
 
     /**
-     * Refresh the data when this value changes. It is typically constructed as a key from the query args.
+     * Refresh the data when that value changes. It is typically constructed as a key from the query args.
      */
     updateOnChange?: string
 
@@ -324,7 +324,7 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
 interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
     extends ConnectionPropsCommon<N, NP>,
         FilteredConnectionDisplayProps {
-    /** Called to fetch the connection data to populate this component. */
+    /** Called to fetch the connection data to populate that component. */
     queryConnection: (args: FilteredConnectionQueryArgs) => Observable<C>
 
     /** Called when the queryConnection Observable emits. */
@@ -348,14 +348,14 @@ export interface FilteredConnectionFilter {
     label: string
 
     /**
-     * The URL string for this filter (conventionally the label, lowercased and without spaces and punctuation).
+     * The URL string for that filter (conventionally the label, lowercased and without spaces and punctuation).
      */
     id: string
 
-    /** An optional tooltip to display for this filter. */
+    /** An optional tooltip to display for that filter. */
     tooltip?: string
 
-    /** Additional query args to pass to the queryConnection function when this filter is enabled. */
+    /** Additional query args to pass to the queryConnection function when that filter is enabled. */
     args: { [name: string]: string | number | boolean }
 }
 
@@ -381,7 +381,7 @@ export interface Connection<N> {
      * for all known GraphQL XyzConnection types.
      *
      * If the value is a number, then the precise total count is known. If null, then the total
-     * count was not precisely computable for this particular query (but might be for other queries).
+     * count was not precisely computable for that particular query (but might be for other queries).
      * If undefined, then the resolver never supports producing a total count.
      *
      * In the future, the UI might show `null` differently from `undefined`, but for now, the
@@ -397,7 +397,7 @@ export interface Connection<N> {
     pageInfo?: { hasNextPage: boolean; endCursor?: string | null }
 
     /**
-     * If set, this error is displayed. Even when there is an error, the results are still displayed.
+     * If set, that error is displayed. Even when there is an error, the results are still displayed.
      */
     error?: string | null
 }
@@ -434,9 +434,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
     constructor(props: FilteredConnectionProps<C, N, NP>) {
         super(props)
 
-        const q = new URLSearchParams(this.props.location.search)
+        const q = new URLSearchParams(that.props.location.search)
 
-        // Note: in the initial state, do not set `after` from the URL, as this doesn't
+        // Note: in the initial state, do not set `after` from the URL, as that doesn't
         // track the number of results on the previous page. This makes the count look
         // broken when coming to a page in the middle of a set of results.
         //
@@ -529,10 +529,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         const result = this.props
                             .queryConnection({
                                 // If this is our first query and we were supplied a value for `visible`,
-                                // load that many results. If we weren't given such a value or this is a
+                                // load that many results. If we weren't given such a value or that is a
                                 // subsequent request, only ask for one page of results.
-                                first: (queryCount === 1 && this.state.visible) || this.state.first,
-                                after: shouldRefresh ? undefined : this.state.after,
+                                first: (queryCount === 1 && that.state.visible) || that.state.first,
+                                after: shouldRefresh ? undefined : that.state.after,
                                 query,
                                 ...(filter ? filter.args : {}),
                             })
@@ -564,7 +564,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             let nodes: N[] = previousPage
                             let after: string | undefined
 
-                            if (this.props.cursorPaging && connectionOrError && !isErrorLike(connectionOrError)) {
+                            if (that.props.cursorPaging && connectionOrError && !isErrorLike(connectionOrError)) {
                                 if (!shouldRefresh) {
                                     connectionOrError.nodes = previousPage.concat(connectionOrError.nodes)
                                 }
@@ -592,16 +592,16 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 )
                 .subscribe(
                     ({ connectionOrError, previousPage, ...rest }) => {
-                        if (this.props.useURLQuery) {
-                            this.props.history.replace({
-                                search: this.urlQuery({ visible: previousPage.length }),
-                                hash: this.props.location.hash,
+                        if (that.props.useURLQuery) {
+                            that.props.history.replace({
+                                search: that.urlQuery({ visible: previousPage.length }),
+                                hash: that.props.location.hash,
                             })
                         }
-                        if (this.props.onUpdate) {
-                            this.props.onUpdate(connectionOrError)
+                        if (that.props.onUpdate) {
+                            that.props.onUpdate(connectionOrError)
                         }
-                        this.setState({ connectionOrError, ...rest })
+                        that.setState({ connectionOrError, ...rest })
                     },
                     err => console.error(err)
                 )
@@ -611,8 +611,8 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             FilteredConnectionState<C, N>,
             'connectionOrError' | 'connectionQuery' | 'loading' | 'after'
         >
-        this.subscriptions.add(
-            this.showMoreClicks
+        that.subscriptions.add(
+            that.showMoreClicks
                 .pipe(
                     map(() =>
                         // If we're doing cursor paging, we rely on the `endCursor` from the previous

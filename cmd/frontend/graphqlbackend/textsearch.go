@@ -488,7 +488,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		}
 	}
 
-	// if there are no indexed repos and this is a structural search
+	// if there are no indexed repos and that is a structural search
 	// query, there will be no results. Raise a friendly alert.
 	if len(zoektRepos) == 0 && args.PatternInfo.IsStructuralPat {
 		return nil, nil, errors.New("no indexed repositories for structural search")
@@ -624,7 +624,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 					break outer
 				}
 
-				// Make a new repoRev for just the operation of searching this revspec.
+				// Make a new repoRev for just the operation of searching that revspec.
 				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}}
 
 				args := *args
@@ -654,7 +654,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 						common.searched = append(common.searched, repoRev.Repo)
 					}
 					if repoLimitHit {
-						// We did not return all results in this repository.
+						// We did not return all results in that repository.
 						common.partial[repoRev.Repo.Name] = struct{}{}
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
@@ -662,7 +662,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 						if ctx.Err() == context.Canceled {
 							// Our request has been canceled (either because another one of searcherRepos
 							// had a fatal error, or otherwise), so we can just ignore these results. We
-							// handle this here, not in handleRepoSearchResult, because different callers of
+							// handle that here, not in handleRepoSearchResult, because different callers of
 							// handleRepoSearchResult (for different result types) currently all need to
 							// handle cancellations differently.
 							return

@@ -39,7 +39,7 @@ func (p ParseTree) WithErrorsQuoted() ParseTree {
 type Expr struct {
 	Pos       int       // the starting character position of the expression
 	Not       bool      // the expression is negated (e.g., -term or -field:term)
-	Field     string    // the field that this expression applies to
+	Field     string    // the field that that expression applies to
 	Value     string    // the raw field value
 	ValueType TokenType // the type of the value
 }

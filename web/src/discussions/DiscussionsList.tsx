@@ -75,25 +75,25 @@ export class DiscussionsList extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <FilteredDiscussionsConnection
-                className={'discussions-list' + this.props.noFlex ? 'discussions-list--no-flex' : ''}
-                autoFocus={this.props.autoFocus !== undefined ? this.props.autoFocus : true}
-                compact={this.props.compact}
-                noun={this.props.noun || 'discussion'}
-                pluralNoun={this.props.pluralNoun || 'discussions'}
-                queryConnection={this.fetchThreads}
+                className={'discussions-list' + that.props.noFlex ? 'discussions-list--no-flex' : ''}
+                autoFocus={that.props.autoFocus !== undefined ? that.props.autoFocus : true}
+                compact={that.props.compact}
+                noun={that.props.noun || 'discussion'}
+                pluralNoun={that.props.pluralNoun || 'discussions'}
+                queryConnection={that.fetchThreads}
                 nodeComponent={DiscussionNode}
                 nodeComponentProps={
-                    { location: this.props.location, withRepo: this.props.withRepo } as Pick<
+                    { location: that.props.location, withRepo: that.props.withRepo } as Pick<
                         DiscussionNodeProps,
                         'location'
                     >
                 }
-                updateOnChange={`${this.props.repoID}:${this.props.rev}:${this.props.filePath}`}
-                defaultFirst={this.props.defaultFirst || 100}
-                hideSearch={this.props.hideSearch}
+                updateOnChange={`${that.props.repoID}:${that.props.rev}:${that.props.filePath}`}
+                defaultFirst={that.props.defaultFirst || 100}
+                hideSearch={that.props.hideSearch}
                 useURLQuery={false}
-                history={this.props.history}
-                location={this.props.location}
+                history={that.props.history}
+                location={that.props.location}
             />
         )
     }
@@ -101,7 +101,7 @@ export class DiscussionsList extends React.PureComponent<Props> {
     private fetchThreads = (args: FilteredConnectionQueryArgs): Observable<GQL.IDiscussionThreadConnection> =>
         fetchDiscussionThreads({
             ...args,
-            targetRepositoryID: this.props.repoID,
-            targetRepositoryPath: this.props.filePath,
+            targetRepositoryID: that.props.repoID,
+            targetRepositoryPath: that.props.filePath,
         })
 }

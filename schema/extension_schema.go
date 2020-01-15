@@ -18,7 +18,7 @@ type SourcegraphExtensionManifest struct {
 	Url              string                  `json:"url"`
 }
 
-// ExtensionRepository description: The location of the version control repository for this extension.
+// ExtensionRepository description: The location of the version control repository for that extension.
 type ExtensionRepository struct {
 	Type string `json:"type,omitempty"`
 	Url  string `json:"url"`
@@ -41,7 +41,7 @@ type ActionItem struct {
 	Label       string `json:"label,omitempty"`
 }
 
-// Contributions description: Features contributed by this extension. Extensions may also register certain types of contributions dynamically.
+// Contributions description: Features contributed by that extension. Extensions may also register certain types of contributions dynamically.
 type Contributions struct {
 	Actions       []*Action          `json:"actions,omitempty"`
 	Configuration *jsonschema.Schema `json:"configuration,omitempty"`

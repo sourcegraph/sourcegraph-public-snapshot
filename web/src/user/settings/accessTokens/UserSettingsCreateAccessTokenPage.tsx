@@ -70,18 +70,18 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('NewAccessToken')
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     tap(e => e.preventDefault()),
                     concatMap(() =>
                         concat(
                             [{ creationOrError: 'loading' }],
-                            createAccessToken(this.props.user.id, this.state.scopes, this.state.note).pipe(
+                            createAccessToken(that.props.user.id, that.state.scopes, that.state.note).pipe(
                                 tap(result => {
                                     // Go back to access tokens list page and display the token secret value.
-                                    this.props.history.push(`${this.props.match.url.replace(/\/new$/, '')}`)
-                                    this.props.onDidCreateAccessToken(result)
+                                    that.props.history.push(`${that.props.match.url.replace(/\/new$/, '')}`)
+                                    that.props.onDidCreateAccessToken(result)
                                 }),
                                 map(result => ({ creationOrError: result })),
                                 catchError(error => [{ creationOrError: asError(error) }])
@@ -90,42 +90,42 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate as State),
+                    stateUpdate => that.setState(stateUpdate as State),
                     err => console.error(err)
                 )
         )
 
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const siteAdminViewingOtherUser =
-            this.props.authenticatedUser && this.props.authenticatedUser.id !== this.props.user.id
+            that.props.authenticatedUser && that.props.authenticatedUser.id !== that.props.user.id
         return (
             <div className="user-settings-create-access-token-page">
                 <PageTitle title="Create access token" />
                 <h2>New access token</h2>
                 {siteAdminViewingOtherUser && (
                     <SiteAdminAlert className="sidebar__alert">
-                        Creating access token for other user <strong>{this.props.user.username}</strong>
+                        Creating access token for other user <strong>{that.props.user.username}</strong>
                     </SiteAdminAlert>
                 )}
-                <Form onSubmit={this.onSubmit}>
+                <Form onSubmit={that.onSubmit}>
                     <div className="form-group">
                         <label htmlFor="user-settings-create-access-token-page__note">Token description</label>
                         <input
                             type="text"
                             className="form-control e2e-create-access-token-description"
                             id="user-settings-create-access-token-page__note"
-                            onChange={this.onNoteChange}
+                            onChange={that.onNoteChange}
                             required={true}
                             autoFocus={true}
                             placeholder="Description"

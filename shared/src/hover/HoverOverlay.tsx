@@ -70,7 +70,7 @@ export interface HoverOverlayProps<A extends string>
         TelemetryProps,
         ThemeProps,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
-    /** A ref callback to get the root overlay element. Use this to calculate the position. */
+    /** A ref callback to get the root overlay element. Use that to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
 
     /** Called when the close button is clicked */
@@ -97,17 +97,17 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
 
     constructor(props: HoverOverlayProps<A>) {
         super(props)
-        this.state = {
+        that.state = {
             showBadges: false,
         }
     }
 
     public componentDidMount(): void {
-        this.logTelemetryEvent()
+        that.logTelemetryEvent()
 
-        this.subscription.add(
-            this.props.platformContext.settings.subscribe(s => {
-                this.setState({
+        that.subscription.add(
+            that.props.platformContext.settings.subscribe(s => {
+                that.setState({
                     showBadges:
                         s.final &&
                         !isErrorLike(s.final) &&
@@ -120,18 +120,18 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
     }
 
     public componentDidUpdate(prevProps: HoverOverlayProps<A>): void {
-        // Log a telemetry event for this hover being displayed, but only do it once per position and when it is
+        // Log a telemetry event for that hover being displayed, but only do it once per position and when it is
         // non-empty.
         if (
-            !isEmptyHover(this.props) &&
-            (!isEqual(this.props.hoveredToken, prevProps.hoveredToken) || isEmptyHover(prevProps))
+            !isEmptyHover(that.props) &&
+            (!isEqual(that.props.hoveredToken, prevProps.hoveredToken) || isEmptyHover(prevProps))
         ) {
-            this.logTelemetryEvent()
+            that.logTelemetryEvent()
         }
     }
 
     public componentWillUnmount(): void {
-        this.subscription.unsubscribe()
+        that.subscription.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -145,7 +145,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
             className = '',
             actionItemClassName,
             actionItemPressedClassName,
-        } = this.props
+        } = that.props
 
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
             return null
@@ -173,7 +173,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                 {showCloseButton && (
                     <button
                         type="button"
-                        className={classNames('hover-overlay__close-button', this.props.closeButtonClassName)}
+                        className={classNames('hover-overlay__close-button', that.props.closeButtonClassName)}
                         onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
                     >
                         <CloseIcon className="icon-inline" />
@@ -189,7 +189,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                             className={classNames(
                                 'hover-overlay__row',
                                 'hover-overlay__hover-error',
-                                this.props.errorAlertClassName
+                                that.props.errorAlertClassName
                             )}
                         >
                             {upperFirst(hoverOrError.message)}
@@ -208,7 +208,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                             const offsetBadge = showCloseButton && i === 0
                                             return (
                                                 <div className="hover-overlay__row e2e-tooltip-badged-content" key={i}>
-                                                    {'badge' in content && content.badge && this.state.showBadges && (
+                                                    {'badge' in content && content.badge && that.state.showBadges && (
                                                         <div
                                                             className={classNames(
                                                                 'hover-overlay__badge',
@@ -218,7 +218,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                                         >
                                                             <BadgeAttachment
                                                                 attachment={content.badge}
-                                                                isLightTheme={this.props.isLightTheme}
+                                                                isLightTheme={that.props.isLightTheme}
                                                             />
                                                         </div>
                                                     )}
@@ -236,7 +236,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                                 <div
                                                     className={classNames(
                                                         'hover-overlay__row',
-                                                        this.props.errorAlertClassName
+                                                        that.props.errorAlertClassName
                                                     )}
                                                     key={i}
                                                 >
@@ -270,7 +270,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                 className={classNames(
                                     'hover-overlay__row',
                                     'hover-overlay__alert',
-                                    this.props.infoAlertClassName
+                                    that.props.infoAlertClassName
                                 )}
                                 key={type}
                             >
@@ -279,7 +279,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                     <a
                                         className="hover-overlay__alert-close"
                                         href=""
-                                        onClick={this.onAlertDismissedCallback(type)}
+                                        onClick={that.onAlertDismissedCallback(type)}
                                     >
                                         <small>Dismiss</small>
                                     </a>
@@ -303,16 +303,16 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                         actionItemClassName,
                                         `e2e-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
                                     )}
-                                    iconClassName={this.props.iconClassName}
+                                    iconClassName={that.props.iconClassName}
                                     pressedClassName={actionItemPressedClassName}
                                     variant="actionItem"
                                     disabledDuringExecution={true}
                                     showLoadingSpinnerDuringExecution={true}
                                     showInlineError={true}
-                                    platformContext={this.props.platformContext}
-                                    telemetryService={this.props.telemetryService}
-                                    extensionsController={this.props.extensionsController}
-                                    location={this.props.location}
+                                    platformContext={that.props.platformContext}
+                                    telemetryService={that.props.telemetryService}
+                                    extensionsController={that.props.extensionsController}
+                                    location={that.props.location}
                                 />
                             ))}
                         </div>
@@ -324,13 +324,13 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
     private onAlertDismissedCallback(alertType: A): (e: React.MouseEvent<HTMLAnchorElement>) => void {
         return e => {
             e.preventDefault()
-            if (this.props.onAlertDismissed) {
-                this.props.onAlertDismissed(alertType)
+            if (that.props.onAlertDismissed) {
+                that.props.onAlertDismissed(alertType)
             }
         }
     }
 
     private logTelemetryEvent(): void {
-        this.props.telemetryService.log('hover')
+        that.props.telemetryService.log('hover')
     }
 }

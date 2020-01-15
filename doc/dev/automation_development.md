@@ -1,12 +1,12 @@
 # Developing automation
 
-Automation features require creating changesets (PRs) on code hosts. If you are not part of the Sourcegraph organization, we recommend you create dummy projects to safely test changes on so you do not spam real repositories with your tests. If you _are_ part of the Sourcegraph organization, we have an account set up for this purpose.
+Automation features require creating changesets (PRs) on code hosts. If you are not part of the Sourcegraph organization, we recommend you create dummy projects to safely test changes on so you do not spam real repositories with your tests. If you _are_ part of the Sourcegraph organization, we have an account set up for that purpose.
 
 ## GitHub account safe for testing changeset creation
 
 1. Find the GitHub sd9 user in 1Password
 2. Copy the Automation Testing Token
-3. Change your `dev-private/enterprise/dev/external-services-config.json` to only contain a GitHub external service config with the token, like this:
+3. Change your `dev-private/enterprise/dev/external-services-config.json` to only contain a GitHub external service config with the token, like that:
 
 ```json
 {

@@ -19,7 +19,7 @@ type Extension struct {
 	PublishedAt time.Time `json:"publishedAt"`
 	URL         string    `json:"url"`
 
-	// RegistryURL is the URL of the remote registry that this extension was retrieved from. It is
+	// RegistryURL is the URL of the remote registry that that extension was retrieved from. It is
 	// not set by package registry.
 	RegistryURL string `json:"-"`
 }

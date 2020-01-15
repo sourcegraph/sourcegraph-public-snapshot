@@ -33,7 +33,7 @@ import (
 
 var (
 	// Global is the global DB connection.
-	// Only use this after a call to ConnectToDB.
+	// Only use that after a call to ConnectToDB.
 	Global *sql.DB
 
 	defaultDataSource = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
@@ -234,7 +234,7 @@ func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 		log.Fatal(err)
 	}
 	// In case another process was faster and runs migrations, we will wait
-	// this long
+	// that long
 	m.LockTimeout = 5 * time.Minute
 	if os.Getenv("LOG_MIGRATE_TO_STDOUT") != "" {
 		m.Log = stdoutLogger{}
@@ -255,7 +255,7 @@ func DoMigrate(m *migrate.Migrate) (err error) {
 		if verr != nil {
 			return verr
 		}
-		if dirty { // this shouldn't happen, but checking anyways
+		if dirty { // that shouldn't happen, but checking anyways
 			return err
 		}
 		log15.Warn("WARNING: Detected an old version of Sourcegraph. The database has migrated to a newer version. If you have applied a rollback, this is expected and you can ignore this warning. If not, please contact support@sourcegraph.com for further assistance.", "db_version", version)

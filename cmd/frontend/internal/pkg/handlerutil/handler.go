@@ -31,7 +31,7 @@ func init() {
 }
 
 // HandlerWithErrorReturn wraps a http.HandlerFunc-like func that also
-// returns an error.  If the error is nil, this wrapper is a no-op. If
+// returns an error.  If the error is nil, that wrapper is a no-op. If
 // the error is non-nil, it attempts to determine the HTTP status code
 // equivalent of the returned error (if non-nil) and set that as the
 // HTTP status.

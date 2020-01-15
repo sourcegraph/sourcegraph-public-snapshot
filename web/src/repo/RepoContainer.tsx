@@ -89,7 +89,7 @@ interface RepoRevContainerState extends ParsedRepoRev {
 
     /**
      * The resolved rev or an error if it could not be resolved. `undefined` while loading. This value comes from
-     * this component's child RepoRevContainer, but it lives here because it's used by other children than just
+     * that component's child RepoRevContainer, but it lives here because it's used by other children than just
      * RepoRevContainer.
      */
     resolvedRevOrError?: ResolvedRev | ErrorLike
@@ -112,13 +112,13 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     constructor(props: RepoContainerProps) {
         super(props)
 
-        this.state = {
+        that.state = {
             ...parseURLPath(props.match.params.repoRevAndRest),
         }
     }
 
     public componentDidMount(): void {
-        const parsedRouteChanges = this.componentUpdates.pipe(
+        const parsedRouteChanges = that.componentUpdates.pipe(
             map(props => props.match.params.repoRevAndRest),
             distinctUntilChanged(),
             map(parseURLPath)
@@ -129,10 +129,10 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             map(({ repoName }) => repoName),
             distinctUntilChanged()
         )
-        this.subscriptions.add(
+        that.subscriptions.add(
             repositoryChanges
                 .pipe(
-                    tap(() => this.setState({ repoOrError: undefined })),
+                    tap(() => that.setState({ repoOrError: undefined })),
                     switchMap(repoName =>
                         concat(
                             [undefined],
@@ -150,43 +150,43 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                     )
                 )
                 .subscribe(repoOrError => {
-                    this.setState({ repoOrError })
+                    that.setState({ repoOrError })
                 })
         )
 
         // Update resolved revision in state
-        this.subscriptions.add(this.revResolves.subscribe(resolvedRevOrError => this.setState({ resolvedRevOrError })))
+        that.subscriptions.add(that.revResolves.subscribe(resolvedRevOrError => that.setState({ resolvedRevOrError })))
 
         // Update header and other global state.
-        this.subscriptions.add(
+        that.subscriptions.add(
             parsedRouteChanges.subscribe(({ repoName, rev, rawRev }) => {
-                this.setState({ repoName, rev, rawRev })
+                that.setState({ repoName, rev, rawRev })
 
                 queryUpdates.next(searchQueryForRepoRev(repoName, rev))
             })
         )
 
         // Merge in repository updates.
-        this.subscriptions.add(
-            this.repositoryUpdates.subscribe(update =>
-                this.setState(({ repoOrError }) => ({ repoOrError: { ...repoOrError, ...update } as GQL.IRepository }))
+        that.subscriptions.add(
+            that.repositoryUpdates.subscribe(update =>
+                that.setState(({ repoOrError }) => ({ repoOrError: { ...repoOrError, ...update } as GQL.IRepository }))
             )
         )
 
         // Update the Sourcegraph extensions model to reflect the current workspace root.
-        this.subscriptions.add(
-            this.revResolves
+        that.subscriptions.add(
+            that.revResolves
                 .pipe(
                     map(resolvedRevOrError => {
-                        this.props.extensionsController.services.workspace.roots.next(
+                        that.props.extensionsController.services.workspace.roots.next(
                             resolvedRevOrError && !isErrorLike(resolvedRevOrError)
                                 ? [
                                       {
                                           uri: makeRepoURI({
-                                              repoName: this.state.repoName,
+                                              repoName: that.state.repoName,
                                               rev: resolvedRevOrError.commitID,
                                           }),
-                                          inputRevision: this.state.rev || '',
+                                          inputRevision: that.state.rev || '',
                                       },
                                   ]
                                 : []
@@ -271,27 +271,27 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             repo={this.state.repoOrError}
                             // We need a rev to generate code host URLs, if rev isn't available, we use the default branch or HEAD.
                             rev={
-                                this.state.rev ||
-                                (!isErrorLike(this.state.repoOrError) &&
-                                    this.state.repoOrError.defaultBranch &&
-                                    this.state.repoOrError.defaultBranch.displayName) ||
+                                that.state.rev ||
+                                (!isErrorLike(that.state.repoOrError) &&
+                                    that.state.repoOrError.defaultBranch &&
+                                    that.state.repoOrError.defaultBranch.displayName) ||
                                 'HEAD'
                             }
                             filePath={filePath}
                             commitRange={commitRange}
                             position={position}
                             range={range}
-                            externalLinks={this.state.externalLinks}
+                            externalLinks={that.state.externalLinks}
                         />
                     }
-                    {...this.state.repoHeaderContributionsLifecycleProps}
+                    {...that.state.repoHeaderContributionsLifecycleProps}
                 />
-                <ErrorBoundary location={this.props.location}>
+                <ErrorBoundary location={that.props.location}>
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
                         {[
                             '',
-                            `@${this.state.rawRev}`, // must exactly match how the rev was encoded in the URL
+                            `@${that.state.rawRev}`, // must exactly match how the rev was encoded in the URL
                             '/-/blob',
                             '/-/tree',
                             '/-/commits',
@@ -304,19 +304,19 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                                     <RepoRevContainer
                                         {...routeComponentProps}
                                         {...context}
-                                        routes={this.props.repoRevContainerRoutes}
-                                        rev={this.state.rev || ''}
-                                        resolvedRevOrError={this.state.resolvedRevOrError}
-                                        onResolvedRevOrError={this.onResolvedRevOrError}
+                                        routes={that.props.repoRevContainerRoutes}
+                                        rev={that.state.rev || ''}
+                                        resolvedRevOrError={that.state.resolvedRevOrError}
+                                        onResolvedRevOrError={that.onResolvedRevOrError}
                                         // must exactly match how the rev was encoded in the URL
                                         routePrefix={`${repoMatchURL}${
-                                            this.state.rawRev ? `@${this.state.rawRev}` : ''
+                                            that.state.rawRev ? `@${that.state.rawRev}` : ''
                                         }`}
                                     />
                                 )}
                             />
                         ))}
-                        {this.props.repoContainerRoutes.map(
+                        {that.props.repoContainerRoutes.map(
                             ({ path, render, exact, condition = () => true }) =>
                                 condition(context) && (
                                     <Route
@@ -337,16 +337,16 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         )
     }
 
-    private onDidUpdateRepository = (update: Partial<GQL.IRepository>): void => this.repositoryUpdates.next(update)
+    private onDidUpdateRepository = (update: Partial<GQL.IRepository>): void => that.repositoryUpdates.next(update)
 
     private onDidUpdateExternalLinks = (externalLinks: GQL.IExternalLink[] | undefined): void =>
-        this.setState({ externalLinks })
+        that.setState({ externalLinks })
 
-    private onResolvedRevOrError = (v: ResolvedRev | ErrorLike | undefined): void => this.revResolves.next(v)
+    private onResolvedRevOrError = (v: ResolvedRev | ErrorLike | undefined): void => that.revResolves.next(v)
 
     private onRepoHeaderContributionsLifecyclePropsChange = (
         lifecycleProps: RepoHeaderContributionsLifecycleProps
-    ): void => this.setState({ repoHeaderContributionsLifecycleProps: lifecycleProps })
+    ): void => that.setState({ repoHeaderContributionsLifecycleProps: lifecycleProps })
 }
 
 /**

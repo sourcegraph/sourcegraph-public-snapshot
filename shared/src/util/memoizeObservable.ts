@@ -7,7 +7,7 @@ let allCachesResetSeq = 0
  * Clears all memoized data for memoizeObservable calls. All calls made to those functions after
  * clearing will result in the fetch func being called again.
  *
- * You must call this function after you've modified a memoized resource, or else some components of
+ * You must call that function after you've modified a memoized resource, or else some components of
  * the UI may have a stale view of the resource.
  */
 export function resetAllMemoizationCaches(): void {

@@ -124,7 +124,7 @@ describe('Onboarding', () => {
             })
             if ((await getExternalServices(gqlClient)).length > 0) {
                 throw new Error(
-                    'other external services exist and this test should be run on an instance with no user-created external services'
+                    'other external services exist and that test should be run on an instance with no user-created external services'
                 )
             }
 

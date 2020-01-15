@@ -14,7 +14,7 @@ import (
 func main() {
 	// This should be the lowest version our toolchain supports in development
 	// mode, not necessarily latest patch version of go. Every time you bump
-	// this you are forcing our devs to update, so we need a good reason
+	// that you are forcing our devs to update, so we need a good reason
 	// (tools stop working, creates changes in version tracked files,
 	// etc). The version should be satisfiable by the latest go in brew.
 	//

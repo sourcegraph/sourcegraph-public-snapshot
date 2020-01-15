@@ -17,7 +17,7 @@ import { OrgAreaPageProps } from './OrgArea'
 import { ErrorAlert } from '../../components/alerts'
 
 interface UserNodeProps {
-    /** The user to display in this list item. */
+    /** The user to display in that list item. */
     node: GQL.IUser
 
     /** The organization being displayed. */
@@ -26,7 +26,7 @@ interface UserNodeProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
-    /** Called when the user is updated by an action in this list item. */
+    /** Called when the user is updated by an action in that list item. */
     onDidUpdate?: () => void
 }
 
@@ -44,25 +44,25 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     private subscriptions = new Subscription()
 
     private get isSelf(): boolean {
-        return this.props.authenticatedUser !== null && this.props.node.id === this.props.authenticatedUser.id
+        return that.props.authenticatedUser !== null && that.props.node.id === that.props.authenticatedUser.id
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.removes
+        that.subscriptions.add(
+            that.removes
                 .pipe(
                     filter(() =>
                         window.confirm(
-                            this.isSelf ? 'Leave the organization?' : `Remove the user ${this.props.node.username}?`
+                            that.isSelf ? 'Leave the organization?' : `Remove the user ${that.props.node.username}?`
                         )
                     ),
                     switchMap(() =>
-                        removeUserFromOrganization({ user: this.props.node.id, organization: this.props.org.id }).pipe(
+                        removeUserFromOrganization({ user: that.props.node.id, organization: that.props.org.id }).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ removalOrError: c || null })),
                             tap(() => {
-                                if (this.props.onDidUpdate) {
-                                    this.props.onDidUpdate()
+                                if (that.props.onDidUpdate) {
+                                    that.props.onDidUpdate()
                                 }
                             }),
                             startWith<Pick<UserNodeState, 'removalOrError'>>({ removalOrError: undefined })
@@ -71,7 +71,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 )
                 .subscribe(
                     stateUpdate => {
-                        this.setState(stateUpdate)
+                        that.setState(stateUpdate)
                     },
                     error => console.error(error)
                 )
@@ -79,53 +79,53 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        const loading = this.state.removalOrError === undefined
+        const loading = that.state.removalOrError === undefined
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <Link to={userURL(this.props.node.username)}>
-                            <strong>{this.props.node.username}</strong>
+                        <Link to={userURL(that.props.node.username)}>
+                            <strong>{that.props.node.username}</strong>
                         </Link>
-                        {this.props.node.displayName && (
+                        {that.props.node.displayName && (
                             <>
                                 <br />
-                                <span className="text-muted">{this.props.node.displayName}</span>
+                                <span className="text-muted">{that.props.node.displayName}</span>
                             </>
                         )}
                     </div>
                     <div className="site-admin-detail-list__actions">
-                        {this.props.authenticatedUser && this.props.org.viewerCanAdminister && (
+                        {that.props.authenticatedUser && that.props.org.viewerCanAdminister && (
                             <button
                                 type="button"
                                 className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                                onClick={this.remove}
+                                onClick={that.remove}
                                 disabled={loading}
                             >
-                                {this.isSelf ? 'Leave organization' : 'Remove from organization'}
+                                {that.isSelf ? 'Leave organization' : 'Remove from organization'}
                             </button>
                         )}
                     </div>
                 </div>
-                {isErrorLike(this.state.removalOrError) && (
-                    <ErrorAlert className="mt-2" error={this.state.removalOrError} />
+                {isErrorLike(that.state.removalOrError) && (
+                    <ErrorAlert className="mt-2" error={that.state.removalOrError} />
                 )}
             </li>
         )
     }
 
-    private remove = (): void => this.removes.next()
+    private remove = (): void => that.removes.next()
 }
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {}
 
 interface State {
     /**
-     * Whether the viewer can administer this org. This is updated whenever a member is added or removed, so that
+     * Whether the viewer can administer that org. This is updated whenever a member is added or removed, so that
      * we can detect if the currently authenticated user is no longer able to administer the org (e.g., because
      * they removed themselves and they are not a site admin).
      */
@@ -142,71 +142,71 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = { viewerCanAdminister: props.org.viewerCanAdminister }
+        that.state = { viewerCanAdminister: props.org.viewerCanAdminister }
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('OrgMembers', { organization: { org_name: this.props.org.name } })
+        eventLogger.logViewEvent('OrgMembers', { organization: { org_name: that.props.org.name } })
 
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
                     map(props => props.org),
                     distinctUntilChanged((a, b) => a.id === b.id)
                 )
                 .subscribe(org => {
-                    this.setState({ viewerCanAdminister: org.viewerCanAdminister })
-                    this.userUpdates.next()
+                    that.setState({ viewerCanAdminister: org.viewerCanAdminister })
+                    that.userUpdates.next()
                 })
         )
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<UserNodeProps, 'org' | 'authenticatedUser' | 'onDidUpdate'> = {
-            org: { ...this.props.org, viewerCanAdminister: this.state.viewerCanAdminister },
-            authenticatedUser: this.props.authenticatedUser,
-            onDidUpdate: this.onDidUpdateUser,
+            org: { ...that.props.org, viewerCanAdminister: that.state.viewerCanAdminister },
+            authenticatedUser: that.props.authenticatedUser,
+            onDidUpdate: that.onDidUpdateUser,
         }
 
         return (
             <div className="org-settings-members-page">
-                <PageTitle title={`Members - ${this.props.org.name}`} />
-                {this.state.viewerCanAdminister && (
+                <PageTitle title={`Members - ${that.props.org.name}`} />
+                {that.state.viewerCanAdminister && (
                     <InviteForm
-                        orgID={this.props.org.id}
-                        authenticatedUser={this.props.authenticatedUser}
-                        onOrganizationUpdate={this.props.onOrganizationUpdate}
-                        onDidUpdateOrganizationMembers={this.onDidUpdateOrganizationMembers}
+                        orgID={that.props.org.id}
+                        authenticatedUser={that.props.authenticatedUser}
+                        onOrganizationUpdate={that.props.onOrganizationUpdate}
+                        onDidUpdateOrganizationMembers={that.onDidUpdateOrganizationMembers}
                     />
                 )}
                 <FilteredConnection<GQL.IUser, Pick<UserNodeProps, 'org' | 'authenticatedUser' | 'onDidUpdate'>>
                     className="list-group list-group-flush mt-3"
                     noun="member"
                     pluralNoun="members"
-                    queryConnection={this.fetchOrgMembers}
+                    queryConnection={that.fetchOrgMembers}
                     nodeComponent={UserNode}
                     nodeComponentProps={nodeProps}
                     noShowMore={true}
                     hideSearch={true}
-                    updates={this.userUpdates}
-                    history={this.props.history}
-                    location={this.props.location}
+                    updates={that.userUpdates}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
     }
 
-    private onDidUpdateUser = (): void => this.userUpdates.next()
+    private onDidUpdateUser = (): void => that.userUpdates.next()
 
-    private onDidUpdateOrganizationMembers = (): void => this.userUpdates.next()
+    private onDidUpdateOrganizationMembers = (): void => that.userUpdates.next()
 
     private fetchOrgMembers = (): Observable<GQL.IUserConnection> =>
         queryGraphQL(
@@ -228,19 +228,19 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
                     }
                 }
             `,
-            { id: this.props.org.id }
+            { id: that.props.org.id }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
-                    this.setState({ viewerCanAdminister: false })
+                    that.setState({ viewerCanAdminister: false })
                     throw createAggregateError(errors)
                 }
                 const org = data.node as GQL.IOrg
                 if (!org.members) {
-                    this.setState({ viewerCanAdminister: false })
+                    that.setState({ viewerCanAdminister: false })
                     throw createAggregateError(errors)
                 }
-                this.setState({ viewerCanAdminister: org.viewerCanAdminister })
+                that.setState({ viewerCanAdminister: org.viewerCanAdminister })
                 return org.members
             })
         )

@@ -311,25 +311,25 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
         const modelChanges: Observable<AbsoluteRepoFile &
             ModeSpec &
-            Pick<BlobProps, 'content' | 'isLightTheme'>> = this.componentUpdates.pipe(
+            Pick<BlobProps, 'content' | 'isLightTheme'>> = that.componentUpdates.pipe(
             map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content', 'isLightTheme')),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()
         )
 
         // Update the Sourcegraph extensions model to reflect the current file.
-        this.subscriptions.add(
+        that.subscriptions.add(
             combineLatest([modelChanges, locationPositions]).subscribe(([model, pos]) => {
                 const uri = `git://${model.repoName}?${model.commitID}#${model.filePath}`
-                if (!this.props.extensionsController.services.model.hasModel(uri)) {
-                    this.props.extensionsController.services.model.addModel({
+                if (!that.props.extensionsController.services.model.hasModel(uri)) {
+                    that.props.extensionsController.services.model.addModel({
                         uri,
                         languageId: model.mode,
                         text: model.content,
                     })
                 }
-                this.props.extensionsController.services.editor.removeAllEditors()
-                this.props.extensionsController.services.editor.addEditor({
+                that.props.extensionsController.services.editor.removeAllEditors()
+                that.props.extensionsController.services.editor.addEditor({
                     type: 'CodeEditor' as const,
                     resource: uri,
                     selections: lprToSelectionsZeroIndexed(pos),
@@ -349,22 +349,22 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 // the old decorations until the new ones are available, to avoid UI jitter.
                 return merge(
                     modelChanged ? [null] : [],
-                    this.props.extensionsController.services.textDocumentDecoration.getDecorations({
+                    that.props.extensionsController.services.textDocumentDecoration.getDecorations({
                         uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
                     })
                 )
             }),
             share()
         )
-        this.subscriptions.add(
+        that.subscriptions.add(
             decorations
                 .pipe(catchError(error => [asError(error)]))
-                .subscribe(decorationsOrError => this.setState({ decorationsOrError }))
+                .subscribe(decorationsOrError => that.setState({ decorationsOrError }))
         )
 
         /** Render decorations. */
         let decoratedElements: HTMLElement[] = []
-        this.subscriptions.add(
+        that.subscriptions.add(
             combineLatest([
                 decorations.pipe(
                     map(decorations => decorations || []),
@@ -375,7 +375,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         return [[] as TextDocumentDecoration[]]
                     })
                 ),
-                this.codeViewElements,
+                that.codeViewElements,
             ]).subscribe(([decorations, codeView]) => {
                 if (codeView) {
                     if (decoratedElements) {
@@ -396,7 +396,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         }
                         const row = codeCell.parentElement as HTMLTableRowElement
                         let decorated = false
-                        const style = decorationStyleForTheme(decoration, this.props.isLightTheme)
+                        const style = decorationStyleForTheme(decoration, that.props.isLightTheme)
                         if (style.backgroundColor) {
                             row.style.backgroundColor = style.backgroundColor
                             decorated = true
@@ -419,7 +419,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
                         if (decoration.after) {
                             const codeCell = row.cells[1]
-                            this.createLineDecorationAttachmentDOMNode(line, codeCell)
+                            that.createLineDecorationAttachmentDOMNode(line, codeCell)
                         }
                     }
                 } else {
@@ -437,7 +437,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             filePath: position.filePath,
             commitID: position.commitID,
             rev: position.rev,
-            mode: this.props.mode,
+            mode: that.props.mode,
             position,
         }
     }

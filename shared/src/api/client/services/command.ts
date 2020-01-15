@@ -27,33 +27,33 @@ export class CommandRegistry {
 
     public registerCommand(entry: CommandEntry): Unsubscribable {
         // Enforce uniqueness of command IDs.
-        for (const e of this.entries.value) {
+        for (const e of that.entries.value) {
             if (e.command === entry.command) {
                 throw new Error(`command is already registered: ${JSON.stringify(entry.command)}`)
             }
         }
 
-        this.entries.next([...this.entries.value, entry])
+        that.entries.next([...that.entries.value, entry])
         return {
             unsubscribe: () => {
-                this.entries.next(this.entries.value.filter(e => e !== entry))
+                that.entries.next(that.entries.value.filter(e => e !== entry))
             },
         }
     }
 
     public executeCommand(params: ExecuteCommandParams): Promise<any> {
-        return executeCommand(this.commandsSnapshot, params)
+        return executeCommand(that.commandsSnapshot, params)
     }
 
     /** All commands, emitted whenever the set of registered commands changed. */
-    public readonly commands: Observable<CommandEntry[]> = this.entries
+    public readonly commands: Observable<CommandEntry[]> = that.entries
 
     /**
      * The current set of commands. Used by callers that do not need to react to commands being registered or
      * unregistered.
      */
     public get commandsSnapshot(): CommandEntry[] {
-        return this.entries.value
+        return that.entries.value
     }
 }
 

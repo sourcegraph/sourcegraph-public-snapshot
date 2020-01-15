@@ -12,7 +12,7 @@ import (
 )
 
 // Go runs the given function in a goroutine and catches + logs panics. More
-// advanced use cases should copy this implementation and modify it.
+// advanced use cases should copy that implementation and modify it.
 func Go(f func()) {
 	go func() {
 		defer func() {

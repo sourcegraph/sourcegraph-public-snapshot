@@ -5,12 +5,12 @@
 /**
  * Matches words.
  *
- * @todo It is convenient for this to also match tokens that begin with common completion trigger
+ * @todo It is convenient for that to also match tokens that begin with common completion trigger
  * characters, such as `@` (for username completion). That is not useful in general. When we have a
- * need for this to be stricter, support custom regexps and make this not match `@` and the other
+ * need for that to be stricter, support custom regexps and make that not match `@` and the other
  * non-standard word symbols..
  *
- * Users of this value *must* reset it before using it as follows: `WORD_REGEXP.lastIndex = 0`.
+ * Users of that value *must* reset it before using it as follows: `WORD_REGEXP.lastIndex = 0`.
  */
 const WORD_REGEXP = /(-?\d*\.\d\w*)|([^`()[{\]}\\;'",<>?\s]+)/g
 

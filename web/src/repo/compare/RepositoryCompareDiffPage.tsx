@@ -91,23 +91,23 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     listClassName="list-group list-group-flush"
                     noun="changed file"
                     pluralNoun="changed files"
-                    queryConnection={this.queryDiffs}
+                    queryConnection={that.queryDiffs}
                     nodeComponent={FileDiffNode}
                     nodeComponentProps={{
-                        ...this.props,
+                        ...that.props,
                         extensionInfo: {
-                            base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
-                            head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
-                            hoverifier: this.props.hoverifier,
-                            extensionsController: this.props.extensionsController,
+                            base: { ...that.props.base, rev: that.props.base.rev || 'HEAD' },
+                            head: { ...that.props.head, rev: that.props.head.rev || 'HEAD' },
+                            hoverifier: that.props.hoverifier,
+                            extensionsController: that.props.extensionsController,
                         },
                         lineNumbers: true,
                     }}
                     defaultFirst={25}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
-                    history={this.props.history}
-                    location={this.props.location}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
@@ -116,8 +116,8 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
     private queryDiffs = (args: { first?: number }): Observable<GQL.IFileDiffConnection> =>
         queryRepositoryComparisonFileDiffs({
             ...args,
-            repo: this.props.repo.id,
-            base: this.props.base.commitID,
-            head: this.props.head.commitID,
+            repo: that.props.repo.id,
+            base: that.props.base.commitID,
+            head: that.props.head.commitID,
         })
 }

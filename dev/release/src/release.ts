@@ -250,7 +250,7 @@ Key dates:
             const message = `:captain: Release \`${version}\` has been cut :captain:
 
 - Please ensure \`CHANGELOG.md\` on \`master\` is up-to-date.
-- Run this release locally with \`IMAGE=sourcegraph/server:${version} ./dev/run-server-image.sh\`
+- Run that release locally with \`IMAGE=sourcegraph/server:${version} ./dev/run-server-image.sh\`
 - It will be deployed to k8s.sgdev.org within approximately one hour (https://k8s.sgdev.org/site-admin/updates)
 - ${releaseBlockerMessage}
             `
@@ -281,7 +281,7 @@ Key dates:
 
             // - Announce issue if issue does not already exist
             await postMessage(
-                `:captain: Patch release ${parsedVersion.version} will be published soon. If you have changes that should go into this patch release, please add your item to the checklist in the issue description: ${url}`,
+                `:captain: Patch release ${parsedVersion.version} will be published soon. If you have changes that should go into that patch release, please add your item to the checklist in the issue description: ${url}`,
                 slackAnnounceChannel
             )
             console.log(`Posted to Slack channel ${slackAnnounceChannel}`)

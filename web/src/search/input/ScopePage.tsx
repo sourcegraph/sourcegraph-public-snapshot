@@ -27,7 +27,7 @@ const ScopeNotFound: React.FunctionComponent = () => (
         title="404: Not Found"
         subtitle={
             <>
-                No search page found with this scope ID. Add an ID and description to a search scope to create a search
+                No search page found with that scope ID. Add an ID and description to a search scope to create a search
                 page. See{' '}
                 <Link to="/help/user/search/scopes#creating-search-scope-pages">search scope documentation</Link>.
             </>
@@ -66,15 +66,15 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('Scope')
 
-        this.subscriptions.add(
-            this.propUpdates
+        that.subscriptions.add(
+            that.propUpdates
                 .pipe(
                     switchMap(props => {
                         const searchScopes =
                             (isSettingsValid<Settings>(props.settingsCascade) &&
                                 props.settingsCascade.final['search.scopes']) ||
                             []
-                        this.setState({ searchScopes })
+                        that.setState({ searchScopes })
                         const matchedScope = searchScopes.find(o => o.id === props.match.params.id)
                         if (matchedScope) {
                             const markdownDescription = renderMarkdown(matchedScope.description || '')
@@ -115,73 +115,73 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                         ]
                     })
                 )
-                .subscribe(state => this.setState(state as State))
+                .subscribe(state => that.setState(state as State))
         )
 
-        this.subscriptions.add(
-            this.showMoreClicks.subscribe(() => this.setState(state => ({ first: state.first + 50 })))
+        that.subscriptions.add(
+            that.showMoreClicks.subscribe(() => that.setState(state => ({ first: state.first + 50 })))
         )
 
-        this.propUpdates.next(this.props)
+        that.propUpdates.next(that.props)
     }
 
     public componentDidUpdate(): void {
-        this.propUpdates.next(this.props)
+        that.propUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.searchScopes) {
+        if (!that.state.searchScopes) {
             return null
         }
 
-        if (!this.state.searchScopes.some((element: SearchScope) => element.id === this.props.match.params.id)) {
+        if (!that.state.searchScopes.some((element: SearchScope) => element.id === that.props.match.params.id)) {
             return <ScopeNotFound />
         }
         return (
             <div className="scope-page">
                 <div className="scope-page__container">
                     <header>
-                        <h1 className="scope-page__title">{this.state.name}</h1>
-                        {this.state.markdownDescription && (
+                        <h1 className="scope-page__title">{that.state.name}</h1>
+                        {that.state.markdownDescription && (
                             <div
                                 className="scope-page__section"
-                                dangerouslySetInnerHTML={{ __html: this.state.markdownDescription || '' }}
+                                dangerouslySetInnerHTML={{ __html: that.state.markdownDescription || '' }}
                             />
                         )}
                     </header>
                     <section>
-                        <Form className="scope-page__section-search" onSubmit={this.onSubmit}>
-                            <div className="scope-page__input-scope" title={this.state.value}>
-                                <span className="scope-page__input-scope-text">{this.state.value}</span>
+                        <Form className="scope-page__section-search" onSubmit={that.onSubmit}>
+                            <div className="scope-page__input-scope" title={that.state.value}>
+                                <span className="scope-page__input-scope-text">{that.state.value}</span>
                             </div>
                             <QueryInput
-                                {...this.props}
-                                value={this.state.queryState}
-                                onChange={this.onQueryChange}
-                                prependQueryForSuggestions={this.state.value}
+                                {...that.props}
+                                value={that.state.queryState}
+                                onChange={that.onQueryChange}
+                                prependQueryForSuggestions={that.state.value}
                                 autoFocus={true}
-                                location={this.props.location}
-                                history={this.props.history}
+                                location={that.props.location}
+                                history={that.props.history}
                                 placeholder="Search in this scope..."
                             />
                             <SearchButton />
                         </Form>
                     </section>
-                    <PageTitle title={this.state.name} />
+                    <PageTitle title={that.state.name} />
                     <section className="scope-page__repos">
                         <div>
                             <div>
-                                {this.state.errorMessage && <ErrorAlert error={this.state.errorMessage} />}
-                                {!this.state.errorMessage &&
-                                    (this.state.repositories && this.state.repositories.length > 0 ? (
+                                {that.state.errorMessage && <ErrorAlert error={that.state.errorMessage} />}
+                                {!that.state.errorMessage &&
+                                    (that.state.repositories && that.state.repositories.length > 0 ? (
                                         <div>
-                                            <p>Repositories included in this scope:</p>
+                                            <p>Repositories included in that scope:</p>
                                             <div>
-                                                {this.state.repositories.slice(0, this.state.first).map((repo, i) => (
+                                                {that.state.repositories.slice(0, that.state.first).map((repo, i) => (
                                                     <div key={repo.name + String(i)} className="scope-page__row">
                                                         <Link to={repo.url} className="scope-page__link">
                                                             <SourceRepositoryIcon className="icon-inline scope-page__link-icon" />
@@ -191,31 +191,31 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                                 ))}
                                             </div>
                                             <p className="scope-page__count">
-                                                {this.state.repositories.length}{' '}
-                                                {this.state.repositories.length > 1 ? 'repositories ' : 'repository '}{' '}
+                                                {that.state.repositories.length}{' '}
+                                                {that.state.repositories.length > 1 ? 'repositories ' : 'repository '}{' '}
                                                 total{' '}
-                                                {this.state.repositories.length > this.state.first
-                                                    ? `(showing first ${this.state.first})`
+                                                {that.state.repositories.length > that.state.first
+                                                    ? `(showing first ${that.state.first})`
                                                     : ''}{' '}
                                             </p>
-                                            {this.state.first < this.state.repositories.length && (
+                                            {that.state.first < that.state.repositories.length && (
                                                 <button
                                                     type="button"
                                                     className="btn btn-secondary btn-sm scope-page__show-more"
-                                                    onClick={this.onShowMore}
+                                                    onClick={that.onShowMore}
                                                 >
                                                     Show more
                                                 </button>
                                             )}
                                         </div>
                                     ) : (
-                                        <p>All repositories included in this scope</p>
+                                        <p>All repositories included in that scope</p>
                                     ))}
                             </div>
-                            {window.context.sourcegraphDotComMode && !this.props.authenticatedUser && (
+                            {window.context.sourcegraphDotComMode && !that.props.authenticatedUser && (
                                 <small>
                                     Have an idea for a search scope for your community, or want to add a repository to
-                                    this scope? Tweet us <a href="https://twitter.com/srcgraph">@srcgraph</a>.
+                                    that scope? Tweet us <a href="https://twitter.com/srcgraph">@srcgraph</a>.
                                 </small>
                             )}
                         </div>
@@ -225,19 +225,19 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
         )
     }
 
-    private onQueryChange = (queryState: QueryState): void => this.setState({ queryState })
+    private onQueryChange = (queryState: QueryState): void => that.setState({ queryState })
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         submitSearch(
-            this.props.history,
-            `${this.state.value} ${this.state.queryState.query}`,
+            that.props.history,
+            `${that.state.value} ${that.state.queryState.query}`,
             'home',
-            this.props.patternType
+            that.props.patternType
         )
     }
 
     private onShowMore = (): void => {
-        this.showMoreClicks.next()
+        that.showMoreClicks.next()
     }
 }

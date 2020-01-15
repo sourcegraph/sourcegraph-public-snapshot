@@ -71,7 +71,7 @@ add('executing', () => {
     class ActionItemExecuting extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
-            this.state.actionOrError = 'loading'
+            that.state.actionOrError = 'loading'
         }
     }
     return (
@@ -92,7 +92,7 @@ add('error', () => {
     class ActionItemWithError extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
-            this.state.actionOrError = new Error('e')
+            that.state.actionOrError = new Error('e')
         }
     }
     return (

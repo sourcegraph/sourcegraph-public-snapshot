@@ -27,15 +27,15 @@ interface NodeState {
 class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     constructor(props: NodeProps) {
         super(props)
-        this.state = { isDeleting: false }
+        that.state = { isDeleting: false }
     }
 
     private subscriptions = new Subscription()
     private delete = new Subject<GQL.ISavedSearch>()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.delete
+        that.subscriptions.add(
+            that.delete
                 .pipe(
                     switchMap(search =>
                         deleteSavedSearch(search.id).pipe(
@@ -48,8 +48,8 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     )
                 )
                 .subscribe(() => {
-                    this.setState({ isDeleting: false })
-                    this.props.onDelete()
+                    that.setState({ isDeleting: false })
+                    that.props.onDelete()
                 })
         )
     }
@@ -58,14 +58,14 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
             <div className="saved-search-list-page__row list-group-item e2e-saved-search-list-page-row">
                 <div className="d-flex">
                     <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
-                    <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query, this.props.patternType)}>
-                        <div className="e2e-saved-search-list-page-row-title">{this.props.savedSearch.description}</div>
+                    <Link to={'/search?' + buildSearchURLQuery(that.props.savedSearch.query, that.props.patternType)}>
+                        <div className="e2e-saved-search-list-page-row-title">{that.props.savedSearch.description}</div>
                     </Link>
                 </div>
                 <div>
                     <Link
                         className="btn btn-secondary btn-sm e2e-edit-saved-search-button"
-                        to={`${this.props.match.path}/${this.props.savedSearch.id}`}
+                        to={`${that.props.match.path}/${that.props.savedSearch.id}`}
                         data-tooltip="Saved search settings"
                     >
                         <SettingsIcon className="icon-inline" /> Settings
@@ -73,8 +73,8 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     <button
                         type="button"
                         className="btn btn-sm btn-danger e2e-delete-saved-search-button"
-                        onClick={this.onDelete}
-                        disabled={this.state.isDeleting}
+                        onClick={that.onDelete}
+                        disabled={that.state.isDeleting}
                         data-tooltip="Delete saved search"
                     >
                         <DeleteIcon className="icon-inline" />
@@ -85,11 +85,11 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
 
     private onDelete = (): void => {
-        if (!window.confirm(`Delete the external service ${this.props.savedSearch.description}?`)) {
+        if (!window.confirm(`Delete the external service ${that.props.savedSearch.description}?`)) {
             return
         }
-        this.setState({ isDeleting: true })
-        this.delete.next(this.props.savedSearch)
+        that.setState({ isDeleting: true })
+        that.delete.next(that.props.savedSearch)
     }
 }
 
@@ -106,8 +106,8 @@ export class SavedSearchListPage extends React.Component<Props, State> {
     public state: State = {}
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.refreshRequests
+        that.subscriptions.add(
+            that.refreshRequests
                 .pipe(
                     startWith(undefined),
                     switchMap(() =>
@@ -120,7 +120,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                     ),
                     map(savedSearchesOrError => ({ savedSearchesOrError }))
                 )
-                .subscribe(newState => this.setState(newState as State))
+                .subscribe(newState => that.setState(newState as State))
         )
     }
 
@@ -134,32 +134,32 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                     </div>
                     <div>
                         <Link
-                            to={`${this.props.match.path}/add`}
+                            to={`${that.props.match.path}/add`}
                             className="btn btn-primary e2e-add-saved-search-button"
                         >
                             <PlusIcon className="icon-inline" /> Add saved search
                         </Link>
                     </div>
                 </div>
-                {this.state.savedSearchesOrError && isErrorLike(this.state.savedSearchesOrError) && (
-                    <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
+                {that.state.savedSearchesOrError && isErrorLike(that.state.savedSearchesOrError) && (
+                    <ErrorAlert className="mb-3" error={that.state.savedSearchesOrError} />
                 )}
                 <div className="list-group list-group-flush">
-                    {this.state.savedSearchesOrError &&
-                        !isErrorLike(this.state.savedSearchesOrError) &&
-                        this.state.savedSearchesOrError.length > 0 &&
-                        this.state.savedSearchesOrError
+                    {that.state.savedSearchesOrError &&
+                        !isErrorLike(that.state.savedSearchesOrError) &&
+                        that.state.savedSearchesOrError.length > 0 &&
+                        that.state.savedSearchesOrError
                             .filter(
                                 search =>
-                                    search.orgID === this.props.namespace.id ||
-                                    search.userID === this.props.namespace.id
+                                    search.orgID === that.props.namespace.id ||
+                                    search.userID === that.props.namespace.id
                             )
                             .map(search => (
                                 <SavedSearchNode
                                     key={search.id}
-                                    {...this.props}
+                                    {...that.props}
                                     savedSearch={search}
-                                    onDelete={this.onDelete}
+                                    onDelete={that.onDelete}
                                 />
                             ))}
                 </div>
@@ -168,6 +168,6 @@ export class SavedSearchListPage extends React.Component<Props, State> {
     }
 
     private onDelete = (): void => {
-        this.refreshRequests.next()
+        that.refreshRequests.next()
     }
 }

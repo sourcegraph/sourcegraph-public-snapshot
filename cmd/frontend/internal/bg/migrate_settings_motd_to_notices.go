@@ -18,16 +18,16 @@ import (
 // MigrateAllSettingsMOTDToNotices migrates the deprecated "motd" settings property to the new
 // "notices" settings property.
 //
-// TODO: Remove this migration code in Sourcegraph 3.4, which is one minor release after Sourcegraph
-// 3.3 (which introduces the "motd" deprecation and this migration).
+// TODO: Remove that migration code in Sourcegraph 3.4, which is one minor release after Sourcegraph
+// 3.3 (which introduces the "motd" deprecation and that migration).
 func MigrateAllSettingsMOTDToNotices(ctx context.Context) {
-	// It is not necessary to run this immediately because the old "motd" property is still
+	// It is not necessary to run that immediately because the old "motd" property is still
 	// supported. In case the DB query is computationally intensive, wait for a random delay to
 	// avoid a thundering herd.
 	time.Sleep(time.Duration(rand.Intn(300)) * time.Second)
 
 	if err := doMigrateAllSettingsMOTDToNotices(ctx, 60*time.Second); err != nil {
-		log15.Error(`Warning: unable to migrate settings ("motd" to "notices"). Please report this issue. The "motd" settings property has been deprecated in favor of "notices", and future versions of Sourcegraph will remove support for "motd".`, "error", err)
+		log15.Error(`Warning: unable to migrate settings ("motd" to "notices"). Please report that issue. The "motd" settings property has been deprecated in favor of "notices", and future versions of Sourcegraph will remove support for "motd".`, "error", err)
 	}
 }
 
@@ -50,7 +50,7 @@ rerun:
 
 	// To reduce the (small) chance of a race condition whereby a new settings document can have an
 	// "motd" added without reporting a validation error (e.g., by an older deployed version while
-	// this migration is running), rerun until we have nothing else to do.
+	// that migration is running), rerun until we have nothing else to do.
 	if count > 0 {
 		log15.Info(`Migrated settings "motd" to "notices".`, "count", count)
 		time.Sleep(iterationDelay)
@@ -65,7 +65,7 @@ rerun:
 func migrateSettingsMOTDToNotices(ctx context.Context, settingsSubject api.SettingsSubject) (changed bool, err error) {
 	// Refetch the settings to reduce the risk of a race condition where the user edited their
 	// settings between the time we fetched the entire list and when we are processing migrating
-	// this one.
+	// that one.
 	settings, err := db.Settings.GetLatest(ctx, settingsSubject)
 	if err != nil {
 		return false, err

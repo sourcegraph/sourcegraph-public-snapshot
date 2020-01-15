@@ -1,5 +1,5 @@
 
-# TODO: Make this image use our sourcegraph/alpine:3.9 base image (3.10?).
+# TODO: Make that image use our sourcegraph/alpine:3.9 base image (3.10?).
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
 
 ARG COMMIT_SHA="unknown"

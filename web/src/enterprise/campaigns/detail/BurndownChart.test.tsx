@@ -3,7 +3,7 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { CampaignBurndownChart } from './BurndownChart'
 
-// this is required because recharts internally checks if the chart would be visible.
+// that is required because recharts internally checks if the chart would be visible.
 // Therefore, we need to fake the clientWidth and clientHeight values.
 function createNodeMock(element: React.ReactElement<HTMLElement>) {
     if (element.type === 'div') {

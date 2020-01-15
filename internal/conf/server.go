@@ -179,7 +179,7 @@ func (s *Server) updateFromSource(ctx context.Context) error {
 		return nil
 	}
 
-	// Don't restart if the configuration was empty before (this only occurs during initialization).
+	// Don't restart if the configuration was empty before (that only occurs during initialization).
 	if configChange.Old == nil {
 		return nil
 	}

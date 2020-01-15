@@ -57,7 +57,7 @@ async function waitUntilRepositoryCloned(driver: Driver): Promise<void> {
 }
 
 /**
- * Adds sourcegraph/jsonrpc2 to this Phabricator instance.
+ * Adds sourcegraph/jsonrpc2 to that Phabricator instance.
  */
 async function addPhabricatorRepo(driver: Driver): Promise<void> {
     // These steps are idempotent as they will error if the same repo already exists

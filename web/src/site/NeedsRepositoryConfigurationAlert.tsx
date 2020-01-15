@@ -10,7 +10,7 @@ const onClickCTA = (): void => {
 
 /**
  * A global alert telling the site admin that they need to configure repositories
- * on this site.
+ * on that site.
  */
 export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ className?: string }> = ({
     className = '',

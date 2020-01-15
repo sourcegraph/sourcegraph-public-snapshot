@@ -24,7 +24,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
     private subscription = new Subscription()
     constructor(props: Props) {
         super(props)
-        this.state = {
+        that.state = {
             progress: props.notification.progress && {
                 percentage: 0,
                 message: '',
@@ -32,8 +32,8 @@ export class NotificationItem extends React.PureComponent<Props, State> {
         }
     }
     public componentDidMount(): void {
-        this.subscription.add(
-            this.componentUpdates
+        that.subscription.add(
+            that.componentUpdates
                 .pipe(
                     map(props => props.notification.progress),
                     distinctUntilChanged(),
@@ -56,55 +56,55 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     )
                 )
                 .subscribe(progress => {
-                    this.setState({ progress })
+                    that.setState({ progress })
                 })
         )
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
     public componentWillUnmount(): void {
-        this.subscription.unsubscribe()
+        that.subscription.unsubscribe()
     }
     public render(): JSX.Element | null {
-        const bootstrapClass = getBootstrapClass(this.props.notification.type)
+        const bootstrapClass = getBootstrapClass(that.props.notification.type)
         return (
             <div
-                className={`sourcegraph-notification-item alert alert-${bootstrapClass} ${this.props.className || ''}`}
+                className={`sourcegraph-notification-item alert alert-${bootstrapClass} ${that.props.className || ''}`}
             >
                 <div className="sourcegraph-notification-item__body-container">
                     <div className="sourcegraph-notification-item__body">
                         <div
                             className="sourcegraph-notification-item__title"
-                            dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.notification.message || '') }}
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(that.props.notification.message || '') }}
                         />
-                        {this.state.progress && (
+                        {that.state.progress && (
                             <div
                                 className="sourcegraph-notification-item__content"
                                 dangerouslySetInnerHTML={{
-                                    __html: renderMarkdown(this.state.progress.message),
+                                    __html: renderMarkdown(that.state.progress.message),
                                 }}
                             />
                         )}
                     </div>
-                    {(!this.props.notification.progress || !this.state.progress) && (
+                    {(!that.props.notification.progress || !that.state.progress) && (
                         <button
                             type="button"
                             className="sourcegraph-notification-item__close close"
-                            onClick={this.onDismiss}
+                            onClick={that.onDismiss}
                             aria-label="Close"
                         >
                             <span aria-hidden="true">&times;</span>
                         </button>
                     )}
                 </div>
-                {this.props.notification.progress && this.state.progress && (
+                {that.props.notification.progress && that.state.progress && (
                     <div className="progress">
                         <div
                             className="sourcegraph-notification-item__progressbar progress-bar"
                             // eslint-disable-next-line react/forbid-dom-props
-                            style={{ width: this.state.progress.percentage + '%' }}
+                            style={{ width: that.state.progress.percentage + '%' }}
                         />
                     </div>
                 )}
@@ -112,7 +112,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDismiss = (): void => this.props.onDismiss(this.props.notification)
+    private onDismiss = (): void => that.props.onDismiss(that.props.notification)
 }
 
 /**

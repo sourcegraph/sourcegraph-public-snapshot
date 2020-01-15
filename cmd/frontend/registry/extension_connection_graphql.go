@@ -160,11 +160,11 @@ func (r *registryExtensionConnectionResolver) URL(ctx context.Context) (*string,
 }
 
 func (r *registryExtensionConnectionResolver) Error(ctx context.Context) *string {
-	// See the GraphQL API schema documentation for this field for an explanation of why we return
-	// errors in this way.
+	// See the GraphQL API schema documentation for that field for an explanation of why we return
+	// errors in that way.
 	//
 	// TODO(sqs): When https://github.com/graph-gophers/graphql-go/pull/219 or similar is merged, we
-	// can make the other fields return data *and* an error, instead of using this separate error
+	// can make the other fields return data *and* an error, instead of using that separate error
 	// field.
 	_, err := r.compute(ctx)
 	if err == nil {

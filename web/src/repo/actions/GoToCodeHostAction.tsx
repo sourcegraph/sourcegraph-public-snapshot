@@ -41,10 +41,10 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.componentUpdates
+        that.subscriptions.add(
+            that.componentUpdates
                 .pipe(
-                    startWith(this.props),
+                    startWith(that.props),
                     distinctUntilChanged((a, b) => a.repo === b.repo && a.rev === b.rev && a.filePath === b.filePath),
                     switchMap(({ repo, rev, filePath }) => {
                         if (!repo || !filePath) {
@@ -60,47 +60,47 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
                     })
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     err => console.error(err)
                 )
         )
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+        that.componentUpdates.next(that.props)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         // If the default branch is undefined, set to HEAD
         const defaultBranch =
-            (!isErrorLike(this.props.repo) &&
-                this.props.repo &&
-                this.props.repo.defaultBranch &&
-                this.props.repo.defaultBranch.displayName) ||
+            (!isErrorLike(that.props.repo) &&
+                that.props.repo &&
+                that.props.repo.defaultBranch &&
+                that.props.repo.defaultBranch.displayName) ||
             'HEAD'
         // If neither repo or file can be loaded, return null, which will hide all code host icons
-        if (!this.props.repo || isErrorLike(this.state.fileExternalLinksOrError)) {
+        if (!that.props.repo || isErrorLike(that.state.fileExternalLinksOrError)) {
             return null
         }
 
         let externalURLs: GQL.IExternalLink[]
-        if (this.props.externalLinks && this.props.externalLinks.length > 0) {
-            externalURLs = this.props.externalLinks
+        if (that.props.externalLinks && that.props.externalLinks.length > 0) {
+            externalURLs = that.props.externalLinks
         } else if (
-            this.state.fileExternalLinksOrError === null ||
-            this.state.fileExternalLinksOrError === undefined ||
-            isErrorLike(this.state.fileExternalLinksOrError) ||
-            this.state.fileExternalLinksOrError.length === 0
+            that.state.fileExternalLinksOrError === null ||
+            that.state.fileExternalLinksOrError === undefined ||
+            isErrorLike(that.state.fileExternalLinksOrError) ||
+            that.state.fileExternalLinksOrError.length === 0
         ) {
             // If the external link for the more specific resource within the repository is loading or errored, use the
             // repository external link.
-            externalURLs = this.props.repo.externalURLs
+            externalURLs = that.props.repo.externalURLs
         } else {
-            externalURLs = this.state.fileExternalLinksOrError
+            externalURLs = that.state.fileExternalLinksOrError
         }
         if (externalURLs.length === 0) {
             return null
@@ -116,18 +116,18 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         let url = externalURL.url
         if (externalURL.serviceType === 'github' || externalURL.serviceType === 'gitlab') {
             // If in a branch, add branch path to the code host URL.
-            if (this.props.rev && this.props.rev !== defaultBranch && !this.state.fileExternalLinksOrError) {
-                url += `/tree/${this.props.rev}`
+            if (that.props.rev && that.props.rev !== defaultBranch && !that.state.fileExternalLinksOrError) {
+                url += `/tree/${that.props.rev}`
             }
             // If showing a comparison, add comparison specifier to the code host URL.
-            if (this.props.commitRange) {
-                url += `/compare/${this.props.commitRange.replace(/^\.\.\./, 'HEAD...').replace(/\.\.\.$/, '...HEAD')}`
+            if (that.props.commitRange) {
+                url += `/compare/${that.props.commitRange.replace(/^\.\.\./, 'HEAD...').replace(/\.\.\.$/, '...HEAD')}`
             }
             // Add range or position path to the code host URL.
-            if (this.props.range) {
-                url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
-            } else if (this.props.position) {
-                url += '#L' + this.props.position.line
+            if (that.props.range) {
+                url += `#L${that.props.range.start.line}-L${that.props.range.end.line}`
+            } else if (that.props.position) {
+                url += '#L' + that.props.position.line
             }
         }
 

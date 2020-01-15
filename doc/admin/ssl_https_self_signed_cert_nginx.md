@@ -46,7 +46,7 @@ Run `sudo ls -la ~/.sourcegraph/config` and you should see the CA and SSL certif
 
 Edit the [default
 `~/.sourcegraph/config/nginx.conf`](https://github.com/sourcegraph/sourcegraph/blob/master/cmd/server/shared/assets/nginx.conf),
-so that port `7080` redirects to `7443` and `7443` is served with SSL. It should look like this:
+so that port `7080` redirects to `7443` and `7443` is served with SSL. It should look like that:
 
 ```nginx
 ...

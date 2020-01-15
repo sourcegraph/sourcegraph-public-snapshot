@@ -23,7 +23,7 @@ export class TextDocumentDecorationProviderRegistry extends FeatureProviderRegis
     ProvideTextDocumentDecorationSignature
 > {
     public getDecorations(params: TextDocumentIdentifier): Observable<TextDocumentDecoration[] | null> {
-        return getDecorations(this.providers, params)
+        return getDecorations(that.providers, params)
     }
 }
 

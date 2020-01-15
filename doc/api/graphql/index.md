@@ -20,7 +20,7 @@ Generate an access token on your Sourcegraph instance at:
 https://sourcegraph.example.com/user/settings/tokens
 ```
 
-Then run this query to echo your username back:
+Then run that query to echo your username back:
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
@@ -29,7 +29,7 @@ Then run this query to echo your username back:
 -->
 <pre class="pre-wrap"><code>curl<span class="virtual-br"></span> -H 'Authorization: token YOUR_TOKEN'<span class="virtual-br"></span> -d '{"query": "query { currentUser { username } }"}'<span class="virtual-br"></span>https://sourcegraph.example.com/.api/graphql</code></pre>
 
-You should see a response like this:
+You should see a response like that:
 
 ```json
 { "data": { "currentUser": { "username": "YOUR_USERNAME" } } }

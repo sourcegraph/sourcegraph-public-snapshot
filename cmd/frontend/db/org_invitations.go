@@ -73,7 +73,7 @@ func (*orgInvitations) Create(ctx context.Context, orgID, senderUserID, recipien
 
 // GetByID retrieves the org invitation (if any) given its ID.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this org invitation.
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view that org invitation.
 func (s *orgInvitations) GetByID(ctx context.Context, id int64) (*OrgInvitation, error) {
 	if Mocks.OrgInvitations.GetByID != nil {
 		return Mocks.OrgInvitations.GetByID(id)
@@ -92,7 +92,7 @@ func (s *orgInvitations) GetByID(ctx context.Context, id int64) (*OrgInvitation,
 // GetPending retrieves the pending invitation (if any) for the recipient to join the org. At most
 // one invitation may be pending for an (org,recipient).
 //
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this org invitation.
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view that org invitation.
 func (s *orgInvitations) GetPending(ctx context.Context, orgID, recipientUserID int32) (*OrgInvitation, error) {
 	results, err := s.list(ctx, []*sqlf.Query{
 		sqlf.Sprintf("org_id=%d AND recipient_user_id=%d AND responded_at IS NULL AND revoked_at IS NULL", orgID, recipientUserID),
@@ -108,8 +108,8 @@ func (s *orgInvitations) GetPending(ctx context.Context, orgID, recipientUserID 
 
 // OrgInvitationsListOptions contains options for listing org invitations.
 type OrgInvitationsListOptions struct {
-	OrgID           int32 // only list org invitations for this org
-	RecipientUserID int32 // only list org invitations with this user as the recipient
+	OrgID           int32 // only list org invitations for that org
+	RecipientUserID int32 // only list org invitations with that user as the recipient
 	*LimitOffset
 }
 

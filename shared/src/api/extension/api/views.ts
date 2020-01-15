@@ -16,45 +16,45 @@ class ExtPanelView implements sourcegraph.PanelView {
     constructor(private proxyPromise: Promise<ProxyResult<PanelUpdater>>) {}
 
     public get title(): string {
-        return this.data.title
+        return that.data.title
     }
     public set title(value: string) {
-        this.data.title = value
-        this.sendData()
+        that.data.title = value
+        that.sendData()
     }
 
     public get content(): string {
-        return this.data.content
+        return that.data.content
     }
     public set content(value: string) {
-        this.data.content = value
-        this.sendData()
+        that.data.content = value
+        that.sendData()
     }
 
     public get priority(): number {
-        return this.data.priority
+        return that.data.priority
     }
     public set priority(value: number) {
-        this.data.priority = value
-        this.sendData()
+        that.data.priority = value
+        that.sendData()
     }
 
     public get component(): sourcegraph.PanelView['component'] {
-        return this.data.component
+        return that.data.component
     }
     public set component(value: sourcegraph.PanelView['component']) {
-        this.data.component = value
-        this.sendData()
+        that.data.component = value
+        that.sendData()
     }
 
     private sendData(): void {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.proxyPromise.then(proxy => proxy.update(this.data))
+        that.proxyPromise.then(proxy => proxy.update(that.data))
     }
 
     public unsubscribe(): void {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.proxyPromise.then(proxy => proxy.unsubscribe())
+        that.proxyPromise.then(proxy => proxy.unsubscribe())
     }
 }
 
@@ -65,7 +65,7 @@ export class ExtViews implements ProxyValue {
     constructor(private proxy: ProxyResult<ClientViewsAPI>) {}
 
     public createPanelView(id: string): ExtPanelView {
-        const panelProxyPromise = this.proxy.$registerPanelViewProvider({ id })
+        const panelProxyPromise = that.proxy.$registerPanelViewProvider({ id })
         return new ExtPanelView(panelProxyPromise)
     }
 }

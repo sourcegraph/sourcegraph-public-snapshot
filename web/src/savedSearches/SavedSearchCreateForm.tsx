@@ -22,7 +22,7 @@ interface State {
 export class SavedSearchCreateForm extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        this.state = {
+        that.state = {
             createdOrError: undefined,
         }
     }
@@ -30,8 +30,8 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
     private submits = new Subject<Omit<SavedQueryFields, 'id'>>()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.submits
+        that.subscriptions.add(
+            that.submits
                 .pipe(
                     switchMap(fields =>
                         concat(
@@ -41,8 +41,8 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                                 fields.query,
                                 fields.notify,
                                 fields.notifySlack,
-                                this.props.namespace.__typename === 'User' ? this.props.namespace.id : null,
-                                this.props.namespace.__typename === 'Org' ? this.props.namespace.id : null
+                                that.props.namespace.__typename === 'User' ? that.props.namespace.id : null,
+                                that.props.namespace.__typename === 'Org' ? that.props.namespace.id : null
                             ).pipe(
                                 map(() => true),
                                 catchError(error => [error])
@@ -51,16 +51,16 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                     )
                 )
                 .subscribe(createdOrError => {
-                    this.setState({ createdOrError })
+                    that.setState({ createdOrError })
                     if (createdOrError === true) {
-                        this.props.history.push(`${this.props.namespace.url}/searches`)
+                        that.props.history.push(`${that.props.namespace.url}/searches`)
                     }
                 })
         )
     }
 
     public render(): JSX.Element | null {
-        const q = new URLSearchParams(this.props.location.search)
+        const q = new URLSearchParams(that.props.location.search)
         let defaultValue: Partial<SavedQueryFields> = {}
         const query = q.get('query')
         const patternType = q.get('patternType')
@@ -73,16 +73,16 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
 
         return (
             <SavedSearchForm
-                {...this.props}
+                {...that.props}
                 submitLabel="Add saved search"
                 title="Add saved search"
                 defaultValues={defaultValue}
-                onSubmit={this.onSubmit}
-                loading={this.state.createdOrError === LOADING}
-                error={isErrorLike(this.state.createdOrError) ? this.state.createdOrError : undefined}
+                onSubmit={that.onSubmit}
+                loading={that.state.createdOrError === LOADING}
+                error={isErrorLike(that.state.createdOrError) ? that.state.createdOrError : undefined}
             />
         )
     }
 
-    private onSubmit = (fields: Omit<SavedQueryFields, 'id'>): void => this.submits.next(fields)
+    private onSubmit = (fields: Omit<SavedQueryFields, 'id'>): void => that.submits.next(fields)
 }

@@ -20,7 +20,7 @@ import (
 // 3. Notifying other users of the new comment.
 // 4. Fetching and returning the updated thread.
 //
-// It does NOT verify that the user has permission to create this comment. That
+// It does NOT verify that the user has permission to create that comment. That
 // is the responsibility of the caller.
 func InsecureAddCommentToThread(ctx context.Context, newComment *types.DiscussionComment) (*types.DiscussionThread, error) {
 	if dc := conf.Get().Discussions; dc != nil && dc.AbuseProtection {

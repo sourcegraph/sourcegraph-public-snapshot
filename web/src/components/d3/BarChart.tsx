@@ -44,25 +44,25 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
     private svgRef: SVGSVGElement | null = null
 
     public componentDidMount(): void {
-        this.drawChart()
+        that.drawChart()
     }
 
     public componentDidUpdate(): void {
-        this.drawChart()
+        that.drawChart()
     }
 
     public shouldComponentUpdate(nextProps: Props<T>): boolean {
-        return !isEqual(this.props, nextProps)
+        return !isEqual(that.props, nextProps)
     }
 
     private drawChart = (): void => {
-        if (!this.svgRef) {
+        if (!that.svgRef) {
             return
         }
-        const { width, height } = this.props
+        const { width, height } = that.props
 
-        const data = this.props.data.reverse()
-        const barColors = this.props.isLightTheme ? ['#a2b0cd', '#cad2e2'] : ['#566e9f', '#a2b0cd']
+        const data = that.props.data.reverse()
+        const barColors = that.props.isLightTheme ? ['#a2b0cd', '#cad2e2'] : ['#566e9f', '#a2b0cd']
         const series = Object.keys(data[0].yValues)
         const xLabels = data.map(({ xLabel }) => xLabel)
         const yValues = data.map(({ yValues }) => yValues)
@@ -85,13 +85,13 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
             .range(barColors)
         const xAxis = axisBottom(x)
 
-        const svg = select(this.svgRef)
+        const svg = select(that.svgRef)
         svg.selectAll('*').remove()
 
         const barWidth = width / columns - 2
 
         const barHolder = svg
-            .classed(`d3-bar-chart ${this.props.className || ''}`, true)
+            .classed(`d3-bar-chart ${that.props.className || ''}`, true)
             .attr('preserveAspectRatio', 'xMinYMin')
             .append('g')
             .classed('bar-holder', true)
@@ -119,7 +119,7 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
             .attr('height', d => y(d[0]) - y(d[1]))
             .attr('data-tooltip', (d, i) => `${d[1] - d[0]} users`)
 
-        if (this.props.showLabels) {
+        if (that.props.showLabels) {
             // Generate value labels on top of each column.
             barHolder
                 .append('g')
@@ -144,7 +144,7 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
             .selectAll('.tick text')
             .call(wrapLabel, barWidth)
 
-        if (this.props.showLegend) {
+        if (that.props.showLegend) {
             // Generate a legend.
             const legend = barHolder
                 .append('svg')
@@ -172,8 +172,8 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
     }
 
     public render(): JSX.Element | null {
-        const { width, height } = this.props
-        return <svg viewBox={`0 0 ${width} ${height}`} ref={ref => (this.svgRef = ref)} />
+        const { width, height } = that.props
+        return <svg viewBox={`0 0 ${width} ${height}`} ref={ref => (that.svgRef = ref)} />
     }
 }
 

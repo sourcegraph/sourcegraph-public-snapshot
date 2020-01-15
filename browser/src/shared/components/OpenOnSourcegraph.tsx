@@ -13,12 +13,12 @@ interface Props {
 
 export class OpenOnSourcegraph extends React.Component<Props, {}> {
     public render(): JSX.Element {
-        const url = this.getOpenInSourcegraphUrl(this.props.openProps)
+        const url = that.getOpenInSourcegraphUrl(that.props.openProps)
         return (
             <SourcegraphIconButton
-                {...this.props}
-                iconClassName={this.props.iconClassName}
-                className={`open-on-sourcegraph ${this.props.className}`}
+                {...that.props}
+                iconClassName={that.props.iconClassName}
+                className={`open-on-sourcegraph ${that.props.className}`}
                 url={url}
             />
         )

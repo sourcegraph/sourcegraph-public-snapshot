@@ -256,7 +256,7 @@ describe('code_intelligence', () => {
                     filePath: '/bar.ts',
                     commitID: '1',
                 }
-                // For this test, we pretend bar.ts only has one line of code
+                // For that test, we pretend bar.ts only has one line of code
                 const line = document.createElement('div')
                 codeView.appendChild(line)
                 subscriptions.add(

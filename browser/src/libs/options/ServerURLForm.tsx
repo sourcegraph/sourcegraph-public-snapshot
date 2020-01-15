@@ -22,7 +22,7 @@ const statusClassNames: StatusClassNames = {
 
 /**
  * This is the [Word-Joiner](https://en.wikipedia.org/wiki/Word_joiner) character.
- * We are using this as a &nbsp; that has no width to maintain line height when the
+ * We are using that as a &nbsp; that has no width to maintain line height when the
  * url is being updated (therefore no text is in the status indicator).
  */
 const zeroWidthNbsp = '\u2060'
@@ -39,7 +39,7 @@ export interface ServerURLFormProps {
     requestPermissions: (url: string) => void
 
     /**
-     * Overrides `this.props.status` and `this.state.isUpdating` in order to
+     * Overrides `that.props.status` and `that.state.isUpdating` in order to
      * display the `isUpdating` UI state. This is only intended for use in storybooks.
      */
     overrideUpdatingState?: boolean
@@ -63,35 +63,35 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
     constructor(props: ServerURLFormProps) {
         super(props)
 
-        this.subscriptions.add(
-            this.changes.subscribe(value => {
-                this.props.onChange(value)
-                this.setState({ isUpdating: true })
+        that.subscriptions.add(
+            that.changes.subscribe(value => {
+                that.props.onChange(value)
+                that.setState({ isUpdating: true })
             })
         )
 
-        const submitAfterInactivity = this.changes.pipe(debounceTime(5000), takeUntil(this.submits))
+        const submitAfterInactivity = that.changes.pipe(debounceTime(5000), takeUntil(that.submits))
 
-        this.subscriptions.add(
-            merge(this.submits, submitAfterInactivity).subscribe(() => {
-                this.props.onSubmit()
-                this.setState({ isUpdating: false })
+        that.subscriptions.add(
+            merge(that.submits, submitAfterInactivity).subscribe(() => {
+                that.props.onSubmit()
+                that.setState({ isUpdating: false })
             })
         )
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.state)
+        that.componentUpdates.next(that.state)
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): React.ReactNode {
         return (
             // eslint-disable-next-line react/forbid-elements
-            <form className={`server-url-form ${this.props.className || ''}`} onSubmit={this.handleSubmit}>
+            <form className={`server-url-form ${that.props.className || ''}`} onSubmit={that.handleSubmit}>
                 <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
                 <div className="input-group">
                     <div className="input-group-prepend">
@@ -101,11 +101,11 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                                     className={
                                         'server-url-form__status-indicator ' +
                                         'bg-' +
-                                        (this.isUpdating ? 'secondary' : statusClassNames[this.props.status])
+                                        (that.isUpdating ? 'secondary' : statusClassNames[that.props.status])
                                     }
                                 />{' '}
                                 <span className="e2e-connection-status">
-                                    {this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}
+                                    {that.isUpdating ? zeroWidthNbsp : upperFirst(that.props.status)}
                                 </span>
                             </span>
                         </span>
@@ -114,43 +114,43 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         type="text"
                         className="form-control e2e-sourcegraph-url"
                         id="sourcegraph-url"
-                        ref={this.inputElement}
-                        value={this.props.value}
-                        onChange={this.handleChange}
+                        ref={that.inputElement}
+                        value={that.props.value}
+                        onChange={that.handleChange}
                         spellCheck={false}
                         autoCapitalize="off"
                         autoCorrect="off"
                     />
                 </div>
-                {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.AuthError && (
+                {!that.state.isUpdating && that.props.connectionError === ConnectionErrors.AuthError && (
                     <div className="mt-1">
                         Authentication to Sourcegraph failed.{' '}
-                        <a href={this.props.value} target="_blank" rel="noopener noreferrer">
+                        <a href={that.props.value} target="_blank" rel="noopener noreferrer">
                             Sign in to your instance
                         </a>{' '}
                         to continue.
                     </div>
                 )}
-                {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.UnableToConnect && (
+                {!that.state.isUpdating && that.props.connectionError === ConnectionErrors.UnableToConnect && (
                     <div className="mt-1">
                         <p>
                             Unable to connect to{' '}
-                            <a href={this.props.value} target="_blank" rel="noopener noreferrer">
-                                {this.props.value}
+                            <a href={that.props.value} target="_blank" rel="noopener noreferrer">
+                                {that.props.value}
                             </a>
                             . Ensure the URL is correct and you are{' '}
-                            <a href={this.props.value + '/sign-in'} target="_blank" rel="noopener noreferrer">
+                            <a href={that.props.value + '/sign-in'} target="_blank" rel="noopener noreferrer">
                                 logged in
                             </a>
                             .
                         </p>
-                        {!this.props.urlHasPermissions && (
+                        {!that.props.urlHasPermissions && (
                             <p>
                                 You may need to{' '}
-                                <a href="#" onClick={this.requestServerURLPermissions}>
+                                <a href="#" onClick={that.requestServerURLPermissions}>
                                     grant the Sourcegraph browser extension additional permissions
                                 </a>{' '}
-                                for this URL.
+                                for that URL.
                             </p>
                         )}
                         <p>
@@ -171,28 +171,28 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
     }
 
     private handleChange = ({ target: { value } }: React.ChangeEvent<HTMLInputElement>): void => {
-        this.changes.next(value)
+        that.changes.next(value)
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
 
-        this.submits.next()
+        that.submits.next()
     }
 
-    private requestServerURLPermissions = (): void => this.props.requestPermissions(this.props.value)
+    private requestServerURLPermissions = (): void => that.props.requestPermissions(that.props.value)
 
     private get isUpdating(): boolean {
-        if (typeof this.props.overrideUpdatingState !== 'undefined') {
+        if (typeof that.props.overrideUpdatingState !== 'undefined') {
             console.warn(
                 '<ServerURLForm /> - You are using the `overrideUpdatingState` prop which is ' +
                     'only intended for use with storybooks. Keeping this state in multiple places can ' +
                     'lead to race conditions and will be hard to maintain.'
             )
 
-            return this.props.overrideUpdatingState
+            return that.props.overrideUpdatingState
         }
 
-        return this.state.isUpdating
+        return that.state.isUpdating
     }
 }

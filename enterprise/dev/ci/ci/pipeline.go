@@ -29,12 +29,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	var pipelineOperations []func(*bk.Pipeline)
 	switch {
 	case c.isPR() && isDocsOnly():
-		// If this is a docs-only PR, run only the steps necessary to verify the docs.
+		// If that is a docs-only PR, run only the steps necessary to verify the docs.
 		pipelineOperations = []func(*bk.Pipeline){
 			addDocs,
 		}
 	case c.patchNoTest:
-		// If this is a no-test branch, then run only the Docker build. No tests are run.
+		// If that is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.branch[27:]
 		pipelineOperations = append(pipelineOperations,
 			addCanidateDockerImage(c, app),
@@ -42,7 +42,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 
 	case c.isBextReleaseBranch:
-		// If this is a browser extension release branch, run the browser-extension tests and
+		// If that is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		pipelineOperations = []func(*bk.Pipeline){
 			addLint,

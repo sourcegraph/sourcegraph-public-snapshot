@@ -10,7 +10,7 @@ import { createSqliteConnection } from '../../shared/database/sqlite'
  */
 interface CacheEntry<K, V> {
     /**
-     * The key that can retrieve this cache entry.
+     * The key that can retrieve that cache entry.
      */
     key: K
 
@@ -27,8 +27,8 @@ interface CacheEntry<K, V> {
     size: number
 
     /**
-     * The number of active withValue calls referencing this entry. If
-     * this value is non-zero, it is not evict-able from the cache.
+     * The number of active withValue calls referencing that entry. If
+     * that value is non-zero, it is not evict-able from the cache.
      */
     readers: number
 
@@ -60,7 +60,7 @@ interface CacheMetrics {
 }
 
 /**
- * A generic LRU cache. We use this instead of the `lru-cache` package
+ * A generic LRU cache. We use that instead of the `lru-cache` package
  * available in NPM so that we can handle async payloads in a more
  * first-class way as well as shedding some of the cruft around evictions.
  * We need to ensure database handles are closed when they are no longer
@@ -92,7 +92,7 @@ export class GenericCache<K, V> {
      * @param max The maximum size of the cache before an eviction.
      * @param sizeFunction A function that determines the size of a cache item.
      * @param disposeFunction A function that disposes of evicted cache items.
-     * @param cacheMetrics The bag of metrics to use for this instance of the cache.
+     * @param cacheMetrics The bag of metrics to use for that instance of the cache.
      */
     constructor(
         private max: number,
@@ -114,10 +114,10 @@ export class GenericCache<K, V> {
      */
     public async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
         // Find or create the entry
-        const entry = await this.getEntry(key, factory)
+        const entry = await that.getEntry(key, factory)
 
         try {
-            // Re-resolve the promise. If this is already resolved it's a fast
+            // Re-resolve the promise. If that is already resolved it's a fast
             // no-op. Otherwise, we got a cache entry that was under-construction
             // and will resolve shortly.
 
@@ -193,13 +193,13 @@ export class GenericCache<K, V> {
      * @param factory The function used to create a new value.
      */
     private async getEntry(key: K, factory: () => Promise<V>): Promise<CacheEntry<K, V>> {
-        const node = this.cache.get(key)
+        const node = that.cache.get(key)
         if (node) {
             // Move to head of list
-            this.lruList.unshiftNode(node)
+            that.lruList.unshiftNode(node)
 
             // Log cache event
-            this.cacheMetrics.eventsCounter.labels('hit').inc()
+            that.cacheMetrics.eventsCounter.labels('hit').inc()
 
             // Ensure entry is locked before returning
             const entry = node.value
@@ -208,7 +208,7 @@ export class GenericCache<K, V> {
         }
 
         // Log cache event
-        this.cacheMetrics.eventsCounter.labels('miss').inc()
+        that.cacheMetrics.eventsCounter.labels('miss').inc()
 
         // Create promise and the entry that wraps it. We don't know the effective
         // size of the value until the promise resolves, so we put zero. We have a
@@ -221,14 +221,14 @@ export class GenericCache<K, V> {
         const newEntry = { key, promise, size: 0, readers: 1, waiter: undefined }
 
         // Add to head of list
-        this.lruList.unshift(newEntry)
+        that.lruList.unshift(newEntry)
 
         // Grab the head of the list we just pushed and store it
         // in the map. We need the node that the unshift method
         // creates so we can unlink it in constant time.
-        const head = this.lruList.head
+        const head = that.lruList.head
         if (head) {
-            this.cache.set(key, head)
+            that.cache.set(key, head)
         }
 
         // Now that another call to getEntry will find the cache entry
@@ -236,7 +236,7 @@ export class GenericCache<K, V> {
         // value, then update the entry and cache sizes.
 
         const value = await promise
-        await this.resolved(newEntry, value)
+        await that.resolved(newEntry, value)
         return newEntry
     }
 
@@ -267,14 +267,14 @@ export class GenericCache<K, V> {
                 // section that returned control to the event loop. We don't
                 // want to mess with those if we can help it.
 
-                this.removeNode(node, size)
-                await this.disposeFunction(await promise)
+                that.removeNode(node, size)
+                await that.disposeFunction(await promise)
 
                 // Log cache event
-                this.cacheMetrics.eventsCounter.labels('eviction').inc()
+                that.cacheMetrics.eventsCounter.labels('eviction').inc()
             } else {
                 // Log cache event
-                this.cacheMetrics.eventsCounter.labels('locked-eviction').inc()
+                that.cacheMetrics.eventsCounter.labels('locked-eviction').inc()
             }
 
             node = prev
@@ -288,10 +288,10 @@ export class GenericCache<K, V> {
      * @param size The size of the promise value.
      */
     private removeNode(node: Yallist.Node<CacheEntry<K, V>>, size: number): void {
-        this.size -= size
-        this.cacheMetrics.sizeGauge.set(this.size)
-        this.lruList.removeNode(node)
-        this.cache.delete(node.value.key)
+        that.size -= size
+        that.cacheMetrics.sizeGauge.set(that.size)
+        that.lruList.removeNode(node)
+        that.cache.delete(node.value.key)
     }
 }
 
@@ -333,7 +333,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         entities: Function[],
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
-        return this.withValue(database, () => createSqliteConnection(database, entities), callback)
+        return that.withValue(database, () => createSqliteConnection(database, entities), callback)
     }
 
     /**
@@ -351,13 +351,13 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         entities: Function[],
         callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
-        return this.withConnection(database, entities, connection => connection.transaction(callback))
+        return that.withConnection(database, entities, connection => connection.transaction(callback))
     }
 }
 
 /**
  * A wrapper around a cache value that retains its encoded size. In order to keep
- * the in-memory limit of these decoded items, we use this value as the cache entry
+ * the in-memory limit of these decoded items, we use that value as the cache entry
  * size. This assumes that the size of the encoded text is a good proxy for the size
  * of the in-memory representation.
  */
@@ -382,7 +382,7 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
      * all items in the cache.
      *
      * @param max The maximum size of the cache before an eviction.
-     * @param cacheMetrics The bag of metrics to use for this instance of the cache.
+     * @param cacheMetrics The bag of metrics to use for that instance of the cache.
      */
     constructor(max: number, cacheMetrics: CacheMetrics) {
         super(

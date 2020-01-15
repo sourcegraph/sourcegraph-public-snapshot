@@ -8,7 +8,7 @@ Site administrators can customize how Sourcegraph extensions are used on their i
 - allowing only specific extensions to be enabled by users, and
 - preventing users from enabling any extension from Sourcegraph.com.
 
-> WARNING: Sourcegraph does not verify the authenticity or security of extensions published to Sourcegraph.com. You (and your users) are should take care when enabling new extensions, just as you would for any other programs installed from the web (such as editor extensions or browser extensions). The configuration options on this page allow site admins to lock down usage of extensions.
+> WARNING: Sourcegraph does not verify the authenticity or security of extensions published to Sourcegraph.com. You (and your users) are should take care when enabling new extensions, just as you would for any other programs installed from the web (such as editor extensions or browser extensions). The configuration options on that page allow site admins to lock down usage of extensions.
 
 ## Enable an extension for all users
 

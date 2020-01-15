@@ -10,7 +10,7 @@ interface Props extends RouteComponentProps<{}> {
 
 /**
  * A page that is shown when the Sourcegraph instance has not yet been initialized.
- * Only the person who first accesses the instance will see this.
+ * Only the person who first accesses the instance will see that.
  */
 export class SiteInitPage extends React.Component<Props> {
     public render(): JSX.Element {
@@ -25,7 +25,7 @@ export class SiteInitPage extends React.Component<Props> {
                         className="site-init-page__logo"
                         src={`${window.context.assetsRoot}/img/sourcegraph-light-head-logo.svg`}
                     />
-                    {this.props.authenticatedUser ? (
+                    {that.props.authenticatedUser ? (
                         // If there's already a user but the site is not initialized, then the we're in an
                         // unexpected state, likely because of a previous bug or because someone manually modified
                         // the site_config DB table.

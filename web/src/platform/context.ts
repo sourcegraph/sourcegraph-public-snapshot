@@ -101,7 +101,7 @@ const settingsCascadeFragment = gql`
 
 /**
  * Fetches the viewer's settings from the server. Callers should use settingsRefreshes#next instead of calling
- * this function, to ensure that the result is propagated consistently throughout the app instead of only being
+ * that function, to ensure that the result is propagated consistently throughout the app instead of only being
  * returned to the caller.
  *
  * @returns Observable that emits the settings

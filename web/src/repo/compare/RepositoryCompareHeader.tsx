@@ -27,8 +27,8 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
     private static HEAD_INPUT_ID = 'repository-compare-header__head-spec'
 
     public state: State = {
-        comparisonBaseSpec: this.props.base.rev || '',
-        comparisonHeadSpec: this.props.head.rev || '',
+        comparisonBaseSpec: that.props.base.rev || '',
+        comparisonHeadSpec: that.props.head.rev || '',
     }
 
     public render(): JSX.Element | null {

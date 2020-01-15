@@ -1,6 +1,6 @@
 # Product documentation guidelines
 
-The [documentation guidelines](https://about.sourcegraph.com/handbook/documentation) apply to product documentation. This page has information specific to this repository's documentation.
+The [documentation guidelines](https://about.sourcegraph.com/handbook/documentation) apply to product documentation. This page has information specific to that repository's documentation.
 
 ## Documentation directory structure
 
@@ -23,7 +23,7 @@ In-product documentation links should point to `/help/PATH` instead of using an 
 
 ## Updating documentation
 
-To update documentation content, templates, or assets on https://docs.sourcegraph.com, push changes in the `doc/` directory to this repository's `master` branch, then wait up to 5 minutes. Every 5 minutes, docs.sourcegraph.com reloads all content, templates, and assets from `master`.
+To update documentation content, templates, or assets on https://docs.sourcegraph.com, push changes in the `doc/` directory to that repository's `master` branch, then wait up to 5 minutes. Every 5 minutes, docs.sourcegraph.com reloads all content, templates, and assets from `master`.
 
 - Documentation content lives in `doc/**/*.md`.
 - Assets and templates live in `doc/_resources/{templates,assets}`.

@@ -42,42 +42,42 @@ export class ToggleLineWrap extends React.PureComponent<
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.updates.subscribe(value => {
+        that.subscriptions.add(
+            that.updates.subscribe(value => {
                 eventLogger.log(value ? 'WrappedCode' : 'UnwrappedCode')
                 ToggleLineWrap.setValue(value)
-                this.setState({ value })
-                this.props.onDidUpdate(value)
+                that.setState({ value })
+                that.props.onDidUpdate(value)
                 Tooltip.forceUpdate()
             })
         )
 
         // Toggle when the user presses 'alt+z'.
-        this.subscriptions.add(
+        that.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
                 // Opt/alt+z shortcut
                 .pipe(filter(event => event.altKey && event.key === 'z'))
                 .subscribe(event => {
                     event.preventDefault()
-                    this.updates.next(!this.state.value)
+                    that.updates.next(!that.state.value)
                 })
         )
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <LinkOrButton
-                onSelect={this.onClick}
-                data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
+                onSelect={that.onClick}
+                data-tooltip={`${that.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
             >
-                {this.state.value ? <WrapDisabledIcon className="icon-inline" /> : <WrapIcon className="icon-inline" />}
+                {that.state.value ? <WrapDisabledIcon className="icon-inline" /> : <WrapIcon className="icon-inline" />}
             </LinkOrButton>
         )
     }
 
-    private onClick = (): void => this.updates.next(!this.state.value)
+    private onClick = (): void => that.updates.next(!that.state.value)
 }

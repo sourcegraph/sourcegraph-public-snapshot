@@ -17,7 +17,7 @@ interface Props extends SettingsCascadeProps, RouteComponentProps<{}> {
 interface State {}
 
 /**
- * A page for viewing code discussions on this site.
+ * A page for viewing code discussions on that site.
  */
 export class DiscussionsPage extends React.PureComponent<Props, State> {
     public state: State = {}
@@ -29,11 +29,11 @@ export class DiscussionsPage extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
-        if (!isDiscussionsEnabled(this.props.settingsCascade)) {
+        if (!isDiscussionsEnabled(that.props.settingsCascade)) {
             return <ErrorNotSupportedPage />
         }
 
@@ -46,8 +46,8 @@ export class DiscussionsPage extends React.PureComponent<Props, State> {
                     repoID={undefined}
                     rev={undefined}
                     filePath="/**"
-                    history={this.props.history}
-                    location={this.props.location}
+                    history={that.props.history}
+                    location={that.props.location}
                     noun="discussion"
                     pluralNoun="discussions"
                     defaultFirst={6}

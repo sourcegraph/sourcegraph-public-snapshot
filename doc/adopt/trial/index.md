@@ -30,7 +30,7 @@ For measuring a trial, each company will be different. Common examples we find i
 
 * ### Taking Sourcegraph away, and seeing who yells
 
-    While we don't always encourage this, it can be instructive! Take Sourcegraph away for a day, and see who gets upset. Developers may feel like their superpowers were suddenly taken away.
+    While we don't always encourage that, it can be instructive! Take Sourcegraph away for a day, and see who gets upset. Developers may feel like their superpowers were suddenly taken away.
 
 What did your company use? [Tweet at us](https://twitter.com/@srcgraph), and we'll send you some Sourcegraph swag!
 
@@ -75,7 +75,7 @@ For short trials, however, companies often choose to only set up our search shor
 
 ## 5. Measure success
 
-Like step 1, this looks different for every company. If you've defined success as a 60% net promoter score (NPS), or 50%+ of your trial team using Sourcegraph every week, this is the time to measure!
+Like step 1, that looks different for every company. If you've defined success as a 60% net promoter score (NPS), or 50%+ of your trial team using Sourcegraph every week, this is the time to measure!
 
 ## Let us know!
 

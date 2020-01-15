@@ -1,6 +1,6 @@
 # TypeScript build documentation
 
-This document describes the TypeScript projects in this repository and how they are built.
+This document describes the TypeScript projects in that repository and how they are built.
 
 ## Build products
 

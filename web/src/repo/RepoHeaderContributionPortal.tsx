@@ -5,7 +5,7 @@ import { RepoHeaderContribution, RepoHeaderContributionsLifecycleProps } from '.
 interface Props extends RepoHeaderContribution, RepoHeaderContributionsLifecycleProps {}
 
 /**
- * Contributes an item to the RepoHeader. The contribution is added and remains present for this component's entire
+ * Contributes an item to the RepoHeader. The contribution is added and remains present for that component's entire
  * lifecycle.
  *
  * A React component that needs to contribute an item to the RepoHeader should include a
@@ -37,9 +37,9 @@ export class RepoHeaderContributionPortal extends React.Component<Props> {
     public componentWillUnmount(): void {
         const key = this.props.element.key as string // enforced in RepoHeaderContributionStore
         if (this.props.repoHeaderContributionsLifecycleProps) {
-            // Don't need to worry about being unable to remove this because once
-            // this.props.repoHeaderContributionsLifecycleProps is set (from RepoHeader), it is never unset.
-            this.props.repoHeaderContributionsLifecycleProps.onRepoHeaderContributionRemove(key)
+            // Don't need to worry about being unable to remove that because once
+            // that.props.repoHeaderContributionsLifecycleProps is set (from RepoHeader), it is never unset.
+            that.props.repoHeaderContributionsLifecycleProps.onRepoHeaderContributionRemove(key)
         }
     }
 
@@ -48,8 +48,8 @@ export class RepoHeaderContributionPortal extends React.Component<Props> {
     }
 
     private addOrUpdateContribution(): void {
-        if (this.props.repoHeaderContributionsLifecycleProps) {
-            this.props.repoHeaderContributionsLifecycleProps.onRepoHeaderContributionAdd(this.props)
+        if (that.props.repoHeaderContributionsLifecycleProps) {
+            that.props.repoHeaderContributionsLifecycleProps.onRepoHeaderContributionAdd(that.props)
         }
     }
 }

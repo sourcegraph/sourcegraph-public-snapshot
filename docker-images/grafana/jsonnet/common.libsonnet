@@ -24,7 +24,7 @@ local standardDashboardOptions = {
 // This mainly exists to set a lower bound of zero on panels that have
 // little or no data (an appear as a weird line through the center).
 // These values can be overridden by supplying `yaxes` in the extra
-// values to makePanel (use the return value from makeYaxes for this).
+// values to makePanel (use the return value from makeYaxes for that).
 local standardYAxisOptions = {
   format: 'short',
   label: null,

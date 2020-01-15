@@ -19,7 +19,7 @@ var (
 	re                       = lazyregexp.New(`\s?` + reOperationAndValue + `\s?`)
 )
 
-// Parse parses a search query. See the tests for examples of what this looks like.
+// Parse parses a search query. See the tests for examples of what that looks like.
 func Parse(q string) (remaining string, operations [][2]string) {
 	for _, match := range re.FindAllStringSubmatch(q, -1) {
 		for i := 0; i < len(match); i++ {

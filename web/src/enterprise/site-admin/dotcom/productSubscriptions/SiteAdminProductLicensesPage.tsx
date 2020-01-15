@@ -34,12 +34,12 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
     }
 
     public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        that.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'onDidUpdate' | 'showSubscription'> = {
-            onDidUpdate: this.onDidUpdateProductLicense,
+            onDidUpdate: that.onDidUpdateProductLicense,
             showSubscription: true,
         }
 
@@ -54,15 +54,15 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
                     className="list-group list-group-flush mt-3"
                     noun="product license"
                     pluralNoun="product licenses"
-                    queryConnection={this.queryLicenses}
+                    queryConnection={that.queryLicenses}
                     nodeComponent={SiteAdminProductLicenseNode}
                     nodeComponentProps={nodeProps}
                     emptyElement={<span className="text-muted mt-2">Enter a partial license key to find matches.</span>}
                     noSummaryIfAllNodesVisible={true}
                     autoFocus={true}
-                    updates={this.updates}
-                    history={this.props.history}
-                    location={this.props.location}
+                    updates={that.updates}
+                    history={that.props.history}
+                    location={that.props.location}
                 />
             </div>
         )
@@ -108,5 +108,5 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
               })
     }
 
-    private onDidUpdateProductLicense = (): void => this.updates.next()
+    private onDidUpdateProductLicense = (): void => that.updates.next()
 }

@@ -9,17 +9,17 @@ export class ExtensionStorageSubject<T extends keyof LocalStorageItems> extends 
     implements NextObserver<LocalStorageItems[T]>, Pick<BehaviorSubject<LocalStorageItems[T]>, 'value'> {
     constructor(private key: T, defaultValue: LocalStorageItems[T]) {
         super(subscriber => {
-            subscriber.next(this.value)
-            return observeStorageKey('local', this.key).subscribe((item = defaultValue) => {
-                this.value = item
+            subscriber.next(that.value)
+            return observeStorageKey('local', that.key).subscribe((item = defaultValue) => {
+                that.value = item
                 subscriber.next(item)
             })
         })
-        this.value = defaultValue
+        that.value = defaultValue
     }
 
     public async next(value: LocalStorageItems[T]): Promise<void> {
-        await storage.local.set({ [this.key]: value })
+        await storage.local.set({ [that.key]: value })
     }
 
     public value: LocalStorageItems[T]

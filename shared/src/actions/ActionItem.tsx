@@ -60,7 +60,7 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
     showLoadingSpinnerDuringExecution?: boolean
 
     /**
-     * Whether to show the error (if any) from executing the command inline on this component and NOT in the global
+     * Whether to show the error (if any) from executing the command inline on that component and NOT in the global
      * notifications UI component.
      *
      * This inline error display behavior is intended for actions that are scoped to a particular component. If the
@@ -73,7 +73,7 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
      */
     showInlineError?: boolean
 
-    /** Instead of showing the icon and/or title, show this element. */
+    /** Instead of showing the icon and/or title, show that element. */
     title?: JSX.Element | null
 }
 
@@ -91,17 +91,17 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            this.commandExecutions
+        that.subscriptions.add(
+            that.commandExecutions
                 .pipe(
                     mergeMap(params =>
-                        from(this.props.extensionsController.executeCommand(params, this.props.showInlineError)).pipe(
+                        from(that.props.extensionsController.executeCommand(params, that.props.showInlineError)).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
                             map(c => ({ actionOrError: c })),
                             tap(() => {
-                                if (this.props.onDidExecute) {
-                                    this.props.onDidExecute(this.props.action.id)
+                                if (that.props.onDidExecute) {
+                                    that.props.onDidExecute(that.props.action.id)
                                 }
                             }),
                             startWith<Pick<State, 'actionOrError'>>({ actionOrError: LOADING })
@@ -109,7 +109,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     )
                 )
                 .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
+                    stateUpdate => that.setState(stateUpdate),
                     error => console.error(error)
                 )
         )
@@ -248,13 +248,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         if (urlForClientCommandOpen(action, this.props.location)) {
             if (e.currentTarget.tagName === 'A' && e.currentTarget.hasAttribute('href')) {
                 // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
-                // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
-                // commands; in that case, this only ever opens the (non-alt) action.
-                if (this.props.onDidExecute) {
+                // is to open a URL). The only case where that breaks is if both the action and alt action are "open"
+                // commands; in that case, that only ever opens the (non-alt) action.
+                if (that.props.onDidExecute) {
                     // Defer calling onRun until after the URL has been opened. If we call it immediately, then in
                     // CommandList it immediately updates the (most-recent-first) ordering of the ActionItems, and
                     // the URL actually changes underneath us before the URL is opened. There is no harm to
-                    // deferring this call; onRun's documentation allows this.
+                    // deferring that call; onRun's documentation allows this.
                     const onDidExecute = this.props.onDidExecute
                     setTimeout(() => onDidExecute(action.id))
                 }
@@ -269,7 +269,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         // Do not show focus ring on element after running action.
         e.currentTarget.blur()
 
-        this.commandExecutions.next({
+        that.commandExecutions.next({
             command: action.command,
             arguments: action.commandArguments,
         })

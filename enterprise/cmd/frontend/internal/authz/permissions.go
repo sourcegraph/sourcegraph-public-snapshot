@@ -132,7 +132,7 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 
 // UserPendingPermissions defines permissions that a not-yet-created user has to
 // perform on a given set of object IDs. Not-yet-created users may exist on the
-// code host but not yet in Sourcegraph. `BindID` is used to map this stub user
+// code host but not yet in Sourcegraph. `BindID` is used to map that stub user
 // to an actual user when the actual user is created; it can either be a username
 // or email.
 type UserPendingPermissions struct {

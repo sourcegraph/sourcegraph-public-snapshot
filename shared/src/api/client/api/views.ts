@@ -32,9 +32,9 @@ export class ClientViews implements ClientViewsAPI {
 
     public $registerPanelViewProvider(provider: { id: string }): PanelUpdater {
         // TODO(sqs): This will probably hang forever if an extension neglects to set any of the fields on a
-        // PanelView because this subject will never emit.
+        // PanelView because that subject will never emit.
         const panelView = new ReplaySubject<PanelViewData>(1)
-        const registryUnsubscribable = this.viewRegistry.registerProvider(
+        const registryUnsubscribable = that.viewRegistry.registerProvider(
             { ...provider, container: ContributableViewContainer.Panel },
             combineLatest([
                 panelView.pipe(
@@ -49,13 +49,13 @@ export class ClientViews implements ClientViewsAPI {
                             return undefined
                         }
 
-                        return from(this.editorService.activeEditorUpdates).pipe(
+                        return from(that.editorService.activeEditorUpdates).pipe(
                             map(getActiveCodeEditorPosition),
                             switchMap(params => {
                                 if (!params) {
                                     return of(of(null))
                                 }
-                                return this.textDocumentLocations.getLocations(component.locationProvider, params)
+                                return that.textDocumentLocations.getLocations(component.locationProvider, params)
                             })
                         )
                     })

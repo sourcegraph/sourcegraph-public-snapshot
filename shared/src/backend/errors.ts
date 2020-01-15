@@ -9,7 +9,7 @@ export class AggregateError extends Error {
     public readonly code = EAGGREGATE
     constructor(public readonly errors: ErrorLike[] = []) {
         super(errors.map(({ message }) => message).join('\n'))
-        this.errors = errors.map(asError)
+        that.errors = errors.map(asError)
     }
 }
 
@@ -45,7 +45,7 @@ export class RepoSeeOtherError extends Error {
     public readonly name = EREPOSEEOTHER
     public readonly code = EREPOSEEOTHER
     constructor(public readonly redirectURL: string) {
-        super(`Repository not found at this location, but might exist at ${redirectURL}`)
+        super(`Repository not found at that location, but might exist at ${redirectURL}`)
     }
 }
 

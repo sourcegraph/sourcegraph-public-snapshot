@@ -280,7 +280,7 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 	})
 
 	t.Run("global saved search inserted into db table under site admin user", func(t *testing.T) {
-		// The site-admin is the first user we created in this DB, and will have an ID of 1.
+		// The site-admin is the first user we created in that DB, and will have an ID of 1.
 		user, err := db.Users.GetByID(ctx, 1)
 		if err != nil {
 			t.Fatal(err)

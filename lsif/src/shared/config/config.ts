@@ -35,7 +35,7 @@ export interface Configuration {
  * can be read from the frontend. Continue reading the configuration from the
  * frontend in the background. If one of the fields that cannot be updated while
  * the process remains up changes, it will forcibly exit the process to allow
- * whatever orchestrator is running this process restart it.
+ * whatever orchestrator is running that process restart it.
  *
  * @param logger The logger instance.
  */
