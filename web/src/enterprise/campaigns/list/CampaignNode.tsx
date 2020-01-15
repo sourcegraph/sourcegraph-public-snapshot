@@ -59,7 +59,7 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new D
                         className={classNames(
                             'text-truncate',
                             !node.description && 'text-muted',
-                            !node.description && 'text-italic'
+                            !node.description && 'font-italic'
                         )}
                         dangerousInnerHTML={
                             node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
