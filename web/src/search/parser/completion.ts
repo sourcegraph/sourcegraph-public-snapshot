@@ -28,7 +28,6 @@ export async function getCompletionItems(
     rawQuery: string,
     { members }: Pick<Sequence, 'members'>,
     { column }: Pick<Monaco.Position, 'column'>,
-    context: Monaco.languages.CompletionContext,
     fetchSuggestions: (query: string) => Observable<SearchSuggestion[]>
 ): Promise<Monaco.languages.CompletionList | null> {
     const tokenAtColumn = members.find(({ range }) => range.start + 2 <= column && range.end + 2 >= column)

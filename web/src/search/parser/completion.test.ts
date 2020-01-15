@@ -10,7 +10,6 @@ describe('getCompletionItems()', () => {
                 'a',
                 (parseSearchQuery('re') as ParseSuccess<Sequence>).token,
                 { column: 3 },
-                {} as any,
                 () => NEVER
             )
         ).toStrictEqual({
@@ -77,7 +76,6 @@ describe('getCompletionItems()', () => {
                 'a',
                 (parseSearchQuery('case:y') as ParseSuccess<Sequence>).token,
                 { column: 7 },
-                {} as any,
                 () => NEVER
             )
         ).toStrictEqual({
@@ -116,7 +114,6 @@ describe('getCompletionItems()', () => {
                 'a',
                 (parseSearchQuery('file:c') as ParseSuccess<Sequence>).token,
                 { column: 7 },
-                {} as any,
                 () =>
                     of([
                         {

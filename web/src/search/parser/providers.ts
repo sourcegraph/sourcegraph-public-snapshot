@@ -102,7 +102,7 @@ export function getProviders(
                         switchMap(({ rawQuery, parsed }) =>
                             parsed.type === 'error'
                                 ? of(null)
-                                : getCompletionItems(rawQuery, parsed.token, position, context, fetchSuggestions)
+                                : getCompletionItems(rawQuery, parsed.token, position, fetchSuggestions)
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
