@@ -80,6 +80,9 @@ export interface TextDocumentProviderIDRegistrationOptions extends TextDocumentR
 /**
  * The registry for text document location providers with a distinguishing ID (i.e., registered using
  * {@link TextDocumentProviderIDRegistrationOptions}).
+ *
+ * @template P The param type of the text document location signature provider.
+ * @template L The result type of the text document location signature provider.
  */
 export class TextDocumentLocationProviderIDRegistry<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
