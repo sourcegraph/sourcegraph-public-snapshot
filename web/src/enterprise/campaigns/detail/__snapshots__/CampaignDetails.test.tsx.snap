@@ -73,7 +73,7 @@ exports[`CampaignDetails creation form 1`] = `
     <React.Fragment>
       <button
         className="btn btn-primary"
-        disabled={true}
+        disabled={false}
         type="submit"
       >
         Create

@@ -1,8 +1,9 @@
 import React from 'react'
 import sinon from 'sinon'
-import { CampaignPlanSpecificationFields, MANUAL_CAMPAIGN_TYPE } from './CampaignPlanSpecificationFields'
+import { CampaignPlanSpecificationFields } from './CampaignPlanSpecificationFields'
 import { createRenderer } from 'react-test-renderer/shallow'
 import renderer, { act } from 'react-test-renderer'
+import { MANUAL_CAMPAIGN_TYPE } from '../presentation'
 
 jest.mock('../../../../settings/MonacoSettingsEditor', () => ({ MonacoSettingsEditor: 'MonacoSettingsEditor' }))
 

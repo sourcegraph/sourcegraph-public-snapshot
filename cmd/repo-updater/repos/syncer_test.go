@@ -410,8 +410,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				),
 				store: s,
 				stored: repos.Repos{
-					tc.repo.With(repos.Opt.RepoName("old-name")), // same external id as sourced
-					tc.repo.With(repos.Opt.RepoExternalID("")),   // same name as sourced
+					tc.repo.With(repos.Opt.RepoName("old-name")),  // same external id as sourced
+					tc.repo.With(repos.Opt.RepoExternalID("bar")), // same name as sourced
 				}.With(repos.Opt.RepoCreatedAt(clock.Time(1))),
 				now: clock.Now,
 				diff: repos.Diff{

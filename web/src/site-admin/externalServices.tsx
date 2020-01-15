@@ -16,7 +16,7 @@ import otherExternalServiceSchemaJSON from '../../../schema/other_external_servi
 import phabricatorSchemaJSON from '../../../schema/phabricator.schema.json'
 import { PhabricatorIcon } from '../../../shared/src/components/icons'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { EditorAction } from './configHelpers.js'
+import { EditorAction } from './configHelpers'
 
 /**
  * Metadata associated with adding a given external service.

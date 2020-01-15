@@ -34,19 +34,30 @@ exports[`CampaignStatus campaign errored 1`] = `
 exports[`CampaignStatus campaign plan processing 1`] = `
 <React.Fragment>
   <div
-    className="d-flex mt-3 e2e-preview-loading"
+    className="mt-3 e2e-preview-loading"
   >
-    <LoadingSpinner
-      className="icon-inline"
-    />
-     
-    <span
-      data-tooltip="Computing changesets"
+    <div
+      className="progress mb-1"
     >
+      <div
+        className="progress-bar"
+        style={
+          Object {
+            "width": "50%",
+          }
+        }
+      >
+         
+      </div>
+    </div>
+    <p>
+      Computing
+       changes:
+       
       3
        / 
       6
-    </span>
+    </p>
   </div>
   <ErrorAlert
     className="mt-3"
@@ -62,19 +73,30 @@ exports[`CampaignStatus campaign plan processing 1`] = `
 exports[`CampaignStatus campaign processing 1`] = `
 <React.Fragment>
   <div
-    className="d-flex mt-3 e2e-preview-loading"
+    className="mt-3 e2e-preview-loading"
   >
-    <LoadingSpinner
-      className="icon-inline"
-    />
-     
-    <span
-      data-tooltip="Computing changesets"
+    <div
+      className="progress mb-1"
     >
+      <div
+        className="progress-bar"
+        style={
+          Object {
+            "width": "50%",
+          }
+        }
+      >
+         
+      </div>
+    </div>
+    <p>
+      Creating
+       changes:
+       
       3
        / 
       6
-    </span>
+    </p>
   </div>
   <ErrorAlert
     className="mt-3"
