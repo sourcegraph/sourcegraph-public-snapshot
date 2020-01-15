@@ -346,8 +346,6 @@ type ExperimentalFeatures struct {
 	SplitSearchModes string `json:"splitSearchModes,omitempty"`
 	// StructuralSearch description: Enables structural search.
 	StructuralSearch string `json:"structuralSearch,omitempty"`
-	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -936,13 +934,6 @@ type SiteConfiguration struct {
 	// 1. `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686`
 	// 1. Go to http://localhost:16686 to view the Jaeger dashboard.
 	UseJaeger bool `json:"useJaeger,omitempty"`
-}
-
-// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-type TlsExternal struct {
-	// InsecureSkipVerify description: insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
-	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.
-	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`

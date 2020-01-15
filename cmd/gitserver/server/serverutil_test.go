@@ -10,12 +10,9 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestConfigureRemoteGitCommand(t *testing.T) {
+func TestConfigureGitCommand(t *testing.T) {
 	expectedEnv := []string{
 		"GIT_ASKPASS=true",
 		"GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30",
@@ -46,7 +43,7 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(strings.Join(test.input.Args, " "), func(t *testing.T) {
-			configureRemoteGitCommand(test.input, nil)
+			configureGitCommand(test.input)
 			if !reflect.DeepEqual(test.input.Env, test.expectedEnv) {
 				t.Errorf("\ngot:  %s\nwant: %s\n", test.input.Env, test.expectedEnv)
 			}
@@ -54,39 +51,6 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 				t.Errorf("\ngot:  %s\nwant: %s\n", test.input.Args, test.expectedArgs)
 			}
 		})
-	}
-}
-
-func TestConfigureRemoteGitCommand_tls(t *testing.T) {
-	baseEnv := []string{
-		"GIT_ASKPASS=true",
-		"GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30",
-	}
-
-	cases := []struct {
-		conf *schema.TlsExternal
-		want []string
-	}{{
-		conf: nil,
-		want: nil,
-	}, {
-		conf: &schema.TlsExternal{},
-		want: nil,
-	}, {
-		conf: &schema.TlsExternal{
-			InsecureSkipVerify: true,
-		},
-		want: []string{
-			"GIT_SSL_NO_VERIFY=true",
-		},
-	}}
-	for _, tc := range cases {
-		cmd := exec.Command("git", "clone")
-		configureRemoteGitCommand(cmd, tc.conf)
-		want := append(baseEnv, tc.want...)
-		if !reflect.DeepEqual(cmd.Env, want) {
-			t.Errorf("mismatch for %#+v (-want +got):\n%s", tc.conf, cmp.Diff(want, cmd.Env))
-		}
 	}
 }
 
