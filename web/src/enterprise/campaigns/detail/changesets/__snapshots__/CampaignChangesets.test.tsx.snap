@@ -53,6 +53,7 @@ exports[`CampaignChangesets renders 1`] = `
     nodeComponentProps={
       Object {
         "campaignUpdates": undefined,
+        "enablePublishing": undefined,
         "history": Object {
           "action": "POP",
           "block": [Function],

@@ -93,7 +93,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <Link to={node.repository.url} className="text-muted" target="_blank" rel="noopener noreferrer">
                         {node.repository.name}
                     </Link>{' '}
-                    {node.__typename === 'ChangesetPlan' && enablePublishing && <span className="badge badge-light">Draft</span>}
+                    {node.__typename === 'ChangesetPlan' && enablePublishing && (
+                        <span className="badge badge-light">Draft</span>
+                    )}
                     <span className="mx-1"></span>{' '}
                     {node.__typename === 'ExternalChangeset' && (
                         <>

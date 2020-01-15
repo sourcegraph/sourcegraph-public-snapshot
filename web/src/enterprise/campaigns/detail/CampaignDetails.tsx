@@ -236,14 +236,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setMode('saving')
         try {
             const createdCampaign = await createCampaign({
-                    name,
-                    description,
-                    namespace: authenticatedUser.id,
-                    plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
-                    draft: true,
-                })
-                unblockHistoryRef.current()
-                history.push(`/campaigns/${createdCampaign.id}`)
+                name,
+                description,
+                namespace: authenticatedUser.id,
+                plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
+                draft: true,
+            })
+            unblockHistoryRef.current()
+            history.push(`/campaigns/${createdCampaign.id}`)
             setMode('viewing')
             setAlertError(undefined)
         } catch (err) {
@@ -497,23 +497,23 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     <>
                         {campaignPlanSpec !== undefined && campaignPlanSpec.type !== MANUAL_CAMPAIGN_TYPE && (
                             <>
-                            <button
-                                type="button"
-                                className="btn btn-primary mr-1 e2e-preview-campaign"
-                                disabled={!previewRefreshNeeded}
-                                onClick={() => nextPreviewCampaignPlan(campaignPlanSpec)}
-                            >
-                                {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
-                                Preview changes
-                            </button>
-                        <button
-                            type="button"
-                            className="btn btn-secondary mr-1"
-                            disabled={previewRefreshNeeded || mode !== 'editing'}
-                            onClick={onDraft}
-                        >
-                            Create draft
-                        </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary mr-1 e2e-preview-campaign"
+                                    disabled={!previewRefreshNeeded}
+                                    onClick={() => nextPreviewCampaignPlan(campaignPlanSpec)}
+                                >
+                                    {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
+                                    Preview changes
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary mr-1"
+                                    disabled={previewRefreshNeeded || mode !== 'editing'}
+                                    onClick={onDraft}
+                                >
+                                    Create draft
+                                </button>
                             </>
                         )}
                         <button
@@ -527,7 +527,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
             </Form>
 
-            {campaign?.status && <CampaignStatus campaign={campaign} status={campaign.status} onPublish={() => undefined} onRetry={onRetry} />}
+            {campaign?.status && (
+                <CampaignStatus
+                    campaign={campaign}
+                    status={campaign.status}
+                    onPublish={() => undefined}
+                    onRetry={onRetry}
+                />
+            )}
 
             {campaign && campaign.__typename === 'Campaign' && (
                 <>

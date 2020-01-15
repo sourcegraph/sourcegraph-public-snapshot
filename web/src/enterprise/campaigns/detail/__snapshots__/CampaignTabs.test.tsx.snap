@@ -37,7 +37,9 @@ exports[`CampaignTabs renders 1`] = `
            
           <span
             className="badge badge-secondary badge-pill"
-          />
+          >
+            0
+          </span>
         </span>,
       },
     ]
@@ -45,6 +47,7 @@ exports[`CampaignTabs renders 1`] = `
 >
   <CampaignChangesets
     className="mt-3"
+    enablePublishing={false}
     history={
       Object {
         "action": "POP",

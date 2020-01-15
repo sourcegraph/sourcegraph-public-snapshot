@@ -17,7 +17,8 @@ describe('CampaignTabs', () => {
                     campaign={
                         {
                             id: '0',
-                            changesets: { nodes: [] as GQL.IExternalChangeset[] } as GQL.IExternalChangesetConnection,
+                            changesets: { nodes: [] as GQL.IExternalChangeset[], totalCount: 0, } as GQL.IExternalChangesetConnection,
+                            changesetPlans: { nodes: [] as GQL.IChangesetPlan[], totalCount: 0 } as GQL.IChangesetPlanConnection,
                         } as GQL.ICampaign
                     }
                     persistLines={true}
