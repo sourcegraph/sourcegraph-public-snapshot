@@ -276,7 +276,6 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 		ExternalRepo: github.ExternalRepoSpec(r, *s.baseURL),
 		Description:  r.Description,
 		Fork:         r.IsFork,
-		Enabled:      true,
 		Archived:     r.IsArchived,
 		Sources: map[string]*SourceInfo{
 			urn: {

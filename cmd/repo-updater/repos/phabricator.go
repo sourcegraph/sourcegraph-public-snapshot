@@ -143,7 +143,6 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
 			ServiceType: "phabricator",
 			ServiceID:   serviceID,
 		},
-		Enabled: true,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
