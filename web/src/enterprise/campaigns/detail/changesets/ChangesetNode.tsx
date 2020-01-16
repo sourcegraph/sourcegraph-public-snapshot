@@ -97,7 +97,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                         {node.repository.name}
                     </Link>{' '}
                     {node.__typename === 'ChangesetPlan' && enablePublishing && (
-                        <span className="badge badge-light">Draft</span>
+                        <span className="badge badge-light">{node.publicationEnqueued ? 'Publishing' : 'Draft'}</span>
                     )}
                     <span className="mx-1"></span>{' '}
                     {node.__typename === 'ExternalChangeset' && (
@@ -131,10 +131,10 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             )}
             {enablePublishing && node.__typename === 'ChangesetPlan' && !node.publicationEnqueued && (
                 <>
-                    {publishError && <ErrorIcon data-tooltip={publishError.message} />}
+                    {publishError && <ErrorIcon data-tooltip={publishError.message} className="ml-2" />}
                     <button
                         type="button"
-                        className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary"
+                        className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
                         disabled={isLoading}
                         onClick={publishChangeset}
                     >

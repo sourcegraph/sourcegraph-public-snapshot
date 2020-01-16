@@ -8,7 +8,9 @@ import InformationIcon from 'mdi-react/InformationIcon'
 import { parseISO, isBefore, addMinutes } from 'date-fns'
 
 interface Props {
-    campaign: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt'> | Pick<GQL.ICampaignPlan, '__typename'>
+    campaign:
+        | Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt' | 'changesets'>
+        | Pick<GQL.ICampaignPlan, '__typename'>
 
     /** The campaign status. */
     status: Omit<GQL.IBackgroundProcessStatus, '__typename'>
@@ -50,7 +52,11 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
             {campaign.__typename === 'Campaign' && !campaign.closedAt && !campaign.publishedAt && (
                 <>
                     <div className="d-flex my-3">
-                        <InformationIcon className="icon-inline text-info mr-1" /> Campaign is drafted
+                        <InformationIcon className="icon-inline text-info mr-1" /> Campaign is a draft.{' '}
+                        {campaign.changesets.totalCount === 0
+                            ? 'No changesets have'
+                            : 'Only a subset of changesets has'}{' '}
+                        been created on code hosts yet.
                     </div>
                     <button type="button" className="mb-3 btn btn-primary" onClick={onPublish}>
                         Publish campaign

@@ -583,7 +583,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             isLightTheme={isLightTheme}
                         />
                     ) : (
-                        <p className="mt-3 text-muted">No changesets</p>
+                        campaign.status.state !== GQL.BackgroundProcessState.PROCESSING && (
+                            <p className="mt-3 text-muted">No changesets</p>
+                        )
                     )}
                 </>
             )}

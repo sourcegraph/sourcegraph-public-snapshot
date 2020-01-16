@@ -205,6 +205,10 @@ Array [
           "username": "alice",
         },
         "changesetCountsOverTime": Array [],
+        "changesetPlans": Object {
+          "nodes": Array [],
+          "totalCount": 2,
+        },
         "changesets": Object {
           "nodes": Array [],
           "totalCount": 2,
@@ -10771,6 +10775,10 @@ Array [
           "username": "alice",
         },
         "changesetCountsOverTime": Array [],
+        "changesetPlans": Object {
+          "nodes": Array [],
+          "totalCount": 2,
+        },
         "changesets": Object {
           "nodes": Array [],
           "totalCount": 2,
