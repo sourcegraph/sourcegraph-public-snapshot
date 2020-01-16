@@ -263,7 +263,7 @@ func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, git
 			default:
 				didRun, err := s.ProcessPendingChangesetJobs(context.Background(), process)
 				if err != nil {
-					log15.Error("Running campaign job", "err", err)
+					log15.Error("Running changeset job", "err", err)
 				}
 				// Back off on error or when no jobs available
 				if err != nil || !didRun {
