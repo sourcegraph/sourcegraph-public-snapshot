@@ -302,7 +302,7 @@ export class Driver {
                 await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
 
                 if (slug.toLowerCase() === 'github.com/sourcegraphtest/alwayscloningtest') {
-                    continue;
+                    continue
                 }
 
                 // We wait for the revision element to show up, which only shows
