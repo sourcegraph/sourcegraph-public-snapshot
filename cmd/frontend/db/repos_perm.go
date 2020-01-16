@@ -99,7 +99,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	cfg := conf.Get().SiteConfiguration
 	if cfg.PermissionsUserMapping != nil && cfg.PermissionsUserMapping.Enabled {
 		if len(authzProviders) > 0 {
-			return nil, errors.New("The permissions user mapping (`permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it in the site configuration.")
+			return nil, errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
 		}
 
 		return Authz.AuthorizedRepos(ctx, &AuthorizedReposArgs{
