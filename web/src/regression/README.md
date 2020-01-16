@@ -33,7 +33,7 @@ Prerequisites:
 Run the tests:
 
 1. From the repository root directory, `cd` into the `web/` directory.
-1. Run `yarn run test-regression`. This will fail with an error indicating environment variables
+1. Run `yarn run test:regression`. This will fail with an error indicating environment variables
    need to be set. The required set of env vars varies with each test suite, so you can set the
    union of all the env vars or just the ones for the test cases you wish to run. Set these in your
    `.envrc` file and run `direnv allow`. (There are also optional environment variables. You can
