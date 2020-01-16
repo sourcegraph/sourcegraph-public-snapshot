@@ -30,29 +30,33 @@ func TestCacheControlTransport(t *testing.T) {
 		return !(r.URL.String() == url3)
 	})
 
-	// Cache-control round-tripper
-	ccTransport.RoundTrip(getReq)
-	if cc := recorder.req.Header.Get("Cache-Control"); cc != "max-age=0" {
+	cacheControl := func(r *http.Request) string {
+		t.Helper()
+
+		// Cache-control round-tripper
+		if _, err := ccTransport.RoundTrip(r); err != nil {
+			t.Fatal(err)
+		}
+		return recorder.req.Header.Get("Cache-Control")
+	}
+
+	if cc := cacheControl(getReq); cc != "max-age=0" {
 		t.Errorf("expected cache control header on GET, but got none")
 	}
 
-	ccTransport.RoundTrip(getReq)
-	if cc := recorder.req.Header.Get("Cache-Control"); cc != "" {
+	if cc := cacheControl(getReq); cc != "" {
 		t.Errorf("expected no cache control header on 2nd GET, but got %s", cc)
 	}
 
-	ccTransport.RoundTrip(getReq2)
-	if cc := recorder.req.Header.Get("Cache-Control"); cc != "max-age=0" {
+	if cc := cacheControl(getReq2); cc != "max-age=0" {
 		t.Errorf("expected cache control header on GET to new URL, but got none")
 	}
 
-	ccTransport.RoundTrip(getReq3)
-	if cc := recorder.req.Header.Get("Cache-Control"); cc != "" {
+	if cc := cacheControl(getReq3); cc != "" {
 		t.Errorf("expected no cache control header on GET to long-lived URL, but got %s", cc)
 	}
 
-	ccTransport.RoundTrip(postReq)
-	if cc := recorder.req.Header.Get("Cache-Control"); cc != "" {
+	if cc := cacheControl(postReq); cc != "" {
 		t.Errorf("expected no cache control header on POST, but got %s", cc)
 	}
 
