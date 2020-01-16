@@ -103,7 +103,7 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.Users.Count failed", "error", err)
 	}
 	q.Set("totalUsers", strconv.Itoa(totalUsers))
-	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{Enabled: true, Disabled: true})
+	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{})
 	hasRepos := totalRepos > 0
 	if err != nil {
 		logFunc("db.Repos.Count failed", "error", err)

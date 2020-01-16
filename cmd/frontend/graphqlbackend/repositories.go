@@ -25,8 +25,6 @@ func (r *schemaResolver) Repositories(args *struct {
 	graphqlutil.ConnectionArgs
 	Query           *string
 	Names           *[]string
-	Enabled         bool // deprecated
-	Disabled        bool // deprecated
 	Cloned          bool
 	CloneInProgress bool
 	NotCloned       bool
@@ -35,14 +33,7 @@ func (r *schemaResolver) Repositories(args *struct {
 	OrderBy         string
 	Descending      bool
 }) (*repositoryConnectionResolver, error) {
-	// New call sites don't specify Enable and Disable. Assume if disabled
-	// isn't specified we want Enabled since all repos are enabled.
-	if !args.Disabled {
-		args.Enabled = true
-	}
-
 	opt := db.ReposListOptions{
-		Enabled: args.Enabled,
 		OrderBy: db.RepoListOrderBy{{
 			Field:      toDBRepoListColumn(args.OrderBy),
 			Descending: args.Descending,

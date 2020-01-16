@@ -1170,14 +1170,6 @@ type Query {
         query: String
         # Return repositories whose names are in the list.
         names: [String!]
-        # Include enabled repositories.
-        #
-        # DEPRECATED: All repositories are enabled. Will be removed in 3.6.
-        enabled: Boolean = true
-        # Include disabled repositories.
-        #
-        # DEPRECATED: No repositories are disabled. Will be removed in 3.6.
-        disabled: Boolean = false
         # Include cloned repositories.
         cloned: Boolean = true
         # Include repositories that are currently being cloned.
@@ -1768,13 +1760,6 @@ type Repository implements Node & GenericSearchResultInterface {
     description: String!
     # The primary programming language in the repository.
     language: String!
-    # DEPRECATED: All repositories are enabled. This field will be removed in 3.6.
-    #
-    # Whether the repository is enabled. A disabled repository should only be accessible to site admins.
-    #
-    # NOTE: Disabling a repository does not provide any additional security. This field is merely a
-    # guideline to UI implementations.
-    enabled: Boolean! @deprecated(reason: "Always true. All repositories are enabled.")
     # DEPRECATED: This field is unused in known clients.
     #
     # The date when this repository was created on Sourcegraph.
