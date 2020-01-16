@@ -49,8 +49,9 @@ async function testLogin(
     )
     await login(driver, { sourcegraphBaseUrl, authProviderDisplayName: authProvider.displayName }, loginToAuthProvider)
 
-    await (await driver.page.waitForSelector('.e2e-user-nav-item-toggle')).click()
-    await (await driver.findElementWithText('Sign out', { wait: { timeout: 2000 } })).click()
+    await driver.page.waitForSelector('.e2e-user-nav-item-toggle')
+    await driver.page.click('.e2e-user-nav-item-toggle')
+    await driver.findElementWithText('Sign out', { action: 'click', wait: { timeout: 2000 } })
     await driver.findElementWithText('Signed out of Sourcegraph', { wait: { timeout: 2000 } })
     await driver.page.goto(sourcegraphBaseUrl)
     await driver.findElementWithText('Sign in', { wait: { timeout: 5000 } })

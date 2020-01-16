@@ -7,7 +7,7 @@ import { GraphQLClient } from './util/GraphQLClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
-import { ensureLoggedInOrCreateTestUser, clickAndWaitForNavigation } from './util/helpers'
+import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { editUserSettings } from './util/settings'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { ensureTestExternalService } from './util/api'
@@ -115,7 +115,7 @@ describe('Sourcegraph extensions regression test suite', () => {
             expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(0)
 
             // Wait for the "Coverage: X%" button to appear and click it
-            await (await driver.findElementWithText('Coverage: 80%', { wait: true })).click()
+            await driver.findElementWithText('Coverage: 80%', { action: 'click', wait: true })
 
             // Lines should get decorated, but without line/hit branch counts
             await retry(async () => expect(await driver.page.$$('tr[style]')).toHaveLength(264))
@@ -123,17 +123,17 @@ describe('Sourcegraph extensions regression test suite', () => {
 
             // Open the command palette and click "Show line/hit branch counts"
             await driver.page.click('.command-list-popover-button')
-            await (await driver.findElementWithText('Codecov: Show line hit/branch counts')).click()
+            await driver.findElementWithText('Codecov: Show line hit/branch counts', { action: 'click' })
 
             // Line/hit branch counts should now show up
             await retry(async () => expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(264))
 
             // Check that the the "View commit report" button links to the correct location
             await driver.page.click('.command-list-popover-button')
-            await clickAndWaitForNavigation(
-                await driver.findElementWithText('Codecov: View commit report'),
-                driver.page
-            )
+            await Promise.all([
+                driver.page.waitForNavigation(),
+                driver.findElementWithText('Codecov: View commit report', { action: 'click' }),
+            ])
             expect(driver.page.url()).toEqual(
                 'https://codecov.io/gh/theupdateframework/notary/commit/62258bc0beb3bdc41de1e927a57acaee06bebe4b'
             )
