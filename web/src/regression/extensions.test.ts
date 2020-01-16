@@ -130,9 +130,10 @@ describe('Sourcegraph extensions regression test suite', () => {
 
             // Check that the the "View commit report" button links to the correct location
             await driver.page.click('.command-list-popover-button')
-            await Promise.all(
-                [driver.page.waitForNavigation(), driver.findElementWithText('Codecov: View commit report', { action: 'click' })]
-            )
+            await Promise.all([
+                driver.page.waitForNavigation(),
+                driver.findElementWithText('Codecov: View commit report', { action: 'click' }),
+            ])
             expect(driver.page.url()).toEqual(
                 'https://codecov.io/gh/theupdateframework/notary/commit/62258bc0beb3bdc41de1e927a57acaee06bebe4b'
             )

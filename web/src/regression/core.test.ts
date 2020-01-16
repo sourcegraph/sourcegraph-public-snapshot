@@ -107,7 +107,7 @@ describe('Core functionality regression test suite', () => {
             selectMethod: 'keyboard',
             enterTextMethod: 'type',
         })
-        await driver.findElementWithText('Save changes', { action: 'click'})
+        await driver.findElementWithText('Save changes', { action: 'click' })
         await driver.page.waitForFunction(
             () => document.evaluate("//*[text() = ' Saving...']", document).iterateNext() === null
         )

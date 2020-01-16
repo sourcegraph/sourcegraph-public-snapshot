@@ -21,7 +21,6 @@ import { Config } from '../../../../shared/src/e2e/config'
 import { ResourceDestructor } from './TestResourceManager'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
-import * as puppeteer from 'puppeteer'
 import {
     GitHubAuthProvider,
     GitLabAuthProvider,
