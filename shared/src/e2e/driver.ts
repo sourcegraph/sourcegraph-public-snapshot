@@ -300,6 +300,16 @@ export class Driver {
                 await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
                 await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
+
+                if (slug.toLowerCase().includes('alwayscloningtest')) {
+                    continue;
+                }
+
+                // We wait for the revision element to show up, which only shows
+                // up when the repository has been cloned.
+                await retry(async () => {
+                    await this.page.waitForSelector('.e2e-revision', { visible: true })
+                })
             }
         }
     }
