@@ -733,7 +733,6 @@ describe('e2e test suite', () => {
                     repoPath: '/github.com/sourcegraph/java-langserver@03efbe9558acc532e88f5288b4e6cfa155c6f2dc',
                     filePath: '/tree/src/main/java/com/sourcegraph/common',
                     symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java#L14:20-14:26',
-                    skip: true,
                 },
                 {
                     name:
@@ -741,20 +740,17 @@ describe('e2e test suite', () => {
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/examples',
                     symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go#L26:6-26:10',
-                    skip: true,
                 },
                 {
                     name: 'displays valid symbols at different file depths for Go (./sqltrace/sql.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/sqltrace',
                     symbolPath: '/blob/sqltrace/sql.go#L14:2-14:5',
-                    skip: true,
                 },
             ]
 
             for (const navigationTest of navigateToSymbolTests) {
-                const testFunc = navigationTest.skip ? test.skip : test
-                testFunc(navigationTest.name, async () => {
+                test(navigationTest.name, async () => {
                     const repoBaseURL = sourcegraphBaseUrl + navigationTest.repoPath + '/-'
 
                     await driver.page.goto(repoBaseURL + navigationTest.filePath)
@@ -1562,7 +1558,7 @@ describe('e2e test suite', () => {
             expect(generatedChangesetCount).toEqual(changesetCount)
             await percySnapshot(driver.page, snapshotName + ' changesets tab')
         }
-        test.skip('Create campaign preview for comby campaign type', async () => {
+        test('Create campaign preview for comby campaign type', async () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
                     matchTemplate: 'file',
@@ -1575,7 +1571,7 @@ describe('e2e test suite', () => {
                 campaignType: 'comby',
             })
         })
-        test.skip('Create campaign preview for credentials campaign type', async () => {
+        test('Create campaign preview for credentials campaign type', async () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
                     matchers: [{ type: 'npm' }],
