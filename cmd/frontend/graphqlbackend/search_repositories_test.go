@@ -63,6 +63,18 @@ func TestSearchRepositories(t *testing.T) {
 		name: "repohasfile",
 		q:    "foo type:repo repohasfile:f.go",
 		want: []string{"foo/one"},
+	}, {
+		name: "case yes match",
+		q:    "foo case:yes",
+		want: []string{"foo/no-match", "foo/one"},
+	}, {
+		name: "case no match",
+		q:    "Foo case:no",
+		want: []string{"foo/no-match", "foo/one"},
+	}, {
+		name: "case exclude all",
+		q:    "Foo case:yes",
+		want: []string{},
 	}}
 
 	for _, tc := range cases {
