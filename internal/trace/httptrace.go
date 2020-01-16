@@ -31,9 +31,16 @@ const (
 	userKey
 	requestErrorCauseKey
 	graphQLRequestNameKey
+	originKey
 )
 
-var metricLabels = []string{"route", "method", "code", "repo"}
+// trackOrigin specifies a URL value. When an incoming request has the request header "Origin" set
+// and the header value equals the `trackOrigin` value then the `requestDuration` metric (and other metrics downstream)
+// gets labeled with this value for the "origin" label  (otherwise the metric is labeled with "unknown").
+// The tracked value can be changed with the METRICS_TRACK_ORIGIN environmental variable.
+var trackOrigin = "https://gitlab.com"
+
+var metricLabels = []string{"route", "method", "code", "repo", "origin"}
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
 	Subsystem: "http",
@@ -52,6 +59,10 @@ var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 func init() {
 	if err := raven.SetDSN(os.Getenv("SENTRY_DSN_BACKEND")); err != nil {
 		log15.Error("sentry.dsn", "error", err)
+	}
+
+	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
+		trackOrigin = origin
 	}
 
 	raven.SetRelease(version.Version())
@@ -94,6 +105,21 @@ func GraphQLRequestName(ctx context.Context) string {
 // WithGraphQLRequestName sets the GraphQL request name in the context.
 func WithGraphQLRequestName(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, graphQLRequestNameKey, name)
+}
+
+// RequestOrigin returns the request origin (the value of the request header "Origin") for a request context.
+// If the request didn't have this header set "unknown" is returned.
+func RequestOrigin(ctx context.Context) string {
+	v := ctx.Value(originKey)
+	if v == nil {
+		return "unknown"
+	}
+	return v.(string)
+}
+
+// WithRequestOrigin sets the request origin in the context.
+func WithRequestOrigin(ctx context.Context, name string) context.Context {
+	return context.WithValue(ctx, originKey, name)
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.
@@ -145,11 +171,18 @@ func Middleware(next http.Handler) http.Handler {
 		span.SetTag("Route", routeName)
 		ext.HTTPStatusCode.Set(span, uint16(m.Code))
 
+		origin := "unknown"
+		if r.Header.Get("Origin") == trackOrigin {
+			origin = trackOrigin
+		}
+		ctx = WithRequestOrigin(ctx, origin)
+
 		labels := prometheus.Labels{
 			"route":  routeName,
 			"method": strings.ToLower(r.Method),
 			"code":   strconv.Itoa(m.Code),
 			"repo":   repotrackutil.GetTrackedRepo(api.RepoName(r.URL.Path)),
+			"origin": origin,
 		}
 		requestDuration.With(labels).Observe(m.Duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
