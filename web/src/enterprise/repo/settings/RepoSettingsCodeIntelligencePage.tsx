@@ -7,6 +7,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { Collapsible } from '../../../components/Collapsible'
+import { fetchLsifUploads } from './backend'
 import { Toggle } from '../../../../../shared/src/components/Toggle'
 
 interface HideIncompleteLSIFUploadsToggleProps {
