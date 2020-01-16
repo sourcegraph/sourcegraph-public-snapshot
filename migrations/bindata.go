@@ -64,6 +64,8 @@
 // 1528395634_lsif_unify_dumps_and_uploads.up.sql (2.607kB)
 // 1528395635_check_campaign_name_not_blank.down.sql (81B)
 // 1528395635_check_campaign_name_not_blank.up.sql (189B)
+// 1528395636_add_published_at_to_changeset_jobs.down.sql (80B)
+// 1528395636_add_published_at_to_changeset_jobs.up.sql (81B)
 
 package migrations
 
@@ -1412,6 +1414,46 @@ func _1528395635_check_campaign_name_not_blankUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395636_add_published_at_to_changeset_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\xcf\xca\x4f\x2a\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x28\x4d\xca\xc9\x2c\xce\x48\x4d\x89\x4f\x2c\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xcb\x01\x9f\x51\x50\x00\x00\x00")
+
+func _1528395636_add_published_at_to_changeset_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395636_add_published_at_to_changeset_jobsDownSql,
+		"1528395636_add_published_at_to_changeset_jobs.down.sql",
+	)
+}
+
+func _1528395636_add_published_at_to_changeset_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395636_add_published_at_to_changeset_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395636_add_published_at_to_changeset_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x69, 0x4e, 0x1, 0x24, 0xcf, 0x1a, 0x32, 0x3f, 0x2e, 0xb5, 0x62, 0x47, 0x70, 0xc5, 0x97, 0x23, 0x9c, 0x7, 0xd1, 0xa5, 0xad, 0x8e, 0xef, 0xd9, 0x54, 0x32, 0x36, 0xbf, 0xbe, 0xfd, 0x1f, 0x1d}}
+	return a, nil
+}
+
+var __1528395636_add_published_at_to_changeset_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\xcf\xca\x4f\x2a\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x28\x4d\xca\xc9\x2c\xce\x48\x4d\x89\x4f\x2c\x51\x28\xc9\xcc\x4d\x2d\x2e\x49\xcc\x2d\x28\xa9\xb2\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x86\xae\x59\x0b\x51\x00\x00\x00")
+
+func _1528395636_add_published_at_to_changeset_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395636_add_published_at_to_changeset_jobsUpSql,
+		"1528395636_add_published_at_to_changeset_jobs.up.sql",
+	)
+}
+
+func _1528395636_add_published_at_to_changeset_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395636_add_published_at_to_changeset_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395636_add_published_at_to_changeset_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x78, 0xd5, 0xc6, 0x78, 0x4f, 0x88, 0xb3, 0x8a, 0x2c, 0xe1, 0xc0, 0x53, 0x17, 0xa3, 0xc3, 0xc4, 0x7b, 0xc0, 0x66, 0xf4, 0x86, 0x40, 0xf6, 0xa7, 0x21, 0xdf, 0xa, 0xb2, 0xb4, 0xb3, 0xb2, 0x67}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1567,6 +1609,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395634_lsif_unify_dumps_and_uploads.up.sql":                     _1528395634_lsif_unify_dumps_and_uploadsUpSql,
 	"1528395635_check_campaign_name_not_blank.down.sql":                  _1528395635_check_campaign_name_not_blankDownSql,
 	"1528395635_check_campaign_name_not_blank.up.sql":                    _1528395635_check_campaign_name_not_blankUpSql,
+	"1528395636_add_published_at_to_changeset_jobs.down.sql":             _1528395636_add_published_at_to_changeset_jobsDownSql,
+	"1528395636_add_published_at_to_changeset_jobs.up.sql":               _1528395636_add_published_at_to_changeset_jobsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1674,6 +1718,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395634_lsif_unify_dumps_and_uploads.up.sql":                     {_1528395634_lsif_unify_dumps_and_uploadsUpSql, map[string]*bintree{}},
 	"1528395635_check_campaign_name_not_blank.down.sql":                  {_1528395635_check_campaign_name_not_blankDownSql, map[string]*bintree{}},
 	"1528395635_check_campaign_name_not_blank.up.sql":                    {_1528395635_check_campaign_name_not_blankUpSql, map[string]*bintree{}},
+	"1528395636_add_published_at_to_changeset_jobs.down.sql":             {_1528395636_add_published_at_to_changeset_jobsDownSql, map[string]*bintree{}},
+	"1528395636_add_published_at_to_changeset_jobs.up.sql":               {_1528395636_add_published_at_to_changeset_jobsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

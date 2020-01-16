@@ -234,7 +234,7 @@ type CampaignResolver interface {
 	Plan(ctx context.Context) (CampaignPlanResolver, error)
 	Status(context.Context) (BackgroundProcessStatus, error)
 	ClosedAt() *DateTime
-	PublishedAt() *DateTime
+	PublishedAt(ctx context.Context) (*DateTime, error)
 	ChangesetPlans(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
 }
 
@@ -280,6 +280,7 @@ type ChangesetPlanResolver interface {
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() ChangesetPlanResolver
 	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
+	PublicationEnqueued(ctx context.Context) (bool, error)
 }
 
 type ChangesetEventsConnectionResolver interface {

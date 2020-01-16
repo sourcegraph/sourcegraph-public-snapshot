@@ -215,6 +215,8 @@ type ChangesetJob struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	PublishedAt time.Time
 }
 
 // Clone returns a clone of a ChangesetJob.
