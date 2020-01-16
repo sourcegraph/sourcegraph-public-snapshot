@@ -325,3 +325,67 @@ func TestUserEmails_GetVerifiedEmails(t *testing.T) {
 		t.Errorf("got %s, but want %q", emails[0].Email, "alice@example.com")
 	}
 }
+
+func TestUserEmails_VerifyAndGrantPendingPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	opts := NewUser{
+		Email:                 "foo@bar.com",
+		Username:              "foo",
+		DisplayName:           "foo",
+		Password:              "right-password",
+		EmailVerificationCode: "email-code",
+	}
+	user, err := Users.Create(ctx, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Must mock after call of Users.Create because that method has a call to the Authz.GrantPendingPermissions as well.
+	Authz = &mockAuthzStore{}
+	defer func() {
+		Authz = &authzStore{}
+	}()
+
+	tests := []struct {
+		name         string
+		code         string
+		isValid      bool
+		expectCalled bool
+	}{
+		{
+			name:         "not called when fail to verify the email",
+			code:         "wrong_email-code",
+			isValid:      false,
+			expectCalled: false,
+		},
+		{
+			name:         "called when successfully verified the email",
+			code:         "email-code",
+			isValid:      true,
+			expectCalled: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			calledGrantPendingPermissions := false
+			Mocks.Authz.GrantPendingPermissions = func(_ context.Context, _ *GrantPendingPermissionsArgs) error {
+				calledGrantPendingPermissions = true
+				return nil
+			}
+
+			isValid, err := UserEmails.Verify(ctx, user.ID, opts.Email, test.code)
+			if err != nil {
+				t.Fatal(err)
+			} else if test.isValid != isValid {
+				t.Fatalf("isValid: want %v but got %v", test.isValid, isValid)
+			} else if test.expectCalled != calledGrantPendingPermissions {
+				t.Fatalf("calledGrantPendingPermissions: want %v but got %v", test.expectCalled, calledGrantPendingPermissions)
+			}
+		})
+	}
+}
