@@ -697,6 +697,16 @@ type ChangesetPlan {
 
     # The diff of the changeset.
     diff: PreviewRepositoryComparison!
+
+    # Whether the ChangesetPlan is enqueued for publication. Default is false.
+    # It will be true when:
+    # - a Campaign has been created with the CampaignPlan to which this
+    # ChangesetPlan belongs
+    # - when a Campaign with the CampaignPlan has been published after being in
+    # draft mode
+    # - when the ChangesetPlan has been individually published through the
+    # publishChangeset mutation
+    publicationEnqueued: Boolean!
 }
 
 # A changeset in a code host (e.g. a PR on Github)

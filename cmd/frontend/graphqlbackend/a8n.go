@@ -280,6 +280,7 @@ type ChangesetPlanResolver interface {
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() ChangesetPlanResolver
 	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
+	PublicationEnqueued(ctx context.Context) (bool, error)
 }
 
 type ChangesetEventsConnectionResolver interface {

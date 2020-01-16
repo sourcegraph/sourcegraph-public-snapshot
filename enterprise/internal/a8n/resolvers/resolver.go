@@ -93,7 +93,7 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, err
 	}
 
-	return &campaignJobResolver{job: job}, nil
+	return &campaignJobResolver{store: r.store, job: job}, nil
 }
 
 func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
