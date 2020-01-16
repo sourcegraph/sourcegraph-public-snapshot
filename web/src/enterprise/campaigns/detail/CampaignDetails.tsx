@@ -569,7 +569,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )}
 
-                    {campaign.changesets.totalCount > 0 ? (
+                    {(campaign.changesets.totalCount + (campaign.__typename === 'Campaign' ? campaign.changesetPlans.totalCount : 0)) > 0 ? (
                         <CampaignTabs
                             campaign={campaign}
                             changesetUpdates={changesetUpdates}

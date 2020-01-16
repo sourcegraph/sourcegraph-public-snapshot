@@ -341,7 +341,7 @@ export const queryChangesets = (
                                     name
                                     url
                                 }
-                                processed
+                                publicationEnqueued
                                 diff {
                                     fileDiffs {
                                         nodes {
@@ -407,7 +407,7 @@ export const queryChangesetPlans = (
                                     name
                                     url
                                 }
-                                processed
+                                publicationEnqueued
                                 diff {
                                     fileDiffs {
                                         nodes {

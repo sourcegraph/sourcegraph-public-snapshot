@@ -129,7 +129,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <DiffStat {...fileDiffs.diffStat} expandedCounts={true}></DiffStat>
                 </span>
             )}
-            {enablePublishing && node.__typename === 'ChangesetPlan' && !node.processed && (
+            {enablePublishing && node.__typename === 'ChangesetPlan' && !node.publicationEnqueued && (
                 <>
                     {publishError && <ErrorIcon data-tooltip={publishError.message} />}
                     <button
