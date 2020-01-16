@@ -39,6 +39,7 @@ $body-color-dark: #f2f4f8;
         cursor: pointer;
     }
 }
+
 .command-list-popover {
     z-index: 1100; // high enough to prevent most things from obscuring it
     border: 1px solid var(--dropdown-border-color);
@@ -61,7 +62,6 @@ $body-color-dark: #f2f4f8;
 .toggle--off::-webkit-slider-runnable-track {
     color: #eeeeee;
 }
-
 .toggle--off::-webkit-slider-thumb {
     background-color: #000000;
     opacity: 0.2;
