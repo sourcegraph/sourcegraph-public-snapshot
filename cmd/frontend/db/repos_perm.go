@@ -29,6 +29,8 @@ var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms
 //
 // The enforcement policy:
 //
+// - If permissions user mapping is enabled, directly check permissions against local Postgres.
+//
 // - If there are no authz providers and `authzAllowByDefault` is true, then the repository is
 //   accessible to everyone.
 //
