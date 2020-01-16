@@ -16,7 +16,7 @@ import {
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 
-export type CampaignType = 'comby' | 'credentials'
+export type CampaignType = 'comby' | 'credentials' | 'regexSearchReplace'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
