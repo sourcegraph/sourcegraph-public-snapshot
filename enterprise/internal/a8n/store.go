@@ -2339,8 +2339,81 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 	return sqlf.Sprintf(getChangesetJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
+// ListChangesetJobsByCampaignPlanOpts captures the query options needed
+// for fetching changeset jobs for a campaign plan
+type ListChangesetJobsByCampaignPlanOpts struct {
+	CampaignPlanID int64
+	Cursor         int64
+	Limit          int
+}
+
+func (s *Store) ListChangesetJobsByCampaignPlan(ctx context.Context, opts ListChangesetJobsByCampaignPlanOpts) (cs []*a8n.ChangesetJob, next int64, err error) {
+	if opts.CampaignPlanID == 0 {
+		return nil, 0, fmt.Errorf("CampaignPlanID must be supplied")
+	}
+	q := listChangesetJobsByCampaignPlanQuery(&opts)
+
+	cs = make([]*a8n.ChangesetJob, 0, opts.Limit)
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var c a8n.ChangesetJob
+		if err = scanChangesetJob(&c, sc); err != nil {
+			return 0, 0, err
+		}
+		cs = append(cs, &c)
+		return c.ID, 1, err
+	})
+
+	if opts.Limit != 0 && len(cs) == opts.Limit {
+		next = cs[len(cs)-1].ID
+		cs = cs[:len(cs)-1]
+	}
+
+	return cs, next, err
+}
+
+var listChangesetJobsByCampaignPlanQueryFmtstr = `
+-- source: internal/a8n/store.go:ListChangesetJobsByCampaignPlan
+SELECT
+  j.id,
+  j.campaign_id,
+  j.campaign_job_id,
+  j.changeset_id,
+  j.error,
+  j.started_at,
+  j.finished_at,
+  j.created_at,
+  j.updated_at,
+  j.published_at
+FROM changeset_jobs j
+JOIN campaigns c ON j.campaign_id = c.id
+WHERE %s
+ORDER BY id ASC
+`
+
+func listChangesetJobsByCampaignPlanQuery(opts *ListChangesetJobsByCampaignPlanOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("id >= %s", opts.Cursor),
+	}
+	preds = append(preds, sqlf.Sprintf("c.campaign_plan_id = %s", opts.CampaignPlanID))
+
+	return sqlf.Sprintf(
+		listChangesetJobsByCampaignPlanQueryFmtstr+limitClause,
+		sqlf.Join(preds, "\n AND "),
+	)
+}
+
 // ListChangesetJobsOpts captures the query options needed for
-// listing code mods.
+// listing changeset jobs.
 type ListChangesetJobsOpts struct {
 	CampaignID int64
 	Cursor     int64
@@ -2358,7 +2431,7 @@ func (s *Store) ListChangesetJobs(ctx context.Context, opts ListChangesetJobsOpt
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
