@@ -30,6 +30,10 @@ class JSDOMEnvironment {
       ...config.testEnvironmentOptions,
     })
     const global = (this.global = this.dom.window.document.defaultView)
+    // jsdom doesn't support document.queryCommandSupported(), needed for monaco-editor.
+    // https://github.com/testing-library/react-testing-library/issues/546
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    this.dom.window.document.queryCommandSupported = () => false
     if (!global) {
       throw new Error('JSDOM did not return a Window object')
     }
