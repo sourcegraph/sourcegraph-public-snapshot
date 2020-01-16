@@ -93,7 +93,7 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, err
 	}
 
-	return &campaignJobResolver{job: job}, nil
+	return &campaignJobResolver{store: r.store, job: job}, nil
 }
 
 func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
@@ -680,7 +680,7 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJobID)
+	err = svc.PublishChangesetJobForCampaignJob(ctx, campaignJobID)
 	if err != nil {
 		return nil, err
 	}

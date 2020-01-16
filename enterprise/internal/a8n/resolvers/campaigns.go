@@ -124,11 +124,18 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
 }
 
-func (r *campaignResolver) PublishedAt() *graphqlbackend.DateTime {
-	if r.Campaign.PublishedAt.IsZero() {
-		return nil
+func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	if !r.Campaign.PublishedAt.IsZero() {
+		return &graphqlbackend.DateTime{Time: r.Campaign.PublishedAt}, nil
 	}
-	return &graphqlbackend.DateTime{Time: r.Campaign.PublishedAt}
+	publishedAt, err := r.store.GetLatestChangesetJobPublishedAt(ctx, r.Campaign.ID)
+	if err != nil {
+		return nil, err
+	}
+	if publishedAt.IsZero() {
+		return nil, nil
+	}
+	return &graphqlbackend.DateTime{Time: publishedAt}, nil
 }
 
 func (r *campaignResolver) Changesets(ctx context.Context, args struct {
