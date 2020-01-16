@@ -9,4 +9,5 @@ export const campaignTypeLabels: Record<CampaignType | typeof MANUAL_CAMPAIGN_TY
     [MANUAL_CAMPAIGN_TYPE]: 'Manual',
     comby: 'Comby search and replace',
     credentials: 'Find leaked credentials',
+    regexSearchReplace: 'Regex search and replace',
 }
