@@ -133,29 +133,6 @@ type UserPendingPermissions struct {
 	UpdatedAt time.Time
 }
 
-// Expired returns true if these UserPendingPermissions have elapsed the given ttl.
-func (p *UserPendingPermissions) Expired(ttl time.Duration, now time.Time) bool {
-	return !now.Before(p.UpdatedAt.Add(ttl))
-}
-
-// AuthorizedRepos returns the intersection of the given repository IDs with
-// the authorized IDs.
-func (p *UserPendingPermissions) AuthorizedRepos(repos []*types.Repo) []authz.RepoPerms {
-	// Return directly if it's used for wrong permissions type or no permissions available.
-	if p.Type != authz.PermRepos ||
-		p.IDs == nil || p.IDs.GetCardinality() == 0 {
-		return nil
-	}
-
-	perms := make([]authz.RepoPerms, 0, len(repos))
-	for _, r := range repos {
-		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
-			perms = append(perms, authz.RepoPerms{Repo: r, Perms: p.Perm})
-		}
-	}
-	return perms
-}
-
 // TracingFields returns tracing fields for the opentracing log.
 func (p *UserPendingPermissions) TracingFields() []otlog.Field {
 	fs := []otlog.Field{
