@@ -508,48 +508,43 @@ export class Driver {
             )
         }
 
-        return retry(async () => {
-            const handlePromise = wait
-                ? this.page
-                      .waitForFunction(findElementMatchingRegexps, typeof wait === 'object' ? wait : {}, tag, regexps)
-                      .catch(err => {
-                          throw notFoundErr(err)
-                      })
-                : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
+        return retry(
+            async () => {
+                const handlePromise = wait
+                    ? this.page
+                          .waitForFunction(
+                              findElementMatchingRegexps,
+                              typeof wait === 'object' ? wait : {},
+                              tag,
+                              regexps
+                          )
+                          .catch(err => {
+                              throw notFoundErr(err)
+                          })
+                    : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
 
-            const el = (await handlePromise).asElement()
-            if (!el) {
-                throw notFoundErr()
-            }
+                const el = (await handlePromise).asElement()
+                if (!el) {
+                    throw notFoundErr()
+                }
 
-            if (options.action === 'click') {
-                await el.click()
+                if (options.action === 'click') {
+                    await el.click()
+                }
+                return el
+            },
+            {
+                retries: options.action === 'click' ? 3 : 0,
+                minTimeout: 100,
+                maxTimeout: 100,
+                factor: 1,
+                maxRetryTime: 500,
             }
-            return el
-        }, { retries: options.action === 'click' ? 3 : 0, minTimeout: 100, maxTimeout: 100, factor: 1, maxRetryTime: 500 })
+        )
     }
 
     public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
         await this.page.waitForFunction(url => document.location.href === url, options, url)
-    }
-
-    public async goToURLWithInvalidTLS(url: string): Promise<void> {
-        try {
-            await this.page.goto(url)
-        } catch (err) {
-            if (!err.message.includes('net::ERR_CERT_AUTHORITY_INVALID')) {
-                throw err
-            }
-            await this.page.waitForSelector('#details-button')
-            await this.page.click('#details-button')
-            await (
-                await this.findElementWithText('Proceed to', {
-                    selector: 'a',
-                    wait: { timeout: 2000 },
-                })
-            ).click()
-        }
-        await this.page.waitForSelector('.monaco-editor', { timeout: 2000 })
     }
 }
 

@@ -459,12 +459,11 @@ describe('Search regression test suite', () => {
                 enterTextMethod: 'type',
             })
             await driver.page.waitForSelector('.e2e-query-suggestions')
-            await (
-                await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
-                    wait: { timeout: 5000 },
-                    selector: '.e2e-query-suggestions li',
-                })
-            ).click()
+            await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
+                action: 'click',
+                wait: { timeout: 5000 },
+                selector: '.e2e-query-suggestions li',
+            })
             await driver.waitUntilURL(`${config.sourcegraphBaseUrl}/github.com/auth0/go-jwt-middleware`)
 
             // File autocomplete from repo search bar
@@ -513,12 +512,11 @@ describe('Search regression test suite', () => {
                 await driver.page.goto(
                     `${config.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
                 )
-                await (
-                    await driver.findElementWithText(filter, {
-                        selector: 'button',
-                        wait: { timeout: 5000 },
-                    })
-                ).click()
+                await driver.findElementWithText(filter, {
+                    action: 'click',
+                    selector: 'button',
+                    wait: { timeout: 5000 },
+                })
                 await driver.page.waitForFunction(
                     expectedQuery => {
                         const url = new URL(document.location.href)

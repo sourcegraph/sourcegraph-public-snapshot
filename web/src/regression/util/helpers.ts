@@ -108,10 +108,6 @@ async function createTestUser(
     await driver.page.waitForFunction(() => document.body.textContent!.includes('Your password was reset'))
 }
 
-export async function clickAndWaitForNavigation(handle: puppeteer.ElementHandle, page: puppeteer.Page): Promise<void> {
-    await Promise.all([handle.click(), page.waitForNavigation()])
-}
-
 export async function createAuthProvider(
     gqlClient: GraphQLClient,
     authProvider: GitHubAuthProvider | GitLabAuthProvider | OpenIDConnectAuthProvider | SAMLAuthProvider
@@ -257,12 +253,11 @@ export async function login(
     await driver.page.goto(sourcegraphBaseUrl)
     await retry(async () => {
         await driver.page.reload()
-        await (
-            await driver.findElementWithText('Sign in with ' + authProviderDisplayName, {
-                selector: 'a',
-                wait: { timeout: 5000 },
-            })
-        ).click()
+        await driver.findElementWithText('Sign in with ' + authProviderDisplayName, {
+            action: 'click',
+            selector: 'a',
+            wait: { timeout: 5000 },
+        })
         await driver.page.waitForNavigation({ timeout: 3000 })
     })
     if (driver.page.url() !== sourcegraphBaseUrl + '/search') {
@@ -289,7 +284,8 @@ export async function loginToOkta(driver: Driver, username: string, password: st
         selector: '#okta-signin-password',
         newText: password,
     })
-    await (await driver.page.waitForSelector('#okta-signin-submit')).click()
+    await driver.page.waitForSelector('#okta-signin-submit')
+    await driver.page.click('#okta-signin-submit')
 }
 
 export async function loginToGitHub(driver: Driver, username: string, password: string): Promise<void> {
@@ -319,5 +315,6 @@ export async function loginToGitLab(driver: Driver, username: string, password: 
         selector: '#user_password',
         newText: password,
     })
-    await (await driver.page.waitForSelector('input[data-qa-selector="sign_in_button"]')).click()
+    await driver.page.waitForSelector('input[data-qa-selector="sign_in_button"]')
+    await driver.page.click('input[data-qa-selector="sign_in_button"]')
 }
