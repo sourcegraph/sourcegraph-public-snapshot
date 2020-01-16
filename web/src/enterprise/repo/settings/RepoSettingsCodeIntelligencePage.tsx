@@ -34,8 +34,10 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload }> = ({ node }) 
     <div className="w-100 list-group-item py-2 lsif-data__main">
         <div className="lsif-data__meta">
             <div className="lsif-data__meta-root">
-                <code>{node.projectRoot?.commit.abbreviatedOID || node.inputCommit.substring(0, 7)}</code>
-                <span className="ml-2">
+                <code className="e2e-upload-commit">
+                    {node.projectRoot?.commit.abbreviatedOID || node.inputCommit.substring(0, 7)}
+                </code>
+                <span className="ml-2 e2e-upload-root">
                     {node.projectRoot ? (
                         <Link to={node.projectRoot.url}>
                             <strong>{node.projectRoot.path || '/'}</strong>

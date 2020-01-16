@@ -245,7 +245,7 @@ async function ensureUpload(
     const actualCommit = await commitElem.evaluate(elem => elem.textContent)
     expect(actualCommit).toEqual(commit.substr(0, 7))
 
-    const rootElem = await driver.page.waitForSelector('.e2e-upload-path')
+    const rootElem = await driver.page.waitForSelector('.e2e-upload-root')
     const actualRoot = await rootElem.evaluate(elem => elem.textContent)
     expect(actualRoot).toEqual(root)
 }
