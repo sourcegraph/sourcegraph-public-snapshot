@@ -41,7 +41,7 @@ export const SearchScopes: React.FunctionComponent<Props> = ({
 
             const newQuery = toggleSearchFilter(query, value)
 
-            submitSearch(history, newQuery, 'filter', patternType)
+            submitSearch(history, newQuery, 'filter', patternType, false)
         },
         [history, patternType, query]
     )

@@ -74,7 +74,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                 </div>
                 <div className="repository-contributor-node__count">
                     <Link
-                        to={`/search?${buildSearchURLQuery(query, patternType)}`}
+                        to={`/search?${buildSearchURLQuery(query, patternType, false)}`}
                         className="font-weight-bold"
                         data-tooltip={
                             revisionRange?.includes('..') &&
