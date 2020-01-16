@@ -7,7 +7,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // UserPermissions are the permissions of a user to perform an action
@@ -77,28 +76,6 @@ type RepoPermissions struct {
 // Expired returns true if these RepoPermissions have elapsed the given ttl.
 func (p *RepoPermissions) Expired(ttl time.Duration, now time.Time) bool {
 	return !now.Before(p.UpdatedAt.Add(ttl))
-}
-
-// AuthorizedUsers returns the intersection of the given user IDs with
-// the authorized IDs.
-func (p *RepoPermissions) AuthorizedUsers(users []*types.User) []authz.RepoPerms {
-	// Return directly if it has no permissions available.
-	if p.UserIDs == nil || p.UserIDs.GetCardinality() == 0 {
-		return nil
-	}
-
-	perms := make([]authz.RepoPerms, 0, len(users))
-	for _, u := range users {
-		if u.ID != 0 && p.UserIDs.Contains(uint32(u.ID)) {
-			perms = append(perms, authz.RepoPerms{
-				Repo: &types.Repo{
-					ID: api.RepoID(p.RepoID),
-				},
-				Perms: p.Perm,
-			})
-		}
-	}
-	return perms
 }
 
 // TracingFields returns tracing fields for the opentracing log.
