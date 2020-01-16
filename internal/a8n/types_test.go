@@ -121,15 +121,15 @@ func TestChangesetEvents(t *testing.T) {
 				ID: 23,
 				Metadata: &github.PullRequest{
 					TimelineItems: []github.TimelineItem{
-						{"AssignedEvent", assignedEvent},
-						{"PullRequestReviewThread", &github.PullRequestReviewThread{
+						{Type: "AssignedEvent", Item: assignedEvent},
+						{Type: "PullRequestReviewThread", Item: &github.PullRequestReviewThread{
 							Comments: reviewComments[:2],
 						}},
-						{"UnassignedEvent", unassignedEvent},
-						{"PullRequestReviewThread", &github.PullRequestReviewThread{
+						{Type: "UnassignedEvent", Item: unassignedEvent},
+						{Type: "PullRequestReviewThread", Item: &github.PullRequestReviewThread{
 							Comments: reviewComments[2:],
 						}},
-						{"ClosedEvent", closedEvent},
+						{Type: "ClosedEvent", Item: closedEvent},
 					},
 				},
 			},
