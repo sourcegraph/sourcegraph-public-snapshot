@@ -93,7 +93,12 @@ export const CampaignPlanSpecificationFields: React.FunctionComponent<Props> = (
                             </select>
                             {value.type === 'comby' && (
                                 <small className="ml-1">
-                                    <a rel="noopener noreferrer" target="_blank" href="https://comby.dev/#match-syntax">
+                                    <a
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                        tabIndex={-1}
+                                        href="https://comby.dev/#match-syntax"
+                                    >
                                         Learn about comby syntax
                                     </a>
                                 </small>

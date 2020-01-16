@@ -20,6 +20,7 @@ import {
     CampaignType,
     retryCampaign,
     closeCampaign,
+    publishCampaign,
 } from './backend'
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -227,6 +228,41 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
+    }
+
+    const onDraft: React.FormEventHandler = async event => {
+        event.preventDefault()
+        setMode('saving')
+        try {
+            const createdCampaign = await createCampaign({
+                name,
+                description,
+                namespace: authenticatedUser.id,
+                plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
+                draft: true,
+            })
+            unblockHistoryRef.current()
+            history.push(`/campaigns/${createdCampaign.id}`)
+            setMode('viewing')
+            setAlertError(undefined)
+            campaignUpdates.next()
+        } catch (err) {
+            setMode('editing')
+            setAlertError(asError(err))
+        }
+    }
+
+    const onPublish = async (): Promise<void> => {
+        setMode('saving')
+        try {
+            await publishCampaign(campaign!.id)
+            setMode('viewing')
+            setAlertError(undefined)
+            campaignUpdates.next()
+        } catch (err) {
+            setMode('editing')
+            setAlertError(asError(err))
+        }
     }
 
     const onSubmit: React.FormEventHandler = async event => {
@@ -476,15 +512,25 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
                         {campaignPlanSpec !== undefined && campaignPlanSpec.type !== MANUAL_CAMPAIGN_TYPE && (
-                            <button
-                                type="button"
-                                className="btn btn-primary mr-1 e2e-preview-campaign"
-                                disabled={!previewRefreshNeeded}
-                                onClick={() => nextPreviewCampaignPlan(campaignPlanSpec)}
-                            >
-                                {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
-                                Preview changes
-                            </button>
+                            <>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary mr-1 e2e-preview-campaign"
+                                    disabled={!previewRefreshNeeded}
+                                    onClick={() => nextPreviewCampaignPlan(campaignPlanSpec)}
+                                >
+                                    {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
+                                    Preview changes
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-secondary mr-1"
+                                    onClick={onDraft}
+                                    disabled={previewRefreshNeeded || mode !== 'editing'}
+                                >
+                                    Create draft
+                                </button>
+                            </>
                         )}
                         <button
                             type="submit"
@@ -502,7 +548,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             {/* is already created or a preview is available */}
             {campaign && (
                 <>
-                    <CampaignStatus campaign={campaign} status={campaign.status} onRetry={onRetry} />
+                    <CampaignStatus
+                        campaign={campaign}
+                        status={campaign.status}
+                        onPublish={onPublish}
+                        onRetry={onRetry}
+                    />
 
                     {campaign.__typename === 'Campaign' && (
                         <>
@@ -518,9 +569,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )}
 
-                    {campaign.changesets.totalCount > 0 ? (
+                    {campaign.changesets.totalCount +
+                        (campaign.__typename === 'Campaign' ? campaign.changesetPlans.totalCount : 0) >
+                    0 ? (
                         <CampaignTabs
                             campaign={campaign}
+                            changesetUpdates={changesetUpdates}
+                            campaignUpdates={campaignUpdates}
                             persistLines={campaign.__typename === 'Campaign'}
                             history={history}
                             location={location}
@@ -528,7 +583,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             isLightTheme={isLightTheme}
                         />
                     ) : (
-                        <p className="mt-3 text-muted">No changesets</p>
+                        campaign.status.state !== GQL.BackgroundProcessState.PROCESSING && (
+                            <p className="mt-3 text-muted">No changesets</p>
+                        )
                     )}
                 </>
             )}

@@ -7,10 +7,13 @@ const PROPS = {
     onRetry: () => undefined,
 }
 
-const CAMPAIGN: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt'> = {
+const CAMPAIGN: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt' | 'changesets'> = {
     __typename: 'Campaign',
     closedAt: null,
-    publishedAt: null,
+    publishedAt: '2020-01-01',
+    changesets: {
+        totalCount: 0,
+    } as GQL.IExternalChangesetConnection,
 }
 
 const CAMPAIGN_PLAN: Pick<GQL.ICampaignPlan, '__typename'> = {
@@ -30,6 +33,45 @@ describe('CampaignStatus', () => {
                         errors: [],
                         state: GQL.BackgroundProcessState.COMPLETED,
                     }}
+                    onPublish={() => undefined}
+                />
+            )
+        ).toMatchSnapshot())
+
+    test('drafted campaign', () =>
+        expect(
+            createRenderer().render(
+                <CampaignStatus
+                    {...PROPS}
+                    campaign={{ ...CAMPAIGN, publishedAt: null }}
+                    status={{
+                        completedCount: 1,
+                        pendingCount: 0,
+                        errors: [],
+                        state: GQL.BackgroundProcessState.COMPLETED,
+                    }}
+                    onPublish={() => undefined}
+                />
+            )
+        ).toMatchSnapshot())
+
+    test('drafted campaign, some published', () =>
+        expect(
+            createRenderer().render(
+                <CampaignStatus
+                    {...PROPS}
+                    campaign={{
+                        ...CAMPAIGN,
+                        publishedAt: null,
+                        changesets: { totalCount: 1 } as GQL.IExternalChangesetConnection,
+                    }}
+                    status={{
+                        completedCount: 1,
+                        pendingCount: 0,
+                        errors: [],
+                        state: GQL.BackgroundProcessState.COMPLETED,
+                    }}
+                    onPublish={() => undefined}
                 />
             )
         ).toMatchSnapshot())
@@ -46,6 +88,7 @@ describe('CampaignStatus', () => {
                         errors: ['a', 'b'],
                         state: GQL.BackgroundProcessState.PROCESSING,
                     }}
+                    onPublish={() => undefined}
                 />
             )
         ).toMatchSnapshot())
@@ -62,6 +105,7 @@ describe('CampaignStatus', () => {
                         errors: ['a', 'b'],
                         state: GQL.BackgroundProcessState.PROCESSING,
                     }}
+                    onPublish={() => undefined}
                 />
             )
         ).toMatchSnapshot())
@@ -78,6 +122,7 @@ describe('CampaignStatus', () => {
                         errors: ['a', 'b'],
                         state: GQL.BackgroundProcessState.ERRORED,
                     }}
+                    onPublish={() => undefined}
                 />
             )
         ).toMatchSnapshot())

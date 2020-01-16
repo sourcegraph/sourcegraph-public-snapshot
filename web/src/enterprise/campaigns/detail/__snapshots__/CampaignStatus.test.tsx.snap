@@ -121,3 +121,77 @@ exports[`CampaignStatus closed campaign 1`] = `
   </div>
 </React.Fragment>
 `;
+
+exports[`CampaignStatus drafted campaign 1`] = `
+<React.Fragment>
+  <React.Fragment>
+    <div
+      className="d-flex my-3"
+    >
+      <Memo(InformationIcon)
+        className="icon-inline text-info mr-1"
+      />
+       Campaign is a draft.
+       
+      No changesets have
+       
+      been created on code hosts yet.
+    </div>
+    <button
+      className="mb-3 btn btn-primary"
+      onClick={[Function]}
+      type="button"
+    >
+      Publish campaign
+    </button>
+  </React.Fragment>
+  <div
+    className="d-flex my-3"
+  >
+    <Memo(CheckCircleIcon)
+      className="icon-inline text-success mr-1 e2e-preview-success"
+    />
+     
+    Creation
+     
+    completed
+  </div>
+</React.Fragment>
+`;
+
+exports[`CampaignStatus drafted campaign, some published 1`] = `
+<React.Fragment>
+  <React.Fragment>
+    <div
+      className="d-flex my-3"
+    >
+      <Memo(InformationIcon)
+        className="icon-inline text-info mr-1"
+      />
+       Campaign is a draft.
+       
+      Only a subset of changesets has
+       
+      been created on code hosts yet.
+    </div>
+    <button
+      className="mb-3 btn btn-primary"
+      onClick={[Function]}
+      type="button"
+    >
+      Publish campaign
+    </button>
+  </React.Fragment>
+  <div
+    className="d-flex my-3"
+  >
+    <Memo(CheckCircleIcon)
+      className="icon-inline text-success mr-1 e2e-preview-success"
+    />
+     
+    Creation
+     
+    completed
+  </div>
+</React.Fragment>
+`;
