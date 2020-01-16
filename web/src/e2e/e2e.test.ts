@@ -1443,7 +1443,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector(`a[href="/stats?q=${uniqueString}"]`)
         })
 
-        test.only('page', async () => {
+        test('page', async () => {
             await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=${uniqueString}`)
 
             // Ensure the global navbar hides the search input (to avoid confusion with the one on
