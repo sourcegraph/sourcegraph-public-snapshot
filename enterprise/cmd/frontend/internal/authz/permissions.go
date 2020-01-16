@@ -30,9 +30,9 @@ func (p *UserPermissions) Expired(ttl time.Duration, now time.Time) bool {
 // AuthorizedRepos returns the intersection of the given repository IDs with
 // the authorized IDs.
 func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []authz.RepoPerms {
-	if p.Type != authz.PermRepos {
-		return nil
-	} else if p.IDs == nil || p.IDs.GetCardinality() == 0 {
+	// Return directly if it's used for wrong permissions type or no permissions available.
+	if p.Type != authz.PermRepos ||
+		p.IDs == nil || p.IDs.GetCardinality() == 0 {
 		return nil
 	}
 
@@ -82,6 +82,7 @@ func (p *RepoPermissions) Expired(ttl time.Duration, now time.Time) bool {
 // AuthorizedUsers returns the intersection of the given user IDs with
 // the authorized IDs.
 func (p *RepoPermissions) AuthorizedUsers(users []*types.User) []authz.RepoPerms {
+	// Return directly if it has no permissions available.
 	if p.UserIDs == nil || p.UserIDs.GetCardinality() == 0 {
 		return nil
 	}
@@ -140,9 +141,9 @@ func (p *UserPendingPermissions) Expired(ttl time.Duration, now time.Time) bool 
 // AuthorizedRepos returns the intersection of the given repository IDs with
 // the authorized IDs.
 func (p *UserPendingPermissions) AuthorizedRepos(repos []*types.Repo) []authz.RepoPerms {
-	if p.Type != authz.PermRepos {
-		return nil
-	} else if p.IDs == nil || p.IDs.GetCardinality() == 0 {
+	// Return directly if it's used for wrong permissions type or no permissions available.
+	if p.Type != authz.PermRepos ||
+		p.IDs == nil || p.IDs.GetCardinality() == 0 {
 		return nil
 	}
 
