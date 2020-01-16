@@ -86,8 +86,8 @@ type Client struct {
 	UserAgent string
 }
 
-// addrForRepo returns the gitserver address to use for the given repo name.
-func (c *Client) addrForRepo(ctx context.Context, repo api.RepoName) string {
+// AddrForRepo returns the gitserver address to use for the given repo name.
+func (c *Client) AddrForRepo(ctx context.Context, repo api.RepoName) string {
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	return c.addrForKey(ctx, string(repo))
 }
@@ -151,7 +151,7 @@ func (c *Client) ArchiveURL(ctx context.Context, repo Repo, opt ArchiveOptions) 
 
 	return &url.URL{
 		Scheme:   "http",
-		Host:     c.addrForRepo(ctx, repo.Name),
+		Host:     c.AddrForRepo(ctx, repo.Name),
 		Path:     "/archive",
 		RawQuery: q.Encode(),
 	}
@@ -654,7 +654,7 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr := c.addrForRepo(ctx, r)
+		addr := c.AddrForRepo(ctx, r)
 		shard := shards[addr]
 
 		if shard == nil {
@@ -761,7 +761,7 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, p
 
 	uri := op
 	if !strings.HasPrefix(op, "http") {
-		uri = "http://" + c.addrForRepo(ctx, repo) + "/" + op
+		uri = "http://" + c.AddrForRepo(ctx, repo) + "/" + op
 	}
 
 	req, err := http.NewRequest(method, uri, bytes.NewReader(reqBody))
