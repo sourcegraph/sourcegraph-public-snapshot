@@ -246,61 +246,99 @@ export class Driver {
         ensureRepos?: string[]
     }): Promise<void> {
         // Use the graphQL API to query external services on the instance.
-        const { externalServices } = dataOrThrowErrors(
-            await this.makeGraphQLRequest<IQuery>({
-                request: gql`
-                    query ExternalServices {
-                        externalServices(first: 1) {
-                            totalCount
+        let externalServices
+        try {
+            externalServices = dataOrThrowErrors(
+                await this.makeGraphQLRequest<IQuery>({
+                    request: gql`
+                        query ExternalServices {
+                            externalServices(first: 1) {
+                                nodes {
+                                    id
+                                    displayName
+                                }
+                                totalCount
+                            }
+                        }
+                    `,
+                    variables: {},
+                })
+            ).externalServices
+        } catch (err) {
+            console.error('Exiting because setup failed:', err)
+            process.exit(-1)
+        }
+
+        let updated = false
+        for (const extSvc of externalServices.nodes) {
+            if (extSvc.displayName === displayName) {
+                try {
+                    await this.makeGraphQLRequest<IQuery>({
+                        request: gql`
+                    mutation UpdateExternalService(input: UpdateExternalServiceInput!) {
+                        updateExternalService(input: $input) {
+                                id
+                                displayName
                         }
                     }
                 `,
-                variables: {},
-            })
-        )
-        // Delete existing external services if there are any.
-        if (externalServices.totalCount !== 0) {
-            await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-            await this.page.waitFor('.e2e-filtered-connection')
-            await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
-
-            // Matches buttons for deleting external services named ${displayName}.
-            const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
-            if (await this.page.$(deleteButtonSelector)) {
-                await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
+                        variables: {
+                            input: {
+                                id: extSvc.id,
+                                displayName,
+                                config,
+                            },
+                        },
+                    })
+                } catch (err) {
+                    console.error('Exiting because setup failed:', err)
+                    process.exit(-1)
+                }
+                updated = true
             }
         }
 
-        // Navigate to the add external service page.
-        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
-        await (
-            await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
-                visible: true,
-            })
-        ).click()
-        await this.replaceText({
-            selector: '#e2e-external-service-form-display-name',
-            newText: displayName,
-        })
-
-        // Type in a new external service configuration.
-        await this.replaceText({
-            selector: '.view-line',
-            newText: config,
-            selectMethod: 'keyboard',
-        })
-        await Promise.all([this.page.waitForNavigation(), this.page.click('.e2e-add-external-service-button')])
-
-        if (ensureRepos) {
-            // Clone the repositories
-            for (const slug of ensureRepos) {
-                await this.page.goto(
-                    this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`
-                )
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
-                // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
-                await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
+        if (!updated) {
+            try {
+                await this.makeGraphQLRequest<IQuery>({
+                    request: gql`
+                    mutation AddExternalService(input: AddExternalServiceInput!) {
+                        addExternalService(input: $input) {
+                          id
+                          name
+                        }
+                    }
+                `,
+                    variables: {
+                        input: {
+                            displayName,
+                            config,
+                        },
+                    },
+                })
+            } catch (err) {
+                console.error('Exiting because setup failed:', err)
+                process.exit(-1)
             }
+        }
+
+        try {
+            if (ensureRepos) {
+                // Clone the repositories
+                for (const slug of ensureRepos) {
+                    await this.page.goto(
+                        this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`
+                    )
+                    await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, {
+                        visible: true,
+                    })
+                    // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
+                    await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
+                }
+            }
+        } catch (err) {
+            console.error('Exiting because setup failed:', err)
+            process.exit(-1)
         }
     }
 

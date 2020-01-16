@@ -359,7 +359,7 @@ describe('e2e test suite', () => {
     })
 
     describe('Visual tests', () => {
-        test('Repositories list', async () => {
+        test.only('Repositories list', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             await percySnapshot(driver.page, 'Repositories list')
