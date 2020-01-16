@@ -26,7 +26,8 @@ var RequireAuthMiddleware = &Middleware{
 			// prevent access.
 			if !actor.FromContext(r.Context()).IsAuthenticated() && !AllowAnonymousRequest(r) {
 				// Report HTTP 401 Unauthorized for API requests.
-				http.Error(w, "Private mode requires authentication.", http.StatusUnauthorized)
+				code := anonymousStatusCode(r, http.StatusUnauthorized)
+				http.Error(w, "Private mode requires authentication.", code)
 				return
 			}
 
@@ -40,9 +41,10 @@ var RequireAuthMiddleware = &Middleware{
 			// prevent access and redirect them to the login page.
 			if !actor.FromContext(r.Context()).IsAuthenticated() && !AllowAnonymousRequest(r) {
 				// Redirect 302 Found for web page requests.
+				code := anonymousStatusCode(r, http.StatusFound)
 				q := url.Values{}
 				q.Set("returnTo", r.URL.String())
-				http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StatusFound)
+				http.Redirect(w, r, "/sign-in?"+q.Encode(), code)
 				return
 			}
 
@@ -70,6 +72,13 @@ var (
 		uirouter.RouteSignIn:        {},
 		uirouter.RouteSignUp:        {},
 		uirouter.RoutePasswordReset: {},
+	}
+	// Some routes return non-standard HTTP responses when a user is not
+	// signed in.
+	anonymousUIStatusCode = map[string]int{
+		// This route lives in the app, but should act like the API since most
+		// clients are extensions.
+		uirouter.RouteRaw: http.StatusUnauthorized,
 	}
 )
 
@@ -124,4 +133,18 @@ func AllowAnonymousRequest(req *http.Request) bool {
 	}
 	_, ok := anonymousAccessibleAPIRoutes[apiRouteName]
 	return ok
+}
+
+func anonymousStatusCode(req *http.Request, defaultCode int) int {
+	name := matchedRouteName(req, router.Router())
+	if name != router.UI {
+		return defaultCode
+	}
+
+	name = matchedRouteName(req, uirouter.Router)
+	if code, ok := anonymousUIStatusCode[name]; ok {
+		return code
+	}
+
+	return defaultCode
 }
