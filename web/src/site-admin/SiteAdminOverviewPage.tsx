@@ -14,7 +14,6 @@ import { queryGraphQL } from '../backend/graphql'
 import { Collapsible } from '../components/Collapsible'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
 import { ErrorAlert } from '../components/alerts'
 
@@ -108,9 +107,6 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-overview-page py-3">
                 <PageTitle title="Overview - Admin" />
-                <div className="mb-3">
-                    <SiteAdminManagementConsolePassword />
-                </div>
                 {this.props.overviewComponents.length > 0 && (
                     <div className="mb-4">
                         {this.props.overviewComponents.map((C, i) => (
@@ -124,17 +120,18 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                         <>
                             {this.props.activation && this.props.activation.completed && (
                                 <Collapsible
-                                    title={<>{setupPercentage < 100 ? 'Set up Sourcegraph' : 'Status'}</>}
+                                    title={
+                                        <>{setupPercentage < 100 ? 'Get started with Sourcegraph' : 'Setup status'}</>
+                                    }
                                     defaultExpanded={setupPercentage < 100}
                                     className="list-group-item"
-                                    titleClassName="h5 mb-0 font-weight-normal p-2"
+                                    titleClassName="h4 mb-0 mt-2 font-weight-normal p-2"
                                 >
                                     {this.props.activation.completed && (
                                         <ActivationChecklist
                                             history={this.props.history}
                                             steps={this.props.activation.steps}
                                             completed={this.props.activation.completed}
-                                            className="border-top"
                                         />
                                     )}
                                 </Collapsible>

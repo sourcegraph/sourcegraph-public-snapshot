@@ -75,11 +75,6 @@ func TestValidateCustom(t *testing.T) {
 }
 
 func TestProblems(t *testing.T) {
-	criticalProblems := NewCriticalProblems(
-		"criticalProblem1",
-		"criticalProblem2",
-		"criticalProblem3",
-	)
 	siteProblems := NewSiteProblems(
 		"siteProblem1",
 		"siteProblem2",
@@ -92,26 +87,16 @@ func TestProblems(t *testing.T) {
 	)
 
 	var problems Problems
-	problems = append(problems, criticalProblems...)
 	problems = append(problems, siteProblems...)
 	problems = append(problems, externalServiceProblems...)
 
 	{
 		messages := make([]string, 0, len(problems))
-		messages = append(messages, criticalProblems.Messages()...)
 		messages = append(messages, siteProblems.Messages()...)
 		messages = append(messages, externalServiceProblems.Messages()...)
 
 		want := strings.Join(messages, "\n")
 		got := strings.Join(problems.Messages(), "\n")
-		if want != got {
-			t.Errorf("got %q, want %q", got, want)
-		}
-	}
-
-	{
-		want := strings.Join(criticalProblems.Messages(), "\n")
-		got := strings.Join(problems.Critical().Messages(), "\n")
 		if want != got {
 			t.Errorf("got %q, want %q", got, want)
 		}

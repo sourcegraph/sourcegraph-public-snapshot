@@ -1,6 +1,6 @@
 # Code search overview
 
-> See [**search query syntax**](queries.md) reference.
+> Reference the [**search query syntax**](queries.md) and see [search examples](examples.md) for inspiration.
 
 [A recently published research paper from Google](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/43835.pdf) and a [Google developer survey](https://docs.google.com/document/d/1LQxLk4E3lrb3fIsVKlANu_pUjnILteoWMMNiJQmqNVU/edit#heading=h.xxziwxixfqq3) showed that 98% of developers consider their Sourcegraph-like internal code search tool to be critical, and developers use it on average for 5.3 sessions each day, primarily to (in order of frequency):
 
@@ -14,12 +14,14 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 Sourcegraph provides fast, advanced code search across multiple repositories. With Sourcegraph's code search, you can:
 
 - Use regular expressions and exact queries to perform full-text searches
+- Perform [language-aware structural search](#language-aware-structural-code-search) on code structure.
 - Search any branch and commit, with no indexing required
 - Search [commit diffs](#commit-diff-search) and [commit messages](#commit-message-search) to see how code has changed
 - Narrow your search by repository and file pattern
 - Define saved [search scopes](#search-scopes) for easier searching
 - Curate [saved searches](#saved-searches) for yourself or your org
 - Set up notifications for code changes that match a query
+- View [language statistics](#statistics) for search results
 
 This document is for code search users. To get code search, [install Sourcegraph](../../admin/install/index.md).
 
@@ -32,6 +34,10 @@ This document is for code search users. To get code search, [install Sourcegraph
 Sourcegraph code search performs full-text searches and supports both regular expression and exact queries. By default, Sourcegraph searches across all your repositories. Our search [query syntax](queries.md) allows for advanced queries, such as searching over any branch or commit, narrowing searches by programming language or file pattern, and more.
 
 See the [query syntax documentation](queries.md) for a comprehensive list of tokens.
+
+### Language-aware structural code search
+
+Sourcegraph supports advanced code search for specifically matching patterns inside code structures, like function parameters and loop bodies. See our [structural search documentation](structural.md) for a detailed explanation of this search mode.
 
 ### Commit diff search
 
@@ -68,6 +74,23 @@ Every project and team has a different set of repositories they commonly work wi
 As you type a query, the menu below will contain suggestions based on the query. Use the keyboard or mouse to select a suggestion to navigate directly to it. For example, if your query is `repo:foo file:\.js$ hello`, the suggestions will consist of the list of files that match your query.
 
 You can also type in the partial name of a repository or filename to quickly jump to it. For example, typing in just `foo` would show you a list of repositories (first) and files with names containing _foo_.
+
+### Statistics
+
+> NOTE: To enable this experimental feature, set `{"experimentalFeatures": {"searchStats": true} }` in user settings.
+
+On a search results page, press the **Stats** button to view a language breakdown of all results matching the query. Each matching file is analyzed to detect its language, and line count statistics are computed as follows:
+
+- Query matches entire repositories (e.g., using only `repo:`): all lines (in all files) in matching repositories are counted.
+- Query matches entire files (e.g., using only `file:` or `lang:`): all lines in all matching files are counted.
+- Query matches text in files (e.g., using a term such as `foo`): all lines that match the query are counted.
+
+Examples:
+
+- If your search query was `file:test` and you had a single 100-line Java test file (and no other files whose name contains `test`), the statistics would show 100 Java lines.
+- If your search query was `foo` and that term appeared on 3 lines in Java files and on 1 line in a Python file, the statistics would show 3 Java lines and 1 Python line.
+
+Tip: On the statistics page, you can enter an empty query to see statistics across all repositories.
 
 ---
 

@@ -180,7 +180,7 @@ func IsValidDeployType(deployType string) bool {
 
 // UpdateChannel tells the update channel. Default is "release".
 func UpdateChannel() string {
-	channel := Get().Critical.UpdateChannel
+	channel := Get().UpdateChannel
 	if channel == "" {
 		return "release"
 	}
@@ -212,16 +212,16 @@ func SymbolIndexEnabled() bool {
 }
 
 func UsingExternalURL() bool {
-	url := Get().Critical.ExternalURL
+	url := Get().ExternalURL
 	return !(url == "" || strings.HasPrefix(url, "http://localhost") || strings.HasPrefix(url, "https://localhost") || strings.HasPrefix(url, "http://127.0.0.1") || strings.HasPrefix(url, "https://127.0.0.1")) // CI:LOCALHOST_OK
 }
 
 func IsExternalURLSecure() bool {
-	return strings.HasPrefix(Get().Critical.ExternalURL, "https:")
+	return strings.HasPrefix(Get().ExternalURL, "https:")
 }
 
 func IsBuiltinSignupAllowed() bool {
-	provs := Get().Critical.AuthProviders
+	provs := Get().AuthProviders
 	for _, prov := range provs {
 		if prov.Builtin != nil {
 			return prov.Builtin.AllowSignup
@@ -258,12 +258,33 @@ func SearchSymbolsParallelism() int {
 	return val
 }
 
+func BitbucketServerFastPerm() bool {
+	val := Get().ExperimentalFeatures.BitbucketServerFastPerm
+	if val == "" {
+		return false
+	}
+	return val == "enabled"
+}
+
 func EventLoggingEnabled() bool {
 	val := Get().ExperimentalFeatures.EventLogging
 	if val == "" {
 		return true
 	}
 	return val == "enabled"
+}
+
+func StructuralSearchEnabled() bool {
+	val := Get().ExperimentalFeatures.StructuralSearch
+	if val == "" {
+		return true
+	}
+	return val == "enabled"
+}
+
+func SearchMultipleRevisionsPerRepository() bool {
+	x := ExperimentalFeatures()
+	return x.SearchMultipleRevisionsPerRepository != nil && *x.SearchMultipleRevisionsPerRepository
 }
 
 func ExperimentalFeatures() schema.ExperimentalFeatures {

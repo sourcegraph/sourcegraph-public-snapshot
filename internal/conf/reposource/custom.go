@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"sync"
-	"sync/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,37 +26,30 @@ type cloneURLResolver struct {
 	to   string
 }
 
-var (
-	// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings,
-	// derived from the site config
-	cloneURLResolvers     atomic.Value
-	cloneURLResolversOnce sync.Once
-)
+// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived
+// from the site config
+var cloneURLResolvers = conf.Cached(func() interface{} {
+	cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
+	var resolvers []*cloneURLResolver
+	for _, c := range cloneURLConfig {
+		from, err := regexp.Compile(c.From)
+		if err != nil {
+			// Skip if there's an error. A user-visible validation error will appear due to the ContributeValidator call above.
+			log15.Error("Site config: unable to compile Git clone URL mapping regexp", "regexp", c.From)
+			continue
+		}
+		resolvers = append(resolvers, &cloneURLResolver{
+			from: from,
+			to:   c.To,
+		})
+	}
+	return resolvers
+})
 
 // CustomCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
 // user in site config. An empty string return value indicates no match.
 func CustomCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
-	cloneURLResolversOnce.Do(func() {
-		conf.Watch(func() {
-			cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
-			newCloneURLResolvers := make([]*cloneURLResolver, len(cloneURLConfig))
-			for i, c := range cloneURLConfig {
-				from, err := regexp.Compile(c.From)
-				if err != nil {
-					// Skip if there's an error. A user-visible validation error will appear due to the ContributeValidator call above.
-					log15.Error("Site config: unable to compile Git clone URL mapping regexp", "regexp", c.From)
-					continue
-				}
-				newCloneURLResolvers[i] = &cloneURLResolver{
-					from: from,
-					to:   c.To,
-				}
-			}
-			cloneURLResolvers.Store(newCloneURLResolvers)
-		})
-	})
-
-	for _, r := range cloneURLResolvers.Load().([]*cloneURLResolver) {
+	for _, r := range cloneURLResolvers().([]*cloneURLResolver) {
 		if name := mapString(r.from, cloneURL, r.to); name != "" {
 			return api.RepoName(name)
 		}

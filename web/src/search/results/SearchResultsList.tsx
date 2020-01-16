@@ -9,7 +9,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery, PatternTypeProps } from '..'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
@@ -35,11 +35,13 @@ const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__ty
 
 export interface SearchResultsListProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         SettingsCascadeProps,
         ThemeProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        CaseSensitivityProps,
+        InteractiveSearchProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -60,6 +62,8 @@ export interface SearchResultsListProps
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
     didSave: boolean
+
+    interactiveSearchMode: boolean
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
@@ -301,7 +305,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     }
 
     public render(): React.ReactNode {
-        const parsedQuery = parseSearchURLQuery(this.props.location.search)
+        const parsedQuery = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
 
         return (
             <>
@@ -417,7 +421,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                         '/search?' +
                                                                         buildSearchURLQuery(
                                                                             proposedQuery.query,
-                                                                            this.props.patternType
+                                                                            this.props.patternType,
+                                                                            this.props.caseSensitive,
+                                                                            this.props.filtersInQuery
                                                                         )
                                                                     }
                                                                 >

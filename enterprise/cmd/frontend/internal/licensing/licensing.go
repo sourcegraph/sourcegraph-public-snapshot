@@ -81,7 +81,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*license.Info, string, erro
 	// don't want to commit a valid license key to dev/config.json in the OSS repo).
 	keyText := os.Getenv("SOURCEGRAPH_LICENSE_KEY")
 	if keyText == "" {
-		keyText = conf.Get().Critical.LicenseKey
+		keyText = conf.Get().LicenseKey
 	}
 
 	if keyText != "" {

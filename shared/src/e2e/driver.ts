@@ -11,6 +11,7 @@ import { readEnvBoolean, retry } from './e2e-test-utils'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
 import { readFile } from 'mz/fs'
+import { Settings } from '../settings/settings'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -55,6 +56,11 @@ interface FindElementOptions {
      * Specifies how exact the search criterion is.
      */
     fuzziness?: 'exact' | 'prefix' | 'space-prefix' | 'contains'
+
+    /**
+     * Specifies whether to wait (and how long) for the element to appear.
+     */
+    wait?: PageFnOptions | boolean
 }
 
 function findElementRegexpStrings(
@@ -85,6 +91,10 @@ function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement
     for (const regexpString of regexps) {
         const regexp = new RegExp(regexpString)
         for (const el of document.querySelectorAll<HTMLElement>(tag)) {
+            if (!el.offsetParent) {
+                // Ignore hidden elements
+                continue
+            }
             if (el.innerText && el.innerText.match(regexp)) {
                 return el
             }
@@ -235,24 +245,39 @@ export class Driver {
         config: string
         ensureRepos?: string[]
     }): Promise<void> {
-        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-        await this.page.waitFor('.e2e-filtered-connection')
-        await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+        // Use the graphQL API to query external services on the instance.
+        const { externalServices } = dataOrThrowErrors(
+            await this.makeGraphQLRequest<IQuery>({
+                request: gql`
+                    query ExternalServices {
+                        externalServices(first: 1) {
+                            totalCount
+                        }
+                    }
+                `,
+                variables: {},
+            })
+        )
+        // Delete existing external services if there are any.
+        if (externalServices.totalCount !== 0) {
+            await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
+            await this.page.waitFor('.e2e-filtered-connection')
+            await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
 
-        // Matches buttons for deleting external services named ${displayName}.
-        const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
-        if (await this.page.$(deleteButtonSelector)) {
-            await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
+            // Matches buttons for deleting external services named ${displayName}.
+            const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
+            if (await this.page.$(deleteButtonSelector)) {
+                await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
+            }
         }
 
-        await (await this.page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
-
+        // Navigate to the add external service page.
+        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
         await (
             await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
                 visible: true,
             })
         ).click()
-
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,
@@ -413,18 +438,18 @@ export class Driver {
     }
 
     public async resetUserSettings(): Promise<void> {
+        return this.setUserSettings({})
+    }
+
+    public async setUserSettings<S extends Settings>(settings: S): Promise<void> {
         const currentSettingsResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
                 query UserSettings {
                     currentUser {
                         id
-                        settingsCascade {
-                            subjects {
-                                latestSettings {
-                                    id
-                                    contents
-                                }
-                            }
+                        latestSettings {
+                            id
+                            contents
                         }
                     }
                 }
@@ -433,33 +458,29 @@ export class Driver {
         })
 
         const { currentUser } = dataOrThrowErrors(currentSettingsResponse)
+        if (!currentUser) {
+            throw new Error('no currentUser')
+        }
 
-        if (currentUser?.settingsCascade) {
-            const emptySettings = '{}'
-            const [{ latestSettings }] = currentUser.settingsCascade.subjects.slice(-1)
-
-            if (latestSettings && latestSettings.contents !== emptySettings) {
-                const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
-                    request: gql`
-                        mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
-                            settingsMutation(input: { subject: $subject, lastID: $lastID }) {
-                                overwriteSettings(contents: $contents) {
-                                    empty {
-                                        alwaysNil
-                                    }
-                                }
+        const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+            request: gql`
+                mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
+                    settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+                        overwriteSettings(contents: $contents) {
+                            empty {
+                                alwaysNil
                             }
                         }
-                    `,
-                    variables: {
-                        contents: emptySettings,
-                        subject: currentUser.id,
-                        lastID: latestSettings.id,
-                    },
-                })
-                dataOrThrowErrors(updateConfigResponse)
-            }
-        }
+                    }
+                }
+            `,
+            variables: {
+                contents: JSON.stringify(settings),
+                subject: currentUser.id,
+                lastID: currentUser.latestSettings ? currentUser.latestSettings.id : null,
+            },
+        })
+        dataOrThrowErrors(updateConfigResponse)
     }
 
     /**
@@ -472,7 +493,7 @@ export class Driver {
      */
     public async findElementWithText(
         text: string,
-        options: FindElementOptions & { wait?: PageFnOptions | boolean } = {}
+        options: FindElementOptions & { action?: 'click' } = {}
     ): Promise<puppeteer.ElementHandle<Element>> {
         const { selector: tagName, fuzziness, wait } = options
         const tag = tagName || '*'
@@ -487,42 +508,43 @@ export class Driver {
             )
         }
 
-        const handlePromise = wait
-            ? this.page
-                  .waitForFunction(findElementMatchingRegexps, typeof wait === 'object' ? wait : {}, tag, regexps)
-                  .catch(err => {
-                      throw notFoundErr(err)
-                  })
-            : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
+        return retry(
+            async () => {
+                const handlePromise = wait
+                    ? this.page
+                          .waitForFunction(
+                              findElementMatchingRegexps,
+                              typeof wait === 'object' ? wait : {},
+                              tag,
+                              regexps
+                          )
+                          .catch(err => {
+                              throw notFoundErr(err)
+                          })
+                    : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
 
-        const el = (await handlePromise).asElement()
-        if (!el) {
-            throw notFoundErr()
-        }
-        return el
+                const el = (await handlePromise).asElement()
+                if (!el) {
+                    throw notFoundErr()
+                }
+
+                if (options.action === 'click') {
+                    await el.click()
+                }
+                return el
+            },
+            {
+                retries: options.action === 'click' ? 3 : 0,
+                minTimeout: 100,
+                maxTimeout: 100,
+                factor: 1,
+                maxRetryTime: 500,
+            }
+        )
     }
 
     public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
         await this.page.waitForFunction(url => document.location.href === url, options, url)
-    }
-
-    public async goToURLWithInvalidTLS(url: string): Promise<void> {
-        try {
-            await this.page.goto(url)
-        } catch (err) {
-            if (!err.message.includes('net::ERR_CERT_AUTHORITY_INVALID')) {
-                throw err
-            }
-            await this.page.waitForSelector('#details-button')
-            await this.page.click('#details-button')
-            await (
-                await this.findElementWithText('Proceed to', {
-                    selector: 'a',
-                    wait: { timeout: 2000 },
-                })
-            ).click()
-        }
-        await this.page.waitForSelector('.monaco-editor', { timeout: 2000 })
     }
 }
 
@@ -583,6 +605,10 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
                 return
             }
             if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
+                return
+            }
+            if (message.text().includes('Warning: componentWillReceiveProps has been renamed')) {
+                // This warning applies to our dependencies and leads to logspam on every page.
                 return
             }
             console.log('Browser console:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))

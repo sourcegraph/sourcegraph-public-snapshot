@@ -13,7 +13,7 @@ interface Props {
  */
 export const SearchButton: React.FunctionComponent<Props> = ({ noHelp }) => (
     <div className="search-button d-flex">
-        <button className="btn btn-primary search-button__btn" type="submit" aria-label="Search">
+        <button className="btn btn-primary search-button__btn e2e-search-button" type="submit" aria-label="Search">
             <SearchIcon className="icon-inline" aria-hidden="true" />
         </button>
         {!noHelp && <SearchHelpDropdownButton />}

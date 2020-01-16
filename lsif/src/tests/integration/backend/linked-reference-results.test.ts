@@ -29,17 +29,16 @@ describe('Backend', () => {
 
         for (const position of positions) {
             const { locations } = util.filterNodeModules(
-                util.mapInternalLocations(
-                    repository,
+                util.mapLocations(
                     (await ctx.backend.references(repository, commit, 'src/index.ts', position)) || { locations: [] }
                 )
             )
 
-            expect(locations).toContainEqual(util.createLocation('src/index.ts', 1, 4, 1, 7)) // abstract def in I
-            expect(locations).toContainEqual(util.createLocation('src/index.ts', 5, 4, 5, 7)) // concrete def in A
-            expect(locations).toContainEqual(util.createLocation('src/index.ts', 9, 4, 9, 7)) // concrete def in B
-            expect(locations).toContainEqual(util.createLocation('src/index.ts', 13, 2, 13, 5)) // use via I
-            expect(locations).toContainEqual(util.createLocation('src/index.ts', 16, 2, 16, 5)) // use via B
+            expect(locations).toContainEqual(util.createLocation(repository, commit, 'src/index.ts', 1, 4, 1, 7)) // abstract def in I
+            expect(locations).toContainEqual(util.createLocation(repository, commit, 'src/index.ts', 5, 4, 5, 7)) // concrete def in A
+            expect(locations).toContainEqual(util.createLocation(repository, commit, 'src/index.ts', 9, 4, 9, 7)) // concrete def in B
+            expect(locations).toContainEqual(util.createLocation(repository, commit, 'src/index.ts', 13, 2, 13, 5)) // use via I
+            expect(locations).toContainEqual(util.createLocation(repository, commit, 'src/index.ts', 16, 2, 16, 5)) // use via B
 
             // Ensure no additional references
             expect(locations?.length).toEqual(5)

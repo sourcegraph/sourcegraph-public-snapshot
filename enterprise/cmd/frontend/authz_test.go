@@ -40,11 +40,11 @@ func (m gitlabAuthzProviderParams) ServiceID() string {
 }
 
 func (m gitlabAuthzProviderParams) ServiceType() string {
-	panic("should never be called")
+	return "gitlab"
 }
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
-func Test_providersFromConfig(t *testing.T) {
+func Test_authzProvidersFromConfig(t *testing.T) {
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthAuthzProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{OAuthOp: op}
@@ -76,7 +76,7 @@ func Test_providersFromConfig(t *testing.T) {
 		{
 			description: "1 GitLab connection with authz enabled, 1 GitLab matching auth provider",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Gitlab: &schema.GitLabAuthProvider{
 							ClientID:     "clientID",
@@ -111,7 +111,7 @@ func Test_providersFromConfig(t *testing.T) {
 		{
 			description: "1 GitLab connection with authz enabled, 1 GitLab auth provider but doesn't match",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Gitlab: &schema.GitLabAuthProvider{
 							ClientID:     "clientID",
@@ -134,12 +134,12 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
+			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
 		},
 		{
 			description: "1 GitLab connection with authz enabled, no GitLab auth provider",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Builtin: &schema.BuiltinAuthProvider{Type: "builtin"},
 					}},
@@ -156,12 +156,12 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
+			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
 		},
 		{
 			description: "Two GitLab connections with authz enabled, two matching GitLab auth providers",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{
 						{
 							Gitlab: &schema.GitLabAuthProvider{
@@ -218,7 +218,7 @@ func Test_providersFromConfig(t *testing.T) {
 		{
 			description: "1 GitLab connection with authz disabled",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Gitlab: &schema.GitLabAuthProvider{
 							ClientID:     "clientID",
@@ -243,7 +243,7 @@ func Test_providersFromConfig(t *testing.T) {
 		{
 			description: "TTL error",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Gitlab: &schema.GitLabAuthProvider{
 							ClientID:     "clientID",
@@ -271,7 +271,7 @@ func Test_providersFromConfig(t *testing.T) {
 		{
 			description: "external auth provider",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Saml: &schema.SAMLAuthProvider{
 							ConfigID: "okta",
@@ -314,7 +314,7 @@ func Test_providersFromConfig(t *testing.T) {
 		{
 			description: "exact username matching",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{},
 				},
 			},
@@ -434,6 +434,72 @@ func Test_providersFromConfig(t *testing.T) {
 					t.Fatalf("no Bitbucket Server authz provider returned")
 				}
 			},
+		},
+
+		// For Sourcegraph authz provider
+		{
+			description: "Conflicted configuration between Sourcegraph and GitLab authz provider",
+			cfg: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					PermissionsUserMapping: &schema.PermissionsUserMapping{
+						Enabled: true,
+						BindID:  "email",
+					},
+					AuthProviders: []schema.AuthProviders{{
+						Gitlab: &schema.GitLabAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "GitLab",
+							Type:         "gitlab",
+							Url:          "https://gitlab.mine",
+						},
+					}},
+				},
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+						Ttl:              "48h",
+					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"The Sourcegraph permissions (`permissions.userMapping`) cannot be enabled when \"gitlab\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
+		},
+		{
+			description: "Conflicted configuration between Sourcegraph and Bitbucket Server authz provider",
+			cfg: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					PermissionsUserMapping: &schema.PermissionsUserMapping{
+						Enabled: true,
+						BindID:  "email",
+					},
+				},
+			},
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: &schema.BitbucketServerAuthorization{
+						IdentityProvider: schema.BitbucketServerIdentityProvider{
+							Username: &schema.BitbucketServerUsernameIdentity{
+								Type: "username",
+							},
+						},
+						Oauth: schema.BitbucketServerOAuth{
+							ConsumerKey: "sourcegraph",
+							SigningKey:  bogusKey,
+						},
+						Ttl: "15m",
+					},
+					Url:      "https://bitbucketserver.mycorp.org",
+					Username: "admin",
+					Token:    "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"The Sourcegraph permissions (`permissions.userMapping`) cannot be enabled when \"bitbucketServer\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
 		},
 	}
 

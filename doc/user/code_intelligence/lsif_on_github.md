@@ -30,6 +30,9 @@ jobs:
           verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
 ```
 
 Once that workflow is committed to your repository, you will start to see LSIF workflows in the Actions tab of your repository (e.g. https://github.com/sourcegraph/sourcegraph/actions).

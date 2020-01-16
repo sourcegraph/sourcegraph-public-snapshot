@@ -5,17 +5,9 @@ exports[`ErrorAlert should add a prefix if given 1`] = `
   <div
     class="alert alert-danger"
   >
-    <svg
-      class="mdi-icon icon icon-inline"
-      fill="currentColor"
-      height="24"
-      viewBox="0 0 24 24"
-      width="24"
-    >
-      <path
-        d="M13,13H11V7H13M13,17H11V15H13M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
-      />
-    </svg>
+    <alertcircleicon
+      class="icon icon-inline"
+    />
      
     <strong>
       An error happened
@@ -52,17 +44,9 @@ exports[`ErrorAlert should render a Go multierror nicely 1`] = `
   <div
     class="alert alert-danger"
   >
-    <svg
-      class="mdi-icon icon icon-inline"
-      fill="currentColor"
-      height="24"
-      viewBox="0 0 24 24"
-      width="24"
-    >
-      <path
-        d="M13,13H11V7H13M13,17H11V15H13M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
-      />
-    </svg>
+    <alertcircleicon
+      class="icon icon-inline"
+    />
      
      
     <span
@@ -92,17 +76,9 @@ exports[`ErrorAlert should render an Error object as an alert 1`] = `
   <div
     class="alert alert-danger"
   >
-    <svg
-      class="mdi-icon icon icon-inline"
-      fill="currentColor"
-      height="24"
-      viewBox="0 0 24 24"
-      width="24"
-    >
-      <path
-        d="M13,13H11V7H13M13,17H11V15H13M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
-      />
-    </svg>
+    <alertcircleicon
+      class="icon icon-inline"
+    />
      
      
     <span

@@ -170,7 +170,7 @@ func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid))
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 }
 
 func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid))
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}

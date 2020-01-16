@@ -2,6 +2,9 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { ErrorBoundary } from './ErrorBoundary'
 
+jest.mock('mdi-react/ErrorIcon', () => 'ErrorIcon')
+jest.mock('mdi-react/ReloadIcon', () => 'ReloadIcon')
+
 const ThrowError: React.FunctionComponent = () => {
     throw new Error('x')
 }

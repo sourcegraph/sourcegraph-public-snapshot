@@ -15,21 +15,26 @@ interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {}
 export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
     <>
         <h1>Campaigns</h1>
-        <p>Track large-scale code changes</p>
+        <p>Perform and track large-scale code changes</p>
 
         <div className="text-right mb-1">
             <Link to="/campaigns/new" className="btn btn-primary">
-                <AddIcon className="icon-inline" /> New Campaign
+                <AddIcon className="icon-inline" /> New campaign
             </Link>
         </div>
 
-        <FilteredConnection<ICampaign>
+        <FilteredConnection<
+            Pick<
+                ICampaign,
+                'id' | 'plan' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt'
+            >
+        >
             {...props}
             nodeComponent={CampaignNode}
             queryConnection={queryCampaigns}
             hideSearch={true}
-            noun="Campaign"
-            pluralNoun="Campaigns"
+            noun="campaign"
+            pluralNoun="campaigns"
         />
     </>
 )

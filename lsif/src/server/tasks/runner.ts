@@ -1,20 +1,33 @@
 import * as settings from '../settings'
 import AsyncPolling from 'async-polling'
-import { updateQueueSizeGauge, resetStalledUploads, cleanOldUploads, cleanFailedUploads } from './uploads'
+import {
+    updateQueueSizeGauge,
+    resetStalledUploads,
+    cleanOldUploads,
+    cleanFailedUploads,
+    purgeOldDumps,
+} from './uploads'
 import { Connection } from 'typeorm'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Logger } from 'winston'
-import { tryWithLock } from '../../shared/locks/locks'
-import { UploadsManager } from '../../shared/uploads/uploads'
+import { tryWithLock } from '../../shared/store/locks'
+import { UploadManager } from '../../shared/store/uploads'
+import { DumpManager } from '../../shared/store/dumps'
 
 /**
  * Begin running cleanup tasks on a schedule in the background.
  *
  * @param connection The Postgres connection.
- * @param uploadsManager The uploads manager instance.
+ * @param dumpManager The dumps manager instance.
+ * @param uploadManager The uploads manager instance.
  * @param logger The logger instance.
  */
-export function startTasks(connection: Connection, uploadsManager: UploadsManager, logger: Logger): void {
+export function startTasks(
+    connection: Connection,
+    dumpManager: DumpManager,
+    uploadManager: UploadManager,
+    logger: Logger
+): void {
     /**
      * Start invoking the given task on an interval.
      *
@@ -40,13 +53,20 @@ export function startTasks(connection: Connection, uploadsManager: UploadsManage
         tryWithLock(connection, name, () => logAndTraceCall({ logger }, name, task))
 
     runTask(
-        wrapTask('Resetting stalled uploads', ctx => resetStalledUploads(uploadsManager, ctx)),
+        wrapTask('Resetting stalled uploads', ctx => resetStalledUploads(uploadManager, ctx)),
         settings.RESET_STALLED_UPLOADS_INTERVAL
     )
 
     runTask(
-        wrapTask('Cleaning old uploads', ctx => cleanOldUploads(uploadsManager, ctx)),
+        wrapTask('Cleaning old uploads', ctx => cleanOldUploads(uploadManager, ctx)),
         settings.CLEAN_OLD_UPLOADS_INTERVAL
+    )
+
+    runTask(
+        wrapTask('Purging old dumps', ctx =>
+            purgeOldDumps(connection, dumpManager, settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
+        ),
+        settings.PURGE_OLD_DUMPS_INTERVAL
     )
 
     runTask(
@@ -54,5 +74,5 @@ export function startTasks(connection: Connection, uploadsManager: UploadsManage
         settings.CLEAN_FAILED_UPLOADS_INTERVAL
     )
 
-    runTask((): Promise<void> => updateQueueSizeGauge(uploadsManager), settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL)
+    runTask((): Promise<void> => updateQueueSizeGauge(uploadManager), settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL)
 }

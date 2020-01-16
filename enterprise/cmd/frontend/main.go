@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	authzResolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
@@ -29,6 +30,7 @@ import (
 	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func main() {
@@ -63,13 +65,18 @@ func main() {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
-	githubWebhook := &a8n.GitHubWebhook{
-		Store: a8n.NewStoreWithClock(dbconn.Global, clock),
-		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
-		Now:   clock,
-	}
+	a8nStore := a8n.NewStoreWithClock(dbconn.Global, clock)
+	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	shared.Main(githubWebhook)
+	githubWebhook := a8n.NewGitHubWebhook(a8nStore, repositories, clock)
+	bitbucketServerWebhook := a8n.NewBitbucketServerWebhook(a8nStore, repositories, clock)
+
+	go bitbucketServerWebhook.Upsert(30 * time.Second)
+
+	go a8n.RunCampaignJobs(ctx, a8nStore, clock, 5*time.Second)
+	go a8n.RunChangesetJobs(ctx, a8nStore, clock, gitserver.DefaultClient, 5*time.Second)
+
+	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
 
 func initLicensing() {
@@ -110,6 +117,7 @@ func initLicensing() {
 func initResolvers() {
 	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
 	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
+	graphqlbackend.NewAuthzResolver = authzResolvers.NewResolver
 }
 
 func initLSIFEndpoints() {

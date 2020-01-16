@@ -28,10 +28,6 @@ export function getAssetsURL(sourcegraphURL: string): string {
     return assetsURL.endsWith('/') ? assetsURL : assetsURL + '/'
 }
 
-export function isSourcegraphDotCom(url: string): boolean {
-    return url === DEFAULT_SOURCEGRAPH_URL
-}
-
 type PlatformName = typeof globalThis.SOURCEGRAPH_INTEGRATION | 'firefox-extension' | 'chrome-extension'
 
 export function getPlatformName(): PlatformName {

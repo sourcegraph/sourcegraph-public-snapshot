@@ -15,7 +15,7 @@ import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 import { PatternTypeProps } from '../search'
 import { ErrorAlert } from '../components/alerts'
 
-interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'togglePatternType'> {
+interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'setPatternType'> {
     savedSearch: GQL.ISavedSearch
     onDelete: () => void
 }
@@ -58,7 +58,12 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
             <div className="saved-search-list-page__row list-group-item e2e-saved-search-list-page-row">
                 <div className="d-flex">
                     <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
-                    <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query, this.props.patternType)}>
+                    <Link
+                        to={
+                            '/search?' +
+                            buildSearchURLQuery(this.props.savedSearch.query, this.props.patternType, false)
+                        }
+                    >
                         <div className="e2e-saved-search-list-page-row-title">{this.props.savedSearch.description}</div>
                     </Link>
                 </div>
@@ -97,7 +102,7 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}>, NamespaceProps, Omit<PatternTypeProps, 'togglePatternType'> {}
+interface Props extends RouteComponentProps<{}>, NamespaceProps, Omit<PatternTypeProps, 'setPatternType'> {}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()

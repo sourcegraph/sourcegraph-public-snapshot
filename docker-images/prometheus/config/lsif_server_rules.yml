@@ -1,0 +1,13 @@
+groups:
+  - name: lsif-server
+    rules:
+      - record: alert_count
+        labels:
+          service_name: lsif-server
+          level: critical
+        expr: 0
+      - record: alert_count
+        labels:
+          service_name: lsif-server
+          level: warning
+        expr: 0

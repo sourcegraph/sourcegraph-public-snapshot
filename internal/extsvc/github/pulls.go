@@ -19,6 +19,12 @@ type Actor struct {
 	URL       string
 }
 
+// A Team represents a team on Github.
+type Team struct {
+	Name string
+	URL  string
+}
+
 // A GitActor represents an actor in a Git commit (ie. an author or committer).
 type GitActor struct {
 	AvatarURL string
@@ -238,17 +244,18 @@ func (e ReviewDismissedEvent) Key() string {
 type ReviewRequestRemovedEvent struct {
 	Actor             Actor
 	RequestedReviewer Actor
+	RequestedTeam     Team
 	CreatedAt         time.Time
 }
 
 // Key is a unique key identifying this event in the context of its pull request.
 func (e ReviewRequestRemovedEvent) Key() string {
-	return fmt.Sprintf(
-		"%s:%s:%d",
-		e.Actor.Login,
-		e.RequestedReviewer.Login,
-		e.CreatedAt.UnixNano(),
-	)
+	requestedFrom := e.RequestedReviewer.Login
+	if requestedFrom == "" {
+		requestedFrom = e.RequestedTeam.Name
+	}
+
+	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CreatedAt.UnixNano())
 }
 
 // ReviewRequestedRevent represents a 'review_requested' event on a
@@ -256,17 +263,18 @@ func (e ReviewRequestRemovedEvent) Key() string {
 type ReviewRequestedEvent struct {
 	Actor             Actor
 	RequestedReviewer Actor
+	RequestedTeam     Team
 	CreatedAt         time.Time
 }
 
 // Key is a unique key identifying this event in the context of its pull request.
 func (e ReviewRequestedEvent) Key() string {
-	return fmt.Sprintf(
-		"%s:%s:%d",
-		e.Actor.Login,
-		e.RequestedReviewer.Login,
-		e.CreatedAt.UnixNano(),
-	)
+	requestedFrom := e.RequestedReviewer.Login
+	if requestedFrom == "" {
+		requestedFrom = e.RequestedTeam.Name
+	}
+
+	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CreatedAt.UnixNano())
 }
 
 // UnassignedEvent represents an 'unassigned' event on a pull request.
@@ -392,6 +400,58 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 	pr := &result.CreatePullRequest.PullRequest.PullRequest
 	pr.TimelineItems = result.CreatePullRequest.PullRequest.TimelineItems.Nodes
 	pr.Participants = result.CreatePullRequest.PullRequest.Participants.Nodes
+	return pr, nil
+}
+
+type UpdatePullRequestInput struct {
+	// The Node ID of the pull request.
+	PullRequestID string `json:"pullRequestId"`
+	// The name of the branch you want your changes pulled into. This should be
+	// an existing branch on the current repository.
+	BaseRefName string `json:"baseRefName"`
+	// The title of the pull request.
+	Title string `json:"title"`
+	// The body of the pull request (optional).
+	Body string `json:"body"`
+}
+
+// UpdatePullRequest creates a PullRequest on Github.
+func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString(`mutation	UpdatePullRequest($input:UpdatePullRequestInput!) {
+  updatePullRequest(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
+
+	var result struct {
+		UpdatePullRequest struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems struct{ Nodes []TimelineItem }
+			} `json:"pullRequest"`
+		} `json:"updatePullRequest"`
+	}
+
+	input := map[string]interface{}{"input": in}
+	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	if err != nil {
+		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
+			e := gqlErrs[0]
+			if strings.Contains(e.Message, "A pull request already exists for") {
+				return nil, ErrPullRequestAlreadyExists
+			}
+		}
+		return nil, err
+	}
+
+	pr := &result.UpdatePullRequest.PullRequest.PullRequest
+	pr.TimelineItems = result.UpdatePullRequest.PullRequest.TimelineItems.Nodes
+	pr.Participants = result.UpdatePullRequest.PullRequest.Participants.Nodes
 	return pr, nil
 }
 
@@ -675,11 +735,17 @@ fragment pr on PullRequest {
 		... on ReviewRequestRemovedEvent {
 		actor { ...actor }
 		requestedReviewer { ...actor }
+		requestedTeam: requestedReviewer {
+			... on Team { name url avatarUrl }
+		}
 		createdAt
 		}
 		... on ReviewRequestedEvent {
 		actor { ...actor }
 		requestedReviewer { ...actor }
+		requestedTeam: requestedReviewer {
+			... on Team { name url avatarUrl }
+		}
 		createdAt
 		}
 		... on UnassignedEvent {

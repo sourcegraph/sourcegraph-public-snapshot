@@ -4,20 +4,8 @@ import { getTestTools } from './util/init'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
 import { TestResourceManager } from './util/TestResourceManager'
-import {
-    ensureLoggedInOrCreateTestUser,
-    ensureNewUser,
-    ensureNewOrganization,
-    editCriticalSiteConfig,
-} from './util/helpers'
-import {
-    getUser,
-    setUserSiteAdmin,
-    fetchAllOrganizations,
-    deleteOrganization,
-    getViewerSettings,
-    getManagementConsoleState,
-} from './util/api'
+import { ensureLoggedInOrCreateTestUser, ensureNewUser, ensureNewOrganization, editSiteConfig } from './util/helpers'
+import { getUser, setUserSiteAdmin, fetchAllOrganizations, deleteOrganization, getViewerSettings } from './util/api'
 import { PlatformContext } from '../../../shared/src/platform/context'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { parseJSONCOrError } from '../../../shared/src/util/jsonc'
@@ -106,7 +94,7 @@ describe('Organizations regression test suite', () => {
             }
 
             await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/organizations')
-            await (await driver.findElementWithText('Create organization', { wait: { timeout: 2000 } })).click()
+            await driver.findElementWithText('Create organization', { action: 'click', wait: { timeout: 2000 } })
             await driver.replaceText({
                 selector: '.e2e-new-org-name-input',
                 newText: testOrg.name,
@@ -115,7 +103,7 @@ describe('Organizations regression test suite', () => {
                 selector: '.e2e-new-org-display-name-input',
                 newText: testOrg.displayName,
             })
-            await (await driver.findElementWithText('Create organization')).click()
+            await driver.findElementWithText('Create organization', { action: 'click' })
             resourceManager.add('Organization', testOrg.name, () => deleteOrganizationByName(gqlClient, testOrg.name))
             await driver.page.waitForSelector('.monaco-editor')
             await driver.replaceText({
@@ -130,7 +118,7 @@ describe('Organizations regression test suite', () => {
             await driver.page.keyboard.press('i')
             await driver.page.keyboard.up(Key.Shift)
             await driver.page.keyboard.up(Key.Control)
-            await (await driver.findElementWithText('Save changes')).click()
+            await driver.findElementWithText('Save changes', { action: 'click' })
             await delay(500) // Wait for save
             await driver.findElementWithText('Save changes')
 
@@ -149,12 +137,12 @@ describe('Organizations regression test suite', () => {
             }
 
             // Remove user from org
-            await (await driver.findElementWithText('Members')).click()
+            await driver.findElementWithText('Members', { action: 'click' })
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             driver.page.once('dialog', async dialog => {
                 await dialog.accept()
             })
-            await (await driver.findElementWithText('Leave organization', { wait: { timeout: 1000 } })).click()
+            await driver.findElementWithText('Leave organization', { action: 'click', wait: { timeout: 1000 } })
 
             await driver.page.waitForFunction(() => !document.body.innerText.includes('Leave organization'))
 
@@ -180,8 +168,7 @@ describe('Organizations regression test suite', () => {
             'noCleanup',
             'sourcegraphBaseUrl',
             'testUserPassword',
-            'logBrowserConsole',
-            'managementConsoleUrl'
+            'logBrowserConsole'
         )
         afterAll(async () => {
             if (!config.noCleanup) {
@@ -214,19 +201,15 @@ describe('Organizations regression test suite', () => {
                 const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
 
                 // Initial state: no auth.userOrgMap property
-                const { plaintextPassword: managementConsolePassword } = await getManagementConsoleState(gqlClient)
-                if (!managementConsolePassword) {
-                    throw new Error('empty management console password')
-                }
                 resourceManager.add(
                     'Configuration',
                     'auth.userOrgMap',
-                    await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
+                    await editSiteConfig(gqlClient, contents =>
                         jsoncEdit.removeProperty(contents, ['auth.userOrgMap'], formattingOptions)
                     )
                 )
 
-                // Retry, because the critical configuration update endpoint is eventually consistent
+                // Retry, because the configuration update endpoint is eventually consistent
                 let lastCreatedOrg: GQL.IOrg
                 await retry(
                     async () => {
@@ -260,7 +243,7 @@ describe('Organizations regression test suite', () => {
                 )
 
                 // Set auth.userOrgMap
-                await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
+                await editSiteConfig(gqlClient, contents =>
                     jsoncEdit.setProperty(contents, ['auth.userOrgMap'], { '*': [testOrg.name] }, formattingOptions)
                 )
 

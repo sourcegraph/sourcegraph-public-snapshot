@@ -54,6 +54,8 @@
 /internal/prefixsuffixsaver @beyang
 /internal/gosrc @beyang
 /internal/txemail @slimsag
+/internal/src-cli @efritz
+/internal/linkheader @efritz
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
 /graphql-schema-linter.config.js @felixfbecker
@@ -238,10 +240,6 @@ README.md @sqs
 /internal/redispool/ @keegancsmith
 /internal/store/ @keegancsmith
 /internal/metrics @keegancsmith @slimsag
-
-# Management console
-/cmd/management-console @slimsag
-/enterprise/cmd/management-console @slimsag
 
 # Code discussions
 **/*discussion* @slimsag

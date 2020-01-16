@@ -91,7 +91,7 @@ func workForever(ctx context.Context) {
 				userID, threadID, err = db.DiscussionMailReplyTokens.Get(ctx, token)
 				if err == db.ErrInvalidToken {
 					log15.Debug("discussions: mailreply worker: ignoring email with invalid authorization token", "subject", msg.Envelope.Subject, "mailbox_name", toAddress.MailboxName)
-					msg.MarkSeenAndDeleted()
+					bestEffortMarkSeenAndDeleted(msg)
 					break // Invalid token / attacker
 				}
 				if err != nil {
@@ -114,7 +114,7 @@ func workForever(ctx context.Context) {
 			contents := strings.TrimSpace(string(trimGmailReplyQuote(textContent)))
 			if contents == "" {
 				log15.Debug("discussions: mailreply worker: ignoring email with no effective content", "subject", msg.Envelope.Subject, "content", string(textContent))
-				msg.MarkSeenAndDeleted()
+				bestEffortMarkSeenAndDeleted(msg)
 				continue // ignore empty replies
 			}
 
@@ -130,7 +130,7 @@ func workForever(ctx context.Context) {
 
 			// Now that we're finished handling this message, mark it as seen
 			// and to be deleted.
-			msg.MarkSeenAndDeleted()
+			bestEffortMarkSeenAndDeleted(msg)
 		}
 		if err := <-done; err != nil {
 			return errors.Wrap(err, "done")
@@ -145,6 +145,13 @@ func workForever(ctx context.Context) {
 			log15.Error("discussions: mailreply worker: error while working", "error", err)
 		}
 		time.Sleep(5 * time.Second)
+	}
+}
+
+func bestEffortMarkSeenAndDeleted(msg *Message) {
+	err := msg.MarkSeenAndDeleted()
+	if err != nil {
+		log15.Warn("discussions: mailreply worker: error marking message seen and deleted", "error", err)
 	}
 }
 

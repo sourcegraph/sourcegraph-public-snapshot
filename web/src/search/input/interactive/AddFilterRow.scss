@@ -1,0 +1,15 @@
+.add-filter-row {
+    display: flex;
+    padding: 0.5rem 0.5rem;
+    &--homepage {
+        padding-left: 0;
+    }
+
+    &__button {
+        &:not(:first-child) {
+            margin-left: 0.25rem;
+        }
+    }
+}
+
+@import './AddFilterDropdown';

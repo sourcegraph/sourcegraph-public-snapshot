@@ -30,7 +30,7 @@ export interface ActionItemAction {
 
 export interface ActionItemComponentProps
     extends ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip'> {
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     location: H.Location
 
     iconClassName?: string
@@ -74,7 +74,7 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
     showInlineError?: boolean
 
     /** Instead of showing the icon and/or title, show this element. */
-    title?: React.ReactElement<any>
+    title?: JSX.Element | null
 }
 
 const LOADING: 'loading' = 'loading'

@@ -465,7 +465,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "github.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -486,7 +485,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -507,7 +505,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "bitbucketserver.mycorp.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -528,7 +525,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
@@ -563,7 +559,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 		gitoliteRepo := repos.Repo{
 			Name:      "gitolite.mycorp.com/bar",
 			URI:       "gitolite.mycorp.com/bar",
-			Enabled:   true,
 			CreatedAt: now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "bar",
@@ -604,6 +599,10 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			}
 
 			sort.Sort(want)
+
+			if noID := want.Filter(hasNoID); len(noID) > 0 {
+				t.Fatalf("UpsertRepos didn't assign an ID to all repos: %v", noID.Names())
+			}
 
 			have, err := tx.ListRepos(ctx, repos.StoreListReposArgs{
 				Kinds: kinds,
@@ -647,7 +646,102 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			} else if diff := pretty.Compare(have, repos.Repos{}); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
+
+			// Insert previously soft-deleted repos. Ensure we get back the same ID.
+			if err = tx.UpsertRepos(ctx, want.Clone().With(repos.Opt.RepoID(0))...); err != nil {
+				t.Errorf("UpsertRepos error: %s", err)
+			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
+				t.Errorf("ListRepos error: %s", err)
+			} else if diff := pretty.Compare(have, want); diff != "" {
+				t.Errorf("ListRepos:\n%s", diff)
+			}
+
+			// Delete all again, then try insert repos with different external
+			// IDs but same name. Check we get new IDs.
+			for _, r := range want {
+				r.ID = 0
+				r.ExternalRepo.ID += "-different"
+			}
+			if err = tx.UpsertRepos(ctx, deleted...); err != nil {
+				t.Fatalf("UpsertRepos deleted error: %s", err)
+			} else if err = tx.UpsertRepos(ctx, want...); err != nil {
+				t.Fatalf("UpsertRepos want error: %s", err)
+			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
+				t.Errorf("ListRepos error: %s", err)
+			} else if diff := pretty.Compare(have, want); diff != "" {
+				t.Errorf("ListRepos:\n%s", diff)
+			} else if sameIDs := want.Filter(hasID(deleted.IDs()...)); len(sameIDs) > 0 {
+				t.Errorf("ListRepos returned IDs of soft deleted repos: %v", sameIDs.Names())
+			}
 		}))
+
+		t.Run("many repos soft-deleted and single repo reinserted", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			all := mkRepos(7, repositories...)
+
+			if err := tx.UpsertRepos(ctx, all...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sort.Sort(all)
+
+			if noID := all.Filter(hasNoID); len(noID) > 0 {
+				t.Fatalf("UpsertRepos didn't assign an ID to all repos: %v", noID.Names())
+			}
+
+			have, err := tx.ListRepos(ctx, repos.StoreListReposArgs{
+				Kinds: kinds,
+			})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			if diff := pretty.Compare(have, all); diff != "" {
+				t.Fatalf("ListRepos:\n%s", diff)
+			}
+
+			allDeleted := all.Clone().With(repos.Opt.RepoDeletedAt(now))
+			args := repos.StoreListReposArgs{}
+
+			if err = tx.UpsertRepos(ctx, allDeleted...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			} else if have, err = tx.ListRepos(ctx, args); err != nil {
+				t.Errorf("ListRepos error: %s", err)
+			} else if diff := pretty.Compare(have, repos.Repos{}); diff != "" {
+				t.Errorf("ListRepos:\n%s", diff)
+			}
+
+			// Insert one of the previously soft-deleted repos. Ensure ID on upserted repo is set and we get back the same ID.
+			want := repos.Repos{all[0]}
+			upsert := want.Clone().With(repos.Opt.RepoID(0))
+			if err = tx.UpsertRepos(ctx, upsert...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+			if upsert[0].ID == 0 {
+				t.Fatalf("Repo ID is zero")
+			}
+
+			if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+			if diff := pretty.Compare(have, want); diff != "" {
+				t.Fatalf("ListRepos:\n%s", diff)
+			}
+		}))
+	}
+}
+
+func hasNoID(r *repos.Repo) bool {
+	return r.ID == 0
+}
+
+func hasID(ids ...uint32) func(r *repos.Repo) bool {
+	return func(r *repos.Repo) bool {
+		for _, id := range ids {
+			if r.ID == id {
+				return true
+			}
+		}
+		return false
 	}
 }
 
@@ -747,7 +841,6 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 
 	gitoliteRepo := repos.Repo{
 		Name:      "gitolite.mycorp.com/bar",
-		Enabled:   true,
 		CreatedAt: now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
@@ -822,15 +915,6 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		stored := repositories.With(repos.Opt.RepoDeletedAt(now))
 		testCases = append(testCases, testCase{
 			name:   "excludes soft deleted repos by default",
-			stored: stored,
-			repos:  repos.Assert.ReposEqual(),
-		})
-	}
-
-	{
-		stored := repositories.With(repos.Opt.RepoDeletedAt(now))
-		testCases = append(testCases, testCase{
-			name:   "excludes deleted repos",
 			stored: stored,
 			repos:  repos.Assert.ReposEqual(),
 		})
@@ -935,13 +1019,15 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 }
 
 func testStoreListReposPagination(store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
 	github := repos.Repo{
 		Name:        "foo/bar",
 		URI:         "github.com/foo/bar",
 		Description: "The description",
 		Language:    "barlang",
-		Enabled:     true,
-		CreatedAt:   time.Now(),
+		CreatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAA==",
 			ServiceType: "github",

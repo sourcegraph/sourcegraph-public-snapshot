@@ -15,7 +15,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, fetchSiteUpdateCheck } from './backend'
 import { ErrorAlert } from '../components/alerts'
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<{}> {}
 
 interface State {
     buildVersion?: string
@@ -56,7 +56,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const autoUpdateCheckingEnabled = window.context.critical['update.channel'] === 'release'
+        const autoUpdateCheckingEnabled = window.context.site['update.channel'] === 'release'
         return (
             <div className="site-admin-updates-page">
                 <PageTitle title="Updates - Admin" />

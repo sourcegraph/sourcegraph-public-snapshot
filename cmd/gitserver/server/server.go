@@ -613,7 +613,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	if cloneInProgress {
 		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
 		})
@@ -810,6 +810,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		tmp := GitDir(tmpPath)
 
 		cmd := exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
+		// see issue #7322: skip LFS content in repositories with Git LFS configured
+		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
 
 		pr, pw := io.Pipe()
@@ -1231,8 +1233,8 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	})
 	hasher := sha256.New()
 	for _, b := range lines {
-		hasher.Write(b)
-		hasher.Write([]byte("\n"))
+		_, _ = hasher.Write(b)
+		_, _ = hasher.Write([]byte("\n"))
 	}
 	hash := make([]byte, hex.EncodedLen(hasher.Size()))
 	hex.Encode(hash, hasher.Sum(nil))

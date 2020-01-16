@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
-const FirstMigration = 1528395582
+const FirstMigration = 1528395604
 
 func TestIDConstraints(t *testing.T) {
 	ups, err := filepath.Glob("*.up.sql")

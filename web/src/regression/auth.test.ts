@@ -9,36 +9,33 @@ import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
 import {
     ensureLoggedInOrCreateTestUser,
-    createAuthProviderGUI,
     login,
     loginToOkta,
     loginToGitHub,
     loginToGitLab,
+    createAuthProvider,
 } from './util/helpers'
-import { setUserSiteAdmin, getUser, getManagementConsoleState } from './util/api'
+import { setUserSiteAdmin, getUser } from './util/api'
 import {
     GitHubAuthProvider,
     GitLabAuthProvider,
     SAMLAuthProvider,
     OpenIDConnectAuthProvider,
-} from '../schema/critical.schema'
+} from '../schema/site.schema'
 
 const oktaUserAmy = 'beyang+sg-e2e-regression-test-amy@sourcegraph.com'
 
 async function testLogin(
     driver: Driver,
+    gqlClient: GraphQLClient,
     resourceManager: TestResourceManager,
     {
         sourcegraphBaseUrl,
-        managementConsoleUrl,
-        managementConsolePassword,
         authProvider,
         loginToAuthProvider,
     }: {
         sourcegraphBaseUrl: string
 
-        managementConsoleUrl: string
-        managementConsolePassword: string
         authProvider: (GitHubAuthProvider | GitLabAuthProvider | SAMLAuthProvider | OpenIDConnectAuthProvider) & {
             displayName: string
         }
@@ -48,12 +45,13 @@ async function testLogin(
     resourceManager.add(
         'Authentication provider',
         authProvider.displayName,
-        await createAuthProviderGUI(driver, managementConsoleUrl, managementConsolePassword, authProvider)
+        await createAuthProvider(gqlClient, authProvider)
     )
     await login(driver, { sourcegraphBaseUrl, authProviderDisplayName: authProvider.displayName }, loginToAuthProvider)
 
-    await (await driver.page.waitForSelector('.e2e-user-nav-item-toggle')).click()
-    await (await driver.findElementWithText('Sign out', { wait: { timeout: 2000 } })).click()
+    await driver.page.waitForSelector('.e2e-user-nav-item-toggle')
+    await driver.page.click('.e2e-user-nav-item-toggle')
+    await driver.findElementWithText('Sign out', { action: 'click', wait: { timeout: 2000 } })
     await driver.findElementWithText('Signed out of Sourcegraph', { wait: { timeout: 2000 } })
     await driver.page.goto(sourcegraphBaseUrl)
     await driver.findElementWithText('Sign in', { wait: { timeout: 5000 } })
@@ -73,7 +71,6 @@ describe('Auth regression test suite', () => {
         'noCleanup',
         'testUserPassword',
         'logBrowserConsole',
-        'managementConsoleUrl',
         'gitHubClientID',
         'gitHubClientSecret',
         'gitHubUserAmyPassword',
@@ -87,7 +84,6 @@ describe('Auth regression test suite', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
-    let managementConsolePassword: string
     beforeAll(async () => {
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
         resourceManager.add(
@@ -104,12 +100,6 @@ describe('Auth regression test suite', () => {
             throw new Error(`test user ${testUsername} does not exist`)
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
-
-        const { plaintextPassword } = await getManagementConsoleState(gqlClient)
-        if (!plaintextPassword) {
-            throw new Error('empty management console password')
-        }
-        managementConsolePassword = plaintextPassword
     })
 
     afterAll(async () => {
@@ -124,9 +114,8 @@ describe('Auth regression test suite', () => {
     test(
         'Sign in via GitHub',
         async () => {
-            await testLogin(driver, resourceManager, {
+            await testLogin(driver, gqlClient, resourceManager, {
                 ...config,
-                managementConsolePassword,
                 authProvider: {
                     type: 'github',
                     displayName: '[TEST] GitHub.com',
@@ -144,9 +133,8 @@ describe('Auth regression test suite', () => {
     test(
         'Sign in with GitLab',
         async () => {
-            await testLogin(driver, resourceManager, {
+            await testLogin(driver, gqlClient, resourceManager, {
                 ...config,
-                managementConsolePassword,
                 authProvider: {
                     type: 'gitlab',
                     displayName: '[TEST] GitLab.com',
@@ -163,9 +151,8 @@ describe('Auth regression test suite', () => {
     test(
         'Sign in with Okta SAML',
         async () => {
-            await testLogin(driver, resourceManager, {
+            await testLogin(driver, gqlClient, resourceManager, {
                 ...config,
-                managementConsolePassword,
                 authProvider: {
                     type: 'saml',
                     displayName: '[TEST] Okta SAML',
@@ -180,9 +167,8 @@ describe('Auth regression test suite', () => {
     test(
         'Sign in with Okta OpenID Connect',
         async () => {
-            await testLogin(driver, resourceManager, {
+            await testLogin(driver, gqlClient, resourceManager, {
                 ...config,
-                managementConsolePassword,
                 authProvider: {
                     type: 'openidconnect',
                     displayName: '[TEST] Okta OpenID Connect',

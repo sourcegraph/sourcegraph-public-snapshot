@@ -13,7 +13,7 @@ export interface RepoSettingsSideBarItem extends NavItemDescriptor {}
 
 export type RepoSettingsSideBarItems = readonly RepoSettingsSideBarItem[]
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<{}> {
     repoSettingsSidebarItems: RepoSettingsSideBarItems
     className?: string
     repo?: GQL.IRepository

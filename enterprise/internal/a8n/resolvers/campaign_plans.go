@@ -6,11 +6,13 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -27,6 +29,17 @@ func marshalCampaignPlanID(id int64) graphql.ID {
 
 func unmarshalCampaignPlanID(id graphql.ID) (campaignPlanID int64, err error) {
 	err = relay.UnmarshalSpec(id, &campaignPlanID)
+	return
+}
+
+const campaignJobIDKind = "ChangesetPlan"
+
+func marshalCampaignJobID(id int64) graphql.ID {
+	return relay.MarshalID(campaignJobIDKind, id)
+}
+
+func unmarshalCampaignJobID(id graphql.ID) (cid int64, err error) {
+	err = relay.UnmarshalSpec(id, &cid)
 	return
 }
 
@@ -53,8 +66,7 @@ func (r *campaignPlanResolver) Changesets(
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {
 	return &campaignJobsConnectionResolver{
-		store:        r.store,
-		campaignPlan: r.campaignPlan,
+		store: r.store,
 		opts: ee.ListCampaignJobsOpts{
 			CampaignPlanID: r.campaignPlan.ID,
 			Limit:          int(args.GetFirst()),
@@ -64,21 +76,29 @@ func (r *campaignPlanResolver) Changesets(
 	}
 }
 
+func (r *campaignPlanResolver) PreviewURL() string {
+	u := globals.ExternalURL().ResolveReference(&url.URL{Path: "/campaigns/new"})
+	q := url.Values{}
+	q.Set("plan", string(r.ID()))
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
 type campaignJobsConnectionResolver struct {
-	store        *ee.Store
-	campaignPlan *a8n.CampaignPlan
-	opts         ee.ListCampaignJobsOpts
+	store *ee.Store
+	opts  ee.ListCampaignJobsOpts
 
 	// cache results because they are used by multiple fields
-	once      sync.Once
-	jobs      []*a8n.CampaignJob
-	reposByID map[int32]*repos.Repo
-	next      int64
-	err       error
+	once                         sync.Once
+	jobs                         []*a8n.CampaignJob
+	reposByID                    map[int32]*repos.Repo
+	changesetJobsByCampaignJobID map[int64]*a8n.ChangesetJob
+	next                         int64
+	err                          error
 }
 
 func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
-	jobs, reposByID, _, err := r.compute(ctx)
+	jobs, reposByID, changesetJobsByCampaignJobID, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -90,12 +110,26 @@ func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlba
 			return nil, fmt.Errorf("failed to load repo %d", j.RepoID)
 		}
 
-		resolvers = append(resolvers, &campaignJobResolver{job: j, preloadedRepo: repo})
+		resolver := &campaignJobResolver{
+			store:         r.store,
+			job:           j,
+			preloadedRepo: repo,
+			// We set this to true, because we tried to preload the
+			// changestJob, but maybe we couldn't find one.
+			attemptedPreloadChangesetJob: true,
+		}
+
+		changesetJob, ok := changesetJobsByCampaignJobID[j.ID]
+		if ok {
+			resolver.preloadedChangesetJob = changesetJob
+		}
+
+		resolvers = append(resolvers, resolver)
 	}
 	return resolvers, nil
 }
 
-func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.CampaignJob, map[int32]*repos.Repo, int64, error) {
+func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.CampaignJob, map[int32]*repos.Repo, map[int64]*a8n.ChangesetJob, int64, error) {
 	r.once.Do(func() {
 		r.jobs, r.next, r.err = r.store.ListCampaignJobs(ctx, r.opts)
 		if r.err != nil {
@@ -118,20 +152,36 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.Ca
 		for _, repo := range rs {
 			r.reposByID[int32(repo.ID)] = repo
 		}
+
+		cs, _, err := r.store.ListChangesetJobs(ctx, ee.ListChangesetJobsOpts{
+			CampaignPlanID: r.opts.CampaignPlanID,
+			Limit:          len(r.jobs),
+		})
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.changesetJobsByCampaignJobID = make(map[int64]*a8n.ChangesetJob, len(cs))
+		for _, c := range cs {
+			r.changesetJobsByCampaignJobID[c.CampaignJobID] = c
+		}
 	})
-	return r.jobs, r.reposByID, r.next, r.err
+	return r.jobs, r.reposByID, r.changesetJobsByCampaignJobID, r.next, r.err
 }
 
 func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountCampaignJobsOpts{CampaignPlanID: r.campaignPlan.ID}
-	opts.OnlyFinished = r.opts.OnlyFinished
-	opts.OnlyWithDiff = r.opts.OnlyWithDiff
+	opts := ee.CountCampaignJobsOpts{
+		CampaignPlanID:            r.opts.CampaignPlanID,
+		OnlyFinished:              r.opts.OnlyFinished,
+		OnlyWithDiff:              r.opts.OnlyWithDiff,
+		OnlyUnpublishedInCampaign: r.opts.OnlyUnpublishedInCampaign,
+	}
 	count, err := r.store.CountCampaignJobs(ctx, opts)
 	return int32(count), err
 }
 
 func (r *campaignJobsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, _, next, err := r.compute(ctx)
+	_, _, _, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -139,14 +189,22 @@ func (r *campaignJobsConnectionResolver) PageInfo(ctx context.Context) (*graphql
 }
 
 type campaignJobResolver struct {
+	store *ee.Store
+
 	job           *a8n.CampaignJob
 	preloadedRepo *repos.Repo
 
+	// Set if we tried to preload the changesetjob
+	attemptedPreloadChangesetJob bool
+	// This is only set if we tried to preload and found a ChangesetJob. If we
+	// tried preloading, but couldn't find anything, it's nil.
+	preloadedChangesetJob *a8n.ChangesetJob
+
 	// cache repo because it's called more than one time
 	once   sync.Once
+	err    error
 	repo   *graphqlbackend.RepositoryResolver
 	commit *graphqlbackend.GitCommitResolver
-	err    error
 }
 
 func (r *campaignJobResolver) computeRepoCommit(ctx context.Context) (*graphqlbackend.RepositoryResolver, *graphqlbackend.GitCommitResolver, error) {
@@ -163,6 +221,10 @@ func (r *campaignJobResolver) computeRepoCommit(ctx context.Context) (*graphqlba
 		r.commit, r.err = r.repo.Commit(ctx, args)
 	})
 	return r.repo, r.commit, r.err
+}
+
+func (r *campaignJobResolver) ID() graphql.ID {
+	return marshalCampaignJobID(r.job.ID)
 }
 
 func (r *campaignJobResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
@@ -188,6 +250,25 @@ func (r *campaignJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.C
 		commit: commit,
 		first:  args.First,
 	}, nil
+}
+
+func (r *campaignJobResolver) PublicationEnqueued(ctx context.Context) (bool, error) {
+	// We tried to preload a ChangesetJob for this CampaignJob
+	if r.attemptedPreloadChangesetJob {
+		// If we have a ChangesetJob, that means its PublishedAt is set or its
+		// Campaign.PublishedAt has been set
+		return r.preloadedChangesetJob != nil, nil
+	}
+
+	_, err := r.store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{CampaignJobID: r.job.ID})
+	if err != nil && err != ee.ErrNoResults {
+		return false, err
+	}
+	if err == ee.ErrNoResults {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 type previewFileDiffConnectionResolver struct {

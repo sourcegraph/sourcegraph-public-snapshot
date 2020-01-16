@@ -286,3 +286,42 @@ func isUserEmailVerified(ctx context.Context, userID int32, email string) (bool,
 func strptr(s string) *string {
 	return &s
 }
+
+func TestUserEmails_GetVerifiedEmails(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	newUsers := []NewUser{
+		{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			EmailIsVerified: true,
+		},
+		{
+			Email:                 "bob@example.com",
+			Username:              "bob",
+			EmailVerificationCode: "c",
+		},
+	}
+
+	for _, newUser := range newUsers {
+		_, err := Users.Create(ctx, newUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	emails, err := UserEmails.GetVerifiedEmails(ctx, "alice@example.com", "bob@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(emails) != 1 {
+		t.Fatalf("got %d emails, but want 1", len(emails))
+	}
+	if emails[0].Email != "alice@example.com" {
+		t.Errorf("got %s, but want %q", emails[0].Email, "alice@example.com")
+	}
+}

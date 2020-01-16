@@ -3,7 +3,14 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { parseSearchURLQuery, parseSearchURLPatternType, PatternTypeProps } from '..'
+import {
+    parseSearchURLQuery,
+    parseSearchURLPatternType,
+    PatternTypeProps,
+    InteractiveSearchProps,
+    CaseSensitivityProps,
+    searchURLIsCaseSensitive,
+} from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -16,27 +23,23 @@ import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { EventLogger } from '../../tracking/eventLogger'
-import {
-    isSearchResults,
-    submitSearch,
-    toggleSearchFilter,
-    toggleSearchFilterAndReplaceSampleRepogroup,
-    getSearchTypeFromQuery,
-    QueryState,
-} from '../helpers'
+import { isSearchResults, submitSearch, toggleSearchFilter, getSearchTypeFromQuery, QueryState } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         SettingsCascadeProps,
         TelemetryProps,
         ThemeProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        CaseSensitivityProps,
+        InteractiveSearchProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -51,6 +54,8 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    filtersInQuery: FiltersToTypeAndValue
+    interactiveSearchMode: boolean
 }
 
 interface SearchResultsState {
@@ -92,7 +97,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
             // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
             const newLoc =
-                '/search?' + buildSearchURLQuery(this.props.navbarSearchQueryState.query, GQL.SearchPatternType.regexp)
+                '/search?' +
+                buildSearchURLQuery(
+                    this.props.navbarSearchQueryState.query,
+                    GQL.SearchPatternType.regexp,
+                    this.props.caseSensitive,
+                    this.props.filtersInQuery
+                )
             window.location.replace(newLoc)
         }
 
@@ -102,17 +113,23 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => [
-                        parseSearchURLQuery(props.location.search),
-                        parseSearchURLPatternType(props.location.search),
-                    ]),
+                    map(props => ({
+                        query: parseSearchURLQuery(props.location.search, props.interactiveSearchMode),
+                        patternType: parseSearchURLPatternType(props.location.search),
+                        caseSensitive: searchURLIsCaseSensitive(props.location.search),
+                    })),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter(
-                        (queryAndPatternType): queryAndPatternType is [string, GQL.SearchPatternType] =>
-                            !!queryAndPatternType[0] && !!queryAndPatternType[1]
+                        (
+                            queryAndPatternTypeAndCase
+                        ): queryAndPatternTypeAndCase is {
+                            query: string
+                            patternType: GQL.SearchPatternType
+                            caseSensitive: boolean
+                        } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
-                    tap(([query]) => {
+                    tap(({ query }) => {
                         const query_data = queryTelemetryData(query)
                         this.props.telemetryService.log('SearchResultsQueried', {
                             code_search: { query_data },
@@ -125,7 +142,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             this.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
-                    switchMap(([query, patternType]) =>
+                    switchMap(({ query, patternType, caseSensitive }) =>
                         concat(
                             // Reset view state
                             [
@@ -136,36 +153,48 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 },
                             ],
                             // Do async search request
-                            this.props.searchRequest(query, LATEST_VERSION, patternType, this.props).pipe(
-                                // Log telemetry
-                                tap(
-                                    results => {
-                                        this.props.telemetryService.log('SearchResultsFetched', {
-                                            code_search: {
-                                                // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
-                                                results: {
-                                                    results_count: isErrorLike(results) ? 0 : results.results.length,
-                                                    any_cloning: isErrorLike(results)
-                                                        ? false
-                                                        : results.cloning.length > 0,
+                            this.props
+                                .searchRequest(
+                                    caseSensitive ? `${query} case:yes` : query,
+                                    LATEST_VERSION,
+                                    patternType,
+                                    this.props
+                                )
+                                .pipe(
+                                    // Log telemetry
+                                    tap(
+                                        results => {
+                                            this.props.telemetryService.log('SearchResultsFetched', {
+                                                code_search: {
+                                                    // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
+                                                    results: {
+                                                        results_count: isErrorLike(results)
+                                                            ? 0
+                                                            : results.results.length,
+                                                        any_cloning: isErrorLike(results)
+                                                            ? false
+                                                            : results.cloning.length > 0,
+                                                    },
                                                 },
-                                            },
-                                        })
-                                        if (patternType && patternType !== this.props.patternType) {
-                                            this.props.togglePatternType()
+                                            })
+                                            if (patternType && patternType !== this.props.patternType) {
+                                                this.props.setPatternType(patternType)
+                                            }
+                                            if (caseSensitive !== this.props.caseSensitive) {
+                                                this.props.setCaseSensitivity(caseSensitive)
+                                            }
+                                        },
+                                        error => {
+                                            this.props.telemetryService.log('SearchResultsFetchFailed', {
+                                                code_search: { error_message: error.message },
+                                            })
+                                            console.error(error)
                                         }
-                                    },
-                                    error => {
-                                        this.props.telemetryService.log('SearchResultsFetchFailed', {
-                                            code_search: { error_message: error.message },
-                                        })
-                                        console.error(error)
-                                    }
-                                ),
-                                // Update view with results or error
-                                map(resultsOrError => ({ resultsOrError })),
-                                catchError(error => [{ resultsOrError: error }])
-                            )
+                                    ),
+                                    // Update view with results or error
+                                    map(resultsOrError => ({ resultsOrError })),
+                                    catchError(error => [{ resultsOrError: error }])
+                                )
                         )
                     )
                 )
@@ -203,7 +232,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     public render(): JSX.Element | null {
-        const query = parseSearchURLQuery(this.props.location.search)
+        const query = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
         const filters = this.getFilters()
         const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
 
@@ -213,17 +242,23 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="e2e-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                <SearchResultsFilterBars
-                    navbarSearchQuery={this.props.navbarSearchQueryState.query}
-                    results={this.state.resultsOrError}
-                    filters={filters}
-                    extensionFilters={extensionFilters}
-                    quickLinks={quickLinks}
-                    onFilterClick={this.onDynamicFilterClicked}
-                    onShowMoreResultsClick={this.showMoreResults}
-                    calculateShowMoreResultsCount={this.calculateCount}
+                {!this.props.interactiveSearchMode && (
+                    <SearchResultsFilterBars
+                        navbarSearchQuery={this.props.navbarSearchQueryState.query}
+                        results={this.state.resultsOrError}
+                        filters={filters}
+                        extensionFilters={extensionFilters}
+                        quickLinks={quickLinks}
+                        onFilterClick={this.onDynamicFilterClicked}
+                        onShowMoreResultsClick={this.showMoreResults}
+                        calculateShowMoreResultsCount={this.calculateCount}
+                    />
+                )}
+                <SearchResultTypeTabs
+                    {...this.props}
+                    query={this.props.navbarSearchQueryState.query}
+                    filtersInQuery={this.props.filtersInQuery}
                 />
-                <SearchResultTypeTabs {...this.props} query={this.props.navbarSearchQueryState.query} />
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}
@@ -319,10 +354,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             search_filter: { value },
         })
 
-        const newQuery = this.props.isSourcegraphDotCom
-            ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.navbarSearchQueryState.query, value)
-            : toggleSearchFilter(this.props.navbarSearchQueryState.query, value)
+        const newQuery = toggleSearchFilter(this.props.navbarSearchQueryState.query, value)
 
-        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType)
+        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType, this.props.caseSensitive)
     }
 }

@@ -5,16 +5,19 @@ import { submitSearch } from '../helpers'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { Subscription, fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { PatternTypeProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps } from '..'
+import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import classNames from 'classnames'
 
-interface RegexpToggleProps extends PatternTypeProps {
-    toggled: boolean
+export interface RegexpToggleProps extends PatternTypeProps, CaseSensitivityProps {
     navbarSearchQuery: string
     history: H.History
+    filtersInQuery?: FiltersToTypeAndValue
     hasGlobalQueryBehavior?: boolean
+    className?: string
 }
 
-export default class RegexpToggle extends React.Component<RegexpToggleProps> {
+export class RegexpToggle extends React.Component<RegexpToggleProps> {
     private subscriptions = new Subscription()
     private toggleCheckbox = React.createRef<HTMLDivElement>()
 
@@ -40,18 +43,26 @@ export default class RegexpToggle extends React.Component<RegexpToggleProps> {
     }
 
     public render(): JSX.Element | null {
+        const isRegexp = this.props.patternType === SearchPatternType.regexp
         return (
             <div
                 ref={this.toggleCheckbox}
                 onClick={this.toggle}
-                className="btn btn-icon icon-inline regexp-toggle e2e-regexp-toggle"
+                className={classNames(
+                    'btn btn-icon icon-inline query-input2__toggle e2e-regexp-toggle',
+                    this.props.className
+                )}
                 role="checkbox"
-                aria-checked={this.props.toggled}
+                aria-checked={isRegexp}
                 aria-label="Regular expression toggle"
                 tabIndex={0}
-                data-tooltip={`${this.props.toggled ? 'Disable' : 'Enable'} regular expressions`}
+                data-tooltip={`${isRegexp ? 'Disable' : 'Enable'} regular expressions`}
             >
-                <span className={this.props.toggled ? 'regexp-toggle--active e2e-regexp-toggle--active' : ''}>
+                <span
+                    className={`query-input2__toggle-icon ${
+                        isRegexp ? 'query-input2__toggle-icon--active e2e-regexp-toggle--active' : ''
+                    }`}
+                >
                     <RegexIcon />
                 </span>
             </div>
@@ -59,14 +70,24 @@ export default class RegexpToggle extends React.Component<RegexpToggleProps> {
     }
 
     private toggle = (): void => {
-        const newPatternType = this.props.toggled ? SearchPatternType.literal : SearchPatternType.regexp
-        this.props.togglePatternType()
+        const newPatternType =
+            this.props.patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.literal
+
+        this.props.setPatternType(newPatternType)
         if (this.props.hasGlobalQueryBehavior) {
             // We only want the regexp toggle to submit searches if the query input it is in
             // has global behavior (i.e. query inputs on the main search page or global navbar). Non-global inputs
             // don't have the canonical query, and are dependent on the page it's on for context, which makes the
             // submit on-toggle behavior undesirable.
-            submitSearch(this.props.history, this.props.navbarSearchQuery, 'filter', newPatternType)
+            submitSearch(
+                this.props.history,
+                this.props.navbarSearchQuery,
+                'filter',
+                newPatternType,
+                this.props.caseSensitive,
+                undefined,
+                this.props.filtersInQuery
+            )
         }
     }
 }

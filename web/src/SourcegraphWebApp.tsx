@@ -42,18 +42,19 @@ import { LayoutRouteProps } from './routes'
 import { search } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { parseSearchURLPatternType } from './search'
-import { ThemePreference } from './search/theme'
+import { parseSearchURLPatternType, searchURLIsCaseSensitive } from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
+import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -75,7 +76,7 @@ export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
-    routes: readonly LayoutRouteProps[]
+    routes: readonly LayoutRouteProps<any>[]
     showCampaigns: boolean
 }
 
@@ -100,13 +101,46 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * The current search query in the navbar.
      */
     navbarSearchQueryState: QueryState
+
     /**
      * The current search pattern type.
      */
     searchPatternType: GQL.SearchPatternType
+
+    /**
+     * Whether the current search is case sensitive.
+     */
+    searchCaseSensitivity: boolean
+
+    /**
+     * filtersInQuery is the source of truth for the filter values currently in the query.
+     *
+     * The data structure is a map, where the key is a uniquely assigned string in the form `repoType-numberOfFilterAdded`.
+     * The value is a data structure containing the fields {`type`, `value`, `editable`}.
+     * `type` is the field type of the filter (repo, file, etc.) `value` is the current value for that particular filter,
+     * and `editable` is whether the corresponding filter input is currently editable in the UI.
+     * */
+    filtersInQuery: FiltersToTypeAndValue
+
+    /**
+     * Whether interactive search mode is activated
+     */
+    interactiveSearchMode: boolean
+
+    /**
+     * Whether to display the option to toggle between interactive and omni search modes.
+     */
+    splitSearchModes: boolean
+
+    /**
+     * Whether to display the MonacoQueryInput search field.
+     */
+    smartSearchField: boolean
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
+const SEARCH_MODE_KEY = 'sg-search-mode'
+
 /** Reads the stored theme preference from localStorage */
 const readStoredThemePreference = (): ThemePreference => {
     const value = localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY)
@@ -152,6 +186,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         // The patternType in the URL query parameter. If none is provided, default to literal.
         // This will be updated with the default in settings when the web app mounts.
         const urlPatternType = parseSearchURLPatternType(window.location.search) || GQL.SearchPatternType.literal
+        const urlCase = searchURLIsCaseSensitive(window.location.search)
+        const currentSearchMode = localStorage.getItem(SEARCH_MODE_KEY)
 
         this.state = {
             themePreference: readStoredThemePreference(),
@@ -160,6 +196,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             searchPatternType: urlPatternType,
+            searchCaseSensitivity: urlCase,
+            filtersInQuery: {},
+            splitSearchModes: false,
+            interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
+            smartSearchField: false,
         }
     }
 
@@ -218,6 +259,16 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 }
             })
         )
+
+        this.subscriptions.add(
+            from(this.platformContext.settings).subscribe(settingsCascade => {
+                if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+                    const { splitSearchModes, smartSearchField } = settingsCascade.final.experimentalFeatures || {}
+                    this.setState({ splitSearchModes, smartSearchField })
+                }
+            })
+        )
+
         // React to OS theme change
         this.subscriptions.add(
             fromEventPattern<MediaQueryListEvent>(
@@ -241,6 +292,14 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
         document.body.classList.toggle('theme-light', this.isLightTheme())
         document.body.classList.toggle('theme-dark', !this.isLightTheme())
+    }
+
+    private toggleSearchMode = (event: React.MouseEvent<HTMLAnchorElement>): void => {
+        event.preventDefault()
+        localStorage.setItem(SEARCH_MODE_KEY, this.state.interactiveSearchMode ? 'omni' : 'interactive')
+        this.setState(state => ({
+            interactiveSearchMode: !state.interactiveSearchMode,
+        }))
     }
 
     public render(): React.ReactFragment | null {
@@ -311,7 +370,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     telemetryService={eventLogger}
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     patternType={this.state.searchPatternType}
-                                    togglePatternType={this.togglePatternType}
+                                    caseSensitive={this.state.searchCaseSensitivity}
+                                    splitSearchModes={this.state.splitSearchModes}
+                                    interactiveSearchMode={this.state.interactiveSearchMode}
+                                    toggleSearchMode={this.toggleSearchMode}
+                                    filtersInQuery={this.state.filtersInQuery}
+                                    onFiltersInQueryChange={this.onFiltersInQueryChange}
+                                    setPatternType={this.setPatternType}
+                                    setCaseSensitivity={this.setCaseSensitivity}
+                                    smartSearchField={this.state.smartSearchField}
                                 />
                             )}
                         />
@@ -332,13 +399,19 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({ navbarSearchQueryState })
     }
 
-    private togglePatternType = (): void => {
-        const currentPatternType = this.state.searchPatternType
+    private onFiltersInQueryChange = (filtersInQuery: FiltersToTypeAndValue): void => {
+        this.setState({ filtersInQuery })
+    }
+
+    private setPatternType = (patternType: GQL.SearchPatternType): void => {
         this.setState({
-            searchPatternType:
-                currentPatternType === GQL.SearchPatternType.regexp
-                    ? GQL.SearchPatternType.literal
-                    : GQL.SearchPatternType.regexp,
+            searchPatternType: patternType,
+        })
+    }
+
+    private setCaseSensitivity = (caseSensitive: boolean): void => {
+        this.setState({
+            searchCaseSensitivity: caseSensitive,
         })
     }
 }

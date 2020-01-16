@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -298,10 +299,31 @@ func TestClient_Users(t *testing.T) {
 	}
 }
 
+func TestClient_LabeledRepos(t *testing.T) {
+	cli, save := NewTestClient(t, "LabeledRepos", *update)
+	defer save()
+
+	// We have archived label on bitbucket.sgdev.org with a repo in it.
+	repos, _, err := cli.LabeledRepos(context.Background(), nil, "archived")
+	if err != nil {
+		t.Fatal("archived label should not fail on bitbucket.sgdev.org", err)
+	}
+	checkGolden(t, "LabeledRepos-archived", repos)
+
+	// This label shouldn't exist. Check we get back the correct error
+	_, _, err = cli.LabeledRepos(context.Background(), nil, "doesnotexist")
+	if err == nil {
+		t.Fatal("expected doesnotexist label to fail")
+	}
+	if !IsNoSuchLabel(err) {
+		t.Fatalf("expected NoSuchLabel error, got %v", err)
+	}
+}
+
 func TestClient_LoadPullRequest(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	cli, save := NewTestClient(t, "PullRequests", *update)
@@ -386,28 +408,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 				return
 			}
 
-			data, err := json.MarshalIndent(pr, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/LoadPullRequest-" + strings.Replace(tc.name, " ", "-", -1)
-			if *update {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			checkGolden(t, "LoadPullRequest-"+strings.Replace(tc.name, " ", "-", -1), pr)
 		})
 	}
 }
@@ -415,7 +416,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 func TestClient_CreatePullRequest(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
@@ -550,28 +551,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 				return
 			}
 
-			data, err := json.MarshalIndent(pr, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/" + name
-			if *update {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			checkGolden(t, name, pr)
 		})
 	}
 }
@@ -579,7 +559,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 func TestClient_DeclinePullRequest(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
@@ -655,28 +635,7 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 				return
 			}
 
-			data, err := json.MarshalIndent(pr, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/" + name
-			if *update {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			checkGolden(t, name, pr)
 		})
 	}
 }
@@ -684,7 +643,7 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 func TestClient_LoadPullRequestActivities(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	cli, save := NewTestClient(t, "PullRequestActivities", *update)
@@ -749,28 +708,42 @@ func TestClient_LoadPullRequestActivities(t *testing.T) {
 				return
 			}
 
-			data, err := json.MarshalIndent(pr, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/LoadPullRequestActivities-" + strings.Replace(tc.name, " ", "-", -1)
-			if *update {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			checkGolden(t, "LoadPullRequestActivities-"+strings.Replace(tc.name, " ", "-", -1), pr)
 		})
 	}
+}
+
+func checkGolden(t *testing.T, name string, got interface{}) {
+	t.Helper()
+
+	data, err := json.MarshalIndent(got, " ", " ")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	path := "testdata/golden/" + name
+	if *update {
+		if err = ioutil.WriteFile(path, data, 0640); err != nil {
+			t.Fatalf("failed to update golden file %q: %s", path, err)
+		}
+	}
+
+	golden, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read golden file %q: %s", path, err)
+	}
+
+	if have, want := string(data), string(golden); have != want {
+		dmp := diffmatchpatch.New()
+		diffs := dmp.DiffMain(have, want, false)
+		t.Error(dmp.DiffPrettyText(diffs))
+	}
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
+	}
+	os.Exit(m.Run())
 }

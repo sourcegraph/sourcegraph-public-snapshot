@@ -9,12 +9,79 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## 3.11.0 (unreleased)
+## 3.13.0 (unreleased)
+
+### Added
+
+- Experimental: the search query input now provides syntax highlighting, hover tooltips, and diagnostics on filters in search queries. Requires the global settings value `{ "experimentalFeatures": { "smartSearchField": true } }`.
+
+### Changed
+
+### Fixed
+
+## 3.12.0 (unreleased)
+
+### Added
+
+- Bitbucket Server repositories with the label `archived` can be excluded from search with `archived:no` [syntax](https://docs.sourcegraph.com/user/search/queries). [#5494](https://github.com/sourcegraph/sourcegraph/issues/5494)
+- Add button to download file in code view. [#5478](https://github.com/sourcegraph/sourcegraph/issues/5478)
+- The new `allowOrgs` site config setting in GitHub `auth.providers` enables admins to restrict GitHub logins to members of specific GitHub organizations. [#4195](https://github.com/sourcegraph/sourcegraph/issues/4195)
+- Support case field in repository search. [#7671](https://github.com/sourcegraph/sourcegraph/issues/7671)
+- Skip LFS content when cloning git repositories. [#7322](https://github.com/sourcegraph/sourcegraph/issues/7322)
+- Hover tooltips and _Find Reference_ results now display a badge to indicate when a result is search-based. These indicators can be disabled by adding `{ "experimentalFeatures": { "showBadgeAttachments": false } }` in global settings.
+- Automation campaigns can now be created as drafts, which can be shared and updated without creating changesets (pull requests) on code hosts. When ready, a draft can then be published, either completely or changeset by changeset, to create changesets on the code host. [#7659](https://github.com/sourcegraph/sourcegraph/pull/7659)
+- Experimental: feature flag `BitbucketServerFastPerm` can be enabled to speed up fetching ACL data from Bitbucket Server instances. This requires [Bitbucket Server Sourcegraph plugin](https://github.com/sourcegraph/bitbucket-server-plugin) to be installed.
+- Experimental: A site configuration field `{ "experimentalFeatures" { "tls.external": true } }` which allows you to configure SSL/TLS settings for Sourcegraph contacting your code hosts. Currently just supports turning off TLS/SSL verification. [#71](https://github.com/sourcegraph/sourcegraph/issues/71)
+- Experimental: To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Requires the site configuration value `{ "experimentalFeatures": { "searchMultipleRevisionsPerRepository": true } }`. Previously this was only supported for diff and commit searches.
+
+### Changed
+
+- The "Files" tab in the search results page has been renamed to "Filenames" for clarity.
+- The search query builder now lives on its own page at `/search/query-builder`. The home search page has a link to it.
+- User passwords when using builtin auth are limited to 256 characters. Existing passwords longer than 256 characters will continue to work.
+- GraphQL API: Campaign.changesetCreationStatus has been renamed to Campaign.status to be aligned with CampaignPlan. [#7654](https://github.com/sourcegraph/sourcegraph/pull/7654)
+
+### Fixed
+
+- The experimental search pagination API no longer times out when large repositories are encountered. [#6384](https://github.com/sourcegraph/sourcegraph/issues/6384)
+- We resolve relative symbolic links from the directory of the symlink, rather than the root of the repository. [#6034](https://github.com/sourcegraph/sourcegraph/issues/6034)
+- Show errors on repository settings page when repo-updater is down. [#3593](https://github.com/sourcegraph/sourcegraph/issues/3593)
+- Remove benign warning that verifying config took more than 10s when updating or saving an external service. [#7176](https://github.com/sourcegraph/sourcegraph/issues/7176)
+- repohasfile search filter works again (regressed in 3.10). [#7380](https://github.com/sourcegraph/sourcegraph/issues/7380)
+- Structural search can now run on very large repositories containing any number of files. [#7133](https://github.com/sourcegraph/sourcegraph/issues/7133)
+
+### Removed
+
+- The deprecated GraphQL mutation `setAllRepositoriesEnabled` has been removed. [#7478](https://github.com/sourcegraph/sourcegraph/pull/7478)
+- The deprecated GraphQL mutation `deleteRepository` has been removed. [#7483](https://github.com/sourcegraph/sourcegraph/pull/7483)
+
+## 3.11.4
+
+### Fixed
+
+- The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
+- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.11.0` will need to manually modify their `docker run` command to use `sourcegraph/server:3.11.4` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
+
+## 3.11.1
+
+### Fixed
+
+- The syncing process for newly created Automation changesets has been fixed again after they have erroneously been marked as deleted in the database. [#7522](https://github.com/sourcegraph/sourcegraph/pull/7522)
+
+## 3.11.0
+
+**Important:** If you use `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE`, please be sure to follow the steps in: [migration notes for Sourcegraph v3.11+](doc/admin/migration/3_11.md) after upgrading.
 
 ### Added
 
 - Language statistics by commit are available via the API. [#6737](https://github.com/sourcegraph/sourcegraph/pull/6737)
+- Added a new page that shows [language statistics for the results of a search query](https://docs.sourcegraph.com/user/search#statistics).
 - Global settings can be configured from a local file using the environment variable `GLOBAL_SETTINGS_FILE`.
+- High-level health metrics and dashboards have been added to Sourcegraph's monitoring (found under the **Site admin** -> **Monitoring** area). [#7216](https://github.com/sourcegraph/sourcegraph/pull/7216)
+- Logging for GraphQL API requests not issued by Sourcegraph is now much more verbose, allowing for easier debugging of problematic queries and where they originate from. [#5706](https://github.com/sourcegraph/sourcegraph/issues/5706)
+- A new Automation campaign type finds and removes leaked NPM credentials. [#6893](https://github.com/sourcegraph/sourcegraph/pull/6893)
+- Automation campaigns can now be retried to create failed changesets due to ephemeral errors (e.g. network problems when creating a pull request on GitHub). [#6718](https://github.com/sourcegraph/sourcegraph/issues/6718)
+- The initial release of [structural code search](https://docs.sourcegraph.com/user/search/structural).
 
 ### Changed
 
@@ -22,15 +89,24 @@ All notable changes to Sourcegraph are documented in this file.
 - `NODE_NAME` can be specified instead of `HOSTNAME` for zoekt-indexserver. `HOSTNAME` was a confusing configuration to use in [Pure-Docker Sourcegraph deployments](https://github.com/sourcegraph/deploy-sourcegraph-docker). [#6846](https://github.com/sourcegraph/sourcegraph/issues/6846)
 - The feedback toast now requests feedback every 60 days of usage (was previously only once on the 3rd day of use). [#7165](https://github.com/sourcegraph/sourcegraph/pull/7165)
 - The lsif-server container now only has a dependency on Postgres, whereas before it also relied on Redis. [#6880](https://github.com/sourcegraph/sourcegraph/pull/6880)
+- Renamed the GraphQL API `LanguageStatistics` fields to `name`, `totalBytes`, and `totalLines` (previously the field names started with an uppercase letter, which was inconsistent).
+- Detecting a file's language uses a more accurate but slower algorithm. To revert to the old (faster and less accurate) algorithm, set the `USE_ENHANCED_LANGUAGE_DETECTION` env var to the string `false` (on the `sourcegraph/server` container, or if using the cluster deployment, on the `sourcegraph-frontend` pod).
+- Diff and commit searches that make use of `before:` and `after:` filters to narrow their search area are now no longer subject to the 50-repository limit. This allows for creating saved searches on more than 50 repositories as before. [#7215](https://github.com/sourcegraph/sourcegraph/issues/7215)
 
 ### Fixed
 
 - Changes to external service configurations are reflected much faster. [#6058](https://github.com/sourcegraph/sourcegraph/issues/6058)
-- Deleting an external service will not show warnings for the non-existant service. [#5617](https://github.com/sourcegraph/sourcegraph/issues/5617)
+- Deleting an external service will not show warnings for the non-existent service. [#5617](https://github.com/sourcegraph/sourcegraph/issues/5617)
 - Suggested search filter chips are quoted if necessary. [#6498](https://github.com/sourcegraph/sourcegraph/issues/6498)
 - Remove potential panic in gitserver if heavily loaded. [#6710](https://github.com/sourcegraph/sourcegraph/issues/6710)
+- Multiple fixes to make the preview and creation of Automation campaigns more robust and a smoother user experience. [#6682](https://github.com/sourcegraph/sourcegraph/pull/6682) [#6625](https://github.com/sourcegraph/sourcegraph/issues/6625) [#6658](https://github.com/sourcegraph/sourcegraph/issues/6658) [#7088](https://github.com/sourcegraph/sourcegraph/issues/7088) [#6766](https://github.com/sourcegraph/sourcegraph/issues/6766) [#6717](https://github.com/sourcegraph/sourcegraph/issues/6717) [#6659](https://github.com/sourcegraph/sourcegraph/issues/6659)
+- Repositories referenced in Automation campaigns that are removed in an external service configuration change won't lead to problems with the syncing process anymore. [#7015](https://github.com/sourcegraph/sourcegraph/pull/7015)
+- The Searcher dashboard (and the `src_graphql_search_response` Prometheus metric) now properly account for search alerts instead of them being incorrectly added to the `timeout` category. [#7214](https://github.com/sourcegraph/sourcegraph/issues/7214)
+- In the experimental search pagination API, the `cloning`, `missing`, and other repository fields now return a well-defined set of results. [#6000](https://github.com/sourcegraph/sourcegraph/issues/6000)
 
 ### Removed
+
+- The management console has been removed. All critical configuration previously stored in the management console will be automatically migrated to your site configuration. For more information about this change, or if you use `SITE_CONFIG_FILE` / `CRITICAL_CONFIG_FILE`, please see the [migration notes for Sourcegraph v3.11+](doc/admin/migration/3_11.md).
 
 ## 3.10.4
 

@@ -28,7 +28,7 @@ import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
-import { PatternTypeProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 
@@ -45,7 +45,8 @@ export interface RepoRevContainerContext
             RepoContainerContext,
             Exclude<keyof RepoContainerContext, 'onDidUpdateRepository' | 'onDidUpdateExternalLinks'>
         >,
-        PatternTypeProps {
+        PatternTypeProps,
+        CaseSensitivityProps {
     repo: GQL.IRepository
     rev: string
     resolvedRev: ResolvedRev
@@ -66,7 +67,8 @@ interface RepoRevContainerProps
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        CaseSensitivityProps {
     routes: readonly RepoRevContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
@@ -220,7 +222,9 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             authenticatedUser: this.props.authenticatedUser,
             settingsCascade: this.props.settingsCascade,
             patternType: this.props.patternType,
-            togglePatternType: this.props.togglePatternType,
+            setPatternType: this.props.setPatternType,
+            caseSensitive: this.props.caseSensitive,
+            setCaseSensitivity: this.props.setCaseSensitivity,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
         }

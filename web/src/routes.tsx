@@ -9,19 +9,21 @@ const SearchResults = lazyComponent(() => import('./search/results/SearchResults
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 
-export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
+interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
+    extends RouteComponentProps<Params>,
+        Omit<LayoutProps, 'match'> {}
 
-export interface LayoutRouteProps {
+export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string }> {
     path: string
     exact?: boolean
-    render: (props: LayoutRouteComponentProps) => React.ReactNode
+    render: (props: LayoutRouteComponentProps<Params>) => React.ReactNode
 
     /**
      * A condition function that needs to return true if the route should be rendered
      *
      * @default () => true
      */
-    condition?: (props: LayoutRouteComponentProps) => boolean
+    condition?: (props: LayoutRouteComponentProps<Params>) => boolean
 
     /**
      * Whether or not to force the width of the page to be narrow.
@@ -30,20 +32,12 @@ export interface LayoutRouteProps {
 }
 
 /**
- * Holds properties for repository+ routes.
- */
-export const repoRevRoute: LayoutRouteProps = {
-    path: '/:repoRevAndRest+',
-    render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
-}
-
-/**
  * Holds all top-level routes for the app because both the navbar and the main content area need to
  * switch over matched path.
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps[] = [
+export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/',
         render: (props: any) =>
@@ -56,8 +50,8 @@ export const routes: readonly LayoutRouteProps[] = [
     },
     {
         path: '/search',
-        render: (props: any) =>
-            parseSearchURLQuery(props.location.search) ? (
+        render: props =>
+            parseSearchURLQuery(props.location.search, props.interactiveSearchMode) ? (
                 <SearchResults {...props} deployType={window.context.deployType} />
             ) : (
                 <SearchPage {...props} />
@@ -65,19 +59,9 @@ export const routes: readonly LayoutRouteProps[] = [
         exact: true,
     },
     {
-        path: '/search/searches',
-        render: lazyComponent(
-            () => import('./savedSearches/RedirectToUserSavedSearches'),
-            'RedirectToUserSavedSearches'
-        ),
+        path: '/search/query-builder',
+        render: lazyComponent(() => import('./search/queryBuilder/QueryBuilderPage'), 'QueryBuilderPage'),
         exact: true,
-        forceNarrowWidth: true,
-    },
-    {
-        path: '/open',
-        render: lazyComponent(() => import('./open/OpenPage'), 'OpenPage'),
-        exact: true,
-        forceNarrowWidth: true,
     },
     {
         path: '/sign-in',
@@ -169,11 +153,6 @@ export const routes: readonly LayoutRouteProps[] = [
             // Force a hard reload so that we delegate to the HTTP handler for /help, which handles
             // redirecting /help to https://docs.sourcegraph.com. That logic is not duplicated in
             // the web app because that would add complexity with no user benefit.
-            //
-            // TODO(sqs): This currently has a bug in dev mode where you can't go back to the app
-            // after following the redirect. This will be fixed when we run docsite on
-            // http://localhost:5080 in Procfile because then the redirect will be cross-domain and
-            // won't reuse the same history stack.
             window.location.reload()
             return null
         },
@@ -182,5 +161,8 @@ export const routes: readonly LayoutRouteProps[] = [
         path: '/snippets',
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
     },
-    repoRevRoute,
+    {
+        path: '/:repoRevAndRest+',
+        render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
+    },
 ]

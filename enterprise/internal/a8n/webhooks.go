@@ -10,20 +10,96 @@ import (
 	"time"
 
 	gh "github.com/google/go-github/v28/github"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
+type Webhook struct {
+	Store *Store
+	Repos repos.Store
+	Now   func() time.Time
+
+	Service string
+}
+
+func (h Webhook) upsertChangesetEvent(
+	ctx context.Context,
+	pr int64,
+	ev interface{ Key() string },
+) (err error) {
+	var tx *Store
+	if tx, err = h.Store.Transact(ctx); err != nil {
+		return err
+	}
+
+	defer tx.Done(&err)
+
+	cs, err := tx.GetChangeset(ctx, GetChangesetOpts{
+		ExternalID:          strconv.FormatInt(pr, 10),
+		ExternalServiceType: h.Service,
+	})
+	if err != nil {
+		if err == ErrNoResults {
+			err = nil // Nothing to do
+		}
+		return err
+	}
+
+	now := h.Now()
+	event := &a8n.ChangesetEvent{
+		ChangesetID: cs.ID,
+		Kind:        a8n.ChangesetEventKindFor(ev),
+		Key:         ev.Key(),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    ev,
+	}
+
+	existing, err := tx.GetChangesetEvent(ctx, GetChangesetEventOpts{
+		ChangesetID: cs.ID,
+		Kind:        event.Kind,
+		Key:         event.Key,
+	})
+
+	if err != nil && err != ErrNoResults {
+		return err
+	}
+
+	if existing != nil {
+		// Upsert is used to create or update the record in the database,
+		// but we're actually "patching" the record with specific merge semantics
+		// encoded in Update. This is because some webhooks payloads don't contain
+		// all the information that we can get from the API, so we only update the
+		// bits that we know are more up to date and leave the others as they were.
+		existing.Update(event)
+		event = existing
+	}
+
+	return tx.UpsertChangesetEvents(ctx, event)
+}
+
 // GitHubWebhook receives GitHub organization webhook events that are
 // relevant to a8n, normalizes those events into ChangesetEvents
 // and upserts them to the database.
 type GitHubWebhook struct {
-	Store *Store
-	Repos repos.Store
-	Now   func() time.Time
+	*Webhook
+}
+
+type BitbucketServerWebhook struct {
+	*Webhook
+}
+
+func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
+	return &GitHubWebhook{&Webhook{store, repos, now, github.ServiceType}}
+}
+
+func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time) *BitbucketServerWebhook {
+	return &BitbucketServerWebhook{&Webhook{store, repos, now, bbs.ServiceType}}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -133,57 +209,6 @@ func (h *GitHubWebhook) convertEvent(theirs interface{}) (pr int64, ours interfa
 	return
 }
 
-func (h *GitHubWebhook) upsertChangesetEvent(
-	ctx context.Context,
-	pr int64,
-	ev interface{ Key() string },
-) (err error) {
-	var tx *Store
-	if tx, err = h.Store.Transact(ctx); err != nil {
-		return err
-	}
-
-	defer tx.Done(&err)
-
-	cs, err := tx.GetChangeset(ctx, GetChangesetOpts{
-		ExternalID:          strconv.FormatInt(pr, 10),
-		ExternalServiceType: github.ServiceType,
-	})
-	if err != nil {
-		if err == ErrNoResults {
-			err = nil // Nothing to do
-		}
-		return err
-	}
-
-	now := h.Now()
-	event := &a8n.ChangesetEvent{
-		ChangesetID: cs.ID,
-		Kind:        a8n.ChangesetEventKindFor(ev),
-		Key:         ev.Key(),
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		Metadata:    ev,
-	}
-
-	existing, err := tx.GetChangesetEvent(ctx, GetChangesetEventOpts{
-		ChangesetID: cs.ID,
-		Kind:        event.Kind,
-		Key:         event.Key,
-	})
-
-	if err != nil && err != ErrNoResults {
-		return err
-	}
-
-	if existing != nil {
-		existing.Update(event)
-		event = existing
-	}
-
-	return h.Store.UpsertChangesetEvents(ctx, event)
-}
-
 func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment {
 	comment := github.IssueComment{
 		DatabaseID: *e.Comment.ID,
@@ -244,35 +269,59 @@ func (*GitHubWebhook) unassignedEvent(e *gh.PullRequestEvent) *github.Unassigned
 }
 
 func (*GitHubWebhook) reviewRequestedEvent(e *gh.PullRequestEvent) *github.ReviewRequestedEvent {
-	return &github.ReviewRequestedEvent{
+	event := &github.ReviewRequestedEvent{
 		Actor: github.Actor{
 			AvatarURL: *e.Sender.AvatarURL,
 			Login:     *e.Sender.Login,
 			URL:       *e.Sender.URL,
 		},
-		RequestedReviewer: github.Actor{
+		CreatedAt: *e.PullRequest.UpdatedAt,
+	}
+
+	if e.RequestedReviewer != nil {
+		event.RequestedReviewer = github.Actor{
 			AvatarURL: *e.RequestedReviewer.AvatarURL,
 			Login:     *e.RequestedReviewer.Login,
 			URL:       *e.RequestedReviewer.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+		}
 	}
+
+	if e.RequestedTeam != nil {
+		event.RequestedTeam = github.Team{
+			Name: *e.RequestedTeam.Name,
+			URL:  *e.RequestedTeam.URL,
+		}
+	}
+
+	return event
 }
 
 func (*GitHubWebhook) reviewRequestRemovedEvent(e *gh.PullRequestEvent) *github.ReviewRequestRemovedEvent {
-	return &github.ReviewRequestRemovedEvent{
+	event := &github.ReviewRequestRemovedEvent{
 		Actor: github.Actor{
 			AvatarURL: *e.Sender.AvatarURL,
 			Login:     *e.Sender.Login,
 			URL:       *e.Sender.URL,
 		},
-		RequestedReviewer: github.Actor{
+		CreatedAt: *e.PullRequest.UpdatedAt,
+	}
+
+	if e.RequestedReviewer != nil {
+		event.RequestedReviewer = github.Actor{
 			AvatarURL: *e.RequestedReviewer.AvatarURL,
 			Login:     *e.RequestedReviewer.Login,
 			URL:       *e.RequestedReviewer.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+		}
 	}
+
+	if e.RequestedTeam != nil {
+		event.RequestedTeam = github.Team{
+			Name: *e.RequestedTeam.Name,
+			URL:  *e.RequestedTeam.URL,
+		}
+	}
+
+	return event
 }
 
 func (*GitHubWebhook) renamedTitleEvent(e *gh.PullRequestEvent) *github.RenamedTitleEvent {
@@ -362,6 +411,116 @@ func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewComme
 	}
 
 	return &comment
+}
+
+// Upsert ensures the creation of the BitbucketServer automation webhook.
+// This happens periodically at the specified interval.
+func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
+	for {
+		args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
+		es, err := h.Repos.ListExternalServices(context.Background(), args)
+		if err != nil {
+			log15.Error("Upserting BBS Webhook failed [Listing BBS extsvc]", "err", err)
+			continue
+		}
+
+		for _, e := range es {
+			c, _ := e.Configuration()
+			con, ok := c.(*schema.BitbucketServerConnection)
+			if !ok || con.Webhooks == nil {
+				continue
+			}
+
+			client, err := bbs.NewClientWithConfig(con)
+			if err != nil {
+				log15.Error("Upserting BBS Webhook [Creating Client]", "err", err)
+				continue
+			}
+
+			endpoint := globals.ExternalURL().String() + "/.api/bitbucket-server-webhooks"
+			wh := bbs.Webhook{
+				Name:     "sourcegraph-a8n",
+				Scope:    "global",
+				Events:   []string{"pr"},
+				Endpoint: endpoint,
+				Secret:   con.Webhooks.Secret,
+			}
+
+			err = client.UpsertWebhook(context.Background(), wh)
+			if err != nil {
+				log15.Error("Upserting BBS Webhook failed [HTTP Request]", "err", err)
+			}
+		}
+
+		time.Sleep(every)
+	}
+}
+
+func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	e, err := h.parseEvent(r)
+	if err != nil {
+		respond(w, err.code, err)
+		return
+	}
+
+	pr, ev := h.convertEvent(e)
+	if pr == 0 || ev == nil {
+		respond(w, http.StatusOK, nil) // Nothing to do
+		return
+	}
+
+	if err := h.upsertChangesetEvent(r.Context(), pr, ev); err != nil {
+		respond(w, http.StatusInternalServerError, err)
+	}
+}
+
+func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
+	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
+	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	if err != nil {
+		return nil, &httpError{http.StatusInternalServerError, err}
+	}
+
+	payload, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, &httpError{http.StatusInternalServerError, err}
+	}
+
+	var secrets [][]byte
+	for _, e := range es {
+		c, _ := e.Configuration()
+		hook, ok := c.(*schema.BitbucketServerConnection)
+		if !ok || hook.Webhooks == nil {
+			continue
+		}
+		secrets = append(secrets, []byte(hook.Webhooks.Secret))
+	}
+
+	sig := r.Header.Get("X-Hub-Signature")
+	for _, secret := range secrets {
+		if err = gh.ValidateSignature(sig, payload, secret); err == nil {
+			break
+		}
+	}
+
+	if len(secrets) == 0 || err != nil {
+		return nil, &httpError{http.StatusUnauthorized, err}
+	}
+
+	e, err := bbs.ParseWebHook(bbs.WebHookType(r), payload)
+	if err != nil {
+		return nil, &httpError{http.StatusBadRequest, err}
+	}
+	return e, nil
+}
+
+func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (pr int64, ours interface{ Key() string }) {
+	switch e := theirs.(type) {
+	case *bbs.PullRequestEvent:
+		return int64(e.PullRequest.ID), e.Activity
+	}
+
+	return
 }
 
 type httpError struct {

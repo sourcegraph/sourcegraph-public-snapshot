@@ -9,7 +9,7 @@ import { PageTitle } from '../components/PageTitle'
 import { DiscussionsList } from './DiscussionsList'
 import { eventLogger } from '../tracking/eventLogger'
 
-interface Props extends SettingsCascadeProps, RouteComponentProps<any> {
+interface Props extends SettingsCascadeProps, RouteComponentProps<{}> {
     history: H.History
     location: H.Location
 }

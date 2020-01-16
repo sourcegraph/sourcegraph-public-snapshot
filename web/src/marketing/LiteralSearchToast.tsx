@@ -13,7 +13,7 @@ interface Props {
 
 const DISMISSED_LITERAL_SEARCH_TOAST_KEY = 'DISMISSED_LITERAL_SEARCH_TOAST'
 
-export default class LiteralSearchToast extends React.Component<Props, State> {
+export class LiteralSearchToast extends React.Component<Props, State> {
     public state: State = { visible: false }
 
     public componentDidMount(): void {

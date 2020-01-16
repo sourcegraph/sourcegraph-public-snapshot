@@ -14,9 +14,9 @@ import (
 
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -56,12 +56,11 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		Repo: &types.Repo{ID: 1, Name: "repo"},
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
-	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, commitSearchOp{
-		repoRevs:          repoRevs,
-		info:              &search.PatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
-		query:             query,
-		diff:              true,
-		textSearchOptions: git.TextSearchOptions{Pattern: "p"},
+	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, search.CommitParameters{
+		RepoRevs:    repoRevs,
+		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
+		Query:       query,
+		Diff:        true,
 	})
 	if err != nil {
 		t.Fatal(err)

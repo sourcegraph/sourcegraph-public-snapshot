@@ -11,6 +11,8 @@ import { CodeExcerpt2 } from './CodeExcerpt2'
 import { IFileMatch, IMatchItem } from './FileMatch'
 import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
+import { BadgeAttachment } from './BadgeAttachment'
+import { isErrorLike } from '../util/errors'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
@@ -29,6 +31,13 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
 const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
+    const showBadges =
+        props.settingsCascade.final &&
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final.experimentalFeatures &&
+        // Enabled if true or null
+        props.settingsCascade.final.experimentalFeatures.showBadgeAttachments !== false
+
     const showItems = props.items
         .sort((a, b) => {
             if (a.line < b.line) {
@@ -73,6 +82,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 line: item.line,
                 character: range.start,
                 highlightLength: range.highlightLength,
+                badge: item.badge,
             }))
         )
     )
@@ -97,23 +107,38 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 const item = items[0]
                 const position = { line: item.line + 1, character: item.character + 1 }
                 return (
-                    <Link
-                        to={`${props.result.file.url}${toPositionOrRangeHash({ position })}`}
+                    <div
                         key={`linematch:${props.result.file.url}${position.line}:${position.character}`}
-                        className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-                        onClick={props.onSelect}
+                        className="file-match-children__item-code-wrapper"
                     >
-                        <CodeExcerpt
-                            repoName={props.result.repository.name}
-                            commitID={props.result.file.commit.oid}
-                            filePath={props.result.file.path}
-                            context={context}
-                            highlightRanges={items}
-                            className="file-match-children__item-code-excerpt"
-                            isLightTheme={props.isLightTheme}
-                            fetchHighlightedFileLines={props.fetchHighlightedFileLines}
-                        />
-                    </Link>
+                        <Link
+                            to={`${props.result.file.url}${toPositionOrRangeHash({ position })}`}
+                            className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                            onClick={props.onSelect}
+                        >
+                            <CodeExcerpt
+                                repoName={props.result.repository.name}
+                                commitID={props.result.file.commit.oid}
+                                filePath={props.result.file.path}
+                                context={context}
+                                highlightRanges={items}
+                                className="file-match-children__item-code-excerpt"
+                                isLightTheme={props.isLightTheme}
+                                fetchHighlightedFileLines={props.fetchHighlightedFileLines}
+                            />
+                        </Link>
+
+                        <div className="file-match-children__item-badge-row">
+                            {item.badge && showBadges && (
+                                // This div is necessary: it has block display, where the badge row
+                                // has flex display and would cause the hover tooltip to be offset
+                                // in a weird way (centered in the code context, not on the icon).
+                                <div>
+                                    <BadgeAttachment attachment={item.badge} isLightTheme={props.isLightTheme} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 )
             })}
         </div>
