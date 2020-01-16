@@ -153,12 +153,12 @@ func main() {
 		}
 		w.WriteHeader(resp.StatusCode)
 		if resp.StatusCode < 400 || !logRequests {
-			io.Copy(w, resp.Body)
+			_, _ = io.Copy(w, resp.Body)
 			return
 		}
 		b, err := ioutil.ReadAll(resp.Body)
 		log15.Warn("proxy error", "status", resp.StatusCode, "body", string(b), "bodyErr", err)
-		io.Copy(w, bytes.NewReader(b))
+		_, _ = io.Copy(w, bytes.NewReader(b))
 	})
 	if logRequests {
 		h = handlers.LoggingHandler(os.Stdout, h)

@@ -72,7 +72,7 @@ func main() {
 			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {
 				w.WriteHeader(200)
-				w.Write([]byte("ok"))
+				_, _ = w.Write([]byte("ok"))
 				return
 			}
 			handler.ServeHTTP(w, r)
