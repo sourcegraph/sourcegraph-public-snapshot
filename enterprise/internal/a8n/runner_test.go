@@ -30,7 +30,7 @@ type refAndTarget struct {
 	target string
 }
 
-func TestConsumePendingCampaignJobs(t *testing.T) {
+func TestRunCampaignJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
