@@ -24,7 +24,7 @@ $body-color-dark: #f2f4f8;
 .command-palette-button {
     align-self: center;
 
-    >.command-list-popover-button {
+    > .command-list-popover-button {
         user-select: none;
         position: relative;
     }
@@ -39,7 +39,6 @@ $body-color-dark: #f2f4f8;
         cursor: pointer;
     }
 }
-
 .command-list-popover {
     z-index: 1100; // high enough to prevent most things from obscuring it
     border: 1px solid var(--dropdown-border-color);
