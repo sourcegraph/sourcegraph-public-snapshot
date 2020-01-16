@@ -2,11 +2,13 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
@@ -27,10 +29,32 @@ func (s *authzStore) init() {
 	})
 }
 
+// 🚨 SECURITY: It is the caller's responsibility to ensure the supplied email is verified.
 func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.GrantPendingPermissionsArgs) error {
 	s.init()
+
+	cfg := conf.Get().SiteConfiguration
+	// Note: we purposely don't check cfg.PermissionsUserMapping.Enabled here because admin could disable the
+	// feature by mistake while a user has valid pending permissions.
+	if cfg.PermissionsUserMapping == nil {
+		return nil
+	}
+
+	var bindID string
+	switch cfg.PermissionsUserMapping.BindID {
+	case "email":
+		bindID = args.Email
+	case "username":
+		bindID = args.Username
+	default:
+		return fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.PermissionsUserMapping.BindID)
+	}
+
+	if bindID == "" {
+		return nil
+	}
 	return s.store.GrantPendingPermissions(ctx, args.UserID, &iauthz.UserPendingPermissions{
-		BindID: args.BindID,
+		BindID: bindID,
 		Perm:   args.Perm,
 		Type:   args.Type,
 	})
