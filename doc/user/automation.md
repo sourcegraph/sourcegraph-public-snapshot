@@ -49,13 +49,12 @@ We are actively working on campaign support for regex search and replace. Let us
 ## Creating a new campaign
 
 1. Navigate to `sourcegraph.example.com/campaigns` or simply click the "Campaigns" entry in the top navbar. (It will only appear when correctly configured).
-1. Click "Create new campaign".
+1. Click `Create new campaign`.
 1. Enter the title and an optional description for your campaign.
-1. Select the type of campaign you wish to run.
-   1. Comby search and replace requires additional parameters, enter them into the json editor.
-1. For automatically generated campaigns, preview the changes by selecting the 'preview' button and wait for all repositories to be processed. After the preview has finished loading, you can preview the complete set of diffs that were generated, as well as the changesets that will be opened as a result.
-1. Adjust parameters as needed.
-1. Select 'create'. If the campaign runs automatic changes, they will be applied asynchronously and you can track the progress on that page. Once fully created, the whole list of changesets will be available and you can track the progress of your newly created campaign.
+1. Select the type of campaign to run. For example, enter patterns to match and replace code for `Comby` using the JSON editor.
+1. To generate a preview campaign, click `Preview changes` and wait for all repositories to be processed. When the preview is ready, you'll see a list of diffs.
+1. Feel free to change the search and replace patterns to create a new preview.
+1. Once the preview looks good, click `create`. **This will create a pull request of the changset on your codehost**. Once created, changeset progress (e.g., `open`, `merged`) can be tracked in the campaign view.
 
 ---
 

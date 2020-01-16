@@ -46,7 +46,6 @@ describe('Initialize new instance', () => {
             })
             await driver.page.keyboard.press(Key.Enter)
             await driver.waitUntilURL(`${config.sourcegraphBaseUrl}/site-admin`)
-            await driver.page.waitForSelector('input[type="password"]', { timeout: 5 * 1000 })
 
             await retry(
                 async () => {

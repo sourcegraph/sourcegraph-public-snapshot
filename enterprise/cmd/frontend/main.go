@@ -71,6 +71,8 @@ func main() {
 	githubWebhook := a8n.NewGitHubWebhook(a8nStore, repositories, clock)
 	bitbucketServerWebhook := a8n.NewBitbucketServerWebhook(a8nStore, repositories, clock)
 
+	go bitbucketServerWebhook.Upsert(30 * time.Second)
+
 	go a8n.RunCampaignJobs(ctx, a8nStore, clock, 5*time.Second)
 	go a8n.RunChangesetJobs(ctx, a8nStore, clock, gitserver.DefaultClient, 5*time.Second)
 

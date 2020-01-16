@@ -300,11 +300,6 @@ func TestClient_Users(t *testing.T) {
 }
 
 func TestClient_LabeledRepos(t *testing.T) {
-	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
-	if instanceURL == "" {
-		instanceURL = "https://bitbucket.sgdev.org"
-	}
-
 	cli, save := NewTestClient(t, "LabeledRepos", *update)
 	defer save()
 

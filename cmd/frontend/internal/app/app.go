@@ -67,7 +67,7 @@ func NewHandler() http.Handler {
 
 	r.Get(router.DebugHeaders).Handler(trace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Del("Cookie")
-		r.Header.Write(w)
+		_ = r.Header.Write(w)
 	})))
 	addDebugHandlers(r.Get(router.Debug).Subrouter())
 

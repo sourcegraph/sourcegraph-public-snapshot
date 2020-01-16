@@ -22,6 +22,8 @@ const PROPS: GlobalNavbar['props'] = {
     themePreference: ThemePreference.Light,
     patternType: GQL.SearchPatternType.literal,
     setPatternType: () => undefined,
+    caseSensitive: false,
+    setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     settingsCascade: {} as any,
     showCampaigns: false,
