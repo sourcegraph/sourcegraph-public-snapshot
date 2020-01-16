@@ -11,11 +11,11 @@ import (
 // site configuration.
 // 🚨 SECURITY: It is the caller's responsibility to ensure the supplied email is verified.
 type GrantPendingPermissionsArgs struct {
-	UserID   int32
-	Username string
-	Email    string
-	Perm     authz.Perms
-	Type     authz.PermType
+	UserID   int32          // The user ID that will be used to bind pending permissions.
+	Username string         // The username that will be used as bind ID.
+	Email    string         // The email address that will be used as bind ID.
+	Perm     authz.Perms    // The permission level to be granted.
+	Type     authz.PermType // The type of permissions to be granted.
 }
 
 // An AuthzStore stores methods for user permissions, they will be no-op in OSS version.
