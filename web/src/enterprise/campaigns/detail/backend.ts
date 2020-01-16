@@ -12,9 +12,12 @@ import {
     IChangesetPlansOnCampaignArguments,
     IChangesetPlanConnection,
     IChangesetsOnCampaignArguments,
-    IExternalChangesetConnection,
+    IEmptyResponse,
+    IChangesetPlan,
+    IExternalChangeset,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
+import { Connection } from '../../../components/FilteredConnection'
 
 export type CampaignType = 'comby' | 'credentials'
 
@@ -37,11 +40,33 @@ const campaignFragment = gql`
         updatedAt
         publishedAt
         closedAt
+        publishedAt
         url
         __typename
         changesets {
             totalCount
             nodes {
+                __typename
+                id
+                repository {
+                    id
+                    name
+                    url
+                }
+                diff {
+                    fileDiffs {
+                        totalCount
+                        diffStat {
+                            ...DiffStatFields
+                        }
+                    }
+                }
+            }
+        }
+        changesetPlans {
+            totalCount
+            nodes {
+                id
                 __typename
                 id
                 repository {
@@ -266,7 +291,7 @@ export const fetchCampaignPlanById = (campaignPlan: ID): Observable<ICampaignPla
 export const queryChangesets = (
     campaign: ID,
     { first }: IChangesetsOnCampaignArguments
-): Observable<IExternalChangesetConnection> =>
+): Observable<Connection<IExternalChangeset | IChangesetPlan>> =>
     queryGraphQL(
         gql`
             query CampaignChangesets($campaign: ID!, $first: Int) {
@@ -306,9 +331,38 @@ export const queryChangesets = (
                                 }
                             }
                         }
+                        changesetPlans(first: $first) {
+                            totalCount
+                            nodes {
+                                __typename
+                                id
+                                repository {
+                                    id
+                                    name
+                                    url
+                                }
+                                publicationEnqueued
+                                diff {
+                                    fileDiffs {
+                                        nodes {
+                                            ...PreviewFileDiffFields
+                                        }
+                                        totalCount
+                                        pageInfo {
+                                            hasNextPage
+                                        }
+                                        diffStat {
+                                            ...DiffStatFields
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+
+            ${PreviewFileDiffFields}
 
             ${FileDiffFields}
 
@@ -326,7 +380,10 @@ export const queryChangesets = (
             if (node.__typename !== 'Campaign') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return node.changesets
+            return {
+                totalCount: node.changesetPlans.totalCount + node.changesets.totalCount,
+                nodes: [...node.changesetPlans.nodes, ...node.changesets.nodes],
+            }
         })
     )
 
@@ -350,6 +407,7 @@ export const queryChangesetPlans = (
                                     name
                                     url
                                 }
+                                publicationEnqueued
                                 diff {
                                     fileDiffs {
                                         nodes {
@@ -389,3 +447,32 @@ export const queryChangesetPlans = (
             return node.changesets
         })
     )
+
+export async function publishCampaign(campaign: ID): Promise<ICampaign> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation PublishCampaign($campaign: ID!) {
+                publishCampaign(campaign: $campaign) {
+                    ...CampaignFields
+                }
+            }
+            ${campaignFragment}
+        `,
+        { campaign }
+    ).toPromise()
+    return dataOrThrowErrors(result).publishCampaign
+}
+
+export async function publishChangeset(changesetPlan: ID): Promise<IEmptyResponse> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation PublishChangeset($changesetPlan: ID!) {
+                publishChangeset(changesetPlan: $changesetPlan) {
+                    alwaysNil
+                }
+            }
+        `,
+        { changesetPlan }
+    ).toPromise()
+    return dataOrThrowErrors(result).publishChangeset
+}
