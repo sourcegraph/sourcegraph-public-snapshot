@@ -11,7 +11,7 @@ interface Resource {
         | 'Global setting'
         | 'Organization'
         | 'Configuration'
-        | 'LSIF dump'
+        | 'LSIF upload'
 
     /**
      * Name of the resource, printed upon creation and destruction. This should uniquely identify

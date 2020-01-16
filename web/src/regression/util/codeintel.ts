@@ -39,28 +39,28 @@ export const enableLSIF = (driver: Driver, gqlClient: GraphQLClient): Promise<()
 export const disableLSIF = (driver: Driver, gqlClient: GraphQLClient): Promise<() => Promise<void>> =>
     setGlobalLSIFSetting(driver, gqlClient, false)
 
-export interface Dump {
+export interface Upload {
     repository: string
     commit: string
     root: string
 }
 
-export async function uploadDumps(
+export async function performUploads(
     driver: Driver,
     config: Pick<Config, 'sourcegraphBaseUrl'>,
     gqlClient: GraphQLClient,
     repoBase: string,
-    dumps: Dump[]
+    uploads: Upload[]
 ): Promise<void> {
-    // First, remove all existing dumps for the repository
-    for (const repository of new Set(dumps.map(d => d.repository))) {
-        await clearDumps(gqlClient, `${repoBase}/${repository}`)
+    // First, remove all existing uploads for the repository
+    for (const repository of new Set(uploads.map(u => u.repository))) {
+        await clearUploads(gqlClient, `${repoBase}/${repository}`)
     }
 
-    // Upload each dump in parallel and get back the upload status URLs
+    // Upload each upload in parallel and get back the upload status URLs
     const uploadUrls = await Promise.all(
-        dumps.map(({ repository, commit, root }) =>
-            uploadDump(config, {
+        uploads.map(({ repository, commit, root }) =>
+            performUpload(config, {
                 repository: `${repoBase}/${repository}`,
                 commit,
                 root,
@@ -70,9 +70,9 @@ export async function uploadDumps(
     )
 
     // Check the upload status URLs to ensure that they succeed, then ensure
-    // that they are all listed as one of the "active" dumps for that repo
-    for (const [i, { repository, ...rest }] of dumps.entries()) {
-        await ensureDump(driver, config, {
+    // that they are all listed as one of the "active" uploads for that repo
+    for (const [i, { repository, ...rest }] of uploads.entries()) {
+        await ensureUpload(driver, config, {
             ...rest,
             repository: `${repoBase}/${repository}`,
             uploadUrl: uploadUrls[i],
@@ -80,7 +80,7 @@ export async function uploadDumps(
     }
 }
 
-export async function uploadAndEnsureDump(
+export async function uploadAndEnsure(
     driver: Driver,
     config: Pick<Config, 'sourcegraphBaseUrl'>,
     gqlClient: GraphQLClient,
@@ -89,11 +89,11 @@ export async function uploadAndEnsureDump(
     commit: string,
     root: string
 ): Promise<() => Promise<void>> {
-    // First, remove all existing dumps for the repository
-    await clearDumps(gqlClient, `${repoBase}/${repository}`)
+    // First, remove all existing uploads for the repository
+    await clearUploads(gqlClient, `${repoBase}/${repository}`)
 
-    // Upload each dump in parallel and get back the upload status URLs
-    const uploadUrl = await uploadDump(config, {
+    // Upload each upload in parallel and get back the upload status URLs
+    const uploadUrl = await performUpload(config, {
         repository: `${repoBase}/${repository}`,
         commit,
         root,
@@ -101,27 +101,27 @@ export async function uploadAndEnsureDump(
     })
 
     // Check the upload status URLs to ensure that they succeed, then ensure
-    // that they are all listed as one of the "active" dumps for that repo
-    await ensureDump(driver, config, {
+    // that they are all listed as one of the "active" uploads for that repo
+    await ensureUpload(driver, config, {
         repository: `${repoBase}/${repository}`,
         commit,
         root,
         uploadUrl,
     })
 
-    return (): Promise<void> => clearDumps(gqlClient, `${repoBase}/${repository}`)
+    return (): Promise<void> => clearUploads(gqlClient, `${repoBase}/${repository}`)
 }
 
 //
 // Helpers
 
-async function clearDumps(gqlClient: GraphQLClient, repoName: string): Promise<void> {
+async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise<void> {
     const { nodes, hasNextPage } = await gqlClient
         .queryGraphQL(
             gql`
                 query ResolveRev($repoName: String!) {
                     repository(name: $repoName) {
-                        lsifDumps {
+                        lsifUploads {
                             nodes {
                                 id
                             }
@@ -140,20 +140,20 @@ async function clearDumps(gqlClient: GraphQLClient, repoName: string): Promise<v
             map(({ repository }) =>
                 repository === null
                     ? { nodes: [], hasNextPage: false }
-                    : { nodes: repository.lsifDumps.nodes, hasNextPage: repository.lsifDumps.pageInfo.hasNextPage }
+                    : { nodes: repository.lsifUploads.nodes, hasNextPage: repository.lsifUploads.pageInfo.hasNextPage }
             )
         )
         .toPromise()
 
     const indices = range(nodes.length)
     const args: { [k: string]: string } = {}
-    indices.forEach(i => (args[`dump${i}`] = nodes[i].id))
+    indices.forEach(i => (args[`upload${i}`] = nodes[i].id))
 
     await gqlClient
         .mutateGraphQL(
             gql`
-                mutation(${indices.map(i => `$dump${i}: ID!`).join(', ')}) {
-                    ${indices.map(i => gql`delete${i}: deleteLSIFDump(id: $dump${i}) { alwaysNil }`).join('\n')}
+                mutation(${indices.map(i => `$upload${i}: ID!`).join(', ')}) {
+                    ${indices.map(i => gql`delete${i}: deleteLSIFUpload(id: $upload${i}) { alwaysNil }`).join('\n')}
                 }
             `,
             args
@@ -162,12 +162,12 @@ async function clearDumps(gqlClient: GraphQLClient, repoName: string): Promise<v
         .toPromise()
 
     if (hasNextPage) {
-        // If we have more dumps, clear the next page
-        return clearDumps(gqlClient, repoName)
+        // If we have more upload, clear the next page
+        return clearUploads(gqlClient, repoName)
     }
 }
 
-async function uploadDump(
+async function performUpload(
     config: Pick<Config, 'sourcegraphBaseUrl'>,
     {
         repository,
@@ -187,7 +187,7 @@ async function uploadDump(
         const tarCommand = ['tar', '-xzf', `${filename}.gz`, '-C', 'lsif-data'].join(' ')
         await child_process.exec(tarCommand, { cwd: path.join(__dirname, '..') })
 
-        // Upload the dump
+        // Upload data
         const uploadCommand = [
             `src -endpoint ${config.sourcegraphBaseUrl}`,
             'lsif upload',
@@ -205,7 +205,7 @@ async function uploadDump(
             throw new Error('src-cli is not available on PATH')
         }
 
-        throw new Error(`Failed to upload LSIF dump: ${error.stderr || error.stdout || '(no output)'}`)
+        throw new Error(`Failed to upload LSIF data: ${error.stderr || error.stdout || '(no output)'}`)
     }
 
     // Extract the status URL
@@ -217,7 +217,7 @@ async function uploadDump(
     return match[1]
 }
 
-async function ensureDump(
+async function ensureUpload(
     driver: Driver,
     config: Pick<Config, 'sourcegraphBaseUrl'>,
     { repository, commit, root, uploadUrl }: { repository: string; commit: string; root: string; uploadUrl: string }
@@ -241,11 +241,11 @@ async function ensureDump(
 
     await driver.page.goto(`${config.sourcegraphBaseUrl}/${repository}/-/settings/code-intelligence`)
 
-    const commitElem = await driver.page.waitForSelector('.e2e-dump-commit')
+    const commitElem = await driver.page.waitForSelector('.e2e-upload-commit')
     const actualCommit = await commitElem.evaluate(elem => elem.textContent)
     expect(actualCommit).toEqual(commit.substr(0, 7))
 
-    const rootElem = await driver.page.waitForSelector('.e2e-dump-path')
+    const rootElem = await driver.page.waitForSelector('.e2e-upload-path')
     const actualRoot = await rootElem.evaluate(elem => elem.textContent)
     expect(actualRoot).toEqual(root)
 }
