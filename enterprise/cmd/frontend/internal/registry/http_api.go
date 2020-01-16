@@ -111,7 +111,7 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 			registryRequestsErrorCounter.Inc()
 			ev.AddField("error", err.Error())
 		}
-		ev.Send()
+		_ = ev.Send()
 	}()
 
 	// Identify this response as coming from the registry API.
@@ -184,7 +184,7 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 	if err != nil {
 		return err
 	}
-	w.Write(data)
+	_, _ = w.Write(data)
 	return nil
 }
 

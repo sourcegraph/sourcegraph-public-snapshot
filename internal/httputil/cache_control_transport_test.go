@@ -64,7 +64,7 @@ func TestCacheControlTransport(t *testing.T) {
 	noCCTransport := NewCacheControlTransport("", recorder, nil)
 	for _, meth := range []string{"GET", "PUT", "PATCH", "DELETE", "POST"} {
 		req, _ := http.NewRequest(meth, url1, bytes.NewBuffer(nil))
-		noCCTransport.RoundTrip(req)
+		_, _ = noCCTransport.RoundTrip(req)
 		if cc := recorder.req.Header.Get("Cache-Control"); cc != "" {
 			t.Errorf("expected no cache control on %s (because none set on transport), but got %s", meth, cc)
 		}
