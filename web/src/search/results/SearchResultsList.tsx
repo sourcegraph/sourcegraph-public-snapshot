@@ -9,7 +9,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from '..'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
@@ -40,6 +40,7 @@ export interface SearchResultsListProps
         SettingsCascadeProps,
         ThemeProps,
         PatternTypeProps,
+        CaseSensitivityProps,
         InteractiveSearchProps {
     location: H.Location
     history: H.History
@@ -421,6 +422,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                         buildSearchURLQuery(
                                                                             proposedQuery.query,
                                                                             this.props.patternType,
+                                                                            this.props.caseSensitive,
                                                                             this.props.filtersInQuery
                                                                         )
                                                                     }
