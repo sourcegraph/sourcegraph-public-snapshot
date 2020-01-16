@@ -33,7 +33,7 @@ func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []authz.RepoPerms
 	// Return directly if it's used for wrong permissions type or no permissions available.
 	if p.Type != authz.PermRepos ||
 		p.IDs == nil || p.IDs.GetCardinality() == 0 {
-		return nil
+		return []authz.RepoPerms{}
 	}
 
 	perms := make([]authz.RepoPerms, 0, len(repos))
