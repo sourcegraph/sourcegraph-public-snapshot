@@ -56,6 +56,11 @@ interface FindElementOptions {
      * Specifies how exact the search criterion is.
      */
     fuzziness?: 'exact' | 'prefix' | 'space-prefix' | 'contains'
+
+    /**
+     * Specifies whether to wait (and how long) for the element to appear.
+     */
+    wait?: PageFnOptions | boolean
 }
 
 function findElementRegexpStrings(
@@ -86,6 +91,10 @@ function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement
     for (const regexpString of regexps) {
         const regexp = new RegExp(regexpString)
         for (const el of document.querySelectorAll<HTMLElement>(tag)) {
+            if (!el.offsetParent) {
+                // Ignore hidden elements
+                continue
+            }
             if (el.innerText && el.innerText.match(regexp)) {
                 return el
             }
@@ -484,7 +493,7 @@ export class Driver {
      */
     public async findElementWithText(
         text: string,
-        options: FindElementOptions & { wait?: PageFnOptions | boolean } = {}
+        options: FindElementOptions & { action?: 'click' } = {}
     ): Promise<puppeteer.ElementHandle<Element>> {
         const { selector: tagName, fuzziness, wait } = options
         const tag = tagName || '*'
@@ -499,19 +508,25 @@ export class Driver {
             )
         }
 
-        const handlePromise = wait
-            ? this.page
-                  .waitForFunction(findElementMatchingRegexps, typeof wait === 'object' ? wait : {}, tag, regexps)
-                  .catch(err => {
-                      throw notFoundErr(err)
-                  })
-            : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
+        return retry(async () => {
+            const handlePromise = wait
+                ? this.page
+                      .waitForFunction(findElementMatchingRegexps, typeof wait === 'object' ? wait : {}, tag, regexps)
+                      .catch(err => {
+                          throw notFoundErr(err)
+                      })
+                : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
 
-        const el = (await handlePromise).asElement()
-        if (!el) {
-            throw notFoundErr()
-        }
-        return el
+            const el = (await handlePromise).asElement()
+            if (!el) {
+                throw notFoundErr()
+            }
+
+            if (options.action === 'click') {
+                await el.click()
+            }
+            return el
+        }, { retries: options.action === 'click' ? 3 : 0, minTimeout: 100, maxTimeout: 100, factor: 1, maxRetryTime: 500 })
     }
 
     public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
