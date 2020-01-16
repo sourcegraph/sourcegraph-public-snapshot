@@ -153,39 +153,48 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 },
                             ],
                             // Do async search request
-                            this.props.searchRequest(query, LATEST_VERSION, patternType, this.props).pipe(
-                                // Log telemetry
-                                tap(
-                                    results => {
-                                        this.props.telemetryService.log('SearchResultsFetched', {
-                                            code_search: {
-                                                // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
-                                                results: {
-                                                    results_count: isErrorLike(results) ? 0 : results.results.length,
-                                                    any_cloning: isErrorLike(results)
-                                                        ? false
-                                                        : results.cloning.length > 0,
+                            this.props
+                                .searchRequest(
+                                    caseSensitive ? `${query} case:yes` : query,
+                                    LATEST_VERSION,
+                                    patternType,
+                                    this.props
+                                )
+                                .pipe(
+                                    // Log telemetry
+                                    tap(
+                                        results => {
+                                            this.props.telemetryService.log('SearchResultsFetched', {
+                                                code_search: {
+                                                    // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
+                                                    results: {
+                                                        results_count: isErrorLike(results)
+                                                            ? 0
+                                                            : results.results.length,
+                                                        any_cloning: isErrorLike(results)
+                                                            ? false
+                                                            : results.cloning.length > 0,
+                                                    },
                                                 },
-                                            },
-                                        })
-                                        if (patternType && patternType !== this.props.patternType) {
-                                            this.props.setPatternType(patternType)
+                                            })
+                                            if (patternType && patternType !== this.props.patternType) {
+                                                this.props.setPatternType(patternType)
+                                            }
+                                            if (caseSensitive !== this.props.caseSensitive) {
+                                                this.props.setCaseSensitivity(caseSensitive)
+                                            }
+                                        },
+                                        error => {
+                                            this.props.telemetryService.log('SearchResultsFetchFailed', {
+                                                code_search: { error_message: error.message },
+                                            })
+                                            console.error(error)
                                         }
-                                        if (caseSensitive !== this.props.caseSensitive) {
-                                            this.props.setCaseSensitivity(caseSensitive)
-                                        }
-                                    },
-                                    error => {
-                                        this.props.telemetryService.log('SearchResultsFetchFailed', {
-                                            code_search: { error_message: error.message },
-                                        })
-                                        console.error(error)
-                                    }
-                                ),
-                                // Update view with results or error
-                                map(resultsOrError => ({ resultsOrError })),
-                                catchError(error => [{ resultsOrError: error }])
-                            )
+                                    ),
+                                    // Update view with results or error
+                                    map(resultsOrError => ({ resultsOrError })),
+                                    catchError(error => [{ resultsOrError: error }])
+                                )
                         )
                     )
                 )
