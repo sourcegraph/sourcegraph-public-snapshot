@@ -24,7 +24,7 @@ $body-color-dark: #f2f4f8;
 .command-palette-button {
     align-self: center;
 
-    > .command-list-popover-button {
+    >.command-list-popover-button {
         user-select: none;
         position: relative;
     }
@@ -62,6 +62,7 @@ $body-color-dark: #f2f4f8;
 .toggle--off::-webkit-slider-runnable-track {
     color: #eeeeee;
 }
+
 .toggle--off::-webkit-slider-thumb {
     background-color: #000000;
     opacity: 0.2;
@@ -69,4 +70,11 @@ $body-color-dark: #f2f4f8;
 
 .line-decoration-attachment {
     margin-left: 0.25rem;
+}
+
+.badge-decoration-attachment {
+    &__contents {
+        // Always apply light theme styles
+        background-color: rgba(255, 255, 255, 0.8);
+    }
 }
