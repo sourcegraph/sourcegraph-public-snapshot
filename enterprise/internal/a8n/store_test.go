@@ -2538,10 +2538,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			for i := 0; i < 2; i++ {
 				go func() {
 					ran, err := s.ProcessPendingCampaignJob(ctx, process)
-					errChan <- err
 					if ran {
 						atomic.AddInt64(&runCount, 1)
 					}
+					errChan <- err
 				}()
 			}
 			for i := 0; i < 2; i++ {
