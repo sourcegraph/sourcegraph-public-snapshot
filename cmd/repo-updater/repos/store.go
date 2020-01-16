@@ -324,7 +324,6 @@ SELECT
   external_service_type,
   external_service_id,
   external_id,
-  enabled,
   archived,
   fork,
   sources,
@@ -566,7 +565,6 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		ExternalServiceType *string         `json:"external_service_type,omitempty"`
 		ExternalServiceID   *string         `json:"external_service_id,omitempty"`
 		ExternalID          *string         `json:"external_id,omitempty"`
-		Enabled             bool            `json:"enabled"`
 		Archived            bool            `json:"archived"`
 		Fork                bool            `json:"fork"`
 		Sources             json.RawMessage `json:"sources"`
@@ -597,7 +595,6 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 			ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
 			ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
 			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
-			Enabled:             r.Enabled,
 			Archived:            r.Archived,
 			Fork:                r.Fork,
 			Sources:             sources,
@@ -641,7 +638,6 @@ WITH batch AS (
       external_service_type text,
       external_service_id   text,
       external_id           text,
-      enabled               boolean,
       archived              boolean,
       fork                  boolean,
       sources               jsonb,
@@ -664,7 +660,6 @@ SET
   external_service_type = batch.external_service_type,
   external_service_id   = batch.external_service_id,
   external_id           = batch.external_id,
-  enabled               = batch.enabled,
   archived              = batch.archived,
   fork                  = batch.fork,
   sources               = batch.sources,
@@ -701,7 +696,6 @@ INSERT INTO repo (
   external_service_type,
   external_service_id,
   external_id,
-  enabled,
   archived,
   fork,
   sources,
@@ -718,7 +712,6 @@ SELECT
   external_service_type,
   external_service_id,
   external_id,
-  enabled,
   archived,
   fork,
   sources,
@@ -819,7 +812,6 @@ func scanRepo(r *Repo, s scanner) error {
 		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
 		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
 		&dbutil.NullString{S: &r.ExternalRepo.ID},
-		&r.Enabled,
 		&r.Archived,
 		&r.Fork,
 		&sources,
