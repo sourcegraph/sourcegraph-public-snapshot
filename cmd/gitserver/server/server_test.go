@@ -122,8 +122,8 @@ func TestRequest(t *testing.T) {
 	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "testcommand":
-			cmd.Stdout.Write([]byte("teststdout"))
-			cmd.Stderr.Write([]byte("teststderr"))
+			_, _ = cmd.Stdout.Write([]byte("teststdout"))
+			_, _ = cmd.Stderr.Write([]byte("teststderr"))
 			return 42, nil
 		case "testerror":
 			return 0, errors.New("testerror")

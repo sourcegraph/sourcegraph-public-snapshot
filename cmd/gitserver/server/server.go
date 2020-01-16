@@ -592,7 +592,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				}
 
 				if honey.Enabled() {
-					ev.Send()
+					_ = ev.Send()
 				}
 				if traceLogs {
 					log15.Debug("TRACE gitserver exec", mapToLog15Ctx(ev.Fields())...)
@@ -660,7 +660,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
 		if resolved, err := quickRevParseHead(dir); err == nil && git.IsAbsoluteRevision(resolved) {
-			w.Write([]byte(resolved))
+			_, _ = w.Write([]byte(resolved))
 			w.Header().Set("X-Exec-Error", "")
 			w.Header().Set("X-Exec-Exit-Status", "0")
 			w.Header().Set("X-Exec-Stderr", "")
@@ -1372,7 +1372,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 		return false
 	}
 	// Revision not found, update before returning.
-	s.doRepoUpdate(ctx, repo, url)
+	_ = s.doRepoUpdate(ctx, repo, url)
 	return true
 }
 

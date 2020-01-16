@@ -196,7 +196,7 @@ func TestProgressWriter(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			var w progressWriter
 			for _, write := range testCase.writes {
-				w.Write([]byte(write))
+				_, _ = w.Write([]byte(write))
 			}
 			if actual := w.String(); testCase.text != actual {
 				t.Fatalf("\ngot:\n%s\nwant:\n%s\n", actual, testCase.text)

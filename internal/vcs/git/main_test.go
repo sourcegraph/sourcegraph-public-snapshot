@@ -51,7 +51,11 @@ func TestMain(m *testing.M) {
 	srv := &http.Server{Handler: (&server.Server{
 		ReposDir: filepath.Join(root, "repos"),
 	}).Handler()}
-	go srv.Serve(l)
+	go func() {
+		if err := srv.Serve(l); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	gitserver.DefaultClient.Addrs = func(ctx context.Context) []string {
 		return []string{l.Addr().String()}
