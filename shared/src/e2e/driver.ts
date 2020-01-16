@@ -301,7 +301,7 @@ export class Driver {
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
                 await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
 
-                if (slug.toLowerCase() === 'sourcegraphtest/alwayscloningtest') {
+                if (slug.toLowerCase() === 'github.com/sourcegraphtest/alwayscloningtest') {
                     continue;
                 }
 
