@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 )
 
+// GrantPendingPermissionsArgs contains required arguments to grant pending permissions for a user.
 type GrantPendingPermissionsArgs struct {
 	UserID int32
 	BindID string
