@@ -102,6 +102,8 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	if cfg.PermissionsUserMapping != nil && cfg.PermissionsUserMapping.Enabled {
 		if len(authzProviders) > 0 {
 			return nil, errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
+		} else if currentUser == nil {
+			return nil, errors.New("Anonymous access is not allow when permissions user mapping is enabled.")
 		}
 
 		return Authz.AuthorizedRepos(ctx, &AuthorizedReposArgs{
