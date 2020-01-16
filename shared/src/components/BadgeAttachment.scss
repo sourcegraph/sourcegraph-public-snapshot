@@ -7,7 +7,7 @@
         z-index: 1;
         border: none;
         border-radius: 1rem;
-        background-color: transparentize($body-bg-color-dark, 0.2);
+        background-color: rgba($body-bg-color-dark, 0.8);
     }
 
     width: 100%;
@@ -17,7 +17,7 @@
 .theme-light {
     .badge-decoration-attachment {
         &__contents {
-            background-color: transparentize($body-bg-color-light, 0.2);
+            background-color: rgba($body-bg-color-light, 0.8);
         }
     }
 }

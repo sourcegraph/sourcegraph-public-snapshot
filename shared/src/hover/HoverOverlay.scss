@@ -21,7 +21,7 @@
         background: transparent;
         z-index: 1;
         border: none;
-        background-color: transparentize($body-bg-color-dark, 0.2);
+        background-color: rgba($body-bg-color-dark, 0.8);
         opacity: 0;
         transition: opacity $animation-duration ease-in-out;
     }
@@ -137,7 +137,7 @@
 .theme-light {
     .hover-overlay {
         &__close-button {
-            background-color: transparentize($body-bg-color-light, 0.2);
+            background-color: rgba($body-bg-color-light, 0.8);
         }
     }
 }
