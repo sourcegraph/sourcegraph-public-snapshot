@@ -4,14 +4,19 @@ import WarningIcon from 'mdi-react/WarningIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { ErrorAlert } from '../../../components/alerts'
+import InformationIcon from 'mdi-react/InformationIcon'
 import { parseISO, isBefore, addMinutes } from 'date-fns'
 
 interface Props {
-    campaign: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt'> | Pick<GQL.ICampaignPlan, '__typename'>
+    campaign:
+        | Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt' | 'changesets'>
+        | Pick<GQL.ICampaignPlan, '__typename'>
 
     /** The campaign status. */
     status: Omit<GQL.IBackgroundProcessStatus, '__typename'>
 
+    /** Called when the "Publish campaign" button is clicked. */
+    onPublish: () => void
     /** Called when the "Retry failed jobs" button is clicked. */
     onRetry: () => void
 }
@@ -19,7 +24,7 @@ interface Props {
 /**
  * The status of a campaign's jobs, plus its closed state and errors.
  */
-export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, status, onRetry }) => {
+export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, status, onPublish, onRetry }) => {
     /* For completed campaigns that have been published, hide the creation complete status 1 day after the time of publication */
     const creationCompletedLongAgo =
         status.state === GQL.BackgroundProcessState.COMPLETED &&
@@ -43,6 +48,20 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                         {status.completedCount} / {status.pendingCount + status.completedCount}
                     </p>
                 </div>
+            )}
+            {campaign.__typename === 'Campaign' && !campaign.closedAt && !campaign.publishedAt && (
+                <>
+                    <div className="d-flex my-3">
+                        <InformationIcon className="icon-inline text-info mr-1" /> Campaign is a draft.{' '}
+                        {campaign.changesets.totalCount === 0
+                            ? 'No changesets have'
+                            : 'Only a subset of changesets has'}{' '}
+                        been created on code hosts yet.
+                    </div>
+                    <button type="button" className="mb-3 btn btn-primary" onClick={onPublish}>
+                        Publish campaign
+                    </button>
+                </>
             )}
             {campaign.__typename === 'Campaign' && campaign.closedAt ? (
                 <div className="d-flex my-3">

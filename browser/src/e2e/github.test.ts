@@ -167,8 +167,8 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
     })
 
     const tokens = {
-        base: { text: 'matchHost', selector: 'span.pl-v' },
-        head: { text: 'typ', selector: 'span.pl-v' },
+        base: { text: 'matchHost', selector: 'span.pl-s1' },
+        head: { text: 'typ', selector: 'span.pl-s1' },
     }
 
     for (const diffType of ['unified', 'split']) {

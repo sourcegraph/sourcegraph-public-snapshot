@@ -42,6 +42,9 @@ export function interactiveParseSearchURLQuery(query: string): string | undefine
     const searchParams = new URLSearchParams(query)
     const finalQueryParts = []
     for (const filterType of [...filterTypeKeys, ...negatedFilters].filter(key => key !== FilterTypes.case)) {
+        // Ignore `case:` filter, since SearchResults and SourcegraphWebApp components will
+        // call `searchURLISCaseSensitive` to check for case sensitivity in both interactive
+        // and non-interacive modes.
         for (const filterValue of searchParams.getAll(filterType)) {
             finalQueryParts.push(`${filterType}:${filterValue}`)
         }
@@ -117,4 +120,8 @@ export interface InteractiveSearchProps {
     splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
+}
+
+export interface SmartSearchFieldProps {
+    smartSearchField: boolean
 }

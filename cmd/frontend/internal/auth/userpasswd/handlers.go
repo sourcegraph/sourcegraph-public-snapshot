@@ -129,7 +129,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	}
 
 	// Write the session cookie
-	if session.SetActor(w, r, actor, 0); err != nil {
+	if err := session.SetActor(w, r, actor, 0); err != nil {
 		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 	}
 
@@ -184,7 +184,7 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 	actor := &actor.Actor{UID: usr.ID}
 
 	// Write the session cookie
-	if session.SetActor(w, r, actor, 0); err != nil {
+	if err := session.SetActor(w, r, actor, 0); err != nil {
 		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 		return
 	}

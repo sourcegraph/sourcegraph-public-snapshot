@@ -48,6 +48,7 @@ describe('CampaignDetails', () => {
                     author: { username: 'alice' },
                     plan: { type: 'comby', arguments: '{}' },
                     changesets: { nodes: [] as GQL.IExternalChangeset[], totalCount: 2 },
+                    changesetPlans: { nodes: [] as GQL.IChangesetPlan[], totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     status: {
                         __typename: 'BackgroundProcessStatus',

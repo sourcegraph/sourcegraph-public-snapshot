@@ -1,6 +1,6 @@
 import * as H from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
+import { createRenderer } from 'react-test-renderer/shallow'
 import { ChangesetNode } from './ChangesetNode'
 import {
     IChangesetPlan,
@@ -8,6 +8,7 @@ import {
     ChangesetState,
     IExternalChangeset,
 } from '../../../../../../shared/src/graphql/schema'
+import { Subject } from 'rxjs'
 
 jest.mock('mdi-react/AccountCheckIcon', () => 'AccountCheckIcon')
 jest.mock('mdi-react/AccountAlertIcon', () => 'AccountAlertIcon')
@@ -19,77 +20,85 @@ jest.mock('mdi-react/DeleteIcon', () => 'DeleteIcon')
 describe('ChangesetNode', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     const location = H.createLocation('/campaigns')
-    test('renders a changesetplan', () => {
-        expect(
-            renderer
-                .create(
-                    <ChangesetNode
-                        isLightTheme={true}
-                        history={history}
-                        location={location}
-                        node={
-                            {
-                                __typename: 'ChangesetPlan',
-                                diff: {
-                                    fileDiffs: {
-                                        __typename: 'PreviewFileDiffConnection',
-                                        diffStat: {
-                                            added: 100,
-                                            changed: 200,
-                                            deleted: 100,
-                                        },
-                                    },
+    const renderChangesetPlan = (enablePublishing: boolean): void => {
+        const renderer = createRenderer()
+        renderer.render(
+            <ChangesetNode
+                isLightTheme={true}
+                history={history}
+                location={location}
+                node={
+                    {
+                        __typename: 'ChangesetPlan',
+                        diff: {
+                            fileDiffs: {
+                                __typename: 'PreviewFileDiffConnection',
+                                diffStat: {
+                                    added: 100,
+                                    changed: 200,
+                                    deleted: 100,
                                 },
-                                repository: {
-                                    __typename: 'Repository',
-                                    name: 'sourcegraph',
-                                    url: 'github.com/sourcegraph/sourcegraph',
-                                },
-                            } as IChangesetPlan
-                        }
-                    />
-                )
-                .toJSON()
-        ).toMatchSnapshot()
+                            },
+                        },
+                        repository: {
+                            __typename: 'Repository',
+                            name: 'sourcegraph',
+                            url: 'github.com/sourcegraph/sourcegraph',
+                        },
+                    } as IChangesetPlan
+                }
+                campaignUpdates={new Subject<void>()}
+                enablePublishing={enablePublishing}
+            />
+        )
+        const result = renderer.getRenderOutput()
+        expect(result.props).toMatchSnapshot()
+    }
+    test('renders a changesetplan with publishing disabled', () => {
+        renderChangesetPlan(false)
+    })
+    test('renders a changesetplan with publishing enabled', () => {
+        renderChangesetPlan(true)
     })
     test('renders an externalchangeset', () => {
-        expect(
-            renderer
-                .create(
-                    <ChangesetNode
-                        isLightTheme={true}
-                        history={history}
-                        location={location}
-                        node={
-                            {
-                                __typename: 'ExternalChangeset',
-                                reviewState: ChangesetReviewState.PENDING,
-                                state: ChangesetState.OPEN,
-                                externalURL: {
-                                    url: 'https://github.com/sourcegraph/sourcegraph/pull/111111',
+        const renderer = createRenderer()
+        renderer.render(
+            <ChangesetNode
+                isLightTheme={true}
+                history={history}
+                location={location}
+                node={
+                    {
+                        __typename: 'ExternalChangeset',
+                        reviewState: ChangesetReviewState.PENDING,
+                        state: ChangesetState.OPEN,
+                        externalURL: {
+                            url: 'https://github.com/sourcegraph/sourcegraph/pull/111111',
+                        },
+                        title: 'Remove lodash',
+                        body: 'We should remove lodash',
+                        diff: {
+                            fileDiffs: {
+                                diffStat: {
+                                    added: 100,
+                                    changed: 200,
+                                    deleted: 100,
                                 },
-                                title: 'Remove lodash',
-                                body: 'We should remove lodash',
-                                diff: {
-                                    fileDiffs: {
-                                        diffStat: {
-                                            added: 100,
-                                            changed: 200,
-                                            deleted: 100,
-                                        },
-                                        nodes: [{ __typename: 'FileDiff' }],
-                                    },
-                                },
-                                repository: {
-                                    __typename: 'Repository',
-                                    name: 'sourcegraph',
-                                    url: 'github.com/sourcegraph/sourcegraph',
-                                },
-                            } as IExternalChangeset
-                        }
-                    />
-                )
-                .toJSON()
-        ).toMatchSnapshot()
+                                nodes: [{ __typename: 'FileDiff' }],
+                            },
+                        },
+                        repository: {
+                            __typename: 'Repository',
+                            name: 'sourcegraph',
+                            url: 'github.com/sourcegraph/sourcegraph',
+                        },
+                    } as IExternalChangeset
+                }
+                campaignUpdates={new Subject<void>()}
+                enablePublishing={false}
+            />
+        )
+        const result = renderer.getRenderOutput()
+        expect(result.props).toMatchSnapshot()
     })
 })

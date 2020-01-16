@@ -115,9 +115,9 @@ type ctagsProcess struct {
 }
 
 func (p *ctagsProcess) Close() {
-	p.cmd.Process.Kill()
-	p.outPipe.Close()
-	p.in.Close()
+	_ = p.cmd.Process.Kill()
+	_ = p.outPipe.Close()
+	_ = p.in.Close()
 }
 
 func (p *ctagsProcess) read(rep *reply) error {

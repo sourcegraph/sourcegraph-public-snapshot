@@ -465,7 +465,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "github.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -486,7 +485,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -507,7 +505,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "bitbucketserver.mycorp.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -528,7 +525,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
@@ -563,7 +559,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 		gitoliteRepo := repos.Repo{
 			Name:      "gitolite.mycorp.com/bar",
 			URI:       "gitolite.mycorp.com/bar",
-			Enabled:   true,
 			CreatedAt: now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "bar",
@@ -846,7 +841,6 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 
 	gitoliteRepo := repos.Repo{
 		Name:      "gitolite.mycorp.com/bar",
-		Enabled:   true,
 		CreatedAt: now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
@@ -1033,7 +1027,6 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 		URI:         "github.com/foo/bar",
 		Description: "The description",
 		Language:    "barlang",
-		Enabled:     true,
 		CreatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAA==",

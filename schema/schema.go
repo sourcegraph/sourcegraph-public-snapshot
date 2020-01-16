@@ -820,6 +820,8 @@ type SettingsExperimentalFeatures struct {
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
 	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
+	// SmartSearchField description: Enables displaying a search field that provides syntax highlighting, hover tooltips and diagnostics for search queries.
+	SmartSearchField *bool `json:"smartSearchField,omitempty"`
 	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
 	SplitSearchModes *bool `json:"splitSearchModes,omitempty"`
 }

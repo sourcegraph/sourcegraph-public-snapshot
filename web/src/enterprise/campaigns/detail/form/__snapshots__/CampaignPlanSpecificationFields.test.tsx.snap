@@ -41,6 +41,7 @@ exports[`CampaignPlanSpecificationFields has initial value and calls onChange 1`
         <a
           href="https://comby.dev/#match-syntax"
           rel="noopener noreferrer"
+          tabIndex={-1}
           target="_blank"
         >
           Learn about comby syntax
@@ -208,6 +209,7 @@ exports[`CampaignPlanSpecificationFields non-manual type editable 1`] = `
           <a
             href="https://comby.dev/#match-syntax"
             rel="noopener noreferrer"
+            tabIndex={-1}
             target="_blank"
           >
             Learn about comby syntax

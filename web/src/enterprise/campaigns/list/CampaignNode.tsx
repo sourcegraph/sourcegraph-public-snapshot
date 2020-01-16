@@ -66,16 +66,14 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new D
                         }
                     ></Markdown>
                 </div>
-                {changesetCountByState(GQL.ChangesetState.OPEN) + node.changesetPlans.totalCount}{' '}
-                <OpenChangesetIcon
-                    className={`text-${changesetStatusColorClasses.OPEN} ml-1 mr-2`}
-                    data-tooltip="Open changesets"
-                />
-                {changesetCountByState(GQL.ChangesetState.MERGED)}{' '}
-                <MergedChangesetIcon
-                    className={`text-${changesetStatusColorClasses.MERGED} ml-1`}
-                    data-tooltip="Merged changesets"
-                />
+                <div data-tooltip="Open changesets">
+                    {changesetCountByState(GQL.ChangesetState.OPEN) + node.changesetPlans.totalCount}{' '}
+                    <OpenChangesetIcon className={`text-${changesetStatusColorClasses.OPEN} ml-1 mr-2`} />
+                </div>
+                <div data-tooltip="Merged changesets">
+                    {changesetCountByState(GQL.ChangesetState.MERGED)}{' '}
+                    <MergedChangesetIcon className={`text-${changesetStatusColorClasses.MERGED} ml-1`} />
+                </div>
             </div>
         </li>
     )

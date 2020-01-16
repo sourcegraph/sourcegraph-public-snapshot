@@ -18,7 +18,7 @@ export function toPosition(position: clientType.Position): Position {
  */
 export function fromLocation(
     location: sourcegraph.Badged<sourcegraph.Location>
-): clientType.Badged<clientType.Location> {
+): sourcegraph.Badged<clientType.Location> {
     return {
         uri: location.uri.toString(),
         range: fromRange(location.range),
@@ -31,7 +31,7 @@ export function fromLocation(
  *
  * @internal
  */
-export function fromHover(hover: sourcegraph.Badged<sourcegraph.Hover>): clientType.Badged<clientType.Hover> {
+export function fromHover(hover: sourcegraph.Badged<sourcegraph.Hover>): sourcegraph.Badged<clientType.Hover> {
     return {
         contents: hover.contents,
         __backcompatContents: hover.__backcompatContents,

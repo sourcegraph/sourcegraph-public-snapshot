@@ -7,7 +7,7 @@ import {
     IPreviewFileDiff,
     ChangesetState,
 } from '../../../../../../shared/src/graphql/schema'
-import React from 'react'
+import React, { useState } from 'react'
 import {
     changesetReviewStateColors,
     changesetReviewStateIcons,
@@ -23,19 +23,43 @@ import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { Markdown } from '../../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
+import { publishChangeset as _publishChangeset } from '../backend'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Subject } from 'rxjs'
+import ErrorIcon from 'mdi-react/ErrorIcon'
+import { asError } from '../../../../../../shared/src/util/errors'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
+    campaignUpdates: Subject<void>
     history: H.History
     location: H.Location
+    /** Shows the publish button for ChangesetPlans */
+    enablePublishing: boolean
 }
 
 export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     node,
+    campaignUpdates,
     isLightTheme,
     history,
     location,
+    enablePublishing,
 }) => {
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [publishError, setPublishError] = useState<Error>()
+    const publishChangeset: React.MouseEventHandler = async () => {
+        try {
+            setPublishError(undefined)
+            setIsLoading(true)
+            await _publishChangeset(node.id)
+            campaignUpdates.next()
+        } catch (error) {
+            setPublishError(asError(error))
+        } finally {
+            setIsLoading(false)
+        }
+    }
     const fileDiffs = node.diff?.fileDiffs
     const fileDiffNodes: (IFileDiff | IPreviewFileDiff)[] | undefined = fileDiffs ? fileDiffs.nodes : undefined
     const ChangesetStateIcon =
@@ -72,6 +96,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <Link to={node.repository.url} className="text-muted" target="_blank" rel="noopener noreferrer">
                         {node.repository.name}
                     </Link>{' '}
+                    {node.__typename === 'ChangesetPlan' && enablePublishing && (
+                        <span className="badge badge-light">{node.publicationEnqueued ? 'Publishing' : 'Draft'}</span>
+                    )}
                     <span className="mx-1"></span>{' '}
                     {node.__typename === 'ExternalChangeset' && (
                         <>
@@ -101,6 +128,19 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                 <span className="flex-shrink-0 flex-grow-0">
                     <DiffStat {...fileDiffs.diffStat} expandedCounts={true}></DiffStat>
                 </span>
+            )}
+            {enablePublishing && node.__typename === 'ChangesetPlan' && !node.publicationEnqueued && (
+                <>
+                    {publishError && <ErrorIcon data-tooltip={publishError.message} className="ml-2" />}
+                    <button
+                        type="button"
+                        className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
+                        disabled={isLoading}
+                        onClick={publishChangeset}
+                    >
+                        {isLoading && <LoadingSpinner className="mr-1 icon-inline"></LoadingSpinner>} Publish
+                    </button>
+                </>
             )}
         </div>
     )

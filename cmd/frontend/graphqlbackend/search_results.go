@@ -694,16 +694,31 @@ type getPatternInfoOptions struct {
 	// to allow users to jump to files by just typing their name.
 	forceFileSearch         bool
 	performStructuralSearch bool
+
+	fileMatchLimit int32
 }
 
 // getPatternInfo gets the search pattern info for the query in the resolver.
 func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
+	if opts == nil {
+		opts = &getPatternInfoOptions{}
+	}
+
+	if opts.fileMatchLimit == 0 {
+		opts.fileMatchLimit = r.maxResults()
+	}
+
+	return getPatternInfo(r.query, opts)
+}
+
+// getPatternInfo gets the search pattern info for q
+func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
 	var patternsToCombine []string
 	isRegExp := false
 	isStructuralPat := false
-	if opts != nil && opts.performStructuralSearch {
+	if opts.performStructuralSearch {
 		isStructuralPat = true
-		for _, v := range r.query.Values(query.FieldDefault) {
+		for _, v := range q.Values(query.FieldDefault) {
 			var pattern string
 			switch {
 			case v.String != nil:
@@ -718,9 +733,9 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 		}
 		p := strings.Join(patternsToCombine, " ")
 		patternsToCombine = []string{p}
-	} else if opts == nil || !opts.forceFileSearch {
+	} else if !opts.forceFileSearch {
 		isRegExp = true
-		for _, v := range r.query.Values(query.FieldDefault) {
+		for _, v := range q.Values(query.FieldDefault) {
 			// Treat quoted strings as literal strings to match, not regexps.
 			var pattern string
 			switch {
@@ -745,42 +760,42 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	}
 
 	// Handle file: and -file: filters.
-	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
-	filePatternsReposMustInclude, filePatternsReposMustExclude := r.query.RegexpPatterns(query.FieldRepoHasFile)
+	includePatterns, excludePatterns := q.RegexpPatterns(query.FieldFile)
+	filePatternsReposMustInclude, filePatternsReposMustExclude := q.RegexpPatterns(query.FieldRepoHasFile)
 
-	if opts != nil && opts.forceFileSearch {
-		for _, v := range r.query.Values(query.FieldDefault) {
+	if opts.forceFileSearch {
+		for _, v := range q.Values(query.FieldDefault) {
 			includePatterns = append(includePatterns, asString(v))
 		}
 	}
 
 	var combyRule []string
-	for _, v := range r.query.Values(query.FieldCombyRule) {
+	for _, v := range q.Values(query.FieldCombyRule) {
 		combyRule = append(combyRule, asString(v))
 	}
 
 	// Handle lang: and -lang: filters.
-	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(query.FieldLang))
+	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(q.StringValues(query.FieldLang))
 	if err != nil {
 		return nil, err
 	}
 	includePatterns = append(includePatterns, langIncludePatterns...)
 	excludePatterns = append(excludePatterns, langExcludePatterns...)
 
-	languages, _ := r.query.StringValues(query.FieldLang)
+	languages, _ := q.StringValues(query.FieldLang)
 
 	patternInfo := &search.TextPatternInfo{
 		IsRegExp:                     isRegExp,
 		IsStructuralPat:              isStructuralPat,
-		IsCaseSensitive:              r.query.IsCaseSensitive(),
-		FileMatchLimit:               r.maxResults(),
+		IsCaseSensitive:              q.IsCaseSensitive(),
+		FileMatchLimit:               opts.fileMatchLimit,
 		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
 		IncludePatterns:              includePatterns,
 		FilePatternsReposMustInclude: filePatternsReposMustInclude,
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
 		PathPatternsAreRegExps:       true,
 		Languages:                    languages,
-		PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
+		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    strings.Join(combyRule, ""),
 	}
 	if len(excludePatterns) > 0 {
