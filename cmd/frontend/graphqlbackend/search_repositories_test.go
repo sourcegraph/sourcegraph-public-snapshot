@@ -52,15 +52,15 @@ func TestSearchRepositories(t *testing.T) {
 		q    string
 		want []string
 	}{{
-		name: "search for all repositories",
+		name: "all",
 		q:    "type:repo",
 		want: []string{"bar/one", "foo/no-match", "foo/one"},
 	}, {
-		name: "search for all repositories where the repo name includes 'foo/one'",
+		name: "pattern filter",
 		q:    "type:repo foo/one",
 		want: []string{"foo/one"},
 	}, {
-		name: "search for all repositories where the repo name includes 'foo' and the repo has a file path matching 'f.go'",
+		name: "repohasfile",
 		q:    "foo type:repo repohasfile:f.go",
 		want: []string{"foo/one"},
 	}}
