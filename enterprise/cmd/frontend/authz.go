@@ -195,7 +195,7 @@ func authzProvidersFromConfig(
 			serviceTypes[i] = strconv.Quote(providers[i].ServiceType())
 		}
 		msg := fmt.Sprintf(
-			"The Sourcegraph permissions (`permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
+			"The permissions user mapping (`permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
 			strings.Join(serviceTypes, ", "))
 		seriousProblems = append(seriousProblems, msg)
 	}
