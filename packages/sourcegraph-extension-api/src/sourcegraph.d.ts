@@ -957,7 +957,7 @@ declare module 'sourcegraph' {
      * A wrapper around a providable type (currently hover and locations) with additional
      * context to enable displaying badges next to the wrapped result value in the UI.
      */
-    type Badged<T> = T & {
+    export type Badged<T extends object> = T & {
         badge?: BadgeAttachmentRenderOptions
     }
 
