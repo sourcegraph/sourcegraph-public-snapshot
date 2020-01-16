@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"golang.org/x/sync/errgroup"
 )
 
 func cleanup(t *testing.T, s *Store) {
@@ -396,11 +397,9 @@ func testStoreSetRepoPermissions(db *sql.DB) func(*testing.T) {
 
 				for _, p := range test.updates {
 					const numOps = 30
-					var wg sync.WaitGroup
-					wg.Add(numOps)
+					g, ctx := errgroup.WithContext(context.Background())
 					for i := 0; i < numOps; i++ {
-						go func() {
-							defer wg.Done()
+						g.Go(func() error {
 							tmp := &RepoPermissions{
 								RepoID:    p.RepoID,
 								Perm:      p.Perm,
@@ -410,12 +409,12 @@ func testStoreSetRepoPermissions(db *sql.DB) func(*testing.T) {
 							if p.UserIDs != nil {
 								tmp.UserIDs = p.UserIDs.Clone()
 							}
-							if err := s.SetRepoPermissions(context.Background(), tmp); err != nil {
-								t.Fatal(err)
-							}
-						}()
+							return s.SetRepoPermissions(ctx, tmp)
+						})
 					}
-					wg.Wait()
+					if err := g.Wait(); err != nil {
+						t.Fatal(err)
+					}
 				}
 
 				err := checkRegularTable(s, `SELECT user_id, object_ids FROM user_permissions`, test.expectUserPerms)
@@ -780,11 +779,9 @@ func testStoreSetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 
 				for _, update := range test.updates {
 					const numOps = 30
-					var wg sync.WaitGroup
-					wg.Add(numOps)
+					g, ctx := errgroup.WithContext(ctx)
 					for i := 0; i < numOps; i++ {
-						go func() {
-							defer wg.Done()
+						g.Go(func() error {
 							tmp := &RepoPermissions{
 								RepoID:    update.perm.RepoID,
 								Perm:      update.perm.Perm,
@@ -794,12 +791,12 @@ func testStoreSetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 							if update.perm.UserIDs != nil {
 								tmp.UserIDs = update.perm.UserIDs.Clone()
 							}
-							if err := s.SetRepoPendingPermissions(ctx, update.bindIDs, tmp); err != nil {
-								t.Fatal(err)
-							}
-						}()
+							return s.SetRepoPendingPermissions(ctx, update.bindIDs, tmp)
+						})
 					}
-					wg.Wait()
+					if err := g.Wait(); err != nil {
+						t.Fatal(err)
+					}
 				}
 
 				// Query and check rows in "user_pending_permissions" table.
