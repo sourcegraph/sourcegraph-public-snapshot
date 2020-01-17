@@ -1578,7 +1578,7 @@ describe('e2e test suite', () => {
         test('Create campaign preview for regexp campaign type', async () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
-                    regexMatch: 'this is file ([0-9]+)',
+                    regexpMatch: 'this is file ([0-9]+)',
                     textReplace: 'file $1 this is',
                     scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
                 }),
