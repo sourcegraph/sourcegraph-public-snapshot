@@ -573,6 +573,8 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 		req.ContentLength = int64(buf.Len())
 	}}
 
+	// TODO - add tracing
+	// TODO - add http limiter
 	proxy.ServeHTTP(w, r)
 	return nil
 }
