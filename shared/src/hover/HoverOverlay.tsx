@@ -212,7 +212,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                                         <div
                                                             className={classNames(
                                                                 'hover-overlay__badge',
-                                                                'e2e-badge',
+                                                                'e2e-hover-badge',
                                                                 offsetBadge && 'hover-overlay__badge--offset'
                                                             )}
                                                         >

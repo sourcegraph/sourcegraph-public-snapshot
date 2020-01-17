@@ -2,6 +2,11 @@ import { Driver } from '../../../../shared/src/e2e/driver'
 import { Config } from '../../../../shared/src/e2e/config'
 import { ElementHandle } from 'puppeteer'
 
+export interface TestLocation {
+    url: string
+    precise: boolean
+}
+
 export interface TestCase {
     repoRev: string
     files: {
@@ -9,9 +14,10 @@ export interface TestCase {
         locations: {
             line: number
             token: string
+            precise: boolean
             expectedHoverContains: string
-            expectedDefinition: string | string[]
-            expectedReferences?: string[]
+            expectedDefinition: TestLocation | TestLocation[]
+            expectedReferences?: TestLocation[]
         }[]
     }[]
 }
@@ -25,12 +31,19 @@ export async function testCodeNavigation(
         for (const { path, locations } of files) {
             await driver.page.goto(config.sourcegraphBaseUrl + `/${repoRev}/-/blob${path}`)
             await driver.page.waitForSelector('.e2e-blob')
-            for (const { line, token, expectedHoverContains, expectedDefinition, expectedReferences } of locations) {
+            for (const {
+                line,
+                token,
+                precise,
+                expectedHoverContains,
+                expectedDefinition,
+                expectedReferences,
+            } of locations) {
                 const tokenEl = await findTokenElement(driver, line, token)
 
                 // Check hover
                 await tokenEl.hover()
-                await waitForHover(driver, expectedHoverContains)
+                await waitForHover(driver, expectedHoverContains, precise)
 
                 // Check click
                 await clickOnEmptyPartOfCodeView(driver)
@@ -38,7 +51,7 @@ export async function testCodeNavigation(
                 await waitForHover(driver, expectedHoverContains)
 
                 // Find-references
-                if (expectedReferences) {
+                if (expectedReferences && expectedReferences.length > 0) {
                     await clickOnEmptyPartOfCodeView(driver)
                     await tokenEl.hover()
                     await waitForHover(driver, expectedHoverContains)
@@ -47,13 +60,12 @@ export async function testCodeNavigation(
                     await driver.page.waitForSelector('.e2e-search-result')
                     const refLinks = await collectLinks(driver)
                     for (const expectedReference of expectedReferences) {
-                        expect(refLinks).toContain(expectedReference)
+                        expect(refLinks).toContainEqual(expectedReference)
                     }
                     await clickOnEmptyPartOfCodeView(driver)
                 }
 
                 // Go-to-definition
-
                 await clickOnEmptyPartOfCodeView(driver)
                 await tokenEl.hover()
                 await waitForHover(driver, expectedHoverContains)
@@ -63,13 +75,13 @@ export async function testCodeNavigation(
                     await driver.page.waitForSelector('.e2e-search-result')
                     const defLinks = await collectLinks(driver)
                     for (const definition of expectedDefinition) {
-                        expect(defLinks).toContain(definition)
+                        expect(defLinks).toContainEqual(definition)
                     }
                 } else {
                     await driver.page.waitForFunction(
                         defURL => document.location.href.endsWith(defURL),
                         { timeout: 2000 },
-                        expectedDefinition
+                        expectedDefinition.url
                     )
                     await driver.page.goBack()
                 }
@@ -84,13 +96,13 @@ async function getTooltip(driver: Driver): Promise<string> {
     return driver.page.evaluate(() => (document.querySelector('.e2e-tooltip-content') as HTMLElement).innerText)
 }
 
-async function collectLinks(driver: Driver): Promise<Set<string>> {
+async function collectLinks(driver: Driver): Promise<TestLocation[]> {
     const panelTabTitles = await getPanelTabTitles(driver)
     if (panelTabTitles.length === 0) {
-        return new Set(await collectVisibleLinks(driver))
+        return collectVisibleLinks(driver)
     }
 
-    const links = new Set<string>()
+    const links = []
     for (const title of panelTabTitles) {
         const tabElem = await driver.page.$$(`.e2e-hierarchical-locations-view-list span[title="${title}"]`)
         if (tabElem.length > 0) {
@@ -98,7 +110,7 @@ async function collectLinks(driver: Driver): Promise<Set<string>> {
         }
 
         for (const link of await collectVisibleLinks(driver)) {
-            links.add(link)
+            links.push(link)
         }
     }
 
@@ -115,10 +127,15 @@ async function getPanelTabTitles(driver: Driver): Promise<string[]> {
     ).map(normalizeWhitespace)
 }
 
-function collectVisibleLinks(driver: Driver): Promise<string[]> {
+function collectVisibleLinks(driver: Driver): Promise<TestLocation[]> {
     return driver.page.evaluate(() =>
         Array.from(document.querySelectorAll<HTMLElement>('.e2e-search-result')).flatMap(e =>
-            Array.from(e.querySelectorAll<HTMLElement>('a[href]')).map(a => a.getAttribute('href') || '')
+            Array.from(e.querySelectorAll<HTMLElement>('a[href]'))
+                .filter(a => a.nextElementSibling?.className.includes('file-match-children__item-badge-row'))
+                .map(a => ({
+                    url: a.getAttribute('href') || '',
+                    precise: a.nextElementSibling?.childElementCount === 0,
+                }))
         )
     )
 }
@@ -144,10 +161,16 @@ async function findTokenElement(driver: Driver, line: number, token: string): Pr
     return driver.findElementWithText(token, { selector, fuzziness: 'exact' })
 }
 
-async function waitForHover(driver: Driver, expectedHoverContains: string): Promise<void> {
+async function waitForHover(driver: Driver, expectedHoverContains: string, precise?: boolean): Promise<void> {
     await driver.page.waitForSelector('.e2e-tooltip-go-to-definition')
     await driver.page.waitForSelector('.e2e-tooltip-content')
     expect(normalizeWhitespace(await getTooltip(driver))).toContain(normalizeWhitespace(expectedHoverContains))
+
+    if (precise !== undefined) {
+        expect(
+            await driver.page.evaluate(() => document.querySelectorAll<HTMLElement>('.e2e-hover-badge').length)
+        ).toEqual(precise ? 0 : 1)
+    }
 }
 
 function normalizeWhitespace(s: string): string {
