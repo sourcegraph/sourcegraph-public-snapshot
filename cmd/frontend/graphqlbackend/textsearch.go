@@ -613,12 +613,11 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 					patternCopy := *args.PatternInfo
 					args.PatternInfo = &patternCopy
 					includePatternsCopy := []string{}
-					threshold := 100 // if there are more matching files than this threshold, only search up to this many
+					threshold := 200 // if there are more matching files than this threshold, only search up to this many
 					if len(v) > threshold {
-						args.PatternInfo.IncludePatterns = append(includePatternsCopy, v[:threshold]...)
-					} else {
-						args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
+						v = v[:threshold]
 					}
+					args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
 				}
 			}
 
