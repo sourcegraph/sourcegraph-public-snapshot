@@ -125,10 +125,10 @@ func (*userEmails) Verify(ctx context.Context, userID int32, email, code string)
 	}
 
 	return true, Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
-		UserID: userID,
-		Email:  email,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
+		UserID:        userID,
+		VerifiedEmail: email,
+		Perm:          authz.Read,
+		Type:          authz.PermRepos,
 	})
 }
 
