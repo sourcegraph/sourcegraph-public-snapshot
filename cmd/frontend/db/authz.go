@@ -26,10 +26,10 @@ type GrantPendingPermissionsArgs struct {
 }
 
 // AuthorizedReposArgs contains required arguments to verify if a user is authorized to access some
-// or all of repositories from the candidate list with given level and type of permissions.
+// or all of the repositories from the candidate list with the given level and type of permissions.
 type AuthorizedReposArgs struct {
 	Repos    []*types.Repo      // The candidate list of repositories to be verified.
-	UserID   int32              // The user ID that will be used to verify access.
+	UserID   int32              // The user whose authorization to access the repos is being checked.
 	Perm     authz.Perms        // The permission level to be verified.
 	Type     authz.PermType     // The type of permissions to be verified.
 	Provider authz.ProviderType // The type of authz provider to load user permissions.
