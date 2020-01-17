@@ -545,7 +545,8 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
 	repoID, err := strconv.ParseInt(vars["RepoID"], 10, 64)
 	if err != nil {
-		return err
+		http.Error(w, "illegal repository id: "+err.Error(), http.StatusBadRequest)
+		return nil
 	}
 
 	repo, err := db.Repos.Get(r.Context(), api.RepoID(repoID))
