@@ -35,14 +35,16 @@ import (
 const defaultFetchTimeout = 30 * time.Second
 
 const (
-	campaignTypeComby       = "comby"
-	campaignTypeCredentials = "credentials"
-	campaignTypePatch       = "patch"
+	campaignTypeComby              = "comby"
+	campaignTypeRegexSearchReplace = "regexsearchreplace"
+	campaignTypeCredentials        = "credentials"
+	campaignTypePatch              = "patch"
 )
 
 var schemas = map[string]string{
-	campaignTypeComby:       schema.CombyCampaignTypeSchemaJSON,
-	campaignTypeCredentials: schema.CredentialsCampaignTypeSchemaJSON,
+	campaignTypeComby:              schema.CombyCampaignTypeSchemaJSON,
+	campaignTypeRegexSearchReplace: schema.RegexSearchReplaceCampaignTypeSchemaJSON,
+	campaignTypeCredentials:        schema.CredentialsCampaignTypeSchemaJSON,
 }
 
 // NewCampaignType returns a new CampaignType for the given campaign type name
@@ -77,6 +79,13 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 			httpClient:   cli,
 			fetchTimeout: defaultFetchTimeout,
 		}
+		if err := json.Unmarshal(normalizedArgs, &c.args); err != nil {
+			return nil, err
+		}
+		ct = c
+
+	case campaignTypeRegexSearchReplace:
+		c := &regexSearchReplace{newSearch: graphqlbackend.NewSearchImplementer}
 		if err := json.Unmarshal(normalizedArgs, &c.args); err != nil {
 			return nil, err
 		}
@@ -254,6 +263,79 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 	}
 
 	return result.String(), "", nil
+}
+
+type regexSearchReplaceArgs struct {
+	ScopeQuery  string `json:"scopeQuery"`
+	RegexMatch  string `json:"regexMatch"`
+	TextReplace string `json:"textReplace"`
+}
+
+type regexSearchReplace struct {
+	args regexSearchReplaceArgs
+
+	newSearch func(*graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error)
+}
+
+func (c *regexSearchReplace) searchQuery() string {
+	// We add the regexMatch because without it search may only return a
+	// truncated list of file matches. We also add count:10000 to have a
+	// higher chance of finding all matches.
+	return fmt.Sprintf("%s %s count:10000", c.args.ScopeQuery, c.args.RegexMatch)
+}
+
+func (c *regexSearchReplace) searchQueryForRepo(n api.RepoName) string {
+	return fmt.Sprintf("repo:%s %s %s count:10000", regexp.QuoteMeta(string(n)), c.args.ScopeQuery, c.args.RegexMatch)
+}
+
+func (c *regexSearchReplace) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, string, error) {
+	// check that the regex is valid before doing any work.
+	re, err := regexp.Compile(c.args.RegexMatch)
+	if err != nil {
+		return "", "", err
+	}
+
+	t := "regexp"
+	search, err := c.newSearch(&graphqlbackend.SearchArgs{
+		Version:     "V2",
+		PatternType: &t,
+		Query:       c.searchQueryForRepo(repo),
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	resultsResolver, err := search.Results(ctx)
+	if err != nil {
+		return "", "", err
+	}
+
+	diffs := []string{}
+
+	for _, res := range resultsResolver.Results() {
+		fm, ok := res.ToFileMatch()
+		if !ok {
+			continue
+		}
+
+		path := fm.File().Path()
+		content, err := fm.File().Content(ctx)
+		if err != nil {
+			return "", "", err
+		}
+
+		newContent := re.ReplaceAllString(content, c.args.TextReplace)
+		diff, err := tmpfileDiff(path, content, newContent)
+
+		if err != nil {
+			return "", "", err
+		}
+
+		withHeader := fmt.Sprintf("diff %s %s\n%s", path, path, diff)
+
+		diffs = append(diffs, withHeader)
+	}
+	return strings.Join(diffs, "\n"), "", nil
 }
 
 type credentialsMatcher struct {
