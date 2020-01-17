@@ -636,8 +636,8 @@ func TestUsers_CreateAndGrantPendingPermissions(t *testing.T) {
 				calledGrantPendingPermissions = true
 				if test.expectUsername != args.Username {
 					return fmt.Errorf("args.Username: want %q but got %q", test.expectUsername, args.Username)
-				} else if test.expectEmail != args.Email {
-					return fmt.Errorf("args.Email: want %q but got %q", test.expectEmail, args.Email)
+				} else if test.expectEmail != args.VerifiedEmail {
+					return fmt.Errorf("args.Email: want %q but got %q", test.expectEmail, args.VerifiedEmail)
 				}
 				return nil
 			}
