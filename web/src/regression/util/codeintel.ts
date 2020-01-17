@@ -11,15 +11,11 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { getGlobalSettings } from './helpers'
 import { overwriteSettings } from '../../../../shared/src/settings/edit'
 
-async function setGlobalLSIFSetting(
-    driver: Driver,
-    gqlClient: GraphQLClient,
-    enabled: boolean
-): Promise<() => Promise<void>> {
+async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
     const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
     const newContents = applyEdits(
         oldContents,
-        setProperty(oldContents, ['codeIntel.lsif'], [enabled], {
+        setProperty(oldContents, ['codeIntel.lsif'], enabled, {
             eol: '\n',
             insertSpaces: true,
             tabSize: 2,
@@ -33,11 +29,11 @@ async function setGlobalLSIFSetting(
     }
 }
 
-export const enableLSIF = (driver: Driver, gqlClient: GraphQLClient): Promise<() => Promise<void>> =>
-    setGlobalLSIFSetting(driver, gqlClient, true)
+export const enableLSIF = (gqlClient: GraphQLClient): Promise<() => Promise<void>> =>
+    setGlobalLSIFSetting(gqlClient, true)
 
-export const disableLSIF = (driver: Driver, gqlClient: GraphQLClient): Promise<() => Promise<void>> =>
-    setGlobalLSIFSetting(driver, gqlClient, false)
+export const disableLSIF = (gqlClient: GraphQLClient): Promise<() => Promise<void>> =>
+    setGlobalLSIFSetting(gqlClient, false)
 
 export interface Upload {
     repository: string
@@ -84,17 +80,16 @@ export async function uploadAndEnsure(
     driver: Driver,
     config: Pick<Config, 'sourcegraphBaseUrl'>,
     gqlClient: GraphQLClient,
-    repoBase: string,
     repository: string,
     commit: string,
     root: string
 ): Promise<() => Promise<void>> {
     // First, remove all existing uploads for the repository
-    await clearUploads(gqlClient, `${repoBase}/${repository}`)
+    await clearUploads(gqlClient, repository)
 
     // Upload each upload in parallel and get back the upload status URLs
     const uploadUrl = await performUpload(config, {
-        repository: `${repoBase}/${repository}`,
+        repository,
         commit,
         root,
         filename: `lsif-data/${repository}@${commit.substring(0, 12)}.lsif`,
@@ -103,19 +98,19 @@ export async function uploadAndEnsure(
     // Check the upload status URLs to ensure that they succeed, then ensure
     // that they are all listed as one of the "active" uploads for that repo
     await ensureUpload(driver, config, {
-        repository: `${repoBase}/${repository}`,
+        repository,
         commit,
         root,
         uploadUrl,
     })
 
-    return (): Promise<void> => clearUploads(gqlClient, `${repoBase}/${repository}`)
+    return (): Promise<void> => clearUploads(gqlClient, repository)
 }
 
 //
 // Helpers
 
-async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise<void> {
+export async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise<void> {
     const { nodes, hasNextPage } = await gqlClient
         .queryGraphQL(
             gql`
@@ -184,7 +179,7 @@ async function performUpload(
     let out!: string
     try {
         // Untar the lsif data for this upload
-        const tarCommand = ['tar', '-xzf', `${filename}.gz`, '-C', 'lsif-data'].join(' ')
+        const tarCommand = ['tar', '-xzf', `${filename}.gz`, '-C', `lsif-data/${path.dirname(repository)}`].join(' ')
         await child_process.exec(tarCommand, { cwd: path.join(__dirname, '..') })
 
         // Upload data

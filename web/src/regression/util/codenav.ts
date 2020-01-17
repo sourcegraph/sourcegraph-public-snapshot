@@ -72,7 +72,7 @@ export async function testCodeNavigation(
                 await (await driver.findElementWithText('Go to definition')).click()
 
                 if (Array.isArray(expectedDefinition)) {
-                    await driver.page.waitForSelector('.e2e-search-result')
+                    await driver.page.waitForSelector('.hierarchical-locations-view')
                     const defLinks = await collectLinks(driver)
                     for (const definition of expectedDefinition) {
                         expect(defLinks).toContainEqual(definition)
