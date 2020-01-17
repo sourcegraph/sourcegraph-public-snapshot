@@ -1,4 +1,4 @@
-package git_test
+package git
 
 import (
 	"bytes"
@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -43,7 +42,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("listen failed: %s", err)
 	}
 
-	root, err = ioutil.TempDir("", "git.test")
+	root, err = ioutil.TempDir("", "test")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -124,7 +123,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
 	return repo
 }
 
-func CommitsEqual(a, b *git.Commit) bool {
+func CommitsEqual(a, b *Commit) bool {
 	if (a == nil) != (b == nil) {
 		return false
 	}
