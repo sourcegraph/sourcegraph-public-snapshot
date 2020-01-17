@@ -2,7 +2,7 @@ env:
   ENTERPRISE: "1"
   DOCKER_BUILDKIT: "1"
   ENTERPRISE: "1"
-  FORCE_COLOR: "1"
+  FORCE_COLOR: "3"
   GO111MODULE: "on"
   IMAGE: us.gcr.io/sourcegraph-dev/server:$TAG
 
