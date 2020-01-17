@@ -45,7 +45,7 @@ const defaultInputByType: { [K in CampaignType]: string } = {
 }`,
     regexSearchReplace: `{
     "scopeQuery": "repo:github.com/foo/bar file:.*",
-    "regexMatch": "foo",
+    "regexpMatch": "foo",
     "textReplace": "bar"
 }`,
 }
@@ -61,7 +61,9 @@ export const CampaignPlanSpecificationFields: React.FunctionComponent<Props> = (
     isLightTheme,
 }) => {
     const value: CampaignPlanSpecificationFormData =
-        rawValue !== undefined ? rawValue : { type: 'comby', arguments: defaultInputByType.comby }
+        rawValue !== undefined
+            ? rawValue
+            : { type: 'regexSearchReplace', arguments: defaultInputByType.regexSearchReplace }
     useEffect(() => {
         if (rawValue === undefined) {
             onChange(value)

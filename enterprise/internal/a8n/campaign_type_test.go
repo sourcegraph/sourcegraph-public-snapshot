@@ -259,7 +259,7 @@ func TestCampaignType_RegexSearchAndReplace(t *testing.T) {
 			name: "simple search replace",
 			args: regexSearchReplaceArgs{
 				ScopeQuery:  "repo:github",
-				RegexMatch:  "foo",
+				RegexpMatch: "foo",
 				TextReplace: "bar",
 			},
 			searchResultsContents: map[string]string{
@@ -278,7 +278,7 @@ func TestCampaignType_RegexSearchAndReplace(t *testing.T) {
 			name: "search replace with match groups",
 			args: regexSearchReplaceArgs{
 				ScopeQuery:  "repo:github",
-				RegexMatch:  "(foo)",
+				RegexpMatch: "(foo)",
 				TextReplace: "$1${1}bar",
 			},
 			searchResultsContents: map[string]string{
