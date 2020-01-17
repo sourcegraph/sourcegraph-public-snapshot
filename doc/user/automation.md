@@ -35,9 +35,9 @@ Automation requires that your [external service](../admin/external_service.md) i
 Automation is still in beta and currently has some limitations to keep in mind:
 
 - We currently only support GitHub and Bitbucket Server code hosts in Automation.
-- The maximum number of repositories over which an Automation campaign is 200.
+- The maximum number of repositories which an Automation campaign can process is 200.
 
-If you have a specific automation workflow in mind that is not covered by our current feature set or exceeds our repository limit, let us know us at <support@sourcegraph.com>.
+If you have a specific automation workflow in mind that is not covered by our current feature set or exceeds our repository limit, let us know at <support@sourcegraph.com>.
 
 ## Supported campaign types and functionality
 
