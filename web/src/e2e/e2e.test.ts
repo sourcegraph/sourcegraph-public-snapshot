@@ -1575,6 +1575,19 @@ describe('e2e test suite', () => {
                 campaignType: 'comby',
             })
         })
+        test('Create campaign preview for regexp campaign type', async () => {
+            await createCampaignPreview({
+                specification: JSON.stringify({
+                    regexMatch: 'this is file ([0-9]+)',
+                    textReplace: 'file $1 this is',
+                    scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
+                }),
+                diffCount: 3,
+                changesetCount: 1,
+                snapshotName: 'Campaign preview page for regexp',
+                campaignType: 'regexSearchReplace',
+            })
+        })
         test('Create campaign preview for credentials campaign type', async () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
