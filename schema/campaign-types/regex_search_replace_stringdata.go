@@ -4,7 +4,7 @@ package schema
 
 // RegexSearchReplaceCampaignTypeSchemaJSON is the content of the file "campaign-types/regex_search_replace.schema.json".
 const RegexSearchReplaceCampaignTypeSchemaJSON = `{
-  "$id": "comby-spec.json#",
+  "$id": "regex-search-replace-spec.json#",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Schema for regex search replace",
   "type": "object",
@@ -17,11 +17,11 @@ const RegexSearchReplaceCampaignTypeSchemaJSON = `{
     "regexMatch": {
       "type": "string",
       "minLength": 1,
-      "description": "Match this regular expression (RE2 syntax is supported)"
+      "description": "Match this regular expression. RE2 syntax is supported: https://github.com/google/re2/wiki/Syntax"
     },
     "textReplace": {
       "type": "string",
-      "description": "Replace the regexMatch text with this expression (you may refer to match groups in regexMatch)"
+      "description": "Replace the regexMatch text with this text. You may refer to match groups in regexMatch using $id or ${id} syntax."
     }
   },
   "required": ["scopeQuery", "regexMatch", "textReplace"],

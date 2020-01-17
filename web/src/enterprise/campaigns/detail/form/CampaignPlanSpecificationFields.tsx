@@ -44,9 +44,9 @@ const defaultInputByType: { [K in CampaignType]: string } = {
     "matchers": [{ "type": "npm" }]
 }`,
     regexSearchReplace: `{
-    "scopeQuery": "repo:github.com/sourcegraph/sourcegraph file:main.go",
-    "regexMatch": "func",
-    "textReplace": "foo"
+    "scopeQuery": "repo:github.com/foo/bar file:.*",
+    "regexMatch": "foo",
+    "textReplace": "bar"
 }`,
 }
 

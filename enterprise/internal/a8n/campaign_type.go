@@ -277,7 +277,17 @@ type regexSearchReplace struct {
 	newSearch func(*graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error)
 }
 
-func (c *regexSearchReplace) searchQuery() string { return c.args.ScopeQuery }
+func (c *regexSearchReplace) searchQuery() string {
+	// We add the regexMatch because without it search may only return a
+	// truncated list of file matches. We also add count:10000 to have a
+	// higher chance of finding all matches.
+	return fmt.Sprintf("%s %s count:10000", c.args.ScopeQuery, c.args.RegexMatch)
+}
+
+func (c *regexSearchReplace) searchQueryForRepo(n api.RepoName) string {
+	return fmt.Sprintf("repo:%s %s %s count:10000", regexp.QuoteMeta(string(n)), c.args.ScopeQuery, c.args.RegexMatch)
+}
+
 func (c *regexSearchReplace) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, string, error) {
 	// check that the regex is valid before doing any work.
 	re, err := regexp.Compile(c.args.RegexMatch)
@@ -289,7 +299,7 @@ func (c *regexSearchReplace) generateDiff(ctx context.Context, repo api.RepoName
 	search, err := c.newSearch(&graphqlbackend.SearchArgs{
 		Version:     "V2",
 		PatternType: &t,
-		Query:       c.searchQuery(), // searchQueryForRepo?
+		Query:       c.searchQueryForRepo(repo),
 	})
 	if err != nil {
 		return "", "", err
