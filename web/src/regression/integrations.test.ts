@@ -1,7 +1,4 @@
-/**
- * @jest-environment node
- */
-
+import { describe, test } from 'mocha'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { fromFetch } from 'rxjs/fetch'
 import { map, catchError } from 'rxjs/operators'

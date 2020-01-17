@@ -1,3 +1,4 @@
+import expect from 'expect'
 import * as child_process from 'mz/child_process'
 import * as path from 'path'
 import { Config } from '../../../../shared/src/e2e/config'
