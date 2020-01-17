@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
@@ -35,11 +35,6 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
-	}
-
-	cfg := conf.Get().SiteConfiguration
-	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
-		return nil, errors.New("permissions user mapping is not enabled")
 	}
 
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
@@ -72,7 +67,8 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		UserIDs:  roaring.NewBitmap(),
 		Provider: authz.ProviderSourcegraph,
 	}
-	switch cfg.PermissionsUserMapping.BindID {
+	cfg := globals.PermissionsUserMapping()
+	switch cfg.BindID {
 	case "email":
 		emails, err := db.UserEmails.GetVerifiedEmails(ctx, bindIDs...)
 		if err != nil {
@@ -96,7 +92,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		}
 
 	default:
-		return nil, fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.PermissionsUserMapping.BindID)
+		return nil, fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
 	}
 
 	pendingBindIDs := make([]string, 0, len(bindIDSet))
@@ -122,11 +118,6 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	// 🚨 SECURITY: Only site admins can query repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
-	}
-
-	cfg := conf.Get().SiteConfiguration
-	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
-		return nil, errors.New("permissions user mapping is not enabled")
 	}
 
 	var (
@@ -187,11 +178,6 @@ func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, e
 		return nil, err
 	}
 
-	cfg := conf.Get().SiteConfiguration
-	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
-		return nil, errors.New("permissions user mapping is not enabled")
-	}
-
 	return r.store.ListPendingUsers(ctx)
 }
 
@@ -199,11 +185,6 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	// 🚨 SECURITY: Only site admins can query repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
-	}
-
-	cfg := conf.Get().SiteConfiguration
-	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
-		return nil, errors.New("permissions user mapping is not enabled")
 	}
 
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.RepositoryID)
