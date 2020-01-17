@@ -4147,9 +4147,6 @@ type LSIFUpload implements Node {
     # The project for which this upload provides code intelligence.
     projectRoot: GitTree
 
-    # The original repository name supplied at upload time.
-    inputRepoName: String!
-
     # The original 40-character commit commit supplied at upload time.
     inputCommit: String!
 

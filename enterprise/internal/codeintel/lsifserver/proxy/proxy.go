@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -43,7 +44,8 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 		root := q.Get("root")
 		ctx := r.Context()
 
-		if !ensureRepoAndCommitExist(ctx, w, repoName, commit) {
+		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
+		if !ok {
 			return
 		}
 
@@ -55,14 +57,16 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 		}
 
 		uploadID, queued, err := client.DefaultClient.Upload(ctx, &struct {
-			RepoName string
+			RepoID   api.RepoID
+			RepoName api.RepoName
 			Commit   graphqlbackend.GitObjectID
 			Root     string
 			Blocking *bool
 			MaxWait  *int32
 			Body     io.ReadCloser
 		}{
-			RepoName: repoName,
+			RepoID:   repo.ID,
+			RepoName: repo.Name,
 			Commit:   graphqlbackend.GitObjectID(commit),
 			Root:     root,
 			Body:     r.Body,
@@ -90,29 +94,29 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 	}
 }
 
-func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoName, commit string) bool {
+func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoName, commit string) (*types.Repo, bool) {
 	repo, err := backend.Repos.GetByName(ctx, api.RepoName(repoName))
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			http.Error(w, fmt.Sprintf("unknown repository %q", repoName), http.StatusNotFound)
-			return false
+			return nil, false
 		}
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return false
+		return nil, false
 	}
 
 	if _, err := backend.Repos.ResolveRev(ctx, repo, commit); err != nil {
 		if gitserver.IsRevisionNotFound(err) {
 			http.Error(w, fmt.Sprintf("unknown commit %q", commit), http.StatusNotFound)
-			return false
+			return nil, false
 		}
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return false
+		return nil, false
 	}
 
-	return true
+	return repo, true
 }
 
 func enforceAuth(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string) bool {

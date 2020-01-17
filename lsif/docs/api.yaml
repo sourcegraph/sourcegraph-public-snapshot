@@ -27,12 +27,12 @@ paths:
               type: string
               format: binary
       parameters:
-        - name: repository
+        - name: repositoryId
           in: query
-          description: The repository name.
+          description: The repository identifier.
           required: true
           schema:
-            type: string
+            type: number
         - name: commit
           in: query
           description: The 40-character commit hash.
@@ -77,10 +77,17 @@ paths:
       tags:
         - LSIF
       parameters:
-        - name: repository
+        - name: repositoryId
           in: query
-          description: The repository name.
+          description: The repository identifier.
           required: true
+          schema:
+            type: number
+        - name: repositoryName
+          in: query
+          description: The url-encoded repository name.
+          required: false
+          example: github.com%2Fsourcegraph%2Flsif-go
           schema:
             type: string
         - name: commit
@@ -109,10 +116,17 @@ paths:
       tags:
         - LSIF
       parameters:
-        - name: repository
+        - name: repositoryId
           in: query
-          description: The repository name.
+          description: The repository identifier.
           required: true
+          schema:
+            type: number
+        - name: repositoryName
+          in: query
+          description: The url-encoded repository name.
+          required: false
+          example: github.com%2Fsourcegraph%2Flsif-go
           schema:
             type: string
         - name: commit
@@ -140,10 +154,16 @@ paths:
       tags:
         - LSIF
       parameters:
-        - name: repository
+        - name: repositoryId
+          in: query
+          description: The repository identifier.
+          required: true
+          schema:
+            type: number
+        - name: repositoryName
           in: query
           description: The url-encoded repository name.
-          required: true
+          required: false
           example: github.com%2Fsourcegraph%2Flsif-go
           schema:
             type: string
@@ -192,10 +212,16 @@ paths:
       tags:
         - LSIF
       parameters:
-        - name: repository
+        - name: repositoryId
+          in: query
+          description: The repository identifier.
+          required: true
+          schema:
+            type: number
+        - name: repositoryName
           in: query
           description: The url-encoded repository name.
-          required: true
+          required: false
           example: github.com%2Fsourcegraph%2Flsif-go
           schema:
             type: string
@@ -262,10 +288,16 @@ paths:
       tags:
         - LSIF
       parameters:
-        - name: repository
+        - name: repositoryId
+          in: query
+          description: The repository identifier.
+          required: true
+          schema:
+            type: number
+        - name: repositoryName
           in: query
           description: The url-encoded repository name.
-          required: true
+          required: false
           example: github.com%2Fsourcegraph%2Flsif-go
           schema:
             type: string
@@ -308,21 +340,21 @@ paths:
                 $ref: '#/components/schemas/Hover'
         '404':
           description: Not found
-  /uploads/{repository}:
+  /uploads/repositories/{repositoryId}:
     get:
-      description: Get LSIF uploads by state.
+      description: Get LSIF uploads for a repository.
       tags:
         - Uploads
       parameters:
-        - name: repository
+        - name: repositoryId
           in: query
-          description: The repository name.
+          description: The repository identifier.
           required: true
           schema:
-            type: string
+            type: number
         - name: query
           in: query
-          description: A search query applied over repository, commit, root, failure reason, and failure stacktrace properties.
+          description: A search query applied over commit, root, failure reason, and failure stacktrace properties.
           required: false
           schema:
             type: string

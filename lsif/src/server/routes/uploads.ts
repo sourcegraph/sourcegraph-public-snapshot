@@ -55,7 +55,7 @@ export function createUploadRouter(uploadManager: UploadManager): express.Router
     )
 
     router.get(
-        '/uploads/:repository',
+        '/uploads/repository/:id([0-9]+)',
         validation.validationMiddleware([
             validation.validateQuery,
             validation.validateLsifUploadState,
@@ -68,7 +68,7 @@ export function createUploadRouter(uploadManager: UploadManager): express.Router
                 const { query, state, visibleAtTip }: UploadsQueryArgs = req.query
                 const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_UPLOAD_PAGE_SIZE)
                 const { uploads, totalCount } = await uploadManager.getUploads(
-                    decodeURIComponent(req.params.repository),
+                    parseInt(req.params.id, 10),
                     state,
                     query,
                     !!visibleAtTip,
