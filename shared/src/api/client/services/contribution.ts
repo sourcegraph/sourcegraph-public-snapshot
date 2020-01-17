@@ -138,7 +138,6 @@ export class ContributionRegistry {
                     } catch (err) {
                         // An error during evaluation causes all of the contributions in the same entry to be
                         // discarded.
-                        console.log(err)
                         logWarning('Discarding contributions: evaluating expressions or templates failed.', {
                             contributions,
                             err,
