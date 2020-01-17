@@ -54,31 +54,32 @@ func run() error {
 	for {
 		for _, v := range searchQueries {
 			<-ticker.C
-			go func(v GQLSearchVars) (err error) {
-				defer func() {
-					if err != nil {
-						log15.Error("Error issuing search query", "query", v.Query, "error", err)
-					}
-				}()
-
-				gqlQuery := GraphQLQuery{Query: gqlSearch, Variables: v}
-				b, err := json.Marshal(gqlQuery)
-				if err != nil {
-					return fmt.Errorf("failed to marshal query: %s", err)
+			go func(v GQLSearchVars) {
+				if count, err := search(v); err != nil {
+					log15.Error("Error issuing search query", "query", v.Query, "error", err)
+				} else {
+					log15.Info("Search results", "query", v.Query, "resultCount", count)
 				}
-				resp, err := http.Post(frontendURL("/.api/graphql?Search"), "application/json", bytes.NewReader(b))
-				if err != nil {
-					return fmt.Errorf("response error: %s", err)
-				}
-				var res GraphQLResponseSearch
-				if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-					return fmt.Errorf("could not decode response body: %s", err)
-				}
-				log15.Info("Search results", "query", v.Query, "resultCount", len(res.Data.Search.Results.Results))
-				return nil
 			}(v)
 		}
 	}
+}
+
+func search(v GQLSearchVars) (int, error) {
+	gqlQuery := GraphQLQuery{Query: gqlSearch, Variables: v}
+	b, err := json.Marshal(gqlQuery)
+	if err != nil {
+		return 0, fmt.Errorf("failed to marshal query: %s", err)
+	}
+	resp, err := http.Post(frontendURL("/.api/graphql?Search"), "application/json", bytes.NewReader(b))
+	if err != nil {
+		return 0, fmt.Errorf("response error: %s", err)
+	}
+	var res GraphQLResponseSearch
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return 0, fmt.Errorf("could not decode response body: %s", err)
+	}
+	return len(res.Data.Search.Results.Results), nil
 }
 
 type GraphQLResponseSearch struct {
