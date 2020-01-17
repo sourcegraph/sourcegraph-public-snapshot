@@ -7,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/
 import { catchError } from 'rxjs/operators'
 import { ErrorAlert } from '../../../components/alerts'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { fetchLsifUpload, fetchRepositoryName } from './backend'
+import { fetchLsifUpload } from './backend'
 import { Link } from '../../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../../components/PageTitle'
@@ -15,21 +15,20 @@ import { RouteComponentProps } from 'react-router'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { useObservable } from '../../../util/useObservable'
 
-interface Props extends RouteComponentProps<{ id: string }> {}
+interface Props extends RouteComponentProps<{ id: string }> {
+    repo: GQL.IRepository
+}
 
 /**
  * A page displaying metadata about an LSIF upload.
  */
 export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
+    repo,
     match: {
         params: { id },
     },
 }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsLsifUpload'))
-
-    const repositoryName = useObservable(
-        useMemo(() => fetchRepositoryName({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
-    )
 
     const uploadOrError = useObservable(
         useMemo(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
@@ -38,12 +37,12 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     return (
         <div className="site-admin-lsif-upload-page w-100">
             <PageTitle title="LSIF uploads - Admin" />
-            {!uploadOrError ? (
-                <LoadingSpinner className="icon-inline" />
-            ) : isErrorLike(uploadOrError) ? (
+            {isErrorLike(uploadOrError) ? (
                 <div className="alert alert-danger">
                     <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
                 </div>
+            ) : !uploadOrError ? (
+                <LoadingSpinner className="icon-inline" />
             ) : (
                 <>
                     <div className="mb-1">
@@ -88,7 +87,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                                             {uploadOrError.projectRoot.commit.repository.name}
                                         </Link>
                                     ) : (
-                                        repositoryName
+                                        repo.name
                                     )}
                                 </td>
                             </tr>

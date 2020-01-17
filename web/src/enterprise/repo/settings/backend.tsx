@@ -79,37 +79,6 @@ export function fetchLsifUploads({
 }
 
 /**
- * Fetch repository name by ID.
- */
-export function fetchRepositoryName({ id }: { id: string }): Observable<string | null> {
-    return queryGraphQL(
-        gql`
-            query FetchRepositoryName($id: ID!) {
-                node(id: $repository) {
-                    __typename
-                    ... on Repository {
-                        name
-                    }
-                }
-            }
-        `,
-        { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                return null
-            }
-            if (node.__typename !== 'Repository') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Repository`)
-            }
-
-            return node.name
-        })
-    )
-}
-
-/**
  * Fetch a single LSIF upload by id.
  */
 export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpload | null> {
