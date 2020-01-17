@@ -1579,9 +1579,7 @@ describe('e2e test suite', () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
                     regexMatch: 'this is file ([0-9]+)',
-                    // we want to use the regexp group, so this expression is valid
-                    // eslint-disable-next-line no-template-curly-in-string
-                    textReplace: 'file ${1} this is',
+                    textReplace: 'file $1 this is',
                     scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
                 }),
                 diffCount: 3,
