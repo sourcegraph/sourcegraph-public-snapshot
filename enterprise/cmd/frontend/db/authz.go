@@ -74,9 +74,9 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 	}
 
 	perms := p.AuthorizedRepos(args.Repos)
-	filtered := args.Repos[:0]
-	for _, r := range perms {
-		filtered = append(filtered, r.Repo) // In-place filtering
+	filtered := make([]*types.Repo, len(perms))
+	for i, r := range perms {
+		filtered[i] = r.Repo
 	}
 	return filtered, nil
 }
