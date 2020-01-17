@@ -33,9 +33,10 @@ const jsonSchemaByType: { [K in CampaignType]: any } = {
 
 const defaultInputByType: { [K in CampaignType]: string } = {
     comby: `{
+    // An example that simplifies Go calls for constructing error messages in the repository github.com/foo/bar
     "scopeQuery": "repo:github.com/foo/bar",
-    "matchTemplate": "",
-    "rewriteTemplate": ""
+    "matchTemplate": "errors.New(fmt.Sprintf(:[args]))",
+    "rewriteTemplate": "fmt.Errorf(:[args])"
 }`,
     credentials: `{
     "scopeQuery": "repo:github.com/foo/bar",
