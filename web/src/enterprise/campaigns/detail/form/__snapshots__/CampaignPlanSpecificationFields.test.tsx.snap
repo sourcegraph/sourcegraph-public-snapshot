@@ -93,9 +93,10 @@ exports[`CampaignPlanSpecificationFields has initial value and calls onChange 1`
       }
       onChange={[Function]}
       value="{
+    // An example that simplifies Go calls for constructing error messages in the repository github.com/foo/bar
     \\"scopeQuery\\": \\"repo:github.com/foo/bar\\",
-    \\"matchTemplate\\": \\"\\",
-    \\"rewriteTemplate\\": \\"\\"
+    \\"matchTemplate\\": \\"errors.New(fmt.Sprintf(:[args]))\\",
+    \\"rewriteTemplate\\": \\"fmt.Errorf(:[args])\\"
 }"
     />
   </div>
