@@ -583,7 +583,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			searchResults: []SearchResultResolver{repoMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
-				`case:yes`:        {},
 			},
 		},
 
@@ -593,7 +592,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:markdown`:   {},
-				`case:yes`:        {},
 			},
 		},
 
@@ -603,7 +601,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$@develop`: {},
 				`lang:markdown`:           {},
-				`case:yes`:                {},
 			},
 		},
 		{
@@ -612,7 +609,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
-				`case:yes`:        {},
 			},
 		},
 		{
@@ -621,7 +617,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
-				`case:yes`:        {},
 			},
 		},
 
