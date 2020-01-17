@@ -8,19 +8,26 @@ import * as path from 'path'
  * @param storageRoot The path where SQLite databases are stored.
  * @param id The ID of the dump.
  */
-export function dbFilename(storageRoot: string, id: number, repository: string, commit: string): string {
-    return path.join(storageRoot, constants.DBS_DIR, `${id}-${encodeURIComponent(repository)}@${commit}.lsif.db`)
+export function dbFilename(storageRoot: string, id: number): string {
+    return path.join(storageRoot, constants.DBS_DIR, `${id}.lsif.db`)
 }
 
 /**
- * Construct the path of the SQLite database file for the given repository and commit.
+ * Returns the identifier of the database file. Handles both of the
+ * following formats:
  *
- * @param storageRoot The path where SQLite databases are stored.
- * @param repository The repository name.
- * @param commit The repository commit.
+ * - `{id}.lsif.db`
+ * - `{id}-{repo}-{commit}.lsif.db`
+ *
+ * @param filename The filename.
  */
-export function dbFilenameOld(storageRoot: string, repository: string, commit: string): string {
-    return path.join(storageRoot, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
+export function idFromFilename(filename: string): number | undefined {
+    const id = parseInt(path.parse(filename).name.split('-')[0], 10)
+    if (!isNaN(id)) {
+        return id
+    }
+
+    return undefined
 }
 
 /**

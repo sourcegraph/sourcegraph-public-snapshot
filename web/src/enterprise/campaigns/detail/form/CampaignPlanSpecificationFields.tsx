@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 import combyJsonSchema from '../../../../../../schema/campaign-types/comby.schema.json'
 import credentialsJsonSchema from '../../../../../../schema/campaign-types/credentials.schema.json'
+import regexSearchReplaceJsonSchema from '../../../../../../schema/campaign-types/regex_search_replace.schema.json'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { CampaignType } from '../backend'
@@ -29,6 +30,7 @@ interface Props extends ThemeProps {
 const jsonSchemaByType: { [K in CampaignType]: any } = {
     comby: combyJsonSchema,
     credentials: credentialsJsonSchema,
+    regexSearchReplace: regexSearchReplaceJsonSchema,
 }
 
 const defaultInputByType: { [K in CampaignType]: string } = {
@@ -40,6 +42,11 @@ const defaultInputByType: { [K in CampaignType]: string } = {
     credentials: `{
     "scopeQuery": "repo:github.com/foo/bar",
     "matchers": [{ "type": "npm" }]
+}`,
+    regexSearchReplace: `{
+    "scopeQuery": "repo:github.com/foo/bar file:.*",
+    "regexMatch": "foo",
+    "textReplace": "bar"
 }`,
 }
 

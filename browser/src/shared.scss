@@ -1,5 +1,10 @@
 // CSS for components shared with the webapp
 
+// Set this to override the icon background color in badge attachments.
+// The web's light-theme background color is slightly off-white, but the
+// box that renders the tooltip on GitHub is pure white.
+$body-bg-color-light: #ffffff;
+
 @import '../../shared/src/actions/ActionItem';
 @import '../../shared/src/commandPalette/CommandList';
 @import '../../shared/src/components/completion/CompletionWidget.scss';

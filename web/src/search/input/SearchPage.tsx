@@ -1,6 +1,12 @@
 import * as H from 'history'
 import * as React from 'react'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps } from '..'
+import {
+    parseSearchURLQuery,
+    PatternTypeProps,
+    InteractiveSearchProps,
+    CaseSensitivityProps,
+    SmartSearchFieldProps,
+} from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -15,6 +21,7 @@ import { limitString } from '../../util'
 import { submitSearch, QueryState } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 import { QueryInput } from './QueryInput'
+import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchScopes } from './SearchScopes'
 import { InteractiveModeInput } from './interactive/InteractiveModeInput'
@@ -35,7 +42,8 @@ interface Props
         EventLoggerProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
-        InteractiveSearchProps {
+        InteractiveSearchProps,
+        SmartSearchFieldProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -104,7 +112,7 @@ export class SearchPage extends React.Component<Props, State> {
                             />
                         ) : (
                             <>
-                                <Form className="search flex-grow-1" onSubmit={this.onSubmit}>
+                                <Form className="search flex-grow-1" onSubmit={this.onFormSubmit}>
                                     <div className="search-page__input-container">
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
@@ -112,16 +120,28 @@ export class SearchPage extends React.Component<Props, State> {
                                                 interactiveSearchMode={this.props.interactiveSearchMode}
                                             />
                                         )}
-                                        <QueryInput
-                                            {...this.props}
-                                            value={this.state.userQueryState}
-                                            onChange={this.onUserQueryChange}
-                                            autoFocus="cursor-at-end"
-                                            hasGlobalQueryBehavior={true}
-                                            patternType={this.props.patternType}
-                                            setPatternType={this.props.setPatternType}
-                                            withSearchModeToggle={this.props.splitSearchModes}
-                                        />
+
+                                        {this.props.smartSearchField ? (
+                                            <LazyMonacoQueryInput
+                                                {...this.props}
+                                                hasGlobalQueryBehavior={true}
+                                                queryState={this.state.userQueryState}
+                                                onChange={this.onUserQueryChange}
+                                                onSubmit={this.onSubmit}
+                                                autoFocus={true}
+                                            />
+                                        ) : (
+                                            <QueryInput
+                                                {...this.props}
+                                                value={this.state.userQueryState}
+                                                onChange={this.onUserQueryChange}
+                                                autoFocus="cursor-at-end"
+                                                hasGlobalQueryBehavior={true}
+                                                patternType={this.props.patternType}
+                                                setPatternType={this.props.setPatternType}
+                                                withSearchModeToggle={this.props.splitSearchModes}
+                                            ></QueryInput>
+                                        )}
                                         <SearchButton />
                                     </div>
                                     <div className="search-page__input-sub-container">
@@ -157,8 +177,7 @@ export class SearchPage extends React.Component<Props, State> {
         this.setState({ userQueryState })
     }
 
-    private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        event.preventDefault()
+    private onSubmit = (): void => {
         const query = [this.state.builderQuery, this.state.userQueryState.query].filter(s => !!s).join(' ')
         submitSearch(
             this.props.history,
@@ -168,6 +187,11 @@ export class SearchPage extends React.Component<Props, State> {
             this.props.caseSensitive,
             this.props.activation
         )
+    }
+
+    private onFormSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+        event.preventDefault()
+        this.onSubmit()
     }
 
     private getPageTitle(): string | undefined {

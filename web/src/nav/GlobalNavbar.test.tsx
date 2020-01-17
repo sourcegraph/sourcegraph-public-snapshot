@@ -34,6 +34,7 @@ const PROPS: GlobalNavbar['props'] = {
     interactiveSearchMode: false,
     toggleSearchMode: () => undefined,
     onFiltersInQueryChange: () => undefined,
+    smartSearchField: false,
 }
 
 describe('GlobalNavbar', () => {

@@ -131,6 +131,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether to display the option to toggle between interactive and omni search modes.
      */
     splitSearchModes: boolean
+
+    /**
+     * Whether to display the MonacoQueryInput search field.
+     */
+    smartSearchField: boolean
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -195,6 +200,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             filtersInQuery: {},
             splitSearchModes: false,
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
+            smartSearchField: false,
         }
     }
 
@@ -256,12 +262,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         this.subscriptions.add(
             from(this.platformContext.settings).subscribe(settingsCascade => {
-                const splitSearchModes =
-                    settingsCascade.final &&
-                    !isErrorLike(settingsCascade.final) &&
-                    settingsCascade.final.experimentalFeatures?.splitSearchModes
-
-                this.setState({ splitSearchModes })
+                if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+                    const { splitSearchModes, smartSearchField } = settingsCascade.final.experimentalFeatures || {}
+                    this.setState({ splitSearchModes, smartSearchField })
+                }
             })
         )
 
@@ -374,6 +378,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     onFiltersInQueryChange={this.onFiltersInQueryChange}
                                     setPatternType={this.setPatternType}
                                     setCaseSensitivity={this.setCaseSensitivity}
+                                    smartSearchField={this.state.smartSearchField}
                                 />
                             )}
                         />
