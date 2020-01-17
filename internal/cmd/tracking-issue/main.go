@@ -44,11 +44,13 @@ func run(milestone, labels string) error {
 
 	fmt.Printf("### Items\n\n")
 	for _, issue := range issues {
+		state := state(issue.State)
 		estimate := estimate(issue.Labels)
 		category := category(issue)
 		assignee := assignee(issue.Assignee)
 
-		fmt.Printf("- [ ] %s [#%d](%s) __%s__ %s %s\n",
+		fmt.Printf("- [%s] %s [#%d](%s) __%s__ %s %s\n",
+			state,
 			*issue.Title,
 			*issue.Number,
 			*issue.HTMLURL,
@@ -84,6 +86,13 @@ func estimate(labels []github.Label) string {
 		}
 	}
 	return "?d"
+}
+
+func state(state *string) string {
+	if state != nil && *state == "closed" {
+		return "x"
+	}
+	return " "
 }
 
 func category(issue *github.Issue) string {
@@ -155,6 +164,7 @@ func listIssues(ctx context.Context, cli *github.Client, milestone int, labels .
 	opt := &github.IssueListByRepoOptions{
 		Milestone:   strconv.Itoa(milestone),
 		Labels:      labels,
+		State:       "all",
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
 
