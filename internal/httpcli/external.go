@@ -25,11 +25,10 @@ func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 
 	if current := conf.Get().ExperimentalFeatures.TlsExternal; current == nil {
 		return t.base.RoundTrip(r)
-	} else if reflect.DeepEqual(config, current) {
-		return effective.RoundTrip(r)
+	} else if !reflect.DeepEqual(config, current) {
+		effective = t.update()
 	}
 
-	effective = t.update()
 	return effective.RoundTrip(r)
 }
 
