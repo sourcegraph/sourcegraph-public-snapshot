@@ -43,7 +43,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	var bindID string
 	switch cfg.PermissionsUserMapping.BindID {
 	case "email":
-		bindID = args.Email
+		bindID = args.VerifiedEmail
 	case "username":
 		bindID = args.Username
 	default:
