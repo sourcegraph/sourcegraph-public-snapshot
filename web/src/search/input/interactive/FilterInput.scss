@@ -36,6 +36,8 @@ $filter-input-padding: 0.25rem;
 
     &__input-field {
         width: 100%;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
     }
 
     &__close {
