@@ -142,7 +142,6 @@ const getRepoByQueryFmtstr = `
 SELECT %s
 FROM repo
 WHERE deleted_at IS NULL
-AND enabled = true
 AND %%s`
 
 var getBySQLColumns = []string{
@@ -246,12 +245,6 @@ type ReposListOptions struct {
 	// the query are strings which are regular expression patterns.
 	PatternQuery query.Q
 
-	// Enabled includes enabled repositories in the list.
-	Enabled bool
-
-	// Disabled includes disabled repositories in the list.
-	Disabled bool
-
 	// NoForks excludes forks from the list.
 	NoForks bool
 
@@ -346,7 +339,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 // indexed-search). We special case just returning enabled names so that we
 // read much less data into memory.
 func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
-	q := sqlf.Sprintf("SELECT name FROM repo WHERE enabled = true AND deleted_at IS NULL")
+	q := sqlf.Sprintf("SELECT name FROM repo WHERE deleted_at IS NULL")
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -439,15 +432,6 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		conds = append(conds, cond)
 	}
 
-	if opt.Enabled && opt.Disabled {
-		// nothing to do
-	} else if opt.Enabled && !opt.Disabled {
-		conds = append(conds, sqlf.Sprintf("enabled"))
-	} else if !opt.Enabled && opt.Disabled {
-		conds = append(conds, sqlf.Sprintf("NOT enabled"))
-	} else {
-		return nil, errors.New("Repos.List: must specify at least one of Enabled=true or Disabled=true")
-	}
 	if opt.NoForks {
 		conds = append(conds, sqlf.Sprintf("NOT fork"))
 	}

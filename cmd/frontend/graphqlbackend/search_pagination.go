@@ -592,7 +592,7 @@ func (n *numTotalReposCache) get(ctx context.Context) int {
 	n.RUnlock()
 
 	n.Lock()
-	newCount, err := db.Repos.Count(ctx, db.ReposListOptions{Enabled: true})
+	newCount, err := db.Repos.Count(ctx, db.ReposListOptions{})
 	if err != nil {
 		defer n.Unlock()
 		log15.Error("failed to determine numTotalRepos", "error", err)

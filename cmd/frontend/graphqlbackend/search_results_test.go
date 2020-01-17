@@ -72,7 +72,6 @@ func TestSearchResults(t *testing.T) {
 
 			want := db.ReposListOptions{
 				OnlyRepoIDs:     true,
-				Enabled:         true,
 				IncludePatterns: []string{"r", "p"},
 				LimitOffset:     limitOffset,
 			}
@@ -106,7 +105,6 @@ func TestSearchResults(t *testing.T) {
 
 			want := db.ReposListOptions{
 				OnlyRepoIDs: true,
-				Enabled:     true,
 				LimitOffset: limitOffset,
 			}
 
@@ -178,7 +176,6 @@ func TestSearchResults(t *testing.T) {
 
 			want := db.ReposListOptions{
 				OnlyRepoIDs: true,
-				Enabled:     true,
 				LimitOffset: limitOffset,
 			}
 
