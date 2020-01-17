@@ -14,7 +14,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -55,7 +54,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	ref := req.TargetRef
 	if req.Push {
-		ref = git.EnsureRefPrefix(ref)
+		ref = ensureRefPrefix(ref)
 	}
 
 	// Ensure tmp directory exists
@@ -233,4 +232,13 @@ func cleanUpTmpRepo(path string) {
 	if err != nil {
 		log15.Info("unable to clean up tmp repo", "path", path, "err", err)
 	}
+}
+
+// ensureRefPrefix checks whether the ref is a full ref and contains the
+// "refs/heads" prefix (i.e. "refs/heads/master") or just an abbreviated ref
+// (i.e. "master") and adds the "refs/heads/" prefix if the latter is the case.
+//
+// Copied from git package to avoid cycle import when testing git package.
+func ensureRefPrefix(ref string) string {
+	return "refs/heads/" + strings.TrimPrefix(ref, "refs/heads/")
 }

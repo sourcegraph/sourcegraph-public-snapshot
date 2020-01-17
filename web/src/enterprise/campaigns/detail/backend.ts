@@ -19,7 +19,7 @@ import {
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 import { Connection } from '../../../components/FilteredConnection'
 
-export type CampaignType = 'comby' | 'credentials'
+export type CampaignType = 'comby' | 'credentials' | 'regexSearchReplace'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {

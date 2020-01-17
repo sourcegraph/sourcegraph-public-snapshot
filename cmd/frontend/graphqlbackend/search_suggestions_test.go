@@ -66,8 +66,8 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("single term", func(t *testing.T) {
 		var calledReposListAll, calledReposListFoo bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, OnlyRepoIDs: true, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
-			wantAll := db.ReposListOptions{OnlyRepoIDs: true, Enabled: true, LimitOffset: limitOffset}                                   // when treating term as text query
+			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, OnlyRepoIDs: true, LimitOffset: limitOffset} // when treating term as repo: field
+			wantAll := db.ReposListOptions{OnlyRepoIDs: true, LimitOffset: limitOffset}                                   // when treating term as text query
 			if reflect.DeepEqual(op, wantAll) {
 				calledReposListAll = true
 				return []*types.Repo{{Name: "bar-repo"}}, nil
@@ -134,8 +134,8 @@ func TestSearchSuggestions(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			wantReposInGroup := db.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, Enabled: true, LimitOffset: limitOffset}    // when treating term as repo: field
-			wantFooRepo3 := db.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
+			wantReposInGroup := db.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, LimitOffset: limitOffset}    // when treating term as repo: field
+			wantFooRepo3 := db.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, LimitOffset: limitOffset} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
 				calledReposListReposInGroup = true
 				return []*types.Repo{
@@ -211,7 +211,6 @@ func TestSearchSuggestions(t *testing.T) {
 			want := db.ReposListOptions{
 				IncludePatterns: []string{"foo"},
 				OnlyRepoIDs:     true,
-				Enabled:         true,
 				LimitOffset:     limitOffset,
 			}
 			if !reflect.DeepEqual(op, want) {
@@ -255,7 +254,6 @@ func TestSearchSuggestions(t *testing.T) {
 			want := db.ReposListOptions{
 				IncludePatterns: []string{"foo"},
 				OnlyRepoIDs:     true,
-				Enabled:         true,
 				LimitOffset: &db.LimitOffset{
 					Limit: 1,
 				},
@@ -307,7 +305,6 @@ func TestSearchSuggestions(t *testing.T) {
 			want := db.ReposListOptions{
 				IncludePatterns: []string{"foo"},
 				OnlyRepoIDs:     true,
-				Enabled:         true,
 				LimitOffset:     limitOffset,
 			}
 

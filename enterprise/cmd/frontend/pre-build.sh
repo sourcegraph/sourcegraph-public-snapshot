@@ -4,11 +4,7 @@ set -exuo pipefail
 cd $(dirname "${BASH_SOURCE[0]}")/../../..
 
 parallel_run() {
-    log_file=$(mktemp)
-    trap "rm -rf $log_file" EXIT
-
-    parallel --jobs 4 --keep-order --line-buffer --tag --joblog $log_file "$@"
-    cat $log_file
+    ./dev/ci/parallel_run.sh "$@"
 }
 
 echo "--- yarn root"

@@ -3,14 +3,15 @@ package client
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 func (c *Client) GetUploads(ctx context.Context, args *struct {
-	RepoName        string
+	RepoID          api.RepoID
+	RepoName        api.RepoName
 	Query           *string
 	State           *string
 	IsLatestForRepo *bool
@@ -27,7 +28,7 @@ func (c *Client) GetUploads(ctx context.Context, args *struct {
 	}
 
 	req := &lsifRequest{
-		path:   fmt.Sprintf("/uploads/%s", url.PathEscape(args.RepoName)),
+		path:   fmt.Sprintf("/uploads/repository/%d", args.RepoID),
 		cursor: args.Cursor,
 		query:  query,
 	}

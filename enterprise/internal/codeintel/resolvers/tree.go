@@ -11,8 +11,8 @@ import (
 )
 
 // resolveRepository returns a repository resolver for the given name.
-func resolveRepository(ctx context.Context, repoName string) (*graphqlbackend.RepositoryResolver, error) {
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(repoName))
+func resolveRepository(ctx context.Context, repoID api.RepoID) (*graphqlbackend.RepositoryResolver, error) {
+	repo, err := backend.Repos.Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -23,8 +23,8 @@ func resolveRepository(ctx context.Context, repoName string) (*graphqlbackend.Re
 // resolveCommit returns the GitCommitResolver for the given repository and commit. If the
 // commit does not exist for the repository, a nil resolver is returned. Any other error is
 // returned unmodified.
-func resolveCommit(ctx context.Context, repoName, commit string) (*graphqlbackend.GitCommitResolver, error) {
-	repositoryResolver, err := resolveRepository(ctx, repoName)
+func resolveCommit(ctx context.Context, repoID api.RepoID, commit string) (*graphqlbackend.GitCommitResolver, error) {
+	repositoryResolver, err := resolveRepository(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +55,8 @@ func resolveCommitFrom(ctx context.Context, repositoryResolver *graphqlbackend.R
 // resolvePath returns the GitTreeResolver for the given repository, commit, and path. If the
 // commit does not exist for the repository, a nil resolver is returned. Any other error is
 // returned unmodified.
-func resolvePath(ctx context.Context, repoName, commit, path string) (*graphqlbackend.GitTreeEntryResolver, error) {
-	commitResolver, err := resolveCommit(ctx, repoName, commit)
+func resolvePath(ctx context.Context, repoID api.RepoID, commit, path string) (*graphqlbackend.GitTreeEntryResolver, error) {
+	commitResolver, err := resolveCommit(ctx, repoID, commit)
 	if err != nil {
 		return nil, err
 	}

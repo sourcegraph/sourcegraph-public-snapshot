@@ -260,7 +260,7 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		}
 	} else {
 		trueP := true
-		res, err := h.Repos.List(r.Context(), db.ReposListOptions{Index: &trueP, Enabled: true})
+		res, err := h.Repos.List(r.Context(), db.ReposListOptions{Index: &trueP})
 		if err != nil {
 			return errors.Wrap(err, "listing repos")
 		}

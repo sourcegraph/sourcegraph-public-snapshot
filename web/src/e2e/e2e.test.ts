@@ -733,6 +733,7 @@ describe('e2e test suite', () => {
                     repoPath: '/github.com/sourcegraph/java-langserver@03efbe9558acc532e88f5288b4e6cfa155c6f2dc',
                     filePath: '/tree/src/main/java/com/sourcegraph/common',
                     symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java#L14:20-14:26',
+                    skip: true,
                 },
                 {
                     name:
@@ -740,17 +741,20 @@ describe('e2e test suite', () => {
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/examples',
                     symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go#L26:6-26:10',
+                    skip: true,
                 },
                 {
                     name: 'displays valid symbols at different file depths for Go (./sqltrace/sql.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/sqltrace',
                     symbolPath: '/blob/sqltrace/sql.go#L14:2-14:5',
+                    skip: true,
                 },
             ]
 
             for (const navigationTest of navigateToSymbolTests) {
-                test(navigationTest.name, async () => {
+                const testFunc = navigationTest.skip ? test.skip : test
+                testFunc(navigationTest.name, async () => {
                     const repoBaseURL = sourcegraphBaseUrl + navigationTest.repoPath + '/-'
 
                     await driver.page.goto(repoBaseURL + navigationTest.filePath)
