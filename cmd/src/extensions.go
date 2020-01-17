@@ -18,6 +18,7 @@ Usage:
 
 The commands are:
 
+	copy       copy an extension from Sourcegraph.com to your private extension registry
 	publish    publish the extension in the current directory
 	list       lists extensions
 	get        gets an extension
