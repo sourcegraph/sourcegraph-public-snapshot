@@ -8,9 +8,9 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -98,8 +98,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 
 	// 🚨 SECURITY: Blocking access to all repositories if both code host authz provider(s) and permissions user mapping
 	// are configured.
-	cfg := conf.Get().SiteConfiguration
-	if cfg.PermissionsUserMapping != nil && cfg.PermissionsUserMapping.Enabled {
+	if globals.PermissionsUserMapping().Enabled {
 		if len(authzProviders) > 0 {
 			return nil, errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
 		} else if currentUser == nil {

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
@@ -34,21 +34,17 @@ func (s *authzStore) init() {
 func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.GrantPendingPermissionsArgs) error {
 	s.init()
 
-	cfg := conf.Get().SiteConfiguration
 	// Note: we purposely don't check cfg.PermissionsUserMapping.Enabled here because admin could disable the
 	// feature by mistake while a user has valid pending permissions.
-	if cfg.PermissionsUserMapping == nil {
-		return nil
-	}
-
 	var bindID string
-	switch cfg.PermissionsUserMapping.BindID {
+	cfg := globals.PermissionsUserMapping()
+	switch cfg.BindID {
 	case "email":
 		bindID = args.VerifiedEmail
 	case "username":
 		bindID = args.Username
 	default:
-		return fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.PermissionsUserMapping.BindID)
+		return fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
 	}
 
 	if bindID == "" {

@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -781,9 +781,9 @@ func Test_authzFilter_createsNewUsers(t *testing.T) {
 }
 
 func Test_authzFilter_permissionsUserMapping(t *testing.T) {
-	cfg := conf.Get()
-	cfg.SiteConfiguration.PermissionsUserMapping = &schema.PermissionsUserMapping{Enabled: true}
-	conf.Mock(cfg)
+	before := globals.PermissionsUserMapping()
+	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+	defer globals.SetPermissionsUserMapping(before)
 
 	t.Run("site configuration conflict with code host authz providers", func(t *testing.T) {
 		authz.SetProviders(false, []authz.Provider{
