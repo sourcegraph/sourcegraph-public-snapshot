@@ -11,14 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 )
 
-// PermType is the object type of the user permissions.
-type PermType string
-
-// The list of available user permission types.
-const (
-	PermRepos PermType = "repos"
-)
-
 // ProviderType is the type of provider implementation for the permissions.
 type ProviderType string
 
@@ -34,7 +26,7 @@ const (
 type UserPermissions struct {
 	UserID    int32
 	Perm      authz.Perms
-	Type      PermType
+	Type      authz.PermType
 	IDs       *roaring.Bitmap
 	Provider  ProviderType
 	UpdatedAt time.Time
@@ -48,7 +40,7 @@ func (p *UserPermissions) Expired(ttl time.Duration, now time.Time) bool {
 // AuthorizedRepos returns the intersection of the given repository IDs with
 // the authorized IDs.
 func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []authz.RepoPerms {
-	if p.Type != PermRepos {
+	if p.Type != authz.PermRepos {
 		return nil
 	}
 
@@ -139,7 +131,7 @@ type UserPendingPermissions struct {
 	ID        int32
 	BindID    string
 	Perm      authz.Perms
-	Type      PermType
+	Type      authz.PermType
 	IDs       *roaring.Bitmap
 	UpdatedAt time.Time
 }
@@ -152,7 +144,7 @@ func (p *UserPendingPermissions) Expired(ttl time.Duration, now time.Time) bool 
 // AuthorizedRepos returns the intersection of the given repository IDs with
 // the authorized IDs.
 func (p *UserPendingPermissions) AuthorizedRepos(repos []*types.Repo) []authz.RepoPerms {
-	if p.Type != PermRepos {
+	if p.Type != authz.PermRepos {
 		return nil
 	}
 
