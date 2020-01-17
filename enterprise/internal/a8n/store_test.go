@@ -1973,6 +1973,50 @@ func testStore(db *sql.DB) func(*testing.T) {
 						cursor = next
 					}
 				})
+
+				t.Run("WithCampaignPlanID", func(t *testing.T) {
+					for i := 1; i <= len(changesetJobs); i++ {
+						c := &a8n.Campaign{
+							Name:            fmt.Sprintf("Upgrade ES-Lint %d", i),
+							Description:     "All the Javascripts are belong to us",
+							AuthorID:        4567,
+							NamespaceUserID: 4567,
+							CampaignPlanID:  1234 + int64(i),
+							PublishedAt:     now,
+						}
+
+						err := s.CreateCampaign(ctx, c)
+						if err != nil {
+							t.Fatal(err)
+						}
+						job := changesetJobs[i-1]
+
+						job.CampaignID = c.ID
+						err = s.UpdateChangesetJob(ctx, job)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						opts := ListChangesetJobsOpts{CampaignPlanID: c.CampaignPlanID}
+						ts, next, err := s.ListChangesetJobs(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						}
+
+						have, want := ts, changesetJobs[i-1:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+				})
 			})
 
 			t.Run("Update", func(t *testing.T) {
@@ -2307,6 +2351,74 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 			})
+
+			t.Run("GetLatestChangesetJobPublishedAt", func(t *testing.T) {
+				campaignID := int64(748312)
+
+				job1 := &a8n.ChangesetJob{CampaignID: int64(campaignID), CampaignJobID: 1}
+				err := s.CreateChangesetJob(ctx, job1)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 1 ChangesetJob, unpublished
+				have, err := s.GetLatestChangesetJobPublishedAt(ctx, campaignID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if !have.IsZero() {
+					t.Fatalf("publishedAt is not zero: %v", have)
+				}
+
+				job1.PublishedAt = now
+				err = s.UpdateChangesetJob(ctx, job1)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 1 ChangesetJob, published
+				have, err = s.GetLatestChangesetJobPublishedAt(ctx, campaignID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := have, job1.PublishedAt; have != want {
+					t.Fatalf("publishedAt is not correct. want=%v, have=%v", want, have)
+				}
+
+				job2 := &a8n.ChangesetJob{CampaignID: int64(campaignID), CampaignJobID: 2}
+				err = s.CreateChangesetJob(ctx, job2)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 2 ChangesetJob, 1 published, 1 unpublished
+				have, err = s.GetLatestChangesetJobPublishedAt(ctx, campaignID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if !have.IsZero() {
+					t.Fatalf("publishedAt is not zero: %v", have)
+				}
+
+				job2.PublishedAt = now.Add(5 * time.Second)
+				err = s.UpdateChangesetJob(ctx, job2)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 2 ChangesetJob, 2 published
+				have, err = s.GetLatestChangesetJobPublishedAt(ctx, campaignID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := have, job2.PublishedAt; have != want {
+					t.Fatalf("publishedAt is not correct. want=%v, have=%v", want, have)
+				}
+			})
 		})
 	}
 }
@@ -2322,8 +2434,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		// Create a test repo
 		reposStore := repos.NewDBStore(db, sql.TxOptions{})
 		repo := &repos.Repo{
-			Name:    fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
-			Enabled: true,
+			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
 				ServiceType: "github",
@@ -2427,10 +2538,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			for i := 0; i < 2; i++ {
 				go func() {
 					ran, err := s.ProcessPendingCampaignJob(ctx, process)
-					errChan <- err
 					if ran {
 						atomic.AddInt64(&runCount, 1)
 					}
+					errChan <- err
 				}()
 			}
 			for i := 0; i < 2; i++ {

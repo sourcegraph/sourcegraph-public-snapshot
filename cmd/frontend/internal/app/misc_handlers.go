@@ -30,7 +30,7 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 		fmt.Fprintln(&buf, "Disallow: /")
 	}
 	fmt.Fprintln(&buf)
-	buf.WriteTo(w)
+	_, _ = buf.WriteTo(w)
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {

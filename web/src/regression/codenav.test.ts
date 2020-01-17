@@ -11,7 +11,8 @@ import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ensureTestExternalService, setUserSiteAdmin, getUser } from './util/api'
-import { testCodeNavigation, disableLSIF } from './util/codenav'
+import { testCodeNavigation } from './util/codenav'
+import { disableLSIF } from './util/codeintel'
 
 describe('Code navigation regression test suite', () => {
     const testUsername = 'test-codenav'
@@ -78,6 +79,9 @@ describe('Code navigation regression test suite', () => {
             }
             await setUserSiteAdmin(gqlClient, user.id, true)
             screenshots = new ScreenshotVerifier(driver)
+
+            // Ensure precise code intel is disabled for navigation assertions
+            resourceManager.add('Global setting', 'codeIntel.lsif', await disableLSIF(driver, gqlClient))
         },
         // Cloning sourcegraph/sourcegraph takes awhile
         2 * 60 * 1000 + 10 * 1000
@@ -97,7 +101,6 @@ describe('Code navigation regression test suite', () => {
     test(
         'Basic code intel',
         async () => {
-            await disableLSIF(driver, config)
             await testCodeNavigation(driver, config, [
                 {
                     repoRev: 'github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25',
@@ -218,12 +221,11 @@ describe('Code navigation regression test suite', () => {
                     '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
             )
             for (const file of ['cmd', 'frontend', 'auth', 'providers', 'providers.go']) {
-                await (
-                    await driver.findElementWithText(file, {
-                        selector: '.e2e-repo-rev-sidebar a',
-                        wait: { timeout: 2 * 1000 },
-                    })
-                ).click()
+                await driver.findElementWithText(file, {
+                    action: 'click',
+                    selector: '.e2e-repo-rev-sidebar a',
+                    wait: { timeout: 2 * 1000 },
+                })
             }
             await driver.waitUntilURL(
                 `${config.sourcegraphBaseUrl}/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3/-/blob/cmd/frontend/auth/providers/providers.go`,
@@ -237,18 +239,16 @@ describe('Code navigation regression test suite', () => {
         await driver.page.goto(
             config.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
         )
-        await (
-            await driver.findElementWithText('SYMBOLS', {
-                selector: '.e2e-repo-rev-sidebar button',
-                wait: { timeout: 10 * 1000 },
-            })
-        ).click()
-        await (
-            await driver.findElementWithText('backgroundEntry', {
-                selector: '.e2e-repo-rev-sidebar a span',
-                wait: { timeout: 2 * 1000 },
-            })
-        ).click()
+        await driver.findElementWithText('SYMBOLS', {
+            action: 'click',
+            selector: '.e2e-repo-rev-sidebar button',
+            wait: { timeout: 10 * 1000 },
+        })
+        await driver.findElementWithText('backgroundEntry', {
+            action: 'click',
+            selector: '.e2e-repo-rev-sidebar a span',
+            wait: { timeout: 2 * 1000 },
+        })
         await driver.replaceText({
             selector: 'input[placeholder="Search symbols..."]',
             newText: 'buildentry',
@@ -262,12 +262,11 @@ describe('Code navigation regression test suite', () => {
                 timeout: 2 * 1000,
             }
         )
-        await (
-            await driver.findElementWithText('buildEntry', {
-                selector: '.e2e-repo-rev-sidebar a span',
-                wait: { timeout: 2 * 1000 },
-            })
-        ).click()
+        await driver.findElementWithText('buildEntry', {
+            action: 'click',
+            selector: '.e2e-repo-rev-sidebar a span',
+            wait: { timeout: 2 * 1000 },
+        })
         await driver.waitUntilURL(
             `${config.sourcegraphBaseUrl}/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3/-/blob/browser/config/webpack/base.config.ts#L6:7-6:17`,
             { timeout: 2 * 1000 }

@@ -346,6 +346,8 @@ type ExperimentalFeatures struct {
 	SplitSearchModes string `json:"splitSearchModes,omitempty"`
 	// StructuralSearch description: Enables structural search.
 	StructuralSearch string `json:"structuralSearch,omitempty"`
+	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
+	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -818,6 +820,8 @@ type SettingsExperimentalFeatures struct {
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
 	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
+	// SmartSearchField description: Enables displaying a search field that provides syntax highlighting, hover tooltips and diagnostics for search queries.
+	SmartSearchField *bool `json:"smartSearchField,omitempty"`
 	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
 	SplitSearchModes *bool `json:"splitSearchModes,omitempty"`
 }
@@ -935,12 +939,19 @@ type SiteConfiguration struct {
 	// 1. Go to http://localhost:16686 to view the Jaeger dashboard.
 	UseJaeger bool `json:"useJaeger,omitempty"`
 }
+
+// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
+type TlsExternal struct {
+	// InsecureSkipVerify description: insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
+	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.
+	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
+}
 type UsernameIdentity struct {
 	Type string `json:"type"`
 }
 
 // Webhooks description: Configuration for Bitbucket Server Sourcegraph plugin webhooks
 type Webhooks struct {
-	// Secret description: Secret for authenticating incoming webhook paylods
+	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret,omitempty"`
 }

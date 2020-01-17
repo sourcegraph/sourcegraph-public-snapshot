@@ -28,7 +28,7 @@ func TestMiddleware(t *testing.T) {
 	const mockUserID = 123
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("got through"))
+		_, _ = w.Write([]byte("got through"))
 	})
 	authedHandler := http.NewServeMux()
 	authedHandler.Handle("/.api/", Middleware.API(h))

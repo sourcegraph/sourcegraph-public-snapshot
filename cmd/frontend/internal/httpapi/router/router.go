@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	LSIF       = "lsif"
 	LSIFUpload = "lsif.upload"
 	GraphQL    = "graphql"
 
@@ -65,7 +64,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
-	base.Path("/lsif/{rest:.*}").Methods("GET", "POST").Name(LSIF)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 

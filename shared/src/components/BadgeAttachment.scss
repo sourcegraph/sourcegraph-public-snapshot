@@ -1,13 +1,13 @@
 .badge-decoration-attachment {
-    img {
+    &__contents {
         width: 1.75rem;
         height: 1.75rem;
         padding: 0.25rem;
         background: transparent;
         z-index: 1;
         border: none;
-        border-radius: 1rem;
-        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 100%;
+        background-color: rgba($body-bg-color-dark, 0.8);
     }
 
     width: 100%;
@@ -16,8 +16,8 @@
 
 .theme-light {
     .badge-decoration-attachment {
-        img {
-            background-color: rgba(255, 255, 255, 0.8);
+        &__contents {
+            background-color: rgba($body-bg-color-light, 0.8);
         }
     }
 }

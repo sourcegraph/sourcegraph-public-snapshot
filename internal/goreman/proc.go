@@ -83,7 +83,7 @@ func startProc(proc string) error {
 // startProcs starts the processes.
 func startProcs() {
 	for proc := range procs {
-		startProc(proc)
+		_ = startProc(proc)
 	}
 }
 
@@ -128,7 +128,7 @@ func stopProcs(kill bool) {
 		wg.Add(1)
 		go func(proc string) {
 			defer wg.Done()
-			stopProc(proc, kill)
+			_ = stopProc(proc, kill)
 		}(proc)
 	}
 	wg.Wait()

@@ -697,6 +697,16 @@ type ChangesetPlan {
 
     # The diff of the changeset.
     diff: PreviewRepositoryComparison!
+
+    # Whether the ChangesetPlan is enqueued for publication. Default is false.
+    # It will be true when:
+    # - a Campaign has been created with the CampaignPlan to which this
+    # ChangesetPlan belongs
+    # - when a Campaign with the CampaignPlan has been published after being in
+    # draft mode
+    # - when the ChangesetPlan has been individually published through the
+    # publishChangeset mutation
+    publicationEnqueued: Boolean!
 }
 
 # A changeset in a code host (e.g. a PR on Github)
@@ -1153,14 +1163,6 @@ type Query {
         query: String
         # Return repositories whose names are in the list.
         names: [String!]
-        # Include enabled repositories.
-        #
-        # DEPRECATED: All repositories are enabled. Will be removed in 3.6.
-        enabled: Boolean = true
-        # Include disabled repositories.
-        #
-        # DEPRECATED: No repositories are disabled. Will be removed in 3.6.
-        disabled: Boolean = false
         # Include cloned repositories.
         cloned: Boolean = true
         # Include repositories that are currently being cloned.
@@ -1751,13 +1753,6 @@ type Repository implements Node & GenericSearchResultInterface {
     description: String!
     # The primary programming language in the repository.
     language: String!
-    # DEPRECATED: All repositories are enabled. This field will be removed in 3.6.
-    #
-    # Whether the repository is enabled. A disabled repository should only be accessible to site admins.
-    #
-    # NOTE: Disabling a repository does not provide any additional security. This field is merely a
-    # guideline to UI implementations.
-    enabled: Boolean! @deprecated(reason: "Always true. All repositories are enabled.")
     # DEPRECATED: This field is unused in known clients.
     #
     # The date when this repository was created on Sourcegraph.
@@ -4151,9 +4146,6 @@ type LSIFUpload implements Node {
 
     # The project for which this upload provides code intelligence.
     projectRoot: GitTree
-
-    # The original repository name supplied at upload time.
-    inputRepoName: String!
 
     # The original 40-character commit commit supplied at upload time.
     inputCommit: String!

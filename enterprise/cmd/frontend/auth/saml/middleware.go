@@ -97,7 +97,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			traceLog(fmt.Sprintf("Service Provider metadata: %s", p.ConfigID().ID), string(buf))
 			w.Header().Set("Content-Type", "application/samlmetadata+xml; charset=utf-8")
-			w.Write(buf)
+			_, _ = w.Write(buf)
 			return
 
 		case "/login":

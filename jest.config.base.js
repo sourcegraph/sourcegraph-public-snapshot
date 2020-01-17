@@ -20,10 +20,17 @@ const config = {
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
   transformIgnorePatterns: [
-    '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/codeintellify|@sourcegraph/comlink)',
+    '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/codeintellify|@sourcegraph/comlink|monaco-editor)',
   ],
 
-  moduleNameMapper: { '\\.s?css$': 'identity-obj-proxy', '^worker-loader': 'identity-obj-proxy' },
+  moduleNameMapper: {
+    '\\.s?css$': 'identity-obj-proxy',
+    '^worker-loader': 'identity-obj-proxy',
+    // monaco-editor uses the "module" field in package.json, which isn't supported by Jest
+    // https://github.com/facebook/jest/issues/2702
+    // https://github.com/Microsoft/monaco-editor/issues/996
+    '^monaco-editor': '<rootDir>/../node_modules/monaco-editor/esm/vs/editor/editor.main.js',
+  },
 
   // By default, don't clutter `yarn test --watch` output with the full coverage table. To see it, use the
   // `--coverageReporters text` jest option.

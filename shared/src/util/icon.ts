@@ -25,11 +25,5 @@ const imageValidators = [isEncodedSVG, isEncodedPNG]
  * @param value The raw icon value.
  */
 export function isEncodedImage(value: string): boolean {
-    for (const validator of imageValidators) {
-        if (validator(value)) {
-            return true
-        }
-    }
-
-    return false
+    return imageValidators.some(validator => validator(value))
 }

@@ -23,9 +23,17 @@ interface Props {
     /** Called when the editor has mounted. */
     editorWillMount: (editor: typeof monaco) => void
 
+    /** Called when a standalone code editor has been created with the given props */
+    onEditorCreated?: (editor: monaco.editor.IStandaloneCodeEditor) => void
+
     /** Options for the editor. */
     options: monaco.editor.IEditorOptions
+
+    /** An optional className to add to the editor. */
     className?: string
+
+    /** Whether to add a border to the Monaco editor. Default: true. */
+    border?: boolean
 }
 
 interface State {}
@@ -37,14 +45,17 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         if (!e) {
             return
         }
-
         this.props.editorWillMount(monaco)
-        this.editor = monaco.editor.create(e, {
+        const editor = monaco.editor.create(e, {
             value: this.props.value,
             language: this.props.language,
             theme: this.props.theme,
             ...this.props.options,
         })
+        if (this.props.onEditorCreated) {
+            this.props.onEditorCreated(editor)
+        }
+        this.editor = editor
     }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -71,7 +82,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                 style={{ height: `${this.props.height}px`, position: 'relative' }}
                 ref={this.setRef}
                 id={this.props.id}
-                className={classNames(this.props.className, 'border')}
+                className={classNames(this.props.className, this.props.border !== false && 'border')}
             />
         )
     }

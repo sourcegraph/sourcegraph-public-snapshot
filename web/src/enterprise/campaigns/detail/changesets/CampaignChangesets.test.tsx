@@ -3,7 +3,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { CampaignChangesets } from './CampaignChangesets'
 import { createRenderer } from 'react-test-renderer/shallow'
 import * as H from 'history'
-import { of } from 'rxjs'
+import { of, Subject } from 'rxjs'
 
 describe('CampaignChangesets', () => {
     const history = H.createMemoryHistory()
@@ -17,6 +17,9 @@ describe('CampaignChangesets', () => {
                     history={history}
                     location={history.location}
                     isLightTheme={true}
+                    campaignUpdates={new Subject<void>()}
+                    changesetUpdates={new Subject<void>()}
+                    enablePublishing={false}
                 />
             )
         ).toMatchSnapshot())

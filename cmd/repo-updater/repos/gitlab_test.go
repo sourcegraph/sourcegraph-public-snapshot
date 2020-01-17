@@ -79,7 +79,6 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 				want := &Repo{
 					Name:        "gitlab.com/gitlab-org/gitaly",
 					Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-					Enabled:     true,
 					URI:         "gitlab.com/gitlab-org/gitaly",
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "2009901",

@@ -79,12 +79,8 @@ describe('External services GUI', () => {
             externalServiceName,
             await (async () => {
                 await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/external-services')
-                await (await driver.findElementWithText('Add external service', { wait: { timeout: 500 } })).click()
-                await (
-                    await driver.findElementWithText('Add GitHub.com repositories.', {
-                        wait: { timeout: 500 },
-                    })
-                ).click()
+                await driver.findElementWithText('Add repositories', { action: 'click', wait: { timeout: 500 } })
+                await driver.findElementWithText('GitHub.com', { action: 'click', wait: { timeout: 500 } })
                 const repoSlugs = ['gorilla/mux']
                 const githubConfig = `{
                     "url": "https://github.com",
@@ -106,12 +102,11 @@ describe('External services GUI', () => {
                     selectMethod: 'keyboard',
                     enterTextMethod: 'paste',
                 })
-                await (
-                    await driver.findElementWithText('Add external service', {
-                        selector: 'button',
-                        wait: { timeout: 500 },
-                    })
-                ).click()
+                await driver.findElementWithText('Add repositories', {
+                    action: 'click',
+                    selector: 'button',
+                    wait: { timeout: 500 },
+                })
                 return () =>
                     ensureNoTestExternalServices(gqlClient, {
                         kind: GQL.ExternalServiceKind.GITHUB,

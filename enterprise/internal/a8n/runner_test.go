@@ -30,7 +30,7 @@ type refAndTarget struct {
 	target string
 }
 
-func TestConsumePendingCampaignJobs(t *testing.T) {
+func TestRunCampaignJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -428,9 +428,8 @@ func testRepo(num int, serviceType string) *repos.Repo {
 	extSvcID := fmt.Sprintf("extsvc:%s:%d", serviceType, num)
 
 	return &repos.Repo{
-		Name:    fmt.Sprintf("repo-%d", num),
-		URI:     fmt.Sprintf("repo-%d", num),
-		Enabled: true,
+		Name: fmt.Sprintf("repo-%d", num),
+		URI:  fmt.Sprintf("repo-%d", num),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", num),
 			ServiceType: serviceType,

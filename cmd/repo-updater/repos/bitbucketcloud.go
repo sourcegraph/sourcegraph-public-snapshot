@@ -40,7 +40,7 @@ func NewBitbucketCloudSource(svc *ExternalService, cf *httpcli.Factory) (*Bitbuc
 
 func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
 	if cf == nil {
-		cf = httpcli.NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	cli, err := cf.Doer()
@@ -119,7 +119,6 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 		},
 		Description: r.Description,
 		Fork:        r.Parent != nil,
-		Enabled:     true,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,

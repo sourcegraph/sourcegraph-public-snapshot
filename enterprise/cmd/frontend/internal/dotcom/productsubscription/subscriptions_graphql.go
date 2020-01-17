@@ -262,7 +262,9 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 	custUpdateParams := &stripe.CustomerParams{
 		Params: stripe.Params{Context: ctx},
 	}
-	custUpdateParams.SetSource(args.PaymentToken)
+	if err := custUpdateParams.SetSource(args.PaymentToken); err != nil {
+		return nil, err
+	}
 	if _, err := customer.Update(custID, custUpdateParams); err != nil {
 		return nil, err
 	}
@@ -341,7 +343,9 @@ func (ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx co
 	custUpdateParams := &stripe.CustomerParams{
 		Params: stripe.Params{Context: ctx},
 	}
-	custUpdateParams.SetSource(args.PaymentToken)
+	if err := custUpdateParams.SetSource(args.PaymentToken); err != nil {
+		return nil, err
+	}
 	if _, err := customer.Update(custID, custUpdateParams); err != nil {
 		return nil, err
 	}

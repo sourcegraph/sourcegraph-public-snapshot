@@ -151,6 +151,11 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	if c.Name == "" {
+		return ErrCampaignNameBlank
+	}
+
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -630,18 +635,19 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) 
 	return syncer.SyncChangesetsWithSources(ctx, bySource)
 }
 
-// CreateChangesetJob creates a ChangesetJob for the CampaignJob with the given
-// ID. The CampaignJob has to belong to a CampaignPlan that was attached to a
-// Campaign.
-func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64) (err error) {
-	traceTitle := fmt.Sprintf("campaignJob: %d", id)
-	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForCampaignJob", traceTitle)
+// PublishChangesetJobForCampaignJob creates or updates a ChangesetJob for the
+// CampaignJob with the given ID. The CampaignJob has to belong to a
+// CampaignPlan that was attached to a Campaign. It will ensure that the
+// ChangesetJob is published, even if it already exists.
+func (s *Service) PublishChangesetJobForCampaignJob(ctx context.Context, campaignJobID int64) (err error) {
+	traceTitle := fmt.Sprintf("campaignJob: %d", campaignJobID)
+	tr, ctx := trace.New(ctx, "service.PublishChangesetJobForCampaignJob", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	job, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: id})
+	job, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: campaignJobID})
 	if err != nil {
 		return err
 	}
@@ -661,19 +667,31 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64
 		CampaignID:    campaign.ID,
 		CampaignJobID: job.ID,
 	})
-	if existing != nil && err == nil {
-		return nil
-	}
 	if err != nil && err != ErrNoResults {
 		return err
 	}
+	if existing != nil && !existing.PublishedAt.IsZero() && err == nil {
+		// No need to update
+		return nil
+	}
 
-	changesetJob := &a8n.ChangesetJob{CampaignID: campaign.ID, CampaignJobID: job.ID}
+	if existing != nil {
+		existing.PublishedAt = s.clock()
+		err = tx.UpdateChangesetJob(ctx, existing)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	changesetJob := &a8n.ChangesetJob{
+		CampaignID:    campaign.ID,
+		CampaignJobID: job.ID,
+		PublishedAt:   s.clock(),
+	}
 	err = tx.CreateChangesetJob(ctx, changesetJob)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -688,6 +706,10 @@ type UpdateCampaignArgs struct {
 	Description *string
 	Plan        *int64
 }
+
+// ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
+// specified Campaign name is blank.
+var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
 // UpdateCampaign updates the Campaign with the given arguments.
 func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *a8n.Campaign, detachedChangesets []*a8n.Changeset, err error) {
@@ -713,6 +735,10 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	var updateAttributes, updatePlanID bool
 
 	if args.Name != nil && campaign.Name != *args.Name {
+		if *args.Name == "" {
+			return nil, nil, ErrCampaignNameBlank
+		}
+
 		campaign.Name = *args.Name
 		updateAttributes = true
 	}

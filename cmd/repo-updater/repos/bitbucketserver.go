@@ -47,7 +47,7 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 	baseURL = NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	var opts []httpcli.Opt
@@ -275,7 +275,6 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 		Description: repo.Name,
 		Fork:        repo.Origin != nil,
 		Archived:    isArchived,
-		Enabled:     true,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,

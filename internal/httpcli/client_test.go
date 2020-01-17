@@ -169,27 +169,10 @@ func TestNewCertPool(t *testing.T) {
 		err    string
 	}{
 		{
-			name: "sets default transport if nil",
-			cli:  &http.Client{},
-			assert: func(t testing.TB, cli *http.Client) {
-				if cli.Transport == nil {
-					t.Fatal("transport wasn't set")
-				}
-			},
-		},
-		{
-			name: "fails if transport isn't an http.Transport",
-			cli:  &http.Client{Transport: bogusTransport{}},
-			err:  "httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport",
-		},
-		{
-			name: "sets TLSClientConfig if nil",
-			cli:  &http.Client{Transport: &http.Transport{}},
-			assert: func(t testing.TB, cli *http.Client) {
-				if cli.Transport.(*http.Transport).TLSClientConfig == nil {
-					t.Fatal("TLSClientConfig wasn't set")
-				}
-			},
+			name:  "fails if transport isn't an http.Transport",
+			cli:   &http.Client{Transport: bogusTransport{}},
+			certs: []string{cert},
+			err:   "httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:  "pool is set to what is given",
@@ -246,7 +229,7 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 		{
 			name: "fails if transport isn't an http.Transport",
 			cli:  &http.Client{Transport: bogusTransport{}},
-			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport is not an *http.Transport",
+			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:    "IdleConnTimeout is set to what is given",

@@ -13,7 +13,9 @@ export const BadgeAttachment: React.FunctionComponent<{
 
     return (
         <LinkOrSpan
-            className="badge-decoration-attachment"
+            // Ensure theme-light exists as an ascendent of the img below, otherwise the
+            // browser extension will always render with a dark theme background. It's bad.
+            className={`badge-decoration-attachment ${isLightTheme ? 'theme-light' : ''}`}
             to={attachment.linkURL}
             data-tooltip={attachment.hoverMessage}
             // Use target to open external URLs
@@ -23,7 +25,7 @@ export const BadgeAttachment: React.FunctionComponent<{
         >
             {style.icon && isEncodedImage(style.icon) && (
                 <img
-                    className="line-decoration-attachment__contents"
+                    className="badge-decoration-attachment__contents"
                     // eslint-disable-next-line react/forbid-dom-props
                     style={{
                         color: style.color,

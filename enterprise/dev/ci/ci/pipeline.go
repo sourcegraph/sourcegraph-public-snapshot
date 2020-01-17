@@ -19,7 +19,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Env("FORCE_COLOR", "1"),
+		bk.Env("FORCE_COLOR", "3"),
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("COMMIT_SHA", c.commit),
 		bk.Env("DATE", c.now.Format(time.RFC3339)),

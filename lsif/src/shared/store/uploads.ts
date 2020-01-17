@@ -40,7 +40,7 @@ export class UploadManager {
     /**
      * Get the uploads in the given state.
      *
-     * @param repository The repository.
+     * @param repositoryId The repository identifier.
      * @param state The state.
      * @param query A search query.
      * @param visibleAtTip If true, only return dumps visible at tip.
@@ -48,7 +48,7 @@ export class UploadManager {
      * @param offset The number of uploads to skip.
      */
     public async getUploads(
-        repository: string,
+        repositoryId: number,
         state: pgModels.LsifUploadState | undefined,
         query: string,
         visibleAtTip: boolean,
@@ -59,7 +59,7 @@ export class UploadManager {
             let queryBuilder = this.connection
                 .getRepository(pgModels.LsifUpload)
                 .createQueryBuilder('upload')
-                .where({ repository })
+                .where({ repositoryId })
                 .orderBy('uploaded_at', 'DESC')
                 .limit(limit)
                 .offset(offset)
@@ -69,7 +69,7 @@ export class UploadManager {
             }
 
             if (query) {
-                const clauses = ['repository', 'commit', 'root', 'failure_summary', 'failure_stacktrace'].map(
+                const clauses = ['commit', 'root', 'failure_summary', 'failure_stacktrace'].map(
                     field => `"${field}" LIKE '%' || :query || '%'`
                 )
 
@@ -166,13 +166,16 @@ export class UploadManager {
      */
     public async enqueue(
         {
-            repository,
+            repositoryId,
+            repositoryName,
             commit,
             root,
             filename,
         }: {
-            /** The repository. */
-            repository: string
+            /** The repository identifier. */
+            repositoryId: number
+            /** The repository name. */
+            repositoryName: string
             /** The commit. */
             commit: string
             /** The root. */
@@ -189,7 +192,8 @@ export class UploadManager {
         }
 
         const upload = new pgModels.LsifUpload()
-        upload.repository = repository
+        upload.repositoryId = repositoryId
+        upload.repositoryNameAtUpload = repositoryName
         upload.commit = commit
         upload.root = root
         upload.filename = filename

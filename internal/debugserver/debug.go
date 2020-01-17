@@ -74,7 +74,7 @@ func Start(extra ...Endpoint) {
 
 	pp := http.NewServeMux()
 	index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`
+		_, _ = w.Write([]byte(`
 				<a href="vars">Vars</a><br>
 				<a href="debug/pprof/">PProf</a><br>
 				<a href="metrics">Metrics</a><br>
@@ -84,7 +84,7 @@ func Start(extra ...Endpoint) {
 		for _, e := range extra {
 			fmt.Fprintf(w, `<a href="%s">%s</a><br>`, strings.TrimPrefix(e.Path, "/"), e.Name)
 		}
-		w.Write([]byte(`
+		_, _ = w.Write([]byte(`
 				<br>
 				<form method="post" action="gc" style="display: inline;"><input type="submit" value="GC"></form>
 				<form method="post" action="freeosmemory" style="display: inline;"><input type="submit" value="Free OS Memory"></form>

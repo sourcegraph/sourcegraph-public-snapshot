@@ -20,6 +20,7 @@ import {
     CampaignType,
     retryCampaign,
     closeCampaign,
+    publishCampaign,
 } from './backend'
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -41,11 +42,10 @@ import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import {
     CampaignPlanSpecificationFields,
     CampaignPlanSpecificationFormData,
-    MANUAL_CAMPAIGN_TYPE,
 } from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
-import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
+import { DEFAULT_CHANGESET_LIST_COUNT, MANUAL_CAMPAIGN_TYPE } from './presentation'
 
 interface Props extends ThemeProps {
     /**
@@ -126,7 +126,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
                     setCampaignPlanSpec({
-                        type: fetchedCampaign?.plan?.type as CampaignType,
+                        type: (fetchedCampaign?.plan?.type as CampaignType) ?? MANUAL_CAMPAIGN_TYPE,
                         arguments: fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null,
                     })
                     nextChangesetUpdate()
@@ -218,7 +218,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
 
         return (
-            !currentSpec ||
             (campaignPlanSpec?.arguments && !isEqual(currentSpec, parseJSONC(campaignPlanSpec.arguments))) ||
             (campaign && campaign.status.state !== GQL.BackgroundProcessState.COMPLETED)
         )
@@ -229,6 +228,41 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
+    }
+
+    const onDraft: React.FormEventHandler = async event => {
+        event.preventDefault()
+        setMode('saving')
+        try {
+            const createdCampaign = await createCampaign({
+                name,
+                description,
+                namespace: authenticatedUser.id,
+                plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
+                draft: true,
+            })
+            unblockHistoryRef.current()
+            history.push(`/campaigns/${createdCampaign.id}`)
+            setMode('viewing')
+            setAlertError(undefined)
+            campaignUpdates.next()
+        } catch (err) {
+            setMode('editing')
+            setAlertError(asError(err))
+        }
+    }
+
+    const onPublish = async (): Promise<void> => {
+        setMode('saving')
+        try {
+            await publishCampaign(campaign!.id)
+            setMode('viewing')
+            setAlertError(undefined)
+            campaignUpdates.next()
+        } catch (err) {
+            setMode('editing')
+            setAlertError(asError(err))
+        }
     }
 
     const onSubmit: React.FormEventHandler = async event => {
@@ -266,7 +300,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setName(name)
             setDescription(description)
             setMode('editing')
-            setCampaignPlanSpec({ type: plan?.type as CampaignType, arguments: plan?.arguments || '' })
+            setCampaignPlanSpec({
+                type: (plan?.type as CampaignType) ?? MANUAL_CAMPAIGN_TYPE,
+                arguments: plan?.arguments || '',
+            })
         }
     }
 
@@ -475,20 +512,32 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
                         {campaignPlanSpec !== undefined && campaignPlanSpec.type !== MANUAL_CAMPAIGN_TYPE && (
-                            <button
-                                type="button"
-                                className="btn btn-primary mr-1 e2e-preview-campaign"
-                                disabled={!previewRefreshNeeded}
-                                onClick={() => nextPreviewCampaignPlan(campaignPlanSpec)}
-                            >
-                                {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
-                                Preview changes
-                            </button>
+                            <>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary mr-1 e2e-preview-campaign"
+                                    disabled={!previewRefreshNeeded}
+                                    onClick={() => nextPreviewCampaignPlan(campaignPlanSpec)}
+                                >
+                                    {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
+                                    Preview changes
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-secondary mr-1"
+                                    onClick={onDraft}
+                                    disabled={previewRefreshNeeded || mode !== 'editing'}
+                                >
+                                    Create draft
+                                </button>
+                            </>
                         )}
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={previewRefreshNeeded || mode !== 'editing'}
+                            disabled={
+                                previewRefreshNeeded || mode !== 'editing' || campaign?.changesets.totalCount === 0
+                            }
                         >
                             Create
                         </button>
@@ -496,30 +545,49 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
             </Form>
 
-            {campaign?.status && <CampaignStatus campaign={campaign} status={campaign.status} onRetry={onRetry} />}
-
-            {campaign && campaign.__typename === 'Campaign' && (
-                <>
-                    <h3>Progress</h3>
-                    <CampaignBurndownChart
-                        changesetCountsOverTime={campaign.changesetCountsOverTime}
-                        history={history}
-                    />
-                    {/* only campaigns that have no plan can add changesets manually */}
-                    {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
-                </>
-            )}
-
             {/* is already created or a preview is available */}
             {campaign && (
-                <CampaignTabs
-                    campaign={campaign}
-                    persistLines={campaign.__typename === 'Campaign'}
-                    history={history}
-                    location={location}
-                    className="mt-3"
-                    isLightTheme={isLightTheme}
-                />
+                <>
+                    <CampaignStatus
+                        campaign={campaign}
+                        status={campaign.status}
+                        onPublish={onPublish}
+                        onRetry={onRetry}
+                    />
+
+                    {campaign.__typename === 'Campaign' && (
+                        <>
+                            <h3>Progress</h3>
+                            <CampaignBurndownChart
+                                changesetCountsOverTime={campaign.changesetCountsOverTime}
+                                history={history}
+                            />
+                            {/* only campaigns that have no plan can add changesets manually */}
+                            {!campaign.plan && (
+                                <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
+                            )}
+                        </>
+                    )}
+
+                    {campaign.changesets.totalCount +
+                        (campaign.__typename === 'Campaign' ? campaign.changesetPlans.totalCount : 0) >
+                    0 ? (
+                        <CampaignTabs
+                            campaign={campaign}
+                            changesetUpdates={changesetUpdates}
+                            campaignUpdates={campaignUpdates}
+                            persistLines={campaign.__typename === 'Campaign'}
+                            history={history}
+                            location={location}
+                            className="mt-3"
+                            isLightTheme={isLightTheme}
+                        />
+                    ) : (
+                        campaign.status.state !== GQL.BackgroundProcessState.PROCESSING && (
+                            <p className="mt-3 text-muted">No changesets</p>
+                        )
+                    )}
+                </>
             )}
         </>
     )
