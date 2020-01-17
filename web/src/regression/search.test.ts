@@ -510,7 +510,6 @@ describe('Search regression test suite', () => {
 
         test('Search filters', async () => {
             const filterToToken = [
-                ['case:yes', 'case:yes'],
                 ['lang:go', 'lang:go'],
                 ['-file:_test\\.go$', '-file:_test\\.go$'],
             ]

@@ -1,12 +1,10 @@
-package git_test
+package git
 
 import (
 	"context"
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestRead(t *testing.T) {
@@ -54,11 +52,11 @@ func TestRead(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name+"-ReadFile", func(t *testing.T) {
-			data, err := git.ReadFile(ctx, repo, commitID, test.file, test.maxBytes)
+			data, err := ReadFile(ctx, repo, commitID, test.file, test.maxBytes)
 			test.checkFn(t, err, data)
 		})
 		t.Run(name+"-GetFileReader", func(t *testing.T) {
-			rc, err := git.NewFileReader(ctx, repo, commitID, test.file)
+			rc, err := NewFileReader(ctx, repo, commitID, test.file)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +67,7 @@ func TestRead(t *testing.T) {
 	}
 
 	t.Run("maxBytes", func(t *testing.T) {
-		data, err := git.ReadFile(ctx, repo, commitID, "file1", 3)
+		data, err := ReadFile(ctx, repo, commitID, "file1", 3)
 		if err != nil {
 			t.Fatal(err)
 		}

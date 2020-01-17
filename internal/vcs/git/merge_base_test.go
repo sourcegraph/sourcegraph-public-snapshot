@@ -1,10 +1,9 @@
-package git_test
+package git
 
 import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestMerger_MergeBase(t *testing.T) {
@@ -41,25 +40,25 @@ func TestMerger_MergeBase(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		a, err := git.ResolveRevision(ctx, test.repo, nil, test.a, nil)
+		a, err := ResolveRevision(ctx, test.repo, nil, test.a, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on a: %s", label, test.a, err)
 			continue
 		}
 
-		b, err := git.ResolveRevision(ctx, test.repo, nil, test.b, nil)
+		b, err := ResolveRevision(ctx, test.repo, nil, test.b, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on b: %s", label, test.b, err)
 			continue
 		}
 
-		want, err := git.ResolveRevision(ctx, test.repo, nil, test.wantMergeBase, nil)
+		want, err := ResolveRevision(ctx, test.repo, nil, test.wantMergeBase, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on wantMergeBase: %s", label, test.wantMergeBase, err)
 			continue
 		}
 
-		mb, err := git.MergeBase(ctx, test.repo, a, b)
+		mb, err := MergeBase(ctx, test.repo, a, b)
 		if err != nil {
 			t.Errorf("%s: MergeBase(%s, %s): %s", label, a, b, err)
 			continue

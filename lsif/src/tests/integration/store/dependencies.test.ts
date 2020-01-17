@@ -13,6 +13,10 @@ describe('DependencyManager', () => {
     let dumpManager!: DumpManager
     let dependencyManager!: DependencyManager
 
+    const repositoryId1 = 100
+    const repositoryId2 = 101
+    const repositoryName = 'foo'
+
     beforeAll(async () => {
         ;({ connection, cleanup } = await util.createCleanPostgresDatabase())
         storageRoot = await util.createStorageRoot()
@@ -51,7 +55,7 @@ describe('DependencyManager', () => {
             root: string,
             identifiers: string[]
         ): Promise<pgModels.LsifDump> => {
-            const dump = await util.insertDump(connection, dumpManager, 'foo', commit, root)
+            const dump = await util.insertDump(connection, dumpManager, repositoryId1, repositoryName, commit, root)
 
             await dependencyManager.addPackagesAndReferences(
                 dump.id,
@@ -81,7 +85,7 @@ describe('DependencyManager', () => {
 
         const getReferencedDumpIds = async () => {
             const { references } = await dependencyManager.getReferences({
-                repository: '',
+                repositoryId: repositoryId2,
                 scheme: 'npm',
                 name: 'p1',
                 version: '0.1.0',
@@ -94,7 +98,7 @@ describe('DependencyManager', () => {
         }
 
         await dumpManager.updateCommits(
-            'foo',
+            repositoryId1,
             new Map<string, Set<string>>([
                 [ca, new Set()],
                 [cb, new Set([ca])],
@@ -104,7 +108,7 @@ describe('DependencyManager', () => {
                 [cf, new Set([ce])],
             ])
         )
-        await dumpManager.updateDumpsVisibleFromTip('foo', cf)
+        await dumpManager.updateDumpsVisibleFromTip(repositoryId1, cf)
 
         // only references containing identifier y
         expect(await getReferencedDumpIds()).toEqual([dumpa.id, dumpb.id, dumpf.id])
@@ -120,7 +124,7 @@ describe('DependencyManager', () => {
             root: string,
             identifiers: string[]
         ): Promise<pgModels.LsifDump> => {
-            const dump = await util.insertDump(connection, dumpManager, 'foo', commit, root)
+            const dump = await util.insertDump(connection, dumpManager, repositoryId1, repositoryName, commit, root)
 
             await dependencyManager.addPackagesAndReferences(
                 dump.id,
@@ -159,7 +163,7 @@ describe('DependencyManager', () => {
         }
 
         const { references } = await dependencyManager.getReferences({
-            repository: 'bar',
+            repositoryId: repositoryId2,
             scheme: 'npm',
             name: 'p1',
             version: '0.1.0',
@@ -191,9 +195,9 @@ describe('DependencyManager', () => {
             },
         ]
 
-        const dumpa = await util.insertDump(connection, dumpManager, 'foo', ca, '')
-        const dumpb = await util.insertDump(connection, dumpManager, 'foo', cb, '')
-        const dumpc = await util.insertDump(connection, dumpManager, 'foo', cc, '')
+        const dumpa = await util.insertDump(connection, dumpManager, repositoryId1, repositoryName, ca, '')
+        const dumpb = await util.insertDump(connection, dumpManager, repositoryId1, repositoryName, cb, '')
+        const dumpc = await util.insertDump(connection, dumpManager, repositoryId1, repositoryName, cc, '')
 
         await dependencyManager.addPackagesAndReferences(dumpa.id, [], references)
         await dependencyManager.addPackagesAndReferences(dumpb.id, [], references)
@@ -202,7 +206,7 @@ describe('DependencyManager', () => {
         const getReferencedDumpIds = async () =>
             (
                 await dependencyManager.getReferences({
-                    repository: '',
+                    repositoryId: repositoryId2,
                     scheme: 'npm',
                     name: 'p1',
                     version: '0.1.0',

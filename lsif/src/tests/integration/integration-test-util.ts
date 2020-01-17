@@ -129,21 +129,24 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
  *
  * @param connection The Postgres connection.
  * @param dumpManager The dumps manager instance.
- * @param repository The repository name.
+ * @param repositoryId The repository identifier.
+ * @param repositoryName The repository name.
  * @param commit The commit.
  * @param root The root of the dump.
  */
 export async function insertDump(
     connection: Connection,
     dumpManager: DumpManager,
-    repository: string,
+    repositoryId: number,
+    repositoryName: string,
     commit: string,
     root: string
 ): Promise<pgModels.LsifDump> {
-    await dumpManager.deleteOverlappingDumps(repository, commit, root, {})
+    await dumpManager.deleteOverlappingDumps(repositoryId, commit, root, {})
 
     const upload = new pgModels.LsifUpload()
-    upload.repository = repository
+    upload.repositoryId = repositoryId
+    upload.repositoryNameAtUpload = repositoryName
     upload.commit = commit
     upload.root = root
     upload.filename = '<test>'
@@ -154,7 +157,7 @@ export async function insertDump(
 
     const dump = new pgModels.LsifDump()
     dump.id = upload.id
-    dump.repository = repository
+    dump.repositoryId = repositoryId
     dump.commit = commit
     dump.root = root
     return dump
@@ -169,7 +172,8 @@ export async function insertDump(
  * @param dumpManager The dumps manager instance.
  * @param dependencyManager The dependency manager instance.
  * @param storageRoot The temporary storage root.
- * @param repository The repository name.
+ * @param repositoryId The repository identifier.
+ * @param repositoryName The repository name.
  * @param commit The commit.
  * @param root The root of the dump.
  * @param filename The filename of the (gzipped) LSIF dump.
@@ -180,7 +184,8 @@ export async function convertTestData(
     dumpManager: DumpManager,
     dependencyManager: DependencyManager,
     storageRoot: string,
-    repository: string,
+    repositoryId: number,
+    repositoryName: string,
     commit: string,
     root: string,
     filename: string,
@@ -192,16 +197,16 @@ export async function convertTestData(
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const { packages, references } = await convertLsif(fullFilename, tmp)
-    const dump = await insertDump(connection, dumpManager, repository, commit, root)
+    const dump = await insertDump(connection, dumpManager, repositoryId, repositoryName, commit, root)
     await dependencyManager.addPackagesAndReferences(dump.id, packages, references)
-    await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
+    await fs.rename(tmp, dbFilename(storageRoot, dump.id))
 
     if (updateCommits) {
         await dumpManager.updateCommits(
-            repository,
+            repositoryId,
             new Map<string, Set<string>>([[commit, new Set<string>()]])
         )
-        await dumpManager.updateDumpsVisibleFromTip(repository, commit)
+        await dumpManager.updateDumpsVisibleFromTip(repositoryId, commit)
     }
 }
 
@@ -267,14 +272,16 @@ export class BackendTestContext {
      * given storage root and will insert dump, package, and reference data into
      * the given Postgres database.
      *
-     * @param repository The repository name.
+     * @param repositoryId The repository identifier.
+     * @param repositoryName The repository name.
      * @param commit The commit.
      * @param root The root of the dump.
      * @param filename The filename of the (gzipped) LSIF dump.
      * @param updateCommits Whether not to update commits.
      */
     public convertTestData(
-        repository: string,
+        repositoryId: number,
+        repositoryName: string,
         commit: string,
         root: string,
         filename: string,
@@ -289,7 +296,8 @@ export class BackendTestContext {
             this.dumpManager,
             this.dependencyManager,
             this.storageRoot,
-            repository,
+            repositoryId,
+            repositoryName,
             commit,
             root,
             filename,
@@ -314,7 +322,7 @@ export class BackendTestContext {
 /**
  * Create an LSP location with a remote URI.
  *
- * @param repository The repository name.
+ * @param repositoryId The repository identifier.
  * @param commit The commit.
  * @param documentPath The document path.
  * @param startLine The starting line.
@@ -323,7 +331,7 @@ export class BackendTestContext {
  * @param endCharacter The ending character.
  */
 export function createLocation(
-    repository: string,
+    repositoryId: number,
     commit: string,
     documentPath: string,
     startLine: number,
@@ -331,7 +339,7 @@ export function createLocation(
     endLine: number,
     endCharacter: number
 ): lsp.Location {
-    const url = new URL(`git://${repository}`)
+    const url = new URL(`git://${repositoryId}`)
     url.search = commit
     url.hash = documentPath
 
@@ -354,7 +362,7 @@ export function createLocation(
  */
 export function mapLocation(location: InternalLocation): lsp.Location {
     return createLocation(
-        location.dump.repository,
+        location.dump.repositoryId,
         location.dump.commit,
         location.path,
         location.range.start.line,

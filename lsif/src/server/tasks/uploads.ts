@@ -9,7 +9,7 @@ import { TracingContext } from '../../shared/tracing'
 import { UploadManager } from '../../shared/store/uploads'
 import { withLock } from '../../shared/store/locks'
 import { DumpManager } from '../../shared/store/dumps'
-import { dbFilename } from '../../shared/paths'
+import { dbFilename, idFromFilename } from '../../shared/paths'
 import { Connection } from 'typeorm'
 
 /**
@@ -96,13 +96,13 @@ export function purgeOldDumps(
             }
 
             logger.info('Pruning dump', {
-                repository: dump.repository,
+                repository: dump.repositoryId,
                 commit: dump.commit,
                 root: dump.root,
             })
 
             // Delete this dump and subtract its size from the current dir size
-            const filename = dbFilename(storageRoot, dump.id, dump.repository, dump.commit)
+            const filename = dbFilename(storageRoot, dump.id)
             currentSizeBytes -= await filesize(filename)
 
             // This delete cascades to the packages and references tables as well
@@ -136,10 +136,12 @@ async function removeDeadDumps(
     )) {
         const pathsById = new Map<number, string>()
         for (const basename of basenames) {
-            const id = parseInt(basename.split('-')[0], 10)
-            if (!isNaN(id)) {
-                pathsById.set(id, path.join(storageRoot, constants.DBS_DIR, basename))
+            const id = idFromFilename(basename)
+            if (!id) {
+                continue
             }
+
+            pathsById.set(id, path.join(storageRoot, constants.DBS_DIR, basename))
         }
 
         const states = await dumpManager.getUploadStates(Array.from(pathsById.keys()))

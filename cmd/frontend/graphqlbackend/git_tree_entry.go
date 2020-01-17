@@ -214,7 +214,8 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context) (LSIFQueryResolver, err
 	}
 
 	return EnterpriseResolvers.codeIntelResolver.LSIF(ctx, &LSIFQueryArgs{
-		RepoName: r.Repository().Name(),
+		RepoID:   r.Repository().Type().ID,
+		RepoName: r.Repository().Type().Name,
 		Commit:   r.Commit().OID(),
 		Path:     r.Path(),
 	})

@@ -39,7 +39,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -659,7 +658,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
-		if resolved, err := quickRevParseHead(dir); err == nil && git.IsAbsoluteRevision(resolved) {
+		if resolved, err := quickRevParseHead(dir); err == nil && isAbsoluteRevision(resolved) {
 			_, _ = w.Write([]byte(resolved))
 			w.Header().Set("X-Exec-Error", "")
 			w.Header().Set("X-Exec-Exit-Status", "0")
@@ -1363,7 +1362,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 	}
 	// rev-parse on an OID does not check if the commit actually exists, so it
 	// is always works. So we append ^0 to force the check
-	if git.IsAbsoluteRevision(rev) {
+	if isAbsoluteRevision(rev) {
 		rev = rev + "^0"
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
@@ -1385,7 +1384,7 @@ func quickRevParseHead(dir GitDir) (string, error) {
 		return "", err
 	}
 	head = bytes.TrimSpace(head)
-	if h := string(head); git.IsAbsoluteRevision(h) {
+	if h := string(head); isAbsoluteRevision(h) {
 		return h, nil
 	}
 
@@ -1436,4 +1435,24 @@ func errorString(err error) string {
 		return ""
 	}
 	return err.Error()
+}
+
+// IsAbsoluteRevision checks if the revision is a git OID SHA string.
+//
+// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
+// isn't a ref. Git allows 40-char hexadecimal strings to be references.
+//
+// copied from internal/vcs/git to avoid cyclic import
+func isAbsoluteRevision(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for _, r := range s {
+		if !(('0' <= r && r <= '9') ||
+			('a' <= r && r <= 'f') ||
+			('A' <= r && r <= 'F')) {
+			return false
+		}
+	}
+	return true
 }
