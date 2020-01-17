@@ -359,12 +359,12 @@ type credentials struct {
 }
 
 func (c *credentials) searchQuery() string {
-	return c.args.ScopeQuery + " " + npmTokenRegexp.String() + " file:.npmrc"
+	return c.args.ScopeQuery + " " + npmTokenRegexp.String() + " file:.npmrc count:99999"
 }
 
 func (c *credentials) searchQueryForRepo(n api.RepoName) string {
 	return fmt.Sprintf(
-		"file:.npmrc repo:%s %s",
+		"file:.npmrc count:99999 repo:%s %s",
 		regexp.QuoteMeta(string(n)),
 		npmTokenRegexp.String(),
 	)
