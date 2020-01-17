@@ -33,6 +33,16 @@ func TestMain(m *testing.M) {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
 
+	code := m.Run()
+
+	_ = os.RemoveAll(root)
+
+	os.Exit(code)
+}
+
+// done in init since the go vet analysis "ctrlflow" is tripped up if this is
+// done as part of TestMain.
+func init() {
 	// Ignore users configuration in tests
 	os.Setenv("GIT_CONFIG_NOSYSTEM", "true")
 	os.Setenv("HOME", "/dev/null")
@@ -59,12 +69,6 @@ func TestMain(m *testing.M) {
 	gitserver.DefaultClient.Addrs = func(ctx context.Context) []string {
 		return []string{l.Addr().String()}
 	}
-
-	code := m.Run()
-
-	_ = os.RemoveAll(root)
-
-	os.Exit(code)
 }
 
 func AsJSON(v interface{}) string {
