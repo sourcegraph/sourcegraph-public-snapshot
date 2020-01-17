@@ -84,7 +84,7 @@ export function fetchLsifUploads({
 export function fetchRepositoryName({ id }: { id: string }): Observable<string | null> {
     return queryGraphQL(
         gql`
-            query LsifUpload($id: ID!) {
+            query FetchRepositoryName($id: ID!) {
                 node(id: $repository) {
                     __typename
                     ... on Repository {
