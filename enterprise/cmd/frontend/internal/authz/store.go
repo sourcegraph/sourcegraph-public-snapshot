@@ -171,7 +171,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 		return nil
 	}
 
-	q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, PermRepos, p.Provider, "FOR UPDATE")
+	q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, authz.PermRepos, p.Provider, "FOR UPDATE")
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load user permissions")
@@ -197,7 +197,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 		updatedPerms = append(updatedPerms, &UserPermissions{
 			UserID:    userID,
 			Perm:      p.Perm,
-			Type:      PermRepos,
+			Type:      authz.PermRepos,
 			IDs:       repoIDs,
 			Provider:  p.Provider,
 			UpdatedAt: updatedAt,
@@ -223,7 +223,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 func loadUserPermissionsBatchQuery(
 	userIDs []uint32,
 	perm authz.Perms,
-	typ PermType,
+	typ authz.PermType,
 	provider ProviderType,
 	lock string,
 ) *sqlf.Query {
@@ -408,7 +408,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 		return nil
 	}
 
-	q = loadUserPendingPermissionsByIDBatchQuery(changedIDs, p.Perm, PermRepos, "FOR UPDATE")
+	q = loadUserPendingPermissionsByIDBatchQuery(changedIDs, p.Perm, authz.PermRepos, "FOR UPDATE")
 	bindIDSet, loadedIDs, err := txs.batchLoadUserPendingPermissions(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load user pending permissions")
@@ -432,7 +432,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 		updatedPerms = append(updatedPerms, &UserPendingPermissions{
 			BindID:    bindIDSet[userID],
 			Perm:      p.Perm,
-			Type:      PermRepos,
+			Type:      authz.PermRepos,
 			IDs:       repoIDs,
 			UpdatedAt: updatedAt,
 		})
@@ -557,7 +557,7 @@ RETURNING id
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s)",
 			bindIDs[i],
 			p.Perm.String(),
-			PermRepos,
+			authz.PermRepos,
 			[]byte{},
 			p.UpdatedAt.UTC(),
 		)
@@ -584,7 +584,7 @@ AND permission = %s
 	)
 }
 
-func loadUserPendingPermissionsByIDBatchQuery(ids []uint32, perm authz.Perms, typ PermType, lock string) *sqlf.Query {
+func loadUserPendingPermissionsByIDBatchQuery(ids []uint32, perm authz.Perms, typ authz.PermType, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPendingPermissionsByIDBatchQuery
 SELECT id, bind_id, object_ids

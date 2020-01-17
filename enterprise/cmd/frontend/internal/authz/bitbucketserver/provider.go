@@ -107,7 +107,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 	ps := &iauthz.UserPermissions{
 		UserID:   userID,
 		Perm:     authz.Read,
-		Type:     iauthz.PermRepos,
+		Type:     authz.PermRepos,
 		Provider: iauthz.ProviderBitbucketServer,
 	}
 
@@ -125,7 +125,7 @@ func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
 	ps := &iauthz.UserPermissions{
 		UserID:   u.ID,
 		Perm:     authz.Read,
-		Type:     iauthz.PermRepos,
+		Type:     authz.PermRepos,
 		Provider: iauthz.ProviderBitbucketServer,
 	}
 

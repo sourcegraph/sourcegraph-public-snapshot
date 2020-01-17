@@ -40,3 +40,11 @@ func (p Perms) String() string {
 		return "none"
 	}
 }
+
+// PermType is the object type of the user permissions.
+type PermType string
+
+// The list of available user permission types.
+const (
+	PermRepos PermType = "repos"
+)
