@@ -9,6 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -26,9 +32,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 		defer done()
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
-		s := NewStoreWithClock(tx, func() time.Time {
+		clock := func() time.Time {
 			return now.UTC().Truncate(time.Microsecond)
-		})
+		}
+		s := NewStoreWithClock(tx, clock)
 
 		ctx := context.Background()
 
@@ -2351,74 +2358,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 			})
-
-			t.Run("GetLatestChangesetJobPublishedAt", func(t *testing.T) {
-				campaignID := int64(748312)
-
-				job1 := &a8n.ChangesetJob{CampaignID: int64(campaignID), CampaignJobID: 1}
-				err := s.CreateChangesetJob(ctx, job1)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				// 1 ChangesetJob, unpublished
-				have, err := s.GetLatestChangesetJobPublishedAt(ctx, campaignID)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if !have.IsZero() {
-					t.Fatalf("publishedAt is not zero: %v", have)
-				}
-
-				job1.PublishedAt = now
-				err = s.UpdateChangesetJob(ctx, job1)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				// 1 ChangesetJob, published
-				have, err = s.GetLatestChangesetJobPublishedAt(ctx, campaignID)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := have, job1.PublishedAt; have != want {
-					t.Fatalf("publishedAt is not correct. want=%v, have=%v", want, have)
-				}
-
-				job2 := &a8n.ChangesetJob{CampaignID: int64(campaignID), CampaignJobID: 2}
-				err = s.CreateChangesetJob(ctx, job2)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				// 2 ChangesetJob, 1 published, 1 unpublished
-				have, err = s.GetLatestChangesetJobPublishedAt(ctx, campaignID)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if !have.IsZero() {
-					t.Fatalf("publishedAt is not zero: %v", have)
-				}
-
-				job2.PublishedAt = now.Add(5 * time.Second)
-				err = s.UpdateChangesetJob(ctx, job2)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				// 2 ChangesetJob, 2 published
-				have, err = s.GetLatestChangesetJobPublishedAt(ctx, campaignID)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := have, job2.PublishedAt; have != want {
-					t.Fatalf("publishedAt is not correct. want=%v, have=%v", want, have)
-				}
-			})
 		})
 	}
 }
@@ -2608,5 +2547,98 @@ func testStoreLocking(db *sql.DB) func(*testing.T) {
 		if !ok {
 			t.Fatal("Could not acquire lock")
 		}
+	}
+}
+
+func TestGetLatestChangesetJobCreatedAt(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	u, err := db.Users.Create(ctx, testUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s := NewStoreWithClock(dbconn.Global, clock)
+
+	// Create a test repo
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repo := &repos.Repo{
+		Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "external-id",
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:github:4": {
+				ID:       "extsvc:github:4",
+				CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+			},
+		},
+	}
+	if err := reposStore.UpsertRepos(context.Background(), repo); err != nil {
+		t.Fatal(err)
+	}
+
+	plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+	err = s.CreateCampaignPlan(ctx, plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	campaign := testCampaign(u.ID, plan.ID)
+	svc := NewServiceWithClock(s, nil, nil, nil, clock)
+
+	err = svc.CreateCampaign(ctx, campaign, false)
+	if err != ErrNoCampaignJobs {
+		t.Fatalf("CreateCampaign did not produce expected error, got %v", err)
+	}
+	campaignJob := &a8n.CampaignJob{
+		CampaignPlanID: plan.ID,
+		BaseRef:        "x",
+		RepoID:         int32(repo.ID),
+	}
+	err = s.CreateCampaignJob(ctx, campaignJob)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// 0 ChangesetJob, 1 CampaignJobs
+	have, err := s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Job counts don't match, should get back null
+	if !have.IsZero() {
+		t.Fatalf("publishedAt is not zero: %v", have)
+	}
+
+	changesetJob1 := &a8n.ChangesetJob{
+		CampaignID:    campaign.ID,
+		CampaignJobID: campaignJob.ID,
+	}
+	err = s.CreateChangesetJob(ctx, changesetJob1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// 1 ChangesetJob, 1 CampaignJobs
+	have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Job counts are the same, we should get a valid time
+	if !have.Equal(clock()) {
+		t.Fatalf("want %v, got %v", clock(), have)
 	}
 }

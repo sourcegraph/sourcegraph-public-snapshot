@@ -262,69 +262,6 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("CreateChangesetJobForCampaignJobWhenNotAlreadyPublished", func(t *testing.T) {
-		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
-		err = store.CreateCampaignPlan(ctx, plan)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		campaignJob := testCampaignJob(plan.ID, rs[0].ID, now)
-		err := store.CreateCampaignJob(ctx, campaignJob)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		campaign := testCampaign(u.ID, plan.ID)
-		err = store.CreateCampaign(ctx, campaign)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
-		err = svc.PublishChangesetJobForCampaignJob(ctx, campaignJob.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		haveJob, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
-			CampaignID:    campaign.ID,
-			CampaignJobID: campaignJob.ID,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if haveJob.PublishedAt.IsZero() {
-			t.Fatalf("PublishedAt is not set")
-		}
-
-		// Reset published at to null
-		haveJob.PublishedAt = time.Time{}
-		err = store.UpdateChangesetJob(ctx, haveJob)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Try to create again, should not fail
-		err = svc.PublishChangesetJobForCampaignJob(ctx, campaignJob.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Get again and make sure PublishedAt has been set
-		haveJob, err = store.GetChangesetJob(ctx, GetChangesetJobOpts{
-			CampaignID:    campaign.ID,
-			CampaignJobID: campaignJob.ID,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if haveJob.PublishedAt.IsZero() {
-			t.Fatalf("PublishedAt is not set")
-		}
-	})
-
 	t.Run("UpdateCampaignWithUnprocessedChangesetJobs", func(t *testing.T) {
 		subTests := []struct {
 			name  string

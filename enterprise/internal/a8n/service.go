@@ -635,10 +635,9 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) 
 	return syncer.SyncChangesetsWithSources(ctx, bySource)
 }
 
-// PublishChangesetJobForCampaignJob creates or updates a ChangesetJob for the
+// PublishChangesetJobForCampaignJob creates a ChangesetJob for the
 // CampaignJob with the given ID. The CampaignJob has to belong to a
-// CampaignPlan that was attached to a Campaign. It will ensure that the
-// ChangesetJob is published, even if it already exists.
+// CampaignPlan that was attached to a Campaign.
 func (s *Service) PublishChangesetJobForCampaignJob(ctx context.Context, campaignJobID int64) (err error) {
 	traceTitle := fmt.Sprintf("campaignJob: %d", campaignJobID)
 	tr, ctx := trace.New(ctx, "service.PublishChangesetJobForCampaignJob", traceTitle)
@@ -670,23 +669,13 @@ func (s *Service) PublishChangesetJobForCampaignJob(ctx context.Context, campaig
 	if err != nil && err != ErrNoResults {
 		return err
 	}
-	if existing != nil && !existing.PublishedAt.IsZero() && err == nil {
-		// No need to update
-		return nil
-	}
-
 	if existing != nil {
-		existing.PublishedAt = s.clock()
-		err = tx.UpdateChangesetJob(ctx, existing)
-		if err != nil {
-			return err
-		}
+		// Already exists
 		return nil
 	}
 	changesetJob := &a8n.ChangesetJob{
 		CampaignID:    campaign.ID,
 		CampaignJobID: job.ID,
-		PublishedAt:   s.clock(),
 	}
 	err = tx.CreateChangesetJob(ctx, changesetJob)
 	if err != nil {
