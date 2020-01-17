@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Form } from '../../../components/Form'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MinusCircleOutlineIcon from 'mdi-react/MinusCircleOutlineIcon'
+import MinusCircleIcon from 'mdi-react/MinusCircleIcon'
 import { Subscription, Subject, merge, of } from 'rxjs'
 import {
     distinctUntilChanged,
@@ -421,7 +422,7 @@ export class FilterInput extends React.Component<Props, State> {
                                             onClick={this.toggleNegation}
                                             data-tooltip={this.props.negated ? 'Include results' : 'Exclude results'}
                                         >
-                                            <MinusCircleOutlineIcon />
+                                            {this.props.negated ? <MinusCircleIcon /> : <MinusCircleOutlineIcon />}
                                         </button>
                                     )}
                                     <span tabIndex={0}>{`${this.props.filterType}:`}</span>
