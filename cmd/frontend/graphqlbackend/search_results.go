@@ -285,10 +285,6 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			// we shouldn't be getting any repositoy name matches back.
 			addRepoFilter(r.Name(), "", 1)
 		}
-		// Add `case:yes` filter to offer easier access to search results matching with case sensitive set to yes
-		// We use count == 0 and limitHit == false since we can't determine that information without
-		// running the search query. This causes it to display as just `case:yes`.
-		add("case:yes", "case:yes", 0, false, "case")
 	}
 
 	filterSlice := make([]*searchFilterResolver, 0, len(filters))
