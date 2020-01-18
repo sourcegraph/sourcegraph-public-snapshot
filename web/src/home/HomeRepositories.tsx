@@ -119,7 +119,7 @@ export const HomeRepositories: React.FunctionComponent<Props> = ({ settings }) =
                         </tbody>
                     </table>
                     <footer className="card-footer small py-1">
-                        <Link to={`/search?${buildSearchURLQuery('repo:', GQL.SearchPatternType.literal)}`}>
+                        <Link to={`/search?${buildSearchURLQuery('repo:', GQL.SearchPatternType.literal, true)}`}>
                             View all repositories
                         </Link>
                     </footer>
