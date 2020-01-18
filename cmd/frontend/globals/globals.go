@@ -83,7 +83,9 @@ func WatchPermissionsUserMapping() {
 
 	conf.Watch(func() {
 		after := conf.Get().SiteConfiguration.PermissionsUserMapping
-		if after.BindID != "email" && after.BindID != "username" {
+		if after == nil {
+			return
+		} else if after.BindID != "email" && after.BindID != "username" {
 			log15.Error("globals.PermissionsUserMapping", "BindID", after.BindID, "error", "not a valid value")
 			return
 		}
