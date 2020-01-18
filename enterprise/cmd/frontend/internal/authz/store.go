@@ -224,7 +224,7 @@ func loadUserPermissionsBatchQuery(
 	userIDs []uint32,
 	perm authz.Perms,
 	typ authz.PermType,
-	provider ProviderType,
+	provider authz.ProviderType,
 	lock string,
 ) *sqlf.Query {
 	const format = `
@@ -688,7 +688,7 @@ DO UPDATE SET
 }
 
 // GrantPendingPermissions grants the user has given ID with pending permissions found in p.
-// It "moves" rows in pending permissions tables to effective permissions tables.
+// It "merges" rows in pending permissions tables to effective permissions tables.
 func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *UserPendingPermissions) (err error) {
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
@@ -723,7 +723,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	// Batch query all repository permissions object IDs in one go.
 	// NOTE: It is critical to always acquire row-level locks in the same order as SetRepoPermissions
 	// (i.e. repo -> user) to prevent deadlocks.
-	q := loadRepoPermissionsBatchQuery(ids, p.Perm, ProviderSourcegraph, "FOR UPDATE")
+	q := loadRepoPermissionsBatchQuery(ids, p.Perm, authz.ProviderSourcegraph, "FOR UPDATE")
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load repo permissions")
@@ -743,7 +743,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 			RepoID:    repoID,
 			Perm:      p.Perm,
 			UserIDs:   oldIDs,
-			Provider:  ProviderSourcegraph,
+			Provider:  authz.ProviderSourcegraph,
 			UpdatedAt: updatedAt,
 		})
 	}
@@ -754,18 +754,32 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 		return errors.Wrap(err, "execute upsert repo permissions batch query")
 	}
 
+	// Load existing user permissions to be merged if any. Since we're doing union of permissions,
+	// whatever we have already in the "repo_permissions" table is all valid thus we don't
+	// need to do any clean up.
 	up := &UserPermissions{
-		UserID:    userID,
-		Perm:      p.Perm,
-		Type:      p.Type,
-		IDs:       p.IDs,
-		Provider:  ProviderSourcegraph,
-		UpdatedAt: txs.clock(),
+		UserID:   userID,
+		Perm:     p.Perm,
+		Type:     p.Type,
+		Provider: authz.ProviderSourcegraph,
 	}
-	if q, err = insertUserPermissionsQuery(up); err != nil {
+	var oldIDs *roaring.Bitmap
+	vals, err = s.load(ctx, loadUserPermissionsQuery(up, "FOR UPDATE"))
+	if err != nil {
+		if err != ErrNotFound {
+			return errors.Wrap(err, "load user permissions")
+		}
+		oldIDs = roaring.NewBitmap()
+	} else {
+		oldIDs = vals.ids
+	}
+	up.IDs = roaring.Or(oldIDs, p.IDs)
+
+	up.UpdatedAt = txs.clock()
+	if q, err = upsertUserPermissionsQuery(up); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute insert user permissions query")
+		return errors.Wrap(err, "execute upsert user permissions query")
 	}
 
 	// NOTE: Practically, we don't need to clean up "repo_pending_permissions" table because the value of "id" column
@@ -778,13 +792,18 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	return nil
 }
 
-func insertUserPermissionsQuery(p *UserPermissions) (*sqlf.Query, error) {
+func upsertUserPermissionsQuery(p *UserPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permissions.go:insertUserPermissionsQuery
+-- source: enterprise/cmd/frontend/internal/authz/permissions.go:upsertUserPermissionsQuery
 INSERT INTO user_permissions
   (user_id, permission, object_type, object_ids, provider, updated_at)
 VALUES
   (%s, %s, %s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+  user_permissions_perm_object_provider_unique
+DO UPDATE SET
+  object_ids = excluded.object_ids,
+  updated_at = excluded.updated_at
 `
 
 	p.IDs.RunOptimize()
@@ -808,7 +827,7 @@ VALUES
 	), nil
 }
 
-func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, provider ProviderType, lock string) *sqlf.Query {
+func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, provider authz.ProviderType, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadRepoPermissionsBatchQuery
 SELECT repo_id, user_ids

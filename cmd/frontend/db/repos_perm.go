@@ -6,7 +6,9 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -26,6 +28,8 @@ var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms
 // this function.
 //
 // The enforcement policy:
+//
+// - If permissions user mapping is enabled, directly check permissions against local Postgres.
 //
 // - If there are no authz providers and `authzAllowByDefault` is true, then the repository is
 //   accessible to everyone.
@@ -91,6 +95,25 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		otlog.Bool("authzAllowByDefault", authzAllowByDefault),
 		otlog.Int("authzProviders.count", len(authzProviders)),
 	)
+
+	// 🚨 SECURITY: Blocking access to all repositories if both code host authz provider(s) and permissions user mapping
+	// are configured.
+	if globals.PermissionsUserMapping().Enabled {
+		if len(authzProviders) > 0 {
+			return nil, errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
+		} else if currentUser == nil {
+			return nil, errors.New("Anonymous access is not allow when permissions user mapping is enabled.")
+		}
+
+		return Authz.AuthorizedRepos(ctx, &AuthorizedReposArgs{
+			Repos:    repos,
+			UserID:   currentUser.ID,
+			Perm:     p,
+			Type:     authz.PermRepos,
+			Provider: authz.ProviderSourcegraph,
+		})
+	}
+
 	if authzAllowByDefault && len(authzProviders) == 0 {
 		return repos, nil
 	}

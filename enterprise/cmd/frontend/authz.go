@@ -187,7 +187,7 @@ func authzProvidersFromConfig(
 		warnings = append(warnings, bbsWarnings...)
 	}
 
-	// 🚨 SECURITY: Warn the admin when both code host authz provider and the Sourcegraph authz provider are configured.
+	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
 	if cfg.SiteConfiguration.PermissionsUserMapping != nil &&
 		cfg.SiteConfiguration.PermissionsUserMapping.Enabled && len(providers) > 0 {
 		serviceTypes := make([]string, len(providers))
@@ -195,7 +195,7 @@ func authzProvidersFromConfig(
 			serviceTypes[i] = strconv.Quote(providers[i].ServiceType())
 		}
 		msg := fmt.Sprintf(
-			"The Sourcegraph permissions (`permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
+			"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
 			strings.Join(serviceTypes, ", "))
 		seriousProblems = append(seriousProblems, msg)
 	}
