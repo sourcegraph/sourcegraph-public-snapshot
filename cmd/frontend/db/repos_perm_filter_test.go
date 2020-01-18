@@ -9,10 +9,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type authzFilter_Test struct {
@@ -776,6 +778,66 @@ func Test_authzFilter_createsNewUsers(t *testing.T) {
 	if !reflect.DeepEqual(associateUserAndSaveCount, account23CreatedTwice) {
 		t.Errorf("expected counts to be %+v, but was %+v", account23CreatedTwice, associateUserAndSaveCount)
 	}
+}
+
+func Test_authzFilter_permissionsUserMapping(t *testing.T) {
+	before := globals.PermissionsUserMapping()
+	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+	defer globals.SetPermissionsUserMapping(before)
+
+	t.Run("site configuration conflict with code host authz providers", func(t *testing.T) {
+		authz.SetProviders(false, []authz.Provider{
+			&MockAuthzProvider{
+				serviceID:   "https://gitlab.mine/",
+				serviceType: "gitlab",
+			},
+		})
+		defer authz.SetProviders(true, nil)
+
+		want := "The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it."
+		_, err := authzFilter(context.Background(), makeRepos("gitlab.mine/u1/r0"), authz.Read)
+		if err == nil || err.Error() != want {
+			t.Fatalf("expect error %q but got %v", want, err)
+		}
+	})
+
+	t.Run("does not allow anonymous access when permissions user mapping is enabled", func(t *testing.T) {
+		want := "Anonymous access is not allow when permissions user mapping is enabled."
+		_, err := authzFilter(context.Background(), makeRepos("gitlab.mine/u1/r0"), authz.Read)
+		if err == nil || err.Error() != want {
+			t.Fatalf("expect error %q but got %v", want, err)
+		}
+	})
+
+	t.Run("called Authz.AuthorizedRepos when permissions user mapping is enabled", func(t *testing.T) {
+		user := &types.User{ID: 1}
+		Mocks.Users.GetByCurrentAuthUser = func(_ context.Context) (*types.User, error) {
+			return user, nil
+		}
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
+
+		Authz = &mockAuthzStore{}
+		defer func() {
+			Authz = &authzStore{}
+		}()
+
+		calledAuthorizedRepos := false
+		Mocks.Authz.AuthorizedRepos = func(_ context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error) {
+			calledAuthorizedRepos = true
+			if user.ID != args.UserID {
+				return nil, fmt.Errorf("args.UserID: want %q but got %q", user.ID, args.UserID)
+			}
+			return []*types.Repo{}, nil
+		}
+
+		_, err := authzFilter(ctx, makeRepos("gitlab.mine/u1/r0"), authz.Read)
+		if err != nil {
+			t.Fatal(err)
+		} else if !calledAuthorizedRepos {
+			t.Fatal("!calledAuthorizedRepos")
+		}
+	})
 }
 
 func acct(userID int32, serviceType, serviceID, accountID string) *extsvc.ExternalAccount {

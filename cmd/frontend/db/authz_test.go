@@ -1,6 +1,10 @@
 package db
 
-import "context"
+import (
+	"context"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+)
 
 var _ AuthzStore = &mockAuthzStore{}
 
@@ -13,4 +17,11 @@ func (*mockAuthzStore) GrantPendingPermissions(ctx context.Context, args *GrantP
 		return nil
 	}
 	return Mocks.Authz.GrantPendingPermissions(ctx, args)
+}
+
+func (*mockAuthzStore) AuthorizedRepos(ctx context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error) {
+	if Mocks.Authz.AuthorizedRepos == nil {
+		return []*types.Repo{}, nil
+	}
+	return Mocks.Authz.AuthorizedRepos(ctx, args)
 }

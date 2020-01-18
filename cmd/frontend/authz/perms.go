@@ -2,6 +2,7 @@ package authz
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 )
 
 // RepoPerms contains a repo and the permissions a given user
@@ -47,4 +48,13 @@ type PermType string
 // The list of available user permission types.
 const (
 	PermRepos PermType = "repos"
+)
+
+// ProviderType is the type of provider implementation for the permissions.
+type ProviderType string
+
+// The list of available provider types.
+const (
+	ProviderBitbucketServer ProviderType = bitbucketserver.ServiceType
+	ProviderSourcegraph     ProviderType = "sourcegraph"
 )

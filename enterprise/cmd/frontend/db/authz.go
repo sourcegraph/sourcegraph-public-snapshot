@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
@@ -33,21 +34,17 @@ func (s *authzStore) init() {
 func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.GrantPendingPermissionsArgs) error {
 	s.init()
 
-	cfg := conf.Get().SiteConfiguration
 	// Note: we purposely don't check cfg.PermissionsUserMapping.Enabled here because admin could disable the
 	// feature by mistake while a user has valid pending permissions.
-	if cfg.PermissionsUserMapping == nil {
-		return nil
-	}
-
 	var bindID string
-	switch cfg.PermissionsUserMapping.BindID {
+	cfg := globals.PermissionsUserMapping()
+	switch cfg.BindID {
 	case "email":
 		bindID = args.VerifiedEmail
 	case "username":
 		bindID = args.Username
 	default:
-		return fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.PermissionsUserMapping.BindID)
+		return fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
 	}
 
 	if bindID == "" {
@@ -58,4 +55,28 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 		Perm:   args.Perm,
 		Type:   args.Type,
 	})
+}
+
+func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedReposArgs) ([]*types.Repo, error) {
+	s.init()
+
+	p := &iauthz.UserPermissions{
+		UserID:   args.UserID,
+		Perm:     args.Perm,
+		Type:     args.Type,
+		Provider: args.Provider,
+	}
+	if err := s.store.LoadUserPermissions(ctx, p); err != nil {
+		if err == iauthz.ErrNotFound {
+			return []*types.Repo{}, nil
+		}
+		return nil, err
+	}
+
+	perms := p.AuthorizedRepos(args.Repos)
+	filtered := make([]*types.Repo, len(perms))
+	for i, r := range perms {
+		filtered[i] = r.Repo
+	}
+	return filtered, nil
 }
