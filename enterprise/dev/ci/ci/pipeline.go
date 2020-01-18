@@ -3,6 +3,7 @@
 package ci
 
 import (
+	"os"
 	"time"
 
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
@@ -23,6 +24,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("COMMIT_SHA", c.commit),
 		bk.Env("DATE", c.now.Format(time.RFC3339)),
+		// For Bundlesize
+		bk.Env("CI_REPO_OWNER", "sourcegraph"),
+		bk.Env("CI_REPO_NAME", "sourcegraph"),
+		bk.Env("CI_COMMIT_SHA", os.Getenv("BUILDKITE_COMMIT")),
+		bk.Env("CI_COMMIT_MESSAGE", os.Getenv("BUILDKITE_MESSAGE")),
 	)
 
 	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
