@@ -315,7 +315,7 @@ export class FilterInput extends React.Component<Props, State> {
         if (relatedTarget === null) {
             return false
         }
-        const node = (relatedTarget as HTMLElement).parentNode
+        const node = relatedTarget as HTMLElement
         return currentTarget.contains(node) || isEqual(currentTarget, node)
     }
 
