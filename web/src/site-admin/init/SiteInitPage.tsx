@@ -20,6 +20,9 @@ const initSite = async (args: SignUpArgs): Promise<void> => {
         const text = await resp.text()
         throw new Error(text)
     }
+
+    // Force hard-reload because site initialization changes global window.context values that our
+    // application can't react to without a hard reload.
     window.location.replace('/site-admin')
 }
 

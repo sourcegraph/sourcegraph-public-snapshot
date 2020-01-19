@@ -1765,6 +1765,12 @@ type ExternalService implements Node {
     # It is a field on ExternalService instead of a separate thing in order to
     # not break the API and stay backwards compatible.
     warning: String
+
+    # A list of all repositories associated with this external service.
+    repositories(
+        # Return only the first n repositories.
+        first: Int
+    ): RepositoryConnection!
 }
 
 # A list of repositories.

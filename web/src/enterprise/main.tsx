@@ -31,6 +31,7 @@ import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems
 import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
 import { enterpriseRepoSettingsSidebarItems } from './repo/settings/sidebaritems'
+import './components/licenseActions/LicenseActionButton' // contributes
 
 window.addEventListener('DOMContentLoaded', () => {
     render(
