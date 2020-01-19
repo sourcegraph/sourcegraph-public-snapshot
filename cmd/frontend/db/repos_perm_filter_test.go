@@ -785,29 +785,56 @@ func Test_authzFilter_permissionsUserMapping(t *testing.T) {
 	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 	defer globals.SetPermissionsUserMapping(before)
 
-	t.Run("site configuration conflict with code host authz providers", func(t *testing.T) {
-		authz.SetProviders(false, []authz.Provider{
-			&MockAuthzProvider{
-				serviceID:   "https://gitlab.mine/",
-				serviceType: "gitlab",
+	tests := []struct {
+		name      string
+		providers []authz.Provider
+		repos     []*types.Repo
+		expectErr string
+	}{
+		// 🚨 SECURITY: We need to make sure the behavior is the same for both "has repos" and "no repos".
+		// This is to ensure we always check conflict as the first step.
+		{
+			name: "site configuration conflict with code host authz providers: has repos",
+			providers: []authz.Provider{
+				&MockAuthzProvider{
+					serviceID:   "https://gitlab.mine/",
+					serviceType: "gitlab",
+				},
 			},
+			repos:     makeRepos("gitlab.mine/u1/r0"),
+			expectErr: "The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.",
+		},
+		{
+			name: "site configuration conflict with code host authz providers: no repos",
+			providers: []authz.Provider{
+				&MockAuthzProvider{
+					serviceID:   "https://gitlab.mine/",
+					serviceType: "gitlab",
+				},
+			},
+			repos:     []*types.Repo{},
+			expectErr: "The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.",
+		},
+
+		{
+			name:      "does not allow anonymous access when permissions user mapping is enabled",
+			repos:     []*types.Repo{},
+			expectErr: "Anonymous access is not allow when permissions user mapping is enabled.",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.providers != nil {
+				authz.SetProviders(false, test.providers)
+				defer authz.SetProviders(true, nil)
+			}
+
+			_, err := authzFilter(context.Background(), test.repos, authz.Read)
+			if test.expectErr != fmt.Sprintf("%v", err) {
+				t.Fatalf("expect error %q but got %q", test.expectErr, err)
+			}
 		})
-		defer authz.SetProviders(true, nil)
-
-		want := "The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it."
-		_, err := authzFilter(context.Background(), makeRepos("gitlab.mine/u1/r0"), authz.Read)
-		if err == nil || err.Error() != want {
-			t.Fatalf("expect error %q but got %v", want, err)
-		}
-	})
-
-	t.Run("does not allow anonymous access when permissions user mapping is enabled", func(t *testing.T) {
-		want := "Anonymous access is not allow when permissions user mapping is enabled."
-		_, err := authzFilter(context.Background(), makeRepos("gitlab.mine/u1/r0"), authz.Read)
-		if err == nil || err.Error() != want {
-			t.Fatalf("expect error %q but got %v", want, err)
-		}
-	})
+	}
 
 	t.Run("called Authz.AuthorizedRepos when permissions user mapping is enabled", func(t *testing.T) {
 		user := &types.User{ID: 1}
