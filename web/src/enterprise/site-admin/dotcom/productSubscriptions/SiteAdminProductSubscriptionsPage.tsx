@@ -47,7 +47,7 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
         return (
             <div className="site-admin-product-subscriptions-page">
                 <PageTitle title="Product subscriptions" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Product subscriptions</h2>
                     <Link to="/site-admin/dotcom/product/subscriptions/new" className="btn btn-primary">
                         <AddIcon className="icon-inline" />

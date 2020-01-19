@@ -87,9 +87,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
     return (
         <div>
             <PageTitle title="Report a bug - Admin" />
-            <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                <h2 className="mb-0">Report a bug</h2>
-            </div>
+            <h2>Report a bug</h2>
             <p>
                 Create an issue on the{' '}
                 <a target="_blank" rel="noopener noreferrer" href="https://github.com/sourcegraph/sourcegraph/issues">

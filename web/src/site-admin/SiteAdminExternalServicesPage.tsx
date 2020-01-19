@@ -196,7 +196,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
         return (
             <div className="site-admin-external-services-page">
                 <PageTitle title="Manage repositories - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Manage repositories</h2>
                     <Link
                         className="btn btn-primary e2e-goto-add-external-service-page"

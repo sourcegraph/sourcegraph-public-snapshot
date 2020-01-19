@@ -100,7 +100,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
         setupPercentage = percentageDone(props.activation.completed)
     }
     return (
-        <div className="site-admin-overview-page py-3">
+        <div className="site-admin-overview-page">
             <PageTitle title="Overview - Admin" />
             {props.overviewComponents.length > 0 && (
                 <div className="mb-4">
