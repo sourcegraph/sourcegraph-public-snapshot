@@ -63,7 +63,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
     }
 
     return (
-        <div className="site-admin-area d-flex container">
+        <div className="site-admin-area d-flex container my-3">
             <SiteAdminSidebar className="flex-0 mr-3" groups={props.sideBarGroups} />
             <div className="flex-1">
                 <ErrorBoundary location={props.location}>

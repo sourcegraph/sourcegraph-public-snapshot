@@ -105,7 +105,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
             setupPercentage = percentageDone(this.props.activation.completed)
         }
         return (
-            <div className="site-admin-overview-page py-3">
+            <div className="site-admin-overview-page">
                 <PageTitle title="Overview - Admin" />
                 {this.props.overviewComponents.length > 0 && (
                     <div className="mb-4">
