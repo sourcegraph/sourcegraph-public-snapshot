@@ -424,13 +424,16 @@ export class FilterInput extends React.Component<Props, State> {
                                             <MinusIcon />
                                         </button>
                                     )}
+                                    <span
+                                        tabIndex={0}
+                                        className="filter-input__label"
+                                    >{`${this.props.filterType}:`}</span>
                                     <div className="filter-input__input-wrapper">
                                         <input
                                             ref={this.inputEl}
                                             className={`form-control filter-input__input-field e2e-filter-input__input-field-${this.props.mapKey}`}
                                             value={this.state.inputValue}
                                             onChange={this.onInputUpdate}
-                                            placeholder={`${startCase(this.props.filterType)} filter`}
                                             onKeyDown={event => {
                                                 this.onInputKeyDown(event)
                                                 onKeyDown(event)
