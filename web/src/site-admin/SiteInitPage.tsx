@@ -36,7 +36,7 @@ interface Props extends RouteComponentProps<{}>, ThemeProps {
  * Only the person who first accesses the instance will see this.
  */
 export const SiteInitPage: React.FunctionComponent<Props> = props => {
-    if (!window.context.showOnboarding) {
+    if (!window.context.needsSiteInit) {
         return <Redirect to="/search" />
     }
 
