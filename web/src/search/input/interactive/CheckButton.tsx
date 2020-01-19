@@ -7,7 +7,7 @@ import classNames from 'classnames'
  * handler performs a new search with the filter value.
  */
 export const CheckButton: React.FunctionComponent<{ className?: string }> = ({ className }) => (
-    <div className="search-button d-flex">
+    <div className="check-button d-flex">
         <button
             className={classNames('btn', 'btn-primary', className, 'e2e-confirm-filter-button')}
             type="submit"
