@@ -1,13 +1,22 @@
 import React, { useCallback } from 'react'
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Redirect } from 'react-router'
+import H from 'history'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SignUpArgs, SignUpForm } from '../../auth/SignUpForm'
 import { submitTrialRequest } from '../../marketing/backend'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { ThemeProps } from '../../../../shared/src/theme'
 
-interface Props extends RouteComponentProps<{}>, ThemeProps {
-    authenticatedUser: GQL.IUser | null
+interface Props extends ThemeProps {
+    authenticatedUser: Pick<GQL.IUser, 'username'> | null
+
+    /**
+     * Whether site initialization is needed. If not set, the global value from
+     * `window.context.needsSiteInit` is used.
+     */
+    needsSiteInit?: typeof window.context.needsSiteInit
+
+    history: H.History
 }
 
 /**
@@ -16,8 +25,8 @@ interface Props extends RouteComponentProps<{}>, ThemeProps {
  */
 export const SiteInitPage: React.FunctionComponent<Props> = ({
     authenticatedUser,
+    needsSiteInit = window.context.needsSiteInit,
     isLightTheme,
-    location,
     history,
 }) => {
     const doSiteInit = useCallback(
@@ -39,13 +48,13 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                     submitTrialRequest(args.email)
                 }
 
-                window.location.replace('/site-admin')
+                history.replace('/site-admin')
                 return Promise.resolve()
             }),
-        []
+        [history]
     )
 
-    if (!window.context.needsSiteInit) {
+    if (!needsSiteInit) {
         return <Redirect to="/search" />
     }
 
@@ -65,12 +74,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                     <>
                         <h2 className="site-init-page__header">Welcome</h2>
                         <p>Create an admin account to start using Sourcegraph.</p>
-                        <SignUpForm
-                            buttonLabel="Create admin account & continue"
-                            doSignUp={doSiteInit}
-                            location={location}
-                            history={history}
-                        />
+                        <SignUpForm buttonLabel="Create admin account & continue" doSignUp={doSiteInit} />
                     </>
                 )}
             </div>
