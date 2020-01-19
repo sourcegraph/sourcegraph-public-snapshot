@@ -1,10 +1,10 @@
 import React, { useCallback } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { SignUpArgs, SignUpForm } from '../auth/SignUpForm'
-import { submitTrialRequest } from '../marketing/backend'
-import { BrandLogo } from '../components/branding/BrandLogo'
-import { ThemeProps } from '../../../shared/src/theme'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { SignUpArgs, SignUpForm } from '../../auth/SignUpForm'
+import { submitTrialRequest } from '../../marketing/backend'
+import { BrandLogo } from '../../components/branding/BrandLogo'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: GQL.IUser | null
