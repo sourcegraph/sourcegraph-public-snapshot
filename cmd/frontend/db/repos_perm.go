@@ -71,10 +71,6 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		return MockAuthzFilter(ctx, repos, p)
 	}
 
-	if len(repos) == 0 {
-		return repos, nil
-	}
-
 	if isInternalActor(ctx) {
 		return repos, nil
 	}
@@ -112,6 +108,14 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			Type:     authz.PermRepos,
 			Provider: authz.ProviderSourcegraph,
 		})
+	}
+
+	// In case there is no repos to be checked, return here to avoid more expensive calls.
+	// 🚨 SECURITY: This "smart" check must happen after checking globals.PermissionsUserMapping().Enabled.
+	// Otherwise, we could leak the existence of repositories that a user has no access to by returning an
+	// error (resulted in 500), and returning nil (resulted in 404) for non-existent repositories.
+	if len(repos) == 0 {
+		return repos, nil
 	}
 
 	if authzAllowByDefault && len(authzProviders) == 0 {
