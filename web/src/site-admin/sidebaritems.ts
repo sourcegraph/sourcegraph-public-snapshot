@@ -1,9 +1,10 @@
-import LockIcon from 'mdi-react/LockIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
+import UsersIcon from 'mdi-react/UsersIcon'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 
-export const primaryGroup: SiteAdminSideBarGroup = {
+export const overviewGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Site admin',
         icon: ServerIcon,
@@ -15,21 +16,25 @@ export const primaryGroup: SiteAdminSideBarGroup = {
             exact: true,
         },
         {
-            label: 'Configuration',
-            to: '/site-admin/configuration',
+            label: 'Usage stats',
+            to: '/site-admin/usage-statistics',
+        },
+        {
+            label: 'Feedback survey',
+            to: '/site-admin/surveys',
         },
     ],
 }
 
-export const secondaryGroup: SiteAdminSideBarGroup = {
+const configurationGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Configuration',
+        icon: SettingsIcon,
+    },
     items: [
         {
-            label: 'Users',
-            to: '/site-admin/users',
-        },
-        {
-            label: 'Organizations',
-            to: '/site-admin/organizations',
+            label: 'Site configuration',
+            to: '/site-admin/configuration',
         },
         {
             label: 'Global settings',
@@ -55,12 +60,20 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-export const authGroup: SiteAdminSideBarGroup = {
+export const usersGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Auth',
-        icon: LockIcon,
+        label: 'Users & auth',
+        icon: UsersIcon,
     },
     items: [
+        {
+            label: 'Users',
+            to: '/site-admin/users',
+        },
+        {
+            label: 'Organizations',
+            to: '/site-admin/organizations',
+        },
         {
             label: 'Access tokens',
             to: '/site-admin/tokens',
@@ -75,14 +88,6 @@ export const otherGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/updates',
         },
         {
-            label: 'Usage stats',
-            to: '/site-admin/usage-statistics',
-        },
-        {
-            label: 'User surveys',
-            to: '/site-admin/surveys',
-        },
-        {
             label: 'Pings',
             to: '/site-admin/pings',
         },
@@ -94,9 +99,9 @@ export const otherGroup: SiteAdminSideBarGroup = {
 }
 
 export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
-    primaryGroup,
-    secondaryGroup,
+    overviewGroup,
+    configurationGroup,
     repositoriesGroup,
-    authGroup,
+    usersGroup,
     otherGroup,
 ]

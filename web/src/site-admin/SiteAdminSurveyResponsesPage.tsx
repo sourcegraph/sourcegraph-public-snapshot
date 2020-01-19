@@ -281,7 +281,7 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
             <div className="site-admin-survey-responses-page">
                 <PageTitle title="Survey Responses - Admin" />
                 <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Survey responses</h2>
+                    <h2 className="mb-0">User feedback survey</h2>
                 </div>
                 <p>
                     After using Sourcegraph for a few days, users are presented with a request to answer "How likely is
