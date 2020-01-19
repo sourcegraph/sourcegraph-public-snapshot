@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Logo renders dark custom branding logo 1`] = `
+<img
+  src="l"
+/>
+`;
+
+exports[`Logo renders dark sourcegraph logo 1`] = `
+<img
+  src="ROOT/img/sourcegraph-head-logo.svg"
+/>
+`;
+
+exports[`Logo renders light custom branding logo 1`] = `
+<img
+  src="l"
+/>
+`;
+
+exports[`Logo renders light sourcegraph logo 1`] = `
+<img
+  src="ROOT/img/sourcegraph-light-head-logo.svg"
+/>
+`;
