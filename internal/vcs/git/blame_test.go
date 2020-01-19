@@ -1,4 +1,4 @@
-package git_test
+package git
 
 import (
 	"reflect"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestRepository_BlameFile(t *testing.T) {
@@ -20,27 +19,27 @@ func TestRepository_BlameFile(t *testing.T) {
 		"git add f",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
-	gitWantHunks := []*git.Hunk{
+	gitWantHunks := []*Hunk{
 		{
 			StartLine: 1, EndLine: 2, StartByte: 0, EndByte: 6, CommitID: "e6093374dcf5725d8517db0dccbbf69df65dbde0",
-			Message: "foo", Author: git.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message: "foo", Author: Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 		},
 		{
 			StartLine: 2, EndLine: 3, StartByte: 6, EndByte: 12, CommitID: "fad406f4fe02c358a09df0d03ec7a36c2c8a20f1",
-			Message: "foo", Author: git.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message: "foo", Author: Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 		},
 	}
 	tests := map[string]struct {
 		repo gitserver.Repo
 		path string
-		opt  *git.BlameOptions
+		opt  *BlameOptions
 
-		wantHunks []*git.Hunk
+		wantHunks []*Hunk
 	}{
 		"git cmd": {
 			repo: MakeGitRepository(t, gitCommands...),
 			path: "f",
-			opt: &git.BlameOptions{
+			opt: &BlameOptions{
 				NewestCommit: "master",
 			},
 			wantHunks: gitWantHunks,
@@ -48,14 +47,14 @@ func TestRepository_BlameFile(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		newestCommitID, err := git.ResolveRevision(ctx, test.repo, nil, string(test.opt.NewestCommit), nil)
+		newestCommitID, err := ResolveRevision(ctx, test.repo, nil, string(test.opt.NewestCommit), nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
 			continue
 		}
 
 		test.opt.NewestCommit = newestCommitID
-		hunks, err := git.BlameFile(ctx, test.repo, test.path, test.opt)
+		hunks, err := BlameFile(ctx, test.repo, test.path, test.opt)
 		if err != nil {
 			t.Errorf("%s: BlameFile(%s, %+v): %s", label, test.path, test.opt, err)
 			continue

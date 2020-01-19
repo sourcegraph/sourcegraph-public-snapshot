@@ -5,12 +5,7 @@ unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 parallel_run() {
-    log_file=$(mktemp)
-    trap "rm -rf $log_file" EXIT
-
-    parallel --jobs 4 --keep-order --line-buffer --joblog $log_file "$@"
-    echo "--- done - displaying job log:"
-    cat $log_file
+    ./dev/ci/parallel_run.sh "$@"
 }
 
 export ARGS="$@"
@@ -34,15 +29,6 @@ export -f run_command
 
 if [[ "${CI:-"false"}" == "true" ]]; then
     echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"
-
-    parallel_run() {
-        log_file=$(mktemp)
-        trap "rm -rf $log_file" EXIT
-
-        parallel --jobs 4 --keep-order --line-buffer --joblog $log_file "$@"
-        echo "--- done - displaying job log:"
-        cat $log_file
-    }
 
     parallel_run run_command {} ::: "${DIRS[@]}"
 else

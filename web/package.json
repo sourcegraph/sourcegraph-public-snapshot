@@ -28,7 +28,7 @@
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e 'src/schema/**' 'src/**/*.ts?(x)' 'types/**/*.ts?(x)' './*.ts?(x)'",
     "eslint": "eslint --cache 'src/**/*.ts?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
-    "bundlesize": "cross-env GITHUB_TOKEN= bundlesize",
+    "bundlesize": "GITHUB_TOKEN= bundlesize",
     "browserslist": "browserslist"
   },
   "bundlesize": [

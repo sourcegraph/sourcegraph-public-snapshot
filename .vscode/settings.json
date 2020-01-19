@@ -67,4 +67,5 @@
       "changeProcessCWD": true,
     },
   ],
+  "go.lintTool": "golangci-lint",
 }

@@ -316,7 +316,7 @@ export class FilterInput extends React.Component<Props, State> {
         if (relatedTarget === null) {
             return false
         }
-        const node = (relatedTarget as HTMLElement).parentNode
+        const node = relatedTarget as HTMLElement
         return currentTarget.contains(node) || isEqual(currentTarget, node)
     }
 
@@ -425,7 +425,10 @@ export class FilterInput extends React.Component<Props, State> {
                                             {this.props.negated ? <MinusCircleIcon /> : <MinusCircleOutlineIcon />}
                                         </button>
                                     )}
-                                    <span tabIndex={0}>{`${this.props.filterType}:`}</span>
+                                    <span
+                                        tabIndex={0}
+                                        className="filter-input__label"
+                                    >{`${this.props.filterType}:`}</span>
                                     <div className="filter-input__input-wrapper">
                                         <input
                                             ref={this.inputEl}

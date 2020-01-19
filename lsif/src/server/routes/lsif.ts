@@ -64,7 +64,8 @@ export function createLsifRouter(
     ): TracingContext => addTags({ logger, span: req.span }, tags)
 
     interface UploadQueryArgs {
-        repository: string
+        repositoryId: number
+        repositoryName: string
         commit: string
         root?: string
         blocking?: boolean
@@ -74,7 +75,8 @@ export function createLsifRouter(
     router.post(
         '/upload',
         validation.validationMiddleware([
-            validation.validateNonEmptyString('repository'),
+            validation.validateInt('repositoryId'),
+            validation.validateNonEmptyString('repositoryName'),
             validation.validateNonEmptyString('commit').matches(commitPattern),
             validation.validateOptionalString('root'),
             validation.validateOptionalBoolean('blocking'),
@@ -82,18 +84,29 @@ export function createLsifRouter(
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, root: rootRaw, blocking, maxWait }: UploadQueryArgs = req.query
+                const {
+                    repositoryId,
+                    repositoryName,
+                    commit,
+                    root: rootRaw,
+                    blocking,
+                    maxWait,
+                }: UploadQueryArgs = req.query
                 const root = sanitizeRoot(rootRaw)
-                const ctx = createTracingContext(req, { repository, commit, root })
+                const ctx = createTracingContext(req, { repositoryId, commit, root })
                 const filename = nodepath.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
                 await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
 
                 // Add upload record
-                const upload = await uploadManager.enqueue({ repository, commit, root, filename }, tracer, ctx.span)
+                const upload = await uploadManager.enqueue(
+                    { repositoryId, repositoryName, commit, root, filename },
+                    tracer,
+                    ctx.span
+                )
 
                 if (blocking) {
-                    logger.debug('Blocking on upload conversion', { repository, commit, root })
+                    logger.debug('Blocking on upload conversion', { repositoryId, commit, root })
 
                     if (await uploadManager.waitForUploadToConvert(upload.id, maxWait)) {
                         // Upload converted successfully while blocked, send success
@@ -111,7 +124,8 @@ export function createLsifRouter(
     )
 
     interface ExistsQueryArgs {
-        repository: string
+        repositoryId: number
+        repositoryName: string | undefined
         commit: string
         path: string
     }
@@ -119,22 +133,24 @@ export function createLsifRouter(
     router.get(
         '/exists',
         validation.validationMiddleware([
-            validation.validateNonEmptyString('repository'),
+            validation.validateInt('repositoryId'),
+            validation.validateOptionalString('repositoryName'),
             validation.validateNonEmptyString('commit').matches(commitPattern),
             validation.validateNonEmptyString('path'),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, path }: ExistsQueryArgs = req.query
-                const ctx = createTracingContext(req, { repository, commit })
-                const upload = await backend.exists(repository, commit, path, undefined, ctx)
+                const { repositoryId, repositoryName, commit, path }: ExistsQueryArgs = req.query
+                const ctx = createTracingContext(req, { repositoryId, commit })
+                const upload = await backend.exists(repositoryId, repositoryName, commit, path, undefined, ctx)
                 res.json({ upload })
             }
         )
     )
 
     interface FilePositionArgs {
-        repository: string
+        repositoryId: number
+        repositoryName: string | undefined
         commit: string
         path: string
         line: number
@@ -145,7 +161,8 @@ export function createLsifRouter(
     router.get(
         '/definitions',
         validation.validationMiddleware([
-            validation.validateNonEmptyString('repository'),
+            validation.validateInt('repositoryId'),
+            validation.validateOptionalString('repositoryName'),
             validation.validateNonEmptyString('commit'),
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -154,11 +171,20 @@ export function createLsifRouter(
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, path, line, character, uploadId }: FilePositionArgs = req.query
-                const ctx = createTracingContext(req, { repository, commit, path })
+                const {
+                    repositoryId,
+                    repositoryName,
+                    commit,
+                    path,
+                    line,
+                    character,
+                    uploadId,
+                }: FilePositionArgs = req.query
+                const ctx = createTracingContext(req, { repositoryId, commit, path })
 
                 const locations = await backend.definitions(
-                    repository,
+                    repositoryId,
+                    repositoryName,
                     commit,
                     path,
                     { line, character },
@@ -171,7 +197,7 @@ export function createLsifRouter(
 
                 res.send({
                     locations: locations.map(l => ({
-                        repository: l.dump.repository,
+                        repositoryId: l.dump.repositoryId,
                         commit: l.dump.commit,
                         path: l.path,
                         range: l.range,
@@ -189,7 +215,8 @@ export function createLsifRouter(
     router.get(
         '/references',
         validation.validationMiddleware([
-            validation.validateNonEmptyString('repository'),
+            validation.validateInt('repositoryId'),
+            validation.validateOptionalString('repositoryName'),
             validation.validateNonEmptyString('commit'),
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -200,12 +227,22 @@ export function createLsifRouter(
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, path, line, character, uploadId, cursor }: ReferencesQueryArgs = req.query
+                const {
+                    repositoryId,
+                    repositoryName,
+                    commit,
+                    path,
+                    line,
+                    character,
+                    uploadId,
+                    cursor,
+                }: ReferencesQueryArgs = req.query
                 const { limit } = extractLimitOffset(req.query, settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
-                const ctx = createTracingContext(req, { repository, commit, path })
+                const ctx = createTracingContext(req, { repositoryId, commit, path })
 
                 const result = await backend.references(
-                    repository,
+                    repositoryId,
+                    repositoryName,
                     commit,
                     path,
                     { line, character },
@@ -225,7 +262,7 @@ export function createLsifRouter(
 
                 res.json({
                     locations: locations.map(l => ({
-                        repository: l.dump.repository,
+                        repositoryId: l.dump.repositoryId,
                         commit: l.dump.commit,
                         path: l.path,
                         range: l.range,
@@ -238,7 +275,8 @@ export function createLsifRouter(
     router.get(
         '/hover',
         validation.validationMiddleware([
-            validation.validateNonEmptyString('repository'),
+            validation.validateInt('repositoryId'),
+            validation.validateOptionalString('repositoryName'),
             validation.validateNonEmptyString('commit'),
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -247,10 +285,26 @@ export function createLsifRouter(
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, path, line, character, uploadId }: FilePositionArgs = req.query
-                const ctx = createTracingContext(req, { repository, commit, path })
+                const {
+                    repositoryId,
+                    repositoryName,
+                    commit,
+                    path,
+                    line,
+                    character,
+                    uploadId,
+                }: FilePositionArgs = req.query
+                const ctx = createTracingContext(req, { repositoryId, commit, path })
 
-                const result = await backend.hover(repository, commit, path, { line, character }, uploadId, ctx)
+                const result = await backend.hover(
+                    repositoryId,
+                    repositoryName,
+                    commit,
+                    path,
+                    { line, character },
+                    uploadId,
+                    ctx
+                )
                 if (result === undefined) {
                     throw Object.assign(new Error('LSIF upload not found'), { status: 404 })
                 }
