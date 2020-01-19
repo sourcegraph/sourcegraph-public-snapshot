@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { SignUpArgs, SignUpForm } from '../auth/SignUpForm'
-import { submitTrialRequest } from '../marketing/backend'
-import { BrandLogo } from '../components/branding/BrandLogo'
-import { ThemeProps } from '../../../shared/src/theme'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { SignUpArgs, SignUpForm } from '../../auth/SignUpForm'
+import { submitTrialRequest } from '../../marketing/backend'
+import { BrandLogo } from '../../components/branding/BrandLogo'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 const initSite = async (args: SignUpArgs): Promise<void> => {
     const resp = await fetch('/-/site-init', {
