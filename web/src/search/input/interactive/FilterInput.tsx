@@ -424,7 +424,10 @@ export class FilterInput extends React.Component<Props, State> {
                                             <MinusIcon />
                                         </button>
                                     )}
-                                    <span tabIndex={0} className="filter-input__label">{`${this.props.filterType}:`}</span>
+                                    <span
+                                        tabIndex={0}
+                                        className="filter-input__label"
+                                    >{`${this.props.filterType}:`}</span>
                                     <div className="filter-input__input-wrapper">
                                         <input
                                             ref={this.inputEl}
