@@ -58,6 +58,10 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 }
 
 func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedReposArgs) ([]*types.Repo, error) {
+	if len(args.Repos) == 0 {
+		return args.Repos, nil
+	}
+
 	s.init()
 
 	p := &iauthz.UserPermissions{
