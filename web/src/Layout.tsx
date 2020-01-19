@@ -121,7 +121,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         props.location.pathname === '/search' &&
         !parseSearchURLQuery(props.location.search, props.interactiveSearchMode)
 
-    const needsSiteInit = window.context.showOnboarding
+    const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
     const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] =

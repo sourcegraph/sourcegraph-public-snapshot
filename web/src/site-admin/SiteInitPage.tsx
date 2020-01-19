@@ -45,7 +45,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
         []
     )
 
-    if (!window.context.showOnboarding) {
+    if (!window.context.needsSiteInit) {
         return <Redirect to="/search" />
     }
 
