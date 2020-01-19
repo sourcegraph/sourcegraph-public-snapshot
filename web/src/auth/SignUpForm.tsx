@@ -1,11 +1,10 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import * as React from 'react'
 import { from, Subscription } from 'rxjs'
 import { asError } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
-import { enterpriseTrial, signupTerms } from '../util/features'
+import { signupTerms } from '../util/features'
 import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
 import classNames from 'classnames'
@@ -14,7 +13,6 @@ export interface SignUpArgs {
     email: string
     username: string
     password: string
-    requestedTrial: boolean
 }
 
 interface SignUpFormProps {
@@ -32,7 +30,6 @@ interface SignUpFormState {
     password: string
     error?: Error
     loading: boolean
-    requestedTrial: boolean
 }
 
 export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState> {
@@ -45,7 +42,6 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
             username: '',
             password: '',
             loading: false,
-            requestedTrial: false,
         }
     }
 
@@ -85,24 +81,6 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         autoComplete="new-password"
                     />
                 </div>
-                {enterpriseTrial && (
-                    <div className="form-group">
-                        <div className="form-check">
-                            <label className="form-check-label">
-                                <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    onChange={this.onRequestTrialFieldChange}
-                                />
-                                Try Sourcegraph Enterprise free for 30 days{' '}
-                                {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                                <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
-                                    <HelpCircleOutlineIcon className="icon-inline" />
-                                </a>
-                            </label>
-                        </div>
-                    </div>
-                )}
                 <div className="form-group mb-0">
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
                         {this.state.loading ? (
@@ -150,10 +128,6 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
         this.setState({ password: e.target.value })
     }
 
-    private onRequestTrialFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ requestedTrial: e.target.checked })
-    }
-
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         if (this.state.loading) {
@@ -168,7 +142,6 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         email: this.state.email,
                         username: this.state.username,
                         password: this.state.password,
-                        requestedTrial: this.state.requestedTrial,
                     })
                     .catch(error => this.setState({ error: asError(error), loading: false }))
             ).subscribe()
