@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as H from 'history'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import * as React from 'react'
 import { from, Subscription } from 'rxjs'
@@ -20,9 +19,6 @@ export interface SignUpArgs {
 
 interface SignUpFormProps {
     className?: string
-
-    location: H.Location
-    history: H.History
 
     /** Called to perform the signup on the server. */
     doSignUp: (args: SignUpArgs) => Promise<void>
