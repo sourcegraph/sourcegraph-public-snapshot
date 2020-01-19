@@ -10,6 +10,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { RouteDescriptor } from '../util/contributions'
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 const NotFoundPage: React.ComponentType<{}> = () => (
     <HeroPage
@@ -67,23 +68,27 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
             <SiteAdminSidebar className="flex-0 mr-3" groups={props.sideBarGroups} />
             <div className="flex-1">
                 <ErrorBoundary location={props.location}>
-                    <Switch>
-                        {props.routes.map(
-                            /* eslint-disable react/jsx-no-bind */
-                            ({ render, path, exact, condition = () => true }) =>
-                                condition(context) && (
-                                    <Route
-                                        // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        key="hardcoded-key"
-                                        path={props.match.url + path}
-                                        exact={exact}
-                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                                    />
-                                )
-                            /* eslint-enable react/jsx-no-bind */
-                        )}
-                        <Route component={NotFoundPage} />
-                    </Switch>
+                    <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                        <Switch>
+                            {props.routes.map(
+                                /* eslint-disable react/jsx-no-bind */
+                                ({ render, path, exact, condition = () => true }) =>
+                                    condition(context) && (
+                                        <Route
+                                            // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            key="hardcoded-key"
+                                            path={props.match.url + path}
+                                            exact={exact}
+                                            render={routeComponentProps =>
+                                                render({ ...context, ...routeComponentProps })
+                                            }
+                                        />
+                                    )
+                                /* eslint-enable react/jsx-no-bind */
+                            )}
+                            <Route component={NotFoundPage} />
+                        </Switch>
+                    </React.Suspense>
                 </ErrorBoundary>
             </div>
         </div>
