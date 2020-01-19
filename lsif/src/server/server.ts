@@ -3,18 +3,16 @@ import * as fs from 'mz/fs'
 import * as metrics from './metrics'
 import * as path from 'path'
 import * as settings from './settings'
-import * as pgModels from '../shared/models/pg'
 import express from 'express'
 import promClient from 'prom-client'
 import { Backend } from './backend/backend'
-import { Connection } from 'typeorm'
 import { createLogger } from '../shared/logging'
 import { createLsifRouter } from './routes/lsif'
 import { createMetaRouter } from './routes/meta'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { createTracer } from '../shared/tracing'
 import { createUploadRouter } from './routes/uploads'
-import { dbFilename, dbFilenameOld, ensureDirectory } from '../shared/paths'
+import { dbFilename, ensureDirectory, idFromFilename } from '../shared/paths'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { errorHandler } from './middleware/errors'
 import { logger as loggingMiddleware } from 'express-winston'
@@ -59,9 +57,9 @@ async function main(logger: Logger): Promise<void> {
     const dependencyManager = new DependencyManager(connection)
     const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, fetchConfiguration)
 
-    // Temporary migrations
-    await moveDatabaseFilesToSubdir() // TODO - remove after 3.12
-    await ensureFilenamesAreIDs(connection) // TODO - remove after 3.10
+    // Temporary migration
+    // TODO - remove after 3.15
+    await migrateFilenames()
 
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
@@ -95,37 +93,26 @@ async function main(logger: Logger): Promise<void> {
 }
 
 /**
- * Move all db files in storage root to a subdirectory.
+ * If it hasn't been done already, migrate from the old pre-3.13 filename format
+ * `$ID-$REPO@$COMMIT.lsif.db` to the new format `$ID.lsif.db`.
  */
-async function moveDatabaseFilesToSubdir(): Promise<void> {
-    for (const filename of await fs.readdir(settings.STORAGE_ROOT)) {
-        if (filename.endsWith('.db')) {
-            await fs.rename(
-                path.join(settings.STORAGE_ROOT, filename),
-                path.join(settings.STORAGE_ROOT, constants.DBS_DIR, filename)
-            )
-        }
-    }
-}
-
-/**
- * If it hasn't been done already, migrate from the old pre-3.9 filename format
- * `$REPO@$COMMIT.lsif.db` to the new format `$ID.lsif.db`.
- */
-async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
-    const doneFile = path.join(settings.STORAGE_ROOT, 'id-based-filenames')
+async function migrateFilenames(): Promise<void> {
+    const doneFile = path.join(settings.STORAGE_ROOT, 'id-only-based-filenames')
     if (await fs.exists(doneFile)) {
         // Already migrated.
         return
     }
 
-    for (const dump of await db.getRepository(pgModels.LsifDump).find()) {
-        const oldFile = dbFilenameOld(settings.STORAGE_ROOT, dump.repository, dump.commit)
-        const newFile = dbFilename(settings.STORAGE_ROOT, dump.id, dump.repository, dump.commit)
-        if (!(await fs.exists(oldFile))) {
+    for (const basename of await fs.readdir(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))) {
+        const id = idFromFilename(basename)
+        if (!id) {
             continue
         }
-        await fs.rename(oldFile, newFile)
+
+        await fs.rename(
+            path.join(settings.STORAGE_ROOT, constants.DBS_DIR, basename),
+            dbFilename(settings.STORAGE_ROOT, id)
+        )
     }
 
     // Create an empty done file to record that all files have been renamed.

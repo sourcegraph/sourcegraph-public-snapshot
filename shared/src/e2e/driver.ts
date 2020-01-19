@@ -2,16 +2,18 @@ import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions, PageFnOptions } from 'puppeteer'
+import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions, PageFnOptions, ConsoleMessage } from 'puppeteer'
 import { Key } from 'ts-key-enum'
-import * as util from 'util'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery, ExternalServiceKind } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
+import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
 import { readFile } from 'mz/fs'
 import { Settings } from '../settings/settings'
+import { fromEvent } from 'rxjs'
+import { filter, map, concatAll } from 'rxjs/operators'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -600,19 +602,20 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
     })
     const page = await browser.newPage()
     if (logBrowserConsole) {
-        page.on('console', message => {
-            if (message.text().includes('Download the React DevTools')) {
-                return
-            }
-            if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
-                return
-            }
-            if (message.text().includes('Warning: componentWillReceiveProps has been renamed')) {
-                // This warning applies to our dependencies and leads to logspam on every page.
-                return
-            }
-            console.log('Browser console:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))
-        })
+        fromEvent<ConsoleMessage>(page, 'console')
+            .pipe(
+                filter(
+                    message =>
+                        !message.text().includes('Download the React DevTools') &&
+                        !message.text().includes('[HMR]') &&
+                        !message.text().includes('[WDS]') &&
+                        !message.text().includes('Warning: componentWillReceiveProps has been renamed')
+                ),
+                // Immediately format remote handles to strings, but maintain order.
+                map(formatPuppeteerConsoleMessage),
+                concatAll()
+            )
+            .subscribe(formattedLine => console.log(formattedLine))
     }
     return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)
 }

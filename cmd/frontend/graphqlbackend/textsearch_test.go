@@ -142,67 +142,64 @@ func TestStructuralPatToZoektQuery(t *testing.T) {
 		{
 			Name:     "Just a hole",
 			Pattern:  ":[1]",
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `TRUE`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"()(?-s:.)*?()")`,
 		},
 		{
 			Name:     "Adjacent holes",
 			Pattern:  ":[1]:[2]:[3]",
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `TRUE`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"()(?-s:.)*?()(?-s:.)*?()(?-s:.)*?()")`,
 		},
 		{
 			Name:     "Substring between holes",
 			Pattern:  ":[1] substring :[2]",
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `(and case_content_substr:" substring ")`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"()(?-s:.)*?([\\t-\\n\\f-\\r ]+substring[\\t-\\n\\f-\\r ]+)(?-s:.)*?()")`,
 		},
 		{
 			Name:     "Substring before and after different hole kinds",
 			Pattern:  "prefix :[[1]] :[2.] suffix",
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `(and case_content_substr:"prefix " case_content_substr:" " case_content_substr:" suffix")`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"(prefix[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+suffix)")`,
 		},
 		{
 			Name:     "Substrings covering all hole kinds.",
 			Pattern:  `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `(and case_content_substr:"1. " case_content_substr:" 2. " case_content_substr:" 3. " case_content_substr:" 4. " case_content_substr:" 5. " case_content_substr:" 6. " case_content_substr:" done.")`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"(1\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+2\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+3\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+4\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+5\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+6\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+done\\.)")`,
 		},
 		{
-			Name: "Substrings across multiple lines.",
-			Pattern: `:[1] spans
-multiple
-lines
- :[2]`,
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `(and case_content_substr:" spans\nmultiple\nlines\n ")`,
+			Name:     "Substrings across multiple lines.",
+			Pattern:  ``,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"()")`,
 		},
 		{
 			Name:     "Allow alphanumeric identifiers in holes",
 			Pattern:  "sub :[alphanum_ident_123] string",
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `(and case_content_substr:"sub " case_content_substr:" string")`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"(sub[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+string)")`,
 		},
 
 		{
 			Name:     "Whitespace separated holes",
 			Pattern:  ":[1] :[2]",
 			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"(?:)" case_regex:"[\\t-\\n\\f-\\r ]+" case_regex:"(?:)")`,
+			Want:     `(and case_regex:"()(?-s:.)*?([\\t-\\n\\f-\\r ]+)(?-s:.)*?()")`,
 		},
 		{
 			Name:     "Expect newline separated pattern",
 			Pattern:  "ParseInt(:[stuff], :[x]) if err ",
 			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_content_substr:"ParseInt(" case_regex:",[\\t-\\n\\f-\\r ]+" case_regex:"\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+")`,
+			Want:     `(and case_regex:"(ParseInt\\()(?-s:.)*?(,[\\t-\\n\\f-\\r ]+)(?-s:.)*?(\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+)")`,
 		},
 		{
 			Name: "Contiguous whitespace is replaced by regex",
 			Pattern: `ParseInt(:[stuff],    :[x])
              if err `,
 			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_content_substr:"ParseInt(" case_regex:",[\\t-\\n\\f-\\r ]+" case_regex:"\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+")`,
+			Want:     `(and case_regex:"(ParseInt\\()(?-s:.)*?(,[\\t-\\n\\f-\\r ]+)(?-s:.)*?(\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+)")`,
 		},
 	}
 	for _, tt := range cases {

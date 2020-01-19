@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -207,28 +206,9 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			}
 		}
 
-		suggestEnablingRepos := false
-		if a.title == "" && !envvar.SourcegraphDotComMode() {
-			repoPattern, _ := search.ParseRepositoryRevisions(repoFilters[0])
-			repos, err := db.Repos.List(ctx, db.ReposListOptions{
-				Enabled:         false,
-				Disabled:        true,
-				IncludePatterns: []string{optimizeRepoPatternWithHeuristics(string(repoPattern))},
-				LimitOffset:     &db.LimitOffset{Limit: 1},
-			})
-			if err == nil && len(repos) > 0 && isSiteAdmin {
-				suggestEnablingRepos = true
-			}
-		}
-
 		if a.title == "" {
-			if suggestEnablingRepos {
-				a.title = "Your repo: filter matched only disabled repositories"
-				a.description = "Go to site admin to enable more repositories, or broaden your repo: scope."
-			} else {
-				a.title = "No repositories satisfied your repo: filter"
-				a.description = "Change your repo: filter to see results"
-			}
+			a.title = "No repositories satisfied your repo: filter"
+			a.description = "Change your repo: filter to see results"
 			if proposeQueries && strings.TrimSpace(withoutRepoFields) != "" {
 				a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 					description: "remove repo: filter",

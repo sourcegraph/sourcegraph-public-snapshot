@@ -7,25 +7,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-)
-
-// PermType is the object type of the user permissions.
-type PermType string
-
-// The list of available user permission types.
-const (
-	PermRepos PermType = "repos"
-)
-
-// ProviderType is the type of provider implementation for the permissions.
-type ProviderType string
-
-// The list of available provider types.
-const (
-	ProviderBitbucketServer ProviderType = bitbucketserver.ServiceType
-	ProviderSourcegraph     ProviderType = "sourcegraph"
 )
 
 // UserPermissions are the permissions of a user to perform an action
@@ -34,9 +15,9 @@ const (
 type UserPermissions struct {
 	UserID    int32
 	Perm      authz.Perms
-	Type      PermType
+	Type      authz.PermType
 	IDs       *roaring.Bitmap
-	Provider  ProviderType
+	Provider  authz.ProviderType
 	UpdatedAt time.Time
 }
 
@@ -48,13 +29,15 @@ func (p *UserPermissions) Expired(ttl time.Duration, now time.Time) bool {
 // AuthorizedRepos returns the intersection of the given repository IDs with
 // the authorized IDs.
 func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []authz.RepoPerms {
-	if p.Type != PermRepos {
-		return nil
+	// Return directly if it's used for wrong permissions type or no permissions available.
+	if p.Type != authz.PermRepos ||
+		p.IDs == nil || p.IDs.GetCardinality() == 0 {
+		return []authz.RepoPerms{}
 	}
 
 	perms := make([]authz.RepoPerms, 0, len(repos))
 	for _, r := range repos {
-		if r.ID != 0 && p.IDs != nil && p.IDs.Contains(uint32(r.ID)) {
+		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
 			perms = append(perms, authz.RepoPerms{Repo: r, Perms: p.Perm})
 		}
 	}
@@ -86,30 +69,13 @@ type RepoPermissions struct {
 	RepoID    int32
 	Perm      authz.Perms
 	UserIDs   *roaring.Bitmap
-	Provider  ProviderType
+	Provider  authz.ProviderType
 	UpdatedAt time.Time
 }
 
 // Expired returns true if these RepoPermissions have elapsed the given ttl.
 func (p *RepoPermissions) Expired(ttl time.Duration, now time.Time) bool {
 	return !now.Before(p.UpdatedAt.Add(ttl))
-}
-
-// AuthorizedUsers returns the intersection of the given user IDs with
-// the authorized IDs.
-func (p *RepoPermissions) AuthorizedUsers(users []*types.User) []authz.RepoPerms {
-	perms := make([]authz.RepoPerms, 0, len(users))
-	for _, u := range users {
-		if u.ID != 0 && p.UserIDs != nil && p.UserIDs.Contains(uint32(u.ID)) {
-			perms = append(perms, authz.RepoPerms{
-				Repo: &types.Repo{
-					ID: api.RepoID(p.RepoID),
-				},
-				Perms: p.Perm,
-			})
-		}
-	}
-	return perms
 }
 
 // TracingFields returns tracing fields for the opentracing log.
@@ -139,30 +105,9 @@ type UserPendingPermissions struct {
 	ID        int32
 	BindID    string
 	Perm      authz.Perms
-	Type      PermType
+	Type      authz.PermType
 	IDs       *roaring.Bitmap
 	UpdatedAt time.Time
-}
-
-// Expired returns true if these UserPendingPermissions have elapsed the given ttl.
-func (p *UserPendingPermissions) Expired(ttl time.Duration, now time.Time) bool {
-	return !now.Before(p.UpdatedAt.Add(ttl))
-}
-
-// AuthorizedRepos returns the intersection of the given repository IDs with
-// the authorized IDs.
-func (p *UserPendingPermissions) AuthorizedRepos(repos []*types.Repo) []authz.RepoPerms {
-	if p.Type != PermRepos {
-		return nil
-	}
-
-	perms := make([]authz.RepoPerms, 0, len(repos))
-	for _, r := range repos {
-		if r.ID != 0 && p.IDs != nil && p.IDs.Contains(uint32(r.ID)) {
-			perms = append(perms, authz.RepoPerms{Repo: r, Perms: p.Perm})
-		}
-	}
-	return perms
 }
 
 // TracingFields returns tracing fields for the opentracing log.
