@@ -3,7 +3,6 @@ import { Redirect } from 'react-router'
 import H from 'history'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SignUpArgs, SignUpForm } from '../../auth/SignUpForm'
-import { submitTrialRequest } from '../../marketing/backend'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { ThemeProps } from '../../../../shared/src/theme'
 
@@ -44,10 +43,6 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                 if (resp.status !== 200) {
                     return resp.text().then(text => Promise.reject(new Error(text)))
                 }
-                if (args.requestedTrial) {
-                    submitTrialRequest(args.email)
-                }
-
                 history.replace('/site-admin')
                 return Promise.resolve()
             }),
