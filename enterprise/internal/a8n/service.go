@@ -635,12 +635,12 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) 
 	return syncer.SyncChangesetsWithSources(ctx, bySource)
 }
 
-// PublishChangesetJobForCampaignJob creates a ChangesetJob for the
+// CreateChangesetJobForCampaignJob creates a ChangesetJob for the
 // CampaignJob with the given ID. The CampaignJob has to belong to a
 // CampaignPlan that was attached to a Campaign.
-func (s *Service) PublishChangesetJobForCampaignJob(ctx context.Context, campaignJobID int64) (err error) {
+func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, campaignJobID int64) (err error) {
 	traceTitle := fmt.Sprintf("campaignJob: %d", campaignJobID)
-	tr, ctx := trace.New(ctx, "service.PublishChangesetJobForCampaignJob", traceTitle)
+	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForCampaignJob", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()

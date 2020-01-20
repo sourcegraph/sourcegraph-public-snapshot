@@ -211,7 +211,7 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("PublishChangesetJobForCampaignJob", func(t *testing.T) {
+	t.Run("CreateChangesetJobForCampaignJob", func(t *testing.T) {
 		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
@@ -231,7 +231,7 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
-		err = svc.PublishChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -245,7 +245,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Try to create again, check that it's the same one
-		err = svc.PublishChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
