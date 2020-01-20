@@ -6,6 +6,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,7 +23,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			t.Helper()
 			sort.Strings(have)
 			if !reflect.DeepEqual(have, want) {
-				t.Error(pretty.Compare(have, want))
+				t.Error(cmp.Diff(have, want))
 			}
 		}
 	}
