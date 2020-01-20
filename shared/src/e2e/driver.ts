@@ -19,11 +19,16 @@ import { filter, map, concatAll, tap } from 'rxjs/operators'
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
  */
-export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
-    new Promise(resolve => page.once(eventName, resolve))
+export const oncePageEvent = <E extends keyof PageEventObj>(
+    page: Pick<Page, 'once'>,
+    eventName: E
+): Promise<PageEventObj[E]> => new Promise(resolve => page.once(eventName, resolve))
 
-export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false })
-    ? realPercySnapshot
+export const percySnapshot: (page: Pick<puppeteer.Page, 'screenshot'>, name: string) => Promise<void> = readEnvBoolean({
+    variable: 'PERCY_ON',
+    defaultValue: false,
+})
+    ? (realPercySnapshot as (page: Pick<puppeteer.Page, 'screenshot'>, name: string) => Promise<void>)
     : () => Promise.resolve()
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
@@ -112,20 +117,23 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
     )})).filter(e => e.innerText && e.innerText.match(/${regexp}/))`
 }
 
-export class Driver {
+export class Driver implements Pick<Page, 'goto'> {
+    public get page(): Omit<puppeteer.Page, 'goto'> {
+        return this._page
+    }
     private consoleBuffer = new Set<Promise<unknown>>()
     private subscriptions = new Subscription()
 
     constructor(
         public browser: puppeteer.Browser,
-        public page: puppeteer.Page,
+        private _page: puppeteer.Page,
         public sourcegraphBaseUrl: string,
         public keepBrowser: boolean = false,
         logBrowserConsole: boolean = true
     ) {
         if (logBrowserConsole) {
             this.subscriptions.add(
-                fromEvent<ConsoleMessage>(page, 'console')
+                fromEvent<ConsoleMessage>(_page, 'console')
                     .pipe(
                         filter(
                             message =>
@@ -157,6 +165,11 @@ export class Driver {
         await Promise.all(this.consoleBuffer)
     }
 
+    public async goto(url: string, options?: puppeteer.DirectNavigationOptions): Promise<puppeteer.Response | null> {
+        await this.ensureConsoleLogsFlushed()
+        return this._page.goto(url, options)
+    }
+
     public async ensureLoggedIn({
         username,
         password,
@@ -166,7 +179,7 @@ export class Driver {
         password: string
         email?: string
     }): Promise<void> {
-        await this.page.goto(this.sourcegraphBaseUrl)
+        await this.goto(this.sourcegraphBaseUrl)
         await this.page.evaluate(() => {
             localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
@@ -195,7 +208,7 @@ export class Driver {
      * Navigates to the Sourcegraph browser extension options page and sets the sourcegraph URL.
      */
     public async setExtensionSourcegraphUrl(): Promise<void> {
-        await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
+        await this.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
         await this.page.waitForSelector('.e2e-sourcegraph-url')
         await this.replaceText({ selector: '.e2e-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
@@ -216,7 +229,7 @@ export class Driver {
     }
 
     public async newPage(): Promise<void> {
-        this.page = await this.browser.newPage()
+        this._page = await this.browser.newPage()
     }
 
     public async selectAll(method: SelectTextMethod = 'selectall'): Promise<void> {
@@ -301,7 +314,7 @@ export class Driver {
         )
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
-            await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
+            await this.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
             await this.page.waitFor('.e2e-filtered-connection')
             await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
 
@@ -313,7 +326,7 @@ export class Driver {
         }
 
         // Navigate to the add external service page.
-        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
+        await this.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
         await (
             await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
                 visible: true,
@@ -335,12 +348,10 @@ export class Driver {
         if (ensureRepos) {
             // Clone the repositories
             for (const slug of ensureRepos) {
-                await this.page.goto(
-                    this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`
-                )
+                await this.goto(this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
                 await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
-                await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
+                await this.goto(`${this.sourcegraphBaseUrl}/${slug}`)
             }
         }
     }

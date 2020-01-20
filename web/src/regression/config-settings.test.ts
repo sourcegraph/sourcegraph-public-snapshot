@@ -58,7 +58,7 @@ describe('Site config test suite', () => {
 
         await retry(
             async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl)
+                await driver.goto(config.sourcegraphBaseUrl)
                 await driver.page.reload()
                 await driver.page.waitForSelector('#htmlBodyTopContent', { timeout: 1000 })
             },
@@ -100,7 +100,7 @@ describe('Site config test suite', () => {
         )
         await retry(
             async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl)
+                await driver.goto(config.sourcegraphBaseUrl)
                 await driver.page.reload()
                 await driver.findElementWithText('Sign in', { wait: { timeout: 2000 } })
                 expect(await driver.page.evaluate(() => document.body.innerText.includes('Sign up'))).toBeFalsy()
@@ -111,7 +111,7 @@ describe('Site config test suite', () => {
         await setBuiltinAuthProvider({ type: 'builtin', allowSignup: true })
         await retry(
             async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl)
+                await driver.goto(config.sourcegraphBaseUrl)
                 await driver.page.reload()
                 await driver.findElementWithText('Sign in', { wait: { timeout: 2000 } })
                 expect(await driver.page.evaluate(() => document.body.innerText.includes('Sign up'))).toBeTruthy()

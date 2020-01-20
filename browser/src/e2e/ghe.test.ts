@@ -25,12 +25,12 @@ const { sourcegraphBaseUrl } = getConfig('sourcegraphBaseUrl')
 /**
  * Logs into GitHub Enterprise enterprise.
  */
-async function gheLogin({ page }: Driver): Promise<void> {
-    await page.goto(GHE_BASE_URL)
-    if (new URL(page.url()).pathname.endsWith('/login')) {
-        await page.type('#login_field', GHE_USERNAME!)
-        await page.type('#password', GHE_PASSWORD!)
-        await Promise.all([page.click('input[name=commit]'), page.waitForNavigation()])
+async function gheLogin(driver: Driver): Promise<void> {
+    await driver.goto(GHE_BASE_URL)
+    if (new URL(driver.page.url()).pathname.endsWith('/login')) {
+        await driver.page.type('#login_field', GHE_USERNAME!)
+        await driver.page.type('#password', GHE_PASSWORD!)
+        await Promise.all([driver.page.click('input[name=commit]'), driver.page.waitForNavigation()])
     }
 }
 
@@ -54,7 +54,7 @@ async function init(driver: Driver): Promise<void> {
     })
     // GHE doesn't allow cloning public repos through the UI (only GitHub.com has the GitHub importer).
     // These tests expect that sourcegraph/jsonrpc2 is cloned on the GHE instance.
-    await driver.page.goto(`${GHE_BASE_URL}/sourcegraph/jsonrpc2`)
+    await driver.goto(`${GHE_BASE_URL}/sourcegraph/jsonrpc2`)
     if (await driver.page.evaluate(() => document.querySelector('#not-found-search') !== null)) {
         throw new Error('You must clone sourcegraph/jsonrpc2 to your GHE instance to run these tests')
     }

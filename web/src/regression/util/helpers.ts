@@ -99,7 +99,7 @@ async function createTestUser(
         throw new Error('passwordResetURL was empty')
     }
 
-    await driver.page.goto(passwordResetURL)
+    await driver.goto(passwordResetURL)
     await driver.page.keyboard.type(testUserPassword)
     await driver.page.keyboard.down(Key.Enter)
 
@@ -247,9 +247,9 @@ export async function login(
     }: Pick<Config, 'sourcegraphBaseUrl'> & { authProviderDisplayName: string },
     loginToAuthProvider: () => Promise<void>
 ): Promise<void> {
-    await driver.page.goto(sourcegraphBaseUrl + '/-/sign-out')
+    await driver.goto(sourcegraphBaseUrl + '/-/sign-out')
     await driver.newPage()
-    await driver.page.goto(sourcegraphBaseUrl)
+    await driver.goto(sourcegraphBaseUrl)
     await retry(async () => {
         await driver.page.reload()
         await driver.findElementWithText('Sign in with ' + authProviderDisplayName, {

@@ -210,7 +210,7 @@ describe('Code navigation regression test suite', () => {
 
     test('File sidebar, multiple levels of directories', async function() {
         this.timeout(20 * 1000)
-        await driver.page.goto(
+        await driver.goto(
             config.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
         )
         for (const file of ['cmd', 'frontend', 'auth', 'providers', 'providers.go']) {
@@ -227,7 +227,7 @@ describe('Code navigation regression test suite', () => {
     })
 
     test('Symbols sidebar', async () => {
-        await driver.page.goto(
+        await driver.goto(
             config.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
         )
         await driver.findElementWithText('SYMBOLS', {

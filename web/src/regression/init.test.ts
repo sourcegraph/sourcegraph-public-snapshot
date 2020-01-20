@@ -26,7 +26,7 @@ describe('Initialize new instance', () => {
     })
     ;(config.init ? test : test.skip)('Initialize new Sourcegraph instance', async function() {
         this.timeout(30 * 1000)
-        await driver.page.goto(config.sourcegraphBaseUrl)
+        await driver.goto(config.sourcegraphBaseUrl)
         await driver.page.waitForSelector('input[placeholder="Email"]', { timeout: 5 * 1000 })
         await driver.replaceText({
             selector: 'input[name="email"]',

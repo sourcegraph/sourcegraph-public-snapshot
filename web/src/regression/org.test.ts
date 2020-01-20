@@ -94,7 +94,7 @@ describe('Organizations regression test suite', () => {
                 return settingsOrError.quicklinks
             }
 
-            await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/organizations')
+            await driver.goto(config.sourcegraphBaseUrl + '/site-admin/organizations')
             await driver.findElementWithText('Create organization', { action: 'click', wait: { timeout: 2000 } })
             await driver.replaceText({
                 selector: '.e2e-new-org-name-input',

@@ -80,7 +80,7 @@ describe('External services GUI', () => {
             'External service',
             externalServiceName,
             await (async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/external-services')
+                await driver.goto(config.sourcegraphBaseUrl + '/site-admin/external-services')
                 await driver.findElementWithText('Add repositories', { action: 'click', wait: { timeout: 500 } })
                 await driver.findElementWithText('GitHub.com', { action: 'click', wait: { timeout: 500 } })
                 const repoSlugs = ['gorilla/mux']
@@ -119,14 +119,14 @@ describe('External services GUI', () => {
         )
 
         await waitForRepos(gqlClient, ['github-prefix/gorilla/mux'], config)
-        const response = await driver.page.goto(config.sourcegraphBaseUrl + '/github-prefix/gorilla/mux')
+        const response = await driver.goto(config.sourcegraphBaseUrl + '/github-prefix/gorilla/mux')
         if (!response) {
             throw new Error('no response')
         }
         expect(response.status()).toBe(200)
 
         // Redirect
-        await driver.page.goto(config.sourcegraphBaseUrl + '/github.com/gorilla/mux')
+        await driver.goto(config.sourcegraphBaseUrl + '/github.com/gorilla/mux')
         await driver.waitUntilURL(config.sourcegraphBaseUrl + '/github-prefix/gorilla/mux')
     })
 })
@@ -306,7 +306,7 @@ describe('External services permissions', () => {
         )
 
         {
-            const response = await driver.page.goto(
+            const response = await driver.goto(
                 config.sourcegraphBaseUrl + '/github.com/sg-e2e-regression-test-bob/shared-with-amy'
             )
             if (!response) {
@@ -319,7 +319,7 @@ describe('External services permissions', () => {
         })
 
         {
-            const response = await driver.page.goto(
+            const response = await driver.goto(
                 config.sourcegraphBaseUrl + '/github.com/sg-e2e-regression-test-bob/about'
             )
             if (!response) {

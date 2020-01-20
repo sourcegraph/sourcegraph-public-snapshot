@@ -27,7 +27,7 @@ const activationNavBarSelector = '.e2e-activation-nav-item-toggle'
  * from the API, so we use a coarse method for extracting it from the GUI.
  */
 async function getActivationStatus(driver: Driver): Promise<{ complete: number; total: number }> {
-    await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+    await driver.goto(driver.sourcegraphBaseUrl + '/search')
     await driver.page.waitForSelector(activationNavBarSelector)
     await driver.page.click(activationNavBarSelector)
     await delay(2000) // TODO: replace/delete
@@ -174,7 +174,7 @@ describe('Onboarding', () => {
         const statusBarSelector = '.activation-dropdown-button__progress-bar-container'
 
         // Initial status indicator
-        await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+        await driver.goto(config.sourcegraphBaseUrl + '/search')
         await screenshots.verifySelector(
             'initial-progress-bar-is-gray-circle.png',
             'gray circle',
@@ -197,9 +197,7 @@ describe('Onboarding', () => {
         )
 
         // Do a find references
-        await driver.page.goto(
-            config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go'
-        )
+        await driver.goto(config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go')
         // await driver.page.mouse.move(100, 100)
         const defTokenXPath = '//*[contains(@class, "blob-page__blob")]//span[starts-with(text(), "TokenExtractor")]'
         await driver.page.waitForXPath(defTokenXPath)

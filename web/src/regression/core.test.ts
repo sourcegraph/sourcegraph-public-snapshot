@@ -80,7 +80,7 @@ describe('Core functionality regression test suite', () => {
             })
         }
 
-        await driver.page.goto(config.sourcegraphBaseUrl + `/users/${testUsername}/settings`)
+        await driver.goto(config.sourcegraphBaseUrl + `/users/${testUsername}/settings`)
         const previousSettings = await getSettings()
         if (!previousSettings) {
             throw new Error('Previous settings were null')
@@ -153,7 +153,7 @@ describe('Core functionality regression test suite', () => {
             'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
         const displayName = 'Test Display Name'
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
+        await driver.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
         await driver.replaceText({
             selector: '.e2e-user-settings-profile-page__display-name',
             newText: displayName,
@@ -183,7 +183,7 @@ describe('Core functionality regression test suite', () => {
 
     test('2.2.3. User emails page', async () => {
         const testEmail = 'sg-test-account@protonmail.com'
-        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
+        await driver.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
         await driver.replaceText({ selector: '.e2e-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
         await driver.findElementWithText('Add', { action: 'click' })
         await driver.findElementWithText(testEmail, { wait: true })
@@ -198,7 +198,7 @@ describe('Core functionality regression test suite', () => {
     })
 
     test('2.2.4 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
-        await driver.page.goto(config.sourcegraphBaseUrl + `/users/${testUsername}/settings/tokens`)
+        await driver.goto(config.sourcegraphBaseUrl + `/users/${testUsername}/settings/tokens`)
         await driver.findElementWithText('Generate new token', { action: 'click', wait: { timeout: 5000 } })
         await driver.findElementWithText('New access token', { wait: { timeout: 1000 } })
         await driver.replaceText({
@@ -280,7 +280,7 @@ describe('Core functionality regression test suite', () => {
             await overwriteSettings(gqlClient, currentSubjectID, currentSettingsID, oldContents)
         })
 
-        await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+        await driver.goto(config.sourcegraphBaseUrl + '/search')
         await (
             await driver.findElementWithText(quicklinkInfo.name, {
                 selector: 'a',

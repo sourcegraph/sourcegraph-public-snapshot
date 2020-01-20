@@ -192,17 +192,15 @@ describe('Search regression test suite', () => {
         })
 
         test('Global text search with 0 results.', async () => {
-            await driver.page.goto(
-                config.sourcegraphBaseUrl + '/search?q=asdfalksd+jflaksjdflkasjdf&patternType=literal'
-            )
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=asdfalksd+jflaksjdflkasjdf&patternType=literal')
             await driver.page.waitForFunction(hasNoResultsOrError)
         })
         test('Global text search with double-quoted string constant ("error type:") with a few results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 3)
         })
         test('Global text search excluding repository ("error type:") with a few results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"+-repo:google')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"+-repo:google')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
             await driver.page.waitForFunction(() => {
                 const results = Array.from(document.querySelectorAll('.e2e-search-result'))
@@ -217,25 +215,25 @@ describe('Search regression test suite', () => {
             })
         })
         test('Global text search (error) with many results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=error')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Global text search (error count:>1000), expect many results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error+count:1000')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=error+count:1000')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Global text search (repohasfile:copying), expect many results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=repohasfile:copying')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=repohasfile:copying')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 2)
         })
         test('Global text search (repohascommitafter:"5 years ago")', async () => {
-            await driver.page.goto(
+            await driver.goto(
                 config.sourcegraphBaseUrl + '/search?q=repohascommitafter:"5+months+ago"+test&patternType=literal'
             )
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 10)
         })
         test('Global text search for something with more than 1000 results and use "count:1000".', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=.+count:1000')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=.+count:1000')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             await driver.page.addScriptTag({ content: `${getNumResults}` })
             await driver.page.waitForFunction(() => getNumResults() !== null)
@@ -248,48 +246,48 @@ describe('Search regression test suite', () => {
             )
         })
         test('Global text search for a regular expression without indexed search: (index:no ^func.*$), expect many results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=index:no+^func.*$')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=index:no+^func.*$')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Global text search for a regular expression with only indexed search: (index:only ^func.*$), expect many results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=index:only+^func.*$')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=index:only+^func.*$')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Search for a repository by name.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=repo:auth0/go-jwt-middleware$')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=repo:auth0/go-jwt-middleware$')
             await driver.page.waitForFunction(() => {
                 const results = document.querySelectorAll('.e2e-search-result')
                 return results.length === 1 && (results.item(0).textContent || '').includes('go-jwt-middleware')
             })
         })
         test('Single repository, case-sensitive search.', async () => {
-            await driver.page.goto(
+            await driver.goto(
                 config.sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/adjust/go-wrk%24+String+case:yes'
             )
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
         })
         test('Global text search, fork:only, few results', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+router')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+router')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 5)
         })
         test('Global text search, fork:only, 1 result', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+FORK_SENTINEL')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+FORK_SENTINEL')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
         })
         test('Global text search, fork:no, 0 results', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+FORK_SENTINEL')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+FORK_SENTINEL')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
         test('Text search non-master branch, large repository, many results', async () => {
             // The string `var ExecutionEnvironment = require('ExecutionEnvironment');` occurs 10 times on this old branch, but 0 times in current master.
-            await driver.page.goto(
+            await driver.goto(
                 config.sourcegraphBaseUrl +
                     '/search?q=repo:%5Egithub%5C.com/facebook/react%24%400.3-stable+"var+ExecutionEnvironment+%3D+require%28%27ExecutionEnvironment%27%29%3B"'
             )
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 10)
         })
         test('Global text search filtering by language', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=%5Cbfunc%5Cb+lang:js')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=%5Cbfunc%5Cb+lang:js')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
             const filenames: string[] = await driver.page.evaluate(
                 () =>
@@ -309,15 +307,15 @@ describe('Search regression test suite', () => {
             }
         })
         test('Global search for a filename with 0 results', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=file:asdfasdf.go')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=file:asdfasdf.go')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
         test('Global search for a filename with a few results', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=file:router.go')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=file:router.go')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 5)
         })
         test('Global search for a filename with many results', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=file:doc.go')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=file:doc.go')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             await driver.page.addScriptTag({ content: `${getNumResults}` })
             await driver.page.waitForFunction(() => getNumResults() !== null)
@@ -330,17 +328,17 @@ describe('Search regression test suite', () => {
             )
         })
         test('Global symbol search with many results', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+test+count:100')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+test+count:100')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             await driver.page.addScriptTag({ content: `${getNumResults}` })
             await driver.page.waitForFunction(() => (getNumResults() || 0) >= 100)
         })
         test('Global symbol search with 0 results', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+asdfasdf')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+asdfasdf')
             await driver.page.waitForFunction(hasNoResultsOrError)
         })
         test('Global symbol search ("type:symbol ^newroute count:100") with a few results', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+%5Enewroute+count:100')
+            await driver.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+%5Enewroute+count:100')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 2)
         })
         test('Indexed multiline search, many results', async () => {
@@ -349,7 +347,7 @@ describe('Search regression test suite', () => {
                 GQL.SearchPatternType.regexp,
                 false
             )
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Non-indexed multiline search, many results', async () => {
@@ -358,7 +356,7 @@ describe('Search regression test suite', () => {
                 GQL.SearchPatternType.regexp,
                 false
             )
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Indexed multiline search, 0 results', async () => {
@@ -367,7 +365,7 @@ describe('Search regression test suite', () => {
                 GQL.SearchPatternType.regexp,
                 false
             )
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
         test('Non-indexed multiline search, 0 results', async () => {
@@ -376,7 +374,7 @@ describe('Search regression test suite', () => {
                 GQL.SearchPatternType.regexp,
                 false
             )
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
         test('Indexed-only structural search, one or more results', async () => {
@@ -385,7 +383,7 @@ describe('Search regression test suite', () => {
                 GQL.SearchPatternType.structural,
                 false
             )
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
         test('Commit search, nonzero result', async () => {
@@ -394,7 +392,7 @@ describe('Search regression test suite', () => {
                 GQL.SearchPatternType.regexp,
                 false
             )
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
         test('Diff search, nonzero result', async () => {
@@ -403,7 +401,7 @@ describe('Search regression test suite', () => {
                 GQL.SearchPatternType.regexp,
                 false
             )
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
 
@@ -448,7 +446,7 @@ describe('Search regression test suite', () => {
 
         test('Search suggestions', async () => {
             // Repo autocomplete from homepage
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+            await driver.goto(config.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-query-input')
             await driver.replaceText({
                 selector: '.e2e-query-input',
@@ -505,7 +503,7 @@ describe('Search regression test suite', () => {
             ]
             const origQuery = 'jwtmiddleware'
             for (const [filter, token] of filterToToken) {
-                await driver.page.goto(
+                await driver.goto(
                     `${config.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
                 )
                 await driver.findElementWithText(filter, {

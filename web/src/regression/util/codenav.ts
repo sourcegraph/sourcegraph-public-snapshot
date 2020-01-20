@@ -24,7 +24,7 @@ export async function testCodeNavigation(
 ): Promise<void> {
     for (const { repoRev, files } of testCases) {
         for (const { path, locations } of files) {
-            await driver.page.goto(config.sourcegraphBaseUrl + `/${repoRev}/-/blob${path}`)
+            await driver.goto(config.sourcegraphBaseUrl + `/${repoRev}/-/blob${path}`)
             await driver.page.waitForSelector('.e2e-blob')
             for (const { line, token, expectedHoverContains, expectedDefinition, expectedReferences } of locations) {
                 const tokenEl = await findTokenElement(driver, line, token)

@@ -36,7 +36,7 @@ async function bitbucketLogin({ page }: Driver): Promise<void> {
  */
 async function importBitbucketRepo(driver: Driver): Promise<void> {
     // Import repo (idempotent)
-    await driver.page.goto(BITBUCKET_BASE_URL + '/plugins/servlet/import-repository/SOURCEGRAPH')
+    await driver.goto(BITBUCKET_BASE_URL + '/plugins/servlet/import-repository/SOURCEGRAPH')
     await driver.page.waitForSelector('button[data-source="GIT"]')
     await driver.page.click('button[data-source="GIT"]')
     await driver.page.waitForSelector('input[name="url"]')
@@ -46,7 +46,7 @@ async function importBitbucketRepo(driver: Driver): Promise<void> {
     await driver.page.click('.next-step [name="connect"]')
     await retry(async () => {
         const browsePage = '/projects/SOURCEGRAPH/repos/jsonrpc2/browse'
-        await driver.page.goto(BITBUCKET_BASE_URL + browsePage)
+        await driver.goto(BITBUCKET_BASE_URL + browsePage)
         // Retry until not redirected to the "import in progress" page anymore
         expect(new URL(driver.page.url()).pathname).toBe(new URL(browsePage, BITBUCKET_BASE_URL).pathname)
         // Ensure this is not a 404 page
@@ -60,7 +60,7 @@ async function importBitbucketRepo(driver: Driver): Promise<void> {
 async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     await driver.ensureHasCORSOrigin({ corsOriginURL: new URL(BITBUCKET_BASE_URL).origin })
     await bitbucketLogin(driver)
-    await driver.page.goto(BITBUCKET_BASE_URL + '/plugins/servlet/upm?source=side_nav_manage_addons')
+    await driver.goto(BITBUCKET_BASE_URL + '/plugins/servlet/upm?source=side_nav_manage_addons')
     await driver.page.waitForSelector('#upm-manage-plugins-user-installed')
     const sourcegraphPluginSelector = '.upm-plugin[data-key="com.sourcegraph.plugins.sourcegraph-bitbucket"]'
     if (await driver.page.$(sourcegraphPluginSelector)) {

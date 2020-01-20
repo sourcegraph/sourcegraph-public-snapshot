@@ -225,7 +225,7 @@ async function ensureUpload(
 ): Promise<void> {
     const pendingUploadStateMessages = ['Upload is queued.', 'Upload is currently being processed...']
 
-    await driver.page.goto(uploadUrl)
+    await driver.goto(uploadUrl)
     while (true) {
         // Keep reloading upload page until the upload is terminal (not queued, not processed)
         const text = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
@@ -240,7 +240,7 @@ async function ensureUpload(
     const text = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
     expect(text).toEqual('Upload completed successfully.')
 
-    await driver.page.goto(`${config.sourcegraphBaseUrl}/${repository}/-/settings/code-intelligence`)
+    await driver.goto(`${config.sourcegraphBaseUrl}/${repository}/-/settings/code-intelligence`)
 
     const commitElem = await driver.page.waitForSelector('.e2e-upload-commit')
     const actualCommit = await commitElem.evaluate(elem => elem.textContent)

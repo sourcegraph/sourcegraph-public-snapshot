@@ -105,7 +105,7 @@ describe('Sourcegraph extensions regression test suite', () => {
             },
             graphQLClient
         )
-        await driver.page.goto(
+        await driver.goto(
             new URL(
                 'github.com/theupdateframework/notary@62258bc0beb3bdc41de1e927a57acaee06bebe4b/-/blob/cmd/notary/delegations.go#L60',
                 config.sourcegraphBaseUrl
@@ -151,7 +151,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         )
 
         // Visit a file that contains statsd calls
-        await driver.page.goto(
+        await driver.goto(
             new URL(
                 'github.com/GetStream/Winds@acd1f5661aae461d33a28c55b54015c20ff49ed7/-/blob/api/src/workers/podcast.js#L97',
                 config.sourcegraphBaseUrl
@@ -183,7 +183,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         )
 
         // Visit a file containing throw statements that should be matched by the Sentry extension
-        await driver.page.goto(
+        await driver.goto(
             new URL(
                 'github.com/codecov/sourcegraph-codecov@f398e73d3e8f49834c09050d1898369762b2c51e/-/blob/src/uri.ts#L19-33',
                 config.sourcegraphBaseUrl

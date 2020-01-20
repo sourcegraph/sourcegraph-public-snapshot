@@ -21,15 +21,15 @@ const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegrap
 /**
  * Logs into Phabricator.
  */
-async function phabricatorLogin({ page }: Driver): Promise<void> {
-    await page.goto(PHABRICATOR_BASE_URL)
-    await page.waitForSelector('.phabricator-wordmark')
-    if (await page.$('input[name=username]')) {
-        await page.type('input[name=username]', PHABRICATOR_USERNAME)
-        await page.type('input[name=password]', PHABRICATOR_PASSWORD)
-        await page.click('button[name="__submit__"]')
+async function phabricatorLogin(driver: Driver): Promise<void> {
+    await driver.goto(PHABRICATOR_BASE_URL)
+    await driver.page.waitForSelector('.phabricator-wordmark')
+    if (await driver.page.$('input[name=username]')) {
+        await driver.page.type('input[name=username]', PHABRICATOR_USERNAME)
+        await driver.page.type('input[name=password]', PHABRICATOR_PASSWORD)
+        await driver.page.click('button[name="__submit__"]')
     }
-    await page.waitForSelector('.phabricator-core-user-menu')
+    await driver.page.waitForSelector('.phabricator-core-user-menu')
 }
 
 /**
@@ -37,7 +37,7 @@ async function phabricatorLogin({ page }: Driver): Promise<void> {
  */
 async function waitUntilRepositoryCloned(driver: Driver): Promise<void> {
     await retry(async () => {
-        await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/status/')
+        await driver.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/status/')
         expect(
             await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.phui-status-item-target')].map(element => element.textContent!.trim())
@@ -53,7 +53,7 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     // These steps are idempotent as they will error if the same repo already exists
 
     // Add new repo to Diffusion
-    await driver.page.goto(PHABRICATOR_BASE_URL + '/diffusion/edit/?vcs=git')
+    await driver.goto(PHABRICATOR_BASE_URL + '/diffusion/edit/?vcs=git')
     await driver.page.waitForSelector('input[name=shortName]')
     await driver.page.type('input[name=name]', 'sourcegraph/jsonrpc2')
     await driver.page.type('input[name=callsign]', 'JRPC')
@@ -61,7 +61,7 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     await driver.page.click('button[type=submit]')
 
     // Configure it to clone github.com/sourcegraph/jsonrpc2
-    await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/uri/edit/')
+    await driver.goto(PHABRICATOR_BASE_URL + '/source/jrpc/uri/edit/')
     await driver.page.waitForSelector('input[name=uri]')
     await driver.page.type('input[name=uri]', 'https://github.com/sourcegraph/jsonrpc2.git')
     await driver.page.select('select[name=io]', 'observe')
@@ -69,7 +69,7 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     await driver.page.click('button[type="submit"][name="__submit__"]')
 
     // Activate the repo and wait for it to clone
-    await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/')
+    await driver.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/')
     const activateButton = await driver.page.waitForSelector('a[href="/source/jrpc/edit/activate/"]')
     const buttonLabel = ((await (await activateButton.getProperty('textContent')).jsonValue()) as string).trim()
     // Don't click if it says "Deactivate Repository"
@@ -84,7 +84,7 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
 
 async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     // Abort if plugin is not installed
-    await driver.page.goto(PHABRICATOR_BASE_URL + '/config/application/')
+    await driver.goto(PHABRICATOR_BASE_URL + '/config/application/')
     try {
         await driver.page.waitForSelector('a[href="/config/group/sourcegraph/"]', { timeout: 2000 })
     } catch (err) {
@@ -94,7 +94,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     }
 
     // Configure the Sourcegraph URL
-    await driver.page.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.url/')
+    await driver.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.url/')
     await driver.replaceText({
         selector: '[name="value"]',
         newText: sourcegraphBaseUrl,
@@ -102,7 +102,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     await Promise.all([driver.page.waitForNavigation(), driver.page.click('button[type="submit"]')])
 
     // Configure the repository mappings
-    await driver.page.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.callsignMappings/')
+    await driver.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.callsignMappings/')
     const callSignConfigStr = await driver.page.evaluate(() =>
         document.querySelector<HTMLTextAreaElement>('textarea[name="value"]')!.value.trim()
     )
@@ -120,7 +120,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     }
 
     // Enable Sourcegraph native integration
-    await driver.page.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.enabled/')
+    await driver.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.enabled/')
     await driver.page.select('select[name="value"]', 'true')
     await Promise.all([driver.page.waitForNavigation(), driver.page.click('button[type="submit"]')])
 }
@@ -165,7 +165,7 @@ describe('Sourcegraph Phabricator extension', () => {
     saveScreenshotsUponFailures(() => driver.page)
 
     it('adds "View on Sourcegraph" buttons to files', async () => {
-        await driver.page.goto(
+        await driver.goto(
             PHABRICATOR_BASE_URL + '/source/jrpc/browse/master/call_opt.go;35a74f039c6a54af5bf0402d8f7da046c3f63ba2'
         )
         await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
@@ -181,7 +181,7 @@ describe('Sourcegraph Phabricator extension', () => {
     })
 
     it('shows hovers when clicking a token', async () => {
-        await driver.page.goto(
+        await driver.goto(
             PHABRICATOR_BASE_URL + '/source/jrpc/browse/master/call_opt.go;35a74f039c6a54af5bf0402d8f7da046c3f63ba2'
         )
         await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
