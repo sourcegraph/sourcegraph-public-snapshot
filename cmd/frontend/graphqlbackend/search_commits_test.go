@@ -11,8 +11,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-
-	"github.com/kylelemons/godebug/pretty"
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -83,7 +82,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 			matches:     []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
 		},
 	}; !reflect.DeepEqual(results, want) {
-		t.Errorf("results\ngot  %v\nwant %v\ndiff: %v", results, want, pretty.Compare(results, want))
+		t.Errorf("results\ngot  %v\nwant %v\ndiff: %v", results, want, cmp.Diff(results, want))
 	}
 	if limitHit {
 		t.Error("limitHit")

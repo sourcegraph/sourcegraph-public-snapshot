@@ -105,10 +105,13 @@ func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
 	client.Password = c.Password
 	client.Token = c.Token
 	if c.Authorization != nil {
-		client.SetOAuth(
+		err := client.SetOAuth(
 			c.Authorization.Oauth.ConsumerKey,
 			c.Authorization.Oauth.SigningKey,
 		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return client, nil
 }

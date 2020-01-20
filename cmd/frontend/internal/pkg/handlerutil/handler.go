@@ -54,8 +54,8 @@ func (h HandlerWithErrorReturn) ServeHTTP(w http.ResponseWriter, r *http.Request
 			stack := make([]byte, 1024*1024)
 			n := runtime.Stack(stack, false)
 			stack = stack[:n]
-			io.WriteString(os.Stderr, "\nstack trace:\n")
-			os.Stderr.Write(stack)
+			_, _ = io.WriteString(os.Stderr, "\nstack trace:\n")
+			_, _ = os.Stderr.Write(stack)
 
 			err := fmt.Errorf("panic: %v\n\nstack trace:\n%s", e, stack)
 			status := http.StatusInternalServerError

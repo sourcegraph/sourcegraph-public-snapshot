@@ -1,5 +1,6 @@
-import { Badged, Location } from '@sourcegraph/extension-api-types'
+import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Badged } from 'sourcegraph'
 import H from 'history'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'

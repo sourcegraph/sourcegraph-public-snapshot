@@ -125,7 +125,6 @@ func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*Repo, erro
 		URI:          string(reposource.AWSRepoName("", r.Name)),
 		ExternalRepo: awscodecommit.ExternalRepoSpec(r, serviceID),
 		Description:  r.Description,
-		Enabled:      true,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,

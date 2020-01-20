@@ -10,7 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kylelemons/godebug/pretty"
+	"github.com/google/go-cmp/cmp/cmpopts"
+
+	"github.com/google/go-cmp/cmp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -408,7 +410,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 				t.Fatalf("ListExternalServices error: %s", err)
 			}
 
-			if diff := pretty.Compare(have, want); diff != "" {
+			if diff := cmp.Diff(have, []*repos.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("ListExternalServices:\n%s", diff)
 			}
 
@@ -426,7 +428,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 				t.Errorf("UpsertExternalServices error: %s", err)
 			} else if have, err = tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{}); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
-			} else if diff := pretty.Compare(have, want); diff != "" {
+			} else if diff := cmp.Diff(have, []*repos.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListExternalServices:\n%s", diff)
 			}
 
@@ -437,7 +439,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 				t.Errorf("UpsertExternalServices error: %s", err)
 			} else if have, err = tx.ListExternalServices(ctx, args); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
-			} else if diff := pretty.Compare(have, repos.ExternalServices{}); diff != "" {
+			} else if diff := cmp.Diff(have, []*repos.ExternalService(nil), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListExternalServices:\n%s", diff)
 			}
 		}))
@@ -465,7 +467,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "github.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -486,7 +487,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -507,7 +507,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "bitbucketserver.mycorp.com/foo/bar",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -528,7 +527,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			URI:         "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 			Description: "The description",
 			Language:    "barlang",
-			Enabled:     true,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
@@ -563,7 +561,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 		gitoliteRepo := repos.Repo{
 			Name:      "gitolite.mycorp.com/bar",
 			URI:       "gitolite.mycorp.com/bar",
-			Enabled:   true,
 			CreatedAt: now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "bar",
@@ -616,7 +613,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("ListRepos error: %s", err)
 			}
 
-			if diff := pretty.Compare(have, want); diff != "" {
+			if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("ListRepos:\n%s", diff)
 			}
 
@@ -637,7 +634,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
-			} else if diff := pretty.Compare(have, want); diff != "" {
+			} else if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
@@ -648,7 +645,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertRepos error: %s", err)
 			} else if have, err = tx.ListRepos(ctx, args); err != nil {
 				t.Errorf("ListRepos error: %s", err)
-			} else if diff := pretty.Compare(have, repos.Repos{}); diff != "" {
+			} else if diff := cmp.Diff(have, []*repos.Repo(nil), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
@@ -657,7 +654,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
-			} else if diff := pretty.Compare(have, want); diff != "" {
+			} else if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
@@ -673,7 +670,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertRepos want error: %s", err)
 			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
-			} else if diff := pretty.Compare(have, want); diff != "" {
+			} else if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			} else if sameIDs := want.Filter(hasID(deleted.IDs()...)); len(sameIDs) > 0 {
 				t.Errorf("ListRepos returned IDs of soft deleted repos: %v", sameIDs.Names())
@@ -700,7 +697,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("ListRepos error: %s", err)
 			}
 
-			if diff := pretty.Compare(have, all); diff != "" {
+			if diff := cmp.Diff(have, []*repos.Repo(all), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("ListRepos:\n%s", diff)
 			}
 
@@ -711,7 +708,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertRepos error: %s", err)
 			} else if have, err = tx.ListRepos(ctx, args); err != nil {
 				t.Errorf("ListRepos error: %s", err)
-			} else if diff := pretty.Compare(have, repos.Repos{}); diff != "" {
+			} else if diff := cmp.Diff(have, []*repos.Repo(nil), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
@@ -728,7 +725,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
 				t.Fatalf("ListRepos error: %s", err)
 			}
-			if diff := pretty.Compare(have, want); diff != "" {
+			if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("ListRepos:\n%s", diff)
 			}
 		}))
@@ -846,7 +843,6 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 
 	gitoliteRepo := repos.Repo{
 		Name:      "gitolite.mycorp.com/bar",
-		Enabled:   true,
 		CreatedAt: now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
@@ -1033,7 +1029,6 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 		URI:         "github.com/foo/bar",
 		Description: "The description",
 		Language:    "barlang",
-		Enabled:     true,
 		CreatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAA==",
@@ -1080,7 +1075,7 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 					}
 
 					if have := repos.Repos(listed); !reflect.DeepEqual(have, want) {
-						t.Fatalf("page=%d, limit=%d: %s", page, limit, pretty.Compare(have, want))
+						t.Fatalf("page=%d, limit=%d: %s", page, limit, cmp.Diff(have, want))
 					}
 				}
 			}

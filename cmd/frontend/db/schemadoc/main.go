@@ -151,7 +151,9 @@ func main() {
 		log.Fatal(err)
 	}
 	if len(os.Args) > 1 {
-		ioutil.WriteFile(os.Args[1], []byte(out), 0644)
+		if err := ioutil.WriteFile(os.Args[1], []byte(out), 0644); err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		fmt.Print(out)
 	}

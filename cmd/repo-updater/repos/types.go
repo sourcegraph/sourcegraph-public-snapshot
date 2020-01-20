@@ -547,9 +547,6 @@ type Repo struct {
 	Language string
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
-	// Enabled is whether the repository is enabled. Disabled repositories are
-	// not accessible by users (except site admins).
-	Enabled bool
 	// Archived is whether the repository has been archived.
 	Archived bool
 	// CreatedAt is when this repository was created on Sourcegraph.

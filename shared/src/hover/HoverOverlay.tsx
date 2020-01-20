@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { castArray, isEqual, upperFirst } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-import { MarkupContent, Badged } from 'sourcegraph'
+import { Badged, MarkupContent } from 'sourcegraph'
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -212,7 +212,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                                         <div
                                                             className={classNames(
                                                                 'hover-overlay__badge',
-                                                                'e2e-badge',
+                                                                'e2e-hover-badge',
                                                                 offsetBadge && 'hover-overlay__badge--offset'
                                                             )}
                                                         >

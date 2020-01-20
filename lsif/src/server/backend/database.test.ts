@@ -116,7 +116,8 @@ describe('mapRangesToInternalLocations', () => {
     it('should map ranges to locations', () => {
         const dump = {
             id: 42,
-            repository: 'test-repo',
+            repositoryId: 1234,
+            repositoryNameAtUpload: 'foo/bar',
             commit: 'deadbeef',
             root: '',
             filename: '',

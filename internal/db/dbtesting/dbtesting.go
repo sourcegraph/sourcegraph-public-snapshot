@@ -26,12 +26,12 @@ func useFastPasswordMocks() {
 	// We can't care about security in tests, we care about speed.
 	MockHashPassword = func(password string) (sql.NullString, error) {
 		h := fnv.New64()
-		io.WriteString(h, password)
+		_, _ = io.WriteString(h, password)
 		return sql.NullString{Valid: true, String: strconv.FormatUint(h.Sum64(), 16)}, nil
 	}
 	MockValidPassword = func(hash, password string) bool {
 		h := fnv.New64()
-		io.WriteString(h, password)
+		_, _ = io.WriteString(h, password)
 		return hash == strconv.FormatUint(h.Sum64(), 16)
 	}
 }
@@ -94,7 +94,9 @@ func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
 	var tables []string
 	for rows.Next() {
 		var table string
-		rows.Scan(&table)
+		if err := rows.Scan(&table); err != nil {
+			t.Fatal(err)
+		}
 		tables = append(tables, table)
 	}
 	if err := rows.Close(); err != nil {

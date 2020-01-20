@@ -1,17 +1,20 @@
+import expect from 'expect'
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions, PageFnOptions } from 'puppeteer'
+import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions, PageFnOptions, ConsoleMessage } from 'puppeteer'
 import { Key } from 'ts-key-enum'
-import * as util from 'util'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery, ExternalServiceKind } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
+import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
 import { readFile } from 'mz/fs'
 import { Settings } from '../settings/settings'
+import { fromEvent } from 'rxjs'
+import { filter, map, concatAll } from 'rxjs/operators'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -56,6 +59,11 @@ interface FindElementOptions {
      * Specifies how exact the search criterion is.
      */
     fuzziness?: 'exact' | 'prefix' | 'space-prefix' | 'contains'
+
+    /**
+     * Specifies whether to wait (and how long) for the element to appear.
+     */
+    wait?: PageFnOptions | boolean
 }
 
 function findElementRegexpStrings(
@@ -86,6 +94,10 @@ function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement
     for (const regexpString of regexps) {
         const regexp = new RegExp(regexpString)
         for (const el of document.querySelectorAll<HTMLElement>(tag)) {
+            if (!el.offsetParent) {
+                // Ignore hidden elements
+                continue
+            }
             if (el.innerText && el.innerText.match(regexp)) {
                 return el
             }
@@ -484,7 +496,7 @@ export class Driver {
      */
     public async findElementWithText(
         text: string,
-        options: FindElementOptions & { wait?: PageFnOptions | boolean } = {}
+        options: FindElementOptions & { action?: 'click' } = {}
     ): Promise<puppeteer.ElementHandle<Element>> {
         const { selector: tagName, fuzziness, wait } = options
         const tag = tagName || '*'
@@ -499,42 +511,43 @@ export class Driver {
             )
         }
 
-        const handlePromise = wait
-            ? this.page
-                  .waitForFunction(findElementMatchingRegexps, typeof wait === 'object' ? wait : {}, tag, regexps)
-                  .catch(err => {
-                      throw notFoundErr(err)
-                  })
-            : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
+        return retry(
+            async () => {
+                const handlePromise = wait
+                    ? this.page
+                          .waitForFunction(
+                              findElementMatchingRegexps,
+                              typeof wait === 'object' ? wait : {},
+                              tag,
+                              regexps
+                          )
+                          .catch(err => {
+                              throw notFoundErr(err)
+                          })
+                    : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
 
-        const el = (await handlePromise).asElement()
-        if (!el) {
-            throw notFoundErr()
-        }
-        return el
+                const el = (await handlePromise).asElement()
+                if (!el) {
+                    throw notFoundErr()
+                }
+
+                if (options.action === 'click') {
+                    await el.click()
+                }
+                return el
+            },
+            {
+                retries: options.action === 'click' ? 3 : 0,
+                minTimeout: 100,
+                maxTimeout: 100,
+                factor: 1,
+                maxRetryTime: 500,
+            }
+        )
     }
 
     public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
         await this.page.waitForFunction(url => document.location.href === url, options, url)
-    }
-
-    public async goToURLWithInvalidTLS(url: string): Promise<void> {
-        try {
-            await this.page.goto(url)
-        } catch (err) {
-            if (!err.message.includes('net::ERR_CERT_AUTHORITY_INVALID')) {
-                throw err
-            }
-            await this.page.waitForSelector('#details-button')
-            await this.page.click('#details-button')
-            await (
-                await this.findElementWithText('Proceed to', {
-                    selector: 'a',
-                    wait: { timeout: 2000 },
-                })
-            ).click()
-        }
-        await this.page.waitForSelector('.monaco-editor', { timeout: 2000 })
     }
 }
 
@@ -590,19 +603,20 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
     })
     const page = await browser.newPage()
     if (logBrowserConsole) {
-        page.on('console', message => {
-            if (message.text().includes('Download the React DevTools')) {
-                return
-            }
-            if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
-                return
-            }
-            if (message.text().includes('Warning: componentWillReceiveProps has been renamed')) {
-                // This warning applies to our dependencies and leads to logspam on every page.
-                return
-            }
-            console.log('Browser console:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))
-        })
+        fromEvent<ConsoleMessage>(page, 'console')
+            .pipe(
+                filter(
+                    message =>
+                        !message.text().includes('Download the React DevTools') &&
+                        !message.text().includes('[HMR]') &&
+                        !message.text().includes('[WDS]') &&
+                        !message.text().includes('Warning: componentWillReceiveProps has been renamed')
+                ),
+                // Immediately format remote handles to strings, but maintain order.
+                map(formatPuppeteerConsoleMessage),
+                concatAll()
+            )
+            .subscribe(formattedLine => console.log(formattedLine))
     }
     return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)
 }

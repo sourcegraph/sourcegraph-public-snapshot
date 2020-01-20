@@ -7,6 +7,10 @@ import (
 )
 
 // ExecRequest is a request to execute a command inside a git repository.
+//
+// Note that this request is deserialized by both gitserver and the frontend's
+// internal proxy route and any major change to this structure will need to
+// be reconciled in both places.
 type ExecRequest struct {
 	Repo api.RepoName `json:"repo"`
 

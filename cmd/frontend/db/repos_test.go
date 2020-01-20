@@ -84,7 +84,7 @@ func TestRepos_Count(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -94,13 +94,13 @@ func TestRepos_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
+	repos, err := Repos.List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)

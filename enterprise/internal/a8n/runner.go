@@ -253,7 +253,10 @@ func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, git
 		if err != nil {
 			return errors.Wrap(err, "getting campaign")
 		}
-		return RunChangesetJob(ctx, clock, s, gitClient, nil, c, &job)
+		_ = RunChangesetJob(ctx, clock, s, gitClient, nil, c, &job)
+		// We ignore the error here so that we don't roll back the transaction
+		// RunChangesetJob will save the error in the job row
+		return nil
 	}
 	worker := func() {
 		for {
@@ -263,7 +266,7 @@ func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, git
 			default:
 				didRun, err := s.ProcessPendingChangesetJobs(context.Background(), process)
 				if err != nil {
-					log15.Error("Running campaign job", "err", err)
+					log15.Error("Running changeset job", "err", err)
 				}
 				// Back off on error or when no jobs available
 				if err != nil || !didRun {

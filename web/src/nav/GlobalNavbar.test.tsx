@@ -22,6 +22,8 @@ const PROPS: GlobalNavbar['props'] = {
     themePreference: ThemePreference.Light,
     patternType: GQL.SearchPatternType.literal,
     setPatternType: () => undefined,
+    caseSensitive: false,
+    setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     settingsCascade: {} as any,
     showCampaigns: false,
@@ -32,6 +34,7 @@ const PROPS: GlobalNavbar['props'] = {
     interactiveSearchMode: false,
     toggleSearchMode: () => undefined,
     onFiltersInQueryChange: () => undefined,
+    smartSearchField: false,
 }
 
 describe('GlobalNavbar', () => {

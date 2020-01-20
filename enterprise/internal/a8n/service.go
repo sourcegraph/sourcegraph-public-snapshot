@@ -635,18 +635,18 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) 
 	return syncer.SyncChangesetsWithSources(ctx, bySource)
 }
 
-// CreateChangesetJob creates a ChangesetJob for the CampaignJob with the given
-// ID. The CampaignJob has to belong to a CampaignPlan that was attached to a
-// Campaign.
-func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64) (err error) {
-	traceTitle := fmt.Sprintf("campaignJob: %d", id)
+// CreateChangesetJobForCampaignJob creates a ChangesetJob for the
+// CampaignJob with the given ID. The CampaignJob has to belong to a
+// CampaignPlan that was attached to a Campaign.
+func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, campaignJobID int64) (err error) {
+	traceTitle := fmt.Sprintf("campaignJob: %d", campaignJobID)
 	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForCampaignJob", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	job, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: id})
+	job, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: campaignJobID})
 	if err != nil {
 		return err
 	}
@@ -666,19 +666,21 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64
 		CampaignID:    campaign.ID,
 		CampaignJobID: job.ID,
 	})
-	if existing != nil && err == nil {
-		return nil
-	}
 	if err != nil && err != ErrNoResults {
 		return err
 	}
-
-	changesetJob := &a8n.ChangesetJob{CampaignID: campaign.ID, CampaignJobID: job.ID}
+	if existing != nil {
+		// Already exists
+		return nil
+	}
+	changesetJob := &a8n.ChangesetJob{
+		CampaignID:    campaign.ID,
+		CampaignJobID: job.ID,
+	}
 	err = tx.CreateChangesetJob(ctx, changesetJob)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 

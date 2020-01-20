@@ -78,6 +78,13 @@ func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
 			location:   "/sign-in?returnTo=%2F",
 		},
 		{
+			name:       "no_auth__raw_route",
+			req:        httptest.NewRequest("GET", "/test-repo/-/raw/README.md", nil),
+			allowed:    false,
+			wantStatus: http.StatusUnauthorized,
+			location:   "/sign-in?returnTo=%2Ftest-repo%2F-%2Fraw%2FREADME.md",
+		},
+		{
 			name:       "no_auth__api_route",
 			req:        httptest.NewRequest("GET", "/.api/graphql", nil),
 			allowed:    false,

@@ -14,13 +14,14 @@
 
     &__close-button {
         position: absolute;
-        top: 0;
-        right: 0;
+        top: 1px;
+        right: 1px;
         padding: 0.25rem;
-        border-radius: 0;
+        border-radius: 100%;
         background: transparent;
         z-index: 1;
         border: none;
+        background-color: rgba($body-bg-color-dark, 0.8);
         opacity: 0;
         transition: opacity $animation-duration ease-in-out;
     }
@@ -87,8 +88,8 @@
 
     &__badge {
         position: absolute;
-        top: 0;
-        right: 0;
+        top: 1px;
+        right: 1px;
         width: 100%;
         text-align: right;
     }
@@ -130,5 +131,13 @@
     &__alert-below {
         margin: 0;
         overflow-y: auto;
+    }
+}
+
+.theme-light {
+    .hover-overlay {
+        &__close-button {
+            background-color: rgba($body-bg-color-light, 0.8);
+        }
     }
 }

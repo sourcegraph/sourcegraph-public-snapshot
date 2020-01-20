@@ -30,7 +30,7 @@ import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import { searchQueryForRepoRev, PatternTypeProps } from '../search'
+import { searchQueryForRepoRev, PatternTypeProps, CaseSensitivityProps } from '../search'
 import { submitSearch, QueryState } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
@@ -135,7 +135,8 @@ interface Props
         ThemeProps,
         EventLoggerProps,
         ActivationProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        CaseSensitivityProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string
@@ -374,6 +375,7 @@ export class TreePage extends React.PureComponent<Props, State> {
             this.getQueryPrefix() + this.state.queryState.query,
             this.props.filePath ? 'tree' : 'repo',
             this.props.patternType,
+            this.props.caseSensitive,
             this.props.activation
         )
     }

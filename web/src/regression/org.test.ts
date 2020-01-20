@@ -1,3 +1,4 @@
+import { describe, before, after, test } from 'mocha'
 import { Key } from 'ts-key-enum'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
@@ -10,14 +11,11 @@ import { PlatformContext } from '../../../shared/src/platform/context'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { parseJSONCOrError } from '../../../shared/src/util/jsonc'
 import { Settings, QuickLink } from '../schema/settings.schema'
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import delay from 'delay'
-
-/**
- * @jest-environment node
- */
+import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { isErrorLike } from '../../../shared/src/util/errors'
 
 async function deleteOrganizationByName(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
@@ -50,7 +48,7 @@ describe('Organizations regression test suite', () => {
         let driver: Driver
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
-        beforeAll(async () => {
+        before(async () => {
             ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
             resourceManager.add(
                 'User',
@@ -68,7 +66,10 @@ describe('Organizations regression test suite', () => {
             await setUserSiteAdmin(gqlClient, user.id, true)
             await deleteOrganizationByName(gqlClient, testOrg.name)
         })
-        afterAll(async () => {
+
+        saveScreenshotsUponFailures(() => driver.page)
+
+        after(async () => {
             if (!config.noCleanup) {
                 await resourceManager.destroyAll()
             }
@@ -94,7 +95,7 @@ describe('Organizations regression test suite', () => {
             }
 
             await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/organizations')
-            await (await driver.findElementWithText('Create organization', { wait: { timeout: 2000 } })).click()
+            await driver.findElementWithText('Create organization', { action: 'click', wait: { timeout: 2000 } })
             await driver.replaceText({
                 selector: '.e2e-new-org-name-input',
                 newText: testOrg.name,
@@ -103,7 +104,7 @@ describe('Organizations regression test suite', () => {
                 selector: '.e2e-new-org-display-name-input',
                 newText: testOrg.displayName,
             })
-            await (await driver.findElementWithText('Create organization')).click()
+            await driver.findElementWithText('Create organization', { action: 'click' })
             resourceManager.add('Organization', testOrg.name, () => deleteOrganizationByName(gqlClient, testOrg.name))
             await driver.page.waitForSelector('.monaco-editor')
             await driver.replaceText({
@@ -118,7 +119,7 @@ describe('Organizations regression test suite', () => {
             await driver.page.keyboard.press('i')
             await driver.page.keyboard.up(Key.Shift)
             await driver.page.keyboard.up(Key.Control)
-            await (await driver.findElementWithText('Save changes')).click()
+            await driver.findElementWithText('Save changes', { action: 'click' })
             await delay(500) // Wait for save
             await driver.findElementWithText('Save changes')
 
@@ -137,12 +138,12 @@ describe('Organizations regression test suite', () => {
             }
 
             // Remove user from org
-            await (await driver.findElementWithText('Members')).click()
+            await driver.findElementWithText('Members', { action: 'click' })
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             driver.page.once('dialog', async dialog => {
                 await dialog.accept()
             })
-            await (await driver.findElementWithText('Leave organization', { wait: { timeout: 1000 } })).click()
+            await driver.findElementWithText('Leave organization', { action: 'click', wait: { timeout: 1000 } })
 
             await driver.page.waitForFunction(() => !document.body.innerText.includes('Leave organization'))
 
@@ -170,103 +171,100 @@ describe('Organizations regression test suite', () => {
             'testUserPassword',
             'logBrowserConsole'
         )
-        afterAll(async () => {
+        after(async () => {
             if (!config.noCleanup) {
                 await resourceManager.destroyAll()
             }
         })
 
-        test(
-            'auth.userOrgMap',
-            async () => {
-                if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0') {
-                    throw new Error(
-                        'You must set environment variable NODE_TLS_REJECT_UNAUTHORIZED=0 when running this test.'
-                    )
-                }
-
-                const testUser1 = {
-                    username: 'test-org-user-1',
-                    email: 'beyang+test-org-user-1@sourcegraph.com',
-                }
-                const testOrg = {
-                    name: 'test-org-2',
-                    displayName: 'Test Org 2',
-                }
-                const gqlClient = createGraphQLClient({
-                    baseUrl: config.sourcegraphBaseUrl,
-                    token: config.sudoToken,
-                    sudoUsername: config.sudoUsername,
-                })
-                const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
-
-                // Initial state: no auth.userOrgMap property
-                resourceManager.add(
-                    'Configuration',
-                    'auth.userOrgMap',
-                    await editSiteConfig(gqlClient, contents =>
-                        jsoncEdit.removeProperty(contents, ['auth.userOrgMap'], formattingOptions)
-                    )
+        test('auth.userOrgMap', async function() {
+            this.timeout(120 * 1000)
+            if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0') {
+                throw new Error(
+                    'You must set environment variable NODE_TLS_REJECT_UNAUTHORIZED=0 when running this test.'
                 )
+            }
 
-                // Retry, because the configuration update endpoint is eventually consistent
-                let lastCreatedOrg: GQL.IOrg
-                await retry(
-                    async () => {
-                        // Create org
-                        const createdOrg = resourceManager.add(
-                            'Organization',
-                            testOrg.name,
-                            await ensureNewOrganization(gqlClient, testOrg)
-                        )
-                        lastCreatedOrg = createdOrg
+            const testUser1 = {
+                username: 'test-org-user-1',
+                email: 'beyang+test-org-user-1@sourcegraph.com',
+            }
+            const testOrg = {
+                name: 'test-org-2',
+                displayName: 'Test Org 2',
+            }
+            const gqlClient = createGraphQLClient({
+                baseUrl: config.sourcegraphBaseUrl,
+                token: config.sudoToken,
+                sudoUsername: config.sudoUsername,
+            })
+            const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
 
-                        // Create user
-                        resourceManager.add(
-                            'User',
-                            testUser1.username,
-                            await ensureNewUser(gqlClient, testUser1.username, testUser1.email)
-                        )
-
-                        // Check that user is not part of org
-                        {
-                            const user = await getUser(gqlClient, testUser1.username)
-                            if (!user) {
-                                throw new Error(`user ${testUser1.username} wasn't created`)
-                            }
-                            if (user.organizations.nodes.some(org => org.id === createdOrg.id)) {
-                                throw new Error(`user ${testUser1.username} should not be part of org ${testOrg.name}`)
-                            }
-                        }
-                    },
-                    { retries: 3 }
-                )
-
-                // Set auth.userOrgMap
+            // Initial state: no auth.userOrgMap property
+            resourceManager.add(
+                'Configuration',
+                'auth.userOrgMap',
                 await editSiteConfig(gqlClient, contents =>
-                    jsoncEdit.setProperty(contents, ['auth.userOrgMap'], { '*': [testOrg.name] }, formattingOptions)
+                    jsoncEdit.removeProperty(contents, ['auth.userOrgMap'], formattingOptions)
                 )
+            )
 
-                await retry(
-                    async () => {
-                        // Re-create user
+            // Retry, because the configuration update endpoint is eventually consistent
+            let lastCreatedOrg: GQL.IOrg
+            await retry(
+                async () => {
+                    // Create org
+                    const createdOrg = resourceManager.add(
+                        'Organization',
+                        testOrg.name,
+                        await ensureNewOrganization(gqlClient, testOrg)
+                    )
+                    lastCreatedOrg = createdOrg
+
+                    // Create user
+                    resourceManager.add(
+                        'User',
+                        testUser1.username,
                         await ensureNewUser(gqlClient, testUser1.username, testUser1.email)
+                    )
 
-                        // Check that user is part of organization
-                        {
-                            const user = await getUser(gqlClient, testUser1.username)
-                            if (!user) {
-                                throw new Error(`user ${testUser1.username} wasn't created`)
-                            }
-                            if (!user.organizations.nodes.some(org => org.id === lastCreatedOrg.id)) {
-                                throw new Error(`user ${testUser1.username} should be part of org ${testOrg.name}`)
-                            }
+                    // Check that user is not part of org
+                    {
+                        const user = await getUser(gqlClient, testUser1.username)
+                        if (!user) {
+                            throw new Error(`user ${testUser1.username} wasn't created`)
                         }
-                    },
-                    { retries: 3 }
-                )
-            },
-            120 * 1000
-        )
+                        if (user.organizations.nodes.some(org => org.id === createdOrg.id)) {
+                            throw new Error(`user ${testUser1.username} should not be part of org ${testOrg.name}`)
+                        }
+                    }
+                },
+                { retries: 3 }
+            )
+
+            // Set auth.userOrgMap
+            await editSiteConfig(gqlClient, contents =>
+                jsoncEdit.setProperty(contents, ['auth.userOrgMap'], { '*': [testOrg.name] }, formattingOptions)
+            )
+
+            await retry(
+                async () => {
+                    // Re-create user
+                    await ensureNewUser(gqlClient, testUser1.username, testUser1.email)
+
+                    // Check that user is part of organization
+                    {
+                        const user = await getUser(gqlClient, testUser1.username)
+                        if (!user) {
+                            throw new Error(`user ${testUser1.username} wasn't created`)
+                        }
+                        if (!user.organizations.nodes.some(org => org.id === lastCreatedOrg.id)) {
+                            throw new Error(`user ${testUser1.username} should be part of org ${testOrg.name}`)
+                        }
+                    }
+                },
+                { retries: 3 }
+            )
+        })
     })
 })

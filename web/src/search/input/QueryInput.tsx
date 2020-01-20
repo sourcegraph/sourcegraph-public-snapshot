@@ -19,7 +19,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { Suggestion, SuggestionItem, createSuggestion, fuzzySearchFilters } from './Suggestion'
 import { RegexpToggle } from './RegexpToggle'
-import { PatternTypeProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions } from '../searchFilterSuggestions'
 import {
@@ -37,6 +37,7 @@ import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import { CaseSensitivityToggle } from './CaseSensitivityToggle'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -44,7 +45,7 @@ import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive
  */
 export const queryUpdates = new Subject<string>()
 
-interface Props extends PatternTypeProps {
+interface Props extends PatternTypeProps, CaseSensitivityProps {
     location: H.Location
     history: H.History
 
@@ -430,11 +431,18 @@ export class QueryInput extends React.Component<Props, State> {
                                         )}
                                     </ul>
                                 )}
-                                <RegexpToggle
-                                    {...this.props}
-                                    navbarSearchQuery={this.props.value.query}
-                                    filtersInQuery={this.props.filterQuery}
-                                />
+                                <div className="query-input2__toggle-container">
+                                    <CaseSensitivityToggle
+                                        {...this.props}
+                                        navbarSearchQuery={this.props.value.query}
+                                        filtersInQuery={this.props.filterQuery}
+                                    />
+                                    <RegexpToggle
+                                        {...this.props}
+                                        navbarSearchQuery={this.props.value.query}
+                                        filtersInQuery={this.props.filterQuery}
+                                    />
+                                </div>
                             </div>
                         </div>
                     )

@@ -96,18 +96,19 @@
 /SECURITY.md @beyang @nicksnyder
 /.dockerignore @beyang
 /.mailmap @beyang
-/tsconfig.json @felixfbecker
-tslint.json @felixfbecker
-tslint.config.js @felixfbecker
-.eslintrc.* @felixfbecker
+/tsconfig.json @sourcegraph/web
+/.mocharc.json @sourcegraph/web
+tslint.json @sourcegraph/web
+tslint.config.js @sourcegraph/web
+.eslintrc.* @sourcegraph/web
 /enterprise/cmd @beyang
 /enterprise/internal @beyang
 /enterprise @beyang
 /doc.go @beyang
 /.gitignore @beyang
-/prettier.config.js @felixfbecker
-/.editorconfig @felixfbecker
-/jest.config.js @felixfbecker
+/prettier.config.js @sourcegraph/web
+/.editorconfig @sourcegraph/web
+/jest.config.js @sourcegraph/web
 /cmd @beyang @slimsag
 /internal @beyang @slimsag
 
