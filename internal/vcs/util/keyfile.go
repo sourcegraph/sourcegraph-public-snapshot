@@ -14,7 +14,7 @@ import (
 // the returned File when done using it.
 func WriteKeyTempFile(namePrefix string, keyData []byte) (filename string, tmp *os.File, err error) {
 	hasher := sha256.New()
-	hasher.Write([]byte(namePrefix))
+	_, _ = hasher.Write([]byte(namePrefix))
 	hash := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 
 	tmpfile, err := ioutil.TempFile("", "go-vcs-"+hash+"-")

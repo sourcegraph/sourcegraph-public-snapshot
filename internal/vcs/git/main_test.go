@@ -1,4 +1,4 @@
-package git_test
+package git
 
 import (
 	"bytes"
@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -34,6 +33,16 @@ func TestMain(m *testing.M) {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
 
+	code := m.Run()
+
+	_ = os.RemoveAll(root)
+
+	os.Exit(code)
+}
+
+// done in init since the go vet analysis "ctrlflow" is tripped up if this is
+// done as part of TestMain.
+func init() {
 	// Ignore users configuration in tests
 	os.Setenv("GIT_CONFIG_NOSYSTEM", "true")
 	os.Setenv("HOME", "/dev/null")
@@ -43,7 +52,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("listen failed: %s", err)
 	}
 
-	root, err = ioutil.TempDir("", "git.test")
+	root, err = ioutil.TempDir("", "test")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,17 +60,15 @@ func TestMain(m *testing.M) {
 	srv := &http.Server{Handler: (&server.Server{
 		ReposDir: filepath.Join(root, "repos"),
 	}).Handler()}
-	go srv.Serve(l)
+	go func() {
+		if err := srv.Serve(l); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	gitserver.DefaultClient.Addrs = func(ctx context.Context) []string {
 		return []string{l.Addr().String()}
 	}
-
-	code := m.Run()
-
-	_ = os.RemoveAll(root)
-
-	os.Exit(code)
 }
 
 func AsJSON(v interface{}) string {
@@ -120,7 +127,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
 	return repo
 }
 
-func CommitsEqual(a, b *git.Commit) bool {
+func CommitsEqual(a, b *Commit) bool {
 	if (a == nil) != (b == nil) {
 		return false
 	}

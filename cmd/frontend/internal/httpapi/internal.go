@@ -36,7 +36,7 @@ func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, _ = w.Write(data)
 	return nil
 }
 
@@ -55,7 +55,7 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, _ = w.Write(data)
 	return nil
 }
 
@@ -265,7 +265,7 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		}
 	} else {
 		trueP := true
-		res, err := h.Repos.List(r.Context(), db.ReposListOptions{Index: &trueP, Enabled: true})
+		res, err := h.Repos.List(r.Context(), db.ReposListOptions{Index: &trueP})
 		if err != nil {
 			return errors.Wrap(err, "listing repos")
 		}
@@ -367,7 +367,7 @@ func serveSavedQueriesSetInfo(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "SavedQueries.Set")
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 	return nil
 }
 
@@ -382,7 +382,7 @@ func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "SavedQueries.Delete")
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 	return nil
 }
 
@@ -505,7 +505,7 @@ func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(commitID))
+	_, _ = w.Write([]byte(commitID))
 	return nil
 }
 

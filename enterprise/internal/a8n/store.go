@@ -63,7 +63,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 }
 
 // ProcessPendingChangesetJobs attempts to fetch one pending changeset job.
-// A pending job is one that has never been started, its campaign is published and its plan is not cancelled.
+// A pending job is one that has never been started and its plan is not cancelled.
 // If found, 'process' is called. We guarantee that if process is called it will have exclusive global access to
 // the job. All operations on the job should be done using the supplied store as they will run in a transaction.
 // Returning an error will roll back the transaction.
@@ -100,7 +100,6 @@ UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	JOIN campaign_plans p ON p.id = c.campaign_plan_id
 	WHERE j.started_at IS NULL
 	AND p.canceled_at IS NULL
-	AND (c.published_at IS NOT NULL OR j.published_at IS NOT NULL)
 	ORDER BY j.id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
@@ -112,8 +111,7 @@ RETURNING j.id,
   j.started_at,
   j.finished_at,
   j.created_at,
-  j.updated_at,
-  j.published_at
+  j.updated_at
 `
 
 // ProcessPendingCampaignJob attempts to fetch one pending campaign job. If found, 'process'
@@ -2097,10 +2095,9 @@ INSERT INTO changeset_jobs (
   started_at,
   finished_at,
   created_at,
-  updated_at,
-  published_at
+  updated_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_id,
@@ -2110,8 +2107,7 @@ RETURNING
   started_at,
   finished_at,
   created_at,
-  updated_at,
-  published_at
+  updated_at
 `
 
 func (s *Store) createChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error) {
@@ -2133,7 +2129,6 @@ func (s *Store) createChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error
 		nullTimeColumn(c.FinishedAt),
 		c.CreatedAt,
 		c.UpdatedAt,
-		nullTimeColumn(c.PublishedAt),
 	), nil
 }
 
@@ -2160,9 +2155,8 @@ SET (
   error,
   started_at,
   finished_at,
-  updated_at,
-  published_at
-) = (%s, %s, %s, %s, %s, %s, %s, %s)
+  updated_at
+) = (%s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -2173,8 +2167,7 @@ RETURNING
   started_at,
   finished_at,
   created_at,
-  updated_at,
-  published_at
+  updated_at
 `
 
 func (s *Store) updateChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error) {
@@ -2189,7 +2182,6 @@ func (s *Store) updateChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error
 		nullTimeColumn(c.StartedAt),
 		nullTimeColumn(c.FinishedAt),
 		c.UpdatedAt,
-		nullTimeColumn(c.PublishedAt),
 		c.ID,
 	), nil
 }
@@ -2245,28 +2237,32 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 	return sqlf.Sprintf(countChangesetJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-func (s *Store) GetLatestChangesetJobPublishedAt(ctx context.Context, campaignID int64) (time.Time, error) {
-	q := sqlf.Sprintf(getLatestChangesetJobPublishedAtFmtstr, campaignID, campaignID)
-	var publishedAt time.Time
+// GetLatestChangesetJobCreatedAt returns the most recent created_at time for all changeset jobs
+// for a campaign. But only if they have all been created, one for each CampaignJob belonging to the CampaignPlan attached to the Campaign. If not, it returns a zero time.Time.
+func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID int64) (time.Time, error) {
+	q := sqlf.Sprintf(getLatestChangesetJobPublishedAtFmtstr, campaignID)
+	var createdAt time.Time
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&dbutil.NullTime{Time: &publishedAt})
+		err = sc.Scan(&dbutil.NullTime{Time: &createdAt})
 		if err != nil {
 			return 0, 0, err
 		}
 		return 0, 1, nil
 	})
 	if err != nil {
-		return publishedAt, err
+		return createdAt, err
 	}
-	return publishedAt, nil
+	return createdAt, nil
 }
 
 var getLatestChangesetJobPublishedAtFmtstr = `
-SELECT max(published_at)
-FROM changeset_jobs
-WHERE campaign_id = %d
-AND NOT EXISTS
-  (SELECT id FROM changeset_jobs WHERE campaign_id = %d AND published_at IS NULL)
+SELECT
+  max(changeset_jobs.created_at)
+FROM campaign_jobs
+INNER JOIN campaigns ON campaign_jobs.campaign_plan_id = campaigns.campaign_plan_id
+LEFT JOIN changeset_jobs ON changeset_jobs.campaign_job_id = campaign_jobs.id
+WHERE campaigns.id = %s
+HAVING count(*) FILTER (WHERE changeset_jobs.created_at IS NULL) = 0;
 `
 
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
@@ -2307,8 +2303,7 @@ SELECT
   started_at,
   finished_at,
   created_at,
-  updated_at,
-  published_at
+  updated_at
 FROM changeset_jobs
 WHERE %s
 LIMIT 1
@@ -2381,8 +2376,7 @@ SELECT
   changeset_jobs.started_at,
   changeset_jobs.finished_at,
   changeset_jobs.created_at,
-  changeset_jobs.updated_at,
-  changeset_jobs.published_at
+  changeset_jobs.updated_at
 FROM changeset_jobs
 `
 
@@ -2630,7 +2624,6 @@ func scanChangesetJob(c *a8n.ChangesetJob, s scanner) error {
 		&dbutil.NullTime{Time: &c.FinishedAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
-		&dbutil.NullTime{Time: &c.PublishedAt},
 	)
 }
 

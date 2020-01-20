@@ -680,7 +680,7 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	err = svc.PublishChangesetJobForCampaignJob(ctx, campaignJobID)
+	err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJobID)
 	if err != nil {
 		return nil, err
 	}

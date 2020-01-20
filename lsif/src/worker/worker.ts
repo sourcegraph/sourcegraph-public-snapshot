@@ -80,7 +80,7 @@ async function main(logger: Logger): Promise<void> {
                     // delete the files on disk right away. These files will be cleaned up by a worker in
                     // a future cleanup task.
                     await dumpManager.deleteOverlappingDumps(
-                        upload.repository,
+                        upload.repositoryId,
                         upload.commit,
                         upload.root,
                         { logger, span },

@@ -22,7 +22,7 @@ describe('CampaignPlanSpecificationFields', () => {
         expect(component).toMatchSnapshot()
 
         expect(onChange.calledOnce).toBe(true)
-        expect(onChange.firstCall.args[0].type).toBe('comby')
+        expect(onChange.firstCall.args[0].type).toBe('regexSearchReplace')
         expect(onChange.firstCall.args[0].arguments).toMatch(/scopeQuery/)
     })
 

@@ -18,7 +18,6 @@ export const SearchModeToggle: React.FunctionComponent<Props> = props => {
             <DropdownToggle
                 caret={true}
                 className="search-mode-toggle__button e2e-search-mode-toggle"
-                data-tooltip="Toggle search mode"
                 aria-label="Toggle search mode"
             >
                 {props.interactiveSearchMode ? (
