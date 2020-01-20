@@ -70,6 +70,8 @@
 // 1528395637_lsif_repository_ids.up.sql (2.062kB)
 // 1528395638_remove_published_at_from_changeset_jobs.down.sql (81B)
 // 1528395638_remove_published_at_from_changeset_jobs.up.sql (80B)
+// 1528395639_create_a8n_job_indexes.down.sql (123B)
+// 1528395639_create_a8n_job_indexes.up.sql (179B)
 
 package migrations
 
@@ -1538,6 +1540,46 @@ func _1528395638_remove_published_at_from_changeset_jobsUpSql() (*asset, error) 
 	return a, nil
 }
 
+var __1528395639_create_a8n_job_indexesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x8e\x87\xf3\x0a\x72\x12\xf3\xe2\x33\x53\xac\x71\x68\xca\x48\xcc\x4b\x4f\x2d\x4e\x2d\x41\xd3\x95\x95\x9f\x04\xd6\xc4\xe5\xec\xef\xeb\xeb\x19\x62\xcd\x05\x08\x00\x00\xff\xff\x24\x70\xd1\xd6\x7b\x00\x00\x00")
+
+func _1528395639_create_a8n_job_indexesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395639_create_a8n_job_indexesDownSql,
+		"1528395639_create_a8n_job_indexes.down.sql",
+	)
+}
+
+func _1528395639_create_a8n_job_indexesDownSql() (*asset, error) {
+	bytes, err := _1528395639_create_a8n_job_indexesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395639_create_a8n_job_indexes.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xaa, 0x2b, 0xf, 0x1d, 0x33, 0x70, 0xa9, 0x25, 0x7d, 0x9a, 0x1e, 0x5, 0x4a, 0x8f, 0x1e, 0x12, 0x6c, 0xf7, 0x55, 0xb5, 0xaf, 0xce, 0x8b, 0xc9, 0xf2, 0x46, 0x44, 0x6a, 0x6c, 0x2f, 0xe7, 0x6}}
+	return a, nil
+}
+
+var __1528395639_create_a8n_job_indexesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x8e\x87\xf3\x0a\x72\x12\xf3\xe2\x33\x53\x14\xfc\xfd\x50\x55\x28\x68\xa0\x2b\xd1\xb4\x46\x33\x30\x23\x31\x2f\x3d\xb5\x38\xb5\x04\xcd\xc4\xac\xfc\x24\x98\x81\x28\x2a\x90\x4c\x84\x28\xd1\x04\x39\xd1\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x57\x4e\xa9\x05\xb3\x00\x00\x00")
+
+func _1528395639_create_a8n_job_indexesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395639_create_a8n_job_indexesUpSql,
+		"1528395639_create_a8n_job_indexes.up.sql",
+	)
+}
+
+func _1528395639_create_a8n_job_indexesUpSql() (*asset, error) {
+	bytes, err := _1528395639_create_a8n_job_indexesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395639_create_a8n_job_indexes.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb7, 0x16, 0x98, 0x6f, 0xc6, 0x6a, 0x77, 0x8e, 0xbb, 0xe, 0xb4, 0x83, 0xd5, 0x8b, 0xfb, 0xa, 0x8, 0x2, 0xbc, 0x97, 0xee, 0xc, 0xc9, 0xd9, 0xe1, 0x8f, 0xf3, 0xd4, 0x2a, 0xd, 0xef, 0x9f}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1699,6 +1741,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395637_lsif_repository_ids.up.sql":                              _1528395637_lsif_repository_idsUpSql,
 	"1528395638_remove_published_at_from_changeset_jobs.down.sql":        _1528395638_remove_published_at_from_changeset_jobsDownSql,
 	"1528395638_remove_published_at_from_changeset_jobs.up.sql":          _1528395638_remove_published_at_from_changeset_jobsUpSql,
+	"1528395639_create_a8n_job_indexes.down.sql":                         _1528395639_create_a8n_job_indexesDownSql,
+	"1528395639_create_a8n_job_indexes.up.sql":                           _1528395639_create_a8n_job_indexesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1812,6 +1856,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395637_lsif_repository_ids.up.sql":                              {_1528395637_lsif_repository_idsUpSql, map[string]*bintree{}},
 	"1528395638_remove_published_at_from_changeset_jobs.down.sql":        {_1528395638_remove_published_at_from_changeset_jobsDownSql, map[string]*bintree{}},
 	"1528395638_remove_published_at_from_changeset_jobs.up.sql":          {_1528395638_remove_published_at_from_changeset_jobsUpSql, map[string]*bintree{}},
+	"1528395639_create_a8n_job_indexes.down.sql":                         {_1528395639_create_a8n_job_indexesDownSql, map[string]*bintree{}},
+	"1528395639_create_a8n_job_indexes.up.sql":                           {_1528395639_create_a8n_job_indexesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
