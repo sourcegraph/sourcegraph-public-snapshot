@@ -2,21 +2,27 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ClockOutlineIcon from 'mdi-react/ClockOutlineIcon'
-import React, { FunctionComponent, useEffect, useMemo } from 'react'
+import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { catchError } from 'rxjs/operators'
 import { ErrorAlert } from '../../../components/alerts'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { fetchLsifUpload } from './backend'
+import { fetchLsifUpload, deleteLsifUpload } from './backend'
 import { Link } from '../../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../../components/PageTitle'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, Redirect } from 'react-router'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { useObservable } from '../../../util/useObservable'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 
 interface Props extends RouteComponentProps<{ id: string }> {
     repo: GQL.IRepository
+}
+
+interface DeletionState {
+    /** Undefined means not started, null means successful. */
+    deletionOrError?: 'loading' | ErrorLike | null
 }
 
 /**
@@ -30,11 +36,33 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
 }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsLsifUpload'))
 
+    const initialState: DeletionState = {}
+    const [state, setState] = useState(initialState)
+
     const uploadOrError = useObservable(
         useMemo(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
     )
 
-    return (
+    const deleteUpload = async (): Promise<void> => {
+        setState({ deletionOrError: 'loading' })
+
+        try {
+            await deleteLsifUpload({ id }).toPromise()
+            setState({ deletionOrError: null })
+        } catch (err) {
+            setState({ deletionOrError: err })
+        }
+    }
+
+    return state.deletionOrError !== undefined ? (
+        isErrorLike(state.deletionOrError) ? (
+            <div className="alert alert-danger">
+                <ErrorAlert prefix="Error loading LSIF upload" error={state.deletionOrError} />
+            </div>
+        ) : (
+            <Redirect to=".." />
+        )
+    ) : (
         <div className="site-admin-lsif-upload-page w-100">
             <PageTitle title="LSIF uploads - Admin" />
             {isErrorLike(uploadOrError) ? (
@@ -157,6 +185,16 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             </tr>
                         </tbody>
                     </table>
+
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-danger"
+                        onClick={deleteUpload}
+                        disabled={state.deletionOrError === 'loading'}
+                        data-tooltip="Delete upload"
+                    >
+                        <DeleteIcon className="icon-inline" />
+                    </button>
                 </>
             )}
         </div>
