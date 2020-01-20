@@ -57,7 +57,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     return state.deletionOrError !== undefined ? (
         isErrorLike(state.deletionOrError) ? (
             <div className="alert alert-danger">
-                <ErrorAlert prefix="Error loading LSIF upload" error={state.deletionOrError} />
+                <ErrorAlert prefix="Error deleting LSIF upload" error={state.deletionOrError} />
             </div>
         ) : (
             <Redirect to=".." />
