@@ -31,14 +31,18 @@ describe('Code intelligence regression test suite', () => {
         kind: GQL.ExternalServiceKind.GITHUB,
         uniqueDisplayName: '[TEST] GitHub (codeintel.test.ts)',
     }
-    const testRepoSlugs = ['sourcegraph-testing/prometheus-common', 'sourcegraph-testing/prometheus-client-golang']
 
-    const repoBase = 'github.com/sourcegraph-testing'
+    const org = 'sourcegraph-testing'
+    const repoBase = `github.com/${org}`
     const commonRepo = 'prometheus-common'
     const clientRepo = 'prometheus-client-golang'
+    const redefinitionsRepo = 'prometheus-redefinitions'
     const commonCommit = '287d3e634a1e550c9e463dd7e5a75a422c614505'
     const clientCommit = '333f01cef0d61f9ef05ada3d94e00e69c8d5cdda'
     const olderCommonCommit = 'e8215224146358493faab0295ce364cd386223b9' // 2 behind commonCommit
+    const redefinitionsCommit = 'c68f0e063cf8a98e7ce3428cfd50588746010f1f'
+
+    const testRepoSlugs = [commonRepo, clientRepo, redefinitionsRepo].map(r => `${org}/${r}`)
 
     let driver: Driver
     let gqlClient: GraphQLClient
@@ -110,6 +114,7 @@ describe('Code intelligence regression test suite', () => {
 
     test('Uploads', async function() {
         this.timeout(60 * 1000)
+
         interface Location {
             path: string
             position: { line: number; character: number }
@@ -164,6 +169,12 @@ describe('Code intelligence regression test suite', () => {
             // { path: 'api/prometheus/v1/api_bench_test.go', position: { line: 37, character: 24 } },
         ]
 
+        const redefinitionLocations = [
+            { path: 'sample.go', position: { line: 7, character: 6 } },
+            { path: 'sample.go', position: { line: 12, character: 10 } },
+            { path: 'sample.go', position: { line: 16, character: 10 } },
+        ]
+
         const makePath = (repository: string, commit: string, { path, position: { line, character } }: Location) =>
             `/${repoBase}/${repository}@${commit}/-/blob/${path}#L${line}:${character}`
 
@@ -183,11 +194,26 @@ describe('Code intelligence regression test suite', () => {
                         {
                             line,
                             token: 'SamplePair',
+                            precise: true,
                             expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
-                            expectedDefinition: `/${repoBase}/prometheus-common@${commonCommit}/-/blob/model/value.go#L78:6`,
+                            expectedDefinition: {
+                                url: `/${repoBase}/prometheus-common@${commonCommit}/-/blob/model/value.go#L78:6`,
+                                precise: true,
+                            },
                             expectedReferences: commonLocations
-                                .map(r => makePath(commonRepo, commonCommit, r))
-                                .concat(clientLocations.map(r => makePath(clientRepo, clientCommit, r))),
+                                .map(r => ({ url: makePath(commonRepo, commonCommit, r), precise: true }))
+                                .concat(
+                                    clientLocations.map(r => ({
+                                        url: makePath(clientRepo, clientCommit, r),
+                                        precise: true,
+                                    }))
+                                )
+                                .concat(
+                                    redefinitionLocations.map(r => ({
+                                        url: makePath(redefinitionsRepo, redefinitionsCommit, r),
+                                        precise: false,
+                                    }))
+                                ),
                         },
                     ],
                 },

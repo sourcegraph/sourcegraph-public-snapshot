@@ -98,6 +98,7 @@ describe('Code navigation regression test suite', () => {
 
     test('Basic code intel', async function() {
         this.timeout(30 * 1000)
+
         await testCodeNavigation(driver, config, [
             {
                 repoRev: 'github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25',
@@ -108,27 +109,36 @@ describe('Code navigation regression test suite', () => {
                             {
                                 line: 46,
                                 token: 'Get',
+                                precise: false,
                                 expectedHoverContains:
                                     'func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error)',
                                 expectedDefinition: [
-                                    '/github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25/-/blob/cmd/frontend/backend/repos.go#L46:17',
+                                    {
+                                        url:
+                                            '/github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25/-/blob/cmd/frontend/backend/repos.go#L46:17',
+                                        precise: false,
+                                    },
                                 ],
                                 expectedReferences: [],
                             },
                             {
                                 line: 33,
                                 token: 'ErrRepoSeeOther',
+                                precise: false,
                                 expectedHoverContains:
                                     'ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph server.',
-                                expectedDefinition:
-                                    '/github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25/-/blob/cmd/frontend/backend/repos.go#L33:6',
+                                expectedDefinition: {
+                                    url:
+                                        '/github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25/-/blob/cmd/frontend/backend/repos.go#L33:6',
+                                    precise: false,
+                                },
                                 expectedReferences: [
                                     '/cmd/frontend/backend/repos.go#L38:9',
                                     '/cmd/frontend/graphqlbackend/graphqlbackend.go#L290:30',
-                                ].map(
-                                    path =>
-                                        `/github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25/-/blob${path}`
-                                ),
+                                ].map(path => ({
+                                    url: `/github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25/-/blob${path}`,
+                                    precise: false,
+                                })),
                             },
                         ],
                     },
@@ -138,18 +148,22 @@ describe('Code navigation regression test suite', () => {
                             {
                                 line: 15,
                                 token: 'gitCommitBody',
+                                precise: false,
                                 expectedHoverContains:
                                     'gitCommitBody returns the contents of the Git commit message after the subject.',
-                                expectedDefinition: '/cmd/frontend/graphqlbackend/git_commit.go#L263:6',
+                                expectedDefinition: {
+                                    url: '/cmd/frontend/graphqlbackend/git_commit.go#L263:6',
+                                    precise: false,
+                                },
                                 expectedReferences: [
                                     '/cmd/frontend/graphqlbackend/git_commit_test.go#L15:10',
                                     '/cmd/frontend/graphqlbackend/git_commit.go#L93:10',
                                     '/cmd/frontend/graphqlbackend/git_commit.go#L253:4',
                                     '/cmd/frontend/graphqlbackend/git_commit.go#L262:4',
-                                ].map(
-                                    path =>
-                                        `/github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25/-/blob${path}`
-                                ),
+                                ].map(path => ({
+                                    url: `/github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25/-/blob${path}`,
+                                    precise: false,
+                                })),
                             },
                         ],
                     },
@@ -165,20 +179,24 @@ describe('Code navigation regression test suite', () => {
                             {
                                 line: 33,
                                 token: 'StdioLogger',
+                                precise: false,
                                 expectedHoverContains:
                                     'Logger implementation that logs to STDOUT and STDERR depending on level',
-                                expectedDefinition:
-                                    '/github.com/sourcegraph/javascript-typescript-langserver@221d798d749fbfc822e1c5bc94bde5a2364f47ea/-/blob/src/logging.ts#L104:14',
+                                expectedDefinition: {
+                                    url:
+                                        '/github.com/sourcegraph/javascript-typescript-langserver@221d798d749fbfc822e1c5bc94bde5a2364f47ea/-/blob/src/logging.ts#L104:14',
+                                    precise: false,
+                                },
                                 expectedReferences: [
                                     '/src/language-server.ts#L4:22',
                                     '/src/language-server.ts#L33:69',
                                     '/src/logging.ts#L104:14',
                                     '/src/server.ts#L7:34',
                                     '/src/server.ts#L27:50',
-                                ].map(
-                                    path =>
-                                        `/github.com/sourcegraph/javascript-typescript-langserver@221d798d749fbfc822e1c5bc94bde5a2364f47ea/-/blob${path}`
-                                ),
+                                ].map(path => ({
+                                    url: `/github.com/sourcegraph/javascript-typescript-langserver@221d798d749fbfc822e1c5bc94bde5a2364f47ea/-/blob${path}`,
+                                    precise: false,
+                                })),
                             },
                         ],
                     },
@@ -193,12 +211,20 @@ describe('Code navigation regression test suite', () => {
                             {
                                 line: 20,
                                 token: 'SpanID',
+                                precise: false,
                                 expectedHoverContains:
                                     'trace (a 64-bit integer) is the root ID of the tree that contains all of the spans related to this one.',
-                                expectedDefinition:
-                                    '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87/-/blob/python/appdash/spanid.py#L34:7',
+                                expectedDefinition: {
+                                    url:
+                                        '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87/-/blob/python/appdash/spanid.py#L34:7',
+                                    precise: false,
+                                },
                                 expectedReferences: [
-                                    '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87/-/blob/python/appdash/recorder.py#L3:20',
+                                    {
+                                        url:
+                                            '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87/-/blob/python/appdash/recorder.py#L3:20',
+                                        precise: false,
+                                    },
                                 ],
                             },
                         ],
