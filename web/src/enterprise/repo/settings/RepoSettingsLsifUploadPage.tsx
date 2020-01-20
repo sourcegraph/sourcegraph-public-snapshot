@@ -123,7 +123,20 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             </tr>
 
                             <tr>
-                                <td>Queued</td>
+                                <td>Is latest for repo</td>
+                                <td>
+                                    {uploadOrError.finishedAt ? (
+                                        <span className="e2e-is-latest-for-repo">
+                                            {uploadOrError.isLatestForRepo ? 'yes' : 'no'}
+                                        </span>
+                                    ) : (
+                                        <span className="text-muted">Upload has not yet completed.</span>
+                                    )}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>Uploaded</td>
                                 <td>
                                     <Timestamp date={uploadOrError.uploadedAt} noAbout={true} />
                                 </td>
