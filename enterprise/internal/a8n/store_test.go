@@ -2403,6 +2403,60 @@ func testStore(db *sql.DB) func(*testing.T) {
 				if !have.Equal(clock()) {
 					t.Fatalf("want %v, got %v", clock(), have)
 				}
+
+				// Create another round to ensure that we get the latest date
+				// when there are more than one
+				oldClock := clock
+				defer func() {
+					clock = oldClock
+				}()
+				clock = func() time.Time {
+					return oldClock().Add(5 * time.Minute)
+				}
+				oldStore := s
+				defer func() {
+					s = oldStore
+				}()
+				s = NewStoreWithClock(tx, clock)
+				campaignJob = &a8n.CampaignJob{
+					CampaignPlanID: plan.ID,
+					BaseRef:        "x",
+					RepoID:         int32(123),
+				}
+				err = s.CreateCampaignJob(ctx, campaignJob)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 1 ChangesetJob, 2 CampaignJobs
+				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Job counts don't match, should get back null
+				if !have.IsZero() {
+					t.Fatalf("publishedAt is not zero: %v", have)
+				}
+
+				// Add another changesetjob
+				changesetJob2 := &a8n.ChangesetJob{
+					CampaignID:    campaign.ID,
+					CampaignJobID: campaignJob.ID,
+				}
+				err = s.CreateChangesetJob(ctx, changesetJob2)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 2 ChangesetJob, 2 CampaignJobs
+				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Job counts are the same, we should get a valid time
+				if !have.Equal(clock()) {
+					t.Fatalf("want %v, got %v", clock(), have)
+				}
 			})
 		})
 	}
