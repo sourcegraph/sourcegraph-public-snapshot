@@ -18,7 +18,8 @@ Usage:
 
 The commands are:
 
-	preview           generates preview of plan from a specification
+	create-from-patches  creates plan from patches to repository branches
+	preview              generates preview of plan from a specification
 
 Use "src campaigns plans [command] -h" for more information about a command.
 `
