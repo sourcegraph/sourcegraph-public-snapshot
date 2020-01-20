@@ -262,9 +262,7 @@ export class BackendTestContext {
         this.cleanup = cleanup
         this.dumpManager = new DumpManager(connection, this.storageRoot)
         this.dependencyManager = new DependencyManager(connection)
-        this.backend = new Backend(this.storageRoot, this.dumpManager, this.dependencyManager, () => ({
-            gitServers: [],
-        }))
+        this.backend = new Backend(this.storageRoot, this.dumpManager, this.dependencyManager, '')
     }
 
     /**

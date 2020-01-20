@@ -109,13 +109,13 @@ export class Backend {
      * @param storageRoot The path where SQLite databases are stored.
      * @param dumpManager The dumps manager instance.
      * @param dependencyManager The dependency manager instance.
-     * @param fetchConfiguration A function that returns the current configuration.
+     * @param frontendUrl The url of the frontend internal API.
      */
     constructor(
         private storageRoot: string,
         private dumpManager: DumpManager,
         private dependencyManager: DependencyManager,
-        private fetchConfiguration: () => { gitServers: string[] }
+        private frontendUrl: string
     ) {}
 
     /**
@@ -809,14 +809,7 @@ export class Backend {
         const dump = await (dumpId
             ? this.dumpManager.getDumpById(dumpId)
             : repositoryName
-            ? this.dumpManager.findClosestDump(
-                  repositoryId,
-                  repositoryName,
-                  commit,
-                  file,
-                  ctx,
-                  this.fetchConfiguration().gitServers
-              )
+            ? this.dumpManager.findClosestDump(repositoryId, repositoryName, commit, file, ctx, this.frontendUrl)
             : undefined)
 
         if (dump) {

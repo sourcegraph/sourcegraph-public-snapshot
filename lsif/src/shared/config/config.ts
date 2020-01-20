@@ -15,11 +15,6 @@ export interface Configuration {
     postgresDSN: string
 
     /**
-     * The (ordered) URLs of the registered gitservers.
-     */
-    gitServers: string[]
-
-    /**
      * The access token for lightstep tracing.
      */
     lightstepAccessToken: string
@@ -115,7 +110,6 @@ async function loadConfiguration(): Promise<Configuration> {
     const site = json5.parse(payload.Site)
 
     return {
-        gitServers: serviceConnections.gitServers,
         postgresDSN: serviceConnections.postgresDSN,
         lightstepAccessToken: site.lightstepAccessToken,
         useJaeger: site.useJaeger || false,

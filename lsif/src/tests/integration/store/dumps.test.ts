@@ -471,13 +471,13 @@ describe('discoverAndUpdateCommit', () => {
 
     it('should update tracked commits', async () => {
         const repositoryId = nextId()
-        const repositoryName = 'test-repo' // hashes to gitserver1
+        const repositoryName = 'test-repo'
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
 
-        nock('http://gitserver1')
-            .post('/exec')
+        nock('http://frontend')
+            .post(`/git/${repositoryId}/exec`)
             .reply(200, `${ca}\n${cb} ${ca}\n${cc} ${cb}`)
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
@@ -492,7 +492,7 @@ describe('discoverAndUpdateCommit', () => {
                     repositoryId,
                     repositoryName,
                     commit: cc,
-                    gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
+                    frontendUrl: 'frontend',
                 })
             )
 
@@ -509,7 +509,7 @@ describe('discoverAndUpdateCommit', () => {
 
     it('should early-out if commit is tracked', async () => {
         const repositoryId = nextId()
-        const repositoryName = 'test-repo' // hashes to gitserver1
+        const repositoryName = 'test-repo'
         const ca = util.createCommit()
         const cb = util.createCommit()
 
@@ -533,7 +533,7 @@ describe('discoverAndUpdateCommit', () => {
                     repositoryId,
                     repositoryName,
                     commit: cb,
-                    gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
+                    frontendUrl: 'frontend',
                 })
             )
         } finally {
@@ -543,7 +543,7 @@ describe('discoverAndUpdateCommit', () => {
 
     it('should early-out if repository is unknown', async () => {
         const repositoryId = nextId()
-        const repositoryName = 'test-repo' // hashes to gitserver1
+        const repositoryName = 'test-repo'
         const ca = util.createCommit()
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
@@ -561,7 +561,7 @@ describe('discoverAndUpdateCommit', () => {
                     repositoryId,
                     repositoryName,
                     commit: ca,
-                    gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
+                    frontendUrl: 'frontend',
                 })
             )
         } finally {
@@ -579,15 +579,15 @@ describe('discoverAndUpdateTips', () => {
 
     it('should update tips', async () => {
         const repositoryId = nextId()
-        const repositoryName = 'test-repo' // hashes to gitserver1
+        const repositoryName = 'test-repo'
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
         const cd = util.createCommit()
         const ce = util.createCommit()
 
-        nock('http://gitserver0')
-            .post('/exec', { repo: repositoryName, args: ['rev-parse', 'HEAD'] })
+        nock('http://frontend')
+            .post(`/git/${repositoryId}/exec`, { args: ['rev-parse', 'HEAD'] })
             .reply(200, ce)
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
@@ -609,8 +609,8 @@ describe('discoverAndUpdateTips', () => {
             await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cc, 'bar')
 
             const tipCommit = await dumpManager.discoverTip({
-                repositoryName,
-                gitserverUrls: ['gitserver0'],
+                repositoryId,
+                frontendUrl: 'frontend',
             })
             if (!tipCommit) {
                 throw new Error('Expected a tip commit')
@@ -624,65 +624,6 @@ describe('discoverAndUpdateTips', () => {
             expect(d1?.visibleAtTip).toBeFalsy()
             expect(d2?.visibleAtTip).toBeTruthy()
             expect(d3?.visibleAtTip).toBeTruthy()
-        } finally {
-            await cleanup()
-        }
-    })
-})
-
-describe('discoverTips', () => {
-    let counter = 400
-    const nextId = () => {
-        counter++
-        return counter
-    }
-
-    it('should route requests to correct gitserver', async () => {
-        // Distribution of repository names to gitservers
-        const requests = {
-            'http://gitserver0': [1, 4, 5, 9, 10, 11, 13],
-            'http://gitserver1': [0, 3, 6, 7, 12, 14],
-            'http://gitserver2': [2, 8],
-        }
-
-        // Setup gitsever responses
-        for (const [addr, suffixes] of Object.entries(requests)) {
-            for (const i of suffixes) {
-                nock(addr)
-                    .post('/exec', { repo: `test-repo-${i}`, args: ['rev-parse', 'HEAD'] })
-                    .reply(200, `c${i}`)
-            }
-        }
-
-        // Map repo to the payloads above
-        const expected = new Map<number, string | undefined>()
-        for (let i = 0; i < 15; i++) {
-            expected.set(i, `c${i}`)
-        }
-
-        const { connection, cleanup } = await util.createCleanPostgresDatabase()
-
-        try {
-            const repositoryId = nextId()
-            const repositoryName = 'foo'
-            const dumpManager = new DumpManager(connection, '')
-
-            for (let i = 0; i < 15; i++) {
-                await util.insertDump(connection, dumpManager, repositoryId, repositoryName, util.createCommit(), '')
-            }
-
-            const tips = new Map<number, string | undefined>()
-            for (let i = 0; i < 15; i++) {
-                tips.set(
-                    i,
-                    await dumpManager.discoverTip({
-                        repositoryName: `test-repo-${i}`,
-                        gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
-                    })
-                )
-            }
-
-            expect(tips).toEqual(expected)
         } finally {
             await cleanup()
         }
