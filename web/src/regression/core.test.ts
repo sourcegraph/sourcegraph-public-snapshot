@@ -1,7 +1,5 @@
-/**
- * @jest-environment node
- */
-
+import expect from 'expect'
+import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { TestResourceManager } from './util/TestResourceManager'
 import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
 import { Driver } from '../../../shared/src/e2e/driver'
@@ -16,6 +14,7 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import delay from 'delay'
+import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -36,7 +35,7 @@ describe('Core functionality regression test suite', () => {
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
     let screenshots: ScreenshotVerifier
-    beforeAll(async () => {
+    before(async () => {
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
         resourceManager.add(
             'User',
@@ -49,7 +48,10 @@ describe('Core functionality regression test suite', () => {
         )
         screenshots = new ScreenshotVerifier(driver)
     })
-    afterAll(async () => {
+
+    saveScreenshotsUponFailures(() => driver.page)
+
+    after(async () => {
         if (!config.noCleanup) {
             await resourceManager.destroyAll()
         }

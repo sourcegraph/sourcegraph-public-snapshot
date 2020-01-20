@@ -1,7 +1,5 @@
-/**
- * @jest-environment node
- */
-
+import expect from 'expect'
+import { describe, before, after, test } from 'mocha'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
@@ -13,6 +11,7 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Key } from 'ts-key-enum'
+import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
 
 /**
  * Reads the number of results from the text at the top of the results page
@@ -153,38 +152,37 @@ describe('Search regression test suite', () => {
         let driver: Driver
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
-        beforeAll(
-            async () => {
-                ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-                resourceManager.add(
-                    'User',
-                    testUsername,
-                    await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
-                )
-                resourceManager.add(
-                    'External service',
-                    testExternalServiceInfo.uniqueDisplayName,
-                    await ensureTestExternalService(
-                        gqlClient,
-                        {
-                            ...testExternalServiceInfo,
-                            config: {
-                                url: 'https://github.com',
-                                token: config.gitHubToken,
-                                repos: testRepoSlugs,
-                                repositoryQuery: ['none'],
-                            },
-                            waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
+        before(async function() {
+            this.timeout(3 * 60 * 1000 + 30 * 1000)
+            ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
+            resourceManager.add(
+                'User',
+                testUsername,
+                await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
+            )
+            resourceManager.add(
+                'External service',
+                testExternalServiceInfo.uniqueDisplayName,
+                await ensureTestExternalService(
+                    gqlClient,
+                    {
+                        ...testExternalServiceInfo,
+                        config: {
+                            url: 'https://github.com',
+                            token: config.gitHubToken,
+                            repos: testRepoSlugs,
+                            repositoryQuery: ['none'],
                         },
-                        { ...config, timeout: 3 * 60 * 1000, indexed: true }
-                    )
+                        waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
+                    },
+                    { ...config, timeout: 3 * 60 * 1000, indexed: true }
                 )
-            },
-            // Cloning the repositories takes ~1 minute, so give initialization ~3 minutes
-            3 * 60 * 1000 + 30 * 1000
-        )
+            )
+        })
 
-        afterAll(async () => {
+        saveScreenshotsUponFailures(() => driver.page)
+
+        after(async () => {
             if (!config.noCleanup) {
                 await resourceManager.destroyAll()
             }
@@ -409,20 +407,12 @@ describe('Search regression test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
 
-        test(
-            'Search timeout',
-            async () => {
-                const response = await search(
-                    gqlClient,
-                    'router index:no timeout:1ns',
-                    'V2',
-                    GQL.SearchPatternType.literal
-                )
-                expect(response.results.matchCount).toBe(0)
-                expect(response.results.alert && response.results.alert.title).toBe('Timed out while searching')
-            },
-            2 * 1000
-        )
+        test('Search timeout', async function() {
+            this.timeout(2 * 1000)
+            const response = await search(gqlClient, 'router index:no timeout:1ns', 'V2', GQL.SearchPatternType.literal)
+            expect(response.results.matchCount).toBe(0)
+            expect(response.results.alert && response.results.alert.title).toBe('Timed out while searching')
+        })
 
         test('Search repo group', async () => {
             resourceManager.add(

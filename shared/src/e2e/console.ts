@@ -3,6 +3,7 @@ import chalk, { Chalk } from 'chalk'
 import * as util from 'util'
 import terminalSize from 'term-size'
 import stringWidth from 'string-width'
+import { identity } from 'lodash'
 
 const colors: Partial<Record<ConsoleMessageType, Chalk>> = {
     error: chalk.red,
@@ -20,7 +21,7 @@ const icons: Partial<Record<ConsoleMessageType, string>> = {
  * Tries to mirror Chrome's console output as closely as possible and makes sense.
  */
 export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Promise<string> {
-    const color = colors[message.type()] ?? chalk.dim
+    const color = colors[message.type()] ?? identity
     const icon = icons[message.type()] ?? ''
     const formattedLocation =
         'at ' +

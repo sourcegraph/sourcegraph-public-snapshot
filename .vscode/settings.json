@@ -14,6 +14,7 @@
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
     "**/dev/site-config.json": "jsonc",
+    "**/.mocharc.json": "jsonc",
   },
   "json.schemas": [
     {
