@@ -2240,7 +2240,7 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 // GetLatestChangesetJobCreatedAt returns the most recent created_at time for all changeset jobs
 // for a campaign. But only if they have all been created, one for each CampaignJob belonging to the CampaignPlan attached to the Campaign. If not, it returns a zero time.Time.
 func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID int64) (time.Time, error) {
-	q := sqlf.Sprintf(getLatestChangesetJobPublishedAtFmtstr, campaignID, campaignID, campaignID)
+	q := sqlf.Sprintf(getLatestChangesetJobPublishedAtFmtstr, campaignID)
 	var createdAt time.Time
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		err = sc.Scan(&dbutil.NullTime{Time: &createdAt})
@@ -2256,18 +2256,13 @@ func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID i
 }
 
 var getLatestChangesetJobPublishedAtFmtstr = `
-SELECT CASE
-         WHEN (SELECT count(campaign_jobs.id)
-               FROM   campaign_jobs
-                      JOIN campaigns c
-                        ON campaign_jobs.campaign_plan_id = c.campaign_plan_id
-               WHERE  c.id = %s) = (SELECT count(id)
-                                   FROM   changeset_jobs
-                                   WHERE  campaign_id = %s) THEN
-         (SELECT max(created_at)
-          FROM   changeset_jobs
-          WHERE  campaign_id = %s)
-       END
+SELECT
+  max(changeset_jobs.created_at)
+FROM campaign_jobs
+INNER JOIN campaigns ON campaign_jobs.campaign_plan_id = campaigns.campaign_plan_id
+LEFT JOIN changeset_jobs ON changeset_jobs.campaign_job_id = campaign_jobs.id
+WHERE campaigns.id = %s
+HAVING count(*) FILTER (WHERE changeset_jobs.created_at IS NULL) = 0;
 `
 
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
