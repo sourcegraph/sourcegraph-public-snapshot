@@ -129,14 +129,10 @@ async function getPanelTabTitles(driver: Driver): Promise<string[]> {
 
 function collectVisibleLinks(driver: Driver): Promise<TestLocation[]> {
     return driver.page.evaluate(() =>
-        Array.from(document.querySelectorAll<HTMLElement>('.e2e-search-result')).flatMap(e =>
-            Array.from(e.querySelectorAll<HTMLElement>('a[href]'))
-                .filter(a => a.nextElementSibling?.className.includes('file-match-children__item-badge-row'))
-                .map(a => ({
-                    url: a.getAttribute('href') || '',
-                    precise: a.nextElementSibling?.childElementCount === 0,
-                }))
-        )
+        Array.from(document.querySelectorAll<HTMLElement>('.e2e-file-match-children-item-wrapper')).map(a => ({
+            url: a.querySelector('.e2e-file-match-children-item')?.getAttribute('href') || '',
+            precise: a.querySelector('.e2e-badge-row')?.childElementCount === 0,
+        }))
     )
 }
 
