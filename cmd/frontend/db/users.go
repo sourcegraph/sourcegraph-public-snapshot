@@ -278,6 +278,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
 		SiteAdmin:   siteAdmin,
+		Builtin:     info.Password != "",
 	}, nil
 }
 
