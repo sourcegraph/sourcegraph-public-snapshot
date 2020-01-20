@@ -50,10 +50,6 @@ var defaultTransport = &nethttp.Transport{
 	}),
 }
 
-// defaultLimiter is the HTTP limiter used int eh default client and the
-// default reverse proxy.
-var defaultLimiter = parallel.NewRun(500)
-
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = NewClient(&http.Client{Transport: defaultTransport})
 
