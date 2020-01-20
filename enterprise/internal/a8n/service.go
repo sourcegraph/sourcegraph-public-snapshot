@@ -499,9 +499,9 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	return campaign, nil
 }
 
-// PublishCampaign publishes the Campaign with the given ID if it has not been
-// published yet by turning the CampaignJobs attached to the CampaignPlan of
-// the Campaign into ChangesetJobs and running them.
+// PublishCampaign publishes the Campaign with the given ID
+// by turning the CampaignJobs attached to the CampaignPlan of
+// the Campaign into ChangesetJobs and enqueuing them
 func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", id)
 	tr, ctx := trace.New(ctx, "service.PublishCampaign", traceTitle)
@@ -514,24 +514,12 @@ func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.
 	if err != nil {
 		return nil, err
 	}
-
 	defer tx.Done(&err)
 
 	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
 	if err != nil {
 		return nil, errors.Wrap(err, "getting campaign")
 	}
-
-	if campaign.Published() {
-		return campaign, nil
-	}
-
-	campaign.PublishedAt = s.clock()
-
-	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
-		return campaign, err
-	}
-
 	return campaign, s.createChangesetJobsWithStore(ctx, tx, campaign)
 }
 
