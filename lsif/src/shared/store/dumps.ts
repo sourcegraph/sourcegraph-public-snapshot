@@ -118,7 +118,6 @@ export class DumpManager {
      * the target commit). If no closest commit can be determined, this method returns undefined.
      *
      * @param repositoryId The repository identifier.
-     * @param repositoryName The repository name.
      * @param commit The target commit.
      * @param file One of the files in the dump.
      * @param ctx The tracing context.
@@ -126,7 +125,6 @@ export class DumpManager {
      */
     public async findClosestDump(
         repositoryId: number,
-        repositoryName: string,
         commit: string,
         file: string,
         ctx: TracingContext = {},
@@ -139,7 +137,7 @@ export class DumpManager {
         if (frontendUrl) {
             await this.updateCommits(
                 repositoryId,
-                await this.discoverCommits({ repositoryId, repositoryName, commit, frontendUrl, ctx }),
+                await this.discoverCommits({ repositoryId, commit, frontendUrl, ctx }),
                 ctx
             )
         }
@@ -256,15 +254,12 @@ export class DumpManager {
      */
     public async discoverCommits({
         repositoryId,
-        repositoryName,
         commit,
         frontendUrl,
         ctx = {},
     }: {
         /** The repository identifier. */
         repositoryId: number
-        /** The repository name. */
-        repositoryName: string
         /** The commit from which the gitserver queries should start. */
         commit: string
         /** The url of the frontend internal API. */

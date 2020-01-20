@@ -78,11 +78,8 @@ export async function updateCommitsAndDumpsVisibleFromTip(
     upload: pgModels.LsifUpload,
     ctx: TracingContext
 ): Promise<void> {
-    const repositoryId = upload.repositoryId
-    const repositoryName = upload.repositoryNameAtUpload
-
     const tipCommit = await dumpManager.discoverTip({
-        repositoryId,
+        repositoryId: upload.repositoryId,
         frontendUrl,
         ctx,
     })
@@ -91,8 +88,7 @@ export async function updateCommitsAndDumpsVisibleFromTip(
     }
 
     const commits = await dumpManager.discoverCommits({
-        repositoryId,
-        repositoryName,
+        repositoryId: upload.repositoryId,
         commit: upload.commit,
         frontendUrl,
         ctx,
@@ -106,8 +102,7 @@ export async function updateCommitsAndDumpsVisibleFromTip(
         // the tip and all dumps will be invisible.
 
         const tipCommits = await dumpManager.discoverCommits({
-            repositoryId,
-            repositoryName,
+            repositoryId: upload.repositoryId,
             commit: tipCommit,
             frontendUrl,
             ctx,

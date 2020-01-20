@@ -425,22 +425,21 @@ Foreign-key constraints:
 
 # Table "public.lsif_uploads"
 ```
-          Column           |           Type           |                        Modifiers                        
----------------------------+--------------------------+---------------------------------------------------------
- id                        | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
- repository_name_at_upload | text                     | not null
- commit                    | text                     | not null
- root                      | text                     | not null default ''::text
- visible_at_tip            | boolean                  | not null default false
- uploaded_at               | timestamp with time zone | not null default now()
- filename                  | text                     | not null
- state                     | lsif_upload_state        | not null default 'queued'::lsif_upload_state
- failure_summary           | text                     | 
- failure_stacktrace        | text                     | 
- started_at                | timestamp with time zone | 
- finished_at               | timestamp with time zone | 
- tracing_context           | text                     | not null
- repository_id             | integer                  | not null
+       Column       |           Type           |                        Modifiers                        
+--------------------+--------------------------+---------------------------------------------------------
+ id                 | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
+ commit             | text                     | not null
+ root               | text                     | not null default ''::text
+ visible_at_tip     | boolean                  | not null default false
+ uploaded_at        | timestamp with time zone | not null default now()
+ filename           | text                     | not null
+ state              | lsif_upload_state        | not null default 'queued'::lsif_upload_state
+ failure_summary    | text                     | 
+ failure_stacktrace | text                     | 
+ started_at         | timestamp with time zone | 
+ finished_at        | timestamp with time zone | 
+ tracing_context    | text                     | not null
+ repository_id      | integer                  | not null
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root" UNIQUE, btree (repository_id, commit, root) WHERE state = 'completed'::lsif_upload_state
