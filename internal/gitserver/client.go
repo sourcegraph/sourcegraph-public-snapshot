@@ -38,19 +38,24 @@ import (
 
 var requestMeter = metrics.NewRequestMeter("gitserver", "Total number of requests sent to gitserver.")
 
+// defaultTransport is the default transport used in the default client and the
+// default reverse proxy. nethttp.Transport will propagate opentracing spans.
+var defaultTransport = &nethttp.Transport{
+	RoundTripper: requestMeter.Transport(&http.Transport{
+		// Default is 2, but we can send many concurrent requests
+		MaxIdleConnsPerHost: 500,
+	}, func(u *url.URL) string {
+		// break it down by API function call (ie "/archive", "/exec", "/is-repo-cloneable", etc)
+		return u.Path
+	}),
+}
+
+// defaultLimiter is the HTTP limiter used int eh default client and the
+// default reverse proxy.
+var defaultLimiter = parallel.NewRun(500)
+
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-var DefaultClient = NewClient(&http.Client{
-	// nethttp.Transport will propagate opentracing spans
-	Transport: &nethttp.Transport{
-		RoundTripper: requestMeter.Transport(&http.Transport{
-			// Default is 2, but we can send many concurrent requests
-			MaxIdleConnsPerHost: 500,
-		}, func(u *url.URL) string {
-			// break it down by API function call (ie "/archive", "/exec", "/is-repo-cloneable", etc)
-			return u.Path
-		}),
-	},
-})
+var DefaultClient = NewClient(&http.Client{Transport: defaultTransport})
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.

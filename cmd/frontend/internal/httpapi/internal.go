@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"net/http/httputil"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -565,17 +564,15 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 	// Find the correct shard to query
 	addr := gitserver.DefaultClient.AddrForRepo(r.Context(), repo.Name)
 
-	proxy := &httputil.ReverseProxy{Director: func(req *http.Request) {
+	director := func(req *http.Request) {
 		req.URL.Scheme = "http"
 		req.URL.Host = addr
 		req.URL.Path = "/exec"
 		req.Body = ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
 		req.ContentLength = int64(buf.Len())
-	}}
+	}
 
-	// TODO - add tracing
-	// TODO - add http limiter
-	proxy.ServeHTTP(w, r)
+	gitserver.DefaultReverseProxy.ServeHTTP(repo.Name, "POST", "exec", director, w, r)
 	return nil
 }
 
