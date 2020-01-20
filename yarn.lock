@@ -1789,8 +1789,7 @@
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.0.0"
 
 "@sourcegraph/prettierrc@^3.0.1":
   version "3.0.1"
@@ -8138,10 +8137,10 @@ execa@^1.0.0:
     signal-exit "^3.0.0"
     strip-eof "^1.0.0"
 
-execa@^3.4.0:
-  version "3.4.0"
-  resolved "https://registry.npmjs.org/execa/-/execa-3.4.0.tgz#c08ed4550ef65d858fac269ffc8572446f37eb89"
-  integrity sha512-r9vdGQk4bmCuK1yKQu1KTwcT2zwfWdbdaXfCtAh+5nU/4fSX+JAb7vZGvI5naJrQlvONrEB20jeruESI69530g==
+execa@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/execa/-/execa-4.0.0.tgz#7f37d6ec17f09e6b8fc53288611695b6d12b9daf"
+  integrity sha512-JbDUxwV3BoT5ZVXQrSVbAiaXhXUkIwvbhPIwZ0N13kX+5yCzOhUNdocxB/UQRuYOHRYYwAxKYwJYc0T4D12pDA==
   dependencies:
     cross-spawn "^7.0.0"
     get-stream "^5.0.0"
@@ -8150,7 +8149,6 @@ execa@^3.4.0:
     merge-stream "^2.0.0"
     npm-run-path "^4.0.0"
     onetime "^5.1.0"
-    p-finally "^2.0.0"
     signal-exit "^3.0.2"
     strip-final-newline "^2.0.0"
 
@@ -14139,11 +14137,6 @@ p-finally@^1.0.0:
   resolved "https://registry.npmjs.org/p-finally/-/p-finally-1.0.0.tgz#3fbcfb15b899a44123b34b6dcc18b724336a2cae"
   integrity sha1-P7z7FbiZpEEjs0ttzBi3JDNqLK4=
 
-p-finally@^2.0.0:
-  version "2.0.1"
-  resolved "https://registry.npmjs.org/p-finally/-/p-finally-2.0.1.tgz#bd6fcaa9c559a096b680806f4d657b3f0f240561"
-  integrity sha512-vpm09aKwq6H9phqRQzecoDpD8TmVyGw70qmWlyq5onxY7tqyTTFVvxMykxQSQKILBSFlbXpypIw2T1Ml7+DDtw==
-
 p-is-promise@^1.1.0:
   version "1.1.0"
   resolved "http://registry.npmjs.org/p-is-promise/-/p-is-promise-1.1.0.tgz#9c9456989e9f6588017b0434d56097675c3da05e"
@@ -17693,8 +17686,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "23.0.1"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
