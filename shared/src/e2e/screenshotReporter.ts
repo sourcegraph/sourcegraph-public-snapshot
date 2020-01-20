@@ -4,10 +4,8 @@ import * as puppeteer from 'puppeteer'
 import { afterEach } from 'mocha'
 
 /**
- * Registers a jasmine reporter (for use with jest) that takes a screenshot of the browser when a test fails (and
- * closes the page after each test). It is used by e2e tests.
- *
- * From https://github.com/smooth-code/jest-puppeteer/issues/131#issuecomment-424073620.
+ * Registers an `afterEach` hook (for use with Mocha) that takes a screenshot of
+ * the browser when a test fails. It is used by e2e tests.
  */
 export function saveScreenshotsUponFailures(getPage: () => puppeteer.Page): void {
     afterEach(async function() {
