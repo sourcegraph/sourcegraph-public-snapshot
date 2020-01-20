@@ -2,13 +2,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { siteFlags } from '../../site/backend'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
@@ -30,15 +27,12 @@ export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {
      * is viewing another user's account page).
      */
     user: GQL.IUser
-    authProviders: GQL.IAuthProvider[]
     newToken?: GQL.ICreateAccessTokenResult
     onDidCreateAccessToken: (value?: GQL.ICreateAccessTokenResult) => void
     onDidPresentNewToken: (value?: GQL.ICreateAccessTokenResult) => void
 }
 
 interface UserSettingsAreaState {
-    authProviders: GQL.IAuthProvider[]
-
     /**
      * Holds the newly created access token (from UserSettingsCreateAccessTokenPage), if any. After
      * it is displayed to the user, this subject's value is set back to undefined.
@@ -51,20 +45,7 @@ interface UserSettingsAreaState {
  */
 export const UserSettingsArea = withAuthenticatedUser(
     class UserSettingsArea extends React.Component<UserSettingsAreaProps, UserSettingsAreaState> {
-        public state: UserSettingsAreaState = { authProviders: [] }
-        private subscriptions = new Subscription()
-
-        public componentDidMount(): void {
-            this.subscriptions.add(
-                siteFlags.pipe(map(({ authProviders }) => authProviders)).subscribe(({ nodes }) => {
-                    this.setState({ authProviders: nodes })
-                })
-            )
-        }
-
-        public componentWillUnmount(): void {
-            this.subscriptions.unsubscribe()
-        }
+        public state: UserSettingsAreaState = {}
 
         public render(): JSX.Element | null {
             if (!this.props.user) {
@@ -88,17 +69,11 @@ export const UserSettingsArea = withAuthenticatedUser(
                 user: this.props.user,
                 onDidCreateAccessToken: this.setNewToken,
                 onDidPresentNewToken: this.setNewToken,
-                authProviders: this.state.authProviders,
             }
 
             return (
                 <div className="d-flex">
-                    <UserSettingsSidebar
-                        items={this.props.sideBarItems}
-                        authProviders={this.state.authProviders}
-                        {...this.props}
-                        className="flex-0 mr-3"
-                    />
+                    <UserSettingsSidebar items={this.props.sideBarItems} {...this.props} className="flex-0 mr-3" />
                     <div className="flex-1">
                         <ErrorBoundary location={this.props.location}>
                             <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>

@@ -115,6 +115,9 @@ func (r *UserResolver) DisplayName() *string {
 	return &r.user.DisplayName
 }
 
+// Builtin returns whether or not the user account was created in Sourcegraph.
+func (r *UserResolver) Builtin() bool { return r.user.Builtin }
+
 func (r *UserResolver) AvatarURL() *string {
 	if r.user.AvatarURL == "" {
 		return nil

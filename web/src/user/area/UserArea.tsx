@@ -38,6 +38,7 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
                     avatarURL
                     viewerCanAdminister
                     siteAdmin
+                    builtin
                     createdAt
                     emails {
                         email
