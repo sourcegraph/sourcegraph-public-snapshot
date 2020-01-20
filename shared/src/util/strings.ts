@@ -17,7 +17,7 @@ export function count(str: string, ...patterns: RegExp[]): number {
     return n
 }
 
-export function numberWithCommas(x: any): string {
+export function numberWithCommas(x: string | number): string {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
