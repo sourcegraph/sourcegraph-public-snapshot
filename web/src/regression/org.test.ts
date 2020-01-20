@@ -11,11 +11,11 @@ import { PlatformContext } from '../../../shared/src/platform/context'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { parseJSONCOrError } from '../../../shared/src/util/jsonc'
 import { Settings, QuickLink } from '../schema/settings.schema'
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import delay from 'delay'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { isErrorLike } from '../../../shared/src/util/errors'
 
 async function deleteOrganizationByName(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
