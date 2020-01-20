@@ -287,7 +287,7 @@ func (s *Store) CreateChangesets(ctx context.Context, cs ...*a8n.Changeset) erro
 			exist = append(exist, cs[i].ID)
 		}
 
-		return int64(cs[i].ID), 1, err
+		return cs[i].ID, 1, err
 	})
 	if err != nil {
 		return err
@@ -552,7 +552,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -762,7 +762,7 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -866,7 +866,7 @@ func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetE
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		i++
 		err = scanChangesetEvent(cs[i], sc)
-		return int64(cs[i].ID), 1, err
+		return cs[i].ID, 1, err
 	})
 }
 
@@ -995,7 +995,7 @@ func (s *Store) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaign(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1097,7 +1097,7 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *a8n.Campaign) error {
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaign(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1288,7 +1288,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -1350,7 +1350,7 @@ func (s *Store) CreateCampaignPlan(ctx context.Context, c *a8n.CampaignPlan) err
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaignPlan(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1406,7 +1406,7 @@ func (s *Store) UpdateCampaignPlan(ctx context.Context, c *a8n.CampaignPlan) err
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaignPlan(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1657,7 +1657,7 @@ func (s *Store) ListCampaignPlans(ctx context.Context, opts ListCampaignPlansOpt
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -1711,7 +1711,7 @@ func (s *Store) CreateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaignJob(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1780,7 +1780,7 @@ func (s *Store) UpdateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaignJob(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1987,7 +1987,7 @@ func (s *Store) ListCampaignJobs(ctx context.Context, opts ListCampaignJobsOpts)
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
