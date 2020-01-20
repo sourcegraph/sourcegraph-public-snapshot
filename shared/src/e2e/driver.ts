@@ -13,8 +13,8 @@ import * as path from 'path'
 import { escapeRegExp } from 'lodash'
 import { readFile } from 'mz/fs'
 import { Settings } from '../settings/settings'
-import { fromEvent } from 'rxjs'
-import { filter, map, concatAll } from 'rxjs/operators'
+import { fromEvent, Subscription } from 'rxjs'
+import { filter, map, concatAll, tap } from 'rxjs/operators'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -113,12 +113,49 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
 }
 
 export class Driver {
+    private consoleBuffer = new Set<Promise<unknown>>()
+    private subscriptions = new Subscription()
+
     constructor(
         public browser: puppeteer.Browser,
         public page: puppeteer.Page,
         public sourcegraphBaseUrl: string,
-        public keepBrowser?: boolean
-    ) {}
+        public keepBrowser: boolean = false,
+        logBrowserConsole: boolean = true
+    ) {
+        if (logBrowserConsole) {
+            this.subscriptions.add(
+                fromEvent<ConsoleMessage>(page, 'console')
+                    .pipe(
+                        filter(
+                            message =>
+                                !message.text().includes('Download the React DevTools') &&
+                                !message.text().includes('[HMR]') &&
+                                !message.text().includes('[WDS]') &&
+                                !message.text().includes('Warning: componentWillReceiveProps has been renamed')
+                        ),
+                        // Immediately format remote handles to strings, but maintain order.
+                        map(formatPuppeteerConsoleMessage),
+                        tap(promise => {
+                            this.consoleBuffer.add(promise)
+                            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                            promise.finally(() => this.consoleBuffer.delete(promise))
+                        }),
+                        concatAll()
+                    )
+                    .subscribe(formattedLine => console.log(formattedLine))
+            )
+            this.subscriptions.add(() => this.consoleBuffer.clear())
+        }
+    }
+
+    /**
+     * Waits for all current console messages to be formatted.
+     * Messages cannot be formatted anymore after a navigation.
+     */
+    public async ensureConsoleLogsFlushed(): Promise<void> {
+        await Promise.all(this.consoleBuffer)
+    }
 
     public async ensureLoggedIn({
         username,
@@ -175,6 +212,7 @@ export class Driver {
         if (!this.keepBrowser) {
             await this.browser.close()
         }
+        this.subscriptions.unsubscribe()
     }
 
     public async newPage(): Promise<void> {
@@ -602,21 +640,5 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
         defaultViewport: null,
     })
     const page = await browser.newPage()
-    if (logBrowserConsole) {
-        fromEvent<ConsoleMessage>(page, 'console')
-            .pipe(
-                filter(
-                    message =>
-                        !message.text().includes('Download the React DevTools') &&
-                        !message.text().includes('[HMR]') &&
-                        !message.text().includes('[WDS]') &&
-                        !message.text().includes('Warning: componentWillReceiveProps has been renamed')
-                ),
-                // Immediately format remote handles to strings, but maintain order.
-                map(formatPuppeteerConsoleMessage),
-                concatAll()
-            )
-            .subscribe(formattedLine => console.log(formattedLine))
-    }
-    return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)
+    return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser, logBrowserConsole)
 }

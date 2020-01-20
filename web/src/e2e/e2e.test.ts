@@ -60,13 +60,8 @@ describe('e2e test suite', () => {
     })
 
     // Close browser.
-    after('Close browser', async () => {
-        if (driver) {
-            await driver.close()
-        }
-    })
-
-    // Take a screenshot when a test fails.
+    after('Close browser', () => driver?.close())
+    afterEach(() => driver?.ensureConsoleLogsFlushed())
     saveScreenshotsUponFailures(() => driver.page)
 
     beforeEach(async () => {
