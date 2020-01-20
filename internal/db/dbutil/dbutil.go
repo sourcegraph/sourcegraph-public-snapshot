@@ -133,6 +133,13 @@ func MigrateDB(db *sql.DB, dataSource string) error {
 		return err
 	}
 
+	// In case another process was faster and runs migrations, we will wait
+	// this long
+	m.LockTimeout = 5 * time.Minute
+	if os.Getenv("LOG_MIGRATE_TO_STDOUT") != "" {
+		m.Log = stdoutLogger{}
+	}
+
 	err = m.Up()
 	if err == nil || err == migr.ErrNoChange {
 		return nil
@@ -151,6 +158,15 @@ func MigrateDB(db *sql.DB, dataSource string) error {
 		return nil
 	}
 	return err
+}
+
+type stdoutLogger struct{}
+
+func (logger stdoutLogger) Printf(format string, v ...interface{}) {
+	fmt.Printf(format, v...)
+}
+func (logger stdoutLogger) Verbose() bool {
+	return true
 }
 
 // NullTime represents a time.Time that may be null. nullTime implements the
