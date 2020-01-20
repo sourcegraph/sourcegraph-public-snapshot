@@ -1,7 +1,5 @@
-/**
- * @jest-environment node
- */
-
+import expect from 'expect'
+import { describe, before, after, test } from 'mocha'
 import * as path from 'path'
 import { range } from 'lodash'
 import { ElementHandle } from 'puppeteer'
@@ -19,6 +17,7 @@ import { Driver } from '../../../shared/src/e2e/driver'
 import { Config, getConfig } from '../../../shared/src/e2e/config'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
+import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
 
 describe('Code intelligence regression test suite', () => {
     const testUsername = 'test-sg-codeintel'
@@ -101,7 +100,9 @@ describe('Code intelligence regression test suite', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let outerResourceManager: TestResourceManager
-    beforeAll(async () => {
+    before(async function() {
+        // sourcegraph/sourcegraph takes a while to clone
+        this.timeout(30 * 1000)
         ;({ driver, gqlClient, resourceManager: outerResourceManager } = await getTestTools(config))
         outerResourceManager.add(
             'User',
@@ -136,8 +137,11 @@ describe('Code intelligence regression test suite', () => {
             throw new Error(`test user ${testUsername} does not exist`)
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
-    }, 30 * 1000) // sourcegraph/sourcegraph takes a while to clone
-    afterAll(async () => {
+    })
+
+    saveScreenshotsUponFailures(() => driver.page)
+
+    after(async () => {
         if (!config.noCleanup) {
             await outerResourceManager.destroyAll()
         }
@@ -148,10 +152,10 @@ describe('Code intelligence regression test suite', () => {
 
     describe('Basic code intelligence regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
-        beforeAll(async () => {
+        before(async () => {
             innerResourceManager.add('Global setting', 'codeIntel.lsif', await setGlobalLSIFSetting(gqlClient, false))
         })
-        afterAll(async () => {
+        after(async () => {
             if (!config.noCleanup) {
                 await innerResourceManager.destroyAll()
             }
@@ -177,27 +181,23 @@ describe('Code intelligence regression test suite', () => {
                 expectedReferences: [],
             }))
 
-        test(
-            'File sidebar, multiple levels of directories',
-            async () => {
-                await driver.page.goto(
-                    config.sourcegraphBaseUrl +
-                        '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
-                )
-                for (const file of ['cmd', 'frontend', 'auth', 'providers', 'providers.go']) {
-                    await driver.findElementWithText(file, {
-                        action: 'click',
-                        selector: '.e2e-repo-rev-sidebar a',
-                        wait: { timeout: 2 * 1000 },
-                    })
-                }
-                await driver.waitUntilURL(
-                    `${config.sourcegraphBaseUrl}/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3/-/blob/cmd/frontend/auth/providers/providers.go`,
-                    { timeout: 2 * 1000 }
-                )
-            },
-            20 * 1000
-        )
+        test('File sidebar, multiple levels of directories', async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl +
+                    '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
+            )
+            for (const file of ['cmd', 'frontend', 'auth', 'providers', 'providers.go']) {
+                await driver.findElementWithText(file, {
+                    action: 'click',
+                    selector: '.e2e-repo-rev-sidebar a',
+                    wait: { timeout: 2 * 1000 },
+                })
+            }
+            await driver.waitUntilURL(
+                `${config.sourcegraphBaseUrl}/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3/-/blob/cmd/frontend/auth/providers/providers.go`,
+                { timeout: 2 * 1000 }
+            )
+        })
 
         test('Symbols sidebar', async () => {
             await driver.page.goto(
@@ -241,7 +241,9 @@ describe('Code intelligence regression test suite', () => {
 
     describe('Precise code intelligence regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
-        beforeAll(async () => {
+        before(async function() {
+            this.timeout(30 * 1000)
+
             for (const { repo, commit } of [
                 { repo: 'prometheus-common', commit: prometheusCommonLSIFCommit },
                 { repo: 'prometheus-client-golang', commit: prometheusClientHeadCommit },
@@ -262,8 +264,8 @@ describe('Code intelligence regression test suite', () => {
 
             await clearUploads(gqlClient, 'github.com/sourcegraph-testing/prometheus-redefinitions')
             innerResourceManager.add('Global setting', 'codeIntel.lsif', await setGlobalLSIFSetting(gqlClient, true))
-        }, 30 * 1000)
-        afterAll(async () => {
+        })
+        after(async () => {
             if (!config.noCleanup) {
                 await innerResourceManager.destroyAll()
             }
@@ -485,13 +487,13 @@ export async function testCodeNavigation(
  * panel. This will click on each repository and collect the visible links in a
  * sequence.
  */
-async function collectLinks(driver: Driver): Promise<TestLocation[]> {
+async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
     const panelTabTitles = await getPanelTabTitles(driver)
     if (panelTabTitles.length === 0) {
-        return collectVisibleLinks(driver)
+        return new Set(await collectVisibleLinks(driver))
     }
 
-    const links = []
+    const links = new Set<TestLocation>()
     for (const title of panelTabTitles) {
         const tabElem = await driver.page.$$(`.e2e-hierarchical-locations-view-list span[title="${title}"]`)
         if (tabElem.length > 0) {
@@ -499,7 +501,7 @@ async function collectLinks(driver: Driver): Promise<TestLocation[]> {
         }
 
         for (const link of await collectVisibleLinks(driver)) {
-            links.push(link)
+            links.add(link)
         }
     }
 
@@ -526,14 +528,10 @@ async function getPanelTabTitles(driver: Driver): Promise<string[]> {
  */
 function collectVisibleLinks(driver: Driver): Promise<TestLocation[]> {
     return driver.page.evaluate(() =>
-        Array.from(document.querySelectorAll<HTMLElement>('.e2e-search-result')).flatMap(e =>
-            Array.from(e.querySelectorAll<HTMLElement>('a[href]'))
-                .filter(a => a.nextElementSibling?.className.includes('file-match-children__item-badge-row'))
-                .map(a => ({
-                    url: a.getAttribute('href') || '',
-                    precise: a.nextElementSibling?.childElementCount === 0,
-                }))
-        )
+        Array.from(document.querySelectorAll<HTMLElement>('.e2e-file-match-children-item-wrapper')).map(a => ({
+            url: a.querySelector('.e2e-file-match-children-item')?.getAttribute('href') || '',
+            precise: a.querySelector('.e2e-badge-row')?.childElementCount === 0,
+        }))
     )
 }
 

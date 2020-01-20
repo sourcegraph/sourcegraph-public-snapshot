@@ -1,4 +1,4 @@
-$filter-input-margin-y: 0.5rem;
+$filter-input-margin-y: 0.125rem;
 $filter-input-padding: 0.25rem;
 
 .filter-input {
@@ -22,7 +22,7 @@ $filter-input-padding: 0.25rem;
 
     &__form {
         display: inline-flex;
-        vertical-align: bottom;
+        vertical-align: middle;
         align-items: center;
         width: 100%;
     }
@@ -34,8 +34,14 @@ $filter-input-padding: 0.25rem;
         flex: 1 1 auto;
     }
 
+    &__label {
+        padding-right: 0.25rem;
+    }
+
     &__input-field {
         width: 100%;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
     }
 
     &__close {

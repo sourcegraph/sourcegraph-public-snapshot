@@ -109,7 +109,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 return (
                     <div
                         key={`linematch:${props.result.file.url}${position.line}:${position.character}`}
-                        className="file-match-children__item-code-wrapper"
+                        className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
                     >
                         <Link
                             to={`${props.result.file.url}${toPositionOrRangeHash({ position })}`}
@@ -128,7 +128,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             />
                         </Link>
 
-                        <div className="file-match-children__item-badge-row">
+                        <div className="file-match-children__item-badge-row e2e-badge-row">
                             {item.badge && showBadges && (
                                 // This div is necessary: it has block display, where the badge row
                                 // has flex display and would cause the hover tooltip to be offset

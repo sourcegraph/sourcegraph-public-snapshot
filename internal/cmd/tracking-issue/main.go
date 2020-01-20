@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -40,37 +41,46 @@ func run(milestone, labels string) error {
 		return err
 	}
 
-	workloads := map[string]float64{}
+	var (
+		assignees []string
+		workloads = map[string]float64{}
+		items     = map[string][]string{}
+	)
 
-	fmt.Printf("### Items\n\n")
 	for _, issue := range issues {
 		state := state(issue.State)
 		estimate := estimate(issue.Labels)
 		category := category(issue)
 		assignee := assignee(issue.Assignee)
 
-		fmt.Printf("- [%s] %s [#%d](%s) __%s__ %s %s\n",
+		item := fmt.Sprintf("- [%s] %s [#%d](%s) __%s__ %s\n",
 			state,
 			*issue.Title,
 			*issue.Number,
 			*issue.HTMLURL,
 			estimate,
 			category,
-			assignee,
 		)
 
+		if len(items[assignee]) == 0 {
+			assignees = append(assignees, assignee)
+		}
+
+		items[assignee] = append(items[assignee], item)
 		workloads[assignee] += days(estimate)
 	}
 
-	fmt.Printf("\n### Workloads\n\n")
-	for assignee, days := range workloads {
-		if assignee == "" {
-			assignee = "Unassigned"
+	sort.Strings(assignees)
+
+	for _, assignee := range assignees {
+		fmt.Printf("\n%s: __%.2fd__\n\n", assignee, workloads[assignee])
+
+		for _, item := range items[assignee] {
+			fmt.Print(item)
 		}
-		fmt.Printf("- %s: %.2fd\n", assignee, days)
 	}
 
-	return err
+	return nil
 }
 
 func days(estimate string) float64 {
@@ -130,7 +140,7 @@ func customer(issue *github.Issue) string {
 
 func assignee(user *github.User) string {
 	if user == nil || user.Login == nil {
-		return ""
+		return "Unassigned"
 	}
 	return "@" + *user.Login
 }

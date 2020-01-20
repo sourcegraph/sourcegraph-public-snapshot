@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Form } from '../../../components/Form'
 import CloseIcon from 'mdi-react/CloseIcon'
+import PlusIcon from 'mdi-react/PlusIcon'
 import MinusIcon from 'mdi-react/MinusIcon'
 import { Subscription, Subject, merge, of } from 'rxjs'
 import {
@@ -315,7 +316,7 @@ export class FilterInput extends React.Component<Props, State> {
         if (relatedTarget === null) {
             return false
         }
-        const node = (relatedTarget as HTMLElement).parentNode
+        const node = relatedTarget as HTMLElement
         return currentTarget.contains(node) || isEqual(currentTarget, node)
     }
 
@@ -421,16 +422,19 @@ export class FilterInput extends React.Component<Props, State> {
                                             onClick={this.toggleNegation}
                                             data-tooltip={this.props.negated ? 'Include results' : 'Exclude results'}
                                         >
-                                            <MinusIcon />
+                                            {this.props.negated ? <MinusIcon size={16} /> : <PlusIcon size={16} />}
                                         </button>
                                     )}
+                                    <span
+                                        tabIndex={0}
+                                        className="filter-input__label"
+                                    >{`${this.props.filterType}:`}</span>
                                     <div className="filter-input__input-wrapper">
                                         <input
                                             ref={this.inputEl}
-                                            className={`form-control filter-input__input-field e2e-filter-input__input-field-${this.props.mapKey}`}
+                                            className={`form-control form-control-sm filter-input__input-field e2e-filter-input__input-field-${this.props.mapKey}`}
                                             value={this.state.inputValue}
                                             onChange={this.onInputUpdate}
-                                            placeholder={`${startCase(this.props.filterType)} filter`}
                                             onKeyDown={event => {
                                                 this.onInputKeyDown(event)
                                                 onKeyDown(event)

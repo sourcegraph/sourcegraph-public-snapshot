@@ -1,3 +1,4 @@
+import expect from 'expect'
 import { Driver } from '../../../shared/src/e2e/driver'
 
 /**

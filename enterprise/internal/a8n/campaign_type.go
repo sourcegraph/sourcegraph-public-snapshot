@@ -267,7 +267,7 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 
 type regexSearchReplaceArgs struct {
 	ScopeQuery  string `json:"scopeQuery"`
-	RegexMatch  string `json:"regexMatch"`
+	RegexpMatch string `json:"regexpMatch"`
 	TextReplace string `json:"textReplace"`
 }
 
@@ -281,16 +281,16 @@ func (c *regexSearchReplace) searchQuery() string {
 	// We add the regexMatch because without it search may only return a
 	// truncated list of file matches. We also add count:10000 to have a
 	// higher chance of finding all matches.
-	return fmt.Sprintf("%s %s count:10000", c.args.ScopeQuery, c.args.RegexMatch)
+	return fmt.Sprintf("%s %s count:10000", c.args.ScopeQuery, c.args.RegexpMatch)
 }
 
 func (c *regexSearchReplace) searchQueryForRepo(n api.RepoName) string {
-	return fmt.Sprintf("repo:%s %s %s count:10000", regexp.QuoteMeta(string(n)), c.args.ScopeQuery, c.args.RegexMatch)
+	return fmt.Sprintf("repo:%s %s %s count:10000", regexp.QuoteMeta(string(n)), c.args.ScopeQuery, c.args.RegexpMatch)
 }
 
 func (c *regexSearchReplace) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, string, error) {
 	// check that the regex is valid before doing any work.
-	re, err := regexp.Compile(c.args.RegexMatch)
+	re, err := regexp.Compile(c.args.RegexpMatch)
 	if err != nil {
 		return "", "", err
 	}

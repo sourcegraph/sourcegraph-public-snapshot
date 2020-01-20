@@ -6,7 +6,7 @@
     // Prevents jitter when editing or adding a new filter by having a minimum height of
     // the input plus associated margins and padding of the filter input.
     min-height: calc(
-        #{$input-height} + #{$input-padding-y} + (#{$filter-input-margin-y} * 2) + (#{$filter-input-padding} * 2)
+        #{$input-height-sm} + #{$input-padding-y} + (#{$filter-input-margin-y} * 2) + (#{$filter-input-padding} * 2)
     );
 
     padding-left: 0.5rem;
