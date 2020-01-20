@@ -3,11 +3,11 @@ import { flattenCommitParents, getCommitsNear } from './gitserver'
 
 describe('getCommitsNear', () => {
     it('should parse response from gitserver', async () => {
-        nock('http://gitserver0')
-            .post('/git/42/exec', { args: ['log', '--pretty=%H %P', 'l', '-150'] })
+        nock('http://frontend')
+            .post('/.internal/git/42/exec', { args: ['log', '--pretty=%H %P', 'l', '-150'] })
             .reply(200, 'a\nb c\nd e f\ng h i j k l')
 
-        expect(await getCommitsNear('gitserver0', 42, 'l')).toEqual(
+        expect(await getCommitsNear('frontend', 42, 'l')).toEqual(
             new Map([
                 ['a', new Set()],
                 ['b', new Set(['c'])],
@@ -18,11 +18,11 @@ describe('getCommitsNear', () => {
     })
 
     it('should handle request for unknown repository', async () => {
-        nock('http://gitserver0')
-            .post('/git/42/exec')
+        nock('http://frontend')
+            .post('/.internal/git/42/exec')
             .reply(404)
 
-        expect(await getCommitsNear('gitserver0', 42, 'l')).toEqual(new Map())
+        expect(await getCommitsNear('frontend', 42, 'l')).toEqual(new Map())
     })
 })
 

@@ -477,7 +477,7 @@ describe('discoverAndUpdateCommit', () => {
         const cc = util.createCommit()
 
         nock('http://frontend')
-            .post(`/git/${repositoryId}/exec`)
+            .post(`/.internal/git/${repositoryId}/exec`)
             .reply(200, `${ca}\n${cb} ${ca}\n${cc} ${cb}`)
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
@@ -587,7 +587,7 @@ describe('discoverAndUpdateTips', () => {
         const ce = util.createCommit()
 
         nock('http://frontend')
-            .post(`/git/${repositoryId}/exec`, { args: ['rev-parse', 'HEAD'] })
+            .post(`/.internal/git/${repositoryId}/exec`, { args: ['rev-parse', 'HEAD'] })
             .reply(200, ce)
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
