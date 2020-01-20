@@ -2238,7 +2238,7 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 }
 
 // GetLatestChangesetJobCreatedAt returns the most recent created_at time for all changeset jobs
-// for a campaign iff they have all been created
+// for a campaign. But only if they have all been created, one for each CampaignJob belonging to the CampaignPlan attached to the Campaign. If not, it returns a zero time.Time.
 func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID int64) (time.Time, error) {
 	q := sqlf.Sprintf(getLatestChangesetJobPublishedAtFmtstr, campaignID, campaignID, campaignID)
 	var createdAt time.Time
