@@ -97,13 +97,13 @@ async function getTooltip(driver: Driver): Promise<string> {
     return driver.page.evaluate(() => (document.querySelector('.e2e-tooltip-content') as HTMLElement).innerText)
 }
 
-async function collectLinks(driver: Driver): Promise<TestLocation[]> {
+async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
     const panelTabTitles = await getPanelTabTitles(driver)
     if (panelTabTitles.length === 0) {
-        return collectVisibleLinks(driver)
+        return new Set(await collectVisibleLinks(driver))
     }
 
-    const links = []
+    const links = new Set<TestLocation>()
     for (const title of panelTabTitles) {
         const tabElem = await driver.page.$$(`.e2e-hierarchical-locations-view-list span[title="${title}"]`)
         if (tabElem.length > 0) {
@@ -111,7 +111,7 @@ async function collectLinks(driver: Driver): Promise<TestLocation[]> {
         }
 
         for (const link of await collectVisibleLinks(driver)) {
-            links.push(link)
+            links.add(link)
         }
     }
 
