@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/kylelemons/godebug/pretty"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -1111,7 +1110,7 @@ func TestRepoLookup(t *testing.T) {
 				t.Errorf("response: %s", cmp.Diff(have, want))
 			}
 
-			if diff := pretty.Compare(res, tc.result); diff != "" {
+			if diff := cmp.Diff(res, tc.result); diff != "" {
 				t.Fatalf("RepoLookup:\n%s", diff)
 			}
 

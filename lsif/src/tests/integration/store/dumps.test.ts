@@ -14,6 +14,12 @@ describe('DumpManager', () => {
     let storageRoot!: string
     let dumpManager!: DumpManager
 
+    let counter = 100
+    const nextId = () => {
+        counter++
+        return counter
+    }
+
     beforeAll(async () => {
         ;({ connection, cleanup } = await util.createCleanPostgresDatabase())
         storageRoot = await util.createStorageRoot()
@@ -45,6 +51,8 @@ describe('DumpManager', () => {
         //       |              |           |
         //       +-- [c] -- d --+           +--- h
 
+        const repositoryId = nextId()
+        const repositoryName = 'foo'
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
@@ -56,7 +64,7 @@ describe('DumpManager', () => {
 
         // Add relations
         await dumpManager.updateCommits(
-            'foo',
+            repositoryId,
             new Map<string, Set<string>>([
                 [ca, new Set()],
                 [cb, new Set([ca])],
@@ -71,18 +79,18 @@ describe('DumpManager', () => {
         )
 
         // Add dumps
-        await util.insertDump(connection, dumpManager, 'foo', ca, '')
-        await util.insertDump(connection, dumpManager, 'foo', cc, '')
-        await util.insertDump(connection, dumpManager, 'foo', cg, '')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, ca, '')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cc, '')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cg, '')
 
-        const d1 = await dumpManager.findClosestDump('foo', ca, 'file')
-        const d2 = await dumpManager.findClosestDump('foo', cb, 'file')
-        const d3 = await dumpManager.findClosestDump('foo', cc, 'file')
-        const d4 = await dumpManager.findClosestDump('foo', cd, 'file')
-        const d5 = await dumpManager.findClosestDump('foo', cf, 'file')
-        const d6 = await dumpManager.findClosestDump('foo', cg, 'file')
-        const d7 = await dumpManager.findClosestDump('foo', ce, 'file')
-        const d8 = await dumpManager.findClosestDump('foo', ch, 'file')
+        const d1 = await dumpManager.findClosestDump(repositoryId, repositoryName, ca, 'file')
+        const d2 = await dumpManager.findClosestDump(repositoryId, repositoryName, cb, 'file')
+        const d3 = await dumpManager.findClosestDump(repositoryId, repositoryName, cc, 'file')
+        const d4 = await dumpManager.findClosestDump(repositoryId, repositoryName, cd, 'file')
+        const d5 = await dumpManager.findClosestDump(repositoryId, repositoryName, cf, 'file')
+        const d6 = await dumpManager.findClosestDump(repositoryId, repositoryName, cg, 'file')
+        const d7 = await dumpManager.findClosestDump(repositoryId, repositoryName, ce, 'file')
+        const d8 = await dumpManager.findClosestDump(repositoryId, repositoryName, ch, 'file')
 
         // Test closest commit
         expect(d1?.commit).toEqual(ca)
@@ -110,6 +118,8 @@ describe('DumpManager', () => {
         //              |
         //              +-- g -- h
 
+        const repositoryId = nextId()
+        const repositoryName = 'foo'
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
@@ -121,7 +131,7 @@ describe('DumpManager', () => {
 
         // Add relations
         await dumpManager.updateCommits(
-            'foo',
+            repositoryId,
             new Map<string, Set<string>>([
                 [ca, new Set()],
                 [cb, new Set([ca])],
@@ -135,21 +145,21 @@ describe('DumpManager', () => {
         )
 
         // Add dumps
-        await util.insertDump(connection, dumpManager, 'foo', cb, '')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cb, '')
 
-        const d1 = await dumpManager.findClosestDump('foo', ca, 'file')
-        const d2 = await dumpManager.findClosestDump('foo', cb, 'file')
-        const d3 = await dumpManager.findClosestDump('foo', cc, 'file')
+        const d1 = await dumpManager.findClosestDump(repositoryId, repositoryName, ca, 'file')
+        const d2 = await dumpManager.findClosestDump(repositoryId, repositoryName, cb, 'file')
+        const d3 = await dumpManager.findClosestDump(repositoryId, repositoryName, cc, 'file')
 
         // Test closest commit
         expect(d1?.commit).toEqual(cb)
         expect(d2?.commit).toEqual(cb)
         expect(d3?.commit).toEqual(cb)
-        expect(await dumpManager.findClosestDump('foo', cd, 'file')).toBeUndefined()
-        expect(await dumpManager.findClosestDump('foo', ce, 'file')).toBeUndefined()
-        expect(await dumpManager.findClosestDump('foo', cf, 'file')).toBeUndefined()
-        expect(await dumpManager.findClosestDump('foo', cg, 'file')).toBeUndefined()
-        expect(await dumpManager.findClosestDump('foo', ch, 'file')).toBeUndefined()
+        expect(await dumpManager.findClosestDump(repositoryId, repositoryName, cd, 'file')).toBeUndefined()
+        expect(await dumpManager.findClosestDump(repositoryId, repositoryName, ce, 'file')).toBeUndefined()
+        expect(await dumpManager.findClosestDump(repositoryId, repositoryName, cf, 'file')).toBeUndefined()
+        expect(await dumpManager.findClosestDump(repositoryId, repositoryName, cg, 'file')).toBeUndefined()
+        expect(await dumpManager.findClosestDump(repositoryId, repositoryName, ch, 'file')).toBeUndefined()
     })
 
     it('should return empty string as closest commit with no reachable lsif data', async () => {
@@ -163,13 +173,15 @@ describe('DumpManager', () => {
         //
         // Where LSIF dumps exist at b at roots: root1/ and root2/.
 
+        const repositoryId = nextId()
+        const repositoryName = 'foo'
         const ca = util.createCommit()
         const cb = util.createCommit()
-        const fields = ['repository', 'commit', 'root']
+        const fields = ['repositoryId', 'commit', 'root']
 
         // Add relations
         await dumpManager.updateCommits(
-            'foo',
+            repositoryId,
             new Map<string, Set<string>>([
                 [ca, new Set()],
                 [cb, new Set([ca])],
@@ -177,37 +189,47 @@ describe('DumpManager', () => {
         )
 
         // Add dumps
-        await util.insertDump(connection, dumpManager, 'foo', cb, 'root1/')
-        await util.insertDump(connection, dumpManager, 'foo', cb, 'root2/')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cb, 'root1/')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cb, 'root2/')
 
         // Test closest commit
-        expect(await dumpManager.findClosestDump('foo', ca, 'blah')).toBeUndefined()
-        expect(pick(await dumpManager.findClosestDump('foo', cb, 'root1/file.ts'), ...fields)).toEqual({
-            repository: 'foo',
+        expect(await dumpManager.findClosestDump(repositoryId, repositoryName, ca, 'blah')).toBeUndefined()
+        expect(
+            pick(await dumpManager.findClosestDump(repositoryId, repositoryName, cb, 'root1/file.ts'), ...fields)
+        ).toEqual({
+            repositoryId,
             commit: cb,
             root: 'root1/',
         })
-        expect(pick(await dumpManager.findClosestDump('foo', cb, 'root2/file.ts'), ...fields)).toEqual({
-            repository: 'foo',
+        expect(
+            pick(await dumpManager.findClosestDump(repositoryId, repositoryName, cb, 'root2/file.ts'), ...fields)
+        ).toEqual({
+            repositoryId,
             commit: cb,
             root: 'root2/',
         })
-        expect(pick(await dumpManager.findClosestDump('foo', ca, 'root2/file.ts'), ...fields)).toEqual({
-            repository: 'foo',
+        expect(
+            pick(await dumpManager.findClosestDump(repositoryId, repositoryName, ca, 'root2/file.ts'), ...fields)
+        ).toEqual({
+            repositoryId,
             commit: cb,
             root: 'root2/',
         })
 
-        expect(await dumpManager.findClosestDump('foo', ca, 'root3/file.ts')).toBeUndefined()
+        expect(await dumpManager.findClosestDump(repositoryId, repositoryName, ca, 'root3/file.ts')).toBeUndefined()
 
-        await util.insertDump(connection, dumpManager, 'foo', cb, '')
-        expect(pick(await dumpManager.findClosestDump('foo', ca, 'root2/file.ts'), ...fields)).toEqual({
-            repository: 'foo',
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cb, '')
+        expect(
+            pick(await dumpManager.findClosestDump(repositoryId, repositoryName, ca, 'root2/file.ts'), ...fields)
+        ).toEqual({
+            repositoryId,
             commit: cb,
             root: '',
         })
-        expect(pick(await dumpManager.findClosestDump('foo', ca, 'root3/file.ts'), ...fields)).toEqual({
-            repository: 'foo',
+        expect(
+            pick(await dumpManager.findClosestDump(repositoryId, repositoryName, ca, 'root3/file.ts'), ...fields)
+        ).toEqual({
+            repositoryId,
             commit: cb,
             root: '',
         })
@@ -225,6 +247,8 @@ describe('DumpManager', () => {
         // Note: we use 'a' as a suffix for commit numbers on construction so that
         // we can distinguish `1` and `11` (`1a1a1a...` and `11a11a11a..`).
 
+        const repositoryId = nextId()
+        const repositoryName = 'foo'
         const c0 = util.createCommit(0)
         const c1 = util.createCommit(1)
         const cpen = util.createCommit(MAX_TRAVERSAL_LIMIT / 2 - 1)
@@ -238,14 +262,14 @@ describe('DumpManager', () => {
         )
 
         // Add relations
-        await dumpManager.updateCommits('foo', commits)
+        await dumpManager.updateCommits(repositoryId, commits)
 
         // Add dumps
-        await util.insertDump(connection, dumpManager, 'foo', c0, '')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, c0, '')
 
-        const d1 = await dumpManager.findClosestDump('foo', c0, 'file')
-        const d2 = await dumpManager.findClosestDump('foo', c1, 'file')
-        const d3 = await dumpManager.findClosestDump('foo', cpen, 'file')
+        const d1 = await dumpManager.findClosestDump(repositoryId, repositoryName, c0, 'file')
+        const d2 = await dumpManager.findClosestDump(repositoryId, repositoryName, c1, 'file')
+        const d3 = await dumpManager.findClosestDump(repositoryId, repositoryName, cpen, 'file')
 
         // Test closest commit
         expect(d1?.commit).toEqual(c0)
@@ -268,13 +292,13 @@ describe('DumpManager', () => {
         // | 99    | 99     |
         // | 100   | 1      | (limit reached)
 
-        expect(await dumpManager.findClosestDump('foo', cmax, 'file')).toBeUndefined()
+        expect(await dumpManager.findClosestDump(repositoryId, repositoryName, cmax, 'file')).toBeUndefined()
 
         // Add closer dump
-        await util.insertDump(connection, dumpManager, 'foo', c1, '')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, c1, '')
 
         // Now commit 1 should be found
-        const dump = await dumpManager.findClosestDump('foo', cmax, 'file')
+        const dump = await dumpManager.findClosestDump(repositoryId, repositoryName, cmax, 'file')
         expect(dump?.commit).toEqual(c1)
     })
 
@@ -287,6 +311,8 @@ describe('DumpManager', () => {
         //
         // a -- b -- c -- d -- e -- f -- g
 
+        const repositoryId = nextId()
+        const repositoryName = 'foo'
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
@@ -297,7 +323,7 @@ describe('DumpManager', () => {
 
         // Add relations
         await dumpManager.updateCommits(
-            'foo',
+            repositoryId,
             new Map<string, Set<string>>([
                 [ca, new Set()],
                 [cb, new Set([ca])],
@@ -310,15 +336,15 @@ describe('DumpManager', () => {
         )
 
         // Add dumps
-        await util.insertDump(connection, dumpManager, 'foo', ca, 'r1')
-        await util.insertDump(connection, dumpManager, 'foo', cb, 'r2')
-        await util.insertDump(connection, dumpManager, 'foo', cc, '') // overwrites r1, r2
-        const d1 = await util.insertDump(connection, dumpManager, 'foo', cd, 'r3') // overwrites ''
-        const d2 = await util.insertDump(connection, dumpManager, 'foo', cf, 'r4')
-        await util.insertDump(connection, dumpManager, 'foo', cg, 'r5') // not traversed
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, ca, 'r1')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cb, 'r2')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cc, '') // overwrites r1, r2
+        const d1 = await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cd, 'r3') // overwrites ''
+        const d2 = await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cf, 'r4')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cg, 'r5') // not traversed
 
-        await dumpManager.updateDumpsVisibleFromTip('foo', cf)
-        const visibleDumps = await dumpManager.getVisibleDumps('foo')
+        await dumpManager.updateDumpsVisibleFromTip(repositoryId, cf)
+        const visibleDumps = await dumpManager.getVisibleDumps(repositoryId)
         expect(visibleDumps.map((dump: pgModels.LsifDump) => dump.id).sort()).toEqual([d1.id, d2.id])
     })
 
@@ -335,6 +361,8 @@ describe('DumpManager', () => {
         //     |                           |
         //     +-- [f] --- g --------------+
 
+        const repositoryId = nextId()
+        const repositoryName = 'foo'
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
@@ -347,7 +375,7 @@ describe('DumpManager', () => {
 
         // Add relations
         await dumpManager.updateCommits(
-            'foo',
+            repositoryId,
             new Map<string, Set<string>>([
                 [ca, new Set()],
                 [cb, new Set([ca])],
@@ -362,16 +390,16 @@ describe('DumpManager', () => {
         )
 
         // Add dumps
-        await util.insertDump(connection, dumpManager, 'foo', cb, 'r2')
-        const dump1 = await util.insertDump(connection, dumpManager, 'foo', ce, 'r2/a') // overwrites r2 in commit b
-        const dump2 = await util.insertDump(connection, dumpManager, 'foo', ce, 'r2/b')
-        await util.insertDump(connection, dumpManager, 'foo', cf, 'r1/a')
-        await util.insertDump(connection, dumpManager, 'foo', cf, 'r1/b')
-        const dump3 = await util.insertDump(connection, dumpManager, 'foo', ch, 'r1') // overwrites r1/{a,b} in commit f
-        const dump4 = await util.insertDump(connection, dumpManager, 'foo', ci, 'r3')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cb, 'r2')
+        const dump1 = await util.insertDump(connection, dumpManager, repositoryId, repositoryName, ce, 'r2/a') // overwrites r2 in commit b
+        const dump2 = await util.insertDump(connection, dumpManager, repositoryId, repositoryName, ce, 'r2/b')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cf, 'r1/a')
+        await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cf, 'r1/b')
+        const dump3 = await util.insertDump(connection, dumpManager, repositoryId, repositoryName, ch, 'r1') // overwrites r1/{a,b} in commit f
+        const dump4 = await util.insertDump(connection, dumpManager, repositoryId, repositoryName, ci, 'r3')
 
-        await dumpManager.updateDumpsVisibleFromTip('foo', ci)
-        const visibleDumps = await dumpManager.getVisibleDumps('foo')
+        await dumpManager.updateDumpsVisibleFromTip(repositoryId, ci)
+        const visibleDumps = await dumpManager.getVisibleDumps(repositoryId)
         expect(visibleDumps.map((dump: pgModels.LsifDump) => dump.id).sort()).toEqual([
             dump1.id,
             dump2.id,
@@ -392,6 +420,8 @@ describe('DumpManager', () => {
         // Note: we use 'a' as a suffix for commit numbers on construction so that
         // we can distinguish `1` and `11` (`1a1a1a...` and `11a11a11a...`).
 
+        const repositoryId = nextId()
+        const repositoryName = 'foo'
         const c0 = util.createCommit(0)
         const c1 = util.createCommit(1)
         const cpen = util.createCommit(MAX_TRAVERSAL_LIMIT - 1)
@@ -405,35 +435,43 @@ describe('DumpManager', () => {
         )
 
         // Add relations
-        await dumpManager.updateCommits('foo', commits)
+        await dumpManager.updateCommits(repositoryId, commits)
 
         // Add dumps
-        const dump1 = await util.insertDump(connection, dumpManager, 'foo', cmax, '')
+        const dump1 = await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cmax, '')
 
-        await dumpManager.updateDumpsVisibleFromTip('foo', cmax)
-        let visibleDumps = await dumpManager.getVisibleDumps('foo')
+        await dumpManager.updateDumpsVisibleFromTip(repositoryId, cmax)
+        let visibleDumps = await dumpManager.getVisibleDumps(repositoryId)
         expect(visibleDumps.map((dump: pgModels.LsifDump) => dump.id).sort()).toEqual([dump1.id])
 
-        await dumpManager.updateDumpsVisibleFromTip('foo', c1)
-        visibleDumps = await dumpManager.getVisibleDumps('foo')
+        await dumpManager.updateDumpsVisibleFromTip(repositoryId, c1)
+        visibleDumps = await dumpManager.getVisibleDumps(repositoryId)
         expect(visibleDumps.map((dump: pgModels.LsifDump) => dump.id).sort()).toEqual([dump1.id])
 
-        await dumpManager.updateDumpsVisibleFromTip('foo', c0)
-        visibleDumps = await dumpManager.getVisibleDumps('foo')
+        await dumpManager.updateDumpsVisibleFromTip(repositoryId, c0)
+        visibleDumps = await dumpManager.getVisibleDumps(repositoryId)
         expect(visibleDumps.map((dump: pgModels.LsifDump) => dump.id).sort()).toEqual([])
 
         // Add closer dump
-        const dump2 = await util.insertDump(connection, dumpManager, 'foo', cpen, '')
+        const dump2 = await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cpen, '')
 
         // Now commit cpen should be found
-        await dumpManager.updateDumpsVisibleFromTip('foo', c0)
-        visibleDumps = await dumpManager.getVisibleDumps('foo')
+        await dumpManager.updateDumpsVisibleFromTip(repositoryId, c0)
+        visibleDumps = await dumpManager.getVisibleDumps(repositoryId)
         expect(visibleDumps.map((dump: pgModels.LsifDump) => dump.id).sort()).toEqual([dump2.id])
     })
 })
 
 describe('discoverAndUpdateCommit', () => {
+    let counter = 200
+    const nextId = () => {
+        counter++
+        return counter
+    }
+
     it('should update tracked commits', async () => {
+        const repositoryId = nextId()
+        const repositoryName = 'test-repo' // hashes to gitserver1
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
@@ -446,12 +484,13 @@ describe('discoverAndUpdateCommit', () => {
 
         try {
             const dumpManager = new DumpManager(connection, '')
-            await util.insertDump(connection, dumpManager, 'test-repo', ca, '')
+            await util.insertDump(connection, dumpManager, repositoryId, repositoryName, ca, '')
 
             await dumpManager.updateCommits(
-                'test-repo',
+                repositoryId,
                 await dumpManager.discoverCommits({
-                    repository: 'test-repo', // hashes to gitserver1
+                    repositoryId,
+                    repositoryName,
                     commit: cc,
                     gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
                 })
@@ -469,6 +508,8 @@ describe('discoverAndUpdateCommit', () => {
     })
 
     it('should early-out if commit is tracked', async () => {
+        const repositoryId = nextId()
+        const repositoryName = 'test-repo' // hashes to gitserver1
         const ca = util.createCommit()
         const cb = util.createCommit()
 
@@ -476,9 +517,9 @@ describe('discoverAndUpdateCommit', () => {
 
         try {
             const dumpManager = new DumpManager(connection, '')
-            await util.insertDump(connection, dumpManager, 'test-repo', ca, '')
+            await util.insertDump(connection, dumpManager, repositoryId, repositoryName, ca, '')
             await dumpManager.updateCommits(
-                'test-repo',
+                repositoryId,
                 new Map<string, Set<string>>([[cb, new Set()]])
             )
 
@@ -487,9 +528,10 @@ describe('discoverAndUpdateCommit', () => {
             // in an exception being thrown.
 
             await dumpManager.updateCommits(
-                'test-repo',
+                repositoryId,
                 await dumpManager.discoverCommits({
-                    repository: 'test-repo', // hashes to gitserver1
+                    repositoryId,
+                    repositoryName,
                     commit: cb,
                     gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
                 })
@@ -500,6 +542,8 @@ describe('discoverAndUpdateCommit', () => {
     })
 
     it('should early-out if repository is unknown', async () => {
+        const repositoryId = nextId()
+        const repositoryName = 'test-repo' // hashes to gitserver1
         const ca = util.createCommit()
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
@@ -512,9 +556,10 @@ describe('discoverAndUpdateCommit', () => {
             // in an exception being thrown.
 
             await dumpManager.updateCommits(
-                'test-repo',
+                repositoryId,
                 await dumpManager.discoverCommits({
-                    repository: 'test-repo', // hashes to gitserver1
+                    repositoryId,
+                    repositoryName,
                     commit: ca,
                     gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
                 })
@@ -526,7 +571,15 @@ describe('discoverAndUpdateCommit', () => {
 })
 
 describe('discoverAndUpdateTips', () => {
+    let counter = 300
+    const nextId = () => {
+        counter++
+        return counter
+    }
+
     it('should update tips', async () => {
+        const repositoryId = nextId()
+        const repositoryName = 'test-repo' // hashes to gitserver1
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
@@ -534,7 +587,7 @@ describe('discoverAndUpdateTips', () => {
         const ce = util.createCommit()
 
         nock('http://gitserver0')
-            .post('/exec', { repo: 'test-repo', args: ['rev-parse', 'HEAD'] })
+            .post('/exec', { repo: repositoryName, args: ['rev-parse', 'HEAD'] })
             .reply(200, ce)
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
@@ -542,7 +595,7 @@ describe('discoverAndUpdateTips', () => {
         try {
             const dumpManager = new DumpManager(connection, '')
             await dumpManager.updateCommits(
-                'test-repo',
+                repositoryId,
                 new Map<string, Set<string>>([
                     [ca, new Set<string>()],
                     [cb, new Set<string>([ca])],
@@ -551,22 +604,22 @@ describe('discoverAndUpdateTips', () => {
                     [ce, new Set<string>([cd])],
                 ])
             )
-            await util.insertDump(connection, dumpManager, 'test-repo', ca, 'foo')
-            await util.insertDump(connection, dumpManager, 'test-repo', cb, 'foo')
-            await util.insertDump(connection, dumpManager, 'test-repo', cc, 'bar')
+            await util.insertDump(connection, dumpManager, repositoryId, repositoryName, ca, 'foo')
+            await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cb, 'foo')
+            await util.insertDump(connection, dumpManager, repositoryId, repositoryName, cc, 'bar')
 
             const tipCommit = await dumpManager.discoverTip({
-                repository: 'test-repo',
+                repositoryName,
                 gitserverUrls: ['gitserver0'],
             })
             if (!tipCommit) {
                 throw new Error('Expected a tip commit')
             }
-            await dumpManager.updateDumpsVisibleFromTip('test-repo', tipCommit)
+            await dumpManager.updateDumpsVisibleFromTip(repositoryId, tipCommit)
 
-            const d1 = await dumpManager.getDump('test-repo', ca, 'foo/test.ts')
-            const d2 = await dumpManager.getDump('test-repo', cb, 'foo/test.ts')
-            const d3 = await dumpManager.getDump('test-repo', cc, 'bar/test.ts')
+            const d1 = await dumpManager.getDump(repositoryId, ca, 'foo/test.ts')
+            const d2 = await dumpManager.getDump(repositoryId, cb, 'foo/test.ts')
+            const d3 = await dumpManager.getDump(repositoryId, cc, 'bar/test.ts')
 
             expect(d1?.visibleAtTip).toBeFalsy()
             expect(d2?.visibleAtTip).toBeTruthy()
@@ -578,6 +631,12 @@ describe('discoverAndUpdateTips', () => {
 })
 
 describe('discoverTips', () => {
+    let counter = 400
+    const nextId = () => {
+        counter++
+        return counter
+    }
+
     it('should route requests to correct gitserver', async () => {
         // Distribution of repository names to gitservers
         const requests = {
@@ -596,26 +655,28 @@ describe('discoverTips', () => {
         }
 
         // Map repo to the payloads above
-        const expected = new Map<string, string | undefined>()
+        const expected = new Map<number, string | undefined>()
         for (let i = 0; i < 15; i++) {
-            expected.set(`test-repo-${i}`, `c${i}`)
+            expected.set(i, `c${i}`)
         }
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
         try {
+            const repositoryId = nextId()
+            const repositoryName = 'foo'
             const dumpManager = new DumpManager(connection, '')
 
             for (let i = 0; i < 15; i++) {
-                await util.insertDump(connection, dumpManager, `test-repo-${i}`, util.createCommit(), '')
+                await util.insertDump(connection, dumpManager, repositoryId, repositoryName, util.createCommit(), '')
             }
 
-            const tips = new Map<string, string | undefined>()
+            const tips = new Map<number, string | undefined>()
             for (let i = 0; i < 15; i++) {
                 tips.set(
-                    `test-repo-${i}`,
+                    i,
                     await dumpManager.discoverTip({
-                        repository: `test-repo-${i}`,
+                        repositoryName: `test-repo-${i}`,
                         gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
                     })
                 )

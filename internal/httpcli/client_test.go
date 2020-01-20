@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kylelemons/godebug/pretty"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestHeadersMiddleware(t *testing.T) {
@@ -238,7 +238,7 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 			assert: func(t testing.TB, cli *http.Client) {
 				have := cli.Transport.(*http.Transport).IdleConnTimeout
 				if want := timeout; !reflect.DeepEqual(have, want) {
-					t.Fatal(pretty.Compare(have, want))
+					t.Fatal(cmp.Diff(have, want))
 				}
 			},
 		},

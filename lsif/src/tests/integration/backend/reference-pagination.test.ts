@@ -1,16 +1,37 @@
 import * as util from '../integration-test-util'
-import { lsp } from 'lsif-protocol'
 import { ReferencePaginationContext } from '../../../server/backend/backend'
+import { extractRepos } from './util'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
     const commit = util.createCommit()
 
+    const ids = {
+        a: 100,
+        b1: 101,
+        b2: 103,
+        b3: 104,
+        b4: 105,
+        b5: 106,
+        b6: 107,
+        b7: 108,
+        b8: 109,
+        b9: 110,
+        // note: lexiographic order
+        b10: 102,
+    }
+
     beforeAll(async () => {
         await ctx.init()
         await Promise.all(
-            ['a', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10'].map(r =>
-                ctx.convertTestData(r, commit, '', `reference-pagination/data/${r}.lsif.gz`)
+            Object.entries(ids).map(([repositoryName, repositoryId]) =>
+                ctx.convertTestData(
+                    repositoryId,
+                    repositoryName,
+                    commit,
+                    '',
+                    `reference-pagination/data/${repositoryName}.lsif.gz`
+                )
             )
         )
     })
@@ -29,6 +50,7 @@ describe('Backend', () => {
             util.filterNodeModules(
                 util.mapLocations(
                     (await backend.references(
+                        ids.a,
                         'a',
                         commit,
                         'src/index.ts',
@@ -54,14 +76,10 @@ describe('Backend', () => {
         expect(cursor0).toBeUndefined()
         expect(cursor4).toBeUndefined()
 
-        const extractRepos = (references: lsp.Location[]): string[] =>
-            // extract the repo name from git://{repo}?{commit}#{path}, or return '' (indicating a local repo)
-            Array.from(new Set(references.map(r => (r.uri.match(/git:\/\/([^?]+)\?.+/) || ['', ''])[1]))).sort()
-
         // Ensure paging gets us expected results per page
-        expect(extractRepos(locations1)).toEqual(['a', 'b1', 'b10', 'b2'])
-        expect(extractRepos(locations2)).toEqual(['b3', 'b4', 'b5'])
-        expect(extractRepos(locations3)).toEqual(['b6', 'b7', 'b8'])
-        expect(extractRepos(locations4)).toEqual(['b9'])
+        expect(extractRepos(locations1)).toEqual([ids.a, ids.b1, ids.b10, ids.b2])
+        expect(extractRepos(locations2)).toEqual([ids.b3, ids.b4, ids.b5])
+        expect(extractRepos(locations3)).toEqual([ids.b6, ids.b7, ids.b8])
+        expect(extractRepos(locations4)).toEqual([ids.b9])
     })
 })

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
@@ -27,11 +28,7 @@ func (r *lsifUploadResolver) ID() graphql.ID {
 }
 
 func (r *lsifUploadResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
-	return resolvePath(ctx, r.lsifUpload.Repository, r.lsifUpload.Commit, r.lsifUpload.Root)
-}
-
-func (r *lsifUploadResolver) InputRepoName() string {
-	return r.lsifUpload.Repository
+	return resolvePath(ctx, r.lsifUpload.RepositoryID, r.lsifUpload.Commit, r.lsifUpload.Root)
 }
 
 func (r *lsifUploadResolver) InputCommit() string {
@@ -162,14 +159,16 @@ func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]*lsif.LSI
 		}
 
 		r.uploads, r.nextURL, r.totalCount, r.err = client.DefaultClient.GetUploads(ctx, &struct {
-			RepoName        string
+			RepoID          api.RepoID
+			RepoName        api.RepoName
 			Query           *string
 			State           *string
 			IsLatestForRepo *bool
 			Limit           *int32
 			Cursor          *string
 		}{
-			RepoName:        r.repositoryResolver.Name(),
+			RepoID:          r.repositoryResolver.Type().ID,
+			RepoName:        r.repositoryResolver.Type().Name,
 			Query:           r.opt.Query,
 			State:           r.opt.State,
 			IsLatestForRepo: r.opt.IsLatestForRepo,
