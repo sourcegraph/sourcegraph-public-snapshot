@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"time"
 )
 
 var reposCommands commander
@@ -16,6 +17,7 @@ Usage:
 
 The commands are:
 
+	get        gets a repository
 	list       lists repositories
 	enable     enables repositories
 	disable    disables repositories
@@ -39,4 +41,50 @@ Use "src repos [command] -h" for more information about a command.
 			fmt.Println(usage)
 		},
 	})
+}
+
+const repositoryFragment = `
+fragment RepositoryFields on Repository {
+	id
+	name
+	url
+	description
+	language
+	createdAt
+	updatedAt
+	externalRepository {
+		id
+		serviceType
+		serviceID
+	}
+	defaultBranch {
+		name
+		displayName
+	}
+	viewerCanAdminister
+}
+`
+
+type Repository struct {
+	ID                  string             `json:"id"`
+	Name                string             `json:"name"`
+	URL                 string             `json:"url"`
+	Description         string             `json:"description"`
+	Language            string             `json:"language"`
+	CreatedAt           time.Time          `json:"createdAt"`
+	UpdatedAt           *time.Time         `json:"updatedAt"`
+	ExternalRepository  ExternalRepository `json:"externalRepository"`
+	DefaultBranch       GitRef             `json:"defaultBranch"`
+	ViewerCanAdminister bool               `json:"viewerCanAdminister"`
+}
+
+type ExternalRepository struct {
+	ID          string `json:"id"`
+	ServiceType string `json:"serviceType"`
+	ServiceID   string `json:"serviceID"`
+}
+
+type GitRef struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
 }

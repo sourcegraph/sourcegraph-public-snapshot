@@ -14,6 +14,10 @@ Examples:
 
     	$ src repos list
 
+  Print JSON description of repositories list:
+
+    	$ src repos list -f '{{.|json}}'
+
   List *all* repositories (may be slow!):
 
     	$ src repos list -first='-1'
@@ -51,12 +55,18 @@ Examples:
 		notIndexedFlag       = flagSet.Bool("not-indexed", true, "Include repositories that do not have a text search index.")
 		orderByFlag          = flagSet.String("order-by", "name", `How to order the results; possible choices are: "name", "created-at"`)
 		descendingFlag       = flagSet.Bool("descending", false, "Whether or not results should be in descending order.")
-		namesWithoutHostFlag = flagSet.Bool("names-without-host", false, "Whether or not repository names should be printed without the code host (new form)")
+		namesWithoutHostFlag = flagSet.Bool("names-without-host", false, "Whether or not repository names should be printed without the hostname (or other first path component). If set, -f is ignored.")
+		formatFlag           = flagSet.String("f", "{{.Name}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Name}}") or "{{.|json}}")`)
 		apiFlags             = newAPIFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
+
+		tmpl, err := parseTemplate(*formatFlag)
+		if err != nil {
+			return err
+		}
 
 		query := `query Repositories(
   $first: Int,
@@ -85,10 +95,11 @@ Examples:
     descending: $descending,
   ) {
     nodes {
-      name
+      ...RepositoryFields
     }
   }
-}`
+}
+` + repositoryFragment
 
 		var orderBy string
 		switch *orderByFlag {
@@ -102,9 +113,7 @@ Examples:
 
 		var result struct {
 			Repositories struct {
-				Nodes []struct {
-					Name string
-				}
+				Nodes []Repository
 			}
 		}
 		return (&apiRequest{
@@ -130,7 +139,10 @@ Examples:
 						fmt.Println(repo.Name[firstSlash+len("/"):])
 						continue
 					}
-					fmt.Println(repo.Name)
+
+					if err := execTemplate(tmpl, repo); err != nil {
+						return err
+					}
 				}
 				return nil
 			},
