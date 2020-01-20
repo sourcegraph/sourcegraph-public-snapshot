@@ -40,6 +40,7 @@ Foreign-key constraints:
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE
+    "campaign_jobs_campaign_plan_id" btree (campaign_plan_id)
     "campaign_jobs_finished_at" btree (finished_at)
     "campaign_jobs_started_at" btree (started_at)
 Check constraints:
@@ -146,10 +147,10 @@ Foreign-key constraints:
  updated_at      | timestamp with time zone | not null default now()
  started_at      | timestamp with time zone | 
  finished_at     | timestamp with time zone | 
- published_at    | timestamp with time zone | 
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, campaign_job_id)
+    "changeset_jobs_campaign_job_id" btree (campaign_job_id)
     "changeset_jobs_error" btree (error)
     "changeset_jobs_finished_at" btree (finished_at)
     "changeset_jobs_started_at" btree (started_at)
