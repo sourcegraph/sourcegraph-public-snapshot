@@ -89,11 +89,12 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	traceCtx, finish := trace.OpenTracingTracer{}.TraceField(ctx, label, typeName, fieldName, trivial, args)
 	start := time.Now()
 	return traceCtx, func(err *gqlerrors.QueryError) {
-		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, strconv.FormatBool(err != nil)).Observe(time.Since(start).Seconds())
+		isErrStr := strconv.FormatBool(err != nil)
+		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, isErrStr).Observe(time.Since(start).Seconds())
 
 		origin := sgtrace.RequestOrigin(ctx)
 		if origin != "unknown" && fieldName == "search" {
-			codeIntelSearchHistogram.WithLabelValues(strconv.FormatBool(err != nil)).Observe(time.Since(start).Seconds())
+			codeIntelSearchHistogram.WithLabelValues(isErrStr).Observe(time.Since(start).Seconds())
 		}
 		finish(err)
 	}
