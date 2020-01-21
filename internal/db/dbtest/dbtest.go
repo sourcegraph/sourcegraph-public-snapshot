@@ -70,7 +70,7 @@ func NewDB(t testing.TB, dsn string) (*sql.DB, func()) {
 
 	m, err := dbutil.NewMigrate(testDB, dsn)
 	if err != nil {
-		t.Fatalf("failed to construct migration: %s", err)
+		t.Fatalf("failed to construct migrations: %s", err)
 	}
 	if err = dbutil.DoMigrate(m); err != nil {
 		t.Fatalf("failed to apply migrations: %s", err)
