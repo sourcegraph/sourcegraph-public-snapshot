@@ -44,6 +44,19 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     )
 
     const deleteUpload = async (): Promise<void> => {
+        if (!uploadOrError || isErrorLike(uploadOrError)) {
+            return
+        }
+
+        let description = `commit ${uploadOrError.inputCommit.substring(0, 7)}`
+        if (uploadOrError.inputRoot) {
+            description += ` rooted at ${uploadOrError.inputRoot}`
+        }
+
+        if (!window.confirm(`Delete upload for commit ${description}?`)) {
+            return
+        }
+
         setState({ deletionOrError: 'loading' })
 
         try {
@@ -186,15 +199,28 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                         </tbody>
                     </table>
 
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-danger"
-                        onClick={deleteUpload}
-                        disabled={state.deletionOrError === 'loading'}
-                        data-tooltip="Delete upload"
-                    >
-                        <DeleteIcon className="icon-inline" />
-                    </button>
+                    <div className="action-container">
+                        <div className="action-container__row">
+                            <div className="action-container__description">
+                                <h4 className="action-container__title">Delete this upload</h4>
+                                <div>
+                                    Deleting this upload make it immediate unavailable to answer code intelligence
+                                    queries.
+                                </div>
+                            </div>
+                            <div className="action-container__btn-container">
+                                <button
+                                    type="button"
+                                    className="btn btn-danger action-container__btn"
+                                    onClick={deleteUpload}
+                                    disabled={state.deletionOrError === 'loading'}
+                                    data-tooltip="Delete upload"
+                                >
+                                    <DeleteIcon className="icon-inline" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </>
             )}
         </div>

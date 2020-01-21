@@ -44,6 +44,15 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: Subje
     const [state, setState] = useState(initialState)
 
     const deleteUpload = async (): Promise<void> => {
+        let description = `commit ${node.inputCommit.substring(0, 7)}`
+        if (node.inputRoot) {
+            description += ` rooted at ${node.inputRoot}`
+        }
+
+        if (!window.confirm(`Delete upload for commit ${description}?`)) {
+            return
+        }
+
         setState({ deletionOrError: 'loading' })
 
         try {
@@ -59,7 +68,7 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: Subje
             <ErrorAlert prefix="Error deleting LSIF upload" error={state.deletionOrError} />
         </div>
     ) : (
-        <div className="w-100 list-group-item py-2 lsif-data__main">
+        <div className="w-100 list-group-item py-2 align-items-center lsif-data__main">
             <div className="lsif-data__meta">
                 <div className="lsif-data__meta-root">
                     <code className="e2e-upload-commit">
