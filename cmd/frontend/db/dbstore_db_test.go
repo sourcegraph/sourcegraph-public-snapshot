@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 func TestMigrations(t *testing.T) {
@@ -16,12 +17,15 @@ func TestMigrations(t *testing.T) {
 	// Setup a global test database
 	dbtesting.SetupGlobalTestDB(t)
 
-	m := dbconn.NewMigrate(dbconn.Global, "")
+	m, err := dbutil.NewMigrate(dbconn.Global, "")
+	if err != nil {
+		t.Errorf("error constructing migrations: %s", err)
+	}
 	// Run all down migrations then up migrations again to ensure there are no SQL errors.
 	if err := m.Down(); err != nil {
 		t.Errorf("error running down migrations: %s", err)
 	}
-	if err := dbconn.DoMigrate(m); err != nil {
+	if err := dbutil.DoMigrate(m); err != nil {
 		t.Errorf("error running up migrations: %s", err)
 	}
 }
