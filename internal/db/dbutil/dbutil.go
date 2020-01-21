@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -127,12 +126,7 @@ func InjectVersionUpdate(f bindata.AssetFunc) bindata.AssetFunc {
 		if err != nil {
 			return nil, err
 		}
-		versionParts := strings.Split(path.Base(name), "_")
-		if len(versionParts) < 2 {
-			return nil, errors.New("expected migration filename to be of the form <version>_<name>")
-		}
-		version := versionParts[0]
-		newContents := strings.Replace(string(oldContents), "COMMIT;", fmt.Sprintf("UPDATE schema_migrations SET version='%s', dirty=false;\nCOMMIT;", version), 1)
+		newContents := strings.Replace(string(oldContents), "COMMIT;", fmt.Sprintf("UPDATE schema_migrations SET dirty=false;\nCOMMIT;"), 1)
 		return []byte(newContents), nil
 	}
 }
