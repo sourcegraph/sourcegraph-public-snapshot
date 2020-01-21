@@ -9,6 +9,7 @@ import {
     isNegatableFilter,
 } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
+import { parseSearchQuery } from '../search/parser/parser'
 
 export interface RepoSpec {
     /**
@@ -556,12 +557,11 @@ export function buildSearchURLQuery(
 
     const caseInQuery = parseCaseSensitivityFromQuery(query)
     if (caseInQuery) {
-        const caseRegexp = /\bcase:(?<type>yes|no)\b/i
-        const newQuery = query.replace(caseRegexp, '')
+        const newQuery = query.replace(caseInQuery.typeAndValue, '')
         searchParams.set('q', newQuery)
 
-        if (caseInQuery === 'yes') {
-            searchParams.set('case', caseInQuery)
+        if (caseInQuery.value === 'yes') {
+            searchParams.set('case', caseInQuery.value)
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
             // queries breaking when only `repo:` filters are specified.
@@ -627,9 +627,28 @@ function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined
     return undefined
 }
 
-function parseCaseSensitivityFromQuery(query: string): string | undefined {
-    const caseRegexp = /\bcase:(?<option>yes|no)\b/i
-    const matches = query.match(caseRegexp)
-
-    return matches?.groups?.option
+function parseCaseSensitivityFromQuery(query: string): { typeAndValue: string; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        const members = parsedQuery.token.members
+        for (const member of members) {
+            if (member.token.type === 'filter' && member.token.filterType.token.value === 'case') {
+                if (member.token.filterValue) {
+                    switch (member.token.filterValue.token.type) {
+                        case 'literal':
+                            return {
+                                typeAndValue: `${member.token.filterType}:${member.token.filterValue}`,
+                                value: member.token.filterValue.token.value,
+                            }
+                        case 'quoted':
+                            return {
+                                typeAndValue: `${member.token.filterType}:${member.token.filterValue}`,
+                                value: member.token.filterValue.token.quotedValue,
+                            }
+                    }
+                }
+            }
+        }
+    }
+    return undefined
 }
