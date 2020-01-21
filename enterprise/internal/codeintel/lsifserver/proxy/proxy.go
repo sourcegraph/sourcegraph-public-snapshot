@@ -58,18 +58,16 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 
 		uploadID, queued, err := client.DefaultClient.Upload(ctx, &struct {
 			RepoID   api.RepoID
-			RepoName api.RepoName
 			Commit   graphqlbackend.GitObjectID
 			Root     string
 			Blocking *bool
 			MaxWait  *int32
 			Body     io.ReadCloser
 		}{
-			RepoID:   repo.ID,
-			RepoName: repo.Name,
-			Commit:   graphqlbackend.GitObjectID(commit),
-			Root:     root,
-			Body:     r.Body,
+			RepoID: repo.ID,
+			Commit: graphqlbackend.GitObjectID(commit),
+			Root:   root,
+			Body:   r.Body,
 		})
 
 		if err != nil {
