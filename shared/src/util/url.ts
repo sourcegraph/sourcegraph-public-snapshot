@@ -9,6 +9,7 @@ import {
     isNegatableFilter,
 } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
+import { parseSearchQuery } from '../search/parser/parser'
 
 export interface RepoSpec {
     /**
@@ -544,10 +545,9 @@ export function buildSearchURLQuery(
 
     const patternTypeInQuery = parsePatternTypeFromQuery(query)
     if (patternTypeInQuery) {
-        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-        const newQuery = query.replace(patternTypeRegexp, '')
+        const newQuery = query.replace(patternTypeInQuery.typeAndValue, '')
         searchParams.set('q', newQuery)
-        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
+        searchParams.set('patternType', patternTypeInQuery.value.toLowerCase())
         query = newQuery
     } else {
         searchParams.set('q', query)
@@ -617,11 +617,26 @@ export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndV
     return searchParams
 }
 
-function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
-    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-    const matches = query.match(patternTypeRegexp)
-    if (matches?.groups?.type) {
-        return matches.groups.type as SearchPatternType
+function parsePatternTypeFromQuery(query: string): { typeAndValue: string; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (token.type === 'filter' && token.filterType.token.value === 'case' && token.filterValue) {
+                switch (token.filterValue.token.type) {
+                    case 'literal':
+                        return {
+                            typeAndValue: `${token.filterType}:${token.filterValue}`,
+                            value: token.filterValue.token.value,
+                        }
+                    case 'quoted':
+                        return {
+                            typeAndValue: `${token.filterType}:${token.filterValue.token.quotedValue}`,
+                            value: token.filterValue.token.quotedValue,
+                        }
+                }
+            }
+        }
     }
 
     return undefined
