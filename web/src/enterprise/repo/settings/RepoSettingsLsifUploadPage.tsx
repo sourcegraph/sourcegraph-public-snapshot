@@ -204,7 +204,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             <div className="action-container__description">
                                 <h4 className="action-container__title">Delete this upload</h4>
                                 <div>
-                                    Deleting this upload make it immediate unavailable to answer code intelligence
+                                    Deleting this upload make it immediately unavailable to answer code intelligence
                                     queries.
                                 </div>
                             </div>
