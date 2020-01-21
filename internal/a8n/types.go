@@ -39,14 +39,14 @@ type CampaignPlan struct {
 	ID int64
 
 	CampaignType string
+	UserID       int32
 
 	// Arguments is a JSONC string
 	Arguments string
 
 	CanceledAt time.Time
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 // Clone returns a clone of a CampaignPlan.
