@@ -10,11 +10,25 @@ info:
 servers:
   - url: http://localhost:3186
 tags:
+  - name: Stats
+    description: Meta operations
   - name: LSIF
     description: LSIF operations
   - name: Uploads
     description: Upload operations
 paths:
+  /stats:
+    get:
+      description: Get common usage statistics.
+      tags:
+        - Stats
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
   /upload:
     post:
       description: Upload LSIF data for a particular commit and directory. Exactly one file must be uploaded, and it is assumed to be the gzipped output of an LSIF indexer.
@@ -405,6 +419,30 @@ paths:
           description: Not Found
 components:
   schemas:
+    Stats:
+      type: object
+      description: Common usage statistics.
+      properties:
+        mostRecentUploads:
+          type: array
+          description: A list of upload dates for each distinct repository.
+          items:
+            type: object
+            description: The most recent upload date for each distinct repository.
+            properties:
+              repositoryId:
+                type: number
+                description: The repository identifier.
+              uploadedAt:
+                type: string
+                description: An ISO 8601-formatted time that the upload was uploaded.
+            required:
+              - repositoryId
+              - uploadedAt
+            additionalProperties: false
+      required:
+        - mostRecentUploads
+      additionalProperties: false
     Position:
       type: object
       description: A cursor position in a source file.
@@ -435,9 +473,9 @@ components:
       type: object
       description: A position in a file of a code base.
       properties:
-        repository:
-          type: string
-          description: The repository in which the location occurs.
+        repositoryId:
+          type: number
+          description: The identifier of the repository in which the location occurs.
         commit:
           type: string
           description: The commit in which the location occurs.
@@ -447,7 +485,7 @@ components:
         range:
           $ref: '#/components/schemas/Range'
       required:
-        - repository
+        - repositoryId
         - commit
         - path
         - range
@@ -499,9 +537,9 @@ components:
         id:
           type: number
           description: A unique identifier.
-        repository:
-          type: string
-          description: The repository argument given on upload.
+        repositoryId:
+          type: number
+          description: The repository identifier argument given on upload.
         commit:
           type: string
           description: The commit argument given on upload.
@@ -541,7 +579,7 @@ components:
           description: Whether or not this upload can provide global reference code intelligence.
       required:
         - id
-        - repository
+        - repositoryId
         - commit
         - root
         - filename
