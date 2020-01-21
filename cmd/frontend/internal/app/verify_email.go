@@ -54,8 +54,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
 	}); err != nil {
-		httpLogAndError(w, "Could not grant user pending permissions", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
-		return
+		log15.Error("Failed to grant user pending permissions", "userID", usr.ID, "error", err)
 	}
 
 	http.Redirect(w, r, "/user/settings/emails", http.StatusFound)

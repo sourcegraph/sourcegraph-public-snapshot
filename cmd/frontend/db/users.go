@@ -11,7 +11,6 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -269,14 +268,6 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, tx, orgs); err != nil {
 			return nil, err
 		}
-	}
-
-	if err = Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
-		UserID: id,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
-	}); err != nil {
-		return nil, err
 	}
 
 	return &types.User{
