@@ -844,11 +844,6 @@ func Test_authzFilter_permissionsUserMapping(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
-		Authz = &mockAuthzStore{}
-		defer func() {
-			Authz = &authzStore{}
-		}()
-
 		calledAuthorizedRepos := false
 		Mocks.Authz.AuthorizedRepos = func(_ context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error) {
 			calledAuthorizedRepos = true

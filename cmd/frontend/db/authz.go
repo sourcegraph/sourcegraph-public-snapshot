@@ -46,10 +46,16 @@ type AuthzStore interface {
 // authzStore is a no-op placeholder for the OSS version.
 type authzStore struct{}
 
-func (*authzStore) GrantPendingPermissions(_ context.Context, _ *GrantPendingPermissionsArgs) error {
-	return nil
+func (*authzStore) GrantPendingPermissions(ctx context.Context, args *GrantPendingPermissionsArgs) error {
+	if Mocks.Authz.GrantPendingPermissions == nil {
+		return nil
+	}
+	return Mocks.Authz.GrantPendingPermissions(ctx, args)
 }
 
-func (*authzStore) AuthorizedRepos(_ context.Context, _ *AuthorizedReposArgs) ([]*types.Repo, error) {
-	return []*types.Repo{}, nil
+func (*authzStore) AuthorizedRepos(ctx context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error) {
+	if Mocks.Authz.AuthorizedRepos == nil {
+		return []*types.Repo{}, nil
+	}
+	return Mocks.Authz.AuthorizedRepos(ctx, args)
 }
