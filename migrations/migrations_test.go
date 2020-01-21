@@ -1,6 +1,7 @@
 package migrations_test
 
 import (
+	"io/ioutil"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -35,6 +36,26 @@ func TestIDConstraints(t *testing.T) {
 		}
 		if len(names) > 1 {
 			t.Errorf("multiple migrations with ID %d: %s", id, strings.Join(names, " "))
+		}
+	}
+}
+
+// Makes sure that every migration contains exactly one `COMMIT;` so that
+// `InjectVersionUpdate` in internal/db/dbutil/dbutil.go is guaranteed to succeed.
+func TestTransactions(t *testing.T) {
+	ups, err := filepath.Glob("*.up.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, name := range ups {
+		contents, err := ioutil.ReadFile(name)
+		if err != nil {
+			t.Fatalf("failed to read migration file %q: %v", name, err)
+		}
+		commitCount := strings.Count(string(contents), "COMMIT;")
+		if commitCount != 1 {
+			t.Fatalf("expected migration %q to contain exactly one COMMIT; but it contains %d", name, commitCount)
 		}
 	}
 }

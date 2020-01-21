@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	// Register driver
@@ -110,8 +112,27 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	return db, nil
 }
 
+// InjectVersionUpdate fixes the dirty state (set by golang-migrate) after a
+// successful migration. See
+// https://github.com/golang-migrate/migrate/issues/325
+func InjectVersionUpdate(f bindata.AssetFunc) bindata.AssetFunc {
+	return func(name string) ([]byte, error) {
+		oldContents, err := f(name)
+		if err != nil {
+			return nil, err
+		}
+		versionParts := strings.Split(path.Base(name), "_")
+		if len(versionParts) < 2 {
+			return nil, errors.New("expected migration filename to be of the form <version>_<name>")
+		}
+		version := versionParts[0]
+		newContents := strings.Replace(string(oldContents), "COMMIT;", fmt.Sprintf("UPDATE schema_migrations SET version='%s', dirty=false;\nCOMMIT;", version), 1)
+		return []byte(newContents), nil
+	}
+}
+
 func NewMigrationSourceLoader(dataSource string) *bindata.AssetSource {
-	return bindata.Resource(migrations.AssetNames(), migrations.Asset)
+	return bindata.Resource(migrations.AssetNames(), InjectVersionUpdate(migrations.Asset))
 }
 
 func NewMigrate(db *sql.DB, dataSource string) (*migrate.Migrate, error) {
