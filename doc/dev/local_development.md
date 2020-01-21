@@ -326,12 +326,12 @@ or CPU each, about 5MB of RAM each.
 
 If you notice heavy battery and CPU usage running `gulp --color watch`, please first [double check that Spotlight is not indexing your Sourcegraph repository](https://www.macobserver.com/tips/how-to/stop-spotlight-indexing/), as this can lead to additional, unnecessary, poll events.
 
-If you're running macOS 10.15.x (Catalina) reinstall the Xcode Command Line Tools could be necessary as follows:
+If you're running macOS 10.15.x (Catalina) reinstalling the Xcode Command Line Tools may be necessary as follows:
 
-1. Uninstall the Command Line Tools by `rm -rf /Library/Developer/CommandLineTools`
-2. Reinstall it by `xcode-select --install`
-3. Go to `sourcegraph/sourcegraph`’s root directory and do `rm -rf node_modules`
-3. Re-run launch script `./dev/start.sh`
+1. Uninstall the Command Line Tools with `rm -rf /Library/Developer/CommandLineTools`
+2. Reinstall it with `xcode-select --install`
+3. Go to `sourcegraph/sourcegraph`’s root directory and run `rm -rf node_modules`
+3. Re-run the launch script (`./dev/start.sh`)
 
 ## How to debug live code
 
