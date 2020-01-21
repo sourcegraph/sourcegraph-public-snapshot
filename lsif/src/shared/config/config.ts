@@ -15,11 +15,6 @@ export interface Configuration {
     postgresDSN: string
 
     /**
-     * The (ordered) URLs of the registered gitservers.
-     */
-    gitServers: string[]
-
-    /**
      * Whether or not to enable Jaeger.
      */
     useJaeger: boolean
@@ -110,7 +105,6 @@ async function loadConfiguration(): Promise<Configuration> {
     const site = json5.parse(payload.Site)
 
     return {
-        gitServers: serviceConnections.gitServers,
         postgresDSN: serviceConnections.postgresDSN,
         useJaeger: site.useJaeger || false,
     }

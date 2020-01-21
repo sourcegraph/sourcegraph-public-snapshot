@@ -23,6 +23,7 @@ import { UploadManager } from '../shared/store/uploads'
 import { waitForConfiguration } from '../shared/config/config'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
+import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -55,7 +56,7 @@ async function main(logger: Logger): Promise<void> {
     const dumpManager = new DumpManager(connection, settings.STORAGE_ROOT)
     const uploadManager = new UploadManager(connection)
     const dependencyManager = new DependencyManager(connection)
-    const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, fetchConfiguration)
+    const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
     // Temporary migration
     // TODO - remove after 3.15

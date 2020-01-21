@@ -13,14 +13,12 @@ import (
 )
 
 func (c *Client) Exists(ctx context.Context, args *struct {
-	RepoID   api.RepoID
-	RepoName api.RepoName
-	Commit   string
-	Path     string
+	RepoID api.RepoID
+	Commit string
+	Path   string
 }) (*lsif.LSIFUpload, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
-	query.Set("repositoryName", string(args.RepoName))
 	query.Set("commit", args.Commit)
 	query.Set("path", args.Path)
 
@@ -43,7 +41,6 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 
 func (c *Client) Upload(ctx context.Context, args *struct {
 	RepoID   api.RepoID
-	RepoName api.RepoName
 	Commit   graphqlbackend.GitObjectID
 	Root     string
 	Blocking *bool
@@ -52,7 +49,6 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 }) (int64, bool, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
-	query.Set("repositoryName", string(args.RepoName))
 	query.Set("commit", string(args.Commit))
 	query.Set("root", args.Root)
 	query.SetOptionalBool("blocking", args.Blocking)
@@ -80,7 +76,6 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 
 func (c *Client) Definitions(ctx context.Context, args *struct {
 	RepoID    api.RepoID
-	RepoName  api.RepoName
 	Commit    graphqlbackend.GitObjectID
 	Path      string
 	Line      int32
@@ -90,7 +85,6 @@ func (c *Client) Definitions(ctx context.Context, args *struct {
 	return c.locationQuery(ctx, &struct {
 		Operation string
 		RepoID    api.RepoID
-		RepoName  api.RepoName
 		Commit    graphqlbackend.GitObjectID
 		Path      string
 		Line      int32
@@ -101,7 +95,6 @@ func (c *Client) Definitions(ctx context.Context, args *struct {
 	}{
 		Operation: "definitions",
 		RepoID:    args.RepoID,
-		RepoName:  args.RepoName,
 		Commit:    args.Commit,
 		Path:      args.Path,
 		Line:      args.Line,
@@ -112,7 +105,6 @@ func (c *Client) Definitions(ctx context.Context, args *struct {
 
 func (c *Client) References(ctx context.Context, args *struct {
 	RepoID    api.RepoID
-	RepoName  api.RepoName
 	Commit    graphqlbackend.GitObjectID
 	Path      string
 	Line      int32
@@ -124,7 +116,6 @@ func (c *Client) References(ctx context.Context, args *struct {
 	return c.locationQuery(ctx, &struct {
 		Operation string
 		RepoID    api.RepoID
-		RepoName  api.RepoName
 		Commit    graphqlbackend.GitObjectID
 		Path      string
 		Line      int32
@@ -135,7 +126,6 @@ func (c *Client) References(ctx context.Context, args *struct {
 	}{
 		Operation: "references",
 		RepoID:    args.RepoID,
-		RepoName:  args.RepoName,
 		Commit:    args.Commit,
 		Path:      args.Path,
 		Line:      args.Line,
@@ -149,7 +139,6 @@ func (c *Client) References(ctx context.Context, args *struct {
 func (c *Client) locationQuery(ctx context.Context, args *struct {
 	Operation string
 	RepoID    api.RepoID
-	RepoName  api.RepoName
 	Commit    graphqlbackend.GitObjectID
 	Path      string
 	Line      int32
@@ -160,7 +149,6 @@ func (c *Client) locationQuery(ctx context.Context, args *struct {
 }) ([]*lsif.LSIFLocation, string, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
-	query.Set("repositoryName", string(args.RepoName))
 	query.Set("commit", string(args.Commit))
 	query.Set("path", args.Path)
 	query.SetInt("line", int64(args.Line))
@@ -188,7 +176,6 @@ func (c *Client) locationQuery(ctx context.Context, args *struct {
 
 func (c *Client) Hover(ctx context.Context, args *struct {
 	RepoID    api.RepoID
-	RepoName  api.RepoName
 	Commit    graphqlbackend.GitObjectID
 	Path      string
 	Line      int32
@@ -197,7 +184,6 @@ func (c *Client) Hover(ctx context.Context, args *struct {
 }) (string, lsp.Range, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
-	query.Set("repositoryName", string(args.RepoName))
 	query.Set("commit", string(args.Commit))
 	query.Set("path", args.Path)
 	query.SetInt("line", int64(args.Line))

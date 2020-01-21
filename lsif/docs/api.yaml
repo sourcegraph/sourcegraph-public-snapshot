@@ -83,13 +83,6 @@ paths:
           required: true
           schema:
             type: number
-        - name: repositoryName
-          in: query
-          description: The url-encoded repository name.
-          required: false
-          example: github.com%2Fsourcegraph%2Flsif-go
-          schema:
-            type: string
         - name: commit
           in: query
           description: The 40-character commit hash.
@@ -122,13 +115,6 @@ paths:
           required: true
           schema:
             type: number
-        - name: repositoryName
-          in: query
-          description: The url-encoded repository name.
-          required: false
-          example: github.com%2Fsourcegraph%2Flsif-go
-          schema:
-            type: string
         - name: commit
           in: query
           description: The 40-character commit hash.
@@ -160,13 +146,6 @@ paths:
           required: true
           schema:
             type: number
-        - name: repositoryName
-          in: query
-          description: The url-encoded repository name.
-          required: false
-          example: github.com%2Fsourcegraph%2Flsif-go
-          schema:
-            type: string
         - name: commit
           in: query
           description: The 40-character commit hash.
@@ -218,13 +197,6 @@ paths:
           required: true
           schema:
             type: number
-        - name: repositoryName
-          in: query
-          description: The url-encoded repository name.
-          required: false
-          example: github.com%2Fsourcegraph%2Flsif-go
-          schema:
-            type: string
         - name: commit
           in: query
           description: The 40-character commit hash.
@@ -294,13 +266,6 @@ paths:
           required: true
           schema:
             type: number
-        - name: repositoryName
-          in: query
-          description: The url-encoded repository name.
-          required: false
-          example: github.com%2Fsourcegraph%2Flsif-go
-          schema:
-            type: string
         - name: commit
           in: query
           description: The 40-character commit hash.

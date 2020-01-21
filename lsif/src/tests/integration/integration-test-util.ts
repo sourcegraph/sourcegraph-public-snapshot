@@ -130,7 +130,6 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
  * @param connection The Postgres connection.
  * @param dumpManager The dumps manager instance.
  * @param repositoryId The repository identifier.
- * @param repositoryName The repository name.
  * @param commit The commit.
  * @param root The root of the dump.
  */
@@ -138,7 +137,6 @@ export async function insertDump(
     connection: Connection,
     dumpManager: DumpManager,
     repositoryId: number,
-    repositoryName: string,
     commit: string,
     root: string
 ): Promise<pgModels.LsifDump> {
@@ -146,7 +144,6 @@ export async function insertDump(
 
     const upload = new pgModels.LsifUpload()
     upload.repositoryId = repositoryId
-    upload.repositoryNameAtUpload = repositoryName
     upload.commit = commit
     upload.root = root
     upload.filename = '<test>'
@@ -173,7 +170,6 @@ export async function insertDump(
  * @param dependencyManager The dependency manager instance.
  * @param storageRoot The temporary storage root.
  * @param repositoryId The repository identifier.
- * @param repositoryName The repository name.
  * @param commit The commit.
  * @param root The root of the dump.
  * @param filename The filename of the (gzipped) LSIF dump.
@@ -185,7 +181,6 @@ export async function convertTestData(
     dependencyManager: DependencyManager,
     storageRoot: string,
     repositoryId: number,
-    repositoryName: string,
     commit: string,
     root: string,
     filename: string,
@@ -197,7 +192,7 @@ export async function convertTestData(
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const { packages, references } = await convertLsif(fullFilename, tmp)
-    const dump = await insertDump(connection, dumpManager, repositoryId, repositoryName, commit, root)
+    const dump = await insertDump(connection, dumpManager, repositoryId, commit, root)
     await dependencyManager.addPackagesAndReferences(dump.id, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dump.id))
 
@@ -262,9 +257,7 @@ export class BackendTestContext {
         this.cleanup = cleanup
         this.dumpManager = new DumpManager(connection, this.storageRoot)
         this.dependencyManager = new DependencyManager(connection)
-        this.backend = new Backend(this.storageRoot, this.dumpManager, this.dependencyManager, () => ({
-            gitServers: [],
-        }))
+        this.backend = new Backend(this.storageRoot, this.dumpManager, this.dependencyManager, '')
     }
 
     /**
@@ -273,7 +266,6 @@ export class BackendTestContext {
      * the given Postgres database.
      *
      * @param repositoryId The repository identifier.
-     * @param repositoryName The repository name.
      * @param commit The commit.
      * @param root The root of the dump.
      * @param filename The filename of the (gzipped) LSIF dump.
@@ -281,7 +273,6 @@ export class BackendTestContext {
      */
     public convertTestData(
         repositoryId: number,
-        repositoryName: string,
         commit: string,
         root: string,
         filename: string,
@@ -297,7 +288,6 @@ export class BackendTestContext {
             this.dependencyManager,
             this.storageRoot,
             repositoryId,
-            repositoryName,
             commit,
             root,
             filename,

@@ -1,5 +1,5 @@
-import { SearchSuggestion } from '../../../../shared/src/graphql/schema'
 import { Filter } from './parser'
+import { SearchSuggestion } from '../../graphql/schema'
 
 export interface FilterDefinition {
     aliases: string[]

@@ -324,13 +324,14 @@ After the initial install/compile is complete, the Docker for Mac binary uses
 about 1.5GB of RAM. The numerous different Go binaries don't use that much RAM
 or CPU each, about 5MB of RAM each.
 
-Some users report [heavy battery usage running `gulp watch`][battery-usage].
-[Double check that Spotlight is not indexing your Sourcegraph
-repository][spotlight], as this can lead to additional, unnecessary, poll
-events. We are investigating other causes of this issue.
+If you notice heavy battery and CPU usage running `gulp --color watch`, please first [double check that Spotlight is not indexing your Sourcegraph repository](https://www.macobserver.com/tips/how-to/stop-spotlight-indexing/), as this can lead to additional, unnecessary, poll events.
 
-[battery-usage]: https://github.com/sourcegraph/sourcegraph/issues/247
-[spotlight]: https://www.macobserver.com/tips/how-to/stop-spotlight-indexing/
+If you're running macOS 10.15.x (Catalina) reinstalling the Xcode Command Line Tools may be necessary as follows:
+
+1. Uninstall the Command Line Tools with `rm -rf /Library/Developer/CommandLineTools`
+2. Reinstall it with `xcode-select --install`
+3. Go to `sourcegraph/sourcegraph`’s root directory and run `rm -rf node_modules`
+3. Re-run the launch script (`./dev/start.sh`)
 
 ## How to debug live code
 
