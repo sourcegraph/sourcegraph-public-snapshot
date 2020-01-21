@@ -1,5 +1,5 @@
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import React, { FunctionComponent, useCallback, useEffect, useState, useMemo, useRef } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useState, useRef } from 'react'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { Link } from '../../../../../shared/src/components/Link'
