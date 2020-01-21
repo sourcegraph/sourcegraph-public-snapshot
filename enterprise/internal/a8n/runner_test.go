@@ -156,6 +156,7 @@ func TestRunner(t *testing.T) {
 
 		runErr string
 
+		planFn   func() *a8n.CampaignPlan
 		wantPlan *a8n.CampaignPlan
 		wantJobs func(plan *a8n.CampaignPlan, rs []*repos.Repo, branches []refAndTarget) []*a8n.CampaignJob
 	}{
@@ -323,6 +324,60 @@ func TestRunner(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:         "missing user",
+			search:       yieldRepos(rs...),
+			commitID:     yieldDefaultBranches(defaultBranches),
+			campaignType: &testCampaignType{},
+			wantPlan: func() *a8n.CampaignPlan {
+				p := testPlan.Clone()
+				p.CreatedAt = now
+				p.UpdatedAt = now
+				p.UserID = 0
+				return p
+			}(),
+			wantJobs: func(plan *a8n.CampaignPlan, rs []*repos.Repo, branches []refAndTarget) []*a8n.CampaignJob {
+				return []*a8n.CampaignJob{
+					{
+						CampaignPlanID: plan.ID,
+						RepoID:         int32(rs[0].ID),
+						Rev:            api.CommitID(branches[0].target),
+						BaseRef:        branches[0].ref,
+						CreatedAt:      now,
+						UpdatedAt:      now,
+						FinishedAt:     now,
+						Error:          "Campaign plan is missing user",
+					},
+					{
+						CampaignPlanID: plan.ID,
+						RepoID:         int32(rs[1].ID),
+						Rev:            api.CommitID(branches[1].target),
+						BaseRef:        branches[1].ref,
+						CreatedAt:      now,
+						UpdatedAt:      now,
+						FinishedAt:     now,
+						Error:          "Campaign plan is missing user",
+					},
+					{
+						CampaignPlanID: plan.ID,
+						RepoID:         int32(rs[2].ID),
+						Rev:            api.CommitID(branches[2].target),
+						BaseRef:        branches[2].ref,
+						CreatedAt:      now,
+						UpdatedAt:      now,
+						FinishedAt:     now,
+						Error:          "Campaign plan is missing user",
+					},
+				}
+			},
+			planFn: func() *a8n.CampaignPlan {
+				p := testPlan.Clone()
+				p.CreatedAt = now
+				p.UpdatedAt = now
+				p.UserID = 0
+				return p
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -333,6 +388,9 @@ func TestRunner(t *testing.T) {
 			}
 
 			plan := testPlan.Clone()
+			if tc.planFn != nil {
+				plan = tc.planFn()
+			}
 
 			runner := NewRunnerWithClock(store, tc.campaignType, tc.search, tc.commitID, clock)
 			err := runner.CreatePlanAndJobs(ctx, plan)
