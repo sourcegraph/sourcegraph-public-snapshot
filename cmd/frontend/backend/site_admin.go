@@ -85,7 +85,7 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 }
 
 // CurrentUser gets the current authenticated user
-// It returns nil, nil if the no user is found
+// It returns nil, nil if no user is found
 func CurrentUser(ctx context.Context) (*types.User, error) {
 	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
