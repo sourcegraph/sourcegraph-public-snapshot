@@ -109,20 +109,19 @@ export class Backend {
      * @param storageRoot The path where SQLite databases are stored.
      * @param dumpManager The dumps manager instance.
      * @param dependencyManager The dependency manager instance.
-     * @param fetchConfiguration A function that returns the current configuration.
+     * @param frontendUrl The url of the frontend internal API.
      */
     constructor(
         private storageRoot: string,
         private dumpManager: DumpManager,
         private dependencyManager: DependencyManager,
-        private fetchConfiguration: () => { gitServers: string[] }
+        private frontendUrl: string
     ) {}
 
     /**
      * Determine if data exists for a particular document.
      *
      * @param repositoryId The repository identifier.
-     * @param repositoryName The repository name.
      * @param commit The commit.
      * @param path The path of the document.
      * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
@@ -130,20 +129,12 @@ export class Backend {
      */
     public async exists(
         repositoryId: number,
-        repositoryName: string | undefined,
         commit: string,
         path: string,
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<pgModels.LsifDump | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(
-            repositoryId,
-            repositoryName,
-            commit,
-            path,
-            dumpId,
-            ctx
-        )
+        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             return undefined
         }
@@ -156,7 +147,6 @@ export class Backend {
      * be loaded to answer this query.
      *
      * @param repositoryId The repository identifier.
-     * @param repositoryName The repository name.
      * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -165,14 +155,13 @@ export class Backend {
      */
     public async definitions(
         repositoryId: number,
-        repositoryName: string | undefined,
         commit: string,
         path: string,
         position: lsp.Position,
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<InternalLocation[] | undefined> {
-        const result = await this.internalDefinitions(repositoryId, repositoryName, commit, path, position, dumpId, ctx)
+        const result = await this.internalDefinitions(repositoryId, commit, path, position, dumpId, ctx)
         if (result === undefined) {
             return undefined
         }
@@ -185,7 +174,6 @@ export class Backend {
      * undefined if no dump can be loaded to answer this query.
      *
      * @param repositoryId The repository identifier.
-     * @param repositoryName The repository name.
      * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -195,7 +183,6 @@ export class Backend {
      */
     public async references(
         repositoryId: number,
-        repositoryName: string | undefined,
         commit: string,
         path: string,
         position: lsp.Position,
@@ -203,16 +190,7 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
-        return this.internalReferences(
-            repositoryId,
-            repositoryName,
-            commit,
-            path,
-            position,
-            paginationContext,
-            dumpId,
-            ctx
-        )
+        return this.internalReferences(repositoryId, commit, path, position, paginationContext, dumpId, ctx)
     }
 
     /**
@@ -220,7 +198,6 @@ export class Backend {
      * be loaded to answer this query.
      *
      * @param repositoryId The repository identifier.
-     * @param repositoryName The repository name.
      * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -229,24 +206,16 @@ export class Backend {
      */
     public async hover(
         repositoryId: number,
-        repositoryName: string | undefined,
         commit: string,
         path: string,
         position: lsp.Position,
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(
-            repositoryId,
-            repositoryName,
-            commit,
-            path,
-            dumpId,
-            ctx
-        )
+        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
-                ctx.logger.warn('No database could be loaded', { repositoryId, repositoryName, commit, path })
+                ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
             }
 
             return undefined
@@ -264,7 +233,7 @@ export class Backend {
         // can happen when the indexer only gives a moniker but does not
         // give hover data for externally defined symbols.
 
-        const result = await this.internalDefinitions(repositoryId, repositoryName, commit, path, position, dumpId, ctx)
+        const result = await this.internalDefinitions(repositoryId, commit, path, position, dumpId, ctx)
         if (result === undefined || result.locations.length === 0) {
             return null
         }
@@ -278,24 +247,16 @@ export class Backend {
 
     private async internalDefinitions(
         repositoryId: number,
-        repositoryName: string | undefined,
         commit: string,
         path: string,
         position: lsp.Position,
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ dump: pgModels.LsifDump; locations: InternalLocation[] } | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(
-            repositoryId,
-            repositoryName,
-            commit,
-            path,
-            dumpId,
-            ctx
-        )
+        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
-                ctx.logger.warn('No database could be loaded', { repositoryId, repositoryName, commit, path })
+                ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
             }
 
             return undefined
@@ -359,7 +320,6 @@ export class Backend {
 
     private async internalReferences(
         repositoryId: number,
-        repositoryName: string | undefined,
         commit: string,
         path: string,
         position: lsp.Position,
@@ -391,17 +351,10 @@ export class Backend {
             return { dump, locations: [] }
         }
 
-        const closestDatabaseAndDump = await this.loadClosestDatabase(
-            repositoryId,
-            repositoryName,
-            commit,
-            path,
-            dumpId,
-            ctx
-        )
+        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
-                ctx.logger.warn('No database could be loaded', { repositoryId, repositoryName, commit, path })
+                ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
             }
 
             return undefined
@@ -789,7 +742,6 @@ export class Backend {
      * are both known.
      *
      * @param repositoryId The repository identifier.
-     * @param repositoryName The repository name.
      * @param commit The target commit.
      * @param file One of the files in the dump.
      * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
@@ -797,7 +749,6 @@ export class Backend {
      */
     private async loadClosestDatabase(
         repositoryId: number,
-        repositoryName: string | undefined,
         commit: string,
         file: string,
         dumpId?: number,
@@ -808,16 +759,7 @@ export class Backend {
         // data for this commit.
         const dump = await (dumpId
             ? this.dumpManager.getDumpById(dumpId)
-            : repositoryName
-            ? this.dumpManager.findClosestDump(
-                  repositoryId,
-                  repositoryName,
-                  commit,
-                  file,
-                  ctx,
-                  this.fetchConfiguration().gitServers
-              )
-            : undefined)
+            : this.dumpManager.findClosestDump(repositoryId, commit, file, ctx, this.frontendUrl))
 
         if (dump) {
             return { database: this.createDatabase(dump), dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }

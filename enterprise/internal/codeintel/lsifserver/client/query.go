@@ -20,7 +20,6 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 }) (*lsif.LSIFUpload, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
-	query.Set("repositoryName", string(args.RepoName))
 	query.Set("commit", args.Commit)
 	query.Set("path", args.Path)
 
@@ -52,7 +51,6 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 }) (int64, bool, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
-	query.Set("repositoryName", string(args.RepoName))
 	query.Set("commit", string(args.Commit))
 	query.Set("root", args.Root)
 	query.SetOptionalBool("blocking", args.Blocking)
@@ -160,7 +158,6 @@ func (c *Client) locationQuery(ctx context.Context, args *struct {
 }) ([]*lsif.LSIFLocation, string, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
-	query.Set("repositoryName", string(args.RepoName))
 	query.Set("commit", string(args.Commit))
 	query.Set("path", args.Path)
 	query.SetInt("line", int64(args.Line))
@@ -197,7 +194,6 @@ func (c *Client) Hover(ctx context.Context, args *struct {
 }) (string, lsp.Range, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
-	query.Set("repositoryName", string(args.RepoName))
 	query.Set("commit", string(args.Commit))
 	query.Set("path", args.Path)
 	query.SetInt("line", int64(args.Line))

@@ -15,7 +15,6 @@ describe('DependencyManager', () => {
 
     const repositoryId1 = 100
     const repositoryId2 = 101
-    const repositoryName = 'foo'
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await util.createCleanPostgresDatabase())
@@ -55,7 +54,7 @@ describe('DependencyManager', () => {
             root: string,
             identifiers: string[]
         ): Promise<pgModels.LsifDump> => {
-            const dump = await util.insertDump(connection, dumpManager, repositoryId1, repositoryName, commit, root)
+            const dump = await util.insertDump(connection, dumpManager, repositoryId1, commit, root)
 
             await dependencyManager.addPackagesAndReferences(
                 dump.id,
@@ -124,7 +123,7 @@ describe('DependencyManager', () => {
             root: string,
             identifiers: string[]
         ): Promise<pgModels.LsifDump> => {
-            const dump = await util.insertDump(connection, dumpManager, repositoryId1, repositoryName, commit, root)
+            const dump = await util.insertDump(connection, dumpManager, repositoryId1, commit, root)
 
             await dependencyManager.addPackagesAndReferences(
                 dump.id,
@@ -195,9 +194,9 @@ describe('DependencyManager', () => {
             },
         ]
 
-        const dumpa = await util.insertDump(connection, dumpManager, repositoryId1, repositoryName, ca, '')
-        const dumpb = await util.insertDump(connection, dumpManager, repositoryId1, repositoryName, cb, '')
-        const dumpc = await util.insertDump(connection, dumpManager, repositoryId1, repositoryName, cc, '')
+        const dumpa = await util.insertDump(connection, dumpManager, repositoryId1, ca, '')
+        const dumpb = await util.insertDump(connection, dumpManager, repositoryId1, cb, '')
+        const dumpc = await util.insertDump(connection, dumpManager, repositoryId1, cc, '')
 
         await dependencyManager.addPackagesAndReferences(dumpa.id, [], references)
         await dependencyManager.addPackagesAndReferences(dumpb.id, [], references)
