@@ -67,25 +67,20 @@ export async function convertDatabase(
  *
  * @param entityManager The EntityManager to use as part of a transaction.
  * @param dumpManager The dumps manager instance.
- * @param fetchConfiguration A function that returns the current configuration.
+ * @param frontendUrl The url of the frontend internal API.
  * @param upload The processed upload record.
  * @param ctx The tracing context.
  */
 export async function updateCommitsAndDumpsVisibleFromTip(
     entityManager: EntityManager,
     dumpManager: DumpManager,
-    fetchConfiguration: () => { gitServers: string[] },
+    frontendUrl: string,
     upload: pgModels.LsifUpload,
     ctx: TracingContext
 ): Promise<void> {
-    const gitserverUrls = fetchConfiguration().gitServers
-
-    const repositoryId = upload.repositoryId
-    const repositoryName = upload.repositoryNameAtUpload
-
     const tipCommit = await dumpManager.discoverTip({
-        repositoryName,
-        gitserverUrls,
+        repositoryId: upload.repositoryId,
+        frontendUrl,
         ctx,
     })
     if (tipCommit === undefined) {
@@ -93,10 +88,9 @@ export async function updateCommitsAndDumpsVisibleFromTip(
     }
 
     const commits = await dumpManager.discoverCommits({
-        repositoryId,
-        repositoryName,
+        repositoryId: upload.repositoryId,
         commit: upload.commit,
-        gitserverUrls,
+        frontendUrl,
         ctx,
     })
 
@@ -108,10 +102,9 @@ export async function updateCommitsAndDumpsVisibleFromTip(
         // the tip and all dumps will be invisible.
 
         const tipCommits = await dumpManager.discoverCommits({
-            repositoryId,
-            repositoryName,
+            repositoryId: upload.repositoryId,
             commit: tipCommit,
-            gitserverUrls,
+            frontendUrl,
             ctx,
         })
 

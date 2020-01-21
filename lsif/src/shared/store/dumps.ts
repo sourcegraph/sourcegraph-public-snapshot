@@ -1,6 +1,6 @@
 import * as sharedMetrics from '../database/metrics'
 import * as pgModels from '../models/pg'
-import { addrFor, getCommitsNear, getHead } from '../gitserver/gitserver'
+import { getCommitsNear, getHead } from '../gitserver/gitserver'
 import { Brackets, Connection, EntityManager } from 'typeorm'
 import { dbFilename, tryDeleteFile } from '../paths'
 import { logAndTraceCall, TracingContext } from '../tracing'
@@ -118,28 +118,26 @@ export class DumpManager {
      * the target commit). If no closest commit can be determined, this method returns undefined.
      *
      * @param repositoryId The repository identifier.
-     * @param repositoryName The repository name.
      * @param commit The target commit.
      * @param file One of the files in the dump.
      * @param ctx The tracing context.
-     * @param gitserverUrls The set of ordered gitserver urls.
+     * @param frontendUrl The url of the frontend internal API.
      */
     public async findClosestDump(
         repositoryId: number,
-        repositoryName: string,
         commit: string,
         file: string,
         ctx: TracingContext = {},
-        gitserverUrls?: string[]
+        frontendUrl?: string
     ): Promise<pgModels.LsifDump | undefined> {
         // Request updated commit data from gitserver if this commit isn't already
         // tracked. This will pull back ancestors for this commit up to a certain
         // (configurable) depth and insert them into the database. This populates
         // the necessary data for the following query.
-        if (gitserverUrls) {
+        if (frontendUrl) {
             await this.updateCommits(
                 repositoryId,
-                await this.discoverCommits({ repositoryId, repositoryName, commit, gitserverUrls, ctx }),
+                await this.discoverCommits({ repositoryId, commit, frontendUrl, ctx }),
                 ctx
             )
         }
@@ -256,19 +254,16 @@ export class DumpManager {
      */
     public async discoverCommits({
         repositoryId,
-        repositoryName,
         commit,
-        gitserverUrls,
+        frontendUrl,
         ctx = {},
     }: {
         /** The repository identifier. */
         repositoryId: number
-        /** The repository name. */
-        repositoryName: string
         /** The commit from which the gitserver queries should start. */
         commit: string
-        /** The set of ordered gitserver urls. */
-        gitserverUrls: string[]
+        /** The url of the frontend internal API. */
+        frontendUrl: string
         /** The tracing context. */
         ctx?: TracingContext
     }): Promise<Map<string, Set<string>>> {
@@ -286,7 +281,7 @@ export class DumpManager {
             return new Map()
         }
 
-        return getCommitsNear(addrFor(repositoryName, gitserverUrls), repositoryName, commit, ctx)
+        return getCommitsNear(frontendUrl, repositoryId, commit, ctx)
     }
 
     /**
@@ -295,20 +290,18 @@ export class DumpManager {
      * @param args Parameter bag.
      */
     public discoverTip({
-        repositoryName,
-        gitserverUrls,
+        repositoryId,
+        frontendUrl,
         ctx = {},
     }: {
-        /** The repository name. */
-        repositoryName: string
-        /** The set of ordered gitserver urls. */
-        gitserverUrls: string[]
+        /** The repository identifier. */
+        repositoryId: number
+        /** The url of the frontend internal API. */
+        frontendUrl: string
         /** The tracing context. */
         ctx?: TracingContext
     }): Promise<string | undefined> {
-        return logAndTraceCall(ctx, 'Getting repository metadata', () =>
-            getHead(addrFor(repositoryName, gitserverUrls), repositoryName, ctx)
-        )
+        return logAndTraceCall(ctx, 'Getting repository metadata', () => getHead(frontendUrl, repositoryId, ctx))
     }
 
     /**

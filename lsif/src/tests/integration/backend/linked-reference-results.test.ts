@@ -3,18 +3,11 @@ import * as util from '../integration-test-util'
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
     const repositoryId = 100
-    const repositoryName = 'main'
     const commit = util.createCommit()
 
     beforeAll(async () => {
         await ctx.init()
-        await ctx.convertTestData(
-            repositoryId,
-            repositoryName,
-            commit,
-            '',
-            'linked-reference-results/data/main.lsif.gz'
-        )
+        await ctx.convertTestData(repositoryId, commit, '', 'linked-reference-results/data/main.lsif.gz')
     })
 
     afterAll(async () => {
@@ -37,7 +30,7 @@ describe('Backend', () => {
         for (const position of positions) {
             const { locations } = util.filterNodeModules(
                 util.mapLocations(
-                    (await ctx.backend.references(repositoryId, repositoryName, commit, 'src/index.ts', position)) || {
+                    (await ctx.backend.references(repositoryId, commit, 'src/index.ts', position)) || {
                         locations: [],
                     }
                 )
