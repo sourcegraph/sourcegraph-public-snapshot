@@ -4,9 +4,11 @@ import (
 	"context"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
@@ -118,5 +120,17 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 	if err := db.UserEmails.SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
 		return nil, err
 	}
+
+	// 🚨 SECURITY: Only grant when the email is set to verified.
+	if args.Verified {
+		if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
+			UserID: userID,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		}); err != nil {
+			log15.Error("Failed to grant user pending permissions", "userID", userID, "error", err)
+		}
+	}
+
 	return &EmptyResponse{}, nil
 }
