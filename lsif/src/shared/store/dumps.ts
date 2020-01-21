@@ -349,7 +349,10 @@ export class DumpManager {
     ): Promise<void> {
         // Do not delete the file on disk directly in case we are part of a larger transaction.
         // We can afford to wait for the cleanup task to determine that the file is orphaned
-        // when it cannot find a matching row in the database.
+        // when it cannot find a matching row in the database. For more context, see the
+        // `removeDeadDumps` function performed at the start of the `purgeOldDumps` task that
+        // is run on a schedule in the server context.
+
         await entityManager.getRepository(pgModels.LsifDump).delete(dump.id)
     }
 }
