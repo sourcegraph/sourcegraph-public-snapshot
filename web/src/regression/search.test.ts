@@ -1,7 +1,5 @@
-/**
- * @jest-environment node
- */
-
+import expect from 'expect'
+import { describe, before, after, test } from 'mocha'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
@@ -13,6 +11,7 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Key } from 'ts-key-enum'
+import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
 
 /**
  * Reads the number of results from the text at the top of the results page
@@ -75,7 +74,6 @@ describe('Search regression test suite', () => {
         'antonmedv/expr',
         'ClickHouse/clickhouse-go',
         'xwb1989/sqlparser',
-        'henrylee2cn/pholcus_lib',
         'itcloudy/ERP',
         'iovisor/kubectl-trace',
         'minio/highwayhash',
@@ -154,38 +152,37 @@ describe('Search regression test suite', () => {
         let driver: Driver
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
-        beforeAll(
-            async () => {
-                ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-                resourceManager.add(
-                    'User',
-                    testUsername,
-                    await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
-                )
-                resourceManager.add(
-                    'External service',
-                    testExternalServiceInfo.uniqueDisplayName,
-                    await ensureTestExternalService(
-                        gqlClient,
-                        {
-                            ...testExternalServiceInfo,
-                            config: {
-                                url: 'https://github.com',
-                                token: config.gitHubToken,
-                                repos: testRepoSlugs,
-                                repositoryQuery: ['none'],
-                            },
-                            waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
+        before(async function() {
+            this.timeout(3 * 60 * 1000 + 30 * 1000)
+            ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
+            resourceManager.add(
+                'User',
+                testUsername,
+                await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
+            )
+            resourceManager.add(
+                'External service',
+                testExternalServiceInfo.uniqueDisplayName,
+                await ensureTestExternalService(
+                    gqlClient,
+                    {
+                        ...testExternalServiceInfo,
+                        config: {
+                            url: 'https://github.com',
+                            token: config.gitHubToken,
+                            repos: testRepoSlugs,
+                            repositoryQuery: ['none'],
                         },
-                        { ...config, timeout: 3 * 60 * 1000, indexed: true }
-                    )
+                        waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
+                    },
+                    { ...config, timeout: 3 * 60 * 1000, indexed: true }
                 )
-            },
-            // Cloning the repositories takes ~1 minute, so give initialization ~3 minutes
-            3 * 60 * 1000 + 30 * 1000
-        )
+            )
+        })
 
-        afterAll(async () => {
+        saveScreenshotsUponFailures(() => driver.page)
+
+        after(async () => {
             if (!config.noCleanup) {
                 await resourceManager.destroyAll()
             }
@@ -349,7 +346,8 @@ describe('Search regression test suite', () => {
         test('Indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this',
-                GQL.SearchPatternType.regexp
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
@@ -357,7 +355,8 @@ describe('Search regression test suite', () => {
         test('Non-indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this index:no',
-                GQL.SearchPatternType.regexp
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
@@ -365,7 +364,8 @@ describe('Search regression test suite', () => {
         test('Indexed multiline search, 0 results', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\(',
-                GQL.SearchPatternType.regexp
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
@@ -373,7 +373,8 @@ describe('Search regression test suite', () => {
         test('Non-indexed multiline search, 0 results', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\( index:no',
-                GQL.SearchPatternType.regexp
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
@@ -381,7 +382,8 @@ describe('Search regression test suite', () => {
         test('Indexed-only structural search, one or more results', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ index:only patterntype:structural toHaveYielded(:[args])',
-                GQL.SearchPatternType.structural
+                GQL.SearchPatternType.structural,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
@@ -389,7 +391,8 @@ describe('Search regression test suite', () => {
         test('Commit search, nonzero result', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ type:commit hello world',
-                GQL.SearchPatternType.regexp
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
@@ -397,26 +400,19 @@ describe('Search regression test suite', () => {
         test('Diff search, nonzero result', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/sgtest/mux$ type:diff main',
-                GQL.SearchPatternType.regexp
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
 
-        test(
-            'Search timeout',
-            async () => {
-                const response = await search(
-                    gqlClient,
-                    'router index:no timeout:1ns',
-                    'V2',
-                    GQL.SearchPatternType.literal
-                )
-                expect(response.results.matchCount).toBe(0)
-                expect(response.results.alert && response.results.alert.title).toBe('Timed out while searching')
-            },
-            2 * 1000
-        )
+        test('Search timeout', async function() {
+            this.timeout(2 * 1000)
+            const response = await search(gqlClient, 'router index:no timeout:1ns', 'V2', GQL.SearchPatternType.literal)
+            expect(response.results.matchCount).toBe(0)
+            expect(response.results.alert && response.results.alert.title).toBe('Timed out while searching')
+        })
 
         test('Search repo group', async () => {
             resourceManager.add(
@@ -460,12 +456,11 @@ describe('Search regression test suite', () => {
                 enterTextMethod: 'type',
             })
             await driver.page.waitForSelector('.e2e-query-suggestions')
-            await (
-                await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
-                    wait: { timeout: 5000 },
-                    selector: '.e2e-query-suggestions li',
-                })
-            ).click()
+            await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
+                action: 'click',
+                wait: { timeout: 5000 },
+                selector: '.e2e-query-suggestions li',
+            })
             await driver.waitUntilURL(`${config.sourcegraphBaseUrl}/github.com/auth0/go-jwt-middleware`)
 
             // File autocomplete from repo search bar
@@ -505,7 +500,6 @@ describe('Search regression test suite', () => {
 
         test('Search filters', async () => {
             const filterToToken = [
-                ['case:yes', 'case:yes'],
                 ['lang:go', 'lang:go'],
                 ['-file:_test\\.go$', '-file:_test\\.go$'],
             ]
@@ -514,12 +508,11 @@ describe('Search regression test suite', () => {
                 await driver.page.goto(
                     `${config.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
                 )
-                await (
-                    await driver.findElementWithText(filter, {
-                        selector: 'button',
-                        wait: { timeout: 5000 },
-                    })
-                ).click()
+                await driver.findElementWithText(filter, {
+                    action: 'click',
+                    selector: 'button',
+                    wait: { timeout: 5000 },
+                })
                 await driver.page.waitForFunction(
                     expectedQuery => {
                         const url = new URL(document.location.href)

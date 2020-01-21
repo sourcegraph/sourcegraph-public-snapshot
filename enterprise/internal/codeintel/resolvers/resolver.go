@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type Resolver struct{}
@@ -91,13 +92,13 @@ func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRep
 
 func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
 	upload, err := client.DefaultClient.Exists(ctx, &struct {
-		RepoName string
-		Commit   string
-		Path     string
+		RepoID api.RepoID
+		Commit string
+		Path   string
 	}{
-		RepoName: args.RepoName,
-		Commit:   string(args.Commit),
-		Path:     args.Path,
+		RepoID: args.Repository.Type().ID,
+		Commit: string(args.Commit),
+		Path:   args.Path,
 	})
 
 	if err != nil {
@@ -109,9 +110,9 @@ func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs)
 	}
 
 	return &lsifQueryResolver{
-		repoName: args.RepoName,
-		commit:   args.Commit,
-		path:     args.Path,
-		upload:   upload,
+		repoID: args.Repository.Type().ID,
+		commit: args.Commit,
+		path:   args.Path,
+		upload: upload,
 	}, nil
 }

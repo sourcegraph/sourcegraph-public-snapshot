@@ -45,7 +45,6 @@ export function fetchLsifUploads({
                                     path
                                     url
                                 }
-                                inputRepoName
                                 inputCommit
                                 inputRoot
                                 uploadedAt
@@ -103,7 +102,6 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                             path
                             url
                         }
-                        inputRepoName
                         inputCommit
                         inputRoot
                         state
@@ -113,6 +111,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                         uploadedAt
                         startedAt
                         finishedAt
+                        isLatestForRepo
                     }
                 }
             }

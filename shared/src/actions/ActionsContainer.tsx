@@ -13,7 +13,7 @@ import { ActionsState } from './actions'
 
 export interface ActionsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'> {
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     menu: ContributableMenu
     scope?: ContributionScope
     extraContext?: Context<any>

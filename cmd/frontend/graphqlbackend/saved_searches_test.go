@@ -59,7 +59,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true, ID: key}, nil
 	}
-	userID := marshalUserID(key)
+	userID := MarshalUserID(key)
 	savedSearches, err := (&schemaResolver{}).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
@@ -117,7 +117,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 		updateSavedSearchCalled = true
 		return &types.SavedSearch{ID: key, Description: savedSearch.Description, Query: savedSearch.Query, Notify: savedSearch.Notify, NotifySlack: savedSearch.NotifySlack, UserID: savedSearch.UserID, OrgID: savedSearch.OrgID}, nil
 	}
-	userID := marshalUserID(key)
+	userID := MarshalUserID(key)
 	savedSearches, err := (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string

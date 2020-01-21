@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	LSIF       = "lsif"
 	LSIFUpload = "lsif.upload"
 	GraphQL    = "graphql"
 
@@ -20,7 +19,8 @@ const (
 	RepoRefresh = "repo.refresh"
 	Telemetry   = "telemetry"
 
-	GitHubWebhooks = "github.webhooks"
+	GitHubWebhooks          = "github.webhooks"
+	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 
 	SavedQueriesListAll    = "internal.saved-queries.list-all"
 	SavedQueriesGetInfo    = "internal.saved-queries.get-info"
@@ -37,6 +37,7 @@ const (
 	Extension              = "internal.extension"
 	GitResolveRevision     = "internal.git.resolve-revision"
 	GitTar                 = "internal.git.tar"
+	GitExec                = "internal.git.exec"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
 	ReposGetByName         = "internal.repos.get-by-name"
 	ReposInventoryUncached = "internal.repos.inventory-uncached"
@@ -62,8 +63,8 @@ func New(base *mux.Router) *mux.Router {
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
+	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
-	base.Path("/lsif/{rest:.*}").Methods("GET", "POST").Name(LSIF)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 
@@ -100,6 +101,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/extension").Methods("POST").Name(Extension)
+	base.Path("/git/{RepoID:[0-9]+}/exec").Methods("POST").Name(GitExec)
 	base.Path("/git/{RepoName:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
 	base.Path("/git/{RepoName:.*}/tar/{Commit}").Methods("GET").Name(GitTar)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)

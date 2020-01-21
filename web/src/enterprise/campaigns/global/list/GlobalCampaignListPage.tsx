@@ -23,7 +23,12 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
             </Link>
         </div>
 
-        <FilteredConnection<ICampaign>
+        <FilteredConnection<
+            Pick<
+                ICampaign,
+                'id' | 'plan' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt'
+            >
+        >
             {...props}
             nodeComponent={CampaignNode}
             queryConnection={queryCampaigns}

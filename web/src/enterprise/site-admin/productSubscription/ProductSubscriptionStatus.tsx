@@ -77,7 +77,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
         // forever, and show them how to upgrade.
 
         return (
-            <div className="mt-3">
+            <div>
                 <ProductCertificate
                     title={productNameWithBrand}
                     detail={

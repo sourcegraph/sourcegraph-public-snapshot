@@ -133,7 +133,6 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error
 			ServiceType: "other",
 			ServiceID:   serviceID,
 		},
-		Enabled: true,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -180,7 +179,6 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
 		}
 
 		// Fields that src-expose isn't allowed to control
-		r.Enabled = true
 		r.ExternalRepo = api.ExternalRepoSpec{
 			ID:          r.URI,
 			ServiceType: "other",

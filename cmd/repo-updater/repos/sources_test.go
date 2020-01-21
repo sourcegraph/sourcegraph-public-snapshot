@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -111,99 +110,6 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	var testCases []testCase
-	{
-		svcs := ExternalServices{
-			{
-				Kind: "GITHUB",
-				Config: marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
-					RepositoryQuery: []string{
-						"user:tsenart in:name patrol",
-					},
-					Repos: []string{"sourcegraph/sourcegraph"},
-				}),
-			},
-			{
-				Kind: "GITLAB",
-				Config: marshalJSON(t, &schema.GitLabConnection{
-					Url:   "https://gitlab.com",
-					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
-					ProjectQuery: []string{
-						"?search=gokulkarthick",
-					},
-				}),
-			},
-			{
-				Kind: "BITBUCKETCLOUD",
-				Config: marshalJSON(t, &schema.BitbucketCloudConnection{
-					Url:         "https://bitbucket.org",
-					Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
-					AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
-				}),
-			},
-			{
-				Kind: "BITBUCKETSERVER",
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
-					Url:   "https://bitbucket.sgdev.org",
-					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-					RepositoryQuery: []string{
-						"?name=vegeta",
-					},
-				}),
-			},
-			{
-				Kind: "GITOLITE",
-				Config: marshalJSON(t, &schema.GitoliteConnection{
-					Host: "ssh://git@127.0.0.1:2222",
-				}),
-			},
-			{
-				Kind: "AWSCODECOMMIT",
-				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
-					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
-					Region:          "us-west-1",
-					GitCredentials: schema.AWSCodeCommitGitCredentials{
-						Username: "git-username",
-						Password: "git-password",
-					},
-				}),
-			},
-			{
-				Kind: "OTHER",
-				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
-					Url: "https://github.com",
-					Repos: []string{
-						"google/go-cmp",
-					},
-				}),
-			},
-		}
-
-		testCases = append(testCases, testCase{
-			name: "yielded repos are always enabled",
-			svcs: svcs,
-			assert: func(e *ExternalService) ReposAssertion {
-				return func(t testing.TB, rs Repos) {
-					t.Helper()
-
-					set := make(map[string]bool)
-					for _, r := range rs {
-						set[strings.ToUpper(r.ExternalRepo.ServiceType)] = true
-						if !r.Enabled {
-							t.Errorf("repo %q is not enabled", r.Name)
-						}
-					}
-
-					if !set[e.Kind] {
-						t.Errorf("external service of kind %q didn't yield any repos", e.Kind)
-					}
-				}
-			},
-			err: "<nil>",
-		})
-	}
 
 	{
 		svcs := ExternalServices{
@@ -751,10 +657,6 @@ func TestSources_ListRepos(t *testing.T) {
 
 						if repo.Name == "" {
 							t.Fatalf("empty repo name: %+v", repo)
-						}
-
-						if !r.Enabled {
-							t.Fatalf("repo disabled: %+v", repo)
 						}
 
 						ext := api.ExternalRepoSpec{

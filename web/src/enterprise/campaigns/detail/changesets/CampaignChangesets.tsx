@@ -3,16 +3,20 @@ import H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
-import { Observable } from 'rxjs'
+import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
+import { Observable, Subject } from 'rxjs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 
 interface Props extends ThemeProps {
     queryChangesetsConnection: (
         args: FilteredConnectionQueryArgs
-    ) => Observable<GQL.IExternalChangesetConnection | GQL.IChangesetPlanConnection>
+    ) => Observable<Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>>
     history: H.History
     location: H.Location
+    campaignUpdates: Subject<void>
+    changesetUpdates: Subject<void>
+    /** Shows the publish button for ChangesetPlans */
+    enablePublishing: ChangesetNodeProps['enablePublishing']
 
     className?: string
 }
@@ -26,13 +30,16 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     location,
     className = '',
     isLightTheme,
+    changesetUpdates,
+    campaignUpdates,
+    enablePublishing,
 }) => (
     <div className={`list-group ${className}`}>
         <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<ChangesetNodeProps, 'node'>>
             className="mt-2"
-            // updates={changesetUpdates}
+            updates={changesetUpdates}
             nodeComponent={ChangesetNode}
-            nodeComponentProps={{ isLightTheme, history, location }}
+            nodeComponentProps={{ isLightTheme, history, location, campaignUpdates, enablePublishing }}
             queryConnection={queryChangesetsConnection}
             hideSearch={true}
             defaultFirst={DEFAULT_CHANGESET_LIST_COUNT}

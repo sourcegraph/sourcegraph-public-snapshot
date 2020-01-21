@@ -6,7 +6,7 @@ Select your SAML identity provider for setup instructions:
 - [Azure Active Directory (Azure AD)](azure_ad.md)
 - [Microsoft Active Directory Federation Services (ADFS)](microsoft_adfs.md)
 - [Auth0](generic.md)
-- [OneLogin](generic.md)
+- [OneLogin](one_login.md)
 - [Ping Identity](generic.md)
 - [Salesforce Identity](generic.md)
 - [Other](generic.md)

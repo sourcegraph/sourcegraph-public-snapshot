@@ -37,14 +37,37 @@ exports[`CampaignTabs renders 1`] = `
            
           <span
             className="badge badge-secondary badge-pill"
-          />
+          >
+            0
+          </span>
         </span>,
       },
     ]
   }
 >
   <CampaignChangesets
+    campaignUpdates={
+      Subject {
+        "_isScalar": false,
+        "closed": false,
+        "hasError": false,
+        "isStopped": false,
+        "observers": Array [],
+        "thrownError": null,
+      }
+    }
+    changesetUpdates={
+      Subject {
+        "_isScalar": false,
+        "closed": false,
+        "hasError": false,
+        "isStopped": false,
+        "observers": Array [],
+        "thrownError": null,
+      }
+    }
     className="mt-3"
+    enablePublishing={false}
     history={
       Object {
         "action": "POP",
@@ -90,6 +113,16 @@ exports[`CampaignTabs renders 1`] = `
     queryChangesetsConnection={[Function]}
   />
   <CampaignDiffs
+    changesetUpdates={
+      Subject {
+        "_isScalar": false,
+        "closed": false,
+        "hasError": false,
+        "isStopped": false,
+        "observers": Array [],
+        "thrownError": null,
+      }
+    }
     className="mt-3"
     history={
       Object {

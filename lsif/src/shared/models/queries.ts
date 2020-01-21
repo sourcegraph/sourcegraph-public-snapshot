@@ -2,33 +2,33 @@ import { MAX_TRAVERSAL_LIMIT } from '../constants'
 
 /**
  * Return a recursive CTE `lineage` that returns ancestors of the commit for the given
- * repository. This assumes that the repo name is $1 and the commit is $2.
+ * repository. This assumes that the repository identifier is $1 and the commit is $2.
  */
 export function ancestorLineage(): string {
     return `
-        RECURSIVE lineage(id, repository, "commit", parent) AS (
-            SELECT c.* FROM lsif_commits c WHERE c.repository = $1 AND c."commit" = $2
+        RECURSIVE lineage(id, "commit", parent, repository_id) AS (
+            SELECT c.* FROM lsif_commits c WHERE c.repository_id = $1 AND c."commit" = $2
             UNION
-            SELECT c.* FROM lineage a JOIN lsif_commits c ON a.repository = c.repository AND a.parent = c."commit"
+            SELECT c.* FROM lineage a JOIN lsif_commits c ON a.repository_id = c.repository_id AND a.parent = c."commit"
         )
     `
 }
 
 /**
  * Return a recursive CTE `lineage` that returns ancestors and descendants of the commit for
- * the given repository. This assumes that the repo name is $1 and the commit is $2. This
- * happens to evaluate in Postgres as a lazy generator, which allows us to pull the "next"
+ * the given repository. This assumes that the repository identifier is $1 and the commit is $2.
+ * This happens to evaluate in Postgres as a lazy generator, which allows us to pull the "next"
  * closest commit in either direction from the source commit as needed.
  */
 export function bidirectionalLineage(): string {
     return `
-        RECURSIVE lineage(id, repository, "commit", parent_commit, direction) AS (
+        RECURSIVE lineage(id, "commit", parent_commit, repository_id, direction) AS (
             SELECT l.* FROM (
                 -- seed recursive set with commit looking in ancestor direction
-                SELECT c.*, 'A' FROM lsif_commits c WHERE c.repository = $1 AND c."commit" = $2
+                SELECT c.*, 'A' FROM lsif_commits c WHERE c.repository_id = $1 AND c."commit" = $2
                 UNION
                 -- seed recursive set with commit looking in descendant direction
-                SELECT c.*, 'D' FROM lsif_commits c WHERE c.repository = $1 AND c."commit" = $2
+                SELECT c.*, 'D' FROM lsif_commits c WHERE c.repository_id = $1 AND c."commit" = $2
             ) l
 
             UNION
@@ -36,10 +36,10 @@ export function bidirectionalLineage(): string {
             SELECT * FROM (
                 WITH l_inner AS (SELECT * FROM lineage)
                 -- get next ancestors (multiple parents for merge commits)
-                SELECT c.*, 'A' FROM l_inner l JOIN lsif_commits c ON l.direction = 'A' AND c.repository = l.repository AND c."commit" = l.parent_commit
+                SELECT c.*, 'A' FROM l_inner l JOIN lsif_commits c ON l.direction = 'A' AND c.repository_id = l.repository_id AND c."commit" = l.parent_commit
                 UNION
                 -- get next descendants
-                SELECT c.*, 'D' FROM l_inner l JOIN lsif_commits c ON l.direction = 'D' and c.repository = l.repository AND c.parent_commit = l."commit"
+                SELECT c.*, 'D' FROM l_inner l JOIN lsif_commits c ON l.direction = 'D' and c.repository_id = l.repository_id AND c.parent_commit = l."commit"
             ) subquery
         )
     `
@@ -62,7 +62,7 @@ export function lineageWithDumps(limit: number = MAX_TRAVERSAL_LIMIT): string {
         -- Correlate commits to dumps and filter out commits without LSIF data
         lineage_with_dumps AS (
             SELECT a.*, d.root, d.id as dump_id FROM limited_lineage a
-            JOIN lsif_dumps d ON d.repository = a.repository AND d."commit" = a."commit"
+            JOIN lsif_dumps d ON d.repository_id = a.repository_id AND d."commit" = a."commit"
         )
     `
 }

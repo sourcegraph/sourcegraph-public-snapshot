@@ -15,17 +15,15 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
         className="btn btn-link text-left w-100 p-0"
         type="button"
       >
-        <div
-          className="d-flex justify-content-between"
-        >
-          <span
-            className="mr-2"
-          >
-            title1
-          </span>
+        <div>
           <CheckboxBlankCircleIcon
             className="icon-inline text-muted"
           />
+          <span
+            className="mr-2 ml-2"
+          >
+            title1
+          </span>
         </div>
       </button>
     </div>
@@ -48,17 +46,15 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
         className="btn btn-link text-left w-100 p-0"
         type="button"
       >
-        <div
-          className="d-flex justify-content-between"
-        >
-          <span
-            className="mr-2"
-          >
-            title1
-          </span>
+        <div>
           <CheckboxBlankCircleIcon
             className="icon-inline text-muted"
           />
+          <span
+            className="mr-2 ml-2"
+          >
+            title1
+          </span>
         </div>
       </button>
     </div>
@@ -81,17 +77,15 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
         className="btn btn-link text-left w-100 p-0"
         type="button"
       >
-        <div
-          className="d-flex justify-content-between"
-        >
-          <span
-            className="mr-2"
-          >
-            title1
-          </span>
+        <div>
           <CheckIcon
             className="icon-inline text-success"
           />
+          <span
+            className="mr-2 ml-2"
+          >
+            title1
+          </span>
         </div>
       </button>
     </div>

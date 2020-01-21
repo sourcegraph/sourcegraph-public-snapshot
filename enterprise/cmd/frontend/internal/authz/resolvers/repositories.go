@@ -16,6 +16,7 @@ import (
 
 var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
+// repositoryConnectionResolver resolves a list of repositories from the roaring bitmap with pagination.
 type repositoryConnectionResolver struct {
 	ids *roaring.Bitmap
 

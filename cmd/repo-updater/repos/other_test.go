@@ -45,9 +45,8 @@ func TestSrcExpose(t *testing.T) {
 		name: "minimal",
 		body: `{"Items":[{"uri": "foo"},{"uri":"bar/baz"}]}`,
 		want: []*Repo{{
-			URI:     "foo",
-			Name:    "foo",
-			Enabled: true,
+			URI:  "foo",
+			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: "other",
@@ -60,9 +59,8 @@ func TestSrcExpose(t *testing.T) {
 				},
 			},
 		}, {
-			URI:     "bar/baz",
-			Name:    "bar/baz",
-			Enabled: true,
+			URI:  "bar/baz",
+			Name: "bar/baz",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: "other",
@@ -82,7 +80,6 @@ func TestSrcExpose(t *testing.T) {
 			URI:         "/repos/foo",
 			Name:        "foo",
 			Description: "hi",
-			Enabled:     true,
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: "other",
@@ -99,9 +96,8 @@ func TestSrcExpose(t *testing.T) {
 		name: "immutable",
 		body: `{"Items":[{"uri": "foo", "enabled": false, "externalrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
 		want: []*Repo{{
-			URI:     "foo",
-			Name:    "foo",
-			Enabled: true,
+			URI:  "foo",
+			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: "other",

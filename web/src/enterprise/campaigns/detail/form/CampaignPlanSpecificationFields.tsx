@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect } from 'react'
 import combyJsonSchema from '../../../../../../schema/campaign-types/comby.schema.json'
 import credentialsJsonSchema from '../../../../../../schema/campaign-types/credentials.schema.json'
+import regexSearchReplaceJsonSchema from '../../../../../../schema/campaign-types/regex_search_replace.schema.json'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
-import { CampaignType } from '../backend.js'
-
-export const MANUAL_CAMPAIGN_TYPE = 'manual' as const
+import { CampaignType } from '../backend'
+import { MANUAL_CAMPAIGN_TYPE, campaignTypeLabels } from '../presentation'
 
 /**
  * Data represented in {@link CampaignPlanSpecificationFields}.
@@ -30,12 +30,7 @@ interface Props extends ThemeProps {
 const jsonSchemaByType: { [K in CampaignType]: any } = {
     comby: combyJsonSchema,
     credentials: credentialsJsonSchema,
-}
-
-const typeLabels: Record<CampaignType | typeof MANUAL_CAMPAIGN_TYPE, string> = {
-    [MANUAL_CAMPAIGN_TYPE]: 'Manual',
-    comby: 'Comby search and replace',
-    credentials: 'Find leaked credentials',
+    regexSearchReplace: regexSearchReplaceJsonSchema,
 }
 
 const defaultInputByType: { [K in CampaignType]: string } = {
@@ -47,6 +42,11 @@ const defaultInputByType: { [K in CampaignType]: string } = {
     credentials: `{
     "scopeQuery": "repo:github.com/foo/bar",
     "matchers": [{ "type": "npm" }]
+}`,
+    regexSearchReplace: `{
+    "scopeQuery": "repo:github.com/foo/bar file:.*",
+    "regexpMatch": "foo",
+    "textReplace": "bar"
 }`,
 }
 
@@ -61,7 +61,9 @@ export const CampaignPlanSpecificationFields: React.FunctionComponent<Props> = (
     isLightTheme,
 }) => {
     const value: CampaignPlanSpecificationFormData =
-        rawValue !== undefined ? rawValue : { type: 'comby', arguments: defaultInputByType.comby }
+        rawValue !== undefined
+            ? rawValue
+            : { type: 'regexSearchReplace', arguments: defaultInputByType.regexSearchReplace }
     useEffect(() => {
         if (rawValue === undefined) {
             onChange(value)
@@ -92,22 +94,27 @@ export const CampaignPlanSpecificationFields: React.FunctionComponent<Props> = (
                                 onChange={e => onTypeChange(e.currentTarget.value as CampaignType)}
                                 value={value.type}
                             >
-                                {(Object.keys(typeLabels) as CampaignType[]).map(typeName => (
+                                {(Object.keys(campaignTypeLabels) as CampaignType[]).map(typeName => (
                                     <option value={typeName || ''} key={typeName}>
-                                        {typeLabels[typeName]}
+                                        {campaignTypeLabels[typeName]}
                                     </option>
                                 ))}
                             </select>
                             {value.type === 'comby' && (
                                 <small className="ml-1">
-                                    <a rel="noopener noreferrer" target="_blank" href="https://comby.dev/#match-syntax">
+                                    <a
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                        tabIndex={-1}
+                                        href="https://comby.dev/#match-syntax"
+                                    >
                                         Learn about comby syntax
                                     </a>
                                 </small>
                             )}
                         </>
                     ) : (
-                        <p className="mb-0">{typeLabels[value.type || '']}</p>
+                        <p className="mb-0">{campaignTypeLabels[value.type || '']}</p>
                     )}
                 </div>
             </div>

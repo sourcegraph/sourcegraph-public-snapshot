@@ -40,6 +40,7 @@ Foreign-key constraints:
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE
+    "campaign_jobs_campaign_plan_id" btree (campaign_plan_id)
     "campaign_jobs_finished_at" btree (finished_at)
     "campaign_jobs_started_at" btree (started_at)
 Check constraints:
@@ -96,6 +97,7 @@ Indexes:
 Check constraints:
     "campaigns_changeset_ids_check" CHECK (jsonb_typeof(changeset_ids) = 'object'::text)
     "campaigns_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
+    "campaigns_name_not_blank" CHECK (name <> ''::text)
 Foreign-key constraints:
     "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_campaign_plan_id_fkey" FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) DEFERRABLE
@@ -148,6 +150,7 @@ Foreign-key constraints:
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, campaign_job_id)
+    "changeset_jobs_campaign_job_id" btree (campaign_job_id)
     "changeset_jobs_error" btree (error)
     "changeset_jobs_finished_at" btree (finished_at)
     "changeset_jobs_started_at" btree (started_at)
@@ -372,13 +375,13 @@ Indexes:
     Column     |  Type   |                         Modifiers                         
 ---------------+---------+-----------------------------------------------------------
  id            | integer | not null default nextval('lsif_commits_id_seq'::regclass)
- repository    | text    | not null
  commit        | text    | not null
  parent_commit | text    | 
+ repository_id | integer | not null
 Indexes:
     "lsif_commits_pkey" PRIMARY KEY, btree (id)
-    "lsif_commits_repo_commit_parent_commit_unique" UNIQUE, btree (repository, commit, parent_commit)
-    "lsif_commits_parent_commit" btree (repository, parent_commit)
+    "lsif_commits_repository_id_commit_parent_commit_unique" UNIQUE, btree (repository_id, commit, parent_commit)
+    "lsif_commits_repository_id_parent_commit" btree (repository_id, parent_commit)
 Check constraints:
     "lsif_commits_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
     "lsif_commits_parent_commit_valid_chars" CHECK (parent_commit ~ '^[a-z0-9]{40}$'::text)
@@ -425,7 +428,6 @@ Foreign-key constraints:
        Column       |           Type           |                        Modifiers                        
 --------------------+--------------------------+---------------------------------------------------------
  id                 | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
- repository         | text                     | not null
  commit             | text                     | not null
  root               | text                     | not null default ''::text
  visible_at_tip     | boolean                  | not null default false
@@ -437,15 +439,15 @@ Foreign-key constraints:
  started_at         | timestamp with time zone | 
  finished_at        | timestamp with time zone | 
  tracing_context    | text                     | not null
+ repository_id      | integer                  | not null
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
-    "lsif_uploads_repository_commit_root" UNIQUE, btree (repository, commit, root) WHERE state = 'completed'::lsif_upload_state
+    "lsif_uploads_repository_id_commit_root" UNIQUE, btree (repository_id, commit, root) WHERE state = 'completed'::lsif_upload_state
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
-    "lsif_uploads_visible_repository_commit" btree (repository, commit) WHERE visible_at_tip
+    "lsif_uploads_visible_repository_id_commit" btree (repository_id, commit) WHERE visible_at_tip
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
-    "lsif_uploads_repository_check" CHECK (repository <> ''::text)
 Referenced by:
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE

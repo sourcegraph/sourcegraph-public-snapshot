@@ -31,6 +31,14 @@ func (r *schemaResolver) Users(args *struct {
 	return &userConnectionResolver{opt: opt, activePeriod: args.ActivePeriod}
 }
 
+type UserConnectionResolver interface {
+	Nodes(ctx context.Context) ([]*UserResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+var _ UserConnectionResolver = &userConnectionResolver{}
+
 type userConnectionResolver struct {
 	opt          db.UsersListOptions
 	activePeriod *string

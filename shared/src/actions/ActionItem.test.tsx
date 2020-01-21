@@ -4,12 +4,13 @@ import renderer from 'react-test-renderer'
 import { createBarrier } from '../api/integration-test/testHelpers'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem } from './ActionItem'
+import { NEVER } from 'rxjs'
 
 jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 
 describe('ActionItem', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve(undefined) }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
+    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
     const history = H.createMemoryHistory()
 
     test('non-actionItem variant', () => {

@@ -275,7 +275,6 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 		Description: repo.Name,
 		Fork:        repo.Origin != nil,
 		Archived:    isArchived,
-		Enabled:     true,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,

@@ -1010,8 +1010,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 
 		reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 		repo := &repos.Repo{
-			Name:    fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
-			Enabled: true,
+			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
 				ServiceType: "github",
@@ -1167,7 +1166,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 			Name:        fmt.Sprintf("github.com/sourcegraph/sourcegraph-%d", i),
 			URI:         fmt.Sprintf("github.com/sourcegraph/sourcegraph-%d", i),
 			Description: "Code search and navigation tool",
-			Enabled:     true,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          fmt.Sprintf("external-id-%d", i),
 				ServiceType: "github",

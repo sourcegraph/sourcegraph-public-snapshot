@@ -258,7 +258,7 @@ func (r *schemaResolver) UpdateAllMirrorRepositories(ctx context.Context) (*Empt
 		return nil, err
 	}
 
-	reposList, err := db.Repos.List(ctx, db.ReposListOptions{Enabled: true, Disabled: true})
+	reposList, err := db.Repos.List(ctx, db.ReposListOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -35,6 +35,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		query.FieldTimeout:     {},
 		query.FieldFork:        {},
 		query.FieldArchived:    {},
+		query.FieldCase:        {},
 		query.FieldRepoHasFile: {},
 	}
 	// Don't return repo results if the search contains fields that aren't on the whitelist.
@@ -45,7 +46,12 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		}
 	}
 
-	pattern, err := regexp.Compile(args.PatternInfo.Pattern)
+	patternRe := args.PatternInfo.Pattern
+	if !args.Query.IsCaseSensitive() {
+		patternRe = "(?i)" + patternRe
+	}
+
+	pattern, err := regexp.Compile(patternRe)
 	if err != nil {
 		return nil, nil, err
 	}

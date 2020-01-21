@@ -65,9 +65,9 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                     onClick={toggleIsExpanded}
                 >
                     {isExpanded ? (
-                        <ChevronUpIcon className="icon-inline" aria-label="Close section" />
+                        <ChevronDownIcon className="icon-inline" aria-label="Close section" />
                     ) : (
-                        <ChevronDownIcon className="icon-inline" aria-label="Expand section" />
+                        <ChevronUpIcon className="icon-inline" aria-label="Expand section" />
                     )}
                 </button>
             </div>

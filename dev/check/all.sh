@@ -4,12 +4,7 @@ set -ex
 cd $(dirname "${BASH_SOURCE[0]}")
 
 parallel_run() {
-    log_file=$(mktemp)
-    trap "rm -rf $log_file" EXIT
-
-    parallel --jobs 4 --keep-order --line-buffer --joblog $log_file "$@"
-    echo "--- done - displaying job log:"
-    cat $log_file
+    ../ci/parallel_run.sh "$@"
 }
 
 go version

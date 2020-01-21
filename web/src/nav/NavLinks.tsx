@@ -27,7 +27,7 @@ interface Props
     extends SettingsCascadeProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         ThemeProps,
         ThemePreferenceProps,
         EventLoggerProps,
