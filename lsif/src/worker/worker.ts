@@ -20,6 +20,7 @@ import AsyncPolling from 'async-polling'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { EntityManager } from 'typeorm'
+import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
 
 /**
  * Runs the worker that converts LSIF uploads.
@@ -97,7 +98,7 @@ async function main(logger: Logger): Promise<void> {
                     await updateCommitsAndDumpsVisibleFromTip(
                         entityManager,
                         dumpManager,
-                        fetchConfiguration,
+                        SRC_FRONTEND_INTERNAL,
                         upload,
                         ctx
                     )

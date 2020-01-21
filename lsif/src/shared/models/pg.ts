@@ -38,14 +38,6 @@ export class LsifUpload {
     public repositoryId!: number
 
     /**
-     * The name of the source repository at the time of upload. This field should
-     * only be used to interface with gitserver when processing the upload. Every
-     * other operation should be performed only in terms of repository ids.
-     */
-    @Column('text', { name: 'repository_name_at_upload' })
-    public repositoryNameAtUpload!: string
-
-    /**
      *  The source commit.
      */
     @Column('text')

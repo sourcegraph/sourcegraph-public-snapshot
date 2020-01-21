@@ -7,7 +7,6 @@ import { extractRepos } from './util'
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
     const repositoryId = 100
-    const repositoryName = 'monorepo'
     const c0 = util.createCommit(0)
     const c1 = util.createCommit(1)
     const c2 = util.createCommit(2)
@@ -60,7 +59,6 @@ describe('Backend', () => {
             dumps.map(({ commit, project, suffix }) =>
                 ctx.convertTestData(
                     repositoryId,
-                    repositoryName,
                     commit,
                     `${project}/`,
                     `reference-pagination-monorepo/data/${project}${suffix}.lsif.gz`,
@@ -145,7 +143,7 @@ describe('Backend', () => {
             const fetch = async () =>
                 util.filterNodeModules(
                     util.mapLocations(
-                        (await backend.references(repositoryId, repositoryName, commit, 'a/src/index.ts', {
+                        (await backend.references(repositoryId, commit, 'a/src/index.ts', {
                             line: 0,
                             character: 17,
                         })) || { locations: [] }
@@ -184,7 +182,6 @@ describe('Backend', () => {
             Object.values(ids).map(externalRepositoryId =>
                 ctx.convertTestData(
                     externalRepositoryId,
-                    repositoryName,
                     util.createCommit(0),
                     'f/',
                     'reference-pagination-monorepo/data/f-ref.lsif.gz'
@@ -197,7 +194,6 @@ describe('Backend', () => {
                 util.mapLocations(
                     (await backend.references(
                         repositoryId,
-                        repositoryName,
                         c3,
                         'a/src/index.ts',
                         {
