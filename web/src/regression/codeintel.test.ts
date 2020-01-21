@@ -778,7 +778,7 @@ async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
 
     // Ensure upload is successful
     const stateText = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
-    expect(stateText).toEqual('Upload completed successfully.')
+    expect(stateText).toEqual('Upload processed successfully.')
 
     const isLatestForRepoText = await (await driver.page.waitFor('.e2e-is-latest-for-repo')).evaluate(
         elem => elem.textContent
