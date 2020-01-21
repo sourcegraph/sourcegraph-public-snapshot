@@ -9,7 +9,7 @@ import { UploadManager } from '../../shared/store/uploads'
 export function createStatsRouter(uploadManager: UploadManager): express.Router {
     const router = express.Router()
     router.get('/stats', async (_, res) => {
-        res.send({ mostRecentUpdates: await uploadManager.mostRecentUpdates() })
+        res.send({ mostRecentUploads: await uploadManager.mostRecentUploads() })
     })
 
     return router

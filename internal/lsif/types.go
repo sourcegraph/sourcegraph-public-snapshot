@@ -28,3 +28,12 @@ type LSIFLocation struct {
 	Path         string     `json:"path"`
 	Range        lsp.Range  `json:"range"`
 }
+
+type LSIFStats struct {
+	MostRecentUploads []*MostRecentUpload `json:"mostRecentUploads"`
+}
+
+type MostRecentUpload struct {
+	RepositoryID api.RepoID `json:"repositoryId"`
+	UploadedAt   time.Time  `json:"uploadedAt"`
+}

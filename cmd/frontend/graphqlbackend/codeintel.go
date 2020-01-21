@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-// NewCodeIntelResolver will be set by enterprise
+// NewCodeIntelResolver will be set by enterprise.
 var NewCodeIntelResolver func() CodeIntelResolver
 
 type CodeIntelResolver interface {

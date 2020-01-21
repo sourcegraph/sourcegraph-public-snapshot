@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
 	authzResolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
@@ -28,6 +29,7 @@ import (
 	a8nResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/proxy"
 	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
+	codeIntelUsagestats "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -37,6 +39,7 @@ func main() {
 	initLicensing()
 	initAuthz()
 	initResolvers()
+	initUsageStats()
 	initLSIFEndpoints()
 
 	// Connect to the database.
@@ -118,6 +121,10 @@ func initResolvers() {
 	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
 	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
 	graphqlbackend.NewAuthzResolver = authzResolvers.NewResolver
+}
+
+func initUsageStats() {
+	usagestats.NewCodeIntelUsageStats = codeIntelUsagestats.NewUsageStats
 }
 
 func initLSIFEndpoints() {

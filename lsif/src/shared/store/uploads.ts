@@ -40,7 +40,7 @@ export class UploadManager {
     /**
      * Return the most recent upload date for an LSIF for every repository.
      */
-    public mostRecentUpdates(): Promise<{ repositoryId: number; uploadedAt: Date }[]> {
+    public mostRecentUploads(): Promise<{ repositoryId: number; uploadedAt: Date }[]> {
         return this.connection
             .getRepository(pgModels.LsifUpload)
             .createQueryBuilder()
