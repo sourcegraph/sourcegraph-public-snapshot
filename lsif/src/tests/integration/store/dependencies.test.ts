@@ -1,6 +1,5 @@
 import * as util from '../integration-test-util'
 import * as pgModels from '../../../shared/models/pg'
-import rmfr from 'rmfr'
 import { Connection } from 'typeorm'
 import { fail } from 'assert'
 import { DumpManager } from '../../../shared/store/dumps'
@@ -9,7 +8,6 @@ import { DependencyManager } from '../../../shared/store/dependencies'
 describe('DependencyManager', () => {
     let connection!: Connection
     let cleanup!: () => Promise<void>
-    let storageRoot!: string
     let dumpManager!: DumpManager
     let dependencyManager!: DependencyManager
 
@@ -18,14 +16,11 @@ describe('DependencyManager', () => {
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await util.createCleanPostgresDatabase())
-        storageRoot = await util.createStorageRoot()
-        dumpManager = new DumpManager(connection, storageRoot)
+        dumpManager = new DumpManager(connection)
         dependencyManager = new DependencyManager(connection)
     })
 
     afterAll(async () => {
-        await rmfr(storageRoot)
-
         if (cleanup) {
             await cleanup()
         }
