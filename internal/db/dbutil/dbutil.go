@@ -162,7 +162,7 @@ func MigrateDB(db *sql.DB, dataSource string) error {
 
 type stdoutLogger struct{}
 
-func (logger stdoutLogger) Printf(format string, v ...interface{}) {
+func (stdoutLogger) Printf(format string, v ...interface{}) {
 	fmt.Printf(format, v...)
 }
 func (logger stdoutLogger) Verbose() bool {
