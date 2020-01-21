@@ -1,7 +1,7 @@
 import { getCompletionItems } from './completion'
 import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
 import { NEVER, of } from 'rxjs'
-import { IFile } from '../../../../shared/src/graphql/schema'
+import { IFile } from '../../graphql/schema'
 
 describe('getCompletionItems()', () => {
     test('returns static filter type completions', async () => {
