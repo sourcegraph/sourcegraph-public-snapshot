@@ -94,7 +94,7 @@ func TestCache_multi(t *testing.T) {
 
 	c := New("some_prefix")
 	vals := c.GetMulti("k0", "k1", "k2")
-	if got, exp := vals, [][]byte{nil, nil, nil}; !reflect.DeepEqual(exp, got) {
+	if got, exp := vals, [][]byte{}; !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v on initial fetch, got %v", exp, got)
 	}
 
@@ -132,7 +132,7 @@ func TestCache_multi(t *testing.T) {
 	}
 
 	c.Delete("k0")
-	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, []byte("y"), []byte("z")}; !reflect.DeepEqual(exp, got) {
+	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{[]byte("y"), []byte("z")}; !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}
 }

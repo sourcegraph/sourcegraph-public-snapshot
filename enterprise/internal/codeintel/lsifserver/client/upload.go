@@ -11,7 +11,6 @@ import (
 
 func (c *Client) GetUploads(ctx context.Context, args *struct {
 	RepoID          api.RepoID
-	RepoName        api.RepoName
 	Query           *string
 	State           *string
 	IsLatestForRepo *bool

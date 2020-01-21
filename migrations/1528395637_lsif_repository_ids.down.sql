@@ -32,7 +32,6 @@ CREATE VIEW lsif_dumps AS SELECT u.*, u.finished_at as processed_at FROM lsif_up
 --
 
 -- Restore old column
--- TODO
 ALTER TABLE lsif_commits ADD repository text;
 CREATE UNIQUE INDEX lsif_commits_repo_commit_parent_commit_unique ON lsif_commits(repository, "commit", parent_commit);
 CREATE INDEX lsif_commits_parent_commit ON lsif_commits(repository, parent_commit);

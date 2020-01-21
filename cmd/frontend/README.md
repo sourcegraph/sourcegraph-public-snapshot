@@ -1,6 +1,6 @@
 # frontend
 
-The frontend serves our web application and hosts our [GraphQL API](../api/graphql/index.md).
+The frontend serves our web application and hosts our [GraphQL API](../../doc/api/graphql/index.md).
 
 Typically there are multiple replicas running in production to scale with load.
 

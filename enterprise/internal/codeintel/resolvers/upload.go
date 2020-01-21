@@ -160,7 +160,6 @@ func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]*lsif.LSI
 
 		r.uploads, r.nextURL, r.totalCount, r.err = client.DefaultClient.GetUploads(ctx, &struct {
 			RepoID          api.RepoID
-			RepoName        api.RepoName
 			Query           *string
 			State           *string
 			IsLatestForRepo *bool
@@ -168,7 +167,6 @@ func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]*lsif.LSI
 			Cursor          *string
 		}{
 			RepoID:          r.repositoryResolver.Type().ID,
-			RepoName:        r.repositoryResolver.Type().Name,
 			Query:           r.opt.Query,
 			State:           r.opt.State,
 			IsLatestForRepo: r.opt.IsLatestForRepo,

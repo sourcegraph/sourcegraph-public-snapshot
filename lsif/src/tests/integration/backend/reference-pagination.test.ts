@@ -25,13 +25,7 @@ describe('Backend', () => {
         await ctx.init()
         await Promise.all(
             Object.entries(ids).map(([repositoryName, repositoryId]) =>
-                ctx.convertTestData(
-                    repositoryId,
-                    repositoryName,
-                    commit,
-                    '',
-                    `reference-pagination/data/${repositoryName}.lsif.gz`
-                )
+                ctx.convertTestData(repositoryId, commit, '', `reference-pagination/data/${repositoryName}.lsif.gz`)
             )
         )
     })
@@ -51,7 +45,6 @@ describe('Backend', () => {
                 util.mapLocations(
                     (await backend.references(
                         ids.a,
-                        'a',
                         commit,
                         'src/index.ts',
                         {
