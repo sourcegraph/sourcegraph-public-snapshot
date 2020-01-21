@@ -15,7 +15,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/golang-migrate/migrate/v4"
-	migr "github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	multierror "github.com/hashicorp/go-multierror"
@@ -127,7 +126,7 @@ func NewMigrate(db *sql.DB, dataSource string) (*migrate.Migrate, error) {
 		return nil, err
 	}
 
-	m, err := migr.NewWithInstance("go-bindata", d, "postgres", driver)
+	m, err := migrate.NewWithInstance("go-bindata", d, "postgres", driver)
 	if err != nil {
 		return nil, err
 	}
