@@ -75,7 +75,7 @@ var defaultRepoResolveRevision = func(ctx context.Context, repo *repos.Repo, rev
 // specification).
 //
 // If resolveRevision is nil, a default implementation is used.
-func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a8n.CampaignPlanPatch) (*a8n.CampaignPlan, error) {
+func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a8n.CampaignPlanPatch, userID int32) (*a8n.CampaignPlan, error) {
 	// Look up all repositories.
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
 	repoIDs := make([]uint32, len(patches))
@@ -100,6 +100,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 	plan := &a8n.CampaignPlan{
 		CampaignType: campaignTypePatch,
 		Arguments:    "", // intentionally empty to avoid needless duplication with CampaignJob diffs
+		UserID:       userID,
 	}
 
 	err = tx.CreateCampaignPlan(ctx, plan)

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -352,6 +354,14 @@ func runCampaignJob(ctx context.Context, clock func() time.Time, store *Store, c
 		job.Error = "Campaign execution canceled."
 		return
 	}
+	if p.UserID == 0 {
+		job.Error = "Campaign plan is missing user"
+		return
+	}
+
+	// Ensure that we run as the user who created the plan
+	act := actor.FromUser(p.UserID)
+	ctx = actor.WithActor(ctx, act)
 
 	job.StartedAt = clock()
 

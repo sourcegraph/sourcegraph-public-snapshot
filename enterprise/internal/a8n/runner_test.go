@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -127,7 +129,23 @@ func TestRunner(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+	user, err := db.Users.Create(ctx, db.NewUser{
+		Email:                "ryanslade@sourcegraph.com",
+		Username:             "ryan",
+		DisplayName:          "Ryan",
+		Password:             "ryan",
+		EmailIsVerified:      true,
+		FailIfNotInitialUser: false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testPlan := &a8n.CampaignPlan{
+		CampaignType: "test",
+		Arguments:    `{}`,
+		UserID:       user.ID,
+	}
 
 	tests := []struct {
 		name string

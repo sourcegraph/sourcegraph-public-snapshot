@@ -482,6 +482,11 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 		return nil, err
 	}
 
+	user, err := backend.CurrentUser(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	}
+
 	specArgs := string(args.Specification.Arguments)
 	typeName := strings.ToLower(args.Specification.Type)
 	if typeName == "" {
@@ -491,7 +496,13 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	if err != nil {
 		return nil, err
 	}
-	plan := &a8n.CampaignPlan{CampaignType: typeName, Arguments: specArgs}
+	plan := &a8n.CampaignPlan{
+		CampaignType: typeName,
+		Arguments:    specArgs,
+	}
+	if user != nil {
+		plan.UserID = user.ID
+	}
 	runner := ee.NewRunner(r.store, campaignType, graphqlbackend.SearchRepos, nil)
 
 	tr.LogFields(log.Int64("plan_id", plan.ID), log.Bool("Wait", args.Wait))
@@ -531,6 +542,11 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 		return nil, err
 	}
 
+	user, err := backend.CurrentUser(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	}
+
 	patches := make([]a8n.CampaignPlanPatch, len(args.Patches))
 	for i, patch := range args.Patches {
 		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
@@ -558,7 +574,11 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches)
+	var userID int32
+	if user != nil {
+		userID = user.ID
+	}
+	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, userID)
 	if err != nil {
 		return nil, err
 	}

@@ -79,7 +79,7 @@ func TestService(t *testing.T) {
 			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
 		}
 
-		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches)
+		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
