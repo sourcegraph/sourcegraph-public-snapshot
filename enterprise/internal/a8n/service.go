@@ -735,7 +735,11 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return campaign, nil, nil
 	}
 
-	if !campaign.Published() {
+	changesetCreation, err := tx.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "getting latest changesetjob creation time")
+	}
+	if changesetCreation.IsZero() {
 		// If the campaign hasn't been published yet, we can simply update the
 		// attributes because no ChangesetJobs have been created yet.
 		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
