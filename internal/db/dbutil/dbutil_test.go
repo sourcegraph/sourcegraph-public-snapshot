@@ -67,3 +67,15 @@ func TestPostgresDSN(t *testing.T) {
 		})
 	}
 }
+
+func TestInjectVersionUpdate(t *testing.T) {
+	gotContents, err := injectVersionUpdate(func(name string) ([]byte, error) { return []byte("BEGIN;\n-- some statements...\nCOMMIT;"), nil })("migrations/100_dummy.up.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(gotContents)
+	want := "BEGIN;\n-- some statements...\nUPDATE schema_migrations SET dirty=false;\nCOMMIT;"
+	if got != want {
+		t.Errorf("incorrect contents: got != want\ngot:  %v\nwant: %v", got, want)
+	}
+}
