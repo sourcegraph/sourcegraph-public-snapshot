@@ -52,7 +52,7 @@ The following are two recommendations for installing these dependencies:
     brew cask install docker
     ```
 
-3.  Install Go, Node, PostgreSQL, Redis, Git, nginx, golang-migrate, Comby, and SQLite tools with the following command:
+3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, nginx, golang-migrate, Comby, and SQLite tools with the following command:
 
     ```bash
     brew install go nvm yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
