@@ -76,11 +76,6 @@ var eventHandlers = map[string][]eventHandler{
 	"CODEINTELINTEGRATION":     {logCodeHostIntegrationUsage, logCodeIntelAction},
 	"CODEINTELINTEGRATIONREFS": {logSiteFindRefsOccurred, logCodeHostIntegrationUsage, logCodeIntelRefsAction},
 
-	"CODEINTELPRECISEHOVER": {logCodeIntelPreciseHoverAction},
-	"CODEINTELPRECISEREF":   {logCodeIntelPreciseRefsAction},
-	"CODEINTELFUZZYHOVER":   {logCodeIntelFuzzyHoverAction},
-	"CODEINTELFUZZYREF":     {logCodeIntelFuzzyRefsAction},
-
 	"STAGEMANAGE":    {logStageEvent},
 	"STAGEPLAN":      {logStageEvent},
 	"STAGECODE":      {logStageEvent},
@@ -140,22 +135,6 @@ var logCodeIntelRefsAction = func(userID int32, _ string, isAuthenticated bool) 
 		return err
 	}
 	return incrementUserCounter(userID, isAuthenticated, fFindRefsActions)
-}
-
-var logCodeIntelPreciseHoverAction = func(userID int32, _ string, isAuthenticated bool) error {
-	return incrementUserCounter(userID, isAuthenticated, fCodeIntelPreciseHoverActions)
-}
-
-var logCodeIntelPreciseRefsAction = func(userID int32, _ string, isAuthenticated bool) error {
-	return incrementUserCounter(userID, isAuthenticated, fCodeIntelPreciseRefsActions)
-}
-
-var logCodeIntelFuzzyHoverAction = func(userID int32, _ string, isAuthenticated bool) error {
-	return incrementUserCounter(userID, isAuthenticated, fCodeIntelFuzzyHoverActions)
-}
-
-var logCodeIntelFuzzyRefsAction = func(userID int32, _ string, isAuthenticated bool) error {
-	return incrementUserCounter(userID, isAuthenticated, fCodeIntelFuzzyRefsActions)
 }
 
 // logCodeHostIntegrationUsage logs the last time a user was active on a code host integration.
