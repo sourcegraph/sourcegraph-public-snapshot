@@ -14,6 +14,7 @@ import (
 	// Register driver
 	_ "github.com/lib/pq"
 
+	"github.com/golang-migrate/migrate/v4"
 	migr "github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
@@ -114,23 +115,21 @@ func NewMigrationSourceLoader(dataSource string) *bindata.AssetSource {
 	return bindata.Resource(migrations.AssetNames(), migrations.Asset)
 }
 
-// MigrateDB runs all migrations from github.com/sourcegraph/sourcegraph/migrations
-// against the given sql.DB
-func MigrateDB(db *sql.DB, dataSource string) error {
+func NewMigrate(db *sql.DB, dataSource string) (*migrate.Migrate, error) {
 	var cfg postgres.Config
 	driver, err := postgres.WithInstance(db, &cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	d, err := bindata.WithInstance(NewMigrationSourceLoader(dataSource))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	m, err := migr.NewWithInstance("go-bindata", d, "postgres", driver)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// In case another process was faster and runs migrations, we will wait
@@ -140,8 +139,13 @@ func MigrateDB(db *sql.DB, dataSource string) error {
 		m.Log = stdoutLogger{}
 	}
 
+	return m, nil
+}
+
+// DoMigrate runs all up migrations.
+func DoMigrate(m *migrate.Migrate) (err error) {
 	err = m.Up()
-	if err == nil || err == migr.ErrNoChange {
+	if err == nil || err == migrate.ErrNoChange {
 		return nil
 	}
 
