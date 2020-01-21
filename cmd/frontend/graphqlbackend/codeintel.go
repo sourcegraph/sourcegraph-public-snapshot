@@ -6,7 +6,6 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // NewCodeIntelResolver will be set by enterprise
@@ -64,11 +63,10 @@ type LSIFQueryResolver interface {
 }
 
 type LSIFQueryArgs struct {
-	RepoID   api.RepoID
-	RepoName api.RepoName
-	Commit   GitObjectID
-	Path     string
-	UploadID int64
+	Repository *RepositoryResolver
+	Commit     GitObjectID
+	Path       string
+	UploadID   int64
 }
 
 type LSIFQueryPositionArgs struct {

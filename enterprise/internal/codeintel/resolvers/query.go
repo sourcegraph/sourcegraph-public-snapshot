@@ -11,11 +11,10 @@ import (
 )
 
 type lsifQueryResolver struct {
-	repoID   api.RepoID
-	repoName api.RepoName
-	commit   graphqlbackend.GitObjectID
-	path     string
-	upload   *lsif.LSIFUpload
+	repoID api.RepoID
+	commit graphqlbackend.GitObjectID
+	path   string
+	upload *lsif.LSIFUpload
 }
 
 var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
@@ -27,7 +26,6 @@ func (r *lsifQueryResolver) Commit(ctx context.Context) (*graphqlbackend.GitComm
 func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	opts := &struct {
 		RepoID    api.RepoID
-		RepoName  api.RepoName
 		Commit    graphqlbackend.GitObjectID
 		Path      string
 		Line      int32
@@ -35,7 +33,6 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 		UploadID  int64
 	}{
 		RepoID:    r.repoID,
-		RepoName:  r.repoName,
 		Commit:    r.commit,
 		Path:      r.path,
 		Line:      args.Line,
@@ -57,7 +54,6 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	opts := &struct {
 		RepoID    api.RepoID
-		RepoName  api.RepoName
 		Commit    graphqlbackend.GitObjectID
 		Path      string
 		Line      int32
@@ -67,7 +63,6 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 		Cursor    *string
 	}{
 		RepoID:    r.repoID,
-		RepoName:  r.repoName,
 		Commit:    r.commit,
 		Path:      r.path,
 		Line:      args.Line,
@@ -100,7 +95,6 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.HoverResolver, error) {
 	text, lspRange, err := client.DefaultClient.Hover(ctx, &struct {
 		RepoID    api.RepoID
-		RepoName  api.RepoName
 		Commit    graphqlbackend.GitObjectID
 		Path      string
 		Line      int32
@@ -108,7 +102,6 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 		UploadID  int64
 	}{
 		RepoID:    r.repoID,
-		RepoName:  r.repoName,
 		Commit:    r.commit,
 		Path:      r.path,
 		Line:      args.Line,
