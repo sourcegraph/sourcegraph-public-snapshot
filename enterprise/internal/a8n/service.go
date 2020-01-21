@@ -164,9 +164,6 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
-	if !draft {
-		c.PublishedAt = c.CreatedAt
-	}
 
 	if err := tx.CreateCampaign(ctx, c); err != nil {
 		return err
