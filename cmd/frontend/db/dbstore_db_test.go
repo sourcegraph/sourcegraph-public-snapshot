@@ -19,7 +19,7 @@ func TestMigrations(t *testing.T) {
 
 	m, err := dbutil.NewMigrate(dbconn.Global, "")
 	if err != nil {
-		t.Errorf("error constructing migration migrations: %s", err)
+		t.Errorf("error constructing migrations: %s", err)
 	}
 	// Run all down migrations then up migrations again to ensure there are no SQL errors.
 	if err := m.Down(); err != nil {
