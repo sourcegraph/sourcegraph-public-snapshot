@@ -74,6 +74,8 @@
 // 1528395639_create_a8n_job_indexes.up.sql (179B)
 // 1528395640_drop_repository_name_at_upload.down.sql (445B)
 // 1528395640_drop_repository_name_at_upload.up.sql (304B)
+// 1528395641_add_user_id_to_campaign_plan.down.sql (75B)
+// 1528395641_add_user_id_to_campaign_plan.up.sql (172B)
 
 package migrations
 
@@ -1622,6 +1624,46 @@ func _1528395640_drop_repository_name_at_uploadUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395641_add_user_id_to_campaign_planDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\x2f\xc8\x49\xcc\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\xcf\x4c\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x4a\xbc\xfa\xff\x4b\x00\x00\x00")
+
+func _1528395641_add_user_id_to_campaign_planDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395641_add_user_id_to_campaign_planDownSql,
+		"1528395641_add_user_id_to_campaign_plan.down.sql",
+	)
+}
+
+func _1528395641_add_user_id_to_campaign_planDownSql() (*asset, error) {
+	bytes, err := _1528395641_add_user_id_to_campaign_planDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395641_add_user_id_to_campaign_plan.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3, 0x20, 0xd6, 0xd5, 0xbe, 0x22, 0xa2, 0x85, 0x8, 0x73, 0x49, 0xd0, 0xf8, 0xca, 0x0, 0xad, 0x96, 0xea, 0xeb, 0x57, 0xeb, 0xd, 0xfa, 0xb1, 0x3f, 0x36, 0xa7, 0x5, 0x44, 0x72, 0xe2, 0xa3}}
+	return a, nil
+}
+
+var __1528395641_add_user_id_to_campaign_planUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\xcd\xb1\xca\x83\x30\x14\xc5\xf1\xfd\x3e\xc5\x19\x15\xbe\x37\x70\x8a\x7a\x95\xf0\xe9\x15\x62\x3a\x74\x0a\x52\x53\x09\x6d\x83\x98\x76\xe8\xdb\x17\xc4\xa1\x74\xfe\x73\x7e\xa7\xe4\x56\x4b\x41\xa4\x3a\xcb\x06\x56\x95\x1d\xe3\x32\x3d\xd6\x29\x2c\xd1\xad\xf7\x29\x26\x02\x00\x55\xd7\xa8\x86\xee\xd4\x0b\x5e\xc9\x6f\x2e\xcc\x08\xf1\xe9\x17\xbf\xfd\x7d\x75\x19\xad\x51\x5a\xec\x8f\xe0\x8e\x89\xbb\xde\xfc\x1b\xcd\x60\x58\xb7\x82\x7f\x3e\x23\x3b\x4a\xbe\x23\x86\x1b\x36\x2c\x15\x8f\xfb\x49\x42\x16\xe6\xbc\x20\xaa\x86\xbe\xd7\xb6\xa0\x4f\x00\x00\x00\xff\xff\x31\x94\x13\xcb\xac\x00\x00\x00")
+
+func _1528395641_add_user_id_to_campaign_planUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395641_add_user_id_to_campaign_planUpSql,
+		"1528395641_add_user_id_to_campaign_plan.up.sql",
+	)
+}
+
+func _1528395641_add_user_id_to_campaign_planUpSql() (*asset, error) {
+	bytes, err := _1528395641_add_user_id_to_campaign_planUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395641_add_user_id_to_campaign_plan.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x61, 0x74, 0x96, 0x72, 0x1a, 0x94, 0xd8, 0x59, 0x47, 0xe1, 0xf9, 0x2b, 0x58, 0xbd, 0x7e, 0x9c, 0xfa, 0x3e, 0x84, 0x3b, 0x32, 0x24, 0x24, 0x5a, 0xd3, 0x3f, 0xa5, 0x49, 0xd4, 0xf1, 0x4c, 0x5d}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1787,6 +1829,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395639_create_a8n_job_indexes.up.sql":                           _1528395639_create_a8n_job_indexesUpSql,
 	"1528395640_drop_repository_name_at_upload.down.sql":                 _1528395640_drop_repository_name_at_uploadDownSql,
 	"1528395640_drop_repository_name_at_upload.up.sql":                   _1528395640_drop_repository_name_at_uploadUpSql,
+	"1528395641_add_user_id_to_campaign_plan.down.sql":                   _1528395641_add_user_id_to_campaign_planDownSql,
+	"1528395641_add_user_id_to_campaign_plan.up.sql":                     _1528395641_add_user_id_to_campaign_planUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1904,6 +1948,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395639_create_a8n_job_indexes.up.sql":                           {_1528395639_create_a8n_job_indexesUpSql, map[string]*bintree{}},
 	"1528395640_drop_repository_name_at_upload.down.sql":                 {_1528395640_drop_repository_name_at_uploadDownSql, map[string]*bintree{}},
 	"1528395640_drop_repository_name_at_upload.up.sql":                   {_1528395640_drop_repository_name_at_uploadUpSql, map[string]*bintree{}},
+	"1528395641_add_user_id_to_campaign_plan.down.sql":                   {_1528395641_add_user_id_to_campaign_planDownSql, map[string]*bintree{}},
+	"1528395641_add_user_id_to_campaign_plan.up.sql":                     {_1528395641_add_user_id_to_campaign_planUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
