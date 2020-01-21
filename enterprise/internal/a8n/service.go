@@ -739,6 +739,9 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	if changesetCreation.IsZero() {
 		// If the campaign hasn't been published yet, we can simply update the
 		// attributes because no ChangesetJobs have been created yet.
+		// If not all ChangesetJobs have been created yet, that means the Campaign itself
+		// hasn't been published yet, but only individual changesets. In that case, we don't
+		// support update yet. See: https://github.com/sourcegraph/sourcegraph/issues/7915
 		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
 	}
 
