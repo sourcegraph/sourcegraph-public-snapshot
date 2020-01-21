@@ -113,8 +113,14 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 }
 
 // InjectVersionUpdate fixes the dirty state (set by golang-migrate) after a
-// successful migration. See
-// https://github.com/golang-migrate/migrate/issues/325
+// successful migration. If the frontend starts a migration that will turn out
+// to be successful but does not stay alive for the duration of the query due to
+// a startup timeout, there will be no chance to set the new version or unset
+// the dirty flag. This function ensures that each successful migration sets the
+// version and dirty flag itself, without requiring the frontend to be alive
+// once the migration is committed.
+//
+// See https://github.com/golang-migrate/migrate/issues/325.
 func InjectVersionUpdate(f bindata.AssetFunc) bindata.AssetFunc {
 	return func(name string) ([]byte, error) {
 		oldContents, err := f(name)
