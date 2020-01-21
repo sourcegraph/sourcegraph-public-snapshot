@@ -38,17 +38,16 @@ export class UploadManager {
     }
 
     /**
-     * Return the number of distinct repositories that have LSIF data.
+     * Return the most recent upload date for an LSIF for every repository.
      */
-    public async countRepositories(): Promise<number> {
-        return (
-            await this.connection
-                .getRepository(pgModels.LsifUpload)
-                .createQueryBuilder()
-                .select('repository')
-                .groupBy('repository')
-                .getRawMany()
-        ).length
+    public mostRecentUpdates(): Promise<{ repositoryId: number; uploadedAt: Date }[]> {
+        return this.connection
+            .getRepository(pgModels.LsifUpload)
+            .createQueryBuilder()
+            .select('repository_id', 'repositoryId')
+            .addSelect('max(uploaded_at)', 'uploadedAt')
+            .groupBy('repository_id')
+            .getRawMany()
     }
 
     /**

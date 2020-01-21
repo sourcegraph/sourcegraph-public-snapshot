@@ -9,12 +9,7 @@ import { UploadManager } from '../../shared/store/uploads'
 export function createStatsRouter(uploadManager: UploadManager): express.Router {
     const router = express.Router()
     router.get('/stats', async (_, res) => {
-        const [numUploads, numUniqueRepositories] = await Promise.all([
-            uploadManager.getCount('completed'),
-            uploadManager.countRepositories(),
-        ])
-
-        res.send({ numUploads, numUniqueRepositories })
+        res.send({ mostRecentUpdates: await uploadManager.mostRecentUpdates() })
     })
 
     return router
