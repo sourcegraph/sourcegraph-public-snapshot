@@ -111,7 +111,7 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	return db, nil
 }
 
-// InjectVersionUpdate fixes the dirty state (set by golang-migrate) after a
+// injectVersionUpdate fixes the dirty state (set by golang-migrate) after a
 // successful migration. If the frontend starts a migration that will turn out
 // to be successful but does not stay alive for the duration of the query due to
 // a startup timeout, there will be no chance to set the new version or unset
@@ -120,7 +120,7 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 // once the migration is committed.
 //
 // See https://github.com/golang-migrate/migrate/issues/325.
-func InjectVersionUpdate(f bindata.AssetFunc) bindata.AssetFunc {
+func injectVersionUpdate(f bindata.AssetFunc) bindata.AssetFunc {
 	return func(name string) ([]byte, error) {
 		oldContents, err := f(name)
 		if err != nil {
@@ -132,7 +132,7 @@ func InjectVersionUpdate(f bindata.AssetFunc) bindata.AssetFunc {
 }
 
 func NewMigrationSourceLoader(dataSource string) *bindata.AssetSource {
-	return bindata.Resource(migrations.AssetNames(), InjectVersionUpdate(migrations.Asset))
+	return bindata.Resource(migrations.AssetNames(), injectVersionUpdate(migrations.Asset))
 }
 
 func NewMigrate(db *sql.DB, dataSource string) (*migrate.Migrate, error) {
