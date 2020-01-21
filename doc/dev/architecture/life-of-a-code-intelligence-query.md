@@ -40,7 +40,7 @@ query {
 }
 ```
 
-The example above resolves the git tree (via `blob`) for the file `/baz/bonk.go`, then asks for the definitions under the cursor position `10:42`. The resolver for the `lsif` field can be found [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22func+%28r+*gitTreeEntryResolver%29+LSIF%28%22).
+The example above resolves the [git tree](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects) (via `blob`) for the file `/baz/bonk.go`, then asks for the definitions under the cursor position `10:42`. The resolver for the `lsif` field can be found [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22func+%28r+*gitTreeEntryResolver%29+LSIF%28%22).
 
 The resolver for definitions, references, and hover fields within the `lsif` field are defined in the enterprise codeintel package. The definition resolver is defined [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lsifQueryResolver%29+definitions+file:codeintel+&patternType=literal), for example. These resolvers are very basic and simply call a method on the [lsif-server client](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22%29+Definitions%28%22+file:lsifserver/.*.go) that simply makes an HTTP request to the lsif-server backend (discussed below).
 
