@@ -630,22 +630,20 @@ function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined
 function parseCaseSensitivityFromQuery(query: string): { typeAndValue: string; value: string } | undefined {
     const parsedQuery = parseSearchQuery(query)
     if (parsedQuery.type === 'success') {
-        const members = parsedQuery.token.members
-        for (const member of members) {
-            if (member.token.type === 'filter' && member.token.filterType.token.value === 'case') {
-                if (member.token.filterValue) {
-                    switch (member.token.filterValue.token.type) {
-                        case 'literal':
-                            return {
-                                typeAndValue: `${member.token.filterType}:${member.token.filterValue}`,
-                                value: member.token.filterValue.token.value,
-                            }
-                        case 'quoted':
-                            return {
-                                typeAndValue: `${member.token.filterType}:${member.token.filterValue}`,
-                                value: member.token.filterValue.token.quotedValue,
-                            }
-                    }
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (token.type === 'filter' && token.filterType.token.value === 'case' && token.filterValue) {
+                switch (token.filterValue.token.type) {
+                    case 'literal':
+                        return {
+                            typeAndValue: `${token.filterType}:${token.filterValue}`,
+                            value: token.filterValue.token.value,
+                        }
+                    case 'quoted':
+                        return {
+                            typeAndValue: `${token.filterType}:${token.filterValue}`,
+                            value: token.filterValue.token.quotedValue,
+                        }
                 }
             }
         }
