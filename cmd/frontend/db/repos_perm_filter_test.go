@@ -838,7 +838,7 @@ func Test_authzFilter_permissionsUserMapping(t *testing.T) {
 
 	t.Run("called Authz.AuthorizedRepos when permissions user mapping is enabled", func(t *testing.T) {
 		user := &types.User{ID: 1}
-		Mocks.Users.GetByCurrentAuthUser = func(_ context.Context) (*types.User, error) {
+		Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return user, nil
 		}
 		ctx := context.Background()

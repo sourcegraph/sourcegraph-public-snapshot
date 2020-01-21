@@ -129,6 +129,10 @@ func (*userEmails) Verify(ctx context.Context, userID int32, email, code string)
 // SetVerified bypasses the normal email verification code process and manually sets the verified
 // status for an email.
 func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
+	if Mocks.UserEmails.SetVerified != nil {
+		return Mocks.UserEmails.SetVerified(ctx, userID, email, verified)
+	}
+
 	var res sql.Result
 	var err error
 	if verified {

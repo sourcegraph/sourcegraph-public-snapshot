@@ -122,6 +122,10 @@ type NewUser struct {
 // order to avoid a race condition where multiple initial site admins could be created or zero site
 // admins could be created.
 func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
+	if Mocks.Users.Create != nil {
+		return Mocks.Users.Create(ctx, info)
+	}
+
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
