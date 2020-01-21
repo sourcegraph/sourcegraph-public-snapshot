@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 func TestMigrations(t *testing.T) {
