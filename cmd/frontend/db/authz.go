@@ -7,18 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-// GrantPendingPermissionsArgs contains required arguments to grant pending permissions for a user.
-// Both "Username" and "Email" could be supplied but only one of them will be used according to the
-// site configuration.
-// 🚨 SECURITY: It is the caller's responsibility to ensure the supplied email is verified.
+// GrantPendingPermissionsArgs contains required arguments to grant pending permissions for a user
+// by username or verified email address(es) according to the site configuration.
 type GrantPendingPermissionsArgs struct {
 	// The user ID that will be used to bind pending permissions.
 	UserID int32
-	// The username that will be used as bind ID.
-	Username string
-	// The verified email address that will be used as bind ID.
-	// 🚨 SECURITY: It is the caller's responsibility to ensure the email is verified.
-	VerifiedEmail string
 	// The permission level to be granted.
 	Perm authz.Perms
 	// The type of permissions to be granted.

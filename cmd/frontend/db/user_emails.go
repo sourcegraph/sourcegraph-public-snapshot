@@ -195,10 +195,16 @@ func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface
 	return userEmails, nil
 }
 
+// ListByUser returns a list of emails that are associated to the given user.
 func (*userEmails) ListByUser(ctx context.Context, userID int32) ([]*UserEmail, error) {
 	if Mocks.UserEmails.ListByUser != nil {
 		return Mocks.UserEmails.ListByUser(userID)
 	}
 
 	return (&userEmails{}).getBySQL(ctx, "WHERE user_id=$1 ORDER BY created_at ASC, email ASC", userID)
+}
+
+// ListVerifiedByUser returns a list of verified emails that are associated to the given user.
+func (*userEmails) ListVerifiedByUser(ctx context.Context, userID int32) ([]*UserEmail, error) {
+	return (&userEmails{}).getBySQL(ctx, "WHERE user_id=$1 AND verified_at IS NOT NULL ORDER BY created_at ASC, email ASC", userID)
 }

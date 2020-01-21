@@ -688,7 +688,8 @@ DO UPDATE SET
 }
 
 // GrantPendingPermissions grants the user has given ID with pending permissions found in p.
-// It "merges" rows in pending permissions tables to effective permissions tables.
+// It "merges" rows in pending permissions tables to effective permissions tables, i.e. permissions
+// are unioned not replaced.
 func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *UserPendingPermissions) (err error) {
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()

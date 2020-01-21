@@ -271,16 +271,10 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		}
 	}
 
-	var verifiedEmail string
-	if info.Email != "" && info.EmailIsVerified {
-		verifiedEmail = info.Email
-	}
 	if err = Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
-		UserID:        id,
-		Username:      info.Username,
-		VerifiedEmail: verifiedEmail,
-		Perm:          authz.Read,
-		Type:          authz.PermRepos,
+		UserID: id,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
 	}); err != nil {
 		return nil, err
 	}

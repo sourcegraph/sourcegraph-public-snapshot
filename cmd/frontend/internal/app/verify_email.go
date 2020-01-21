@@ -50,10 +50,9 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
-		UserID:        usr.ID,
-		VerifiedEmail: email,
-		Perm:          authz.Read,
-		Type:          authz.PermRepos,
+		UserID: usr.ID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
 	}); err != nil {
 		httpLogAndError(w, "Could not grant user pending permissions", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
 		return
