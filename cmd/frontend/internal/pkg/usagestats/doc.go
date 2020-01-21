@@ -35,6 +35,10 @@ const (
 	fSearchQueries                 = "searchqueries"
 	fCodeIntelActions              = "codeintelactions"
 	fFindRefsActions               = "codeintelactions:findrefs"
+	fCodeIntelPreciseHoverActions  = "codeintelactions:precise:hover"
+	fCodeIntelPreciseRefsActions   = "codeintelactions:precise:refs"
+	fCodeIntelFuzzyHoverActions    = "codeintelactions:fuzzy:hover"
+	fCodeIntelFuzzyRefsActions     = "codeintelactions:fuzzy:refs"
 	fLastActiveCodeHostIntegration = "lastactivecodehostintegration"
 )
 
