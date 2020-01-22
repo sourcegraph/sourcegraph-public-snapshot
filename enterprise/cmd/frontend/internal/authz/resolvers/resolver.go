@@ -14,21 +14,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	idb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 type Resolver struct {
-	store *idb.PermsStore
+	store *edb.PermsStore
 }
 
 var _ graphqlbackend.AuthzResolver = &Resolver{}
 
 func NewResolver() graphqlbackend.AuthzResolver {
 	return &Resolver{
-		store: idb.NewPermsStore(dbconn.Global, time.Now),
+		store: edb.NewPermsStore(dbconn.Global, time.Now),
 	}
 }
 
@@ -159,11 +159,11 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		err = r.store.LoadUserPendingPermissions(ctx, p)
 		ids = p.IDs
 	}
-	if err != nil && err != idb.ErrPermsNotFound {
+	if err != nil && err != edb.ErrPermsNotFound {
 		return nil, err
 	}
 	// If no row is found, we return an empty list to the consumer.
-	if err == idb.ErrPermsNotFound {
+	if err == edb.ErrPermsNotFound {
 		ids = roaring.NewBitmap()
 	}
 
@@ -204,11 +204,11 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		Provider: authz.ProviderSourcegraph,
 	}
 	err = r.store.LoadRepoPermissions(ctx, p)
-	if err != nil && err != idb.ErrPermsNotFound {
+	if err != nil && err != edb.ErrPermsNotFound {
 		return nil, err
 	}
 	// If no row is found, we return an empty list to the consumer.
-	if err == idb.ErrPermsNotFound {
+	if err == edb.ErrPermsNotFound {
 		p.UserIDs = roaring.NewBitmap()
 	}
 
