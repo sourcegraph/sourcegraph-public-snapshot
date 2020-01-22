@@ -41,10 +41,7 @@ func TestService(t *testing.T) {
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
-	u, err := db.Users.Create(ctx, testUser)
-	if err != nil {
-		t.Fatal(err)
-	}
+	u := createTestUser(ctx, t)
 
 	store := NewStoreWithClock(dbconn.Global, clock)
 
@@ -54,7 +51,7 @@ func TestService(t *testing.T) {
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	err = reposStore.UpsertRepos(ctx, rs...)
+	err := reposStore.UpsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,19 +76,7 @@ func TestService(t *testing.T) {
 			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
 		}
 
-		user, err := db.Users.Create(ctx, db.NewUser{
-			Email:                "ryanslade@sourcegraph.com",
-			Username:             "ryan",
-			DisplayName:          "Ryan",
-			Password:             "ryan",
-			EmailIsVerified:      true,
-			FailIfNotInitialUser: false,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
+		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, u.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -366,10 +351,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
-	u, err := db.Users.Create(ctx, testUser)
-	if err != nil {
-		t.Fatal(err)
-	}
+	u := createTestUser(ctx, t)
 
 	var rs []*repos.Repo
 	for i := 0; i < 4; i++ {
@@ -377,7 +359,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	err = reposStore.UpsertRepos(ctx, rs...)
+	err := reposStore.UpsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}

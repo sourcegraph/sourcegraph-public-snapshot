@@ -63,22 +63,11 @@ func TestRunCampaignJobs(t *testing.T) {
 	search := yieldRepos(rs...)
 	commitID := yieldDefaultBranches(defaultBranches)
 
-	user, err := db.Users.Create(ctx, db.NewUser{
-		Email:                "ryanslade@sourcegraph.com",
-		Username:             "ryan",
-		DisplayName:          "Ryan",
-		Password:             "ryan",
-		EmailIsVerified:      true,
-		FailIfNotInitialUser: false,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	u := createTestUser(ctx, t)
 	plan := &a8n.CampaignPlan{
 		CampaignType: "test",
 		Arguments:    `{}`,
-		UserID:       user.ID,
+		UserID:       u.ID,
 	}
 
 	runner := NewRunnerWithClock(store, campaignType, search, commitID, clock)
@@ -145,17 +134,7 @@ func TestRunner(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	user, err := db.Users.Create(ctx, db.NewUser{
-		Email:                "ryanslade@sourcegraph.com",
-		Username:             "ryan",
-		DisplayName:          "Ryan",
-		Password:             "ryan",
-		EmailIsVerified:      true,
-		FailIfNotInitialUser: false,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	user := createTestUser(ctx, t)
 
 	testPlan := &a8n.CampaignPlan{
 		CampaignType: "test",
@@ -418,6 +397,14 @@ func TestRunner(t *testing.T) {
 		})
 	}
 
+}
+
+func createTestUser(ctx context.Context, t *testing.T) *types.User {
+	user, err := db.Users.Create(ctx, testUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return user
 }
 
 type testCampaignType struct {

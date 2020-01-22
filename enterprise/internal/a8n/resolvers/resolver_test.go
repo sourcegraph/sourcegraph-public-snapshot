@@ -962,17 +962,7 @@ type CampaignPlan struct {
 func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
-	user, err := db.Users.Create(ctx, db.NewUser{
-		Email:                "ryanslade@sourcegraph.com",
-		Username:             "ryan",
-		DisplayName:          "Ryan",
-		Password:             "ryan",
-		EmailIsVerified:      true,
-		FailIfNotInitialUser: false,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	user := createTestUser(ctx, t)
 	act := actor.FromUser(user.ID)
 	ctx = actor.WithActor(ctx, act)
 
@@ -1004,17 +994,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 		dbtesting.SetupGlobalTestDB(t)
 		rcache.SetupForTest(t)
 
-		user, err := db.Users.Create(ctx, db.NewUser{
-			Email:                "ryanslade@sourcegraph.com",
-			Username:             "ryan",
-			DisplayName:          "Ryan",
-			Password:             "ryan",
-			EmailIsVerified:      true,
-			FailIfNotInitialUser: false,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		user := createTestUser(ctx, t)
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time {
@@ -1502,4 +1482,21 @@ func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.Bitbu
 	}
 
 	return repos
+}
+
+var testUser = db.NewUser{
+	Email:                "test@sourcegraph.com",
+	Username:             "test",
+	DisplayName:          "Test",
+	Password:             "test",
+	EmailIsVerified:      true,
+	FailIfNotInitialUser: false,
+}
+
+func createTestUser(ctx context.Context, t *testing.T) *types.User {
+	user, err := db.Users.Create(ctx, testUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return user
 }
