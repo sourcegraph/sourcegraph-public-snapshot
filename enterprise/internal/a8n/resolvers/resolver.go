@@ -481,10 +481,12 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-
 	user, err := backend.CurrentUser(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	}
+	if user == nil {
+		return nil, backend.ErrNotAuthenticated
 	}
 
 	specArgs := string(args.Specification.Arguments)
@@ -499,9 +501,7 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	plan := &a8n.CampaignPlan{
 		CampaignType: typeName,
 		Arguments:    specArgs,
-	}
-	if user != nil {
-		plan.UserID = user.ID
+		UserID:       user.ID,
 	}
 	runner := ee.NewRunner(r.store, campaignType, graphqlbackend.SearchRepos, nil)
 
