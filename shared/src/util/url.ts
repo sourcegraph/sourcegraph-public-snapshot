@@ -9,6 +9,7 @@ import {
     isNegatableFilter,
 } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
+import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 
 export interface RepoSpec {
     /**
@@ -556,12 +557,11 @@ export function buildSearchURLQuery(
 
     const caseInQuery = parseCaseSensitivityFromQuery(query)
     if (caseInQuery) {
-        const caseRegexp = /\bcase:(?<type>yes|no)\b/i
-        const newQuery = query.replace(caseRegexp, '')
+        const newQuery = query.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
         searchParams.set('q', newQuery)
 
-        if (caseInQuery === 'yes') {
-            searchParams.set('case', caseInQuery)
+        if (caseInQuery.value === 'yes') {
+            searchParams.set('case', caseInQuery.value)
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
             // queries breaking when only `repo:` filters are specified.
@@ -627,9 +627,18 @@ function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined
     return undefined
 }
 
-function parseCaseSensitivityFromQuery(query: string): string | undefined {
-    const caseRegexp = /\bcase:(?<option>yes|no)\b/i
-    const matches = query.match(caseRegexp)
-
-    return matches?.groups?.option
+function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (token.type === 'filter' && token.filterType.token.value === 'case' && token.filterValue) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
+    }
+    return undefined
 }
