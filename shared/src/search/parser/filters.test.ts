@@ -51,6 +51,12 @@ describe('validateFilter()', () => {
             expected: { valid: false, reason: 'Invalid filter value, expected one of: yes, no.' },
             token: { type: 'literal', value: 'yess' },
         },
+        {
+            description: 'Valid case-insensitive repo filter',
+            filterType: 'RePo',
+            expected: { valid: true },
+            token: { type: 'literal', value: 'a' },
+        },
     ]
 
     for (const { description, filterType, expected, token } of TESTCASES) {
