@@ -435,9 +435,9 @@ components:
       type: object
       description: A position in a file of a code base.
       properties:
-        repository:
-          type: string
-          description: The repository in which the location occurs.
+        repositoryId:
+          type: number
+          description: The identifier of the repository in which the location occurs.
         commit:
           type: string
           description: The commit in which the location occurs.
@@ -447,7 +447,7 @@ components:
         range:
           $ref: '#/components/schemas/Range'
       required:
-        - repository
+        - repositoryId
         - commit
         - path
         - range
@@ -499,9 +499,9 @@ components:
         id:
           type: number
           description: A unique identifier.
-        repository:
-          type: string
-          description: The repository argument given on upload.
+        repositoryId:
+          type: number
+          description: The repository identifier argument given on upload.
         commit:
           type: string
           description: The commit argument given on upload.
@@ -541,7 +541,7 @@ components:
           description: Whether or not this upload can provide global reference code intelligence.
       required:
         - id
-        - repository
+        - repositoryId
         - commit
         - root
         - filename
