@@ -23,7 +23,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 - All repository fields related to `enabled` and `disabled` have been removed from the GraphQL API. These fields have been deprecated since 3.4. [#3971](https://github.com/sourcegraph/sourcegraph/pull/3971)
 
-## 3.12.0 (unreleased)
+## 3.12.1
+
+## Fixed
+
+- Regex search/replace will work in private repositories [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914)
+
+## 3.12.0
 
 ### Added
 
