@@ -1,6 +1,6 @@
 import * as Monaco from 'monaco-editor'
 import { Sequence, toMonacoRange } from './parser'
-import { FILTERS } from './filters'
+import { resolveFilter } from './filters'
 
 /**
  * Returns the hover result for a hovered search token in the Monaco query input.
@@ -14,14 +14,19 @@ export const getHoverResult = (
         return null
     }
     const { filterType } = tokenAtColumn.token
-    const matchedFilterDefinition = FILTERS.find(({ aliases }) =>
-        aliases.includes(filterType.token.value.toLowerCase())
-    )
-    if (!matchedFilterDefinition) {
+    const resolvedFilter = resolveFilter(filterType.token.value)
+    if (!resolvedFilter) {
         return null
     }
     return {
-        contents: [{ value: matchedFilterDefinition.description }],
+        contents: [
+            {
+                value:
+                    'negated' in resolvedFilter
+                        ? resolvedFilter.definition.description(resolvedFilter.negated)
+                        : resolvedFilter.definition.description,
+            },
+        ],
         range: toMonacoRange(tokenAtColumn.range),
     }
 }
