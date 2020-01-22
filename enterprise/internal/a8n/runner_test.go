@@ -354,7 +354,7 @@ func TestRunner(t *testing.T) {
 				p.UserID = 0
 				return p
 			},
-			runErr: backend.ErrNotAuthenticated.Error(),
+			runErr: "campaign plan is missing a user",
 		},
 	}
 
