@@ -146,8 +146,6 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 // Campaign and the Campaign is not created as a draft, it calls
 // CreateChangesetJobs inside the same transaction in which it creates the
 // Campaign.
-// When draft is true it also does not set the PublishedAt field on the
-// Campaign.
 func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft bool) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
