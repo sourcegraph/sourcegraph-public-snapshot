@@ -550,7 +550,7 @@ export function buildSearchURLQuery(
             ''
         )
         searchParams.set('q', newQuery)
-        searchParams.set('patternType', patternTypeInQuery.value.toLowerCase())
+        searchParams.set('patternType', patternTypeInQuery.value)
         query = newQuery
     } else {
         searchParams.set('q', query)
@@ -645,7 +645,7 @@ function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; 
     if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {
             const token = member.token
-            if (token.type === 'filter' && token.filterType.token.value === 'case' && token.filterValue) {
+            if (token.type === 'filter' && token.filterType.token.value.toLowerCase() === 'case' && token.filterValue) {
                 return {
                     range: { start: token.filterType.range.start, end: token.filterValue.range.end },
                     value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
