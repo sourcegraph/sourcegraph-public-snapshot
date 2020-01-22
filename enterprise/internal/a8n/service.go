@@ -164,9 +164,6 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
-	if !draft {
-		c.PublishedAt = c.CreatedAt
-	}
 
 	if err := tx.CreateCampaign(ctx, c); err != nil {
 		return err
@@ -499,9 +496,9 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	return campaign, nil
 }
 
-// PublishCampaign publishes the Campaign with the given ID if it has not been
-// published yet by turning the CampaignJobs attached to the CampaignPlan of
-// the Campaign into ChangesetJobs and running them.
+// PublishCampaign publishes the Campaign with the given ID
+// by turning the CampaignJobs attached to the CampaignPlan of
+// the Campaign into ChangesetJobs and enqueuing them
 func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", id)
 	tr, ctx := trace.New(ctx, "service.PublishCampaign", traceTitle)
@@ -514,24 +511,12 @@ func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.
 	if err != nil {
 		return nil, err
 	}
-
 	defer tx.Done(&err)
 
 	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
 	if err != nil {
 		return nil, errors.Wrap(err, "getting campaign")
 	}
-
-	if campaign.Published() {
-		return campaign, nil
-	}
-
-	campaign.PublishedAt = s.clock()
-
-	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
-		return campaign, err
-	}
-
 	return campaign, s.createChangesetJobsWithStore(ctx, tx, campaign)
 }
 
@@ -747,9 +732,16 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return campaign, nil, nil
 	}
 
-	if !campaign.Published() {
+	changesetCreation, err := tx.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "getting latest changesetjob creation time")
+	}
+	if changesetCreation.IsZero() {
 		// If the campaign hasn't been published yet, we can simply update the
 		// attributes because no ChangesetJobs have been created yet.
+		// If not all ChangesetJobs have been created yet, that means the Campaign itself
+		// hasn't been published yet, but only individual changesets. In that case, we don't
+		// support update yet. See: https://github.com/sourcegraph/sourcegraph/issues/7915
 		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
 	}
 
