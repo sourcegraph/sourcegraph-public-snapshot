@@ -66,7 +66,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                     ) : uploadOrError.state === GQL.LSIFUploadState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
                             <CheckIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload completed successfully.</span>
+                            <span className="e2e-upload-state">Upload processed successfully.</span>
                         </div>
                     ) : uploadOrError.state === GQL.LSIFUploadState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
@@ -123,7 +123,20 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             </tr>
 
                             <tr>
-                                <td>Queued</td>
+                                <td>Is latest for repo</td>
+                                <td>
+                                    {uploadOrError.finishedAt ? (
+                                        <span className="e2e-is-latest-for-repo">
+                                            {uploadOrError.isLatestForRepo ? 'yes' : 'no'}
+                                        </span>
+                                    ) : (
+                                        <span className="text-muted">Upload has not yet completed.</span>
+                                    )}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>Uploaded</td>
                                 <td>
                                     <Timestamp date={uploadOrError.uploadedAt} noAbout={true} />
                                 </td>

@@ -1,4 +1,3 @@
-import * as lightstep from 'lightstep-tracer'
 import { createSilentLogger, logCall } from './logging'
 import { ERROR } from 'opentracing/lib/ext/tags'
 import { initTracerFromEnv } from 'jaeger-client'
@@ -59,12 +58,9 @@ export function createTracer(
     serviceName: string,
     {
         useJaeger,
-        lightstepAccessToken,
     }: {
         /** Whether or not to enable Jaeger. */
         useJaeger: boolean
-        /** The access token for lightstep tracing. */
-        lightstepAccessToken: string
     }
 ): Tracer | undefined {
     if (useJaeger) {
@@ -77,13 +73,6 @@ export function createTracer(
         }
 
         return initTracerFromEnv(config, {})
-    }
-
-    if (lightstepAccessToken !== '') {
-        return new lightstep.Tracer({
-            access_token: lightstepAccessToken,
-            component_name: serviceName,
-        })
     }
 
     return undefined

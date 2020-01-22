@@ -33,12 +33,19 @@ ALTER TABLE IF EXISTS ONLY discussion_comments DROP CONSTRAINT IF EXISTS discuss
 ALTER TABLE IF EXISTS ONLY discussion_comments DROP CONSTRAINT IF EXISTS discussion_comments_author_user_id_fkey;
 ALTER TABLE IF EXISTS ONLY default_repos DROP CONSTRAINT IF EXISTS default_repos_repo_id_fkey;
 ALTER TABLE IF EXISTS ONLY changesets DROP CONSTRAINT IF EXISTS changesets_repo_id_fkey;
+ALTER TABLE IF EXISTS ONLY changeset_jobs DROP CONSTRAINT IF EXISTS changeset_jobs_changeset_id_fkey;
+ALTER TABLE IF EXISTS ONLY changeset_jobs DROP CONSTRAINT IF EXISTS changeset_jobs_campaign_job_id_fkey;
+ALTER TABLE IF EXISTS ONLY changeset_jobs DROP CONSTRAINT IF EXISTS changeset_jobs_campaign_id_fkey;
 ALTER TABLE IF EXISTS ONLY changeset_events DROP CONSTRAINT IF EXISTS changeset_events_changeset_id_fkey;
 ALTER TABLE IF EXISTS ONLY campaigns DROP CONSTRAINT IF EXISTS campaigns_namespace_user_id_fkey;
 ALTER TABLE IF EXISTS ONLY campaigns DROP CONSTRAINT IF EXISTS campaigns_namespace_org_id_fkey;
+ALTER TABLE IF EXISTS ONLY campaigns DROP CONSTRAINT IF EXISTS campaigns_campaign_plan_id_fkey;
 ALTER TABLE IF EXISTS ONLY campaigns DROP CONSTRAINT IF EXISTS campaigns_author_id_fkey;
+ALTER TABLE IF EXISTS ONLY campaign_jobs DROP CONSTRAINT IF EXISTS campaign_jobs_repo_id_fkey;
+ALTER TABLE IF EXISTS ONLY campaign_jobs DROP CONSTRAINT IF EXISTS campaign_jobs_campaign_plan_id_fkey;
 ALTER TABLE IF EXISTS ONLY access_tokens DROP CONSTRAINT IF EXISTS access_tokens_subject_user_id_fkey;
 ALTER TABLE IF EXISTS ONLY access_tokens DROP CONSTRAINT IF EXISTS access_tokens_creator_user_id_fkey;
+DROP TRIGGER IF EXISTS trig_validate_campaign_plan_is_finished ON campaigns;
 DROP TRIGGER IF EXISTS trig_delete_changeset_reference_on_campaigns ON changesets;
 DROP TRIGGER IF EXISTS trig_delete_campaign_reference_on_changesets ON campaigns;
 DROP INDEX IF EXISTS users_username;
@@ -60,11 +67,10 @@ DROP INDEX IF EXISTS org_invitations_recipient_user_id;
 DROP INDEX IF EXISTS org_invitations_org_id;
 DROP INDEX IF EXISTS lsif_references_package;
 DROP INDEX IF EXISTS lsif_packages_package_unique;
-DROP INDEX IF EXISTS lsif_commits_repo_parent_commit;
+DROP INDEX IF EXISTS lsif_dumps_visible_repository_commit;
+DROP INDEX IF EXISTS lsif_dumps_uploaded_at;
 DROP INDEX IF EXISTS lsif_commits_repo_commit_parent_commit_unique;
-DROP INDEX IF EXISTS lsif_commits_repo_commit;
 DROP INDEX IF EXISTS lsif_commits_parent_commit;
-DROP INDEX IF EXISTS lsif_commits_commit;
 DROP INDEX IF EXISTS event_logs_user_id;
 DROP INDEX IF EXISTS event_logs_timestamp;
 DROP INDEX IF EXISTS event_logs_name;
@@ -77,9 +83,15 @@ DROP INDEX IF EXISTS discussion_comments_thread_id_idx;
 DROP INDEX IF EXISTS discussion_comments_reports_array_length_idx;
 DROP INDEX IF EXISTS discussion_comments_author_user_id_idx;
 DROP INDEX IF EXISTS critical_and_site_config_unique;
+DROP INDEX IF EXISTS changeset_jobs_started_at;
+DROP INDEX IF EXISTS changeset_jobs_finished_at;
+DROP INDEX IF EXISTS changeset_jobs_error;
 DROP INDEX IF EXISTS campaigns_namespace_user_id;
 DROP INDEX IF EXISTS campaigns_namespace_org_id;
 DROP INDEX IF EXISTS campaigns_changeset_ids_gin_idx;
+DROP INDEX IF EXISTS campaign_jobs_started_at;
+DROP INDEX IF EXISTS campaign_jobs_finished_at;
+DROP INDEX IF EXISTS campaign_jobs_campaign_plan_id;
 DROP INDEX IF EXISTS access_tokens_lookup;
 ALTER TABLE IF EXISTS ONLY users DROP CONSTRAINT IF EXISTS users_pkey;
 ALTER TABLE IF EXISTS ONLY user_permissions DROP CONSTRAINT IF EXISTS user_permissions_perm_object_unique;
@@ -94,7 +106,6 @@ ALTER TABLE IF EXISTS ONLY repo DROP CONSTRAINT IF EXISTS repo_pkey;
 ALTER TABLE IF EXISTS ONLY repo DROP CONSTRAINT IF EXISTS repo_name_unique;
 ALTER TABLE IF EXISTS ONLY registry_extensions DROP CONSTRAINT IF EXISTS registry_extensions_pkey;
 ALTER TABLE IF EXISTS ONLY registry_extension_releases DROP CONSTRAINT IF EXISTS registry_extension_releases_pkey;
-ALTER TABLE IF EXISTS ONLY recent_searches DROP CONSTRAINT IF EXISTS recent_searches_pkey;
 ALTER TABLE IF EXISTS ONLY product_subscriptions DROP CONSTRAINT IF EXISTS product_subscriptions_pkey;
 ALTER TABLE IF EXISTS ONLY product_licenses DROP CONSTRAINT IF EXISTS product_licenses_pkey;
 ALTER TABLE IF EXISTS ONLY phabricator_repos DROP CONSTRAINT IF EXISTS phabricator_repos_repo_name_key;
@@ -120,9 +131,14 @@ ALTER TABLE IF EXISTS ONLY default_repos DROP CONSTRAINT IF EXISTS default_repos
 ALTER TABLE IF EXISTS ONLY critical_and_site_config DROP CONSTRAINT IF EXISTS critical_and_site_config_pkey;
 ALTER TABLE IF EXISTS ONLY changesets DROP CONSTRAINT IF EXISTS changesets_repo_external_id_unique;
 ALTER TABLE IF EXISTS ONLY changesets DROP CONSTRAINT IF EXISTS changesets_pkey;
+ALTER TABLE IF EXISTS ONLY changeset_jobs DROP CONSTRAINT IF EXISTS changeset_jobs_unique;
+ALTER TABLE IF EXISTS ONLY changeset_jobs DROP CONSTRAINT IF EXISTS changeset_jobs_pkey;
 ALTER TABLE IF EXISTS ONLY changeset_events DROP CONSTRAINT IF EXISTS changeset_events_pkey;
 ALTER TABLE IF EXISTS ONLY changeset_events DROP CONSTRAINT IF EXISTS changeset_events_changeset_id_kind_key_unique;
 ALTER TABLE IF EXISTS ONLY campaigns DROP CONSTRAINT IF EXISTS campaigns_pkey;
+ALTER TABLE IF EXISTS ONLY campaign_plans DROP CONSTRAINT IF EXISTS campaign_plans_pkey;
+ALTER TABLE IF EXISTS ONLY campaign_jobs DROP CONSTRAINT IF EXISTS campaign_jobs_pkey;
+ALTER TABLE IF EXISTS ONLY campaign_jobs DROP CONSTRAINT IF EXISTS campaign_jobs_campaign_plan_repo_rev_unique;
 ALTER TABLE IF EXISTS ONLY access_tokens DROP CONSTRAINT IF EXISTS access_tokens_value_sha256_key;
 ALTER TABLE IF EXISTS ONLY access_tokens DROP CONSTRAINT IF EXISTS access_tokens_pkey;
 ALTER TABLE IF EXISTS users ALTER COLUMN id DROP DEFAULT;
@@ -133,7 +149,6 @@ ALTER TABLE IF EXISTS saved_searches ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS repo ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS registry_extensions ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS registry_extension_releases ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE IF EXISTS recent_searches ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS phabricator_repos ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS orgs ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS org_members ALTER COLUMN id DROP DEFAULT;
@@ -149,8 +164,11 @@ ALTER TABLE IF EXISTS discussion_threads ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS discussion_comments ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS critical_and_site_config ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS changesets ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS changeset_jobs ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS changeset_events ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS campaigns ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS campaign_plans ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS campaign_jobs ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS access_tokens ALTER COLUMN id DROP DEFAULT;
 DROP SEQUENCE IF EXISTS users_id_seq;
 DROP TABLE IF EXISTS users;
@@ -174,8 +192,6 @@ DROP SEQUENCE IF EXISTS registry_extensions_id_seq;
 DROP TABLE IF EXISTS registry_extensions;
 DROP SEQUENCE IF EXISTS registry_extension_releases_id_seq;
 DROP TABLE IF EXISTS registry_extension_releases;
-DROP SEQUENCE IF EXISTS recent_searches_id_seq;
-DROP TABLE IF EXISTS recent_searches;
 DROP TABLE IF EXISTS query_runner_state;
 DROP TABLE IF EXISTS product_subscriptions;
 DROP TABLE IF EXISTS product_licenses;
@@ -213,12 +229,19 @@ DROP SEQUENCE IF EXISTS critical_and_site_config_id_seq;
 DROP TABLE IF EXISTS critical_and_site_config;
 DROP SEQUENCE IF EXISTS changesets_id_seq;
 DROP TABLE IF EXISTS changesets;
+DROP SEQUENCE IF EXISTS changeset_jobs_id_seq;
+DROP TABLE IF EXISTS changeset_jobs;
 DROP SEQUENCE IF EXISTS changeset_events_id_seq;
 DROP TABLE IF EXISTS changeset_events;
 DROP SEQUENCE IF EXISTS campaigns_id_seq;
 DROP TABLE IF EXISTS campaigns;
+DROP SEQUENCE IF EXISTS campaign_plans_id_seq;
+DROP TABLE IF EXISTS campaign_plans;
+DROP SEQUENCE IF EXISTS campaign_jobs_id_seq;
+DROP TABLE IF EXISTS campaign_jobs;
 DROP SEQUENCE IF EXISTS access_tokens_id_seq;
 DROP TABLE IF EXISTS access_tokens;
+DROP FUNCTION IF EXISTS validate_campaign_plan_is_finished();
 DROP FUNCTION IF EXISTS delete_changeset_reference_on_campaigns();
 DROP FUNCTION IF EXISTS delete_campaign_reference_on_changesets();
 DROP FUNCTION IF EXISTS closest_dump(repository text, commit text, path text, traversal_limit integer);
@@ -241,7 +264,10 @@ CREATE TABLE lsif_dumps (
     repository text NOT NULL,
     commit text NOT NULL,
     root text DEFAULT ''::text NOT NULL,
-    CONSTRAINT lsif_dumps_commit_check CHECK ((length(commit) = 40)),
+    visible_at_tip boolean DEFAULT false NOT NULL,
+    processed_at timestamp with time zone DEFAULT now() NOT NULL,
+    uploaded_at timestamp with time zone NOT NULL,
+    CONSTRAINT lsif_dumps_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text)),
     CONSTRAINT lsif_dumps_repository_check CHECK ((repository <> ''::text))
 );
 
@@ -334,6 +360,27 @@ CREATE FUNCTION delete_changeset_reference_on_campaigns() RETURNS trigger
     END;
 $$;
 
+CREATE FUNCTION validate_campaign_plan_is_finished() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  running int;
+BEGIN
+  running := (
+    SELECT COUNT(*) FROM campaign_jobs
+    WHERE campaign_plan_id = NEW.campaign_plan_id
+    AND finished_at IS NULL
+  );
+
+  IF (running != 0) THEN
+    RAISE EXCEPTION 'CampaignPlan{ID: %} has % unfinished jobs',
+      NEW.campaign_plan_id, running;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
 CREATE TABLE access_tokens (
     id bigint NOT NULL,
     subject_user_id integer NOT NULL,
@@ -355,6 +402,48 @@ CREATE SEQUENCE access_tokens_id_seq
 
 ALTER SEQUENCE access_tokens_id_seq OWNED BY access_tokens.id;
 
+CREATE TABLE campaign_jobs (
+    id bigint NOT NULL,
+    campaign_plan_id bigint NOT NULL,
+    repo_id bigint NOT NULL,
+    rev text NOT NULL,
+    diff text NOT NULL,
+    error text NOT NULL,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    base_ref text NOT NULL,
+    CONSTRAINT campaign_jobs_base_ref_check CHECK ((base_ref <> ''::text))
+);
+
+CREATE SEQUENCE campaign_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE campaign_jobs_id_seq OWNED BY campaign_jobs.id;
+
+CREATE TABLE campaign_plans (
+    id bigint NOT NULL,
+    campaign_type text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    arguments text NOT NULL,
+    CONSTRAINT campaign_plans_campaign_type_check CHECK ((campaign_type <> ''::text))
+);
+
+CREATE SEQUENCE campaign_plans_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE campaign_plans_id_seq OWNED BY campaign_plans.id;
+
 CREATE TABLE campaigns (
     id bigint NOT NULL,
     name text NOT NULL,
@@ -365,6 +454,7 @@ CREATE TABLE campaigns (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     changeset_ids jsonb DEFAULT '{}'::jsonb NOT NULL,
+    campaign_plan_id integer,
     CONSTRAINT campaigns_changeset_ids_check CHECK ((jsonb_typeof(changeset_ids) = 'object'::text)),
     CONSTRAINT campaigns_has_1_namespace CHECK (((namespace_user_id IS NULL) <> (namespace_org_id IS NULL)))
 );
@@ -399,6 +489,27 @@ CREATE SEQUENCE changeset_events_id_seq
     CACHE 1;
 
 ALTER SEQUENCE changeset_events_id_seq OWNED BY changeset_events.id;
+
+CREATE TABLE changeset_jobs (
+    id bigint NOT NULL,
+    campaign_id bigint NOT NULL,
+    campaign_job_id bigint NOT NULL,
+    changeset_id bigint,
+    error text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone
+);
+
+CREATE SEQUENCE changeset_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE changeset_jobs_id_seq OWNED BY changeset_jobs.id;
 
 CREATE TABLE changesets (
     id bigint NOT NULL,
@@ -574,7 +685,9 @@ CREATE TABLE lsif_commits (
     id integer NOT NULL,
     repository text NOT NULL,
     commit text NOT NULL,
-    parent_commit text NOT NULL
+    parent_commit text,
+    CONSTRAINT lsif_commits_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text)),
+    CONSTRAINT lsif_commits_parent_commit_valid_chars CHECK ((parent_commit ~ '^[a-z0-9]{40}$'::text))
 );
 
 CREATE SEQUENCE lsif_commits_id_seq
@@ -750,21 +863,6 @@ CREATE TABLE query_runner_state (
     latest_result timestamp with time zone,
     exec_duration_ns bigint
 );
-
-CREATE TABLE recent_searches (
-    id integer NOT NULL,
-    query text NOT NULL,
-    created_at timestamp without time zone DEFAULT now() NOT NULL
-);
-
-CREATE SEQUENCE recent_searches_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE recent_searches_id_seq OWNED BY recent_searches.id;
 
 CREATE TABLE registry_extension_releases (
     id bigint NOT NULL,
@@ -1003,9 +1101,15 @@ ALTER SEQUENCE users_id_seq OWNED BY users.id;
 
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
+ALTER TABLE ONLY campaign_jobs ALTER COLUMN id SET DEFAULT nextval('campaign_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY campaign_plans ALTER COLUMN id SET DEFAULT nextval('campaign_plans_id_seq'::regclass);
+
 ALTER TABLE ONLY campaigns ALTER COLUMN id SET DEFAULT nextval('campaigns_id_seq'::regclass);
 
 ALTER TABLE ONLY changeset_events ALTER COLUMN id SET DEFAULT nextval('changeset_events_id_seq'::regclass);
+
+ALTER TABLE ONLY changeset_jobs ALTER COLUMN id SET DEFAULT nextval('changeset_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY changesets ALTER COLUMN id SET DEFAULT nextval('changesets_id_seq'::regclass);
 
@@ -1037,8 +1141,6 @@ ALTER TABLE ONLY orgs ALTER COLUMN id SET DEFAULT nextval('orgs_id_seq'::regclas
 
 ALTER TABLE ONLY phabricator_repos ALTER COLUMN id SET DEFAULT nextval('phabricator_repos_id_seq'::regclass);
 
-ALTER TABLE ONLY recent_searches ALTER COLUMN id SET DEFAULT nextval('recent_searches_id_seq'::regclass);
-
 ALTER TABLE ONLY registry_extension_releases ALTER COLUMN id SET DEFAULT nextval('registry_extension_releases_id_seq'::regclass);
 
 ALTER TABLE ONLY registry_extensions ALTER COLUMN id SET DEFAULT nextval('registry_extensions_id_seq'::regclass);
@@ -1061,6 +1163,15 @@ ALTER TABLE ONLY access_tokens
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_value_sha256_key UNIQUE (value_sha256);
 
+ALTER TABLE ONLY campaign_jobs
+    ADD CONSTRAINT campaign_jobs_campaign_plan_repo_rev_unique UNIQUE (campaign_plan_id, repo_id, rev) DEFERRABLE;
+
+ALTER TABLE ONLY campaign_jobs
+    ADD CONSTRAINT campaign_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY campaign_plans
+    ADD CONSTRAINT campaign_plans_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY campaigns
     ADD CONSTRAINT campaigns_pkey PRIMARY KEY (id);
 
@@ -1069,6 +1180,12 @@ ALTER TABLE ONLY changeset_events
 
 ALTER TABLE ONLY changeset_events
     ADD CONSTRAINT changeset_events_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY changeset_jobs
+    ADD CONSTRAINT changeset_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY changeset_jobs
+    ADD CONSTRAINT changeset_jobs_unique UNIQUE (campaign_id, campaign_job_id);
 
 ALTER TABLE ONLY changesets
     ADD CONSTRAINT changesets_pkey PRIMARY KEY (id);
@@ -1145,9 +1262,6 @@ ALTER TABLE ONLY product_licenses
 ALTER TABLE ONLY product_subscriptions
     ADD CONSTRAINT product_subscriptions_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY recent_searches
-    ADD CONSTRAINT recent_searches_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY registry_extension_releases
     ADD CONSTRAINT registry_extension_releases_pkey PRIMARY KEY (id);
 
@@ -1189,11 +1303,23 @@ ALTER TABLE ONLY users
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
+CREATE INDEX campaign_jobs_campaign_plan_id ON campaign_jobs USING btree (campaign_plan_id);
+
+CREATE INDEX campaign_jobs_finished_at ON campaign_jobs USING btree (finished_at);
+
+CREATE INDEX campaign_jobs_started_at ON campaign_jobs USING btree (started_at);
+
 CREATE INDEX campaigns_changeset_ids_gin_idx ON campaigns USING gin (changeset_ids);
 
 CREATE INDEX campaigns_namespace_org_id ON campaigns USING btree (namespace_org_id);
 
 CREATE INDEX campaigns_namespace_user_id ON campaigns USING btree (namespace_user_id);
+
+CREATE INDEX changeset_jobs_error ON changeset_jobs USING btree (error);
+
+CREATE INDEX changeset_jobs_finished_at ON changeset_jobs USING btree (finished_at);
+
+CREATE INDEX changeset_jobs_started_at ON changeset_jobs USING btree (started_at);
 
 CREATE UNIQUE INDEX critical_and_site_config_unique ON critical_and_site_config USING btree (id, type);
 
@@ -1219,15 +1345,13 @@ CREATE INDEX event_logs_timestamp ON event_logs USING btree ("timestamp");
 
 CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
 
-CREATE INDEX lsif_commits_commit ON lsif_commits USING btree (repository, commit);
-
 CREATE INDEX lsif_commits_parent_commit ON lsif_commits USING btree (repository, parent_commit);
-
-CREATE INDEX lsif_commits_repo_commit ON lsif_commits USING btree (repository, commit);
 
 CREATE UNIQUE INDEX lsif_commits_repo_commit_parent_commit_unique ON lsif_commits USING btree (repository, commit, parent_commit);
 
-CREATE INDEX lsif_commits_repo_parent_commit ON lsif_commits USING btree (repository, parent_commit);
+CREATE INDEX lsif_dumps_uploaded_at ON lsif_dumps USING btree (uploaded_at);
+
+CREATE INDEX lsif_dumps_visible_repository_commit ON lsif_dumps USING btree (repository, commit) WHERE visible_at_tip;
 
 CREATE UNIQUE INDEX lsif_packages_package_unique ON lsif_packages USING btree (scheme, name, version);
 
@@ -1271,14 +1395,25 @@ CREATE TRIGGER trig_delete_campaign_reference_on_changesets AFTER DELETE ON camp
 
 CREATE TRIGGER trig_delete_changeset_reference_on_campaigns AFTER DELETE ON changesets FOR EACH ROW EXECUTE PROCEDURE delete_changeset_reference_on_campaigns();
 
+CREATE TRIGGER trig_validate_campaign_plan_is_finished BEFORE INSERT OR UPDATE ON campaigns FOR EACH ROW EXECUTE PROCEDURE validate_campaign_plan_is_finished();
+
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_creator_user_id_fkey FOREIGN KEY (creator_user_id) REFERENCES users(id);
 
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_subject_user_id_fkey FOREIGN KEY (subject_user_id) REFERENCES users(id);
 
+ALTER TABLE ONLY campaign_jobs
+    ADD CONSTRAINT campaign_jobs_campaign_plan_id_fkey FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY campaign_jobs
+    ADD CONSTRAINT campaign_jobs_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE;
+
 ALTER TABLE ONLY campaigns
     ADD CONSTRAINT campaigns_author_id_fkey FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY campaigns
+    ADD CONSTRAINT campaigns_campaign_plan_id_fkey FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) DEFERRABLE;
 
 ALTER TABLE ONLY campaigns
     ADD CONSTRAINT campaigns_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE;
@@ -1288,6 +1423,15 @@ ALTER TABLE ONLY campaigns
 
 ALTER TABLE ONLY changeset_events
     ADD CONSTRAINT changeset_events_changeset_id_fkey FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY changeset_jobs
+    ADD CONSTRAINT changeset_jobs_campaign_id_fkey FOREIGN KEY (campaign_id) REFERENCES campaigns(id) DEFERRABLE;
+
+ALTER TABLE ONLY changeset_jobs
+    ADD CONSTRAINT changeset_jobs_campaign_job_id_fkey FOREIGN KEY (campaign_job_id) REFERENCES campaign_jobs(id) DEFERRABLE;
+
+ALTER TABLE ONLY changeset_jobs
+    ADD CONSTRAINT changeset_jobs_changeset_id_fkey FOREIGN KEY (changeset_id) REFERENCES changesets(id) DEFERRABLE;
 
 ALTER TABLE ONLY changesets
     ADD CONSTRAINT changesets_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;

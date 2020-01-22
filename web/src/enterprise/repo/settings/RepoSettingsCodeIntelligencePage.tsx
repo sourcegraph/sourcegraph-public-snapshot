@@ -20,11 +20,11 @@ const HideIncompleteLSIFUploadsToggle: FunctionComponent<HideIncompleteLSIFUploa
     onToggle,
 }) => (
     <div className="lsif-uploads-filter-toggle">
-        <label className="radio-buttons__item lsif-uploads-filter-toggle-label" title="Hide incomplete uploads">
-            <Toggle value={onlyCompleted} onToggle={onToggle} title="Hide incomplete uploads" />
+        <label className="radio-buttons__item lsif-uploads-filter-toggle-label" title="Show only processed uploads">
+            <Toggle value={onlyCompleted} onToggle={onToggle} title="Show only processed uploads" />
 
             <small>
-                <div className="radio-buttons__label">Hide incomplete uploads</div>
+                <div className="radio-buttons__label">Show only processed uploads</div>
             </small>
         </label>
     </div>
