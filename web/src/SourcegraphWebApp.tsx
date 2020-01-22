@@ -55,6 +55,7 @@ import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
+import { generateFiltersQuery } from './search/input/helpers'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -297,9 +298,19 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     private toggleSearchMode = (event: React.MouseEvent<HTMLAnchorElement>): void => {
         event.preventDefault()
         localStorage.setItem(SEARCH_MODE_KEY, this.state.interactiveSearchMode ? 'omni' : 'interactive')
-        this.setState(state => ({
-            interactiveSearchMode: !state.interactiveSearchMode,
-        }))
+        if (this.state.interactiveSearchMode) {
+            const newQuery = `${this.state.navbarSearchQueryState.query} ${generateFiltersQuery(this.state.filtersInQuery)}`
+            this.setState(state => ({
+                interactiveSearchMode: !state.interactiveSearchMode,
+                navbarSearchQueryState: {query: newQuery, cursorPosition: newQuery.length}
+            }))
+        } else {
+            this.setState(state => ({
+                navbarSearchQueryState: {query: '', cursorPosition: 0},
+                filtersInQuery: {},
+                interactiveSearchMode: !state.interactiveSearchMode,
+            }))
+        }
     }
 
     public render(): React.ReactFragment | null {
