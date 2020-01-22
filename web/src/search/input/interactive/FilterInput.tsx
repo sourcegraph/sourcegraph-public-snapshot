@@ -17,7 +17,7 @@ import {
     share,
     delay,
 } from 'rxjs/operators'
-import { createSuggestion, Suggestion, SuggestionItem, fuzzySearchFilters } from '../Suggestion'
+import { createSuggestion, Suggestion, SuggestionItem, fuzzySearchFilters, FiltersSuggestionTypes } from '../Suggestion'
 import { fetchSuggestions } from '../../backend'
 import { ComponentSuggestions, noSuggestions, typingDebounceTime } from '../QueryInput'
 import { isDefined } from '../../../../../shared/src/util/types'
@@ -67,7 +67,7 @@ interface Props {
     /**
      * The search filter type, as available in {@link SuggstionTypes}
      */
-    filterType: FilterTypes
+    filterType: Exclude<FilterTypes, FilterTypes.patterntype>
 
     /**
      * Whether or not this FilterInput is currently editable.

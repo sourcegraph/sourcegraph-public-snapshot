@@ -36,7 +36,10 @@ export enum FilterTypes {
     author = 'author',
     message = 'message',
     content = 'content',
+    patterntype = 'patterntype',
 }
+
+export const isFilterType = (filter: string): filter is FilterTypes => filter in FilterTypes
 
 export const filterTypeKeys: FilterTypes[] = Object.keys(FilterTypes) as FilterTypes[]
 

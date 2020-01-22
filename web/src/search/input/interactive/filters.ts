@@ -2,7 +2,7 @@ import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/ut
 import { Suggestion } from '../Suggestion'
 import { assign } from 'lodash/fp'
 import { FilterTypes } from '../../../../../shared/src/search/interactive/util'
-import { getFilterDefinition } from '../../../../../shared/src/search/parser/filters'
+import { resolveFilter } from '../../../../../shared/src/search/parser/filters'
 
 /** FilterTypes which have a finite number of valid options. */
 export type FiniteFilterTypes = FilterTypes.archived | FilterTypes.fork | FilterTypes.type
@@ -48,10 +48,10 @@ export const finiteFilters: Record<
 }
 
 export const isFiniteFilter = (filter: FilterTypes): filter is FiniteFilterTypes =>
-    !!getFilterDefinition(filter) && ['fork', 'archived', 'type'].includes(filter)
+    !!resolveFilter(filter) && ['fork', 'archived', 'type'].includes(filter)
 
 export function isTextFilter(filter: FilterTypes): boolean {
-    return !!getFilterDefinition(filter) && !isFiniteFilter(filter)
+    return !!resolveFilter(filter) && !isFiniteFilter(filter)
 }
 
 /**
@@ -80,4 +80,5 @@ export const FilterTypesToProseNames: Record<FilterTypes, string> = {
     author: 'Commit author',
     type: 'Type',
     content: 'Content',
+    patterntype: 'Pattern type',
 }
