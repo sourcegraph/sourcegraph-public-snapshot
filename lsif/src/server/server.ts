@@ -53,7 +53,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const dumpManager = new DumpManager(connection, settings.STORAGE_ROOT)
+    const dumpManager = new DumpManager(connection)
     const uploadManager = new UploadManager(connection)
     const dependencyManager = new DependencyManager(connection)
     const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)

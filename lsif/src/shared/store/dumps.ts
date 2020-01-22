@@ -2,7 +2,6 @@ import * as sharedMetrics from '../database/metrics'
 import * as pgModels from '../models/pg'
 import { getCommitsNear, getHead } from '../gitserver/gitserver'
 import { Brackets, Connection, EntityManager } from 'typeorm'
-import { dbFilename, tryDeleteFile } from '../paths'
 import { logAndTraceCall, TracingContext } from '../tracing'
 import { instrumentQuery, instrumentQueryOrTransaction, withInstrumentedTransaction } from '../database/postgres'
 import { TableInserter } from '../database/inserter'
@@ -24,9 +23,8 @@ export class DumpManager {
      * Create a new `DumpManager` backed by the given database connection.
      *
      * @param connection The Postgres connection.
-     * @param storageRoot The path where SQLite databases are stored.
      */
-    constructor(private connection: Connection, private storageRoot: string) {}
+    constructor(private connection: Connection) {}
 
     /**
      * Find the dump for the given repository and commit.
@@ -349,15 +347,11 @@ export class DumpManager {
         dump: pgModels.LsifDump,
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<void> {
-        // Delete the SQLite file on disk (ignore errors if the file doesn't exist)
-        const path = dbFilename(this.storageRoot, dump.id)
-        await tryDeleteFile(path)
-
-        // Delete the dump record. Do this AFTER the file is deleted because the retention
-        // policy scans the database for deletion candidates, and we don't want to get into
-        // the situation where the row is gone and the file is there. In this case, we don't
-        // have any process to tell us that the file is okay to delete and will be orphaned
-        // on disk forever.
+        // Do not delete the file on disk directly in case we are part of a larger transaction.
+        // We can afford to wait for the cleanup task to determine that the file is orphaned
+        // when it cannot find a matching row in the database. For more context, see the
+        // `removeDeadDumps` function performed at the start of the `purgeOldDumps` task that
+        // is run on a schedule in the server context.
 
         await entityManager.getRepository(pgModels.LsifDump).delete(dump.id)
     }

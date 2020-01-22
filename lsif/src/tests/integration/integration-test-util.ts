@@ -255,7 +255,7 @@ export class BackendTestContext {
         const { connection, cleanup } = await createCleanPostgresDatabase()
         this.connection = connection
         this.cleanup = cleanup
-        this.dumpManager = new DumpManager(connection, this.storageRoot)
+        this.dumpManager = new DumpManager(connection)
         this.dependencyManager = new DependencyManager(connection)
         this.backend = new Backend(this.storageRoot, this.dumpManager, this.dependencyManager, '')
     }

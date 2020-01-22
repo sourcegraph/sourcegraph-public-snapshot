@@ -5,8 +5,8 @@ import { map, first, takeUntil, publishReplay, refCount, switchMap } from 'rxjs/
 import { getMonacoTokens } from './tokens'
 import { getDiagnostics } from './diagnostics'
 import { getCompletionItems } from './completion'
-import { SearchSuggestion } from '../../../../shared/src/graphql/schema'
 import { getHoverResult } from './hover'
+import { SearchSuggestion } from '../../graphql/schema'
 
 interface SearchFieldProviders {
     tokens: Monaco.languages.TokensProvider

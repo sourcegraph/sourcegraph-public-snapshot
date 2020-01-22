@@ -143,10 +143,6 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if campaign.PublishedAt.IsZero() {
-			t.Fatalf("PublishedAt is zero")
-		}
-
 		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
 		if err != nil {
 			t.Fatal(err)
@@ -185,10 +181,6 @@ func TestService(t *testing.T) {
 		err = svc.CreateCampaign(ctx, campaign, true)
 		if err != nil {
 			t.Fatal(err)
-		}
-
-		if !campaign.PublishedAt.IsZero() {
-			t.Fatalf("PublishedAt is not zero")
 		}
 
 		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})

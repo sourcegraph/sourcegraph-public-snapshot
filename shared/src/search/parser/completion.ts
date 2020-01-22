@@ -3,9 +3,9 @@ import { escapeRegExp } from 'lodash'
 import { FILTERS, getFilterDefinition } from './filters'
 import { Sequence, toMonacoRange } from './parser'
 import { Omit } from 'utility-types'
-import { SearchSuggestion } from '../../../../shared/src/graphql/schema'
 import { Observable } from 'rxjs'
-import { isDefined } from '../../../../shared/src/util/types'
+import { SearchSuggestion } from '../../graphql/schema'
+import { isDefined } from '../../util/types'
 
 const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] = FILTERS.flatMap(
     ({ aliases, description }) =>

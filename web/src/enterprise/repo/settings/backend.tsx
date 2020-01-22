@@ -111,6 +111,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                         uploadedAt
                         startedAt
                         finishedAt
+                        isLatestForRepo
                     }
                 }
             }
