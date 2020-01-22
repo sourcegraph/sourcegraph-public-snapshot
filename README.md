@@ -81,7 +81,7 @@ Or via the configuration file (`~/src-config.json`):
 
 See `src -h` for more information on specifying access tokens.
 
-To acquire the access token, visit your Sourcegraph instance (or https://sourcegraph.com), click your profile picture, and select **access tokens** in the left hand menu.
+To acquire the access token, visit your Sourcegraph instance (or https://sourcegraph.com), click your username in the top right to open the user menu, select **Settings**, and then select **Access tokens** in the left hand menu.
 
 ## Development
 
