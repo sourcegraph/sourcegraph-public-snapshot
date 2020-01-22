@@ -27,7 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Fixed
 
-- Regex search/replace will work in private repositories [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914)
+- A regression in 3.12.0 which caused [Automation campaigns that find leaked credentials](https://docs.sourcegraph.com/user/automation#finding-leaked-credentials) to not return any results for private repositories. [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914)
 
 ## 3.12.0
 
