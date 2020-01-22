@@ -1013,13 +1013,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 		}
 		defer func() { backend.Mocks.Repos.GetCommit = nil }()
 
-		// We need to mock this as the actor in our context is lost when using
-		// mustExec
-		db.Mocks.Users.GetByCurrentAuthUser = func(_ context.Context) (*types.User, error) {
-			return user, nil
-		}
-		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
-
 		reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 		repo := &repos.Repo{
 			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
