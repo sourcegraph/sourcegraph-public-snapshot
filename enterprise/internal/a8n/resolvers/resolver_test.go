@@ -962,6 +962,8 @@ type CampaignPlan struct {
 func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
+	dbtesting.SetupGlobalTestDB(t)
+
 	user := createTestUser(ctx, t)
 	act := actor.FromUser(user.ID)
 	ctx = actor.WithActor(ctx, act)
@@ -991,10 +993,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			t.Skip()
 		}
 
-		dbtesting.SetupGlobalTestDB(t)
 		rcache.SetupForTest(t)
-
-		user := createTestUser(ctx, t)
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time {
