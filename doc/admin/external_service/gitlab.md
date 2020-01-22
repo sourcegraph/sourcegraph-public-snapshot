@@ -64,3 +64,23 @@ The Sourcegraph instance's site admin must [update the `corsOrigin` site config 
   // ...
 }
 ```
+
+## Access token scopes
+
+Sourcegraph requires an access token with `api` permissions (and `sudo`, if you are using an `external` identity provider type). Below is an explanation for why we require this scope instead of e.g. just `read_user`, and what we may also use the access token for in the future.
+
+We are actively collaborating with GitLab on multiple fronts to improve our integration with them (e.g. through our [GitLab native integration](https://docs.gitlab.com/ee/integration/sourcegraph.html) and [working torwards better APIs Sourcegraph could use for querying repository permissions](https://gitlab.com/gitlab-org/gitlab/issues/20532)), so if you have any feedback please let us know!
+
+| Request Type | Required GitLab scope | Sourcegraph usage |
+|--------------|-----------------------|-------------------|
+| [`GET /projects`](https://docs.gitlab.com/ee/api/projects.html#list-all-projects) | `api` | (1) For repository discovery when specifying `projectQuery` in external service configuration; (2) If using an `external` identity provider type, also used as a test query to ensure token is `sudo` (`sudo` not required otherwise). |
+| [`GET /users`](https://docs.gitlab.com/ee/api/users.html#list-users) | `read_user` or `api` | If you are using an `external` identity provider type, used to discover user accounts. |
+| [`GET /users/:id`](https://docs.gitlab.com/ee/api/users.html#single-user) | `read_user` or `api` | If using GitLab OAuth, used to fetch user metadata during the OAuth sign in process. |
+| [`GET /projects/:id`](https://docs.gitlab.com/ee/api/projects.html#get-single-project) | `api` | (1) If using GitLab OAuth and repository permissions, used to determine if a user has access to a given _project_; (2) Used to query repository metadata (e.g. description) for display on Sourcegraph. |
+| [`GET /projects/:id/repository/tree`](https://docs.gitlab.com/ee/api/repositories.html#list-repository-tree) | `api` | If using GitLab OAuth and repository permissions, used to verify a given user has access to the file contents of a repository within a project (i.e. does not merely have `Guest` permissions). |
+
+Sourcegraph in the future may do more with the provided access token as well, including:
+
+- Allowing your Sourcegraph site-admins to perform large-scale code refactors, with Sourcegraph issuing and managing merge requests against your repositories on GitLab (only at your request as a Sourcegraph admin, of course).
+- Using more efficient APIs to get repository and user permissions from GitLab more efficiently. We are actively working with GitLab to make this more efficient and use fewer requests, see https://gitlab.com/gitlab-org/gitlab/issues/20532
+- Improving the GitLab native integration and Sourcegraph browser extension integration: https://docs.gitlab.com/ee/integration/sourcegraph.html
