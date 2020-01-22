@@ -1,4 +1,4 @@
-package authz
+package db
 
 import (
 	"context"
@@ -12,34 +12,35 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var (
-	ErrNotFound        = errors.New("permissions not found")
-	ErrUpdatedAtNotSet = errors.New("UpdatedAt timestamp must be set")
+	ErrPermsNotFound        = errors.New("permissions not found")
+	ErrPermsUpdatedAtNotSet = errors.New("permissions UpdatedAt timestamp must be set")
 )
 
-// Store is the unified interface for managing permissions explicitly in the database.
+// PermsStore is the unified interface for managing permissions explicitly in the database.
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
 // 'repo_permissions', 'user_pending_permissions', and 'repo_pending_permissions' tables.
-type Store struct {
+type PermsStore struct {
 	db    dbutil.DB
 	clock func() time.Time
 }
 
-// NewStore returns a new Store with given parameters.
-func NewStore(db dbutil.DB, clock func() time.Time) *Store {
-	return &Store{
+// NewPermsStore returns a new PermsStore with given parameters.
+func NewPermsStore(db dbutil.DB, clock func() time.Time) *PermsStore {
+	return &PermsStore{
 		db:    db,
 		clock: clock,
 	}
 }
 
-// LoadUserPermissions loads stored user permissions into p. An ErrNotFound is returned
+// LoadUserPermissions loads stored user permissions into p. An ErrPermsNotFound is returned
 // when there are no valid permissions available.
-func (s *Store) LoadUserPermissions(ctx context.Context, p *UserPermissions) (err error) {
+func (s *PermsStore) LoadUserPermissions(ctx context.Context, p *iauthz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -52,9 +53,9 @@ func (s *Store) LoadUserPermissions(ctx context.Context, p *UserPermissions) (er
 	return nil
 }
 
-func loadUserPermissionsQuery(p *UserPermissions, lock string) *sqlf.Query {
+func loadUserPermissionsQuery(p *iauthz.UserPermissions, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPermissionsQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPermissionsQuery
 SELECT user_id, object_ids, updated_at
 FROM user_permissions
 WHERE user_id = %s
@@ -72,9 +73,9 @@ AND provider = %s
 	)
 }
 
-// LoadRepoPermissions loads stored repository permissions into p. An ErrNotFound is
+// LoadRepoPermissions loads stored repository permissions into p. An ErrPermsNotFound is
 // returned when there are no valid permissions available.
-func (s *Store) LoadRepoPermissions(ctx context.Context, p *RepoPermissions) (err error) {
+func (s *PermsStore) LoadRepoPermissions(ctx context.Context, p *iauthz.RepoPermissions) (err error) {
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -87,9 +88,9 @@ func (s *Store) LoadRepoPermissions(ctx context.Context, p *RepoPermissions) (er
 	return nil
 }
 
-func loadRepoPermissionsQuery(p *RepoPermissions, lock string) *sqlf.Query {
+func loadRepoPermissionsQuery(p *iauthz.RepoPermissions, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permissions.go:loadRepoPermissionsQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:loadRepoPermissionsQuery
 SELECT repo_id, user_ids, updated_at
 FROM repo_permissions
 WHERE repo_id = %s
@@ -128,7 +129,7 @@ AND provider = %s
 //   repo_id | permission |   user_ids   |   provider  | updated_at
 //  ---------+------------+--------------+-------------+------------
 //         1 |       read | bitmap{1, 2} | sourcegraph | <DateTime>
-func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err error) {
+func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *iauthz.RepoPermissions) (err error) {
 	ctx, save := s.observe(ctx, "SetRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -139,14 +140,14 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	}
 	defer tx.commitOrRollback(&err)
 
-	// Make another Store with this underlying transaction.
-	txs := NewStore(tx, s.clock)
+	// Make another PermsStore with this underlying transaction.
+	txs := NewPermsStore(tx, s.clock)
 
 	// Retrieve currently stored user IDs of this repository.
 	var oldIDs *roaring.Bitmap
 	vals, err := txs.load(ctx, loadRepoPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
-		if err == ErrNotFound {
+		if err == ErrPermsNotFound {
 			oldIDs = roaring.NewBitmap()
 		} else {
 			return errors.Wrap(err, "load repo permissions")
@@ -179,7 +180,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 
 	// We have two sets of IDs that one needs to add, and the other needs to remove.
 	updatedAt := txs.clock()
-	updatedPerms := make([]*UserPermissions, 0, len(changedIDs))
+	updatedPerms := make([]*iauthz.UserPermissions, 0, len(changedIDs))
 	for _, id := range changedIDs {
 		userID := int32(id)
 		repoIDs := loadedIDs[userID]
@@ -194,7 +195,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 			repoIDs.Remove(uint32(p.RepoID))
 		}
 
-		updatedPerms = append(updatedPerms, &UserPermissions{
+		updatedPerms = append(updatedPerms, &iauthz.UserPermissions{
 			UserID:    userID,
 			Perm:      p.Perm,
 			Type:      authz.PermRepos,
@@ -228,7 +229,7 @@ func loadUserPermissionsBatchQuery(
 	lock string,
 ) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPermissionsBatchQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPermissionsBatchQuery
 SELECT user_id, object_ids
 FROM user_permissions
 WHERE user_id IN (%s)
@@ -250,9 +251,9 @@ AND provider = %s
 	)
 }
 
-func upsertUserPermissionsBatchQuery(ps ...*UserPermissions) (*sqlf.Query, error) {
+func upsertUserPermissionsBatchQuery(ps ...*iauthz.UserPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permissions.go:upsertUserPermissionsBatchQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:upsertUserPermissionsBatchQuery
 INSERT INTO user_permissions
   (user_id, permission, object_type, object_ids, provider, updated_at)
 VALUES
@@ -273,7 +274,7 @@ DO UPDATE SET
 		}
 
 		if ps[i].UpdatedAt.IsZero() {
-			return nil, ErrUpdatedAtNotSet
+			return nil, ErrPermsUpdatedAtNotSet
 		}
 
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s, %s)",
@@ -293,8 +294,8 @@ DO UPDATE SET
 }
 
 // LoadUserPendingPermissions returns pending permissions found by given parameters.
-// An ErrNotFound is returned when there are no pending permissions available.
-func (s *Store) LoadUserPendingPermissions(ctx context.Context, p *UserPendingPermissions) (err error) {
+// An ErrPermsNotFound is returned when there are no pending permissions available.
+func (s *PermsStore) LoadUserPendingPermissions(ctx context.Context, p *iauthz.UserPendingPermissions) (err error) {
 	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -308,9 +309,9 @@ func (s *Store) LoadUserPendingPermissions(ctx context.Context, p *UserPendingPe
 	return nil
 }
 
-func loadUserPendingPermissionsQuery(p *UserPendingPermissions, lock string) *sqlf.Query {
+func loadUserPendingPermissionsQuery(p *iauthz.UserPendingPermissions, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permissions.go:loadUserPendingPermissionsQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPendingPermissionsQuery
 SELECT id, object_ids, updated_at
 FROM user_pending_permissions
 WHERE bind_id = %s
@@ -347,7 +348,7 @@ AND object_type = %s
 //   repo_id | permission |   user_ids   | updated_at
 //  ---------+------------+--------------+------------
 //         1 |       read | bitmap{1, 2} | <DateTime>
-func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string, p *RepoPermissions) (err error) {
+func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, bindIDs []string, p *iauthz.RepoPermissions) (err error) {
 	ctx, save := s.observe(ctx, "SetRepoPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.String("bindIDs", strings.Join(bindIDs, ",")))...) }()
 
@@ -358,8 +359,8 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 	}
 	defer tx.commitOrRollback(&err)
 
-	// Make another Store with this underlying transaction.
-	txs := NewStore(tx, s.clock)
+	// Make another PermsStore with this underlying transaction.
+	txs := NewPermsStore(tx, s.clock)
 
 	var q *sqlf.Query
 
@@ -388,7 +389,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 
 	// Retrieve currently stored user IDs of this repository.
 	vals, err := txs.load(ctx, loadRepoPendingPermissionsQuery(p, "FOR UPDATE"))
-	if err != nil && err != ErrNotFound {
+	if err != nil && err != ErrPermsNotFound {
 		return errors.Wrap(err, "load repo pending permissions")
 	}
 	oldIDs := roaring.NewBitmap()
@@ -414,7 +415,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 		return errors.Wrap(err, "batch load user pending permissions")
 	}
 
-	updatedPerms := make([]*UserPendingPermissions, 0, len(bindIDSet))
+	updatedPerms := make([]*iauthz.UserPendingPermissions, 0, len(bindIDSet))
 	for _, id := range changedIDs {
 		userID := int32(id)
 		repoIDs := loadedIDs[userID]
@@ -429,7 +430,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 			repoIDs.Remove(uint32(p.RepoID))
 		}
 
-		updatedPerms = append(updatedPerms, &UserPendingPermissions{
+		updatedPerms = append(updatedPerms, &iauthz.UserPendingPermissions{
 			BindID:    bindIDSet[userID],
 			Perm:      p.Perm,
 			Type:      authz.PermRepos,
@@ -453,7 +454,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 	return nil
 }
 
-func (s *Store) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.Query) (ids []uint32, err error) {
+func (s *PermsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.Query) (ids []uint32, err error) {
 	ctx, save := s.observe(ctx, "loadUserPendingPermissionsIDs", "")
 	defer func() {
 		save(&err,
@@ -483,7 +484,7 @@ func (s *Store) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.Query
 	return ids, nil
 }
 
-func (s *Store) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
+func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
 	bindIDSet map[int32]string,
 	loaded map[int32]*roaring.Bitmap,
 	err error,
@@ -533,10 +534,10 @@ func (s *Store) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Que
 
 func insertUserPendingPermissionsBatchQuery(
 	bindIDs []string,
-	p *RepoPermissions,
+	p *iauthz.RepoPermissions,
 ) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permissions.go:insertUserPendingPermissionsBatchQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:insertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
   (bind_id, permission, object_type, object_ids, updated_at)
 VALUES
@@ -549,7 +550,7 @@ RETURNING id
 `
 
 	if p.UpdatedAt.IsZero() {
-		return nil, ErrUpdatedAtNotSet
+		return nil, ErrPermsUpdatedAtNotSet
 	}
 
 	items := make([]*sqlf.Query, len(bindIDs))
@@ -569,9 +570,9 @@ RETURNING id
 	), nil
 }
 
-func loadRepoPendingPermissionsQuery(p *RepoPermissions, lock string) *sqlf.Query {
+func loadRepoPendingPermissionsQuery(p *iauthz.RepoPermissions, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permissions.go:loadRepoPendingPermissionsQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:loadRepoPendingPermissionsQuery
 SELECT repo_id, user_ids, updated_at
 FROM repo_pending_permissions
 WHERE repo_id = %s
@@ -586,7 +587,7 @@ AND permission = %s
 
 func loadUserPendingPermissionsByIDBatchQuery(ids []uint32, perm authz.Perms, typ authz.PermType, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPendingPermissionsByIDBatchQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPendingPermissionsByIDBatchQuery
 SELECT id, bind_id, object_ids
 FROM user_pending_permissions
 WHERE id IN (%s)
@@ -606,9 +607,9 @@ AND object_type = %s
 	)
 }
 
-func upsertUserPendingPermissionsBatchQuery(ps ...*UserPendingPermissions) (*sqlf.Query, error) {
+func upsertUserPendingPermissionsBatchQuery(ps ...*iauthz.UserPendingPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permissions.go:upsertUserPendingPermissionsBatchQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:upsertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
   (bind_id, permission, object_type, object_ids, updated_at)
 VALUES
@@ -629,7 +630,7 @@ DO UPDATE SET
 		}
 
 		if ps[i].UpdatedAt.IsZero() {
-			return nil, ErrUpdatedAtNotSet
+			return nil, ErrPermsUpdatedAtNotSet
 		}
 
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s)",
@@ -647,9 +648,9 @@ DO UPDATE SET
 	), nil
 }
 
-func upsertRepoPendingPermissionsBatchQuery(ps ...*RepoPermissions) (*sqlf.Query, error) {
+func upsertRepoPendingPermissionsBatchQuery(ps ...*iauthz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permissions.go:upsertRepoPendingPermissionsBatchQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:upsertRepoPendingPermissionsBatchQuery
 INSERT INTO repo_pending_permissions
   (repo_id, permission, user_ids, updated_at)
 VALUES
@@ -670,7 +671,7 @@ DO UPDATE SET
 		}
 
 		if ps[i].UpdatedAt.IsZero() {
-			return nil, ErrUpdatedAtNotSet
+			return nil, ErrPermsUpdatedAtNotSet
 		}
 
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s)",
@@ -690,7 +691,7 @@ DO UPDATE SET
 // GrantPendingPermissions grants the user has given ID with pending permissions found in p.
 // It "merges" rows in pending permissions tables to effective permissions tables, i.e. permissions
 // are unioned not replaced.
-func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *UserPendingPermissions) (err error) {
+func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
 
@@ -701,13 +702,13 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	}
 	defer tx.commitOrRollback(&err)
 
-	// Make another Store with this underlying transaction.
-	txs := NewStore(tx, s.clock)
+	// Make another PermsStore with this underlying transaction.
+	txs := NewPermsStore(tx, s.clock)
 
 	vals, err := txs.load(ctx, loadUserPendingPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
 		// Skip the whole grant process if the user has no pending permissions.
-		if err == ErrNotFound {
+		if err == ErrPermsNotFound {
 			return nil
 		}
 		return errors.Wrap(err, "load user pending permissions")
@@ -731,7 +732,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	}
 
 	updatedAt := txs.clock()
-	updatedPerms := make([]*RepoPermissions, 0, len(ids))
+	updatedPerms := make([]*iauthz.RepoPermissions, 0, len(ids))
 	for i := range ids {
 		repoID := int32(ids[i])
 		oldIDs := loadedIDs[repoID]
@@ -740,7 +741,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 		}
 
 		oldIDs.Add(uint32(userID))
-		updatedPerms = append(updatedPerms, &RepoPermissions{
+		updatedPerms = append(updatedPerms, &iauthz.RepoPermissions{
 			RepoID:    repoID,
 			Perm:      p.Perm,
 			UserIDs:   oldIDs,
@@ -758,7 +759,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	// Load existing user permissions to be merged if any. Since we're doing union of permissions,
 	// whatever we have already in the "repo_permissions" table is all valid thus we don't
 	// need to do any clean up.
-	up := &UserPermissions{
+	up := &iauthz.UserPermissions{
 		UserID:   userID,
 		Perm:     p.Perm,
 		Type:     p.Type,
@@ -767,7 +768,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	var oldIDs *roaring.Bitmap
 	vals, err = s.load(ctx, loadUserPermissionsQuery(up, "FOR UPDATE"))
 	if err != nil {
-		if err != ErrNotFound {
+		if err != ErrPermsNotFound {
 			return errors.Wrap(err, "load user permissions")
 		}
 		oldIDs = roaring.NewBitmap()
@@ -793,9 +794,9 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	return nil
 }
 
-func upsertUserPermissionsQuery(p *UserPermissions) (*sqlf.Query, error) {
+func upsertUserPermissionsQuery(p *iauthz.UserPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permissions.go:upsertUserPermissionsQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:upsertUserPermissionsQuery
 INSERT INTO user_permissions
   (user_id, permission, object_type, object_ids, provider, updated_at)
 VALUES
@@ -814,7 +815,7 @@ DO UPDATE SET
 	}
 
 	if p.UpdatedAt.IsZero() {
-		return nil, ErrUpdatedAtNotSet
+		return nil, ErrPermsUpdatedAtNotSet
 	}
 
 	return sqlf.Sprintf(
@@ -830,7 +831,7 @@ DO UPDATE SET
 
 func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, provider authz.ProviderType, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/store.go:loadRepoPermissionsBatchQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:loadRepoPermissionsBatchQuery
 SELECT repo_id, user_ids
 FROM repo_permissions
 WHERE repo_id IN (%s)
@@ -850,9 +851,9 @@ AND provider = %s
 	)
 }
 
-func upsertRepoPermissionsBatchQuery(ps ...*RepoPermissions) (*sqlf.Query, error) {
+func upsertRepoPermissionsBatchQuery(ps ...*iauthz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permissions.go:upsertRepoPermissionsBatchQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
   (repo_id, permission, user_ids, provider, updated_at)
 VALUES
@@ -873,7 +874,7 @@ DO UPDATE SET
 		}
 
 		if ps[i].UpdatedAt.IsZero() {
-			return nil, ErrUpdatedAtNotSet
+			return nil, ErrPermsUpdatedAtNotSet
 		}
 
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s)",
@@ -891,9 +892,9 @@ DO UPDATE SET
 	), nil
 }
 
-func deleteUserPendingPermissionsQuery(p *UserPendingPermissions) *sqlf.Query {
+func deleteUserPendingPermissionsQuery(p *iauthz.UserPendingPermissions) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/store.go:deleteUserPendingPermissionsQuery
+-- source: enterprise/cmd/frontend/db/perms_store.go:deleteUserPendingPermissionsQuery
 DELETE FROM user_pending_permissions
 WHERE bind_id = %s
 AND permission = %s
@@ -909,7 +910,7 @@ AND object_type = %s
 }
 
 // ListPendingUsers returns a list of bind IDs who have pending permissions.
-func (s *Store) ListPendingUsers(ctx context.Context) (bindIDs []string, err error) {
+func (s *PermsStore) ListPendingUsers(ctx context.Context) (bindIDs []string, err error) {
 	ctx, save := s.observe(ctx, "ListPendingUsers", "")
 	defer save(&err)
 
@@ -949,7 +950,7 @@ func (s *Store) ListPendingUsers(ctx context.Context) (bindIDs []string, err err
 	return bindIDs, nil
 }
 
-func (s *Store) execute(ctx context.Context, q *sqlf.Query) (err error) {
+func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query) (err error) {
 	ctx, save := s.observe(ctx, "execute", "")
 	defer func() { save(&err, otlog.Object("q", q)) }()
 
@@ -961,8 +962,8 @@ func (s *Store) execute(ctx context.Context, q *sqlf.Query) (err error) {
 	return rows.Close()
 }
 
-// loadValues contains return values of (*Store).load method.
-type loadValues struct {
+// permsLoadValues contains return values of (*PermsStore).load method.
+type permsLoadValues struct {
 	id        int32           // An integer ID
 	ids       *roaring.Bitmap // Bitmap of unmarshalled IDs
 	updatedAt time.Time       // Last updated time of the row
@@ -971,7 +972,7 @@ type loadValues struct {
 // load is a generic method that scans three values from one database table row, these values must have
 // types and be scanned in the order of int32, []byte and time.Time. In addition, it unmarshalles the
 // []byte into a *roaring.Bitmap.
-func (s *Store) load(ctx context.Context, q *sqlf.Query) (*loadValues, error) {
+func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues, error) {
 	var err error
 	ctx, save := s.observe(ctx, "load", "")
 	defer func() {
@@ -988,10 +989,10 @@ func (s *Store) load(ctx context.Context, q *sqlf.Query) (*loadValues, error) {
 	}
 
 	if !rows.Next() {
-		// One row is expected, return ErrNotFound if no other errors occurred.
+		// One row is expected, return ErrPermsNotFound if no other errors occurred.
 		err = rows.Err()
 		if err == nil {
-			err = ErrNotFound
+			err = ErrPermsNotFound
 		}
 		return nil, err
 	}
@@ -1007,7 +1008,7 @@ func (s *Store) load(ctx context.Context, q *sqlf.Query) (*loadValues, error) {
 		return nil, err
 	}
 
-	vals := &loadValues{
+	vals := &permsLoadValues{
 		id:        id,
 		ids:       roaring.NewBitmap(),
 		updatedAt: updatedAt,
@@ -1022,7 +1023,7 @@ func (s *Store) load(ctx context.Context, q *sqlf.Query) (*loadValues, error) {
 }
 
 // batchLoadIDs runs the query and returns unmarshalled IDs with their corresponding object ID value.
-func (s *Store) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32]*roaring.Bitmap, error) {
+func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32]*roaring.Bitmap, error) {
 	var err error
 	ctx, save := s.observe(ctx, "batchLoadIDs", "")
 	defer func() {
@@ -1064,7 +1065,7 @@ func (s *Store) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32]*roa
 	return loaded, nil
 }
 
-func (s *Store) tx(ctx context.Context) (*sqlTx, error) {
+func (s *PermsStore) tx(ctx context.Context) (*sqlTx, error) {
 	switch t := s.db.(type) {
 	case *sql.Tx:
 		return &sqlTx{t}, nil
@@ -1079,9 +1080,9 @@ func (s *Store) tx(ctx context.Context) (*sqlTx, error) {
 	}
 }
 
-func (s *Store) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {
+func (s *PermsStore) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {
 	began := s.clock()
-	tr, ctx := trace.New(ctx, "authz.Store."+family, title)
+	tr, ctx := trace.New(ctx, "db.PermsStore."+family, title)
 
 	return ctx, func(err *error, fs ...otlog.Field) {
 		now := s.clock()

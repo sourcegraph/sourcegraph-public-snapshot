@@ -1,9 +1,10 @@
-package authz
+package db
 
 import (
 	"database/sql"
 )
 
+// sqlTx is a wrapper over sql.Tx with helper methods.
 type sqlTx struct {
 	*sql.Tx
 }
