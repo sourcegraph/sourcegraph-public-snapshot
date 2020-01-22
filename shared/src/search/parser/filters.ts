@@ -116,7 +116,7 @@ export const FILTERS: readonly FilterDefinition[] = [
  * Returns the {@link FilterDefinition} for the given filterType if it exists, or `undefined` otherwise.
  */
 export const getFilterDefinition = (filterType: string): FilterDefinition | undefined =>
-    FILTERS.find(({ aliases }) => aliases.some(a => a === filterType))
+    FILTERS.find(({ aliases }) => aliases.some(a => a === filterType.toLowerCase()))
 
 /**
  * Validates a filter given its type and value.

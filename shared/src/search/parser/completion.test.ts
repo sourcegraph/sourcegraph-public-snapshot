@@ -70,6 +70,72 @@ describe('getCompletionItems()', () => {
         })
     })
 
+    test('returns static filter type completions for case-insensitive query', async () => {
+        expect(
+            await getCompletionItems(
+                'a',
+                (parseSearchQuery('rE') as ParseSuccess<Sequence>).token,
+                { column: 3 },
+                () => NEVER
+            )
+        ).toStrictEqual({
+            suggestions: [
+                {
+                    detail: 'Include only results from repositories matching the given regex pattern.',
+                    filterText: 'repo',
+                    insertText: 'repo:',
+                    kind: 17,
+                    label: 'repo',
+                    range: {
+                        endColumn: 3,
+                        endLineNumber: 1,
+                        startColumn: 1,
+                        startLineNumber: 1,
+                    },
+                },
+                {
+                    detail: 'group-name (include results from the named group)',
+                    filterText: 'repogroup',
+                    insertText: 'repogroup:',
+                    kind: 17,
+                    label: 'repogroup',
+                    range: {
+                        endColumn: 3,
+                        endLineNumber: 1,
+                        startColumn: 1,
+                        startLineNumber: 1,
+                    },
+                },
+                {
+                    detail: 'regex-pattern (include results from repos that contain a matching file)',
+                    filterText: 'repohasfile',
+                    insertText: 'repohasfile:',
+                    kind: 17,
+                    label: 'repohasfile',
+                    range: {
+                        endColumn: 3,
+                        endLineNumber: 1,
+                        startColumn: 1,
+                        startLineNumber: 1,
+                    },
+                },
+                {
+                    detail: '"string specifying time frame" (filter out stale repositories without recent commits)',
+                    filterText: 'repohascommitafter',
+                    insertText: 'repohascommitafter:',
+                    kind: 17,
+                    label: 'repohascommitafter',
+                    range: {
+                        endColumn: 3,
+                        endLineNumber: 1,
+                        startColumn: 1,
+                        startLineNumber: 1,
+                    },
+                },
+            ],
+        })
+    })
+
     test('returns completions for filters with discrete values', async () => {
         expect(
             await getCompletionItems(
