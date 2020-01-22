@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
@@ -136,7 +135,7 @@ func (r *Runner) CreatePlanAndJobs(ctx context.Context, plan *a8n.CampaignPlan) 
 	r.started = true
 
 	if plan.UserID == 0 {
-		return backend.ErrNotAuthenticated
+		return errors.New("campaign plan is missing a user")
 	}
 
 	rs, err := r.search(ctx, r.ct.searchQuery())
