@@ -9,7 +9,7 @@ import {
     isNegatableFilter,
 } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
-import { parseSearchQuery } from '../search/parser/parser'
+import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 
 export interface RepoSpec {
     /**
@@ -557,7 +557,7 @@ export function buildSearchURLQuery(
 
     const caseInQuery = parseCaseSensitivityFromQuery(query)
     if (caseInQuery) {
-        const newQuery = query.replace(caseInQuery.typeAndValue, '')
+        const newQuery = query.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
         searchParams.set('q', newQuery)
 
         if (caseInQuery.value === 'yes') {
@@ -627,23 +627,15 @@ function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined
     return undefined
 }
 
-function parseCaseSensitivityFromQuery(query: string): { typeAndValue: string; value: string } | undefined {
+function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
     const parsedQuery = parseSearchQuery(query)
     if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {
             const token = member.token
             if (token.type === 'filter' && token.filterType.token.value === 'case' && token.filterValue) {
-                switch (token.filterValue.token.type) {
-                    case 'literal':
-                        return {
-                            typeAndValue: `${token.filterType}:${token.filterValue}`,
-                            value: token.filterValue.token.value,
-                        }
-                    case 'quoted':
-                        return {
-                            typeAndValue: `${token.filterType}:${token.filterValue}`,
-                            value: token.filterValue.token.quotedValue,
-                        }
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
                 }
             }
         }
