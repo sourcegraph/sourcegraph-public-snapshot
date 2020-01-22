@@ -35,7 +35,6 @@ import (
 
 func main() {
 	initLicensing()
-	initAuthz()
 	initResolvers()
 	initLSIFEndpoints()
 
@@ -43,6 +42,7 @@ func main() {
 	if err := dbconn.ConnectToDB(""); err != nil {
 		log.Fatal(err)
 	}
+	initAuthz(dbconn.Global)
 
 	ctx := context.Background()
 	go func() {

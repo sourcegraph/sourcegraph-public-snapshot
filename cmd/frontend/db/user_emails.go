@@ -210,5 +210,9 @@ func (*userEmails) ListByUser(ctx context.Context, userID int32) ([]*UserEmail, 
 
 // ListVerifiedByUser returns a list of verified emails that are associated to the given user.
 func (*userEmails) ListVerifiedByUser(ctx context.Context, userID int32) ([]*UserEmail, error) {
+	if Mocks.UserEmails.ListVerifiedByUser != nil {
+		return Mocks.UserEmails.ListVerifiedByUser(userID)
+	}
+
 	return (&userEmails{}).getBySQL(ctx, "WHERE user_id=$1 AND verified_at IS NOT NULL ORDER BY created_at ASC, email ASC", userID)
 }

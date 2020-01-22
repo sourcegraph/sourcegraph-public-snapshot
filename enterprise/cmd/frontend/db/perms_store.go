@@ -41,6 +41,10 @@ func NewPermsStore(db dbutil.DB, clock func() time.Time) *PermsStore {
 // LoadUserPermissions loads stored user permissions into p. An ErrPermsNotFound is returned
 // when there are no valid permissions available.
 func (s *PermsStore) LoadUserPermissions(ctx context.Context, p *iauthz.UserPermissions) (err error) {
+	if Mocks.Perms.LoadUserPermissions != nil {
+		return Mocks.Perms.LoadUserPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -686,6 +690,10 @@ DO UPDATE SET
 // It "merges" rows in pending permissions tables to effective permissions tables, i.e. permissions
 // are unioned not replaced. This method expects to be wrapped in a transaction by the caller.
 func (s *PermsStore) GrantPendingPermissionsTx(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
+	if Mocks.Perms.GrantPendingPermissionsTx != nil {
+		return Mocks.Perms.GrantPendingPermissionsTx(ctx, userID, p)
+	}
+
 	ctx, save := s.observe(ctx, "GrantPendingPermissionsTx", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
 
@@ -1086,6 +1094,10 @@ func (s *PermsStore) tx(ctx context.Context) (*sql.Tx, error) {
 
 // Txs begins a new transaction and make a new PermsStore over it.
 func (s *PermsStore) Txs(ctx context.Context) (*PermsStore, error) {
+	if Mocks.Perms.Txs != nil {
+		return Mocks.Perms.Txs(ctx)
+	}
+
 	tx, err := s.tx(ctx)
 	if err != nil {
 		return nil, err
