@@ -546,6 +546,9 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 	if err != nil {
 		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
 	}
+	if user == nil {
+		return nil, backend.ErrNotAuthenticated
+	}
 
 	patches := make([]a8n.CampaignPlanPatch, len(args.Patches))
 	for i, patch := range args.Patches {
@@ -574,11 +577,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	var userID int32
-	if user != nil {
-		userID = user.ID
-	}
-	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, userID)
+	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
 	if err != nil {
 		return nil, err
 	}

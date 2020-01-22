@@ -76,7 +76,10 @@ var defaultRepoResolveRevision = func(ctx context.Context, repo *repos.Repo, rev
 //
 // If resolveRevision is nil, a default implementation is used.
 func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a8n.CampaignPlanPatch, userID int32) (*a8n.CampaignPlan, error) {
-	// Look up all repositories.
+	// Look up all repositories
+	if userID == 0 {
+		return nil, backend.ErrNotAuthenticated
+	}
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
 	repoIDs := make([]uint32, len(patches))
 	for i, patch := range patches {

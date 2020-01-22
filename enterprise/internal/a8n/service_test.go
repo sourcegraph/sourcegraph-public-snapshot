@@ -79,7 +79,19 @@ func TestService(t *testing.T) {
 			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
 		}
 
-		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, 0)
+		user, err := db.Users.Create(ctx, db.NewUser{
+			Email:                "ryanslade@sourcegraph.com",
+			Username:             "ryan",
+			DisplayName:          "Ryan",
+			Password:             "ryan",
+			EmailIsVerified:      true,
+			FailIfNotInitialUser: false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}

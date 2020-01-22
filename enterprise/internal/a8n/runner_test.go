@@ -62,7 +62,24 @@ func TestRunCampaignJobs(t *testing.T) {
 	campaignType := &testCampaignType{diff: testDiff, description: testDescription}
 	search := yieldRepos(rs...)
 	commitID := yieldDefaultBranches(defaultBranches)
-	plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+
+	user, err := db.Users.Create(ctx, db.NewUser{
+		Email:                "ryanslade@sourcegraph.com",
+		Username:             "ryan",
+		DisplayName:          "Ryan",
+		Password:             "ryan",
+		EmailIsVerified:      true,
+		FailIfNotInitialUser: false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan := &a8n.CampaignPlan{
+		CampaignType: "test",
+		Arguments:    `{}`,
+		UserID:       user.ID,
+	}
 
 	runner := NewRunnerWithClock(store, campaignType, search, commitID, clock)
 	err = runner.CreatePlanAndJobs(ctx, plan)
@@ -328,47 +345,8 @@ func TestRunner(t *testing.T) {
 			search:       yieldRepos(rs...),
 			commitID:     yieldDefaultBranches(defaultBranches),
 			campaignType: &testCampaignType{},
-			wantPlan: func() *a8n.CampaignPlan {
-				p := testPlan.Clone()
-				p.CreatedAt = now
-				p.UpdatedAt = now
-				p.UserID = 0
-				return p
-			}(),
-			wantJobs: func(plan *a8n.CampaignPlan, rs []*repos.Repo, branches []refAndTarget) []*a8n.CampaignJob {
-				return []*a8n.CampaignJob{
-					{
-						CampaignPlanID: plan.ID,
-						RepoID:         int32(rs[0].ID),
-						Rev:            api.CommitID(branches[0].target),
-						BaseRef:        branches[0].ref,
-						CreatedAt:      now,
-						UpdatedAt:      now,
-						FinishedAt:     now,
-						Error:          "Campaign plan is missing user",
-					},
-					{
-						CampaignPlanID: plan.ID,
-						RepoID:         int32(rs[1].ID),
-						Rev:            api.CommitID(branches[1].target),
-						BaseRef:        branches[1].ref,
-						CreatedAt:      now,
-						UpdatedAt:      now,
-						FinishedAt:     now,
-						Error:          "Campaign plan is missing user",
-					},
-					{
-						CampaignPlanID: plan.ID,
-						RepoID:         int32(rs[2].ID),
-						Rev:            api.CommitID(branches[2].target),
-						BaseRef:        branches[2].ref,
-						CreatedAt:      now,
-						UpdatedAt:      now,
-						FinishedAt:     now,
-						Error:          "Campaign plan is missing user",
-					},
-				}
-			},
+			wantPlan:     nil,
+			wantJobs:     wantNoJobs,
 			planFn: func() *a8n.CampaignPlan {
 				p := testPlan.Clone()
 				p.CreatedAt = now
@@ -376,6 +354,7 @@ func TestRunner(t *testing.T) {
 				p.UserID = 0
 				return p
 			},
+			runErr: backend.ErrNotAuthenticated.Error(),
 		},
 	}
 

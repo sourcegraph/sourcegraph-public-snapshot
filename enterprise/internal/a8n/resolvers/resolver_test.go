@@ -962,6 +962,20 @@ type CampaignPlan struct {
 func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
+	user, err := db.Users.Create(ctx, db.NewUser{
+		Email:                "ryanslade@sourcegraph.com",
+		Username:             "ryan",
+		DisplayName:          "Ryan",
+		Password:             "ryan",
+		EmailIsVerified:      true,
+		FailIfNotInitialUser: false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	act := actor.FromUser(user.ID)
+	ctx = actor.WithActor(ctx, act)
+
 	t.Run("invalid patch", func(t *testing.T) {
 		args := graphqlbackend.CreateCampaignPlanFromPatchesArgs{
 			Patches: []graphqlbackend.CampaignPlanPatch{
@@ -990,6 +1004,18 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 		dbtesting.SetupGlobalTestDB(t)
 		rcache.SetupForTest(t)
 
+		user, err := db.Users.Create(ctx, db.NewUser{
+			Email:                "ryanslade@sourcegraph.com",
+			Username:             "ryan",
+			DisplayName:          "Ryan",
+			Password:             "ryan",
+			EmailIsVerified:      true,
+			FailIfNotInitialUser: false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time {
 			return now.UTC().Truncate(time.Microsecond)
@@ -1007,6 +1033,13 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			return &git.Commit{ID: testingRev}, nil
 		}
 		defer func() { backend.Mocks.Repos.GetCommit = nil }()
+
+		// We need to mock this as the actor in our context is lost when using
+		// mustExec
+		db.Mocks.Users.GetByCurrentAuthUser = func(_ context.Context) (*types.User, error) {
+			return user, nil
+		}
+		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 
 		reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 		repo := &repos.Repo{
