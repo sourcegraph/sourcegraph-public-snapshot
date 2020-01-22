@@ -527,14 +527,14 @@ components:
           description: The stacktrace of the upload error.
         uploadedAt:
           type: string
-          description: An ISO 8601-formatted time that the upload was uploaded.
+          description: An RFC3339-formatted time that the upload was uploaded.
         startedAt:
           type: string
-          description: An ISO 8601-formatted time that the conversion started.
+          description: An RFC3339-formatted time that the conversion started.
           nullable: true
         finishedAt:
           type: string
-          description: An ISO 8601-formatted time that the conversion completed or errored.
+          description: An RFC3339-formatted time that the conversion completed or errored.
           nullable: true
         visibleAtTip:
           type: boolean
