@@ -109,7 +109,9 @@ export function registerBuiltinClientCommands(
         commandRegistry.registerCommand({
             command: 'logTelemetryEvent',
             run: (eventName: string, eventProperties?: any): Promise<any> => {
-                context.telemetryService?.log(eventName, eventProperties)
+                if (context.telemetryService) {
+                    context.telemetryService.log(eventName, eventProperties)
+                }
                 return Promise.resolve()
             },
         })
