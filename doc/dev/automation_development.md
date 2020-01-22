@@ -16,7 +16,7 @@ Before diving into the technical part of Automation, make sure to read up on wha
 
 ## Glossary
 
-Automation introduces a lot of new names, GraphQL queries and mutations and database table. This section tries to explain the most common names and provide a mapping between the GraphQL types and their internal counterpart in the Go backend.
+Automation introduces a lot of new names, GraphQL queries and mutations and database tables. This section tries to explain the most common names and provide a mapping between the GraphQL types and their internal counterpart in the Go backend.
 
 | GraphQL type        | Go type              | Database table     | Description |
 | ------------------- | -------------------- | -------------------| ----------- |
