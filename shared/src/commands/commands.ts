@@ -103,7 +103,7 @@ export function registerBuiltinClientCommands(
     )
 
     /**
-     * TODO
+     * Sends a telemetry event to the Sourcegraph instance with the correct anonymous user id.
      */
     subscription.add(
         commandRegistry.registerCommand({
