@@ -96,7 +96,6 @@ type Campaign struct {
 	ChangesetIDs    []int64
 	CampaignPlanID  int64
 	ClosedAt        time.Time
-	PublishedAt     time.Time
 }
 
 // Clone returns a clone of a Campaign.
@@ -105,9 +104,6 @@ func (c *Campaign) Clone() *Campaign {
 	cc.ChangesetIDs = c.ChangesetIDs[:len(c.ChangesetIDs):len(c.ChangesetIDs)]
 	return &cc
 }
-
-// Published returns whether the PublishedAt timestamp is non-zero.
-func (c *Campaign) Published() bool { return !c.PublishedAt.IsZero() }
 
 // RemoveChangesetID removes the given id from the Campaigns ChangesetIDs slice.
 // If the id is not in ChangesetIDs calling this method doesn't have an effect.
