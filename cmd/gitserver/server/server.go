@@ -669,7 +669,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	var stderrBuf bytes.Buffer
 	stdoutW := &writeCounter{w: w}
-	stderrW := &writeCounter{w: &stderrBuf}
+	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
 
 	cmdStart = time.Now()
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
@@ -683,15 +683,10 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
 
-	stderr := stderrBuf.String()
-	if len(stderr) > 1024 {
-		stderr = stderr[:1024]
-	}
-
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
-	w.Header().Set("X-Exec-Stderr", string(stderr))
+	w.Header().Set("X-Exec-Stderr", stderrBuf.String())
 }
 
 // setGitAttributes writes our global gitattributes to
