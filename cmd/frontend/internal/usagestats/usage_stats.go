@@ -122,15 +122,15 @@ func GetSiteUsageStatistics(ctx context.Context, opt *SiteUsageStatisticsOptions
 		}
 	}
 
-	daus, err := activeUsers(ctx, "daily", dayPeriods)
+	daus, err := activeUsers(ctx, db.Daily, dayPeriods)
 	if err != nil {
 		return nil, err
 	}
-	waus, err := activeUsers(ctx, "weekly", weekPeriods)
+	waus, err := activeUsers(ctx, db.Weekly, weekPeriods)
 	if err != nil {
 		return nil, err
 	}
-	maus, err := activeUsers(ctx, "monthly", monthPeriods)
+	maus, err := activeUsers(ctx, db.Monthly, monthPeriods)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func startOfPeriod(periodType db.UniqueUserCountType, periodsAgo int) (time.Time
 	return time.Time{}, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 }
 
-// daus returns counts of active users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
+// activeUsers returns counts of active users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
 func activeUsers(ctx context.Context, periodType db.UniqueUserCountType, periods int) ([]*types.SiteActivityPeriod, error) {
 	if periods == 0 {
 		return []*types.SiteActivityPeriod{}, nil
@@ -199,6 +199,7 @@ func activeUsers(ctx context.Context, periodType db.UniqueUserCountType, periods
 	// Count stage uniques For the latest week and month only.
 	switch periodType {
 	case db.Weekly:
+		fallthrough
 	case db.Monthly:
 		activeUsers[0].Stages, err = stageUniques(activeUsers[0].StartTime)
 		if err != nil {

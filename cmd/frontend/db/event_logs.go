@@ -159,6 +159,7 @@ type CountUniquesOptions struct {
 }
 
 // CountUniquesPerPeriod provides a count of unique active users in a given time span, broken up into periods of a given type.
+// Returns an array array of length `periods`, with one entry for each period in the time span.
 func (l *eventLogs) CountUniquesPerPeriod(ctx context.Context, periodType UniqueUserCountType, startDate time.Time, periods int, opt *CountUniquesOptions) ([]UsageValue, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
@@ -195,9 +196,9 @@ func (l *eventLogs) countUniquesPerPeriodBySQL(ctx context.Context, interval, pe
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	counts := []UsageValue{}
-	defer rows.Close()
 	for rows.Next() {
 		var v UsageValue
 		err := rows.Scan(&v.Start, &v.Count)

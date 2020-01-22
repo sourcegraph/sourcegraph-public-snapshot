@@ -12,6 +12,44 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
+func TestStartOfWeek(t *testing.T) {
+	defer func() {
+		timeNow = time.Now
+	}()
+
+	want := time.Date(2020, 1, 19, 0, 0, 0, 0, time.UTC)
+
+	mockTimeNow(time.Date(2020, 1, 19, 5, 30, 10, 0, time.UTC))
+	got := startOfWeek(0)
+	if !want.Equal(got) {
+		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
+	}
+
+	mockTimeNow(time.Date(2020, 1, 23, 0, 0, 0, 0, time.UTC))
+	got = startOfWeek(0)
+	if !want.Equal(got) {
+		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
+	}
+
+	mockTimeNow(time.Date(2020, 1, 25, 23, 59, 59, 0, time.UTC))
+	got = startOfWeek(0)
+	if !want.Equal(got) {
+		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
+	}
+
+	mockTimeNow(time.Date(2020, 1, 28, 0, 0, 0, 0, time.UTC))
+	got = startOfWeek(1)
+	if !want.Equal(got) {
+		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
+	}
+
+	mockTimeNow(time.Date(2021, 1, 19, 0, 0, 0, 0, time.UTC))
+	got = startOfWeek(52)
+	if !want.Equal(got) {
+		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
+	}
+}
+
 func TestUserUsageStatistics_None(t *testing.T) {
 	setupForTest(t)
 
@@ -387,49 +425,49 @@ func mockTimeNow(t time.Time) {
 	}
 }
 
-func siteActivityCompare(a, b *types.SiteUsageStatistics) error {
-	if a == nil || b == nil {
+func siteActivityCompare(got, want *types.SiteUsageStatistics) error {
+	if got == nil || want == nil {
 		return errors.New("site activities can not be nil")
 	}
-	if a == b {
+	if got == want {
 		return nil
 	}
-	if len(a.DAUs) != len(b.DAUs) || len(a.WAUs) != len(b.WAUs) || len(a.MAUs) != len(b.MAUs) {
-		return fmt.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (MAUs)", len(a.DAUs), len(b.DAUs), len(a.WAUs), len(b.WAUs), len(a.MAUs), len(b.MAUs))
+	if len(got.DAUs) != len(want.DAUs) || len(got.WAUs) != len(want.WAUs) || len(got.MAUs) != len(want.MAUs) {
+		return fmt.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (MAUs)", len(got.DAUs), len(want.DAUs), len(got.WAUs), len(want.WAUs), len(got.MAUs), len(want.MAUs))
 	}
-	if err := siteActivityPeriodSliceCompare("DAUs", a.DAUs, b.DAUs); err != nil {
+	if err := siteActivityPeriodSliceCompare("DAUs", got.DAUs, want.DAUs); err != nil {
 		return err
 	}
-	if err := siteActivityPeriodSliceCompare("WAUs", a.WAUs, b.WAUs); err != nil {
+	if err := siteActivityPeriodSliceCompare("WAUs", got.WAUs, want.WAUs); err != nil {
 		return err
 	}
-	if err := siteActivityPeriodSliceCompare("MAUs", a.MAUs, b.MAUs); err != nil {
+	if err := siteActivityPeriodSliceCompare("MAUs", got.MAUs, want.MAUs); err != nil {
 		return err
 	}
 	return nil
 }
 
-func siteActivityPeriodSliceCompare(label string, a, b []*types.SiteActivityPeriod) error {
-	if a == nil || b == nil {
+func siteActivityPeriodSliceCompare(label string, got, want []*types.SiteActivityPeriod) error {
+	if got == nil || want == nil {
 		return fmt.Errorf("%v slices can not be nil", label)
 	}
-	for i, v := range a {
-		if err := siteActivityPeriodCompare(label, v, b[i]); err != nil {
+	for i, v := range got {
+		if err := siteActivityPeriodCompare(label, v, want[i]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func siteActivityPeriodCompare(label string, a, b *types.SiteActivityPeriod) error {
-	if a == nil || b == nil {
+func siteActivityPeriodCompare(label string, got, want *types.SiteActivityPeriod) error {
+	if got == nil || want == nil {
 		return errors.New("site activity periods can not be nil")
 	}
-	if a == b {
+	if got == want {
 		return nil
 	}
-	if a.StartTime != b.StartTime || a.UserCount != b.UserCount || a.RegisteredUserCount != b.RegisteredUserCount || a.AnonymousUserCount != b.AnonymousUserCount || a.IntegrationUserCount != b.IntegrationUserCount {
-		return fmt.Errorf("[%v] got %+v want %+v", label, a, b)
+	if got.StartTime != want.StartTime || got.UserCount != want.UserCount || got.RegisteredUserCount != want.RegisteredUserCount || got.AnonymousUserCount != want.AnonymousUserCount || got.IntegrationUserCount != want.IntegrationUserCount {
+		return fmt.Errorf("[%v] got %+v want %+v", label, got, want)
 	}
 	return nil
 }
