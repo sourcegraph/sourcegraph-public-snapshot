@@ -3,7 +3,7 @@ import { IRange } from 'monaco-editor'
 /**
  * Represents a zero-indexed character range in a single-line search query.
  */
-interface CharacterRange {
+export interface CharacterRange {
     /** Zero-based character on the line */
     start: number
     /** Zero-based character on the line */
@@ -233,7 +233,7 @@ const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
 
 const literal = pattern(/[^\s]+/)
 
-const filterKeyword = pattern(/-?[a-z]+(?=:)/)
+const filterKeyword = pattern(/-?[a-zA-z]+(?=:)/)
 
 const filterDelimiter = character(':')
 
