@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -840,6 +841,15 @@ var testUser = db.NewUser{
 	DisplayName:           "thorsten",
 	Password:              "1234",
 	EmailVerificationCode: "foobar",
+}
+
+func createTestUser(ctx context.Context, t *testing.T) *types.User {
+	t.Helper()
+	user, err := db.Users.Create(ctx, testUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return user
 }
 
 func testCampaignJob(plan int64, repo uint32, t time.Time) *a8n.CampaignJob {

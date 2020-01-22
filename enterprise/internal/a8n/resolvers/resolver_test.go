@@ -1486,6 +1486,7 @@ var testUser = db.NewUser{
 }
 
 func createTestUser(ctx context.Context, t *testing.T) *types.User {
+	t.Helper()
 	user, err := db.Users.Create(ctx, testUser)
 	if err != nil {
 		t.Fatal(err)
