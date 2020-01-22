@@ -112,6 +112,7 @@ export const FILTERS: readonly FilterDefinition[] = [
     },
     {
         aliases: ['patterntype'],
+        discreteValues: ['regexp', 'literal', 'structural'],
         description: 'The pattern type (regexp, literal, structural) in use',
     },
 ]
