@@ -18,6 +18,7 @@ import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
+import { NOOP_TELEMETRY_SERVICE } from '../../telemetry/telemetryService'
 
 /**
  * Required information when initializing an extension host.
@@ -260,6 +261,10 @@ function createExtensionAPI(
             updateContext: (updates: sourcegraph.ContextValues) => context.updateContext(updates),
             sourcegraphURL: new URL(initData.sourcegraphURL),
             clientApplication: initData.clientApplication,
+        },
+
+        telemetry: {
+            log: NOOP_TELEMETRY_SERVICE.log.bind(NOOP_TELEMETRY_SERVICE),
         },
     }
     return { extensionHostAPI, extensionAPI, subscription }

@@ -1433,4 +1433,14 @@ declare module 'sourcegraph' {
             add: (unsubscribable: Unsubscribable | (() => void)) => void
         }
     }
+
+    /**
+     * Sending counts and latencies of extension operations back to Sourcegraph.
+     */
+    export namespace telemetry {
+        /**
+         * Log an event (by sending it to the server).
+         */
+        export const log: (eventName: string, eventProperties?: any) => void
+    }
 }
