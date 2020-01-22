@@ -262,10 +262,6 @@ function createExtensionAPI(
             sourcegraphURL: new URL(initData.sourcegraphURL),
             clientApplication: initData.clientApplication,
         },
-
-        telemetry: {
-            log: NOOP_TELEMETRY_SERVICE.log.bind(NOOP_TELEMETRY_SERVICE),
-        },
     }
     return { extensionHostAPI, extensionAPI, subscription }
 }
