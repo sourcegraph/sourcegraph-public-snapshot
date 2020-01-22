@@ -278,7 +278,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
 		SiteAdmin:   siteAdmin,
-		Builtin:     info.Password != "",
+		BuiltinAuth: info.Password != "",
 	}, nil
 }
 
@@ -711,7 +711,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.Builtin, pq.Array(&u.Tags))
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags))
 		if err != nil {
 			return nil, err
 		}

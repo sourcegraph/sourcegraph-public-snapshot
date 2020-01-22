@@ -7,6 +7,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -115,8 +116,9 @@ func (r *UserResolver) DisplayName() *string {
 	return &r.user.DisplayName
 }
 
-// Builtin returns whether or not the user account was created in Sourcegraph.
-func (r *UserResolver) Builtin() bool { return r.user.Builtin }
+func (r *UserResolver) BuiltinAuth() bool {
+	return r.user.BuiltinAuth && providers.BuiltinAuthEnabled()
+}
 
 func (r *UserResolver) AvatarURL() *string {
 	if r.user.AvatarURL == "" {

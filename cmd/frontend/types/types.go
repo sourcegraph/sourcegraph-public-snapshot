@@ -77,7 +77,7 @@ type User struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	SiteAdmin   bool
-	Builtin     bool
+	BuiltinAuth bool
 	Tags        []string
 }
 

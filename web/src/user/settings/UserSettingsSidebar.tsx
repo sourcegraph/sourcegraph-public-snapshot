@@ -19,7 +19,7 @@ import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 export interface UserSettingsSidebarItemConditionContext {
-    user: Pick<GQL.IUser, 'viewerCanAdminister' | 'builtin'>
+    user: Pick<GQL.IUser, 'viewerCanAdminister' | 'builtinAuth'>
 }
 
 export type UserSettingsSidebarItems = Record<

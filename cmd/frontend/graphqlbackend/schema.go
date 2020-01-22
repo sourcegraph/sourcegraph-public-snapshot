@@ -2923,7 +2923,7 @@ type User implements Node & SettingsSubject & Namespace {
     # Only the user and site admins can access this field.
     siteAdmin: Boolean!
     # Whether the user account uses built in auth.
-    builtin: Boolean!
+    builtinAuth: Boolean!
     # The latest settings for the user.
     #
     # Only the user and site admins can access this field.
