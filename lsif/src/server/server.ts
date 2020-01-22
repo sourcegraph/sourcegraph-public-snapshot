@@ -24,6 +24,7 @@ import { waitForConfiguration } from '../shared/config/config'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
+import { createStatsRouter } from './routes/stats'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -84,6 +85,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(createMetaRouter())
+    app.use(createStatsRouter(uploadManager))
     app.use(createUploadRouter(uploadManager))
     app.use(createLsifRouter(backend, uploadManager, logger, tracer))
 
