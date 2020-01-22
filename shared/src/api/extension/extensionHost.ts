@@ -18,7 +18,6 @@ import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
-import { NOOP_TELEMETRY_SERVICE } from '../../telemetry/telemetryService'
 
 /**
  * Required information when initializing an extension host.
