@@ -154,8 +154,8 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
                     <h2 className="mb-0">Repositories</h2>
                 </div>
                 <p>
-                    Repositories are mirrored from connected{' '}
-                    <Link to="/site-admin/external-services">external services</Link>.
+                    Repositories are synced from connected{' '}
+                    <Link to="/site-admin/external-services">code host connections</Link>.
                 </p>
                 <FilteredRepositoryConnection
                     className="list-group list-group-flush mt-3"
