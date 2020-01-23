@@ -233,7 +233,7 @@ const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
 
 const literal = pattern(/[^\s]+/)
 
-const filterKeyword = pattern(/-?[a-z]+(?=:)/i)
+const filterKeyword = pattern(/-?[a-zA-Z]+(?=:)/)
 
 const filterDelimiter = character(':')
 

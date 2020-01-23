@@ -110,6 +110,11 @@ export const FILTERS: readonly FilterDefinition[] = [
         aliases: ['timeout'],
         description: 'Duration before timeout',
     },
+    {
+        aliases: ['patterntype'],
+        discreteValues: ['regexp', 'literal', 'structural'],
+        description: 'The pattern type (regexp, literal, structural) in use',
+    },
 ]
 
 /**
