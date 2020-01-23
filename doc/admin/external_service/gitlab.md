@@ -82,5 +82,5 @@ We are actively collaborating with GitLab to improve our integration (e.g. the [
 Sourcegraph in the future may do more with the provided access token as well, including:
 
 - Enabling Sourcegraph site-admins to perform large-scale code refactors, with Sourcegraph issuing and managing the merge requests on GitLab repositories, company-wide.
-- Using more efficient APIs to get repository and user permissions from GitLab more efficiently. We are actively working with GitLab to make this more efficient and use fewer requests, see https://gitlab.com/gitlab-org/gitlab/issues/20532
+- More efficient usage of GitLab APIs for fetching repository and user permissions, and we are [actively working with GitLab](https://gitlab.com/gitlab-org/gitlab/issues/20532) on these improvements.
 - Improving the GitLab native integration and Sourcegraph browser extension integration: https://docs.gitlab.com/ee/integration/sourcegraph.html
