@@ -134,6 +134,10 @@ AND provider = %s
 //  ---------+------------+--------------+-------------+------------
 //         1 |       read | bitmap{1, 2} | sourcegraph | <DateTime>
 func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *iauthz.RepoPermissions) (err error) {
+	if Mocks.Perms.SetRepoPermissions != nil {
+		return Mocks.Perms.SetRepoPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "SetRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -350,6 +354,10 @@ AND object_type = %s
 //  ---------+------------+--------------+------------
 //         1 |       read | bitmap{1, 2} | <DateTime>
 func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, bindIDs []string, p *iauthz.RepoPermissions) (err error) {
+	if Mocks.Perms.SetRepoPendingPermissions != nil {
+		return Mocks.Perms.SetRepoPendingPermissions(ctx, bindIDs, p)
+	}
+
 	ctx, save := s.observe(ctx, "SetRepoPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.String("bindIDs", strings.Join(bindIDs, ",")))...) }()
 
