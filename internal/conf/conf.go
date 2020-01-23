@@ -173,7 +173,7 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 // edit computation.
 var FormatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2, EOL: "\n"}
 
-var siteConfigEscapeHatchPath = env.Get("SITE_CONFIG_ESCAPE_HATCH_PATH", "/site-config.json", "Path where the site-config.json escape-hatch file will be written.")
+var siteConfigEscapeHatchPath = env.Get("SITE_CONFIG_ESCAPE_HATCH_PATH", "$HOME/site-config.json", "Path where the site-config.json escape-hatch file will be written.")
 
 // startSiteConfigEscapeHatchWorker handles ensuring that edits to the ephemeral on-disk
 // site-config.json file are propagated to the persistent DB and vice-versa. This acts as
@@ -181,6 +181,8 @@ var siteConfigEscapeHatchPath = env.Get("SITE_CONFIG_ESCAPE_HATCH_PATH", "/site-
 // cannot access the UI (for example by configuring auth in a way that locks them out)
 // they can simply edit this file in any of the frontend containers to undo the change.
 func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
+	siteConfigEscapeHatchPath = os.ExpandEnv(siteConfigEscapeHatchPath)
+
 	var (
 		ctx                                        = context.Background()
 		lastKnownFileContents, lastKnownDBContents string
