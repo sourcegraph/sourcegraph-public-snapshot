@@ -167,13 +167,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                               visibility: 'hidden',
                           }
                 }
-                className={classNames(
-                    'hover-overlay',
-                    className,
-                    // Ensure theme-light is applied here, otherwise the browser
-                    // extension  will always render with a dark theme background.
-                    this.props.isLightTheme ? 'theme-light' : ''
-                )}
+                className={classNames('hover-overlay', className)}
                 ref={hoverRef}
             >
                 {showCloseButton && (
