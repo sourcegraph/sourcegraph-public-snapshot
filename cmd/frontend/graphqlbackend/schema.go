@@ -39,12 +39,14 @@ type Mutation {
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
-    # Preview the plan for a campaign, including its diff.
+    # Create and preview the plan for a campaign. A plan is a collection of
+    # patches the Campaign would create as changesets on code hosts once
+    # created.
     # The returned CampaignPlan can be referred to when creating the campaign.
     # It is cached with a short TTL.
     # The campaign plan is computed asynchronously.
     # Check its status property and query it by its id to see its latest state.
-    previewCampaignPlan(
+    createCampaignPlan(
         specification: CampaignPlanSpecification!
         # Whether to wait to finish computing the plan before returning.
         # If false, callers must poll the CampaignPlan using its node ID to track progress and get results.
@@ -61,7 +63,7 @@ type Mutation {
         # created from this campaign plan.
         patches: [CampaignPlanPatch!]!
     ): CampaignPlan!
-    # Cancel a campaign plan that is being generated.
+    # Cancel the creation of a campaign plan.
     # Cancellation expresses a desinterest in the campaign plan and is best-effort.
     # It may not be relied upon.
     # The return of this mutation does not mean the plan was fully cancelled yet,
@@ -470,7 +472,7 @@ input CreateCampaignInput {
     # If null, existing changesets can be added manually.
     # If set, no changesets can be added manually, they will be created by Sourcegraph
     # after creating the campaign according to the precomputed campaign plan.
-    # Will error if the plan has been purged already and needs to be recomputed by another call to previewCampaignPlan.
+    # Will error if the plan has been purged already and needs to be recomputed by another call to createCampaignPlan.
     # Will error if the plan is not completed yet.
     # Using a campaign plan for a campaign will retain it for the lifetime of the campaign and prevents it from being purged.
     plan: ID
@@ -500,7 +502,8 @@ input UpdateCampaignInput {
     plan: ID
 }
 
-# A preview of changes that will be applied by a campaign.
+# A collection of proposed changesets with patches that will be turned into
+# real changesets on code hosts by a Campaign.
 # It is chached and addressable by its ID for a limited amount of time.
 type CampaignPlan implements Node {
     # The unique ID of this campaign plan.

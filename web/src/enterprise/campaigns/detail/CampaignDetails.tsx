@@ -15,7 +15,7 @@ import {
     updateCampaign,
     deleteCampaign,
     createCampaign,
-    previewCampaignPlan,
+    createCampaignPlan,
     fetchCampaignPlanById,
     CampaignType,
     retryCampaign,
@@ -153,15 +153,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return unblockHistoryRef.current
     }, [campaignID, history])
 
-    const previewCampaignPlans = useMemo(() => new Subject<GQL.ICampaignPlanSpecification | GQL.ID>(), [])
-    const nextPreviewCampaignPlan = useCallback(previewCampaignPlans.next.bind(previewCampaignPlans), [
-        previewCampaignPlans,
+    const createCampaignPlans = useMemo(() => new Subject<GQL.ICampaignPlanSpecification | GQL.ID>(), [])
+    const nextCreateCampaignPlan = useCallback(createCampaignPlans.next.bind(createCampaignPlans), [
+        createCampaignPlans,
     ])
     const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false)
     useObservable(
         useMemo(
             () =>
-                previewCampaignPlans.pipe(
+                createCampaignPlans.pipe(
                     tap(() => {
                         setAlertError(undefined)
                         setIsLoadingPreview(true)
@@ -170,7 +170,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     switchMap(plan =>
                         typeof plan === 'string'
                             ? fetchCampaignPlanById(plan)
-                            : previewCampaignPlan(plan, false).pipe(
+                            : createCampaignPlan(plan, false).pipe(
                                   tap(() => {
                                       setIsLoadingPreview(false)
                                   }),
@@ -201,16 +201,16 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         }
                     })
                 ),
-            [previewCampaignPlans, nextChangesetUpdate]
+            [createCampaignPlans, nextChangesetUpdate]
         )
     )
 
     const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
     useEffect(() => {
         if (planID) {
-            nextPreviewCampaignPlan(planID)
+            nextCreateCampaignPlan(planID)
         }
-    }, [nextPreviewCampaignPlan, planID])
+    }, [nextCreateCampaignPlan, planID])
 
     // Tracks if a refresh of the campaignPlan is required before the campaign can be created
     const previewRefreshNeeded = useMemo(() => {
@@ -517,7 +517,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     type="button"
                                     className="btn btn-primary mr-1 e2e-preview-campaign"
                                     disabled={!previewRefreshNeeded}
-                                    onClick={() => nextPreviewCampaignPlan(campaignPlanSpec)}
+                                    onClick={() => nextCreateCampaignPlan(campaignPlanSpec)}
                                 >
                                     {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
                                     Preview changes

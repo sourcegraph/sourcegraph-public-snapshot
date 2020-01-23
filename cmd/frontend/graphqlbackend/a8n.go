@@ -38,7 +38,7 @@ type UpdateCampaignArgs struct {
 	}
 }
 
-type PreviewCampaignPlanArgs struct {
+type CreateCampaignPlanArgs struct {
 	Specification struct {
 		Type      string
 		Arguments JSONCString
@@ -106,7 +106,7 @@ type A8NResolver interface {
 
 	AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error)
 
-	PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error)
+	CreateCampaignPlan(ctx context.Context, args CreateCampaignPlanArgs) (CampaignPlanResolver, error)
 	CreateCampaignPlanFromPatches(ctx context.Context, args CreateCampaignPlanFromPatchesArgs) (CampaignPlanResolver, error)
 	CampaignPlanByID(ctx context.Context, id graphql.ID) (CampaignPlanResolver, error)
 	CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error)
@@ -123,11 +123,11 @@ func (r *schemaResolver) AddChangesetsToCampaign(ctx context.Context, args *AddC
 	return EnterpriseResolvers.a8nResolver.AddChangesetsToCampaign(ctx, args)
 }
 
-func (r *schemaResolver) PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error) {
+func (r *schemaResolver) CreateCampaignPlan(ctx context.Context, args CreateCampaignPlanArgs) (CampaignPlanResolver, error) {
 	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return EnterpriseResolvers.a8nResolver.PreviewCampaignPlan(ctx, args)
+	return EnterpriseResolvers.a8nResolver.CreateCampaignPlan(ctx, args)
 }
 
 func (r *schemaResolver) CreateCampaignPlanFromPatches(ctx context.Context, args CreateCampaignPlanFromPatchesArgs) (CampaignPlanResolver, error) {

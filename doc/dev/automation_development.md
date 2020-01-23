@@ -32,7 +32,7 @@ Automation introduces a lot of new names, GraphQL queries and mutations and data
 1. Read through `./cmd/frontend/graphqlbackend/a8n.go` to get an overview of the Automation GraphQL API.
 1. Read through `./internal/a8n/types.go` to see all Automation related type definitions.
 1. Compare that with the GraphQL definitions in `./cmd/frontend/graphqlbackend/schema.graphql`.
-1. Start reading through `./enterprise/internal/a8n/resolvers/resolver.go` to see how the main mutation are implemented (look at `previewCampaignPlan` and `createCampaign` to see how the two main operations are implemented).
+1. Start reading through `./enterprise/internal/a8n/resolvers/resolver.go` to see how the main mutation are implemented (look at `createCampaignPlan` and `createCampaign` to see how the two main operations are implemented).
 1. Then start from the other end, `enterprise/cmd/repo-updater/main.go`, and see how the enterprise `repo-updater` uses `a8n.Syncer` to sync `Changesets`.
 
 ## GitHub testing account

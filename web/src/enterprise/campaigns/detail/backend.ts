@@ -172,14 +172,14 @@ export async function createCampaign(input: ICreateCampaignInput): Promise<ICamp
     return dataOrThrowErrors(result).createCampaign
 }
 
-export function previewCampaignPlan(
+export function createCampaignPlan(
     specification: ICampaignPlanSpecification,
     wait: boolean = false
 ): Observable<ICampaignPlan> {
     return mutateGraphQL(
         gql`
-            mutation PreviewCampaignPlan($specification: CampaignPlanSpecification!, $wait: Boolean!) {
-                previewCampaignPlan(specification: $specification, wait: $wait) {
+            mutation CreateCampaignPlan($specification: CampaignPlanSpecification!, $wait: Boolean!) {
+                createCampaignPlan(specification: $specification, wait: $wait) {
                     ...CampaignPlanFields
                 }
             }
@@ -188,7 +188,7 @@ export function previewCampaignPlan(
         { specification, wait }
     ).pipe(
         map(dataOrThrowErrors),
-        map(mutation => mutation.previewCampaignPlan)
+        map(mutation => mutation.createCampaignPlan)
     )
 }
 

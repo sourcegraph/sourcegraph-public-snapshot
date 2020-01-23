@@ -469,9 +469,9 @@ func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionA
 	}, nil
 }
 
-func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.PreviewCampaignPlanArgs) (graphqlbackend.CampaignPlanResolver, error) {
+func (r *Resolver) CreateCampaignPlan(ctx context.Context, args graphqlbackend.CreateCampaignPlanArgs) (graphqlbackend.CampaignPlanResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.PreviewCampaignPlan", args.Specification.Type)
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignPlan", args.Specification.Type)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()

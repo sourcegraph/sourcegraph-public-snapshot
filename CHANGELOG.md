@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- The GraphQL mutation `previewCampaignPlan` has been renamed to `createCampaignPlan`. This mutation is part of Automation, which is still in beta and behind a feature flag and thus subject to possible breaking changes while we still work on it.
+
 ### Fixed
 
 ### Removed
