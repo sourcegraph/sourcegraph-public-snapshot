@@ -118,7 +118,9 @@ func initResolvers() {
 	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
 	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
 	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
-		return authzResolvers.NewResolver(dbconn.Global, time.Now)
+		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {
+			return time.Now().UTC().Truncate(time.Microsecond)
+		})
 	}
 }
 
