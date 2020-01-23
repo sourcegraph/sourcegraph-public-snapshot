@@ -82,7 +82,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	defer txs.Done(&err)
 
 	for _, bindID := range bindIDs {
-		err = txs.GrantPendingPermissionsTx(ctx, args.UserID, &iauthz.UserPendingPermissions{
+		err = txs.GrantPendingPermissions(ctx, args.UserID, &iauthz.UserPendingPermissions{
 			BindID: bindID,
 			Perm:   args.Perm,
 			Type:   args.Type,
