@@ -17,7 +17,9 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 		return nil, err
 	}
 
-	userEmails, err := db.UserEmails.ListByUser(ctx, r.user.ID)
+	userEmails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+		UserID: r.user.ID,
+	})
 	if err != nil {
 		return nil, err
 	}

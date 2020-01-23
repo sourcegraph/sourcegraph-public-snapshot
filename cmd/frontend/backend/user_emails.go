@@ -34,7 +34,9 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 	// following abuse prevention checks.
 	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
 		if conf.EmailVerificationRequired() {
-			emails, err := db.UserEmails.ListByUser(ctx, userID)
+			emails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+				UserID: userID,
+			})
 			if err != nil {
 				return err
 			}
