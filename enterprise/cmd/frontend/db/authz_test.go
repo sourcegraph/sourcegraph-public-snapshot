@@ -2,9 +2,9 @@ package db
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
