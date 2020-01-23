@@ -121,7 +121,7 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only grant when the email is set to verified.
+	// Avoid unnecessary calls if the email is set to unverified.
 	if args.Verified {
 		if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
 			UserID: userID,

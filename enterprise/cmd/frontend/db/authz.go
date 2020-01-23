@@ -31,6 +31,9 @@ func (s *authzStore) init() {
 	})
 }
 
+// GrantPendingPermissions grants pending permissions for a user, which implements the db.AuthzStore interface.
+// It uses provided arguments to retrieve information directly from the database to offload security concerns
+// from the caller.
 func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.GrantPendingPermissionsArgs) error {
 	if args.UserID <= 0 {
 		return nil
