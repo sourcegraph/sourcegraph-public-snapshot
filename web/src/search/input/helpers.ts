@@ -18,7 +18,7 @@ export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): str
 }
 
 export function convertPlainTextToInteractiveQuery(
-    query: string,
+    query: string
 ): { filtersInQuery: FiltersToTypeAndValue; navbarQuery: string } {
     const parsedQuery = parseSearchQuery(query)
 

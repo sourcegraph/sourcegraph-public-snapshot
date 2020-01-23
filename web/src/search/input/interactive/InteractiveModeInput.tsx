@@ -90,11 +90,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
             }
         }
 
-        // We only want to call this when we are toggling from plain text mode.
-        // When we toggle from plain text mode, if there are filters that exist, props.filtersInQuery
-        // won't be empty. What to do if it is empty?
+        // This allows us to parse filters from the raw query in the `q=` parameter. This is useful
+        // when we are in interactive mode, but do nothave a URL that is in the interactive mode format.
         const onlyQueryParam = searchParams.get('q')
-        if (onlyQueryParam) {
+        if (onlyQueryParam !== null && onlyQueryParam.length > 0) {
             const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(
                 onlyQueryParam
             )

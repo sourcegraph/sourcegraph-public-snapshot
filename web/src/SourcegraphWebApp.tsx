@@ -308,7 +308,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             }))
         } else {
             const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(
-                this.state.navbarSearchQueryState.query,
+                this.state.navbarSearchQueryState.query
             )
 
             this.setState(state => ({
