@@ -138,15 +138,15 @@ type UsageValue struct {
 	Count int
 }
 
-// PeriodType is the type of period in which to count events and unique.
+// PeriodType is the type of period in which to count events and unique users.
 type PeriodType string
 
 const (
-	// Daily is used to get a count of events or unique active users within a day.
+	// Daily is used to get a count of events or unique users within a day.
 	Daily PeriodType = "daily"
-	// Weekly is used to get a count of events or unique active users within a week.
+	// Weekly is used to get a count of events or unique users within a week.
 	Weekly PeriodType = "weekly"
-	// Monthly is used to get a count of events or unique active users within a month.
+	// Monthly is used to get a count of events or unique users within a month.
 	Monthly PeriodType = "monthly"
 )
 
@@ -165,8 +165,8 @@ var periodByPeriodType = map[PeriodType]*sqlf.Query{
 	Monthly: sqlf.Sprintf("DATE_TRUNC('month', timestamp)"),
 }
 
-// CountUniquesOptions provides options for counting unique users.
-type CountUniquesOptions struct {
+// CountUniqueUsersOptions provides options for counting unique users.
+type CountUniqueUsersOptions struct {
 	// If true, only include registered users. Otherwise, include all users.
 	RegisteredOnly bool
 	// If true, only include code host integration users. Otherwise, include all users.
@@ -179,9 +179,9 @@ type CountUniquesOptions struct {
 	ByEventNames *[]string
 }
 
-// CountUniquesPerPeriod provides a count of unique active users in a given time span, broken up into periods of a given type.
+// CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of a given type.
 // Returns an array array of length `periods`, with one entry for each period in the time span.
-func (l *eventLogs) CountUniquesPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, opt *CountUniquesOptions) ([]UsageValue, error) {
+func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.RegisteredOnly {
@@ -217,10 +217,10 @@ func (l *eventLogs) CountUniquesPerPeriod(ctx context.Context, periodType Period
 		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
 
-	return l.countUniquesPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
+	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
-func (l *eventLogs) countUniquesPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
+func (l *eventLogs) countUniqueUsersPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
 	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp, (%s)::interval) AS period", startDate, endDate, interval)
 	usersByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS count
 		FROM event_logs
@@ -253,31 +253,31 @@ func (l *eventLogs) countUniquesPerPeriodBySQL(ctx context.Context, interval, pe
 	return counts, nil
 }
 
-// CountUniquesAll provides a count of unique active users in a given time span.
-func (l *eventLogs) CountUniquesAll(ctx context.Context, startDate, endDate time.Time) (int, error) {
-	return l.countUniquesBySQL(ctx, startDate, endDate, nil)
+// CountUniqueUsersAll provides a count of unique active users in a given time span.
+func (l *eventLogs) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) (int, error) {
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, nil)
 }
 
-// CountUniquesByEventNamePrefix provides a count of unique active users in a given time span that logged an event with a given prefix.
-func (l *eventLogs) CountUniquesByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error) {
-	return l.countUniquesBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name LIKE %s ", namePrefix+"%"))
+// CountUniqueUsersByEventNamePrefix provides a count of unique active users in a given time span that logged an event with a given prefix.
+func (l *eventLogs) CountUniqueUsersByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error) {
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name LIKE %s ", namePrefix+"%"))
 }
 
-// CountUniquesByEventName provides a count of unique active users in a given time span that logged a given event.
-func (l *eventLogs) CountUniquesByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error) {
-	return l.countUniquesBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name = %s", name))
+// CountUniqueUsersByEventName provides a count of unique active users in a given time span that logged a given event.
+func (l *eventLogs) CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error) {
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name = %s", name))
 }
 
-// CountUniquesByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
-func (l *eventLogs) CountUniquesByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error) {
+// CountUniqueUsersByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
+func (l *eventLogs) CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error) {
 	items := []*sqlf.Query{}
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
 	}
-	return l.countUniquesBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name IN (%s)", sqlf.Join(items, ",")))
+	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name IN (%s)", sqlf.Join(items, ",")))
 }
 
-func (*eventLogs) countUniquesBySQL(ctx context.Context, startDate, endDate time.Time, querySuffix *sqlf.Query) (int, error) {
+func (*eventLogs) countUniqueUsersBySQL(ctx context.Context, startDate, endDate time.Time, querySuffix *sqlf.Query) (int, error) {
 	if querySuffix == nil {
 		querySuffix = sqlf.Sprintf("")
 	}
@@ -290,7 +290,7 @@ func (*eventLogs) countUniquesBySQL(ctx context.Context, startDate, endDate time
 	return count, err
 }
 
-func (l *eventLogs) ListUniquesAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
+func (l *eventLogs) ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, `SELECT user_id
 		FROM event_logs
 		WHERE user_id > 0 AND DATE(TIMEZONE('UTC'::text, timestamp)) >= $1 AND DATE(TIMEZONE('UTC'::text, timestamp)) <= $2
