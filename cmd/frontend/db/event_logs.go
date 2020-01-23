@@ -207,11 +207,11 @@ func (l *eventLogs) CountUniquesPerPeriod(ctx context.Context, periodType Period
 
 	var endDate time.Time
 	switch periodType {
-	case "daily":
+	case Daily:
 		endDate = startDate.AddDate(0, 0, periods)
-	case "weekly":
+	case Weekly:
 		endDate = startDate.AddDate(0, 0, 7*periods)
-	case "monthly":
+	case Monthly:
 		endDate = startDate.AddDate(0, periods, 0)
 	default:
 		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
