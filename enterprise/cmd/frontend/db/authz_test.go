@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
@@ -69,7 +70,12 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			globals.SetPermissionsUserMapping(test.config)
 
 			calledCount := 0
-			db.Mocks.UserEmails.ListVerifiedByUser = func(int32) ([]*db.UserEmail, error) {
+			db.Mocks.UserEmails.ListByUser = func(_ context.Context, opt db.UserEmailsListOptions) ([]*db.UserEmail, error) {
+				if opt.UserID <= 0 {
+					return nil, errors.New("opt.UserID must be greater than 0")
+				} else if !opt.OnlyVerified {
+					return nil, errors.New("opt.OnlyVerified is not set to true")
+				}
 				return test.mockEmails, nil
 			}
 			db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
@@ -80,7 +86,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				return nil
 			}
 			defer func() {
-				db.Mocks.UserEmails.ListVerifiedByUser = nil
+				db.Mocks.UserEmails.ListByUser = nil
 				db.Mocks.Users.GetByID = nil
 				Mocks.Perms.GrantPendingPermissionsTx = nil
 			}()
