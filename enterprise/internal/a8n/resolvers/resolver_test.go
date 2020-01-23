@@ -1192,9 +1192,11 @@ func TestCampaignPlanResolver(t *testing.T) {
 
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
+	user := createTestUser(ctx, t)
 	plan := &a8n.CampaignPlan{
 		CampaignType: "COMBY",
 		Arguments:    `{"scopeQuery": "file:README.md"}`,
+		UserID:       user.ID,
 	}
 	err := store.CreateCampaignPlan(ctx, plan)
 	if err != nil {

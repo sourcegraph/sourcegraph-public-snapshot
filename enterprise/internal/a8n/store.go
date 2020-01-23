@@ -1388,7 +1388,7 @@ func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		nullTimeColumn(c.CanceledAt),
 		c.CreatedAt,
 		c.UpdatedAt,
-		nullInt32Column(c.UserID),
+		c.UserID,
 	), nil
 }
 
@@ -1440,7 +1440,7 @@ func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		arguments,
 		nullTimeColumn(c.CanceledAt),
 		c.UpdatedAt,
-		nullInt32Column(c.UserID),
+		c.UserID,
 		c.ID,
 	), nil
 }
@@ -2592,7 +2592,7 @@ func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
 		&dbutil.NullTime{Time: &c.CanceledAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
-		&dbutil.NullInt32{N: &c.UserID},
+		&c.UserID,
 	)
 }
 

@@ -134,10 +134,6 @@ func (r *Runner) CreatePlanAndJobs(ctx context.Context, plan *a8n.CampaignPlan) 
 	}
 	r.started = true
 
-	if plan.UserID == 0 {
-		return errors.New("campaign plan is missing a user")
-	}
-
 	rs, err := r.search(ctx, r.ct.searchQuery())
 	if err != nil {
 		return err
@@ -355,10 +351,6 @@ func runCampaignJob(ctx context.Context, clock func() time.Time, store *Store, c
 	}
 	if !p.CanceledAt.IsZero() {
 		job.Error = "Campaign execution canceled."
-		return
-	}
-	if p.UserID == 0 {
-		job.Error = "Campaign plan is missing user"
 		return
 	}
 

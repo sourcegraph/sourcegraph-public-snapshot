@@ -332,7 +332,7 @@ func TestRunner(t *testing.T) {
 				p.UserID = 0
 				return p
 			},
-			runErr: "campaign plan is missing a user",
+			runErr: `pq: insert or update on table "campaign_plans" violates foreign key constraint "campaign_plans_user_id_fkey"`,
 		},
 	}
 
