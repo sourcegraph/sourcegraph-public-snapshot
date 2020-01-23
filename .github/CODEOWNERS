@@ -222,7 +222,7 @@ Dockerfile @sourcegraph/distribution
 /enterprise/cmd/frontend/internal/licensing @sourcegraph/distribution
 
 # Documentation and homepage
-README.md @sqs
+/README.md @sqs
 /doc/ @sourcegraph/distribution @ryan-blunden
 /doc/dev/ @nicksnyder
 
