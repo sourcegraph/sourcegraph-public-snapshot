@@ -185,6 +185,9 @@ func activeUsers(ctx context.Context, periodType db.UniqueUserCountType, periods
 
 	var activeUsers []*types.SiteActivityPeriod
 	for i, u := range uniques {
+		// Pull out data from each period. Note that CountUniquesPerPeriod will always
+		// return a slice of length `periods` due to the generate_series in the base
+		// query, so it is safe to read the following indices.
 		actPer := &types.SiteActivityPeriod{
 			StartTime:            u.Start,
 			UserCount:            int32(u.Count),
