@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -25,7 +26,7 @@ type Event struct {
 	URL             string
 	UserID          uint32
 	AnonymousUserID string
-	Argument        string
+	Argument        *json.RawMessage
 	Source          string
 	Timestamp       time.Time
 }
