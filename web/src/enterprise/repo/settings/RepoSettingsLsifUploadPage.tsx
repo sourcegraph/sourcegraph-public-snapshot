@@ -20,11 +20,6 @@ interface Props extends RouteComponentProps<{ id: string }> {
     repo: GQL.IRepository
 }
 
-interface DeletionState {
-    /** Undefined means not started, null means successful. */
-    deletionOrError?: 'loading' | ErrorLike | null
-}
-
 /**
  * A page displaying metadata about an LSIF upload.
  */
@@ -36,8 +31,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
 }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsLsifUpload'))
 
-    const initialState: DeletionState = {}
-    const [state, setState] = useState(initialState)
+    const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
     const uploadOrError = useObservable(
         useMemo(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
@@ -57,24 +51,22 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
             return
         }
 
-        setState({ deletionOrError: 'loading' })
+        setDeletionOrError('loading')
 
         try {
             await deleteLsifUpload({ id }).toPromise()
-            setState({ deletionOrError: null })
+            setDeletionOrError('deleted')
         } catch (err) {
-            setState({ deletionOrError: err })
+            setDeletionOrError(err)
         }
     }
 
-    return state.deletionOrError !== undefined ? (
-        isErrorLike(state.deletionOrError) ? (
-            <div className="alert alert-danger">
-                <ErrorAlert prefix="Error deleting LSIF upload" error={state.deletionOrError} />
-            </div>
-        ) : (
-            <Redirect to=".." />
-        )
+    return deletionOrError === 'deleted' ? (
+        <Redirect to=".." />
+    ) : isErrorLike(deletionOrError) ? (
+        <div className="alert alert-danger">
+            <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
+        </div>
     ) : (
         <div className="site-admin-lsif-upload-page w-100">
             <PageTitle title="LSIF uploads - Admin" />
@@ -213,7 +205,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                                     type="button"
                                     className="btn btn-danger action-container__btn"
                                     onClick={deleteUpload}
-                                    disabled={state.deletionOrError === 'loading'}
+                                    disabled={deletionOrError === 'loading'}
                                     data-tooltip="Delete upload"
                                 >
                                     <DeleteIcon className="icon-inline" />

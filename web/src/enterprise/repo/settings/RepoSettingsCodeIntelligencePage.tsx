@@ -34,14 +34,8 @@ const HideIncompleteLSIFUploadsToggle: FunctionComponent<HideIncompleteLSIFUploa
     </div>
 )
 
-interface DeletionState {
-    /** Undefined means not started, null means successful. */
-    deletionOrError?: 'loading' | ErrorLike | null
-}
-
 const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: Subject<void> }> = ({ node, onDelete }) => {
-    const initialState: DeletionState = {}
-    const [state, setState] = useState(initialState)
+    const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
     const deleteUpload = async (): Promise<void> => {
         let description = `commit ${node.inputCommit.substring(0, 7)}`
@@ -53,19 +47,19 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: Subje
             return
         }
 
-        setState({ deletionOrError: 'loading' })
+        setDeletionOrError('loading')
 
         try {
             await deleteLsifUpload({ id: node.id }).toPromise()
             onDelete.next()
         } catch (err) {
-            setState({ deletionOrError: err })
+            setDeletionOrError(err)
         }
     }
 
-    return state.deletionOrError && isErrorLike(state.deletionOrError) ? (
+    return deletionOrError && isErrorLike(deletionOrError) ? (
         <div className="alert alert-danger">
-            <ErrorAlert prefix="Error deleting LSIF upload" error={state.deletionOrError} />
+            <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
         </div>
     ) : (
         <div className="w-100 list-group-item py-2 align-items-center lsif-data__main">
@@ -109,7 +103,7 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: Subje
                     type="button"
                     className="btn btn-sm btn-danger lsif-data__meta-delete"
                     onClick={deleteUpload}
-                    disabled={state.deletionOrError === 'loading'}
+                    disabled={deletionOrError === 'loading'}
                     data-tooltip="Delete upload"
                 >
                     <DeleteIcon className="icon-inline" />
