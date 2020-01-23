@@ -7,15 +7,17 @@ import (
 
 func init() {
 	usage := `
+Create a campaign plan from a specification. The created plan can then be viewed on the Sourcegraph instance and used to create a campaign and changesets.
+
 Examples:
 
-  Preview a comby campaign:
+  Create a comby campaign plan:
 
-    	$ src campaigns plans preview -type=comby -args='{"scopeQuery":"repo:sourcegraph/go-diff", "matchTemplate": "fmt.Errorf", "rewriteTemplate": "errors.Wrapf"}' -f '{{.|json}}'
+    	$ src campaigns plan create -type=comby -args='{"scopeQuery":"repo:sourcegraph/go-diff", "matchTemplate": "fmt.Errorf", "rewriteTemplate": "errors.Wrapf"}' -f '{{.|json}}'
 
 `
 
-	flagSet := flag.NewFlagSet("preview", flag.ExitOnError)
+	flagSet := flag.NewFlagSet("create", flag.ExitOnError)
 	usageFunc := func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src campaigns plans %s':\n", flagSet.Name())
 		flagSet.PrintDefaults()
@@ -77,6 +79,7 @@ Examples:
 	// Register the command.
 	campaignPlansCommands = append(campaignPlansCommands, &command{
 		flagSet:   flagSet,
+		aliases:   []string{"preview"},
 		handler:   handler,
 		usageFunc: usageFunc,
 	})

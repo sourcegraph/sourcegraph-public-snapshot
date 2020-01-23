@@ -19,7 +19,7 @@ Usage:
 The commands are:
 
 	create-from-patches  creates plan from patches to repository branches
-	preview              generates preview of plan from a specification
+	create               creates a plan from a specification and provides a preview of the changesets
 
 Use "src campaigns plans [command] -h" for more information about a command.
 `
