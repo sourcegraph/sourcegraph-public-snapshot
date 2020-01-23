@@ -4,52 +4,103 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
-	ctx := context.Background()
-	s := NewAuthzStore(nil, clock)
-	Mocks.Perms.Txs = func(context.Context) (*PermsStore, error) {
-		return &PermsStore{}, nil
+	if testing.Short() {
+		t.Skip()
 	}
-	defer func() {
-		Mocks.Perms.Txs = nil
-	}()
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// Create user with initially verified email
+	user, err := db.Users.Create(ctx, db.NewUser{
+		Email:           "alice@example.com",
+		Username:        "alice",
+		EmailIsVerified: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	code := "verify-code"
+
+	// Add and verify the second email
+	err = db.UserEmails.Add(ctx, user.ID, "alice2@example.com", &code)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.UserEmails.SetVerified(ctx, user.ID, "alice2@example.com", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Add third email and leave as unverified
+	err = db.UserEmails.Add(ctx, user.ID, "alice3@example.com", &code)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s := NewAuthzStore(dbconn.Global, clock).(*authzStore)
 
 	tests := []struct {
-		name              string
-		config            *schema.PermissionsUserMapping
-		args              *db.GrantPendingPermissionsArgs
-		mockEmails        []*db.UserEmail
-		mockUser          *types.User
-		expectCalledCount int
+		name          string
+		config        *schema.PermissionsUserMapping
+		args          *db.GrantPendingPermissionsArgs
+		update        func(ctx context.Context, s *PermsStore) error
+		expectRepoIDs []uint32
 	}{
-		{
-			name:              "bad userID",
-			config:            &schema.PermissionsUserMapping{},
-			args:              &db.GrantPendingPermissionsArgs{},
-			expectCalledCount: 0,
-		},
 		{
 			name: "grant by emails",
 			config: &schema.PermissionsUserMapping{
 				BindID: "email",
 			},
 			args: &db.GrantPendingPermissionsArgs{
-				UserID: 1,
+				UserID: user.ID,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			},
-			mockEmails: []*db.UserEmail{
-				{Email: "alice@example.com"},
-				{Email: "alice2@example.com"},
+			update: func(ctx context.Context, s *PermsStore) error {
+				err := s.SetRepoPendingPermissions(ctx, []string{"alice@example.com"}, &iauthz.RepoPermissions{
+					RepoID:   1,
+					Perm:     authz.Read,
+					UserIDs:  toBitmap(1),
+					Provider: authz.ProviderSourcegraph,
+				})
+				if err != nil {
+					return err
+				}
+
+				err = s.SetRepoPendingPermissions(ctx, []string{"alice2@example.com"}, &iauthz.RepoPermissions{
+					RepoID:   2,
+					Perm:     authz.Read,
+					UserIDs:  toBitmap(1),
+					Provider: authz.ProviderSourcegraph,
+				})
+				if err != nil {
+					return err
+				}
+
+				err = s.SetRepoPendingPermissions(ctx, []string{"alice3@example.com"}, &iauthz.RepoPermissions{
+					RepoID:   3,
+					Perm:     authz.Read,
+					UserIDs:  toBitmap(1),
+					Provider: authz.ProviderSourcegraph,
+				})
+				if err != nil {
+					return err
+				}
+				return nil
 			},
-			expectCalledCount: 2,
+			expectRepoIDs: []uint32{1, 2},
 		},
 		{
 			name: "grant by username",
@@ -57,60 +108,80 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				BindID: "username",
 			},
 			args: &db.GrantPendingPermissionsArgs{
-				UserID: 1,
+				UserID: user.ID,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			},
-			mockUser: &types.User{
-				Username: "alice",
+			update: func(ctx context.Context, s *PermsStore) error {
+				err := s.SetRepoPendingPermissions(ctx, []string{"alice"}, &iauthz.RepoPermissions{
+					RepoID:   1,
+					Perm:     authz.Read,
+					Provider: authz.ProviderSourcegraph,
+				})
+				if err != nil {
+					return err
+				}
+
+				err = s.SetRepoPendingPermissions(ctx, []string{"bob"}, &iauthz.RepoPermissions{
+					RepoID:   2,
+					Perm:     authz.Read,
+					Provider: authz.ProviderSourcegraph,
+				})
+				if err != nil {
+					return err
+				}
+
+				return nil
 			},
-			expectCalledCount: 1,
+			expectRepoIDs: []uint32{1},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			defer cleanupPermsTables(t, s.store)
+
 			globals.SetPermissionsUserMapping(test.config)
 
-			calledCount := 0
-			db.Mocks.UserEmails.ListByUser = func(_ context.Context, opt db.UserEmailsListOptions) ([]*db.UserEmail, error) {
-				if opt.UserID <= 0 {
-					return nil, errors.New("opt.UserID must be greater than 0")
-				} else if !opt.OnlyVerified {
-					return nil, errors.New("opt.OnlyVerified is not set to true")
+			if test.update != nil {
+				if err = test.update(ctx, s.store); err != nil {
+					t.Fatal(err)
 				}
-				return test.mockEmails, nil
 			}
-			db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
-				return test.mockUser, nil
-			}
-			Mocks.Perms.GrantPendingPermissionsTx = func(context.Context, int32, *iauthz.UserPendingPermissions) error {
-				calledCount++
-				return nil
-			}
-			defer func() {
-				db.Mocks.UserEmails.ListByUser = nil
-				db.Mocks.Users.GetByID = nil
-				Mocks.Perms.GrantPendingPermissionsTx = nil
-			}()
 
 			err := s.GrantPendingPermissions(ctx, test.args)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if test.expectCalledCount != calledCount {
-				t.Fatalf("calledCount: want %d but got %d", test.expectCalledCount, calledCount)
+			p := &iauthz.UserPermissions{
+				UserID:   user.ID,
+				Perm:     authz.Read,
+				Type:     authz.PermRepos,
+				Provider: authz.ProviderSourcegraph,
 			}
+			err = s.store.LoadUserPermissions(ctx, p)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			equal(t, "p.IDs", test.expectRepoIDs, bitmapToArray(p.IDs))
 		})
 	}
 }
 
 func TestAuthzStore_AuthorizedRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
-	s := NewAuthzStore(nil, clock)
+
+	s := NewAuthzStore(dbconn.Global, clock).(*authzStore)
 
 	tests := []struct {
 		name        string
 		args        *db.AuthorizedReposArgs
-		mockPerms   *iauthz.UserPermissions
+		update      func(ctx context.Context, s *PermsStore) error
 		expectRepos []*types.Repo
 	}{
 		{
@@ -118,33 +189,77 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			args: &db.AuthorizedReposArgs{},
 		},
 		{
-			name: "has repos",
+			name: "has permissions for user=1",
 			args: &db.AuthorizedReposArgs{
 				Repos: []*types.Repo{
 					{ID: 1},
 					{ID: 2},
 					{ID: 4},
 				},
+				UserID:   1,
+				Perm:     authz.Read,
+				Type:     authz.PermRepos,
+				Provider: authz.ProviderSourcegraph,
 			},
-			mockPerms: &iauthz.UserPermissions{
-				Type: authz.PermRepos,
-				IDs:  toBitmap(1, 2, 3),
+			update: func(ctx context.Context, s *PermsStore) error {
+				for _, repoID := range []int32{1, 2, 3} {
+					err := s.SetRepoPermissions(ctx, &iauthz.RepoPermissions{
+						RepoID:   repoID,
+						Perm:     authz.Read,
+						UserIDs:  toBitmap(1),
+						Provider: authz.ProviderSourcegraph,
+					})
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
 			},
 			expectRepos: []*types.Repo{
 				{ID: 1},
 				{ID: 2},
 			},
 		},
+		{
+			name: "no permissions for user=2",
+			args: &db.AuthorizedReposArgs{
+				Repos: []*types.Repo{
+					{ID: 1},
+					{ID: 2},
+				},
+				UserID:   2,
+				Perm:     authz.Read,
+				Type:     authz.PermRepos,
+				Provider: authz.ProviderSourcegraph,
+			},
+			update: func(ctx context.Context, s *PermsStore) error {
+				for _, repoID := range []int32{1, 2, 3} {
+					err := s.SetRepoPermissions(ctx, &iauthz.RepoPermissions{
+						RepoID:   repoID,
+						Perm:     authz.Read,
+						UserIDs:  toBitmap(1),
+						Provider: authz.ProviderSourcegraph,
+					})
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+			expectRepos: []*types.Repo{},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			Mocks.Perms.LoadUserPermissions = func(_ context.Context, p *iauthz.UserPermissions) error {
-				*p = *test.mockPerms
-				return nil
+			defer cleanupPermsTables(t, s.store)
+
+			if test.update != nil {
+				if err := test.update(ctx, s.store); err != nil {
+					t.Fatal(err)
+				}
 			}
-			defer func() {
-				Mocks.Perms.LoadUserPermissions = nil
-			}()
 
 			repos, err := s.AuthorizedRepos(ctx, test.args)
 			if err != nil {
