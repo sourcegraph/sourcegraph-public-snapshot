@@ -265,6 +265,54 @@ func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodT
 	return l.countEventsPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
+// PercentileValue is a slice of Nth percentile values calculated from a field of events
+// in a time period starting on a given date.
+type PercentileValue struct {
+	Start  time.Time
+	Values []float64
+}
+
+// PercentilesOptions provides options for calculating percentiles over values of an field in the event's arguments.
+type PercentilesOptions struct {
+	// If non-nil, only include values from events with a given prefix.
+	ByEventNamePrefix *string
+	// If non-nil, only include values from events that match the given event name.
+	ByEventName *string
+	// If non-nil, only include values from events that matches a list of given event names
+	ByEventNames *[]string
+}
+
+// PercentilesPerPeriod calculates the given percentiles over a field of the event's arguments in a given time span,
+// broken up into periods of a given type. Percentiles should be supplied as floats in the range `[0, 1)`, such that
+// `[.5, .9, .99]` will return the 50th, 90th, and 99th percentile values. Returns an array of length `periods`, with
+// one entry for each period in the time span. Each `PercentileValue` object in the result will contain exactly
+// `len(percentiles)` values.
+func (l *eventLogs) PercentilesPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, field string, percentiles []float64, opt *PercentilesOptions) ([]PercentileValue, error) {
+	conds := []*sqlf.Query{sqlf.Sprintf("argument IS NOT NULL")}
+	if opt != nil {
+		if opt.ByEventNamePrefix != nil {
+			conds = append(conds, sqlf.Sprintf("name LIKE %s", *opt.ByEventNamePrefix+"%"))
+		}
+		if opt.ByEventName != nil {
+			conds = append(conds, sqlf.Sprintf("name = %s", *opt.ByEventName))
+		}
+		if opt.ByEventNames != nil {
+			items := []*sqlf.Query{}
+			for _, v := range *opt.ByEventNames {
+				items = append(items, sqlf.Sprintf("%s", v))
+			}
+			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
+		}
+	}
+
+	endDate, ok := calcEndDate(startDate, periods, periodType)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	return l.calculatePercentilesPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, field, percentiles, conds)
+}
+
 func (l *eventLogs) countUniqueUsersPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
 	return l.countPerPeriodBySQL(ctx, sqlf.Sprintf("DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END"), interval, period, startDate, endDate, conds)
 }
@@ -304,6 +352,52 @@ func (l *eventLogs) countPerPeriodBySQL(ctx context.Context, countExpr, interval
 		return nil, err
 	}
 	return counts, nil
+}
+
+func (l *eventLogs) calculatePercentilesPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, field string, percentiles []float64, conds []*sqlf.Query) ([]PercentileValue, error) {
+	countByPeriodExprs := []*sqlf.Query{}
+	qExprs := []*sqlf.Query{}
+	for i, p := range percentiles {
+		name := fmt.Sprintf("p%d\n", i)
+		countByPeriodExprs = append(countByPeriodExprs, sqlf.Sprintf("percentile_cont(%d) WITHIN GROUP (ORDER BY (argument->'"+field+"')::integer) AS "+name, p))
+		qExprs = append(qExprs, sqlf.Sprintf("COALESCE("+name+", 0)"))
+	}
+
+	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp, (%s)::interval) AS period", startDate, endDate, interval)
+	countByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, %s
+		FROM event_logs
+		WHERE (%s)
+		GROUP BY period`, period, sqlf.Join(countByPeriodExprs, ", "), sqlf.Join(conds, ") AND ("))
+	q := sqlf.Sprintf(`WITH all_periods AS (%s), values_by_period AS (%s)
+		SELECT all_periods.period, %s
+		FROM all_periods
+		LEFT OUTER JOIN values_by_period ON all_periods.period = (values_by_period.period)::timestamp
+		ORDER BY period DESC`, allPeriods, countByPeriod, sqlf.Join(qExprs, ", "))
+	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	values := []PercentileValue{}
+	for rows.Next() {
+		var v PercentileValue
+		v.Values = make([]float64, len(percentiles))
+		dest := []interface{}{&v.Start}
+		for i := range v.Values {
+			dest = append(dest, &v.Values[i])
+		}
+		err := rows.Scan(dest...)
+		if err != nil {
+			return nil, err
+		}
+		v.Start = v.Start.UTC()
+		values = append(values, v)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return values, nil
 }
 
 // CountUniqueUsersAll provides a count of unique active users in a given time span.
