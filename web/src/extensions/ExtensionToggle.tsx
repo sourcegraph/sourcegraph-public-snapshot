@@ -50,7 +50,7 @@ export class ExtensionToggle extends React.PureComponent<Props> {
                             return EMPTY
                         }
 
-                        eventLogger.log('ExtensionToggled', { extension_id: this.props.extension.id })
+                        eventLogger.log('ExtensionToggled')
 
                         return from(
                             this.props.platformContext.updateSettings(highestPrecedenceSubject.subject.id, {

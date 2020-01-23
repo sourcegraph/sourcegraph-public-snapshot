@@ -39,32 +39,22 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
         preview_type: props.result.diffPreview ? 'diff' : 'message',
     }
     const logClickOnPerson = (): void => {
-        eventLogger.log('CommitSearchResultClicked', { commit_search_result: { ...telemetryData, target: 'person' } })
+        eventLogger.log('CommitSearchResultClicked')
     }
     const logClickOnMessage = (): void => {
-        eventLogger.log('CommitSearchResultClicked', {
-            commit_search_result: { ...telemetryData, target: 'message' },
-        })
+        eventLogger.log('CommitSearchResultClicked')
     }
     const logClickOnTag = (): void => {
-        eventLogger.log('CommitSearchResultClicked', {
-            commit_search_result: { ...telemetryData, target: 'tag' },
-        })
+        eventLogger.log('CommitSearchResultClicked')
     }
     const logClickOnCommitID = (): void => {
-        eventLogger.log('CommitSearchResultClicked', {
-            commit_search_result: { ...telemetryData, target: 'commit-id' },
-        })
+        eventLogger.log('CommitSearchResultClicked')
     }
     const logClickOnTimestamp = (): void => {
-        eventLogger.log('CommitSearchResultClicked', {
-            commit_search_result: { ...telemetryData, target: 'timestamp' },
-        })
+        eventLogger.log('CommitSearchResultClicked')
     }
     const logClickOnText = (): void => {
-        eventLogger.log('CommitSearchResultClicked', {
-            commit_search_result: { ...telemetryData, target: 'text' },
-        })
+        eventLogger.log('CommitSearchResultClicked')
     }
 
     const title: React.ReactChild = (

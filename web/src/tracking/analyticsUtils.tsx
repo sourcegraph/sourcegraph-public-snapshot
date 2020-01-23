@@ -78,21 +78,17 @@ export function pageViewQueryParameters(url: string): EventQueryParameters {
  */
 export function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
-    const eventParameters: { [key: string]: string } = {}
-    for (const [key, val] of parsedUrl.searchParams.entries()) {
-        eventParameters[camelCaseToUnderscore(key)] = val
-    }
     const eventName = parsedUrl.searchParams.get('_event')
     const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
     if (eventName || isBadgeRedirect) {
         if (isBadgeRedirect) {
-            eventLogger.log('RepoBadgeRedirected', eventParameters)
+            eventLogger.log('RepoBadgeRedirected')
         } else if (eventName === 'CompletedAuth0SignIn') {
-            eventLogger.log('CompletedAuth0SignIn', eventParameters)
+            eventLogger.log('CompletedAuth0SignIn')
         } else if (eventName === 'SignupCompleted') {
-            eventLogger.log('SignupCompleted', eventParameters)
+            eventLogger.log('SignupCompleted')
         } else if (eventName) {
-            eventLogger.log(eventName, eventParameters)
+            eventLogger.log(eventName)
         }
     }
 
