@@ -171,7 +171,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                     'hover-overlay',
                     className,
                     // Ensure theme-light is applied here, otherwise the browser
-                    // extension  will always render with a dark theme background.
+                    // extension will always render with a dark theme background.
                     this.props.isLightTheme ? 'theme-light' : ''
                 )}
                 ref={hoverRef}
