@@ -23,6 +23,8 @@ const PARSER_STATE: Monaco.languages.IState = {
     equals: () => false,
 }
 
+const alphabet = 'abcdefghijklmnopqrstuvwxyz'
+
 /**
  * Returns the providers used by the Monaco query input to provide syntax highlighting,
  * hovers, completions and diagnostics for the Sourcegraph search syntax.
@@ -65,36 +67,7 @@ export function getProviders(
         },
         completion: {
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
-            triggerCharacters: [
-                ':',
-                'a',
-                'b',
-                'c',
-                'd',
-                'e',
-                'f',
-                'g',
-                'h',
-                'i',
-                'j',
-                'k',
-                'l',
-                'm',
-                'n',
-                'o',
-                'p',
-                'q',
-                'r',
-                's',
-                't',
-                'u',
-                'v',
-                'w',
-                'x',
-                'y',
-                'z',
-                '-',
-            ],
+            triggerCharacters: [':', '-', ...alphabet, ...alphabet.toUpperCase()],
             provideCompletionItems: (_, position, context, token) =>
                 parsedQueries
                     .pipe(
