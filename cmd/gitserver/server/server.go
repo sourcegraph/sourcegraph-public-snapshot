@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -115,6 +116,10 @@ type Server struct {
 
 	// DiskSizer tells how much disk is free and how large the disk is.
 	DiskSizer DiskSizer
+
+	// TODO(keegancsmith) remove! Temporary logging to understand errors in
+	// production. https://github.com/sourcegraph/sourcegraph/issues/6676
+	StderrErrorLog *log.Logger
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -682,6 +687,10 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
+
+	if s.StderrErrorLog != nil {
+		logErrors(s.StderrErrorLog.Printf, req.Repo, stderrBuf.Bytes())
+	}
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))

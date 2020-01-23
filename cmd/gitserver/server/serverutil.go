@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -501,4 +502,19 @@ func bestEffortWalk(root string, walkFn func(path string, info os.FileInfo) erro
 
 		return walkFn(path, info)
 	})
+}
+
+func logErrors(printf func(format string, v ...interface{}), repo api.RepoName, stderr []byte) {
+	for len(stderr) > 0 {
+		advance, line, err := bufio.ScanLines(stderr, true)
+		if err != nil {
+			// bufio.ScanLines should never return an error (go1.13)
+			panic("bufio.ScanLines returned an error: " + err.Error())
+		}
+		stderr = stderr[advance:]
+
+		if bytes.HasPrefix(line, []byte("error: ")) {
+			printf("%s %s\n", repo, line)
+		}
+	}
 }
