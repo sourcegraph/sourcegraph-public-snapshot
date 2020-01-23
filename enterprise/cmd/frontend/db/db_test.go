@@ -1,7 +1,6 @@
 package db
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -14,7 +13,7 @@ func init() {
 
 func equal(t testing.TB, name string, want, have interface{}) {
 	t.Helper()
-	if !reflect.DeepEqual(want, have) {
-		t.Fatalf("%q: %s", name, cmp.Diff(want, have))
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatalf("%q: %s", name, diff)
 	}
 }

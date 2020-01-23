@@ -74,7 +74,9 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 				Provider: authz.ProviderSourcegraph,
 			}
 			err := s.LoadUserPermissions(context.Background(), up)
-			equal(t, "err", ErrPermsNotFound, err)
+			if err != ErrPermsNotFound {
+				t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+			}
 			equal(t, "IDs", 0, len(bitmapToArray(up.IDs)))
 		})
 
@@ -189,7 +191,9 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 				Provider: authz.ProviderSourcegraph,
 			}
 			err := s.LoadRepoPermissions(context.Background(), rp)
-			equal(t, "err", ErrPermsNotFound, err)
+			if err != ErrPermsNotFound {
+				t.Fatalf("err: want %q but got %q", ErrPermsNotFound, err)
+			}
 			equal(t, "rp.UserIDs", 0, len(bitmapToArray(rp.UserIDs)))
 		})
 
@@ -443,7 +447,9 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 				Type:   authz.PermRepos,
 			}
 			err := s.LoadUserPendingPermissions(context.Background(), up)
-			equal(t, "err", ErrPermsNotFound, err)
+			if err != ErrPermsNotFound {
+				t.Fatalf("err: want %q but got %q", ErrPermsNotFound, err)
+			}
 			equal(t, "IDs", 0, len(bitmapToArray(up.IDs)))
 		})
 
