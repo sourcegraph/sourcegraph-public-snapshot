@@ -1353,16 +1353,18 @@ INSERT INTO campaign_plans (
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 )
-VALUES (%s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_type,
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 `
 
 func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
@@ -1386,6 +1388,7 @@ func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		nullTimeColumn(c.CanceledAt),
 		c.CreatedAt,
 		c.UpdatedAt,
+		c.UserID,
 	), nil
 }
 
@@ -1409,8 +1412,9 @@ SET (
   campaign_type,
   arguments,
   canceled_at,
-  updated_at
-) = (%s, %s, %s, %s)
+  updated_at,
+  user_id
+) = (%s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1418,7 +1422,8 @@ RETURNING
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 `
 
 func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
@@ -1435,6 +1440,7 @@ func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		arguments,
 		nullTimeColumn(c.CanceledAt),
 		c.UpdatedAt,
+		c.UserID,
 		c.ID,
 	), nil
 }
@@ -1545,7 +1551,8 @@ SELECT
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 FROM campaign_plans
 WHERE %s
 LIMIT 1
@@ -1668,7 +1675,8 @@ SELECT
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 FROM campaign_plans
 WHERE %s
 ORDER BY id ASC
@@ -2584,6 +2592,7 @@ func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
 		&dbutil.NullTime{Time: &c.CanceledAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
+		&c.UserID,
 	)
 }
 

@@ -2462,9 +2462,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Microsecond)
-		s := NewStoreWithClock(db, func() time.Time {
-			return now.UTC().Truncate(time.Microsecond)
-		})
+		clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
 		ctx := context.Background()
 
 		// Create a test repo
@@ -2488,6 +2486,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		}
 
 		t.Run("GetPendingCampaignJobsWhenNoneAvailable", func(t *testing.T) {
+			tx, done := dbtest.NewTx(t, db)
+			defer done()
+			s := NewStoreWithClock(tx, clock)
+
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				return errors.New("rollback")
 			}
@@ -2502,6 +2504,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailable", func(t *testing.T) {
+			tx, done := dbtest.NewTx(t, db)
+			defer done()
+			s := NewStoreWithClock(tx, clock)
+
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				return errors.New("rollback")
 			}
@@ -2526,12 +2532,6 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer func() {
-				err := s.DeleteCampaignJob(ctx, job.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}()
 			ran, err := s.ProcessPendingCampaignJob(ctx, process)
 			if err != nil && err.Error() != "rollback" {
 				t.Fatal(err)
@@ -2543,6 +2543,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailableLocking", func(t *testing.T) {
+			tx, done := dbtest.NewTx(t, db)
+			defer done()
+			s := NewStoreWithClock(tx, clock)
+
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				time.Sleep(100 * time.Millisecond)
 				return errors.New("rollback")
