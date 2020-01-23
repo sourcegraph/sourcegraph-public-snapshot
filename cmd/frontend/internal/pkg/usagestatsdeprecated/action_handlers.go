@@ -1,4 +1,4 @@
-package usagestats
+package usagestatsdeprecated
 
 import (
 	"context"

@@ -1,9 +1,11 @@
-// Package usagestats provides an interface to update and access information about
+// Package usagestatsdeprecated is deprecated in favor of package usagestats.
+//
+// Package usagestatsdeprecated provides an interface to update and access information about
 // individual and aggregate Sourcegraph users' activity levels.
 //
 // Note that this package should not be used on sourcegraph.com, only on self-hosted
 // deployments.
-package usagestats
+package usagestatsdeprecated
 
 import (
 	"context"

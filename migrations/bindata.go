@@ -52,6 +52,10 @@
 // 1528395641_remove_published_at_from_campaign.up.sql (75B)
 // 1528395642_add_user_id_to_campaign_plan.down.sql (75B)
 // 1528395642_add_user_id_to_campaign_plan.up.sql (733B)
+// 1528395643_create_indexes_on_event_logs.down.sql (107B)
+// 1528395643_create_indexes_on_event_logs.up.sql (191B)
+// 1528395644_remove_default_from_event_logs_timestamp.down.sql (82B)
+// 1528395644_remove_default_from_event_logs_timestamp.up.sql (77B)
 
 package migrations
 
@@ -1160,6 +1164,86 @@ func _1528395642_add_user_id_to_campaign_planUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395643_create_indexes_on_event_logsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\x8e\x2f\xce\x2f\x2d\x4a\x4e\xb5\x26\xa8\xae\x24\x33\x37\xb5\xb8\x24\x31\xb7\x20\x3e\xb1\x24\x3e\x34\xc4\xd9\x9a\x8b\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x63\x56\xe0\x2b\x6b\x00\x00\x00")
+
+func _1528395643_create_indexes_on_event_logsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395643_create_indexes_on_event_logsDownSql,
+		"1528395643_create_indexes_on_event_logs.down.sql",
+	)
+}
+
+func _1528395643_create_indexes_on_event_logsDownSql() (*asset, error) {
+	bytes, err := _1528395643_create_indexes_on_event_logsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395643_create_indexes_on_event_logs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xcb, 0x5f, 0x8d, 0xc3, 0xfb, 0x12, 0x48, 0xbc, 0x85, 0xf8, 0x6, 0x77, 0xd8, 0x3d, 0xbb, 0xf6, 0x45, 0xbe, 0xaa, 0xe1, 0x70, 0x24, 0xc4, 0x25, 0x5c, 0x67, 0x34, 0xeb, 0xd9, 0x19, 0x60, 0x32}}
+	return a, nil
+}
+
+var __1528395643_create_indexes_on_event_logsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\x8e\x2f\xce\x2f\x2d\x4a\x4e\x55\xf0\xf7\x43\x12\xd4\x80\x08\x6a\x5a\x13\x69\x46\x49\x66\x6e\x6a\x71\x49\x62\x6e\x41\x7c\x62\x49\x7c\x68\x88\x33\x9a\x69\x2e\x8e\x21\xae\x1a\x70\x35\x0a\x8e\x21\x0a\x21\x9e\xbe\xae\x0a\x51\xfe\x7e\xae\x0a\xea\xa1\x21\xce\xea\x9a\x9a\x20\xe7\xfa\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x8a\x00\x60\xe4\xbf\x00\x00\x00")
+
+func _1528395643_create_indexes_on_event_logsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395643_create_indexes_on_event_logsUpSql,
+		"1528395643_create_indexes_on_event_logs.up.sql",
+	)
+}
+
+func _1528395643_create_indexes_on_event_logsUpSql() (*asset, error) {
+	bytes, err := _1528395643_create_indexes_on_event_logsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395643_create_indexes_on_event_logs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa3, 0x91, 0x47, 0x54, 0x17, 0xf6, 0xcd, 0xab, 0x78, 0x68, 0xe, 0x22, 0xfc, 0x1e, 0xb6, 0xc3, 0x2e, 0xa7, 0x5d, 0x8e, 0x4a, 0x5d, 0x4d, 0x4b, 0x38, 0x47, 0xba, 0xfc, 0x33, 0xeb, 0x2d, 0x13}}
+	return a, nil
+}
+
+var __1528395644_remove_default_from_event_logs_timestampDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\x86\x0a\x3b\xfb\xfb\x84\xfa\xfa\x29\x94\x64\xe6\xa6\x16\x97\x24\xe6\x16\x28\x04\xbb\x86\x28\xb8\xb8\xba\x39\x86\xfa\x84\x28\xe4\xe5\x97\x6b\x68\x5a\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x0f\x3e\xdf\x83\x52\x00\x00\x00")
+
+func _1528395644_remove_default_from_event_logs_timestampDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395644_remove_default_from_event_logs_timestampDownSql,
+		"1528395644_remove_default_from_event_logs_timestamp.down.sql",
+	)
+}
+
+func _1528395644_remove_default_from_event_logs_timestampDownSql() (*asset, error) {
+	bytes, err := _1528395644_remove_default_from_event_logs_timestampDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395644_remove_default_from_event_logs_timestamp.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x52, 0x99, 0x6c, 0x51, 0x6f, 0xf, 0xc, 0x4d, 0x52, 0x26, 0xc, 0xd8, 0x2d, 0x15, 0x1c, 0xf2, 0xd7, 0xf, 0x87, 0x12, 0xae, 0x6, 0x77, 0xb2, 0xb8, 0xfd, 0xd8, 0x54, 0xbd, 0x16, 0x2, 0xe5}}
+	return a, nil
+}
+
+var __1528395644_remove_default_from_event_logs_timestampUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\x86\x0a\x3b\xfb\xfb\x84\xfa\xfa\x29\x94\x64\xe6\xa6\x16\x97\x24\xe6\x16\x28\xb8\x04\xf9\x07\x28\xb8\xb8\xba\x39\x86\xfa\x84\x58\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\xc2\x8d\x88\xe2\x4d\x00\x00\x00")
+
+func _1528395644_remove_default_from_event_logs_timestampUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395644_remove_default_from_event_logs_timestampUpSql,
+		"1528395644_remove_default_from_event_logs_timestamp.up.sql",
+	)
+}
+
+func _1528395644_remove_default_from_event_logs_timestampUpSql() (*asset, error) {
+	bytes, err := _1528395644_remove_default_from_event_logs_timestampUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395644_remove_default_from_event_logs_timestamp.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x43, 0x95, 0x56, 0x6a, 0x5, 0x19, 0x3a, 0x93, 0xbe, 0xea, 0x16, 0x37, 0x34, 0xe6, 0x92, 0x2c, 0xc9, 0xe, 0xd5, 0xa9, 0x69, 0xb7, 0xff, 0xbb, 0xb2, 0x7, 0x8e, 0xe, 0xa6, 0x77, 0xf4, 0x52}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1303,6 +1387,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395641_remove_published_at_from_campaign.up.sql":            _1528395641_remove_published_at_from_campaignUpSql,
 	"1528395642_add_user_id_to_campaign_plan.down.sql":               _1528395642_add_user_id_to_campaign_planDownSql,
 	"1528395642_add_user_id_to_campaign_plan.up.sql":                 _1528395642_add_user_id_to_campaign_planUpSql,
+	"1528395643_create_indexes_on_event_logs.down.sql":               _1528395643_create_indexes_on_event_logsDownSql,
+	"1528395643_create_indexes_on_event_logs.up.sql":                 _1528395643_create_indexes_on_event_logsUpSql,
+	"1528395644_remove_default_from_event_logs_timestamp.down.sql":   _1528395644_remove_default_from_event_logs_timestampDownSql,
+	"1528395644_remove_default_from_event_logs_timestamp.up.sql":     _1528395644_remove_default_from_event_logs_timestampUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1398,6 +1486,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395641_remove_published_at_from_campaign.up.sql":            {_1528395641_remove_published_at_from_campaignUpSql, map[string]*bintree{}},
 	"1528395642_add_user_id_to_campaign_plan.down.sql":               {_1528395642_add_user_id_to_campaign_planDownSql, map[string]*bintree{}},
 	"1528395642_add_user_id_to_campaign_plan.up.sql":                 {_1528395642_add_user_id_to_campaign_planUpSql, map[string]*bintree{}},
+	"1528395643_create_indexes_on_event_logs.down.sql":               {_1528395643_create_indexes_on_event_logsDownSql, map[string]*bintree{}},
+	"1528395643_create_indexes_on_event_logs.up.sql":                 {_1528395643_create_indexes_on_event_logsUpSql, map[string]*bintree{}},
+	"1528395644_remove_default_from_event_logs_timestamp.down.sql":   {_1528395644_remove_default_from_event_logs_timestampDownSql, map[string]*bintree{}},
+	"1528395644_remove_default_from_event_logs_timestamp.up.sql":     {_1528395644_remove_default_from_event_logs_timestampUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

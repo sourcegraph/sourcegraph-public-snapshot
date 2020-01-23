@@ -152,3 +152,15 @@ type SurveyResponse struct {
 	Better    *string
 	CreatedAt time.Time
 }
+
+type Event struct {
+	ID              int32
+	Name            string
+	URL             string
+	UserID          *int32
+	AnonymousUserID string
+	Argument        string
+	Source          string
+	Version         string
+	Timestamp       time.Time
+}

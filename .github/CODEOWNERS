@@ -130,7 +130,8 @@ tslint.config.js @sourcegraph/web
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
 **/tracking @dadlerj
-/cmd/frontend/internal/pkg/usagestats @dadlerj
+/cmd/frontend/internal/usagestats @dadlerj
+/cmd/frontend/internal/pkg/usagestatsdeprecated @dadlerj
 /internal/eventlogger @dadlerj
 
 # Automation
