@@ -333,7 +333,7 @@ export const githubCodeHost: CodeHost = {
         listItemClassName: 'text-normal',
     },
     hoverOverlayClassProps: {
-        className: 'theme-light Box',
+        className: 'Box',
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
