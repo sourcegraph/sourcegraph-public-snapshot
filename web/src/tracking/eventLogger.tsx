@@ -62,7 +62,7 @@ export class EventLogger implements TelemetryService {
         if ((window.context && window.context.userAgentIsBot) || !eventLabel) {
             return
         }
-        serverAdmin.trackAction(eventLabel)
+        serverAdmin.trackAction(eventLabel, eventProperties)
         this.logToConsole(eventLabel, eventProperties)
     }
 
