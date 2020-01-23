@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -138,58 +137,39 @@ func TestUserEmails_ListByUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userEmails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
-		UserID: user.ID,
+	t.Run("list all emails", func(t *testing.T) {
+		userEmails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+			UserID: user.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		normalizeUserEmails(userEmails)
+		want := []*UserEmail{
+			{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c")},
+			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
+		}
+		if diff := cmp.Diff(want, userEmails); diff != "" {
+			t.Fatalf("userEmails: %s", diff)
+		}
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	normalizeUserEmails(userEmails)
-	if want := []*UserEmail{
-		{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c")},
-		{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
-	}; !reflect.DeepEqual(userEmails, want) {
-		t.Errorf("got  %s\n\nwant %s", toJSON(userEmails), toJSON(want))
-	}
-}
 
-func TestUserEmails_ListVerifiedByUser(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-
-	user, err := Users.Create(ctx, NewUser{
-		Email:                 "a@example.com",
-		Username:              "u2",
-		Password:              "pw",
-		EmailVerificationCode: "c",
+	t.Run("list only verified emails", func(t *testing.T) {
+		userEmails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+			UserID:       user.ID,
+			OnlyVerified: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		normalizeUserEmails(userEmails)
+		want := []*UserEmail{
+			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
+		}
+		if diff := cmp.Diff(want, userEmails); diff != "" {
+			t.Fatalf("userEmails: %s", diff)
+		}
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	testTime := time.Now().Round(time.Second).UTC()
-	if _, err := dbconn.Global.ExecContext(ctx,
-		`INSERT INTO user_emails(user_id, email, verification_code, verified_at) VALUES($1, $2, $3, $4)`,
-		user.ID, "b@example.com", "c2", testTime); err != nil {
-		t.Fatal(err)
-	}
-
-	userEmails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
-		UserID:       user.ID,
-		OnlyVerified: true,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	normalizeUserEmails(userEmails)
-	if want := []*UserEmail{
-		{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
-	}; !reflect.DeepEqual(want, userEmails) {
-		t.Fatalf("userEmails: %s", cmp.Diff(want, userEmails))
-	}
 }
 
 func normalizeUserEmails(userEmails []*UserEmail) {
