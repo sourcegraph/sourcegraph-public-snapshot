@@ -56,6 +56,8 @@
 // 1528395643_create_indexes_on_event_logs.up.sql (191B)
 // 1528395644_remove_default_from_event_logs_timestamp.down.sql (82B)
 // 1528395644_remove_default_from_event_logs_timestamp.up.sql (77B)
+// 1528395645_event_logs_json_arguments.down.sql (265B)
+// 1528395645_event_logs_json_arguments.up.sql (736B)
 
 package migrations
 
@@ -1244,6 +1246,46 @@ func _1528395644_remove_default_from_event_logs_timestampUpSql() (*asset, error)
 	return a, nil
 }
 
+var __1528395645_event_logs_json_argumentsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x8d\xc1\x6a\x84\x30\x14\x45\xf7\xf9\x8a\xbb\xb3\x5d\xf8\x05\xa1\x0b\xb5\xa1\x15\x62\x14\x8d\x94\xae\x4a\x94\x54\x6c\xd3\x17\x30\x51\xfa\xf9\xc3\x38\xc3\xc8\x2c\x67\x7b\xde\x3b\xe7\xe6\xe2\xad\x54\x9c\xb1\x34\x45\xe1\x69\xb3\x4b\x04\xad\xce\x99\xc1\x59\xfc\x04\x4f\x03\x06\x33\xfe\x22\x7a\x90\xa7\xf4\x76\x8a\xf6\x3f\xe2\x69\xdc\x8d\x30\x7b\xc2\x1c\x10\xcc\xb7\x7d\x66\x99\xd4\xa2\x85\xce\x72\x29\x60\x37\x4b\xf1\xcb\xf9\x29\xe0\x82\x8b\x5a\xf6\x95\x82\x59\xa6\xf5\xcf\x52\x84\xfe\x6c\xc4\xde\xe2\xac\x6f\x5e\x33\x7d\xa7\x74\x42\x1f\x9f\x2f\x48\x12\x7c\xbc\x8b\x56\x1c\xac\xec\xa0\x7a\x29\xf9\x63\x9b\xe7\xac\xaa\xf5\x55\x65\x45\x5d\x55\xa5\xe6\xec\x14\x00\x00\xff\xff\x32\x80\xbc\xb4\x09\x01\x00\x00")
+
+func _1528395645_event_logs_json_argumentsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395645_event_logs_json_argumentsDownSql,
+		"1528395645_event_logs_json_arguments.down.sql",
+	)
+}
+
+func _1528395645_event_logs_json_argumentsDownSql() (*asset, error) {
+	bytes, err := _1528395645_event_logs_json_argumentsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395645_event_logs_json_arguments.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6e, 0xa4, 0x6a, 0x7b, 0x12, 0xf7, 0xfb, 0x8c, 0xf2, 0xab, 0x50, 0x21, 0x8d, 0x32, 0x2a, 0x3b, 0xd6, 0xec, 0x72, 0x75, 0xbc, 0x24, 0x12, 0x20, 0x6c, 0x2b, 0x8b, 0xe0, 0x61, 0x0, 0x1d, 0x80}}
+	return a, nil
+}
+
+var __1528395645_event_logs_json_argumentsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x52\xc1\x72\xdb\x20\x14\xbc\xf3\x15\x7b\xf0\x4c\x9a\x83\xf3\x01\xd6\xe4\xa0\xc8\x2f\x8e\x3b\x12\xf2\x48\x68\xda\x9e\x12\x6c\x63\x47\x2d\x01\x07\x90\x66\xfc\xf7\x1d\x50\x12\x7b\x7a\xab\x4e\x68\xd9\x85\x65\xf7\x3d\xd0\x6a\xcd\x33\xc6\xe6\x73\xe4\x21\xa8\xb7\x53\x40\xb0\xd8\x49\x1f\xf0\x32\x4a\xfd\x02\xe9\xf1\xbd\xad\x39\xa4\xd9\xc3\xa9\x30\x38\x83\x83\xd4\x5e\xa1\x3f\x20\xbc\x2a\xa7\xd0\x7b\x48\x84\xf3\x49\x41\x39\x67\xdd\x1d\x2b\x1a\xca\x05\xe1\xb1\xe3\x85\x58\xd7\x1c\xbd\x7f\xfe\xed\xad\xf9\x36\x4a\x8d\x51\xba\xdd\xab\x74\xb7\x68\x48\x74\x0d\x6f\xb1\xb5\x56\x2b\x69\x90\xb7\x98\xcd\xb0\xa4\xa2\xcc\x1b\x42\x74\x82\x28\xca\x58\x72\xc8\x00\xe0\xb2\x8a\x5f\xa2\x2c\xee\x31\x4a\x9d\x25\x90\x7e\x16\xb4\x49\x17\xfe\x78\x22\x0e\x1b\xdd\x79\x88\x27\xba\x68\xa6\x4b\xf1\x98\x97\x2d\x7d\x88\xf8\x72\x5a\x7c\x6c\x89\xa6\xa3\x8c\x25\x74\x36\x43\x99\xf3\x55\x97\xaf\x08\x27\x7d\x3a\xfa\x77\x8d\x75\x55\x75\x22\x7f\x28\x69\x8a\xac\x92\x7f\x14\xa4\x3b\x0e\x6f\xca\x04\x0f\x33\x68\x2d\xb7\x5a\xa1\x37\x3e\x28\xb9\x87\x3d\xc0\xa9\xf7\xa1\x77\xbd\x39\x42\x1a\xc4\x7c\xcf\xf0\x21\xfe\xb3\xbc\x14\xd4\x20\x9d\x06\x35\x2a\x13\x9e\xb5\x3d\x7a\x4c\x70\x51\x97\x5d\xc5\xbf\xce\xc6\xb2\xa9\x37\xe0\xb5\x00\xef\xca\x32\x63\xdd\x66\x19\x23\xbe\x92\xb5\x24\x2e\xec\xfb\x44\x8b\x39\x34\x74\x8d\xde\xdc\x4c\xbe\x0b\x6b\x46\xe5\x02\xa4\x39\x63\x37\x38\x17\x77\x47\xa9\xfb\xfd\x3c\x66\x7e\xf5\xa2\xde\x04\x9b\x7a\xd8\xde\xfd\x9f\x5f\xf1\x6b\x43\x93\x10\x5d\xbb\xe6\x2b\x14\x79\x4b\x53\x31\x9f\xe3\xf0\xc9\xbd\x4d\x1d\x7d\x49\x17\x8b\x49\x46\x65\x4b\xd3\x33\x52\x1b\xd1\xf6\xd2\xd9\xd3\xd4\xfb\x61\x30\xbb\xd0\x5b\xc3\x52\x2e\xff\x4e\x5a\xc6\x58\x51\x57\xd5\x5a\x64\xec\x6f\x00\x00\x00\xff\xff\x02\x85\xf7\xdd\xe0\x02\x00\x00")
+
+func _1528395645_event_logs_json_argumentsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395645_event_logs_json_argumentsUpSql,
+		"1528395645_event_logs_json_arguments.up.sql",
+	)
+}
+
+func _1528395645_event_logs_json_argumentsUpSql() (*asset, error) {
+	bytes, err := _1528395645_event_logs_json_argumentsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395645_event_logs_json_arguments.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa5, 0x9d, 0x71, 0x8a, 0x28, 0xc8, 0x96, 0x84, 0xf6, 0x2e, 0xf1, 0x39, 0xec, 0x58, 0x20, 0x7e, 0xb1, 0x1, 0xe9, 0x15, 0x2b, 0x19, 0x24, 0x4b, 0xea, 0x75, 0x78, 0x69, 0x3a, 0x9f, 0x47, 0x3f}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1391,6 +1433,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395643_create_indexes_on_event_logs.up.sql":                 _1528395643_create_indexes_on_event_logsUpSql,
 	"1528395644_remove_default_from_event_logs_timestamp.down.sql":   _1528395644_remove_default_from_event_logs_timestampDownSql,
 	"1528395644_remove_default_from_event_logs_timestamp.up.sql":     _1528395644_remove_default_from_event_logs_timestampUpSql,
+	"1528395645_event_logs_json_arguments.down.sql":                  _1528395645_event_logs_json_argumentsDownSql,
+	"1528395645_event_logs_json_arguments.up.sql":                    _1528395645_event_logs_json_argumentsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1490,6 +1534,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395643_create_indexes_on_event_logs.up.sql":                 {_1528395643_create_indexes_on_event_logsUpSql, map[string]*bintree{}},
 	"1528395644_remove_default_from_event_logs_timestamp.down.sql":   {_1528395644_remove_default_from_event_logs_timestampDownSql, map[string]*bintree{}},
 	"1528395644_remove_default_from_event_logs_timestamp.up.sql":     {_1528395644_remove_default_from_event_logs_timestampUpSql, map[string]*bintree{}},
+	"1528395645_event_logs_json_arguments.down.sql":                  {_1528395645_event_logs_json_argumentsDownSql, map[string]*bintree{}},
+	"1528395645_event_logs_json_arguments.up.sql":                    {_1528395645_event_logs_json_argumentsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
