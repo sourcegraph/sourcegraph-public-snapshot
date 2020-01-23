@@ -63,7 +63,7 @@ Referenced by:
  updated_at    | timestamp with time zone | not null default now()
  arguments     | text                     | not null
  canceled_at   | timestamp with time zone | 
- user_id       | integer                  | 
+ user_id       | integer                  | not null
 Indexes:
     "campaign_plans_pkey" PRIMARY KEY, btree (id)
 Check constraints:
