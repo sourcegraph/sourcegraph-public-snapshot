@@ -78,9 +78,4 @@ We are actively collaborating with GitLab to improve our integration (e.g. the [
 | [`GET /users/:id`](https://docs.gitlab.com/ee/api/users.html#single-user) | `read_user` or `api` | If using GitLab OAuth, used to fetch user metadata during the OAuth sign in process. |
 | [`GET /projects/:id`](https://docs.gitlab.com/ee/api/projects.html#get-single-project) | `api` | (1) If using GitLab OAuth and repository permissions, used to determine if a user has access to a given _project_; (2) Used to query repository metadata (e.g. description) for display on Sourcegraph. |
 | [`GET /projects/:id/repository/tree`](https://docs.gitlab.com/ee/api/repositories.html#list-repository-tree) | `api` | If using GitLab OAuth and repository permissions, used to verify a given user has access to the file contents of a repository within a project (i.e. does not merely have `Guest` permissions). |
-
-Sourcegraph in the future may do more with the provided access token as well, including:
-
-- Enabling Sourcegraph site-admins to perform large-scale code refactors, with Sourcegraph issuing and managing the merge requests on GitLab repositories, company-wide.
-- More efficient usage of GitLab APIs for fetching repository and user permissions, and we are [actively working with GitLab](https://gitlab.com/gitlab-org/gitlab/issues/20532) on these improvements.
-- Improving the GitLab native integration and Sourcegraph browser extension integration: https://docs.gitlab.com/ee/integration/sourcegraph.html
+| (future) write access | `api` | graph site-admins (only) to perform large-scale code refactors, with Sourcegraph issuing and managing the merge requests on GitLab repositories, company-wide. |
