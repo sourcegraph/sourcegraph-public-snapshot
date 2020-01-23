@@ -171,6 +171,12 @@ type CountUniquesOptions struct {
 	RegisteredOnly bool
 	// If true, only include code host integration users. Otherwise, include all users.
 	IntegrationOnly bool
+	// If non-nil, only include users that logged an event with a given prefix.
+	ByEventNamePrefix *string
+	// If non-nil, only include users that logged a given event.
+	ByEventName *string
+	// If non-nil, only include users that logged any event that matches a list of given event names
+	ByEventNames *[]string
 }
 
 // CountUniquesPerPeriod provides a count of unique active users in a given time span, broken up into periods of a given type.
@@ -183,6 +189,19 @@ func (l *eventLogs) CountUniquesPerPeriod(ctx context.Context, periodType Period
 		}
 		if opt.IntegrationOnly {
 			conds = append(conds, sqlf.Sprintf("source = %s", integrationSource))
+		}
+		if opt.ByEventNamePrefix != nil {
+			conds = append(conds, sqlf.Sprintf("name LIKE %s", *opt.ByEventNamePrefix+"%"))
+		}
+		if opt.ByEventName != nil {
+			conds = append(conds, sqlf.Sprintf("name = %s", *opt.ByEventName))
+		}
+		if opt.ByEventNames != nil {
+			items := []*sqlf.Query{}
+			for _, v := range *opt.ByEventNames {
+				items = append(items, sqlf.Sprintf("%s", v))
+			}
+			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
 		}
 	}
 
