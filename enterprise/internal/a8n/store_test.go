@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -2543,9 +2545,9 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailableLocking", func(t *testing.T) {
-			tx, done := dbtest.NewTx(t, db)
-			defer done()
-			s := NewStoreWithClock(tx, clock)
+			dbtesting.SetupGlobalTestDB(t)
+			user := createTestUser(ctx, t)
+			s := NewStoreWithClock(db, clock)
 
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				time.Sleep(100 * time.Millisecond)
@@ -2553,6 +2555,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			}
 			plan := &a8n.CampaignPlan{
 				CampaignType: "test",
+				UserID:       user.ID,
 			}
 			err := s.CreateCampaignPlan(context.Background(), plan)
 			if err != nil {
