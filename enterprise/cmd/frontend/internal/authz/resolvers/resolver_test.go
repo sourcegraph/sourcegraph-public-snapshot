@@ -62,8 +62,8 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
 	}
-	db.Mocks.Repos.Get = func(context.Context, api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: 1}, nil
+	db.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+		return &types.Repo{ID: id}, nil
 	}
 	defer func() {
 		db.Mocks.Users.GetByCurrentAuthUser = nil
@@ -96,7 +96,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 					Query: `
 				mutation {
 					setRepositoryPermissionsForUsers(
-						repository: "UmVwb3NpdG9yeToxMzA5Mjg1",
+						repository: "UmVwb3NpdG9yeTox",
 						bindIDs: ["alice@example.com", "bob"]) {
 						alwaysNil
 					}
@@ -131,7 +131,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 					Query: `
 				mutation {
 					setRepositoryPermissionsForUsers(
-						repository: "UmVwb3NpdG9yeToxMzA5Mjg1",
+						repository: "UmVwb3NpdG9yeTox",
 						bindIDs: ["alice", "bob"]) {
 						alwaysNil
 					}
@@ -154,10 +154,10 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			globals.SetPermissionsUserMapping(test.config)
 
-			db.Mocks.UserEmails.GetVerifiedEmails = func(_ context.Context, emails ...string) ([]*db.UserEmail, error) {
+			db.Mocks.UserEmails.GetVerifiedEmails = func(context.Context, ...string) ([]*db.UserEmail, error) {
 				return test.mockVerifiedEmails, nil
 			}
-			db.Mocks.Users.GetByUsernames = func(_ context.Context, usernames ...string) ([]*types.User, error) {
+			db.Mocks.Users.GetByUsernames = func(context.Context, ...string) ([]*types.User, error) {
 				return test.mockUsers, nil
 			}
 			edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *iauthz.RepoPermissions) error {
