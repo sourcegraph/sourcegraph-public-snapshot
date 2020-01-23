@@ -150,6 +150,21 @@ const (
 	Monthly PeriodType = "monthly"
 )
 
+// intervalByPeriodType is a map of generate_series step values by period type.
+var intervalByPeriodType = map[PeriodType]*sqlf.Query{
+	Daily:   sqlf.Sprintf("'1 day'"),
+	Weekly:  sqlf.Sprintf("'1 week'"),
+	Monthly: sqlf.Sprintf("'1 month'"),
+}
+
+// periodByPeriodType is a map of SQL fragments that produce a timestamp bucket by period
+// type. This assumes the existence of a  field named `timestamp` in the enclosing query.
+var periodByPeriodType = map[PeriodType]*sqlf.Query{
+	Daily:   sqlf.Sprintf("DATE_TRUNC('day', timestamp)"),
+	Weekly:  sqlf.Sprintf("DATE_TRUNC('week', timestamp + '1 day'::interval) - '1 day'::interval"),
+	Monthly: sqlf.Sprintf("DATE_TRUNC('month', timestamp)"),
+}
+
 // CountUniquesOptions provides options for counting unique users.
 type CountUniquesOptions struct {
 	// If true, only include registered users. Otherwise, include all users.
@@ -170,19 +185,24 @@ func (l *eventLogs) CountUniquesPerPeriod(ctx context.Context, periodType Period
 			conds = append(conds, sqlf.Sprintf("source = %s", integrationSource))
 		}
 	}
+
+	var endDate time.Time
 	switch periodType {
 	case "daily":
-		return l.countUniquesPerPeriodBySQL(ctx, sqlf.Sprintf("day"), sqlf.Sprintf("DATE_TRUNC('day', timestamp)"), startDate, startDate.AddDate(0, 0, periods), conds)
+		endDate = startDate.AddDate(0, 0, periods)
 	case "weekly":
-		return l.countUniquesPerPeriodBySQL(ctx, sqlf.Sprintf("week"), sqlf.Sprintf("DATE_TRUNC('week', timestamp + '1 day'::interval) - '1 day'::interval"), startDate, startDate.AddDate(0, 0, 7*periods), conds)
+		endDate = startDate.AddDate(0, 0, 7*periods)
 	case "monthly":
-		return l.countUniquesPerPeriodBySQL(ctx, sqlf.Sprintf("month"), sqlf.Sprintf("DATE_TRUNC('month', timestamp)"), startDate, startDate.AddDate(0, periods, 0), conds)
+		endDate = startDate.AddDate(0, periods, 0)
+	default:
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
-	return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+
+	return l.countUniquesPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
 func (l *eventLogs) countUniquesPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
-	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp,  (%s)::interval) AS period", startDate, endDate, sqlf.Sprintf("'1 %s'", interval))
+	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp, (%s)::interval) AS period", startDate, endDate, interval)
 	usersByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS count
 		FROM event_logs
 		WHERE (%s)
