@@ -134,11 +134,11 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *iauthz.RepoPermi
 	defer func() { save(&err, p.TracingFields()...) }()
 
 	// Open a transaction for update consistency.
-	txs, err := s.Txs(ctx)
+	txs, err := s.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer txs.CommitOrRollback(&err)
+	defer txs.Done(&err)
 
 	// Retrieve currently stored user IDs of this repository.
 	var oldIDs *roaring.Bitmap
@@ -350,11 +350,11 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, bindIDs []st
 	defer func() { save(&err, append(p.TracingFields(), otlog.String("bindIDs", strings.Join(bindIDs, ",")))...) }()
 
 	// Open a transaction for update consistency.
-	txs, err := s.Txs(ctx)
+	txs, err := s.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer txs.CommitOrRollback(&err)
+	defer txs.Done(&err)
 
 	var q *sqlf.Query
 
@@ -1084,8 +1084,8 @@ func (s *PermsStore) tx(ctx context.Context) (*sql.Tx, error) {
 	}
 }
 
-// Txs begins a new transaction and make a new PermsStore over it.
-func (s *PermsStore) Txs(ctx context.Context) (*PermsStore, error) {
+// Transact begins a new transaction and make a new PermsStore over it.
+func (s *PermsStore) Transact(ctx context.Context) (*PermsStore, error) {
 	tx, err := s.tx(ctx)
 	if err != nil {
 		return nil, err
@@ -1099,8 +1099,8 @@ func (s *PermsStore) inTx() bool {
 	return ok
 }
 
-// CommitOrRollback commits the transaction if error is nil. Otherwise, rolls back the transaction.
-func (s *PermsStore) CommitOrRollback(err *error) {
+// Done commits the transaction if error is nil. Otherwise, rolls back the transaction.
+func (s *PermsStore) Done(err *error) {
 	if !s.inTx() {
 		return
 	}
