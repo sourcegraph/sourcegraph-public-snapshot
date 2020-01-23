@@ -691,8 +691,8 @@ DO UPDATE SET
 // are unioned not replaced.
 // This method starts its own transaction if the caller hasn't started one already.
 func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
-	if Mocks.Perms.GrantPendingPermissionsTx != nil {
-		return Mocks.Perms.GrantPendingPermissionsTx(ctx, userID, p)
+	if Mocks.Perms.GrantPendingPermissions != nil {
+		return Mocks.Perms.GrantPendingPermissions(ctx, userID, p)
 	}
 
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
@@ -1088,8 +1088,8 @@ func (s *PermsStore) tx(ctx context.Context) (*sql.Tx, error) {
 
 // Transact begins a new transaction and make a new PermsStore over it.
 func (s *PermsStore) Transact(ctx context.Context) (*PermsStore, error) {
-	if Mocks.Perms.Txs != nil {
-		return Mocks.Perms.Txs(ctx)
+	if Mocks.Perms.Transact != nil {
+		return Mocks.Perms.Transact(ctx)
 	}
 
 	tx, err := s.tx(ctx)

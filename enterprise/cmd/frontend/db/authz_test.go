@@ -16,11 +16,11 @@ import (
 func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	ctx := context.Background()
 	s := NewAuthzStore(nil, clock)
-	Mocks.Perms.Txs = func(context.Context) (*PermsStore, error) {
+	Mocks.Perms.Transact = func(context.Context) (*PermsStore, error) {
 		return &PermsStore{}, nil
 	}
 	defer func() {
-		Mocks.Perms.Txs = nil
+		Mocks.Perms.Transact = nil
 	}()
 
 	tests := []struct {
@@ -81,14 +81,14 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
 				return test.mockUser, nil
 			}
-			Mocks.Perms.GrantPendingPermissionsTx = func(context.Context, int32, *iauthz.UserPendingPermissions) error {
+			Mocks.Perms.GrantPendingPermissions = func(context.Context, int32, *iauthz.UserPendingPermissions) error {
 				calledCount++
 				return nil
 			}
 			defer func() {
 				db.Mocks.UserEmails.ListByUser = nil
 				db.Mocks.Users.GetByID = nil
-				Mocks.Perms.GrantPendingPermissionsTx = nil
+				Mocks.Perms.GrantPendingPermissions = nil
 			}()
 
 			err := s.GrantPendingPermissions(ctx, test.args)
