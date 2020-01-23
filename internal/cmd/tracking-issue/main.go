@@ -4,39 +4,41 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v28/github"
+	"golang.org/x/oauth2"
 )
 
 func main() {
+	token := flag.String("token", os.Getenv("GITHUB_TOKEN"), "GitHub personal access token")
+	org := flag.String("org", "sourcegraph", "GitHub organization to list issues from")
 	milestone := flag.String("milestone", "", "GitHub milestone to filter issues by")
 	labels := flag.String("labels", "", "Comma separated list of labels to filter issues by")
 
 	flag.Parse()
 
-	if err := run(*milestone, *labels); err != nil {
+	if err := run(*token, *org, *milestone, *labels); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(milestone, labels string) error {
-	cli := github.NewClient(nil)
+func run(token, org, milestone, labels string) (err error) {
 	ctx := context.Background()
+	cli := github.NewClient(
+		oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: token},
+		)),
+	)
 
-	m, err := getMilestoneByTitle(ctx, cli, milestone)
-	if err != nil {
-		return err
-	}
-
-	issues, err := listIssues(ctx, cli, *m.Number, strings.Split(labels, ",")...)
+	issues, err := listIssues(ctx, cli, org, strings.Split(labels, ",")...)
 	if err != nil {
 		return err
 	}
@@ -48,18 +50,23 @@ func run(milestone, labels string) error {
 	)
 
 	for _, issue := range issues {
+		if !partOf(milestone, issue) {
+			continue
+		}
+
 		state := state(issue.State)
 		estimate := estimate(issue.Labels)
-		category := category(issue)
+		categories := categories(issue)
 		assignee := assignee(issue.Assignee)
+		title := title(issue)
 
 		item := fmt.Sprintf("- [%s] %s [#%d](%s) __%s__ %s\n",
 			state,
-			*issue.Title,
+			title,
 			*issue.Number,
 			*issue.HTMLURL,
 			estimate,
-			category,
+			emojis(categories),
 		)
 
 		if len(items[assignee]) == 0 {
@@ -81,6 +88,18 @@ func run(milestone, labels string) error {
 	}
 
 	return nil
+}
+
+func title(issue *github.Issue) string {
+	if *issue.Repository.Private {
+		return *issue.Repository.FullName
+	}
+	return *issue.Title
+}
+
+func partOf(milestone string, issue *github.Issue) bool {
+	return milestone != "" && issue.Milestone != nil &&
+		*issue.Milestone.Title == milestone
 }
 
 func days(estimate string) float64 {
@@ -105,22 +124,43 @@ func state(state *string) string {
 	return " "
 }
 
-func category(issue *github.Issue) string {
+func categories(issue *github.Issue) map[string]string {
+	categories := make(map[string]string, len(issue.Labels))
+
 	for _, l := range issue.Labels {
+		var emoji string
+
 		switch *l.Name {
 		case "customer":
-			return customer(issue)
+			emoji = customer(issue)
 		case "roadmap":
-			return "🛠️"
+			emoji = "🛠️"
 		case "debt":
-			return "🧶"
+			emoji = "🧶"
 		case "spike":
-			return "🕵️"
+			emoji = "🕵️"
 		case "bug":
-			return "🐛"
+			emoji = "🐛"
+		case "security":
+			emoji = "🔒"
+		}
+
+		if emoji != "" {
+			categories[*l.Name] = emoji
 		}
 	}
-	return "❓"
+
+	return categories
+}
+
+func emojis(categories map[string]string) string {
+	// Generous four bytes for each emoji. We don't have
+	// to be precise, since append will allocate more if needed.
+	s := make([]byte, 0, 4*len(categories))
+	for _, emoji := range categories {
+		s = append(s, emoji...)
+	}
+	return string(s)
 }
 
 var matcher = regexp.MustCompile(`https://app\.hubspot\.com/contacts/2762526/company/\d+`)
@@ -145,41 +185,16 @@ func assignee(user *github.User) string {
 	return "@" + *user.Login
 }
 
-func getMilestoneByTitle(ctx context.Context, cli *github.Client, title string) (*github.Milestone, error) {
-	opt := &github.MilestoneListOptions{ListOptions: github.ListOptions{PerPage: 100}}
-
-	for {
-		milestones, resp, err := cli.Issues.ListMilestones(ctx, "sourcegraph", "sourcegraph", opt)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, m := range milestones {
-			if *m.Title == title {
-				return m, nil
-			}
-		}
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
-	}
-
-	return nil, errors.New("milestone not found")
-}
-
-func listIssues(ctx context.Context, cli *github.Client, milestone int, labels ...string) (issues []*github.Issue, _ error) {
-	opt := &github.IssueListByRepoOptions{
-		Milestone:   strconv.Itoa(milestone),
-		Labels:      labels,
+func listIssues(ctx context.Context, cli *github.Client, org string, labels ...string) (issues []*github.Issue, _ error) {
+	opt := &github.IssueListOptions{
+		Filter:      "all",
 		State:       "all",
+		Labels:      labels,
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
 
 	for {
-		page, resp, err := cli.Issues.ListByRepo(ctx, "sourcegraph", "sourcegraph", opt)
+		page, resp, err := cli.Issues.ListByOrg(ctx, org, opt)
 		if err != nil {
 			return nil, err
 		}
