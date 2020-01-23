@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -2543,9 +2544,9 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailableLocking", func(t *testing.T) {
-			tx, done := dbtest.NewTx(t, db)
-			defer done()
-			s := NewStoreWithClock(tx, clock)
+			dbtesting.SetupGlobalTestDB(t)
+			user := createTestUser(ctx, t)
+			s := NewStoreWithClock(db, clock)
 
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				time.Sleep(100 * time.Millisecond)
@@ -2553,6 +2554,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			}
 			plan := &a8n.CampaignPlan{
 				CampaignType: "test",
+				UserID:       user.ID,
 			}
 			err := s.CreateCampaignPlan(context.Background(), plan)
 			if err != nil {
