@@ -44,9 +44,10 @@ to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you w
 
 All you need to do to upgrade Sourcegraph is to restart your Docker server with a new image tag.
 
-We actively maintain the two most recent monthly releases of Sourcegraph, and we support upgrading from the two previous monthly releases.
+We actively maintain the two most recent monthly releases of Sourcegraph.
 
-For example, if you are running Sourcegraph 3.1, then you can upgrade directly to 3.2 and 3.3. If you want to upgrade to 3.4, then you first need to upgrade to 3.3 before you can upgrade to 3.4.
+Upgrades should happen across consecutive minor versions of Sourcegraph. For example, if you are
+running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 and then 3.3.
 
 > The Docker server image tags follow SemVer semantics, so version 3.8 can be found at `sourcegraph/server:3.12.0`. You can see the full list of tags on our [Docker Hub page](https://hub.docker.com/r/sourcegraph/server/tags).
 

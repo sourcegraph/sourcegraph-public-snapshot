@@ -545,10 +545,12 @@ export function buildSearchURLQuery(
 
     const patternTypeInQuery = parsePatternTypeFromQuery(query)
     if (patternTypeInQuery) {
-        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-        const newQuery = query.replace(patternTypeRegexp, '')
+        const newQuery = query.replace(
+            query.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
+            ''
+        )
         searchParams.set('q', newQuery)
-        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
+        searchParams.set('patternType', patternTypeInQuery.value)
         query = newQuery
     } else {
         searchParams.set('q', query)
@@ -617,11 +619,22 @@ export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndV
     return searchParams
 }
 
-function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
-    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-    const matches = query.match(patternTypeRegexp)
-    if (matches?.groups?.type) {
-        return matches.groups.type as SearchPatternType
+function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (
+                token.type === 'filter' &&
+                token.filterType.token.value.toLowerCase() === 'patterntype' &&
+                token.filterValue
+            ) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
     }
 
     return undefined
@@ -632,7 +645,7 @@ function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; 
     if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {
             const token = member.token
-            if (token.type === 'filter' && token.filterType.token.value === 'case' && token.filterValue) {
+            if (token.type === 'filter' && token.filterType.token.value.toLowerCase() === 'case' && token.filterValue) {
                 return {
                     range: { start: token.filterType.range.start, end: token.filterValue.range.end },
                     value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
