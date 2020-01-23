@@ -138,16 +138,16 @@ type UsageValue struct {
 	Count int
 }
 
-// UniqueUserCountType is the type of period in which to count unique users.
-type UniqueUserCountType string
+// PeriodType is the type of period in which to count events and unique.
+type PeriodType string
 
 const (
-	// Daily is used to get a count of unique daily active users.
-	Daily UniqueUserCountType = "daily"
-	// Weekly is used to get a count of unique weekly active users.
-	Weekly UniqueUserCountType = "weekly"
-	// Monthly is used to get a count of unique monthly active users.
-	Monthly UniqueUserCountType = "monthly"
+	// Daily is used to get a count of events or unique active users within a day.
+	Daily PeriodType = "daily"
+	// Weekly is used to get a count of events or unique active users within a week.
+	Weekly PeriodType = "weekly"
+	// Monthly is used to get a count of events or unique active users within a month.
+	Monthly PeriodType = "monthly"
 )
 
 // CountUniquesOptions provides options for counting unique users.
@@ -160,7 +160,7 @@ type CountUniquesOptions struct {
 
 // CountUniquesPerPeriod provides a count of unique active users in a given time span, broken up into periods of a given type.
 // Returns an array array of length `periods`, with one entry for each period in the time span.
-func (l *eventLogs) CountUniquesPerPeriod(ctx context.Context, periodType UniqueUserCountType, startDate time.Time, periods int, opt *CountUniquesOptions) ([]UsageValue, error) {
+func (l *eventLogs) CountUniquesPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, opt *CountUniquesOptions) ([]UsageValue, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.RegisteredOnly {

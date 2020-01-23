@@ -141,7 +141,7 @@ func GetSiteUsageStatistics(ctx context.Context, opt *SiteUsageStatisticsOptions
 	}, nil
 }
 
-func startOfPeriod(periodType db.UniqueUserCountType, periodsAgo int) (time.Time, error) {
+func startOfPeriod(periodType db.PeriodType, periodsAgo int) (time.Time, error) {
 	switch periodType {
 	case db.Daily:
 		now := timeNow().UTC()
@@ -156,7 +156,7 @@ func startOfPeriod(periodType db.UniqueUserCountType, periodsAgo int) (time.Time
 }
 
 // activeUsers returns counts of active users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
-func activeUsers(ctx context.Context, periodType db.UniqueUserCountType, periods int) ([]*types.SiteActivityPeriod, error) {
+func activeUsers(ctx context.Context, periodType db.PeriodType, periods int) ([]*types.SiteActivityPeriod, error) {
 	if periods == 0 {
 		return []*types.SiteActivityPeriod{}, nil
 	}
