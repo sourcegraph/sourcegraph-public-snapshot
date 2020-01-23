@@ -185,7 +185,7 @@ export const phabricatorCodeHost: CodeHost = {
         actionItemIconClass: 'action-item__icon--phabricator',
     },
     hoverOverlayClassProps: {
-        className: 'aphront-dialog-view hover-overlay--phabricator',
+        className: 'theme-light aphront-dialog-view hover-overlay--phabricator',
         actionItemClassName: 'button grey hover-overlay-action-item--phabricator',
         closeButtonClassName: 'button grey hover-overlay__close-button--phabricator',
         infoAlertClassName: 'phui-info-view phui-info-severity-notice',
