@@ -27,7 +27,7 @@ export function submitSearch(
 
     // Go to search results page
     const path = '/search?' + searchQueryParam
-    eventLogger.log('SearchSubmitted')
+    eventLogger.log('SearchSubmitted', { query: navbarQuery, source })
     history.push(path, { ...history.location.state, query: navbarQuery })
     if (activation) {
         activation.update({ DidSearch: true })

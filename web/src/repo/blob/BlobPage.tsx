@@ -129,7 +129,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
     }
 
     private logViewEvent(): void {
-        eventLogger.logViewEvent('Blob', { fileShown: true })
+        eventLogger.logViewEvent('Blob')
     }
 
     public componentDidMount(): void {

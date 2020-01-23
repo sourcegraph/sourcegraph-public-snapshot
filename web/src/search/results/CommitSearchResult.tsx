@@ -35,22 +35,7 @@ interface Props {
 }
 
 export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props) => {
-    const logClickOnPerson = (): void => {
-        eventLogger.log('CommitSearchResultClicked')
-    }
-    const logClickOnMessage = (): void => {
-        eventLogger.log('CommitSearchResultClicked')
-    }
-    const logClickOnTag = (): void => {
-        eventLogger.log('CommitSearchResultClicked')
-    }
-    const logClickOnCommitID = (): void => {
-        eventLogger.log('CommitSearchResultClicked')
-    }
-    const logClickOnTimestamp = (): void => {
-        eventLogger.log('CommitSearchResultClicked')
-    }
-    const logClickOnText = (): void => {
+    const logClick = (): void => {
         eventLogger.log('CommitSearchResultClicked')
     }
 
@@ -68,7 +53,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
                 to={props.result.commit.url}
                 className="commit-search-result__title-person"
                 onClick={stopPropagationToCollapseOrExpand}
-                onMouseDown={logClickOnPerson}
+                onMouseDown={logClick}
             >
                 <UserAvatar user={props.result.commit.author.person} size={32} className="mr-1 icon-inline" />
                 {props.result.commit.author.person.displayName}
@@ -77,28 +62,24 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
                 to={props.result.commit.url}
                 className="commit-search-result__title-message"
                 onClick={stopPropagationToCollapseOrExpand}
-                onMouseDown={logClickOnMessage}
+                onMouseDown={logClick}
             >
                 {commitMessageSubject(props.result.commit.message) || '(empty commit message)'}
             </Link>
             <span className="commit-search-result__title-signature">
                 {uniqueRefs([...props.result.refs, ...props.result.sourceRefs]).map((ref, i) => (
-                    <GitRefTag key={i} gitRef={ref} onMouseDown={logClickOnTag} />
+                    <GitRefTag key={i} gitRef={ref} onMouseDown={logClick} />
                 ))}
                 <code>
                     <Link
                         to={props.result.commit.url}
                         onClick={stopPropagationToCollapseOrExpand}
-                        onMouseDown={logClickOnCommitID}
+                        onMouseDown={logClick}
                     >
                         {props.result.commit.abbreviatedOID}
                     </Link>
                 </code>{' '}
-                <Link
-                    to={props.result.commit.url}
-                    onClick={stopPropagationToCollapseOrExpand}
-                    onMouseDown={logClickOnTimestamp}
-                >
+                <Link to={props.result.commit.url} onClick={stopPropagationToCollapseOrExpand} onMouseDown={logClick}>
                     {formatDistance(parseISO(props.result.commit.author.date), new Date(), {
                         addSuffix: true,
                     })}
@@ -117,7 +98,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
                 value={props.result.messagePreview.value.split('\n')}
                 highlights={props.result.messagePreview.highlights}
                 lineClasses={[{ line: 1, className: 'strong' }]}
-                onMouseDown={logClickOnText}
+                onMouseDown={logClick}
             />
         )
     }
@@ -220,7 +201,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
                 value={lines}
                 highlights={props.result.diffPreview.highlights}
                 lineClasses={lineClasses}
-                onMouseDown={logClickOnText}
+                onMouseDown={logClick}
             />
         )
     }
