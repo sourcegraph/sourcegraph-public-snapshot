@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -146,11 +145,12 @@ func TestUserEmails_ListByUser(t *testing.T) {
 			t.Fatal(err)
 		}
 		normalizeUserEmails(userEmails)
-		if want := []*UserEmail{
+		want := []*UserEmail{
 			{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c")},
 			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
-		}; !reflect.DeepEqual(want, userEmails) {
-			t.Fatalf("userEmails: %s", cmp.Diff(want, userEmails))
+		}
+		if diff := cmp.Diff(want, userEmails); diff != "" {
+			t.Fatalf("userEmails: %s", diff)
 		}
 	})
 
@@ -163,10 +163,11 @@ func TestUserEmails_ListByUser(t *testing.T) {
 			t.Fatal(err)
 		}
 		normalizeUserEmails(userEmails)
-		if want := []*UserEmail{
+		want := []*UserEmail{
 			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
-		}; !reflect.DeepEqual(want, userEmails) {
-			t.Fatalf("userEmails: %s", cmp.Diff(want, userEmails))
+		}
+		if diff := cmp.Diff(want, userEmails); diff != "" {
+			t.Fatalf("userEmails: %s", diff)
 		}
 	})
 }
