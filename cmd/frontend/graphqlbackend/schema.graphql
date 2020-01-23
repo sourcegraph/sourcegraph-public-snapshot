@@ -3597,6 +3597,15 @@ type Site implements SettingsSubject {
         # Months of history.
         months: Int
     ): SiteUsageStatistics!
+    # Usage statistics of code intelligence features.
+    codeIntelUsageStatistics(
+        # Days of history.
+        days: Int
+        # Weeks of history.
+        weeks: Int
+        # Months of history.
+        months: Int
+    ): CodeIntelUsageStatistics!
 }
 
 # The configuration for a site.
@@ -3831,6 +3840,58 @@ type SiteUsageStages {
     secure: Int!
     # The number of users using automation stage features.
     automate: Int!
+}
+
+# CodeIntelUsageStatistics describes a site's aggregate usage statistics of code intel features.
+#
+# This information is visible to all viewers.
+type CodeIntelUsageStatistics {
+    # Recent daily usage statistics.
+    dailyActivities: [CodeIntelUsagePeriod!]!
+    # Recent weekly usage statistics.
+    weeklyActivities: [CodeIntelUsagePeriod!]!
+    # Recent monthly usage statistics.
+    monthlyActivities: [CodeIntelUsagePeriod!]!
+}
+
+# CodeIntelUsagePeriod describes usage statistics of code intel features in a given timespan.
+#
+# This information is visible to all viewers.
+type CodeIntelUsagePeriod {
+    # The time when this started.
+    startTime: String!
+    # TODO - document
+    preciseHoverStatistics: CodeIntelEventStatistics!
+    # TODO - document
+    fuzzyHoverStatistics: CodeIntelEventStatistics!
+    # TODO - document
+    preciseDefinitionsStatistics: CodeIntelEventStatistics!
+    # TODO - document
+    fuzzyDefinitionsStatistics: CodeIntelEventStatistics!
+    # TODO - document
+    preciseReferencesStatistics: CodeIntelEventStatistics!
+    # TODO - document
+    fuzzyReferencesStatistics: CodeIntelEventStatistics!
+}
+
+# TODO - document
+type CodeIntelEventStatistics {
+    # TODO - document
+    usersCount: Int!
+    # TODO - document
+    eventsCount: Int!
+    # TODO - document
+    eventLatencies: CodeIntelEventLatencies!
+}
+
+# TODO - document
+type CodeIntelEventLatencies {
+    # TODO - document
+    p50: Float!
+    # TODO - document
+    p90: Float!
+    # TODO - document
+    p99: Float!
 }
 
 # A deployment configuration.
