@@ -43,6 +43,8 @@ func unmarshalCampaignJobID(id graphql.ID) (cid int64, err error) {
 	return
 }
 
+var _ graphqlbackend.CampaignPlanResolver = &campaignPlanResolver{}
+
 type campaignPlanResolver struct {
 	store        *ee.Store
 	campaignPlan *a8n.CampaignPlan
@@ -56,7 +58,7 @@ func (r *campaignPlanResolver) Status(ctx context.Context) (graphqlbackend.Backg
 	return r.store.GetCampaignPlanStatus(ctx, r.campaignPlan.ID)
 }
 
-func (r *campaignPlanResolver) Changesets(
+func (r *campaignPlanResolver) ChangesetPlans(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {

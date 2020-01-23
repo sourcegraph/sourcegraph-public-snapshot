@@ -475,8 +475,8 @@ type CampaignPlan implements Node {
     # The progress status of generating changesets.
     status: BackgroundProcessStatus!
 
-    # The changesets that will be created by the campaign.
-    changesets(first: Int): ChangesetPlanConnection!
+    # The proposed patches ("plans") for the changesets that will be created by the campaign.
+    changesetPlans(first: Int): ChangesetPlanConnection!
 
     # The URL where the plan can be previewed and a campaign can be created from it.
     previewURL: String!
