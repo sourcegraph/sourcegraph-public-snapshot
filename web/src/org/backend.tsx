@@ -93,7 +93,7 @@ export function updateOrganization(id: GQL.ID, displayName: string): Observable<
             displayName,
         }
     ).pipe(
-        map(({ errors }) => {
+        map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {
                 eventLogger.log('UpdateOrgSettingsFailed')
                 throw createAggregateError(errors)

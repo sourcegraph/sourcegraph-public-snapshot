@@ -34,7 +34,7 @@ function inviteUserToOrganization(
             organization,
         }
     ).pipe(
-        map(({ errors }) => {
+        map(({ data, errors }) => {
             if (!data || !data.inviteUserToOrganization || (errors && errors.length > 0)) {
                 eventLogger.log('InviteOrgMemberFailed')
                 throw createAggregateError(errors)

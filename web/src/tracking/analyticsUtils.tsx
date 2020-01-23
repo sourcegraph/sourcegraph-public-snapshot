@@ -117,10 +117,3 @@ function stripURLParameters(url: string, paramsToRemove: string[] = []): void {
     }
     window.history.replaceState(window.history.state, window.document.title, parsedUrl.href)
 }
-
-function camelCaseToUnderscore(input: string): string {
-    if (input.startsWith('_')) {
-        input = input.substring(1)
-    }
-    return input.replace(/([A-Z])/g, $1 => `_${$1.toLowerCase()}`)
-}
