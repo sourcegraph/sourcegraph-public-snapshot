@@ -67,7 +67,7 @@ The Sourcegraph instance's site admin must [update the `corsOrigin` site config 
 
 ## Access token scopes
 
-Sourcegraph requires an access token with `api` permissions (and `sudo`, if you are using an `external` identity provider type). Below is an explanation for why we require this scope instead of e.g. just `read_user`, and what we may also use the access token for in the future.
+Sourcegraph requires an access token with `api` permissions (and `sudo`, if you are using an `external` identity provider type). These permissions are required for the following reasons:
 
 We are actively collaborating with GitLab to improve our integration (e.g. the [Sourcegraph GitLab native integration](https://docs.gitlab.com/ee/integration/sourcegraph.html) and [better APIs for querying repository permissions](https://gitlab.com/gitlab-org/gitlab/issues/20532)).
 
