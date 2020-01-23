@@ -17,7 +17,9 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 		return nil, err
 	}
 
-	userEmails, err := db.UserEmails.ListByUser(ctx, r.user.ID)
+	userEmails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+		UserID: r.user.ID,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +123,7 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only grant when the email is set to verified.
+	// Avoid unnecessary calls if the email is set to unverified.
 	if args.Verified {
 		if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
 			UserID: userID,

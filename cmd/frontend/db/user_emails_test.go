@@ -138,7 +138,9 @@ func TestUserEmails_ListByUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userEmails, err := UserEmails.ListByUser(ctx, user.ID)
+	userEmails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: user.ID,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +177,10 @@ func TestUserEmails_ListVerifiedByUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userEmails, err := UserEmails.ListVerifiedByUser(ctx, user.ID)
+	userEmails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID:       user.ID,
+		OnlyVerified: true,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -224,7 +229,9 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	} else if want := false; verified != want {
 		t.Fatalf("got verified %v, want %v", verified, want)
 	}
-	if emails, err := UserEmails.ListByUser(ctx, user.ID); err != nil {
+	if emails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: user.ID,
+	}); err != nil {
 		t.Fatal(err)
 	} else if want := 2; len(emails) != want {
 		t.Errorf("got %d emails, want %d", len(emails), want)
@@ -236,7 +243,9 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	if err := UserEmails.Add(ctx, 12345 /* bad user ID */, "foo@example.com", nil); err == nil {
 		t.Fatal("got err == nil for Add on bad user ID")
 	}
-	if emails, err := UserEmails.ListByUser(ctx, user.ID); err != nil {
+	if emails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: user.ID,
+	}); err != nil {
 		t.Fatal(err)
 	} else if want := 2; len(emails) != want {
 		t.Errorf("got %d emails, want %d", len(emails), want)
@@ -246,7 +255,9 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	if err := UserEmails.Remove(ctx, user.ID, emailB); err != nil {
 		t.Fatal(err)
 	}
-	if emails, err := UserEmails.ListByUser(ctx, user.ID); err != nil {
+	if emails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: user.ID,
+	}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; len(emails) != want {
 		t.Errorf("got %d emails (after removing), want %d", len(emails), want)
@@ -308,7 +319,9 @@ func TestUserEmails_SetVerified(t *testing.T) {
 }
 
 func isUserEmailVerified(ctx context.Context, userID int32, email string) (bool, error) {
-	userEmails, err := UserEmails.ListByUser(ctx, userID)
+	userEmails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: userID,
+	})
 	if err != nil {
 		return false, err
 	}
