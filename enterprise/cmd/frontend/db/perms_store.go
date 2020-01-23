@@ -682,18 +682,27 @@ DO UPDATE SET
 	), nil
 }
 
-// GrantPendingPermissionsTx grants the user has given ID with pending permissions found in p.
+// GrantPendingPermissions grants the user has given ID with pending permissions found in p.
 // It "merges" rows in pending permissions tables to effective permissions tables, i.e. permissions
-// are unioned not replaced. This method expects to be wrapped in a transaction by the caller.
-func (s *PermsStore) GrantPendingPermissionsTx(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
-	ctx, save := s.observe(ctx, "GrantPendingPermissionsTx", "")
+// are unioned not replaced.
+// This method starts its own transaction if the caller hasn't started one already.
+func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
+	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
 
-	if !s.inTx() {
-		return errors.New("must be called within a transaction")
+	var txs *PermsStore
+	if s.inTx() {
+		txs = s
+	} else {
+		// Open a transaction for update consistency.
+		txs, err = s.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer txs.Done(&err)
 	}
 
-	vals, err := s.load(ctx, loadUserPendingPermissionsQuery(p, "FOR UPDATE"))
+	vals, err := txs.load(ctx, loadUserPendingPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
 		// Skip the whole grant process if the user has no pending permissions.
 		if err == ErrPermsNotFound {
@@ -714,12 +723,12 @@ func (s *PermsStore) GrantPendingPermissionsTx(ctx context.Context, userID int32
 	// NOTE: It is critical to always acquire row-level locks in the same order as SetRepoPermissions
 	// (i.e. repo -> user) to prevent deadlocks.
 	q := loadRepoPermissionsBatchQuery(ids, p.Perm, authz.ProviderSourcegraph, "FOR UPDATE")
-	loadedIDs, err := s.batchLoadIDs(ctx, q)
+	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load repo permissions")
 	}
 
-	updatedAt := s.clock()
+	updatedAt := txs.clock()
 	updatedPerms := make([]*iauthz.RepoPermissions, 0, len(ids))
 	for i := range ids {
 		repoID := int32(ids[i])
@@ -740,7 +749,7 @@ func (s *PermsStore) GrantPendingPermissionsTx(ctx context.Context, userID int32
 
 	if q, err = upsertRepoPermissionsBatchQuery(updatedPerms...); err != nil {
 		return err
-	} else if err = s.execute(ctx, q); err != nil {
+	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert repo permissions batch query")
 	}
 
@@ -754,7 +763,7 @@ func (s *PermsStore) GrantPendingPermissionsTx(ctx context.Context, userID int32
 		Provider: authz.ProviderSourcegraph,
 	}
 	var oldIDs *roaring.Bitmap
-	vals, err = s.load(ctx, loadUserPermissionsQuery(up, "FOR UPDATE"))
+	vals, err = txs.load(ctx, loadUserPermissionsQuery(up, "FOR UPDATE"))
 	if err != nil {
 		if err != ErrPermsNotFound {
 			return errors.Wrap(err, "load user permissions")
@@ -765,36 +774,21 @@ func (s *PermsStore) GrantPendingPermissionsTx(ctx context.Context, userID int32
 	}
 	up.IDs = roaring.Or(oldIDs, p.IDs)
 
-	up.UpdatedAt = s.clock()
+	up.UpdatedAt = txs.clock()
 	if q, err = upsertUserPermissionsQuery(up); err != nil {
 		return err
-	} else if err = s.execute(ctx, q); err != nil {
+	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert user permissions query")
 	}
 
 	// NOTE: Practically, we don't need to clean up "repo_pending_permissions" table because the value of "id" column
 	// that is associated with this user will be invalidated automatically by deleting this row. Thus, we are able to
 	// avoid database deadlocks with other methods (e.g. SetRepoPermissions, SetRepoPendingPermissions).
-	if err = s.execute(ctx, deleteUserPendingPermissionsQuery(p)); err != nil {
+	if err = txs.execute(ctx, deleteUserPendingPermissionsQuery(p)); err != nil {
 		return errors.Wrap(err, "execute delete user pending permissions query")
 	}
 
 	return nil
-}
-
-// GrantPendingPermissions begins a transaction then call GrantPendingPermissionsTx.
-func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
-	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
-	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
-
-	// Open a transaction for update consistency.
-	txs, err := s.Txs(ctx)
-	if err != nil {
-		return err
-	}
-	defer txs.CommitOrRollback(&err)
-
-	return txs.GrantPendingPermissionsTx(ctx, userID, p)
 }
 
 func upsertUserPermissionsQuery(p *iauthz.UserPermissions) (*sqlf.Query, error) {
