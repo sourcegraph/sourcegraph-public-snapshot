@@ -138,15 +138,6 @@ type Mutation {
     # Only site admins may perform this mutation.
     setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
         @deprecated(reason: "update external service exclude setting.")
-    # DEPRECATED: All repositories are accessible or deleted. To prevent a
-    # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration.
-    #
-    # Enables or disables all site repositories.
-    #
-    # Only site admins may perform this mutation.
-    setAllRepositoriesEnabled(enabled: Boolean!): EmptyResponse
-        @deprecated(reason: "update external service exclude setting.")
     # Tests the connection to a mirror repository's original source repository. This is an
     # expensive and slow operation, so it should only be used for interactive diagnostics.
     #
@@ -175,19 +166,6 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
-    # DEPRECATED: All repositories are accessible or deleted. To prevent a
-    # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration. It will be deleted. This mutation will be removed in 3.6.
-    #
-    # Deletes a repository and all data associated with it, irreversibly.
-    #
-    # If the repository was added because it was present in the site configuration (directly,
-    # or because it originated from a configured code host), then it will be re-added during
-    # the next sync. If you intend to make the repository inaccessible to users and not searchable,
-    # use setRepositoryEnabled to disable the repository instead of deleteRepository.
-    #
-    # Only site admins may perform this mutation.
-    deleteRepository(repository: ID!): EmptyResponse @deprecated(reason: "update external service exclude setting.")
     # Creates a new user account.
     #
     # Only site admins may perform this mutation.
@@ -441,14 +419,18 @@ type Mutation {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
-    # Deletes an LSIF dump.
-    deleteLSIFDump(id: ID!): EmptyResponse
-
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
+
+    # Set permissions of a repository with a full set of users by their usernames or emails.
+    setRepositoryPermissionsForUsers(
+        # The repository that the mutation is applied to.
+        repository: ID!
+        # A list of usernames or email addresses according to site configuration.
+        bindIDs: [String!]!
+        # The level of repository permission.
+        perm: RepositoryPermission = READ
+    ): EmptyResponse!
 }
 
 # The specification of what changesets Sourcegraph will open when the campaign is created.
@@ -516,6 +498,13 @@ input UpdateCampaignInput {
 
     # The updated description of the campaign as Markdown (if non-null).
     description: String
+
+    # An optional reference to a completed CampaignPlan that was previewed
+    # before updating the Campaign.
+    # If set, the Campaign's changesets will be updated to the Changesets of the given CampaignPlan.
+    # The Campaign's status will be updated accordingly while possibly
+    # new ExternalChangesets are created/updated/closed on the codehosts.
+    plan: ID
 }
 
 # A preview of changes that will be applied by a campaign.
@@ -588,8 +577,9 @@ type Campaign implements Node {
     # If null, changesets are added to the campaign manually.
     plan: CampaignPlan
 
-    # The current status of creating the campaigns changesets on the code host.
-    changesetCreationStatus: BackgroundProcessStatus
+    # The current status of creating or updating the campaigns changesets on
+    # the code host.
+    status: BackgroundProcessStatus!
 
     # The namespace where this campaign is defined.
     namespace: Namespace!
@@ -714,12 +704,26 @@ type ChangesetPlan {
 
     # The diff of the changeset.
     diff: PreviewRepositoryComparison!
+
+    # Whether the ChangesetPlan is enqueued for publication. Default is false.
+    # It will be true when:
+    # - a Campaign has been created with the CampaignPlan to which this
+    # ChangesetPlan belongs
+    # - when a Campaign with the CampaignPlan has been published after being in
+    # draft mode
+    # - when the ChangesetPlan has been individually published through the
+    # publishChangeset mutation
+    publicationEnqueued: Boolean!
 }
 
 # A changeset in a code host (e.g. a PR on Github)
 type ExternalChangeset implements Node {
     # The unique ID for the changeset.
     id: ID!
+
+    # The external ID that uniquely identifies this ExternalChangeset on the
+    # codehost. For example, on GitHub this is the PR number.
+    externalID: String!
 
     # The repository changed by this changeset.
     repository: Repository!
@@ -1166,14 +1170,6 @@ type Query {
         query: String
         # Return repositories whose names are in the list.
         names: [String!]
-        # Include enabled repositories.
-        #
-        # DEPRECATED: All repositories are enabled. Will be removed in 3.6.
-        enabled: Boolean = true
-        # Include disabled repositories.
-        #
-        # DEPRECATED: No repositories are disabled. Will be removed in 3.6.
-        disabled: Boolean = false
         # Include cloned repositories.
         cloned: Boolean = true
         # Include repositories that are currently being cloned.
@@ -1336,36 +1332,26 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
-    # Retrieve counts of uploads by state.
-    lsifUploadStats: LSIFUploadStats!
-
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
-    # Search for LSIF uploaads by state and query term.
-    lsifUploads(
-        # The state of returned uploads.
-        state: LSIFUploadState!
-
-        # An (optional) search query that searches over the repository, commit,
-        # root, and failure properties (reason and stacktrace).
-        query: String
-
-        # When specified, indicates that this request should be paginated and
-        # the first N results (relative to the cursor) should be returned. i.e.
-        # how many results to return per page. It must be in the range of 0-5000.
-        first: Int
-
-        # When specified, indicates that this request should be paginated and
-        # to fetch results starting at this cursor.
-        #
-        # A future request can be made for more results by passing in the
-        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
+    # The repositories a user is authorized to access with the given permission.
+    # This isn’t defined in the User type because we store permissions for users
+    # that don’t yet exist (i.e. late binding). Only one of "username" or "email"
+    # is required to identify a user.
+    authorizedUserRepositories(
+        # The username.
+        username: String
+        # One of the email addresses.
+        email: String
+        # Permission that the user has on the repositories.
+        perm: RepositoryPermission = READ
+        # Number of repositories to return after the given cursor.
+        first: Int!
+        # Opaque pagination cursor.
         after: String
-    ): LSIFUploadConnection!
+    ): RepositoryConnection!
+
+    # Returns a list of usernames or emails that have associated pending permissions.
+    # The returned list can be used to query authorizedUserRepositories for pending permissions.
+    usersWithPendingPermissions: [String!]!
 }
 
 # The version of the search syntax.
@@ -1774,13 +1760,6 @@ type Repository implements Node & GenericSearchResultInterface {
     description: String!
     # The primary programming language in the repository.
     language: String!
-    # DEPRECATED: All repositories are enabled. This field will be removed in 3.6.
-    #
-    # Whether the repository is enabled. A disabled repository should only be accessible to site admins.
-    #
-    # NOTE: Disabling a repository does not provide any additional security. This field is merely a
-    # guideline to UI implementations.
-    enabled: Boolean! @deprecated(reason: "Always true. All repositories are enabled.")
     # DEPRECATED: This field is unused in known clients.
     #
     # The date when this repository was created on Sourcegraph.
@@ -1894,12 +1873,15 @@ type Repository implements Node & GenericSearchResultInterface {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
-    # The repository's LSIF dumps.
-    lsifDumps(
+    # The repository's LSIF uploads.
+    lsifUploads(
         # An (optional) search query that searches over the commit and root properties.
         query: String
 
-        # When specified, shows only dumps that are latest for the given repository.
+        # The state of returned uploads.
+        state: LSIFUploadState
+
+        # When specified, shows only uploads that are latest for the given repository.
         isLatestForRepo: Boolean
 
         # When specified, indicates that this request should be paginated and
@@ -1911,9 +1893,21 @@ type Repository implements Node & GenericSearchResultInterface {
         # to fetch results starting at this cursor.
         #
         # A future request can be made for more results by passing in the
-        # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
+        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         after: String
-    ): LSIFDumpConnection!
+    ): LSIFUploadConnection!
+
+    # A list of authorized users to access this repository with the given permission.
+    # This API currently only returns permissions from the Sourcegraph provider, i.e.
+    # "permissions.userMapping" in site configuration.
+    authorizedUsers(
+        # Permission that the user has on this repository.
+        perm: RepositoryPermission = READ
+        # Number of users to return after the given cursor.
+        first: Int!
+        # Opaque pagination cursor.
+        after: String
+    ): UserConnection!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
@@ -2757,7 +2751,7 @@ type GitBlob implements TreeEntry & File2 {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
-    # A wrapper around LSIF query methods. If no LSIF dump can be used to answer code
+    # A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
     # intelligence queries for this path-at-revision, this resolves to null.
     lsif: LSIFQueryResolver
 }
@@ -2840,6 +2834,9 @@ type FileMatch {
     file: GitBlob!
     # The repository containing the file match.
     repository: Repository!
+    # The revspec of the revision that contains this match. If no revspec was given (such as when no
+    # repository filter or revspec is specified in the search query), it is null.
+    revSpec: GitRevSpec
     # The resource.
     resource: String! @deprecated(reason: "use the file field instead")
     # The symbols found in this file that match the query.
@@ -2932,6 +2929,8 @@ type User implements Node & SettingsSubject & Namespace {
     #
     # Only the user and site admins can access this field.
     siteAdmin: Boolean!
+    # Whether the user account uses built in auth.
+    builtinAuth: Boolean!
     # The latest settings for the user.
     #
     # Only the user and site admins can access this field.
@@ -4116,35 +4115,6 @@ type RegistryExtensionConnection {
     error: String
 }
 
-# Metadata about an LSIF upload.
-type LSIFDump implements Node {
-    # An opaque GraphQL ID representing this LSIF dump.
-    id: ID!
-
-    # The project for which this dump provides code intelligence.
-    projectRoot: GitTree
-
-    # The original repository name supplied at upload time.
-    inputRepoName: String!
-
-    # The original 40-character commit commit supplied at upload time.
-    inputCommit: String!
-
-    # The original root supplied at upload time.
-    inputRoot: String!
-
-    # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
-    # will return symbols from remote repositories only when this property is true. This property is updated
-    # asynchronously and is eventually consistent with the git data known by the Sourcegraph instance.
-    isLatestForRepo: Boolean!
-
-    # The time the dump was uploaded.
-    uploadedAt: DateTime!
-
-    # The time the dump became available for use.
-    processedAt: DateTime!
-}
-
 # A list of locations within a file.
 type LocationConnection {
     # A list of locations within a file.
@@ -4163,18 +4133,6 @@ type Hover {
     range: Range!
 }
 
-# A list of LSIF dumps.
-type LSIFDumpConnection {
-    # A list of LSIF dumps.
-    nodes: [LSIFDump!]!
-
-    # The total number of dumps for this repository.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
 # The state an LSIF upload can be in.
 enum LSIFUploadState {
     # The LSIF worker is processing this upload.
@@ -4190,24 +4148,6 @@ enum LSIFUploadState {
     QUEUED
 }
 
-# Counts of LSIF uploads by state.
-type LSIFUploadStats implements Node {
-    # An opaque GraphQL ID.
-    id: ID!
-
-    # How many uploads are currently being processed.
-    processingCount: Int!
-
-    # How many uploads have errored.
-    erroredCount: Int!
-
-    # How many uploads have completed.
-    completedCount: Int!
-
-    # How many uploads are queued.
-    queuedCount: Int!
-}
-
 # Metadata and status about an LSIF upload.
 type LSIFUpload implements Node {
     # The ID.
@@ -4215,9 +4155,6 @@ type LSIFUpload implements Node {
 
     # The project for which this upload provides code intelligence.
     projectRoot: GitTree
-
-    # The original repository name supplied at upload time.
-    inputRepoName: String!
 
     # The original 40-character commit commit supplied at upload time.
     inputCommit: String!
@@ -4228,9 +4165,6 @@ type LSIFUpload implements Node {
     # The upload's current state.
     state: LSIFUploadState!
 
-    # Metadata about a upload's failure (not set if state is not ERRORED).
-    failure: LSIFUploadFailureReason
-
     # The time the upload was uploaded.
     uploadedAt: DateTime!
 
@@ -4239,6 +4173,15 @@ type LSIFUpload implements Node {
 
     # The time the upload compelted or errored.
     finishedAt: DateTime
+
+    # Metadata about a upload's failure (not set if state is not ERRORED).
+    failure: LSIFUploadFailureReason
+
+    # Whether or not this upload provides intelligence for the tip of the default branch. Find reference
+    # queries will return symbols from remote repositories only when this property is true. This property
+    # is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
+    # instance.
+    isLatestForRepo: Boolean!
 }
 
 # Metadata about a LSIF upload failure.
@@ -4375,6 +4318,8 @@ type DotcomQuery {
         #
         # Only Sourcegraph.com site admins may perform this query with account == null.
         account: ID
+        # Returns product subscriptions from users with usernames or email addresses that match the query.
+        query: String
     ): ProductSubscriptionConnection!
     # The invoice that would be generated for a new or updated subscription. This is used to show
     # users a preview of the credits, debits, and other billing information before creating or
@@ -4651,3 +4596,8 @@ union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use
 # Date#toISOString.
 scalar DateTime
+
+# Different repository permission levels.
+enum RepositoryPermission {
+    READ
+}

@@ -13,4 +13,9 @@ describe('interactiveParseSearchURLQuery', () => {
         const query = '?q=hello+world&repo=gorilla/mux&file=test.tsx'
         expect(interactiveParseSearchURLQuery(query)).toBe('repo:gorilla/mux file:test.tsx hello world')
     })
+
+    test('ignores the case parameter correctly', () => {
+        const query = '?q=hello+world&repo=gorilla/mux&file=test.tsx&case=yes'
+        expect(interactiveParseSearchURLQuery(query)).toBe('repo:gorilla/mux file:test.tsx hello world')
+    })
 })

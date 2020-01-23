@@ -1,6 +1,7 @@
 import LockIcon from 'mdi-react/LockIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 export const primaryGroup: SiteAdminSideBarGroup = {
     header: {
@@ -16,14 +17,6 @@ export const primaryGroup: SiteAdminSideBarGroup = {
         {
             label: 'Configuration',
             to: '/site-admin/configuration',
-        },
-        {
-            label: 'External services',
-            to: '/site-admin/external-services',
-        },
-        {
-            label: 'Repositories',
-            to: '/site-admin/repositories',
         },
     ],
 }
@@ -41,6 +34,23 @@ export const secondaryGroup: SiteAdminSideBarGroup = {
         {
             label: 'Global settings',
             to: '/site-admin/global-settings',
+        },
+    ],
+}
+
+const repositoriesGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Repositories',
+        icon: SourceRepositoryIcon,
+    },
+    items: [
+        {
+            label: 'Manage repositories',
+            to: '/site-admin/external-services',
+        },
+        {
+            label: 'Repository status',
+            to: '/site-admin/repositories',
         },
     ],
 }
@@ -83,4 +93,10 @@ export const otherGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [primaryGroup, secondaryGroup, authGroup, otherGroup]
+export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
+    primaryGroup,
+    secondaryGroup,
+    repositoriesGroup,
+    authGroup,
+    otherGroup,
+]

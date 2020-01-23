@@ -80,7 +80,7 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(githubWebhook http.Handler) error {
+func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
@@ -157,6 +157,7 @@ func Main(githubWebhook http.Handler) error {
 	siteid.Init()
 
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
+	globals.WatchPermissionsUserMapping()
 
 	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
 	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
@@ -184,7 +185,13 @@ func Main(githubWebhook http.Handler) error {
 		codeIntelResolver = graphqlbackend.NewCodeIntelResolver()
 	}
 
-	schema, err := graphqlbackend.NewSchema(a8nResolver, codeIntelResolver)
+	// graphqlbackend.AuthzResolver is set by enterprise frontend
+	var authzResolver graphqlbackend.AuthzResolver
+	if graphqlbackend.NewAuthzResolver != nil {
+		authzResolver = graphqlbackend.NewAuthzResolver()
+	}
+
+	schema, err := graphqlbackend.NewSchema(a8nResolver, codeIntelResolver, authzResolver)
 	if err != nil {
 		return err
 	}
@@ -199,7 +206,7 @@ func Main(githubWebhook http.Handler) error {
 	}
 
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, lsifServerProxy)
+	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, bitbucketServerWebhook, lsifServerProxy)
 	if err != nil {
 		return err
 	}

@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {
+func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 	// If we're only searching a small number of repositories, return more comprehensive results. This is
 	// arbitrary.
 	k := 1
@@ -47,7 +47,7 @@ func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {
 	return k
 }
 
-func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
+func zoektSearchOpts(k int, query *search.TextPatternInfo) zoekt.SearchOptions {
 	searchOpts := zoekt.SearchOptions{
 		MaxWallTime:            3 * time.Second,
 		ShardMaxMatchCount:     100 * k,
@@ -137,7 +137,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 
 	// If the query has a `repohasfile` or `-repohasfile` flag, we want to construct a new reposet based
 	// on the values passed in to the flag.
-	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.PatternInfo, args.Zoekt.Client, *repoSet)
+	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.PatternInfo, args.Zoekt.Client, repoSet)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -261,9 +261,15 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 	return matches, limitHit, reposLimitHit, nil
 }
 
-// Returns a new repoSet which accounts for the `repohasfile` and `-repohasfile` flags that may have been passed in the query.
-func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.PatternInfo, searcher zoekt.Searcher, repoSet zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
-	newRepoSet := repoSet.Set
+// createNewRepoSetWithRepoHasFileInputs mutates repoSet such that it accounts
+// for the `repohasfile` and `-repohasfile` flags that may have been passed in
+// the query. As a convenience it returns the mutated RepoSet.
+func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.TextPatternInfo, searcher zoekt.Searcher, repoSet *zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
+	// Shortcut if we have no repos to search
+	if len(repoSet.Set) == 0 {
+		return repoSet, nil
+	}
+
 	flagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
 	negatedFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
 
@@ -274,44 +280,35 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	}
 
 	newSearchOpts := zoekt.SearchOptions{
-		ShardMaxMatchCount: 1,
-		TotalMaxMatchCount: math.MaxInt32,
-		MaxDocDisplayCount: 0,
+		ShardMaxMatchCount:     1,
+		TotalMaxMatchCount:     math.MaxInt32,
+		ShardMaxImportantMatch: 1,
+		TotalMaxImportantMatch: math.MaxInt32,
+		MaxDocDisplayCount:     0,
 	}
 	newSearchOpts.SetDefaults()
 
 	if flagIsInQuery {
-		// Set newRepoSet to an empty map if the `repohasflag` exists.
-		newRepoSet = make(map[string]bool)
+		for _, q := range filesToIncludeQueries {
+			// Shortcut if we have no repos to search
+			if len(repoSet.Set) == 0 {
+				return repoSet, nil
+			}
 
-		for i, q := range filesToIncludeQueries {
 			// Execute a new Zoekt search for each file passed in to a `repohasfile` flag.
-			includeResp, err := searcher.Search(ctx, q, &newSearchOpts)
+			includeResp, err := searcher.Search(ctx, zoektquery.NewAnd(repoSet, q), &newSearchOpts)
 			if err != nil {
 				return nil, errors.Wrapf(err, "searching for %v", q.String())
 			}
 
+			newRepoSet := make(map[string]bool, len(includeResp.RepoURLs))
 			for repoURL := range includeResp.RepoURLs {
-				if i == 0 {
-					// For the results from the first file query, add each repo that is in the result set to newRepoSet.
-					//
-					// Only add repoURLs that exist in the original repoSet, since
-					// repoSet is already filtered down to repositories that adhere to
-					// fit the `repo` filters in the query.
-					if repoSet.Set[repoURL] {
-						newRepoSet[repoURL] = true
-					}
-				} else {
-					// Then, for all following file queries, if there are repositories already existing in newRepoSet that do not appear in
-					// the result set for the current file query, remove them so that we only include repos that have at least
-					// one match for each `repohasfile` value in newRepoSet.
-					for existing := range newRepoSet {
-						if _, ok := includeResp.RepoURLs[existing]; !ok {
-							delete(newRepoSet, existing)
-						}
-					}
-				}
+				newRepoSet[repoURL] = true
 			}
+
+			// We want repoSet = repoSet intersect newRepoSet. but newRepoSet
+			// is a subset, so we can just set repoSet = newRepoSet.
+			repoSet.Set = newRepoSet
 		}
 	}
 
@@ -323,20 +320,25 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 
 	if negatedFlagIsInQuery {
 		for _, q := range filesToExcludeQueries {
-			excludeResp, err := searcher.Search(ctx, q, &newSearchOpts)
+			// Shortcut if we have no repos to search
+			if len(repoSet.Set) == 0 {
+				return repoSet, nil
+			}
+
+			excludeResp, err := searcher.Search(ctx, zoektquery.NewAnd(repoSet, q), &newSearchOpts)
 			if err != nil {
 				return nil, err
 			}
 			for repoURL := range excludeResp.RepoURLs {
 				// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
-				if newRepoSet[repoURL] {
-					delete(newRepoSet, repoURL)
+				if repoSet.Set[repoURL] {
+					delete(repoSet.Set, repoURL)
 				}
 			}
 		}
 	}
 
-	return &zoektquery.RepoSet{Set: newRepoSet}, nil
+	return repoSet, nil
 }
 
 func noOpAnyChar(re *syntax.Regexp) {
@@ -396,90 +398,45 @@ func splitOnHolesPattern() string {
 
 var matchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
 
-// Parses comby a structural syntax by stripping holes and returns a Zoekt
-// query. The Zoekt query is (only) a a conjunction of constant substrings.
-// Examples:
-//
-// "foo(:[args])"          -> "foo(" AND ")"
-// ":[fn](:[[1]], :[[2]])" -> "(" AND ", " AND ")"
-// ":[1\n] :[ whitespace]" -> " "
-func StructuralPatToConjunctedLiteralsQuery(pattern string) (zoektquery.Q, error) {
-	var children []zoektquery.Q
-	substrings := matchHoleRegexp.Split(pattern, -1)
-	for _, s := range substrings {
-		if s != "" {
-			children = append(children, &zoektquery.Substring{
-				Pattern:       s,
-				CaseSensitive: true,
-				Content:       true,
-			})
-		}
-	}
-	if len(children) == 0 {
-		return &zoektquery.Const{Value: true}, nil
-	}
-	return &zoektquery.And{Children: children}, nil
-}
-
-// Converts comby a structural pattern to a Zoekt regular expression query. This
-// conversion conceptually performs the same conversion as
-// StructuralPatToConjunctedLiteralsQuery, except that whitespace in the pattern
-// is converted so that content across newlines can be matched in the index. The
-// function produces a conjunction of regular expressions where whitespace is
-// converted to \s+, rather than a conjunction of literal strings.
+// Converts comby a structural pattern to a Zoekt regular expression query. It
+// converts whitespace in the pattern so that content across newlines can be
+// matched in the index. As an incomplete approximation, we use the regex
+// pattern .*? to scan ahead.
 // Example:
-// "ParseInt(:[args]) if err != nil" -> "ParseInt(" AND ")\s+if\s+err!=\s+nil"
+// "ParseInt(:[args]) if err != nil" -> "ParseInt(.*)\s+if\s+err!=\s+nil"
 func StructuralPatToRegexpQuery(pattern string) (zoektquery.Q, error) {
 	substrings := matchHoleRegexp.Split(pattern, -1)
 	var children []zoektquery.Q
+	var pieces []string
 	for _, s := range substrings {
-		rs := regexp.QuoteMeta(s)
+		piece := regexp.QuoteMeta(s)
 		onMatchWhitespace := lazyregexp.New(`[\s]+`)
-		rs = onMatchWhitespace.ReplaceAllLiteralString(rs, `[\s]+`)
-		re, err := syntax.Parse(rs, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-		if err != nil {
-			return nil, err
-		}
-		// zoekt decides to use its literal optimization at the query parser
-		// level, so we check if our regex can just be a literal.
-		if re.Op == syntax.OpLiteral {
-			children = append(children, &zoektquery.Substring{
-				Pattern:       s,
-				CaseSensitive: true,
-				Content:       true,
-			})
-		} else {
-			children = append(children, &zoektquery.Regexp{
-				Regexp:        re,
-				CaseSensitive: true,
-				Content:       true,
-			})
-		}
+		piece = onMatchWhitespace.ReplaceAllLiteralString(piece, `[\s]+`)
+		pieces = append(pieces, piece)
 	}
-	if len(children) == 0 {
+
+	if len(pieces) == 0 {
 		return &zoektquery.Const{Value: true}, nil
 	}
+	rs := "(" + strings.Join(pieces, ").*?(") + ")"
+	re, _ := syntax.Parse(rs, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	children = append(children, &zoektquery.Regexp{
+		Regexp:        re,
+		CaseSensitive: true,
+		Content:       true,
+	})
 	return &zoektquery.And{Children: children}, nil
 }
 
 func StructuralPatToQuery(pattern string) (zoektquery.Q, error) {
-	// ToConjunctedLiteralsQuery cannot return an error. @rvantonder added
-	// an error type so that the function signatures below are equal,
-	// resulting in cleaner test code.
-	conjunctedLiteralsQuery, _ := StructuralPatToConjunctedLiteralsQuery(pattern)
 	regexpQuery, err := StructuralPatToRegexpQuery(pattern)
 	if err != nil {
 		return nil, err
 	}
-	return &zoektquery.Or{
-		Children: []zoektquery.Q{
-			conjunctedLiteralsQuery,
-			regexpQuery,
-		},
-	}, nil
+	return &zoektquery.Or{Children: []zoektquery.Q{regexpQuery}}, nil
 }
 
-func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, error) {
+func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	var q zoektquery.Q
@@ -540,7 +497,7 @@ func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, 
 // queryToZoektFileOnlyQueries constructs a list of Zoekt queries that search for a file pattern(s).
 // `listOfFilePaths` specifies which field on `query` should be the list of file patterns to look for.
 //  A separate zoekt query is created for each file path that should be searched.
-func queryToZoektFileOnlyQueries(query *search.PatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
+func queryToZoektFileOnlyQueries(query *search.TextPatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
 	var zoektQueries []zoektquery.Q
 	if !query.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
@@ -583,6 +540,13 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 	unindexed = make([]*search.RepositoryRevisions, 0, len(revs)-count)
 
 	for _, rev := range revs {
+		if len(rev.RevSpecs()) >= 2 || len(rev.RevSpecs()) != len(rev.Revs) {
+			// Zoekt only indexes 1 rev per repository, so it will not have the full results for the
+			// query on repositories for which multiple revs are searched.
+			unindexed = append(unindexed, rev)
+			continue
+		}
+
 		repo, ok := set[strings.ToLower(string(rev.Repo.Name))]
 		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, rev)

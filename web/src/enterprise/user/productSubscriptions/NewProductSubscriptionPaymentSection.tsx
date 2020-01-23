@@ -4,7 +4,6 @@ import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import { isEqual } from 'lodash'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import * as React from 'react'
-import { ReactStripeElements } from 'react-stripe-elements'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
@@ -50,10 +49,7 @@ interface State {
 /**
  * Displays the payment section of the new product subscription form.
  */
-export class NewProductSubscriptionPaymentSection extends React.PureComponent<
-    Props & ReactStripeElements.InjectedStripeProps,
-    State
-> {
+export class NewProductSubscriptionPaymentSection extends React.PureComponent<Props, State> {
     public state: State = {
         previewInvoiceOrError: LOADING,
     }

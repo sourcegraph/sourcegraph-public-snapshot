@@ -9,4 +9,4 @@ We rely on the Sourcegraph frontend to apply our DB migrations. These live in th
 
 ## Migrations
 
-To add a new migration for the tables used by the LSIF processes, create a new migration in the frontend according to the instructions in [the migration documentation](../migrations/README.md). Then, update the value of `MINIMUM_MIGRATION_VERSION` in [connection.ts](./src/connection.ts) to be the timestamp from the generated filename.
+To add a new migration for the tables used by the LSIF processes, create a new migration in the frontend according to the instructions in [the migration documentation](../../migrations/README.md). Then, update the value of `MINIMUM_MIGRATION_VERSION` in [postgres.ts](../src/shared/database/postgres.ts) to be the timestamp from the generated filename.

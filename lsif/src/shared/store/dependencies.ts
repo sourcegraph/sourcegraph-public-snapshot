@@ -6,7 +6,7 @@ import { createFilter, testFilter } from '../datastructures/bloom-filter'
 import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
 import { logAndTraceCall, logSpan, TracingContext } from '../tracing'
 import { TableInserter } from '../database/inserter'
-import { visibleDumps } from '../models/queries'
+import { visibleDumps, bidirectionalLineage } from '../models/queries'
 
 /**
  * The insertion metrics for Postgres.
@@ -101,7 +101,7 @@ export class DependencyManager {
      * @param args Parameter bag.
      */
     public getReferences({
-        repository,
+        repositoryId,
         scheme,
         name,
         version,
@@ -110,8 +110,8 @@ export class DependencyManager {
         offset,
         ctx = {},
     }: {
-        /** The source repository of the search. */
-        repository: string
+        /** The identifier of the source repository of the search. */
+        repositoryId: number
         /** The package manager scheme (e.g. npm, pip). */
         scheme: string
         /** The package name. */
@@ -138,7 +138,7 @@ export class DependencyManager {
                 .createQueryBuilder('reference')
                 .leftJoinAndSelect('reference.dump', 'dump')
                 .where({ scheme, name, version })
-                .andWhere('dump.repository != :repository', { repository })
+                .andWhere('dump.repository_id != :repositoryId', { repositoryId })
                 .andWhere('dump.visible_at_tip = true')
 
             // Get total number of items in this set of results
@@ -147,7 +147,7 @@ export class DependencyManager {
             // Construct method to select a page of possible references
             const getPage = (pageOffset: number): Promise<pgModels.ReferenceModel[]> =>
                 baseQuery
-                    .orderBy('dump.repository')
+                    .orderBy('dump.repository_id')
                     .addOrderBy('dump.root')
                     .limit(limit)
                     .offset(pageOffset)
@@ -179,7 +179,7 @@ export class DependencyManager {
      * @param args Parameter bag.
      */
     public getSameRepoRemoteReferences({
-        repository,
+        repositoryId,
         commit,
         scheme,
         name,
@@ -189,8 +189,8 @@ export class DependencyManager {
         offset,
         ctx = {},
     }: {
-        /** The source repository of the search. */
-        repository: string
+        /** The identifier of the source repository of the search. */
+        repositoryId: number
         /** The commit of the references query. */
         commit: string
         /** The package manager scheme (e.g. npm, pip). */
@@ -209,30 +209,8 @@ export class DependencyManager {
         ctx?: TracingContext
     }): Promise<{ references: pgModels.ReferenceModel[]; totalCount: number; newOffset: number }> {
         const visibleIdsQuery = `
-            -- lineage is a recursively defined CTE that returns all ancestor an descendants
-            -- of the given commit for the given repository. This happens to evaluate in
-            -- Postgres as a lazy generator, which allows us to pull the "next" closest commit
-            -- in either direction from the source commit as needed.
-            WITH RECURSIVE lineage(id, repository, "commit", parent_commit, direction) AS (
-                SELECT l.* FROM (
-                    -- seed recursive set with commit looking in ancestor direction
-                    SELECT c.*, 'A' FROM lsif_commits c WHERE c.repository = $1 AND c."commit" = $2
-                    UNION
-                    -- seed recursive set with commit looking in descendant direction
-                    SELECT c.*, 'D' FROM lsif_commits c WHERE c.repository = $1 AND c."commit" = $2
-                ) l
-
-                UNION
-
-                SELECT * FROM (
-                    WITH l_inner AS (SELECT * FROM lineage)
-                    -- get next ancestor
-                    SELECT c.*, l.direction FROM l_inner l JOIN lsif_commits c ON l.direction = 'A' AND c.repository = l.repository AND c."commit" = l.parent_commit
-                    UNION
-                    -- get next descendant
-                    SELECT c.*, l.direction FROM l_inner l JOIN lsif_commits c ON l.direction = 'D' and c.repository = l.repository AND c.parent_commit = l."commit"
-                ) subquery
-            ),
+            WITH
+            ${bidirectionalLineage()},
             ${visibleDumps()}
             SELECT * FROM visible_ids
         `
@@ -260,7 +238,7 @@ export class DependencyManager {
             // and the getPage queries. The results of this query do not change based on
             // the page size or offset, so we query it separately here and pass the result
             // as a parameter.
-            const visible_ids = extractIds(await entityManager.query(visibleIdsQuery, [repository, commit]))
+            const visible_ids = extractIds(await entityManager.query(visibleIdsQuery, [repositoryId, commit]))
 
             // Get total number of items in this set of results
             const rawCount: { count: string }[] = await entityManager.query(countQuery, [

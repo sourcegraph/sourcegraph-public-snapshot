@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -94,6 +95,14 @@ func Watch(f func()) {
 	defaultClient.Watch(f)
 }
 
+// Cached will return a wrapper around f which caches the response. The value
+// will be recomputed every time the config is updated.
+//
+// IMPORTANT: The first call to wrapped will block on config initialization.
+func Cached(f func() interface{}) (wrapped func() interface{}) {
+	return defaultClient.Cached(f)
+}
+
 // Watch calls the given function in a separate goroutine whenever the
 // configuration has changed. The new configuration can be received by calling
 // conf.Get.
@@ -118,6 +127,23 @@ func (c *client) Watch(f func()) {
 			f()
 		}
 	}()
+}
+
+// Cached will return a wrapper around f which caches the response. The value
+// will be recomputed every time the config is updated.
+//
+// The first call to wrapped will block on config initialization.
+func (c *client) Cached(f func() interface{}) (wrapped func() interface{}) {
+	var once sync.Once
+	var val atomic.Value
+	return func() interface{} {
+		once.Do(func() {
+			c.Watch(func() {
+				val.Store(f())
+			})
+		})
+		return val.Load()
+	}
 }
 
 // notifyWatchers runs all the callbacks registered via client.Watch() whenever

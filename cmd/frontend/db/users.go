@@ -6,15 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"unicode/utf8"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -138,11 +141,27 @@ func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, 
 	return u.create(ctx, tx, info)
 }
 
+// maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
+// This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.
+const maxPasswordRunes = 256
+
+// checkPasswordLength returns an error if the password is too long.
+func checkPasswordLength(pw string) error {
+	if utf8.RuneCountInString(pw) > maxPasswordRunes {
+		return errcode.NewPresentationError(fmt.Sprintf("Passwords may not be more than %d characters.", maxPasswordRunes))
+	}
+	return nil
+}
+
 // create is like Create, except it uses the provided DB transaction. It must execute in a
 // transaction because the post-user-creation hooks must run atomically with the user creation.
 func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *types.User, err error) {
 	if Mocks.Users.Create != nil {
 		return Mocks.Users.Create(ctx, info)
+	}
+
+	if err := checkPasswordLength(info.Password); err != nil {
+		return nil, err
 	}
 
 	if info.Email != "" && info.EmailVerificationCode == "" && !info.EmailIsVerified {
@@ -252,6 +271,20 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		}
 	}
 
+	var verifiedEmail string
+	if info.Email != "" && info.EmailIsVerified {
+		verifiedEmail = info.Email
+	}
+	if err = Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
+		UserID:        id,
+		Username:      info.Username,
+		VerifiedEmail: verifiedEmail,
+		Perm:          authz.Read,
+		Type:          authz.PermRepos,
+	}); err != nil {
+		return nil, err
+	}
+
 	return &types.User{
 		ID:          id,
 		Username:    info.Username,
@@ -260,6 +293,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
 		SiteAdmin:   siteAdmin,
+		BuiltinAuth: info.Password != "",
 	}, nil
 }
 
@@ -557,6 +591,25 @@ func (u *users) GetByUsername(ctx context.Context, username string) (*types.User
 	return u.getOneBySQL(ctx, "WHERE username=$1 AND deleted_at IS NULL LIMIT 1", username)
 }
 
+// GetByUsernames returns a list of users by given usernames. The number of results list could be less
+// than the candidate list due to no user is associated with some usernames.
+func (u *users) GetByUsernames(ctx context.Context, usernames ...string) ([]*types.User, error) {
+	if Mocks.Users.GetByUsernames != nil {
+		return Mocks.Users.GetByUsernames(ctx, usernames...)
+	}
+
+	if len(usernames) == 0 {
+		return []*types.User{}, nil
+	}
+
+	items := make([]*sqlf.Query, len(usernames))
+	for i := range usernames {
+		items[i] = sqlf.Sprintf("%s", usernames[i])
+	}
+	q := sqlf.Sprintf("WHERE username IN (%s) AND deleted_at IS NULL ORDER BY id ASC", sqlf.Join(items, ","))
+	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
 var ErrNoCurrentUser = errors.New("no current user")
 
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
@@ -663,7 +716,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.User, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.tags FROM users u "+query, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -673,7 +726,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, pq.Array(&u.Tags))
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags))
 		if err != nil {
 			return nil, err
 		}

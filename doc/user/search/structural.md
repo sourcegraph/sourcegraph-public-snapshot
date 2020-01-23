@@ -66,8 +66,6 @@ following:
 
 - **The `lang` keyword is semantically significant.** Adding the `lang` [keyword](queries.md) informs the parser about language-specific syntax for comments, strings, and code. This makes structural search more accurate for that language. For example, `patterntype:structural 'fmt.Sprintf(:[args])' lang:go`. If `lang` is omitted, we perform a best-effort to infer the language based on matching file extensions, or fall back to a generic structural matcher.
 
-- **Extra large repos are unsupported**. Extra large repositories, like the Linux kernel, are currently restricted from being searched. This is a temporary restriction that we will lift soon.
-
 - **Unsupported query syntax keywords.** The `case` keyword does not change the behavior of structural search. Structural search patterns are always case-sensitive.
 
 - **Saved search are not supported.** It is not currently possible to save structural searches.

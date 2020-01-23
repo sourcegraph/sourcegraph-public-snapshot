@@ -1,5 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Badged } from 'sourcegraph'
 import H from 'history'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -165,7 +166,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
     }
 }
 
-function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
+function refsToFileMatch(uri: string, refs: Badged<Location>[]): IFileMatch {
     const p = parseRepoURI(uri)
     return {
         file: {
@@ -191,6 +192,7 @@ function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
                 limitHit: false,
                 lineNumber: ref.range.start.line,
                 offsetAndLengths: [[ref.range.start.character, ref.range.end.character - ref.range.start.character]],
+                badge: ref.badge,
             })
         ),
     }

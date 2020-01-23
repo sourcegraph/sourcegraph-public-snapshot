@@ -11,11 +11,7 @@ cleanup() {
 trap cleanup EXIT
 
 parallel_run() {
-    log_file=$(mktemp)
-    trap "rm -rf $log_file" EXIT
-
-    parallel --jobs 4 --keep-order --line-buffer --tag --joblog $log_file "$@"
-    cat $log_file
+    ./dev/ci/parallel_run.sh "$@"
 }
 export -f parallel_run
 
@@ -82,7 +78,7 @@ export -f build_symbols
 
 build_lsif() {
     echo "--- build lsif-server"
-    IMAGE=sourcegraph/lsif-server:ci ./lsif/build.sh
+    IMAGE=sourcegraph/lsif-server-builder:ci ./lsif/build.sh
 }
 export -f build_lsif
 

@@ -20,23 +20,6 @@ export class UploadManager {
     constructor(private connection: Connection) {}
 
     /**
-     * Get the counts of uploads in each possible state.
-     */
-    public getCounts(): Promise<{
-        queuedCount: number
-        completedCount: number
-        erroredCount: number
-        processingCount: number
-    }> {
-        return withInstrumentedTransaction(this.connection, async entityManager => ({
-            queuedCount: await this.getCount('queued', entityManager),
-            completedCount: await this.getCount('completed', entityManager),
-            erroredCount: await this.getCount('errored', entityManager),
-            processingCount: await this.getCount('processing', entityManager),
-        }))
-    }
-
-    /**
      * Get the count of uploads in the given state.
      *
      * @param state The state.
@@ -57,14 +40,18 @@ export class UploadManager {
     /**
      * Get the uploads in the given state.
      *
+     * @param repositoryId The repository identifier.
      * @param state The state.
      * @param query A search query.
+     * @param visibleAtTip If true, only return dumps visible at tip.
      * @param limit The maximum number of uploads to return.
      * @param offset The number of uploads to skip.
      */
     public async getUploads(
-        state: pgModels.LsifUploadState,
+        repositoryId: number,
+        state: pgModels.LsifUploadState | undefined,
         query: string,
+        visibleAtTip: boolean,
         limit: number,
         offset: number
     ): Promise<{ uploads: pgModels.LsifUpload[]; totalCount: number }> {
@@ -72,13 +59,17 @@ export class UploadManager {
             let queryBuilder = this.connection
                 .getRepository(pgModels.LsifUpload)
                 .createQueryBuilder('upload')
-                .where({ state })
+                .where({ repositoryId })
                 .orderBy('uploaded_at', 'DESC')
                 .limit(limit)
                 .offset(offset)
 
+            if (state) {
+                queryBuilder = queryBuilder.andWhere('state = :state', { state })
+            }
+
             if (query) {
-                const clauses = ['repository', 'commit', 'root', 'failure_summary', 'failure_stacktrace'].map(
+                const clauses = ['commit', 'root', 'failure_summary', 'failure_stacktrace'].map(
                     field => `"${field}" LIKE '%' || :query || '%'`
                 )
 
@@ -87,6 +78,10 @@ export class UploadManager {
                         clauses.slice(1).reduce((ob, c) => ob.orWhere(c, { query }), qb.where(clauses[0], { query }))
                     )
                 )
+            }
+
+            if (visibleAtTip) {
+                queryBuilder = queryBuilder.andWhere('visible_at_tip = true')
             }
 
             return queryBuilder.getManyAndCount()
@@ -130,7 +125,8 @@ export class UploadManager {
                         .getRepository(pgModels.LsifUpload)
                         .createQueryBuilder()
                         .delete()
-                        .where("uploaded_at < now() - (:maxAge * interval '1 second')", { maxAge })
+                        .where("state != 'completed'")
+                        .andWhere("uploaded_at < now() - (:maxAge * interval '1 second')", { maxAge })
                         .execute()
                 )
             ).affected || 0
@@ -170,13 +166,13 @@ export class UploadManager {
      */
     public async enqueue(
         {
-            repository,
+            repositoryId,
             commit,
             root,
             filename,
         }: {
-            /** The repository. */
-            repository: string
+            /** The repository identifier. */
+            repositoryId: number
             /** The commit. */
             commit: string
             /** The root. */
@@ -193,7 +189,7 @@ export class UploadManager {
         }
 
         const upload = new pgModels.LsifUpload()
-        upload.repository = repository
+        upload.repositoryId = repositoryId
         upload.commit = commit
         upload.root = root
         upload.filename = filename
@@ -228,8 +224,8 @@ export class UploadManager {
             )
 
             if (upload.state === 'errored') {
-                const error = new Error(upload.failureSummary)
-                error.stack = upload.failureStacktrace
+                const error = new Error(upload.failureSummary || '')
+                error.stack = upload.failureStacktrace || ''
                 throw new AbortError(error)
             }
 
@@ -263,13 +259,21 @@ export class UploadManager {
 
     /**
      * Lock and convert a queued upload. If the conversion function throws an error, then
-     * the error summary and stack trace will be written to the upload record.
+     * the error summary and stack trace will be written to the upload record and the state
+     * will be set to "errored".
+     *
+     * The convert callback is invoked with the locked upload record and the entity manager
+     * that locked the record. The callback should use it to operate in the same transaction.
+     *
+     * This method does NOT mark the upload as complete and the callback MUST be sure to call
+     * the `markComplete` method on successful processing. Otherwise the record will block the
+     * head of the queue by being re-processed ad nauseam.
      *
      * @param convert The function to call with the locked upload.
      * @param logger The logger instance.
      */
     public async dequeueAndConvert(
-        convert: (upload: pgModels.LsifUpload) => Promise<void>,
+        convert: (upload: pgModels.LsifUpload, entityManager: EntityManager) => Promise<void>,
         logger: Logger
     ): Promise<boolean> {
         // First, we select the next oldest upload with a state of `queued` and set
@@ -306,30 +310,37 @@ export class UploadManager {
             const transformer = new PlainObjectToDatabaseEntityTransformer(repo.manager)
             const upload = (await transformer.transform(results[0], meta)) as pgModels.LsifUpload
 
-            let state = 'completed'
-            let failureSummary: string | null = null
-            let failureStacktrace: string | null = null
-
             try {
-                await convert(upload)
+                await convert(upload, entityManager)
             } catch (error) {
-                state = 'errored'
-                failureSummary = error?.message
-                failureStacktrace = error?.stack
-
                 logger.error('Failed to convert upload', { error })
-            }
 
-            await entityManager.query(
-                `
-                    UPDATE lsif_uploads
-                    SET finished_at = now(), state = $2, failure_summary = $3, failure_stacktrace = $4
-                    WHERE id = $1
-                `,
-                [uploadId, state, failureSummary, failureStacktrace]
-            )
+                await entityManager.query(
+                    `
+                        UPDATE lsif_uploads
+                        SET state = 'errored', finished_at = now(), failure_summary = $2, failure_stacktrace = $3
+                        WHERE id = $1
+                    `,
+                    [uploadId, error?.message, error?.stack]
+                )
+            }
 
             return true
         })
+    }
+
+    /**
+     * Mark an upload as complete and set its finished timestamp.
+     *
+     * @param upload The upload.
+     * @param entityManager The EntityManager to use as part of a transaction.
+     */
+    public markComplete(
+        upload: pgModels.LsifUpload,
+        entityManager: EntityManager = this.connection.createEntityManager()
+    ): Promise<void> {
+        return entityManager.query("UPDATE lsif_uploads SET state = 'completed', finished_at = now() WHERE id = $1", [
+            upload.id,
+        ])
     }
 }

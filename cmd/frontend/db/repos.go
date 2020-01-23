@@ -98,6 +98,27 @@ func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.R
 	return repos[0], nil
 }
 
+// GetByIDs returns a list of repositories by given IDs. The number of results list could be less
+// than the candidate list due to no repository is associated with some IDs.
+// 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
+// is the site admin because this method returns all available data from the database.
+func (s *repos) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
+	if Mocks.Repos.GetByIDs != nil {
+		return Mocks.Repos.GetByIDs(ctx, ids...)
+	}
+
+	if len(ids) == 0 {
+		return []*types.Repo{}, nil
+	}
+
+	items := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		items[i] = sqlf.Sprintf("%d", ids[i])
+	}
+	q := sqlf.Sprintf("id IN (%s)", sqlf.Join(items, ","))
+	return s.getReposBySQL(ctx, false, true, q)
+}
+
 func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)
@@ -121,7 +142,6 @@ const getRepoByQueryFmtstr = `
 SELECT %s
 FROM repo
 WHERE deleted_at IS NULL
-AND enabled = true
 AND %%s`
 
 var getBySQLColumns = []string{
@@ -136,10 +156,12 @@ var getBySQLColumns = []string{
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	return s.getReposBySQL(ctx, false, querySuffix)
+	return s.getReposBySQL(ctx, true, false, querySuffix)
 }
 
-func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+// 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
+// is the site admin who is authorized to see the repositories returned even when authorize=false.
+func (s *repos) getReposBySQL(ctx context.Context, authorize, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	columns := getBySQLColumns
 	if minimal {
 		columns = columns[:5]
@@ -173,6 +195,9 @@ func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sq
 		return nil, err
 	}
 
+	if !authorize {
+		return repos, nil
+	}
 	// 🚨 SECURITY: This enforces repository permissions
 	return authzFilter(ctx, repos, authz.Read)
 }
@@ -219,12 +244,6 @@ type ReposListOptions struct {
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
 	PatternQuery query.Q
-
-	// Enabled includes enabled repositories in the list.
-	Enabled bool
-
-	// Disabled includes disabled repositories in the list.
-	Disabled bool
 
 	// NoForks excludes forks from the list.
 	NoForks bool
@@ -312,7 +331,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	// fetch matching repos
 	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
-	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
+	return s.getReposBySQL(ctx, true, opt.OnlyRepoIDs, fetchSQL)
 }
 
 // ListEnabledNames returns a list of all enabled repo names. This is commonly
@@ -320,7 +339,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 // indexed-search). We special case just returning enabled names so that we
 // read much less data into memory.
 func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
-	q := sqlf.Sprintf("SELECT name FROM repo WHERE enabled = true AND deleted_at IS NULL")
+	q := sqlf.Sprintf("SELECT name FROM repo WHERE deleted_at IS NULL")
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -413,15 +432,6 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		conds = append(conds, cond)
 	}
 
-	if opt.Enabled && opt.Disabled {
-		// nothing to do
-	} else if opt.Enabled && !opt.Disabled {
-		conds = append(conds, sqlf.Sprintf("enabled"))
-	} else if !opt.Enabled && opt.Disabled {
-		conds = append(conds, sqlf.Sprintf("NOT enabled"))
-	} else {
-		return nil, errors.New("Repos.List: must specify at least one of Enabled=true or Disabled=true")
-	}
 	if opt.NoForks {
 		conds = append(conds, sqlf.Sprintf("NOT fork"))
 	}
@@ -602,145 +612,4 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 	}
 
 	return nil, nil, nil, nil, nil
-}
-
-// Delete deletes the repository row from the repo table.
-func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
-	if Mocks.Repos.Delete != nil {
-		return Mocks.Repos.Delete(ctx, repo)
-	}
-
-	q := sqlf.Sprintf("DELETE FROM repo WHERE id=%d", repo)
-	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
-}
-
-func (s *repos) SetEnabled(ctx context.Context, id api.RepoID, enabled bool) error {
-	q := sqlf.Sprintf("UPDATE repo SET enabled=%t WHERE id=%d", enabled, id)
-	res, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return &repoNotFoundErr{ID: id}
-	}
-	return nil
-}
-
-func (s *repos) UpdateLanguage(ctx context.Context, repo api.RepoID, language string) error {
-	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET language=$1 WHERE id=$2", language, repo)
-	return err
-}
-
-func (s *repos) UpdateRepositoryMetadata(ctx context.Context, name api.RepoName, description string, fork bool, archived bool) error {
-	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE name=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, name)
-	return err
-}
-
-const upsertSQL = `
-WITH upsert AS (
-  UPDATE repo
-  SET
-    name                  = $1,
-    description           = $2,
-    fork                  = $3,
-    enabled               = $4,
-    external_id           = NULLIF(BTRIM($5), ''),
-    external_service_type = NULLIF(BTRIM($6), ''),
-    external_service_id   = NULLIF(BTRIM($7), ''),
-    archived              = $9
-  WHERE name = $1 OR (
-    external_id IS NOT NULL
-    AND external_service_type IS NOT NULL
-    AND external_service_id IS NOT NULL
-    AND NULLIF(BTRIM($5), '') IS NOT NULL
-    AND NULLIF(BTRIM($6), '') IS NOT NULL
-    AND NULLIF(BTRIM($7), '') IS NOT NULL
-    AND external_id = NULLIF(BTRIM($5), '')
-    AND external_service_type = NULLIF(BTRIM($6), '')
-    AND external_service_id = NULLIF(BTRIM($7), '')
-  )
-  RETURNING repo.name
-)
-
-INSERT INTO repo (
-  name,
-  description,
-  fork,
-  language,
-  enabled,
-  external_id,
-  external_service_type,
-  external_service_id,
-  archived
-) (
-  SELECT
-    $1 AS name,
-    $2 AS description,
-    $3 AS fork,
-    $8 AS language,
-    $4 AS enabled,
-    NULLIF(BTRIM($5), '') AS external_id,
-    NULLIF(BTRIM($6), '') AS external_service_type,
-    NULLIF(BTRIM($7), '') AS external_service_id,
-    $9 AS archived
-  WHERE NOT EXISTS (SELECT 1 FROM upsert)
-)`
-
-// Upsert updates the repository if it already exists (keyed on name) and
-// inserts it if it does not.
-//
-// If repo exists, op.Enabled is ignored.
-func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
-	if Mocks.Repos.Upsert != nil {
-		return Mocks.Repos.Upsert(op)
-	}
-
-	insert := false
-	language := ""
-	enabled := op.Enabled
-
-	// We optimistically assume the repo is already in the table, so first
-	// check if it is. We then fallback to the upsert functionality. The
-	// upsert is logged as a modification to the DB, even if it is a no-op. So
-	// we do this check to avoid log spam if postgres is configured with
-	// log_statement='mod'.
-	r, err := s.GetByName(ctx, op.Name)
-	if err != nil {
-		if _, ok := err.(*repoNotFoundErr); !ok {
-			return err
-		}
-		insert = true // missing
-	} else {
-		enabled = true
-		language = r.Language
-		// Ignore Enabled for deciding to update
-		insert = (op.Description != r.Description) ||
-			(op.Fork != r.Fork) ||
-			(!op.ExternalRepo.Equal(&r.ExternalRepo))
-	}
-
-	if !insert {
-		return nil
-	}
-
-	_, err = dbconn.Global.ExecContext(
-		ctx,
-		upsertSQL,
-		op.Name,
-		op.Description,
-		op.Fork,
-		enabled,
-		op.ExternalRepo.ID,
-		op.ExternalRepo.ServiceType,
-		op.ExternalRepo.ServiceID,
-		language,
-		op.Archived,
-	)
-
-	return err
 }

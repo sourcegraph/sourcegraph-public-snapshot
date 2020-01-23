@@ -72,7 +72,6 @@ func TestSearchResults(t *testing.T) {
 
 			want := db.ReposListOptions{
 				OnlyRepoIDs:     true,
-				Enabled:         true,
 				IncludePatterns: []string{"r", "p"},
 				LimitOffset:     limitOffset,
 			}
@@ -106,7 +105,6 @@ func TestSearchResults(t *testing.T) {
 
 			want := db.ReposListOptions{
 				OnlyRepoIDs: true,
-				Enabled:     true,
 				LimitOffset: limitOffset,
 			}
 
@@ -178,7 +176,6 @@ func TestSearchResults(t *testing.T) {
 
 			want := db.ReposListOptions{
 				OnlyRepoIDs: true,
-				Enabled:     true,
 				LimitOffset: limitOffset,
 			}
 
@@ -445,7 +442,7 @@ func TestRegexpPatternMatchingExprsInOrder(t *testing.T) {
 }
 
 func TestSearchResolver_getPatternInfo(t *testing.T) {
-	normalize := func(p *search.PatternInfo) {
+	normalize := func(p *search.TextPatternInfo) {
 		if len(p.IncludePatterns) == 0 {
 			p.IncludePatterns = nil
 		}
@@ -454,7 +451,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 		}
 	}
 
-	tests := map[string]search.PatternInfo{
+	tests := map[string]search.TextPatternInfo{
 		"p": {
 			Pattern:                "p",
 			IsRegExp:               true,
@@ -586,7 +583,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			searchResults: []SearchResultResolver{repoMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
-				`case:yes`:        {},
 			},
 		},
 
@@ -596,7 +592,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:markdown`:   {},
-				`case:yes`:        {},
 			},
 		},
 
@@ -606,7 +601,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$@develop`: {},
 				`lang:markdown`:           {},
-				`case:yes`:                {},
 			},
 		},
 		{
@@ -615,7 +609,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
-				`case:yes`:        {},
 			},
 		},
 		{
@@ -624,7 +617,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
-				`case:yes`:        {},
 			},
 		},
 
@@ -1014,7 +1006,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "indexed/one":

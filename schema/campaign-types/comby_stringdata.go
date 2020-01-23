@@ -21,7 +21,6 @@ const CombyCampaignTypeSchemaJSON = `{
     },
     "rewriteTemplate": {
       "type": "string",
-      "minLength": 1,
       "description": "See https://comby.dev/#match-syntax for syntax"
     }
   },

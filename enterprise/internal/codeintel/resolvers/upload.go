@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"encoding/base64"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -11,11 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 type lsifUploadResolver struct {
-	lsifUpload *lsif.LSIFUpload
+	repositoryResolver *graphqlbackend.RepositoryResolver
+	lsifUpload         *lsif.LSIFUpload
 }
 
 var _ graphqlbackend.LSIFUploadResolver = &lsifUploadResolver{}
@@ -25,11 +28,7 @@ func (r *lsifUploadResolver) ID() graphql.ID {
 }
 
 func (r *lsifUploadResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
-	return resolvePath(ctx, r.lsifUpload.Repository, r.lsifUpload.Commit, r.lsifUpload.Root)
-}
-
-func (r *lsifUploadResolver) InputRepoName() string {
-	return r.lsifUpload.Repository
+	return resolvePath(ctx, r.lsifUpload.RepositoryID, r.lsifUpload.Commit, r.lsifUpload.Root)
 }
 
 func (r *lsifUploadResolver) InputCommit() string {
@@ -64,6 +63,10 @@ func (r *lsifUploadResolver) FinishedAt() *graphqlbackend.DateTime {
 	return graphqlbackend.DateTimeOrNil(r.lsifUpload.FinishedAt)
 }
 
+func (r *lsifUploadResolver) IsLatestForRepo() bool {
+	return r.lsifUpload.VisibleAtTip
+}
+
 type lsifUploadFailureReasonResolver struct {
 	lsifUpload *lsif.LSIFUpload
 }
@@ -87,27 +90,30 @@ func (r *lsifUploadFailureReasonResolver) Stacktrace() string {
 }
 
 type LSIFUploadsListOptions struct {
-	State   string
-	Query   *string
-	Limit   *int32
-	NextURL *string
+	RepositoryID    graphql.ID
+	Query           *string
+	State           *string
+	IsLatestForRepo *bool
+	Limit           *int32
+	NextURL         *string
 }
 
 type lsifUploadConnectionResolver struct {
 	opt LSIFUploadsListOptions
 
 	// cache results because they are used by multiple fields
-	once       sync.Once
-	uploads    []*lsif.LSIFUpload
-	totalCount *int
-	nextURL    string
-	err        error
+	once               sync.Once
+	uploads            []*lsif.LSIFUpload
+	repositoryResolver *graphqlbackend.RepositoryResolver
+	totalCount         *int
+	nextURL            string
+	err                error
 }
 
 var _ graphqlbackend.LSIFUploadConnectionResolver = &lsifUploadConnectionResolver{}
 
 func (r *lsifUploadConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.LSIFUploadResolver, error) {
-	uploads, _, _, err := r.compute(ctx)
+	uploads, repositoryResolver, _, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,14 +121,15 @@ func (r *lsifUploadConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 	var l []graphqlbackend.LSIFUploadResolver
 	for _, lsifUpload := range uploads {
 		l = append(l, &lsifUploadResolver{
-			lsifUpload: lsifUpload,
+			repositoryResolver: repositoryResolver,
+			lsifUpload:         lsifUpload,
 		})
 	}
 	return l, nil
 }
 
 func (r *lsifUploadConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	_, count, _, err := r.compute(ctx)
+	_, _, count, _, err := r.compute(ctx)
 	if count == nil || err != nil {
 		return nil, err
 	}
@@ -132,7 +139,7 @@ func (r *lsifUploadConnectionResolver) TotalCount(ctx context.Context) (*int32, 
 }
 
 func (r *lsifUploadConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, _, nextURL, err := r.compute(ctx)
+	_, _, _, nextURL, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -144,53 +151,51 @@ func (r *lsifUploadConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFUpload, *int, string, error) {
+func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFUpload, *graphqlbackend.RepositoryResolver, *int, string, error) {
 	r.once.Do(func() {
+		r.repositoryResolver, r.err = graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
+		if r.err != nil {
+			return
+		}
+
 		r.uploads, r.nextURL, r.totalCount, r.err = client.DefaultClient.GetUploads(ctx, &struct {
-			State  string
-			Query  *string
-			Limit  *int32
-			Cursor *string
+			RepoID          api.RepoID
+			Query           *string
+			State           *string
+			IsLatestForRepo *bool
+			Limit           *int32
+			Cursor          *string
 		}{
-			State:  r.opt.State,
-			Query:  r.opt.Query,
-			Limit:  r.opt.Limit,
-			Cursor: r.opt.NextURL,
+			RepoID:          r.repositoryResolver.Type().ID,
+			Query:           r.opt.Query,
+			State:           r.opt.State,
+			IsLatestForRepo: r.opt.IsLatestForRepo,
+			Limit:           r.opt.Limit,
+			Cursor:          r.opt.NextURL,
 		})
 	})
 
-	return r.uploads, r.totalCount, r.nextURL, r.err
+	return r.uploads, r.repositoryResolver, r.totalCount, r.nextURL, r.err
 }
 
-type lsifUploadStatsResolver struct {
-	stats *lsif.LSIFUploadStats
-}
-
-var _ graphqlbackend.LSIFUploadStatsResolver = &lsifUploadStatsResolver{}
-
-func (r *lsifUploadStatsResolver) ID() graphql.ID {
-	return marshalLSIFUploadStatsGQLID(lsifUploadStatsGQLID)
-}
-
-func (r *lsifUploadStatsResolver) ProcessingCount() int32 { return r.stats.ProcessingCount }
-func (r *lsifUploadStatsResolver) ErroredCount() int32    { return r.stats.ErroredCount }
-func (r *lsifUploadStatsResolver) CompletedCount() int32  { return r.stats.CompletedCount }
-func (r *lsifUploadStatsResolver) QueuedCount() int32     { return r.stats.QueuedCount }
-
-func marshalLSIFUploadGQLID(lsifUploadID string) graphql.ID {
+func marshalLSIFUploadGQLID(lsifUploadID int64) graphql.ID {
 	return relay.MarshalID("LSIFUpload", lsifUploadID)
 }
 
-func unmarshalLSIFUploadGQLID(id graphql.ID) (lsifUploadID string, err error) {
+func unmarshalLSIFUploadGQLID(id graphql.ID) (lsifUploadID int64, err error) {
+	// First, try to unmarshal the ID as a string and then convert it to an
+	// integer. This is here to maintain backwards compatibility with the
+	// src-cli lsif upload command, which constructs its own relay identifier
+	// from a the string payload returned by the upload proxy.
+
+	var lsifUploadIDString string
+	err = relay.UnmarshalSpec(id, &lsifUploadIDString)
+	if err == nil {
+		lsifUploadID, err = strconv.ParseInt(lsifUploadIDString, 10, 64)
+		return
+	}
+
+	// If it wasn't unmarshal-able as a string, it's a new-style int identifier
 	err = relay.UnmarshalSpec(id, &lsifUploadID)
-	return
-}
-
-func marshalLSIFUploadStatsGQLID(lsifUploadStatsID string) graphql.ID {
-	return relay.MarshalID("LSIFUploadStats", lsifUploadStatsID)
-}
-
-func unmarshalLSIFUploadStatsGQLID(id graphql.ID) (lsifUploadStatsID string, err error) {
-	err = relay.UnmarshalSpec(id, &lsifUploadStatsID)
 	return
 }

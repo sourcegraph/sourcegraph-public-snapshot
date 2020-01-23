@@ -89,6 +89,24 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "searchMultipleRevisionsPerRepository": {
+          "description": "Enables searching multiple revisions of the same repository (using ` + "`" + `repo:myrepo@branch1:branch2` + "`" + `).",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
+        "tls.external": {
+          "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "insecureSkipVerify": {
+              "description": "insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.\nIf InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.",
+              "type": "boolean",
+              "default": false
+            }
+          }
         }
       },
       "group": "Experimental",
@@ -742,6 +760,15 @@ const SiteSchemaJSON = `{
           "description": "Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.",
           "default": false,
           "type": "boolean"
+        },
+        "allowOrgs": {
+          "description": "Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },

@@ -2,7 +2,9 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -85,6 +87,22 @@ func TestUsers_ValidUsernames(t *testing.T) {
 				t.Errorf("%q: got valid %v, want %v", test.name, valid, test.wantValid)
 			}
 		})
+	}
+}
+
+func TestUsers_LimitPasswordLength(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	longPassword := strings.Repeat("x", maxPasswordRunes+1)
+	expectedErr := "Passwords may not be more than 256 characters."
+
+	_, err := Users.Create(ctx, NewUser{Username: "test", Password: longPassword})
+	if pm := errcode.PresentationMessage(err); pm != expectedErr {
+		t.Fatalf("expected error %q; got %q", expectedErr, pm)
 	}
 }
 
@@ -392,6 +410,47 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	}
 }
 
+func TestUsers_GetByUsernames(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	newUsers := []NewUser{
+		{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			EmailIsVerified: true,
+		},
+		{
+			Email:           "bob@example.com",
+			Username:        "bob",
+			EmailIsVerified: true,
+		},
+	}
+
+	for _, newUser := range newUsers {
+		_, err := Users.Create(ctx, newUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	users, err := Users.GetByUsernames(ctx, "alice", "bob", "cindy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(users) != 2 {
+		t.Fatalf("got %d users, but want 2", len(users))
+	}
+	for i := range users {
+		if users[i].Username != newUsers[i].Username {
+			t.Errorf("got %s, but want %s", users[i].Username, newUsers[i].Username)
+		}
+	}
+}
+
 func TestUsers_Delete(t *testing.T) {
 	for name, hard := range map[string]bool{"": false, "_Hard": true} {
 		t.Run("TestUsers_Delete"+name, func(t *testing.T) {
@@ -522,4 +581,72 @@ func normalizeUsers(users []*types.User) []*types.User {
 		u.UpdatedAt = u.UpdatedAt.Local().Round(time.Second)
 	}
 	return users
+}
+
+func TestUsers_CreateAndGrantPendingPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	Authz = &mockAuthzStore{}
+	defer func() {
+		Authz = &authzStore{}
+	}()
+
+	tests := []struct {
+		name           string
+		opts           NewUser
+		expectCalled   bool
+		expectUsername string
+		expectEmail    string
+	}{
+		{
+			name: "create with an unverified email",
+			opts: NewUser{
+				Email:                 "alice@example.com",
+				Username:              "alice",
+				DisplayName:           "alice",
+				Password:              "right-password",
+				EmailVerificationCode: "email-code",
+			},
+			expectCalled:   true,
+			expectUsername: "alice",
+			expectEmail:    "",
+		},
+		{
+			name: "create with a verified email",
+			opts: NewUser{
+				Email:           "bob@example.com",
+				Username:        "bob",
+				DisplayName:     "bob",
+				Password:        "right-password",
+				EmailIsVerified: true,
+			},
+			expectCalled:   true,
+			expectUsername: "bob",
+			expectEmail:    "bob@example.com",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			calledGrantPendingPermissions := false
+			Mocks.Authz.GrantPendingPermissions = func(_ context.Context, args *GrantPendingPermissionsArgs) error {
+				calledGrantPendingPermissions = true
+				if test.expectUsername != args.Username {
+					return fmt.Errorf("args.Username: want %q but got %q", test.expectUsername, args.Username)
+				} else if test.expectEmail != args.VerifiedEmail {
+					return fmt.Errorf("args.Email: want %q but got %q", test.expectEmail, args.VerifiedEmail)
+				}
+				return nil
+			}
+			_, err := Users.Create(ctx, test.opts)
+			if err != nil {
+				t.Fatal(err)
+			} else if test.expectCalled != calledGrantPendingPermissions {
+				t.Fatalf("calledGrantPendingPermissions: want %v but got %v", test.expectCalled, calledGrantPendingPermissions)
+			}
+		})
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,7 +23,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			t.Helper()
 			sort.Strings(have)
 			if !reflect.DeepEqual(have, want) {
-				t.Error(pretty.Compare(have, want))
+				t.Error(cmp.Diff(have, want))
 			}
 		}
 	}
@@ -878,7 +879,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITLAB",
 			desc:   "invalid projects item name",
 			config: `{"projects": [{"name": "bar"}]}`,
-			assert: includes(`projects.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			assert: includes(`projects.0.name: Does not match pattern '^[\w-]+(/[\w.-]+)+$'`),
 		},
 		{
 			kind:   "GITLAB",

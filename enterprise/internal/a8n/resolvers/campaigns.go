@@ -15,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 )
 
+var _ graphqlbackend.CampaignsConnectionResolver = &campaignsConnectionResolver{}
+
 type campaignsConnectionResolver struct {
 	store *ee.Store
 	opts  ee.ListCampaignsOpts
@@ -58,6 +60,8 @@ func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*a8n.Campa
 	})
 	return r.campaigns, r.next, r.err
 }
+
+var _ graphqlbackend.CampaignResolver = &campaignResolver{}
 
 type campaignResolver struct {
 	store *ee.Store
@@ -120,11 +124,15 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
 }
 
-func (r *campaignResolver) PublishedAt() *graphqlbackend.DateTime {
-	if r.Campaign.PublishedAt.IsZero() {
-		return nil
+func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	createdAt, err := r.store.GetLatestChangesetJobCreatedAt(ctx, r.Campaign.ID)
+	if err != nil {
+		return nil, err
 	}
-	return &graphqlbackend.DateTime{Time: r.Campaign.PublishedAt}
+	if createdAt.IsZero() {
+		return nil, nil
+	}
+	return &graphqlbackend.DateTime{Time: createdAt}, nil
 }
 
 func (r *campaignResolver) Changesets(ctx context.Context, args struct {
@@ -244,7 +252,7 @@ func (r *campaignResolver) RepositoryDiffs(
 	return &changesetDiffsConnectionResolver{changesetsConnection}, nil
 }
 
-func (r *campaignResolver) ChangesetCreationStatus(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
+func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
 	return r.store.GetCampaignStatus(ctx, r.Campaign.ID)
 }
 

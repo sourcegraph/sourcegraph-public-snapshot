@@ -34,12 +34,18 @@ import (
 // zip archives
 const defaultFetchTimeout = 30 * time.Second
 
-var schemas = map[string]string{
-	"comby":       schema.CombyCampaignTypeSchemaJSON,
-	"credentials": schema.CredentialsCampaignTypeSchemaJSON,
-}
+const (
+	campaignTypeComby              = "comby"
+	campaignTypeRegexSearchReplace = "regexsearchreplace"
+	campaignTypeCredentials        = "credentials"
+	campaignTypePatch              = "patch"
+)
 
-const patchCampaignType = "patch"
+var schemas = map[string]string{
+	campaignTypeComby:              schema.CombyCampaignTypeSchemaJSON,
+	campaignTypeRegexSearchReplace: schema.RegexSearchReplaceCampaignTypeSchemaJSON,
+	campaignTypeCredentials:        schema.CredentialsCampaignTypeSchemaJSON,
+}
 
 // NewCampaignType returns a new CampaignType for the given campaign type name
 // and arguments.
@@ -67,29 +73,32 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 	var ct CampaignType
 
 	switch campaignTypeName {
-	case "comby":
+	case campaignTypeComby:
 		c := &comby{
 			replacerURL:  graphqlbackend.ReplacerURL,
 			httpClient:   cli,
 			fetchTimeout: defaultFetchTimeout,
 		}
-
 		if err := json.Unmarshal(normalizedArgs, &c.args); err != nil {
 			return nil, err
 		}
-
 		ct = c
 
-	case "credentials":
+	case campaignTypeRegexSearchReplace:
+		c := &regexSearchReplace{newSearch: graphqlbackend.NewSearchImplementer}
+		if err := json.Unmarshal(normalizedArgs, &c.args); err != nil {
+			return nil, err
+		}
+		ct = c
+
+	case campaignTypeCredentials:
 		c := &credentials{newSearch: graphqlbackend.NewSearchImplementer}
-
 		if err := json.Unmarshal(normalizedArgs, &c.args); err != nil {
 			return nil, err
 		}
-
 		ct = c
 
-	case patchCampaignType:
+	case campaignTypePatch:
 		// Prefer the more specific createCampaignPlanFromPatches GraphQL API for creating campaigns
 		// from patches computed by the caller, to avoid having multiple ways to do the same thing.
 		return nil, errors.New("use createCampaignPlanFromPatches for patch campaign types")
@@ -256,6 +265,79 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 	return result.String(), "", nil
 }
 
+type regexSearchReplaceArgs struct {
+	ScopeQuery  string `json:"scopeQuery"`
+	RegexpMatch string `json:"regexpMatch"`
+	TextReplace string `json:"textReplace"`
+}
+
+type regexSearchReplace struct {
+	args regexSearchReplaceArgs
+
+	newSearch func(*graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error)
+}
+
+func (c *regexSearchReplace) searchQuery() string {
+	// We add the regexMatch because without it search may only return a
+	// truncated list of file matches. We also add count:10000 to have a
+	// higher chance of finding all matches.
+	return fmt.Sprintf("%s %s count:10000", c.args.ScopeQuery, c.args.RegexpMatch)
+}
+
+func (c *regexSearchReplace) searchQueryForRepo(n api.RepoName) string {
+	return fmt.Sprintf("repo:%s %s %s count:10000", regexp.QuoteMeta(string(n)), c.args.ScopeQuery, c.args.RegexpMatch)
+}
+
+func (c *regexSearchReplace) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, string, error) {
+	// check that the regex is valid before doing any work.
+	re, err := regexp.Compile(c.args.RegexpMatch)
+	if err != nil {
+		return "", "", err
+	}
+
+	t := "regexp"
+	search, err := c.newSearch(&graphqlbackend.SearchArgs{
+		Version:     "V2",
+		PatternType: &t,
+		Query:       c.searchQueryForRepo(repo),
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	resultsResolver, err := search.Results(ctx)
+	if err != nil {
+		return "", "", err
+	}
+
+	diffs := []string{}
+
+	for _, res := range resultsResolver.Results() {
+		fm, ok := res.ToFileMatch()
+		if !ok {
+			continue
+		}
+
+		path := fm.File().Path()
+		content, err := fm.File().Content(ctx)
+		if err != nil {
+			return "", "", err
+		}
+
+		newContent := re.ReplaceAllString(content, c.args.TextReplace)
+		diff, err := tmpfileDiff(path, content, newContent)
+
+		if err != nil {
+			return "", "", err
+		}
+
+		withHeader := fmt.Sprintf("diff %s %s\n%s", path, path, diff)
+
+		diffs = append(diffs, withHeader)
+	}
+	return strings.Join(diffs, "\n"), "", nil
+}
+
 type credentialsMatcher struct {
 	MatcherType string `json:"type"`
 	ReplaceWith string `json:"replaceWith"`
@@ -268,6 +350,7 @@ type credentialsArgs struct {
 
 var npmTokenRegexp = regexp.MustCompile(`((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
 var npmTokenRegexpMultiline = regexp.MustCompile(`(?m)((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
+var npmEnvironmentVariableRegexp = regexp.MustCompile(`\${.+}$`)
 
 type credentials struct {
 	args credentialsArgs
@@ -276,12 +359,12 @@ type credentials struct {
 }
 
 func (c *credentials) searchQuery() string {
-	return c.args.ScopeQuery + " " + npmTokenRegexp.String() + " file:.npmrc"
+	return c.args.ScopeQuery + " " + npmTokenRegexp.String() + " file:.npmrc count:99999"
 }
 
 func (c *credentials) searchQueryForRepo(n api.RepoName) string {
 	return fmt.Sprintf(
-		"file:.npmrc repo:%s %s",
+		"file:.npmrc count:99999 repo:%s %s",
 		regexp.QuoteMeta(string(n)),
 		npmTokenRegexp.String(),
 	)
@@ -305,7 +388,6 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 
 	diffs := []string{}
 	tokens := []string{}
-
 	for _, res := range resultsResolver.Results() {
 		fm, ok := res.ToFileMatch()
 		if !ok {
@@ -318,13 +400,28 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 			return "", "", err
 		}
 
+		// If the token is in the form ${ABC} we should not replace it as this is valid and indicates
+		// a value that should be read from the environment
 		submatches := npmTokenRegexpMultiline.FindAllStringSubmatch(content, -1)
 		for _, match := range submatches {
-			tokens = append(tokens, match[len(match)-1])
+			token := match[len(match)-1]
+			if npmEnvironmentVariableRegexp.MatchString(token) {
+				continue
+			}
+			tokens = append(tokens, token)
 		}
-
-		replacement := fmt.Sprintf("${1}%s", c.args.Matchers[0].ReplaceWith)
-		newContent := npmTokenRegexpMultiline.ReplaceAllString(content, replacement)
+		newContent := npmTokenRegexpMultiline.ReplaceAllStringFunc(content, func(old string) string {
+			// Don't replace right hand side if it is an environment variable
+			submatches := npmTokenRegexp.FindAllStringSubmatch(old, -1)
+			if len(submatches) != 1 && len(submatches[0]) != 3 {
+				return old
+			}
+			left, right := submatches[0][1], submatches[0][2]
+			if npmEnvironmentVariableRegexp.MatchString(right) {
+				return old
+			}
+			return left + c.args.Matchers[0].ReplaceWith
+		})
 
 		diff, err := tmpfileDiff(path, content, newContent)
 		if err != nil {

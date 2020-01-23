@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -18,7 +19,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -63,7 +66,7 @@ func checkSpecArgSafety(spec string) error {
 // runWithRemoteOpts runs the command after applying the remote options.
 // If progress is not nil, all output is written to it in a separate goroutine.
 func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	configureGitCommand(cmd)
+	configureRemoteGitCommand(cmd, conf.Get().ExperimentalFeatures.TlsExternal)
 
 	var b interface {
 		Bytes() []byte
@@ -93,7 +96,7 @@ func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) (
 	return b.Bytes(), err
 }
 
-func configureGitCommand(cmd *exec.Cmd) {
+func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *schema.TlsExternal) {
 	if cmd.Args[0] != "git" {
 		panic("Only git commands are supported")
 	}
@@ -105,6 +108,12 @@ func configureGitCommand(cmd *exec.Cmd) {
 	//
 	// And set a timeout to avoid indefinite hangs if the server is unreachable.
 	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
+
+	if tlsConf != nil {
+		if tlsConf.InsecureSkipVerify {
+			cmd.Env = append(cmd.Env, "GIT_SSL_NO_VERIFY=true")
+		}
+	}
 
 	extraArgs := []string{
 		// Unset credential helper because the command is non-interactive.
@@ -190,7 +199,7 @@ var repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
 	return remoteURLs[0], nil
 }
 
-// writeCounter wraps an io.WriterCloser and keeps track of bytes written.
+// writeCounter wraps an io.Writer and keeps track of bytes written.
 type writeCounter struct {
 	w io.Writer
 	// n is the number of bytes written to w
@@ -201,6 +210,30 @@ func (c *writeCounter) Write(p []byte) (n int, err error) {
 	n, err = c.w.Write(p)
 	c.n += int64(n)
 	return
+}
+
+// limitWriter is a io.Writer that writes to an W but discards after N bytes.
+type limitWriter struct {
+	W io.Writer // underling writer
+	N int       // max bytes remaining
+}
+
+func (l *limitWriter) Write(p []byte) (int, error) {
+	if l.N <= 0 {
+		return len(p), nil
+	}
+	origLen := len(p)
+	if len(p) > l.N {
+		p = p[:l.N]
+	}
+	n, err := l.W.Write(p)
+	l.N -= n
+	if l.N <= 0 {
+		// If we have written limit bytes, then we can include the discarded
+		// part of p in the count.
+		n = origLen
+	}
+	return n, err
 }
 
 // flushingResponseWriter is a http.ResponseWriter that flushes all writes
@@ -469,4 +502,19 @@ func bestEffortWalk(root string, walkFn func(path string, info os.FileInfo) erro
 
 		return walkFn(path, info)
 	})
+}
+
+func logErrors(printf func(format string, v ...interface{}), repo api.RepoName, stderr []byte) {
+	for len(stderr) > 0 {
+		advance, line, err := bufio.ScanLines(stderr, true)
+		if err != nil {
+			// bufio.ScanLines should never return an error (go1.13)
+			panic("bufio.ScanLines returned an error: " + err.Error())
+		}
+		stderr = stderr[advance:]
+
+		if bytes.HasPrefix(line, []byte("error: ")) {
+			printf("%s %s\n", repo, line)
+		}
+	}
 }

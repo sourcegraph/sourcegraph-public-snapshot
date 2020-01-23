@@ -14,6 +14,7 @@
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
     "**/dev/site-config.json": "jsonc",
+    "**/.mocharc.json": "jsonc",
   },
   "json.schemas": [
     {
@@ -40,21 +41,11 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": false,
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    {
-      "language": "typescript",
-      "autoFix": true,
-    },
-    {
-      "language": "typescriptreact",
-      "autoFix": true,
-    },
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true,
   },
+  "eslint.options": { "cache": true },
   "eslint.workingDirectories": [
     {
       "directory": "dev/release",
@@ -77,4 +68,5 @@
       "changeProcessCWD": true,
     },
   ],
+  "go.lintTool": "golangci-lint",
 }

@@ -15,6 +15,9 @@ Image expects two volumes mounted:
 
 - at `/prometheus` a data directory where logs, the tsdb and other prometheus data files will live
 - at `/sg_prometheus_add_ons` a directory that contains additional config files of two types:
+
   - rule files which must have the suffix `_rules.yml` in their filename (ie `gitserver_rules.yml`)
   - target files which must have the suffix `_targets.yml` in their filename (ie `local_targets.yml`)
   - if this directory contains a file named `prometheus.yml` it will be used as the main prometheus config file
+
+You can specify additional flags to pass to the prometheus command by setting the environment variable `PROMETHEUS_ADDITIONAL_FLAGS`.

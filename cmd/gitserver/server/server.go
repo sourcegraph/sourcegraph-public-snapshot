@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -39,7 +40,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -116,6 +116,10 @@ type Server struct {
 
 	// DiskSizer tells how much disk is free and how large the disk is.
 	DiskSizer DiskSizer
+
+	// TODO(keegancsmith) remove! Temporary logging to understand errors in
+	// production. https://github.com/sourcegraph/sourcegraph/issues/6676
+	StderrErrorLog *log.Logger
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -592,7 +596,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				}
 
 				if honey.Enabled() {
-					ev.Send()
+					_ = ev.Send()
 				}
 				if traceLogs {
 					log15.Debug("TRACE gitserver exec", mapToLog15Ctx(ev.Fields())...)
@@ -613,7 +617,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	if cloneInProgress {
 		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
 		})
@@ -659,8 +663,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
-		if resolved, err := quickRevParseHead(dir); err == nil && git.IsAbsoluteRevision(resolved) {
-			w.Write([]byte(resolved))
+		if resolved, err := quickRevParseHead(dir); err == nil && isAbsoluteRevision(resolved) {
+			_, _ = w.Write([]byte(resolved))
 			w.Header().Set("X-Exec-Error", "")
 			w.Header().Set("X-Exec-Exit-Status", "0")
 			w.Header().Set("X-Exec-Stderr", "")
@@ -670,7 +674,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	var stderrBuf bytes.Buffer
 	stdoutW := &writeCounter{w: w}
-	stderrW := &writeCounter{w: &stderrBuf}
+	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
 
 	cmdStart = time.Now()
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
@@ -684,15 +688,14 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
 
-	stderr := stderrBuf.String()
-	if len(stderr) > 1024 {
-		stderr = stderr[:1024]
+	if s.StderrErrorLog != nil {
+		logErrors(s.StderrErrorLog.Printf, req.Repo, stderrBuf.Bytes())
 	}
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
-	w.Header().Set("X-Exec-Stderr", string(stderr))
+	w.Header().Set("X-Exec-Stderr", stderrBuf.String())
 }
 
 // setGitAttributes writes our global gitattributes to
@@ -1233,8 +1236,8 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	})
 	hasher := sha256.New()
 	for _, b := range lines {
-		hasher.Write(b)
-		hasher.Write([]byte("\n"))
+		_, _ = hasher.Write(b)
+		_, _ = hasher.Write([]byte("\n"))
 	}
 	hash := make([]byte, hex.EncodedLen(hasher.Size()))
 	hex.Encode(hash, hasher.Sum(nil))
@@ -1363,7 +1366,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 	}
 	// rev-parse on an OID does not check if the commit actually exists, so it
 	// is always works. So we append ^0 to force the check
-	if git.IsAbsoluteRevision(rev) {
+	if isAbsoluteRevision(rev) {
 		rev = rev + "^0"
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
@@ -1372,7 +1375,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 		return false
 	}
 	// Revision not found, update before returning.
-	s.doRepoUpdate(ctx, repo, url)
+	_ = s.doRepoUpdate(ctx, repo, url)
 	return true
 }
 
@@ -1385,7 +1388,7 @@ func quickRevParseHead(dir GitDir) (string, error) {
 		return "", err
 	}
 	head = bytes.TrimSpace(head)
-	if h := string(head); git.IsAbsoluteRevision(h) {
+	if h := string(head); isAbsoluteRevision(h) {
 		return h, nil
 	}
 
@@ -1436,4 +1439,24 @@ func errorString(err error) string {
 		return ""
 	}
 	return err.Error()
+}
+
+// IsAbsoluteRevision checks if the revision is a git OID SHA string.
+//
+// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
+// isn't a ref. Git allows 40-char hexadecimal strings to be references.
+//
+// copied from internal/vcs/git to avoid cyclic import
+func isAbsoluteRevision(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for _, r := range s {
+		if !(('0' <= r && r <= '9') ||
+			('a' <= r && r <= 'f') ||
+			('A' <= r && r <= 'F')) {
+			return false
+		}
+	}
+	return true
 }

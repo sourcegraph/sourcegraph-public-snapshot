@@ -46,5 +46,3 @@ export const settingsActions: EditorAction[] = [
     { id: 'sourcegraph.settings.searchScopes', label: 'Add search scope', run: addSearchScopeToSettings },
     { id: 'sourcegraph.settings.quickLinks', label: 'Add quick link', run: addQuickLinkToSettings },
 ]
-
-export const siteConfigActions: EditorAction[] = []

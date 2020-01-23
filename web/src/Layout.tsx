@@ -31,7 +31,13 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from './search'
+import {
+    parseSearchURLQuery,
+    PatternTypeProps,
+    InteractiveSearchProps,
+    CaseSensitivityProps,
+    SmartSearchFieldProps,
+} from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
@@ -60,7 +66,9 @@ export interface LayoutProps
         ThemePreferenceProps,
         ActivationProps,
         PatternTypeProps,
-        InteractiveSearchProps {
+        CaseSensitivityProps,
+        InteractiveSearchProps,
+        SmartSearchFieldProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -116,7 +124,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
-    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] = props.location.pathname === '/stats'
+    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] =
+        props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
 
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).

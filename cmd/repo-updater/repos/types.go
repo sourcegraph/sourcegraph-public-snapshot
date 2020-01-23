@@ -547,9 +547,6 @@ type Repo struct {
 	Language string
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
-	// Enabled is whether the repository is enabled. Disabled repositories are
-	// not accessible by users (except site admins).
-	Enabled bool
 	// Archived is whether the repository has been archived.
 	Archived bool
 	// CreatedAt is when this repository was created on Sourcegraph.
@@ -717,6 +714,14 @@ func (r *Repo) Less(s *Repo) bool {
 	return sortedSliceLess(sourcesKeys(r.Sources), sourcesKeys(s.Sources))
 }
 
+func (r *Repo) String() string {
+	eid := fmt.Sprintf("{%s %s %s}", r.ExternalRepo.ServiceID, r.ExternalRepo.ServiceType, r.ExternalRepo.ID)
+	if r.IsDeleted() {
+		return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s, IsDeleted: true}", r.ID, r.Name, eid)
+	}
+	return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s}", r.ID, r.Name, eid)
+}
+
 func sourcesKeys(m map[string]*SourceInfo) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -786,9 +791,7 @@ func (rs Repos) Kinds() (kinds []string) {
 func (rs Repos) ExternalRepos() []api.ExternalRepoSpec {
 	specs := make([]api.ExternalRepoSpec, 0, len(rs))
 	for _, r := range rs {
-		if r.ExternalRepo.IsSet() {
-			specs = append(specs, r.ExternalRepo)
-		}
+		specs = append(specs, r.ExternalRepo)
 	}
 	return specs
 }

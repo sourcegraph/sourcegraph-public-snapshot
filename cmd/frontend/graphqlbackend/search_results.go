@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
@@ -284,10 +285,6 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			// we shouldn't be getting any repositoy name matches back.
 			addRepoFilter(r.Name(), "", 1)
 		}
-		// Add `case:yes` filter to offer easier access to search results matching with case sensitive set to yes
-		// We use count == 0 and limitHit == false since we can't determine that information without
-		// running the search query. This causes it to display as just `case:yes`.
-		add("case:yes", "case:yes", 0, false, "case")
 	}
 
 	filterSlice := make([]*searchFilterResolver, 0, len(filters))
@@ -693,16 +690,31 @@ type getPatternInfoOptions struct {
 	// to allow users to jump to files by just typing their name.
 	forceFileSearch         bool
 	performStructuralSearch bool
+
+	fileMatchLimit int32
 }
 
 // getPatternInfo gets the search pattern info for the query in the resolver.
-func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.PatternInfo, error) {
+func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
+	if opts == nil {
+		opts = &getPatternInfoOptions{}
+	}
+
+	if opts.fileMatchLimit == 0 {
+		opts.fileMatchLimit = r.maxResults()
+	}
+
+	return getPatternInfo(r.query, opts)
+}
+
+// getPatternInfo gets the search pattern info for q
+func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
 	var patternsToCombine []string
 	isRegExp := false
 	isStructuralPat := false
-	if opts != nil && opts.performStructuralSearch {
+	if opts.performStructuralSearch {
 		isStructuralPat = true
-		for _, v := range r.query.Values(query.FieldDefault) {
+		for _, v := range q.Values(query.FieldDefault) {
 			var pattern string
 			switch {
 			case v.String != nil:
@@ -717,9 +729,9 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		}
 		p := strings.Join(patternsToCombine, " ")
 		patternsToCombine = []string{p}
-	} else if opts == nil || !opts.forceFileSearch {
+	} else if !opts.forceFileSearch {
 		isRegExp = true
-		for _, v := range r.query.Values(query.FieldDefault) {
+		for _, v := range q.Values(query.FieldDefault) {
 			// Treat quoted strings as literal strings to match, not regexps.
 			var pattern string
 			switch {
@@ -744,42 +756,42 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 	}
 
 	// Handle file: and -file: filters.
-	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
-	filePatternsReposMustInclude, filePatternsReposMustExclude := r.query.RegexpPatterns(query.FieldRepoHasFile)
+	includePatterns, excludePatterns := q.RegexpPatterns(query.FieldFile)
+	filePatternsReposMustInclude, filePatternsReposMustExclude := q.RegexpPatterns(query.FieldRepoHasFile)
 
-	if opts != nil && opts.forceFileSearch {
-		for _, v := range r.query.Values(query.FieldDefault) {
+	if opts.forceFileSearch {
+		for _, v := range q.Values(query.FieldDefault) {
 			includePatterns = append(includePatterns, asString(v))
 		}
 	}
 
 	var combyRule []string
-	for _, v := range r.query.Values(query.FieldCombyRule) {
+	for _, v := range q.Values(query.FieldCombyRule) {
 		combyRule = append(combyRule, asString(v))
 	}
 
 	// Handle lang: and -lang: filters.
-	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(query.FieldLang))
+	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(q.StringValues(query.FieldLang))
 	if err != nil {
 		return nil, err
 	}
 	includePatterns = append(includePatterns, langIncludePatterns...)
 	excludePatterns = append(excludePatterns, langExcludePatterns...)
 
-	languages, _ := r.query.StringValues(query.FieldLang)
+	languages, _ := q.StringValues(query.FieldLang)
 
-	patternInfo := &search.PatternInfo{
+	patternInfo := &search.TextPatternInfo{
 		IsRegExp:                     isRegExp,
 		IsStructuralPat:              isStructuralPat,
-		IsCaseSensitive:              r.query.IsCaseSensitive(),
-		FileMatchLimit:               r.maxResults(),
+		IsCaseSensitive:              q.IsCaseSensitive(),
+		FileMatchLimit:               opts.fileMatchLimit,
 		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
 		IncludePatterns:              includePatterns,
 		FilePatternsReposMustInclude: filePatternsReposMustInclude,
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
 		PathPatternsAreRegExps:       true,
 		Languages:                    languages,
-		PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
+		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    strings.Join(combyRule, ""),
 	}
 	if len(excludePatterns) > 0 {
@@ -912,6 +924,18 @@ func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, al
 					prometheusType: "structural_search_needs_more_memory",
 					title:          "Structural search needs more memory",
 					description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
+				}
+			} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
+				var msg string
+				if envvar.SourcegraphDotComMode() {
+					msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
+				} else {
+					msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
+				}
+				alert = &searchAlert{
+					prometheusType: "structural_search_on_zero_indexed_repos",
+					title:          "Unindexed repositories with structural search",
+					description:    fmt.Sprintf("Structural search currently only works on indexed repositories. Some of the repositories to search are not indexed, so we can't return results for them. %s", msg),
 				}
 			} else {
 				newMultiErr = multierror.Append(newMultiErr, err)
@@ -1122,6 +1146,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
+				old := args.PatternInfo
+				patternInfo := &search.CommitPatternInfo{
+					Pattern:                      old.Pattern,
+					IsRegExp:                     old.IsRegExp,
+					IsCaseSensitive:              old.IsCaseSensitive,
+					FileMatchLimit:               old.FileMatchLimit,
+					IncludePatterns:              old.IncludePatterns,
+					ExcludePattern:               old.ExcludePattern,
+					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+				}
+				args := search.TextParametersForCommitParameters{
+					PatternInfo: patternInfo,
+					Repos:       args.Repos,
+					Query:       args.Query,
+				}
 				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
@@ -1146,6 +1186,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
+				old := args.PatternInfo
+				patternInfo := &search.CommitPatternInfo{
+					Pattern:                      old.Pattern,
+					IsRegExp:                     old.IsRegExp,
+					IsCaseSensitive:              old.IsCaseSensitive,
+					FileMatchLimit:               old.FileMatchLimit,
+					IncludePatterns:              old.IncludePatterns,
+					ExcludePattern:               old.ExcludePattern,
+					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
+				}
+				args := search.TextParametersForCommitParameters{
+					PatternInfo: patternInfo,
+					Repos:       args.Repos,
+					Query:       args.Query,
+				}
 				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {

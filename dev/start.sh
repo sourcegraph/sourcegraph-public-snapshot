@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# set to true if unset so set -u won't break us
-: ${SOURCEGRAPH_COMBINE_CONFIG:=false}
-
 set -euf -o pipefail
 
 unset CDPATH
@@ -73,7 +70,6 @@ export GRAFANA_SERVER_URL=http://localhost:3370
 export SRC_HTTP_ADDR=":3082"
 export WEBPACK_DEV_SERVER=1
 
-export CRITICAL_CONFIG_FILE=${CRITICAL_CONFIG_FILE:-./dev/critical-config.json}
 export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}
 export GLOBAL_SETTINGS_FILE=${GLOBAL_SETTINGS_FILE:-./dev/global-settings.json}
 export SITE_CONFIG_ALLOW_EDITS=true

@@ -36,6 +36,16 @@ func TestNewCampaignType_ArgsValidation(t *testing.T) {
 			},
 		},
 		{
+			name:         "valid comby with empty rewriteTemplate",
+			campaignType: "comby",
+			args:         `{"scopeQuery":"repo:github","matchTemplate":"foobar","rewriteTemplate":""}`,
+			wantArgs: combyArgs{
+				ScopeQuery:      "repo:github",
+				MatchTemplate:   "foobar",
+				RewriteTemplate: "",
+			},
+		},
+		{
 			name:         "invalid comby",
 			campaignType: "comby",
 			args:         `{"scopeQuery":""}`,
@@ -233,6 +243,107 @@ func TestCampaignType_Comby(t *testing.T) {
 	}
 }
 
+func TestCampaignType_RegexSearchAndReplace(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name                  string
+		repoName              string
+		commitID              string
+		args                  regexSearchReplaceArgs
+		newSearch             func(*graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error)
+		searchResultsContents map[string]string
+		wantDiff              string
+	}{
+		{
+			name: "simple search replace",
+			args: regexSearchReplaceArgs{
+				ScopeQuery:  "repo:github",
+				RegexpMatch: "foo",
+				TextReplace: "bar",
+			},
+			searchResultsContents: map[string]string{
+				"main.go": `func foo() int { return 0 }
+`,
+			},
+			wantDiff: `diff main.go main.go
+--- main.go
++++ main.go
+@@ -1 +1 @@
+-func foo() int { return 0 }
++func bar() int { return 0 }
+`,
+		},
+		{
+			name: "search replace with match groups",
+			args: regexSearchReplaceArgs{
+				ScopeQuery:  "repo:github",
+				RegexpMatch: "(foo)",
+				TextReplace: "$1${1}bar",
+			},
+			searchResultsContents: map[string]string{
+				"main.go": `func foo() int { return 0 }
+`,
+			},
+			wantDiff: `diff main.go main.go
+--- main.go
++++ main.go
+@@ -1 +1 @@
+-func foo() int { return 0 }
++func foofoobar() int { return 0 }
+`,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+				if string(commit) != tc.commitID {
+					return nil, fmt.Errorf("wrong commit ID. have=%q, want=%q", commit, tc.commitID)
+				}
+
+				content, ok := tc.searchResultsContents[name]
+				if !ok {
+					return nil, fmt.Errorf("no fake file content for %s set up", name)
+				}
+
+				return []byte(content), nil
+			}
+			defer func() { git.Mocks.ReadFile = nil }()
+			testSearch := func(*graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error) {
+				results := make([]graphqlbackend.SearchResultResolver, 0, len(tc.searchResultsContents))
+
+				for path := range tc.searchResultsContents {
+					results = append(results, &fakeSearchResultResolver{
+						commitID: api.CommitID(tc.commitID),
+						repo: &types.Repo{
+							ExternalRepo: api.ExternalRepoSpec{ServiceType: github.ServiceType},
+						},
+						path: path,
+					})
+				}
+
+				return &fakeSearch{results: results}, nil
+			}
+
+			ct := &regexSearchReplace{args: tc.args, newSearch: testSearch}
+
+			haveDiff, _, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
+
+			if err != nil {
+				t.Fatalf("error generating diff: %q", err)
+			}
+
+			if haveDiff != tc.wantDiff {
+				t.Fatalf("wrong diff.\nhave=%q\nwant=%q", haveDiff, tc.wantDiff)
+			}
+
+		})
+	}
+
+}
+
 func TestCampaignType_Credentials(t *testing.T) {
 	ctx := context.Background()
 
@@ -298,16 +409,15 @@ _authToken=YET_ANOTHER_TOKEN_LEAKED
 --- .npmrc
 +++ .npmrc
 @@ -1,4 +1,4 @@
--//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+ //registry.npmjs.org/:_authToken=${NPM_TOKEN}
 -//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
 -:_authToken=ANOTHER_TOKEN
 -_authToken=YET_ANOTHER_TOKEN_LEAKED
-+//registry.npmjs.org/:_authToken=
 +//npm.fontawesome.com/:_authToken=
 +:_authToken=
 +_authToken=
 `,
-			wantDescription: "Tokens found:\n\n- [ ] `${NPM_TOKEN}`\n- [ ] `12345678-2323-1111-1111-12345670B312`\n- [ ] `ANOTHER_TOKEN`\n- [ ] `YET_ANOTHER_TOKEN_LEAKED`\n",
+			wantDescription: "Tokens found:\n\n- [ ] `12345678-2323-1111-1111-12345670B312`\n- [ ] `ANOTHER_TOKEN`\n- [ ] `YET_ANOTHER_TOKEN_LEAKED`\n",
 		},
 		{
 			name: "single NPM token and replaceWith",

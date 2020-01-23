@@ -5,7 +5,6 @@ export const enterpriseRepoSettingsSidebarItems: RepoSettingsSideBarItems = [
     ...repoSettingsSidebarItems,
     {
         to: '/code-intelligence',
-        exact: true,
         label: 'Code intelligence',
     },
 ]

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -22,17 +24,19 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
-		Pattern *search.PatternInfo
+		Pattern *search.TextPatternInfo
 		Query   string
 	}{
 		{
 			Name: "substr",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -45,7 +49,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "regex",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "(foo).*?(bar)",
@@ -58,7 +62,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -71,7 +75,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "case",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
 				Pattern:                      "foo",
@@ -84,7 +88,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "casepath",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
 				Pattern:                      "foo",
@@ -97,7 +101,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path matches only",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "test",
@@ -138,67 +142,64 @@ func TestStructuralPatToZoektQuery(t *testing.T) {
 		{
 			Name:     "Just a hole",
 			Pattern:  ":[1]",
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `TRUE`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"()(?-s:.)*?()")`,
 		},
 		{
 			Name:     "Adjacent holes",
 			Pattern:  ":[1]:[2]:[3]",
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `TRUE`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"()(?-s:.)*?()(?-s:.)*?()(?-s:.)*?()")`,
 		},
 		{
 			Name:     "Substring between holes",
 			Pattern:  ":[1] substring :[2]",
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `(and case_content_substr:" substring ")`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"()(?-s:.)*?([\\t-\\n\\f-\\r ]+substring[\\t-\\n\\f-\\r ]+)(?-s:.)*?()")`,
 		},
 		{
 			Name:     "Substring before and after different hole kinds",
 			Pattern:  "prefix :[[1]] :[2.] suffix",
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `(and case_content_substr:"prefix " case_content_substr:" " case_content_substr:" suffix")`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"(prefix[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+suffix)")`,
 		},
 		{
 			Name:     "Substrings covering all hole kinds.",
 			Pattern:  `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `(and case_content_substr:"1. " case_content_substr:" 2. " case_content_substr:" 3. " case_content_substr:" 4. " case_content_substr:" 5. " case_content_substr:" 6. " case_content_substr:" done.")`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"(1\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+2\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+3\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+4\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+5\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+6\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+done\\.)")`,
 		},
 		{
-			Name: "Substrings across multiple lines.",
-			Pattern: `:[1] spans
-multiple
-lines
- :[2]`,
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `(and case_content_substr:" spans\nmultiple\nlines\n ")`,
+			Name:     "Substrings across multiple lines.",
+			Pattern:  ``,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"()")`,
 		},
 		{
 			Name:     "Allow alphanumeric identifiers in holes",
 			Pattern:  "sub :[alphanum_ident_123] string",
-			Function: StructuralPatToConjunctedLiteralsQuery,
-			Want:     `(and case_content_substr:"sub " case_content_substr:" string")`,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"(sub[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+string)")`,
 		},
 
 		{
 			Name:     "Whitespace separated holes",
 			Pattern:  ":[1] :[2]",
 			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"(?:)" case_regex:"[\\t-\\n\\f-\\r ]+" case_regex:"(?:)")`,
+			Want:     `(and case_regex:"()(?-s:.)*?([\\t-\\n\\f-\\r ]+)(?-s:.)*?()")`,
 		},
 		{
 			Name:     "Expect newline separated pattern",
 			Pattern:  "ParseInt(:[stuff], :[x]) if err ",
 			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_content_substr:"ParseInt(" case_regex:",[\\t-\\n\\f-\\r ]+" case_regex:"\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+")`,
+			Want:     `(and case_regex:"(ParseInt\\()(?-s:.)*?(,[\\t-\\n\\f-\\r ]+)(?-s:.)*?(\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+)")`,
 		},
 		{
 			Name: "Contiguous whitespace is replaced by regex",
 			Pattern: `ParseInt(:[stuff],    :[x])
              if err `,
 			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_content_substr:"ParseInt(" case_regex:",[\\t-\\n\\f-\\r ]+" case_regex:"\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+")`,
+			Want:     `(and case_regex:"(ParseInt\\()(?-s:.)*?(,[\\t-\\n\\f-\\r ]+)(?-s:.)*?(\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+)")`,
 		},
 	}
 	for _, tt := range cases {
@@ -231,14 +232,14 @@ func queryEqual(a, b zoektquery.Q) bool {
 func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 	cases := []struct {
 		Name    string
-		Pattern *search.PatternInfo
+		Pattern *search.TextPatternInfo
 		Query   []string
 		// This should be the same value passed in to either FilePatternsReposMustInclude or FilePatternsReposMustExclude
 		ListOfFilePaths []string
 	}{
 		{
 			Name: "single repohasfile filter",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -253,7 +254,7 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 		},
 		{
 			Name: "multiple repohasfile filters",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -268,7 +269,7 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 		},
 		{
 			Name: "single negated repohasfile filter",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -283,7 +284,7 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 		},
 		{
 			Name: "multiple negated repohasfile filter",
-			Pattern: &search.PatternInfo{
+			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -322,7 +323,7 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 }
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -362,7 +363,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 	args := &search.TextParameters{
-		PatternInfo: &search.PatternInfo{
+		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
@@ -392,7 +393,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
 	args = &search.TextParameters{
-		PatternInfo: &search.PatternInfo{
+		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
@@ -408,8 +409,71 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 }
 
+func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
+		switch repoName {
+		case "foo":
+			return []*FileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				},
+			}, false, nil
+		default:
+			panic("unexpected repo")
+		}
+	}
+	defer func() { mockSearchFilesInRepo = nil }()
+
+	trueVal := true
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{SearchMultipleRevisionsPerRepository: &trueVal},
+	}})
+	defer conf.Mock(nil)
+
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
+
+	q, err := query.ParseAndCheck("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	args := &search.TextParameters{
+		PatternInfo: &search.TextPatternInfo{
+			FileMatchLimit: defaultMaxSearchResults,
+			Pattern:        "foo",
+		},
+		Repos:        makeRepositoryRevisions("foo@master:mybranch:*refs/heads/"),
+		Query:        q,
+		Zoekt:        zoekt,
+		SearcherURLs: endpoint.Static("test"),
+	}
+	args.Repos[0].ListRefs = func(context.Context, gitserver.Repo) ([]git.Ref, error) {
+		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
+	}
+	results, _, err := searchFilesInRepos(context.Background(), args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resultURIs := make([]string, len(results))
+	for i, result := range results {
+		resultURIs[i] = result.uri
+	}
+	sort.Strings(resultURIs)
+
+	wantResultURIs := []string{
+		"git://foo?branch3#main.go",
+		"git://foo?branch4#main.go",
+		"git://foo?master#main.go",
+		"git://foo?mybranch#main.go",
+	}
+	if !reflect.DeepEqual(resultURIs, wantResultURIs) {
+		t.Errorf("got %v, want %v", resultURIs, wantResultURIs)
+	}
+}
+
 func TestRepoShouldBeSearched(t *testing.T) {
-	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -425,7 +489,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		}
 	}
 	defer func() { mockTextSearch = nil }()
-	info := &search.PatternInfo{
+	info := &search.TextPatternInfo{
 		FileMatchLimit:               defaultMaxSearchResults,
 		Pattern:                      "foo",
 		FilePatternsReposMustInclude: []string{"main"},
@@ -499,7 +563,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	defer cancel()
 	type args struct {
 		ctx             context.Context
-		query           *search.PatternInfo
+		query           *search.TextPatternInfo
 		repos           []*search.RepositoryRevisions
 		useFullDeadline bool
 		searcher        zoekt.Searcher
@@ -522,7 +586,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			name: "returns no error if search completed with no matches before timeout",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: false,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
@@ -537,7 +601,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			name: "returns error if max wall time is exceeded but no matches have been found yet",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: false,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
@@ -552,7 +616,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			name: "returns error if context timeout already passed",
 			args: args{
 				ctx:             zeroTimeoutCtx,
-				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: true,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
@@ -567,7 +631,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			name: "returns error if searcher returns an error",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: true,
 				searcher:        &errorSearcher{err: errors.New("womp womp")},
@@ -604,140 +668,203 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 }
 
-func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
-	type args struct {
-		ctx                             context.Context
-		queryPatternInfo                *search.PatternInfo
-		searcher                        zoekt.Searcher
-		repoSet                         zoektquery.RepoSet
-		repoHasFileFlagIsInQuery        bool
-		negatedRepoHasFileFlagIsInQuery bool
+// repoURLsFakeSearcher fakes a searcher for use in
+// createNewRepoSetWithRepoHasFileInputs. It only supports setting the
+// RepoURLs field in search results, and will only evaluate search queries
+// containing RepoSets and file path filters.
+//
+// It is a map from repo name to list of files.
+type repoURLsFakeSearcher map[string][]string
+
+func (repoPaths repoURLsFakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	matchedRepoURLs := map[string]string{}
+	for repo, files := range repoPaths {
+		// We only expect a subset of query atoms. So we can evaluate them
+		// against our repo and files and tell if this repo should be in the
+		// result set.
+		errS := ""
+		eval := zoektquery.Map(q, func(q zoektquery.Q) zoektquery.Q {
+			switch r := q.(type) {
+			case *zoektquery.RepoSet:
+				return &zoektquery.Const{Value: r.Set[repo]}
+
+			case *zoektquery.Substring:
+				// Return true if any file name matches pattern
+				if r.Content || !r.FileName {
+					errS = "content substr"
+					return q
+				}
+
+				match := func(v string) bool {
+					return strings.Contains(v, r.Pattern)
+				}
+				if !r.CaseSensitive {
+					pat := strings.ToLower(r.Pattern)
+					match = func(v string) bool {
+						return strings.Contains(strings.ToLower(v), pat)
+					}
+				}
+
+				for _, f := range files {
+					if match(f) {
+						return &zoektquery.Const{Value: true}
+					}
+				}
+				return &zoektquery.Const{Value: false}
+
+			case *zoektquery.Regexp:
+				// Return true if any file name matches regexp
+				if r.Content || !r.FileName {
+					errS = "content regexp"
+					return q
+				}
+
+				prefix := ""
+				if !r.CaseSensitive {
+					prefix = "(?i)"
+				}
+				re := regexp.MustCompile(prefix + r.Regexp.String())
+
+				for _, f := range files {
+					if re.FindStringIndex(f) != nil {
+						return &zoektquery.Const{Value: true}
+					}
+				}
+				return &zoektquery.Const{Value: false}
+
+			case *zoektquery.And:
+				return q
+
+			default:
+				errS = "unexpected query atom: " + q.String()
+				return q
+			}
+		})
+		if errS != "" {
+			return nil, errors.Errorf("unsupported query %s: %s", q.String(), errS)
+		}
+		eval = zoektquery.Simplify(eval)
+		if eval.(*zoektquery.Const).Value {
+			matchedRepoURLs[repo] = repo
+		}
 	}
+
+	return &zoekt.SearchResult{RepoURLs: matchedRepoURLs}, nil
+}
+
+func (repoURLsFakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {
+	panic("unimplemented")
+}
+
+func (repoURLsFakeSearcher) String() string {
+	panic("unimplemented")
+}
+
+func (repoURLsFakeSearcher) Close() {
+	panic("unimplemented")
+}
+
+func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
+	searcher := repoURLsFakeSearcher{
+		"github.com/test/1": []string{"1.md"},
+		"github.com/test/2": []string{"2.md"},
+	}
+	allRepos := []string{"github.com/test/1", "github.com/test/2"}
 
 	tests := []struct {
 		name        string
-		args        args
-		wantRepoSet *zoektquery.RepoSet
+		include     []string
+		exclude     []string
+		repoSet     []string
+		wantRepoSet []string
 	}{
 		{
-			name: "returns filtered repoSet when repoHasFileFlag is in query",
-			args: args{
-				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
-				searcher: &fakeSearcher{result: &zoekt.SearchResult{
-					Files: []zoekt.FileMatch{
-						{
-							FileName:   "1.md",
-							Repository: "github.com/test/1",
-							LineMatches: []zoekt.LineMatch{{
-								FileName: true,
-							}},
-						},
-					},
-					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"},
-				}},
-				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
-				repoHasFileFlagIsInQuery:        true,
-				negatedRepoHasFileFlagIsInQuery: false,
-			},
-			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+			name:        "all",
+			include:     []string{"md"},
+			repoSet:     allRepos,
+			wantRepoSet: allRepos,
 		},
 		{
-			name: "returns filtered repoSet when multiple repoHasFileFlags are in query",
-			args: args{
-				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1", "2"}, PathPatternsAreRegExps: true},
-				searcher: &fakeSearcher{result: &zoekt.SearchResult{
-					Files: []zoekt.FileMatch{
-						{
-							FileName:   "1.md",
-							Repository: "github.com/test/1",
-							LineMatches: []zoekt.LineMatch{{
-								FileName: true,
-							}},
-						},
-						{
-							FileName:   "1.md",
-							Repository: "github.com/test/2",
-							LineMatches: []zoekt.LineMatch{{
-								FileName: true,
-							}},
-						},
-						{
-							FileName:   "2.md",
-							Repository: "github.com/test/2",
-							LineMatches: []zoekt.LineMatch{{
-								FileName: true,
-							}},
-						},
-					},
-					RepoURLs: map[string]string{"github.com/test/2": "github.com/test/2"},
-				}},
-				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
-				repoHasFileFlagIsInQuery:        true,
-				negatedRepoHasFileFlagIsInQuery: false,
-			},
-			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
+			name:    "none",
+			include: []string{"foo"},
+			repoSet: allRepos,
 		},
 		{
-			name: "returns filtered repoSet when negated repoHasFileFlag is in query",
-			args: args{
-				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustExclude: []string{"1"}, PathPatternsAreRegExps: true},
-				searcher: &fakeSearcher{result: &zoekt.SearchResult{
-					Files: []zoekt.FileMatch{
-						{
-							FileName:   "1.md",
-							Repository: "github.com/test/1",
-							LineMatches: []zoekt.LineMatch{{
-								FileName: true,
-							}},
-						},
-					},
-					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"},
-				}},
-				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
-				repoHasFileFlagIsInQuery:        false,
-				negatedRepoHasFileFlagIsInQuery: true,
-			},
-			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
+			name:        "one include",
+			include:     []string{"1"},
+			repoSet:     allRepos,
+			wantRepoSet: []string{"github.com/test/1"},
 		},
 		{
-			name: "returns a new repoSet that includes at most the repos from original repoSet",
-			args: args{
-				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
-				searcher: &fakeSearcher{result: &zoekt.SearchResult{
-					Files: []zoekt.FileMatch{
-						{
-							FileName:   "1.md",
-							Repository: "github.com/test/1",
-							LineMatches: []zoekt.LineMatch{{
-								FileName: true,
-							}},
-						},
-						{
-							FileName:   "1.md",
-							Repository: "github.com/test/2",
-							LineMatches: []zoekt.LineMatch{{
-								FileName: true,
-							}},
-						},
-					},
-					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1", "github.com/test/2": "github.com/test/2"},
-				}},
-				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
-				repoHasFileFlagIsInQuery:        false,
-				negatedRepoHasFileFlagIsInQuery: true,
-			},
-			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+			name:        "two include",
+			include:     []string{"md", "2"},
+			repoSet:     allRepos,
+			wantRepoSet: []string{"github.com/test/2"},
+		},
+		{
+			name:        "include exclude",
+			include:     []string{"md"},
+			exclude:     []string{"1"},
+			repoSet:     allRepos,
+			wantRepoSet: []string{"github.com/test/2"},
+		},
+		{
+			name:        "exclude",
+			exclude:     []string{"1"},
+			repoSet:     allRepos,
+			wantRepoSet: []string{"github.com/test/2"},
+		},
+		{
+			name:    "exclude all",
+			exclude: []string{"md"},
+			repoSet: allRepos,
+		},
+		{
+			name:        "exclude none",
+			exclude:     []string{"foo"},
+			repoSet:     allRepos,
+			wantRepoSet: allRepos,
+		},
+		{
+			name:        "subset of reposet",
+			include:     []string{"md"},
+			repoSet:     []string{"github.com/test/1"},
+			wantRepoSet: []string{"github.com/test/1"},
+		},
+		{
+			name:    "exclude subset of reposet",
+			exclude: []string{"1"},
+			repoSet: []string{"github.com/test/1"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(tt.args.ctx, tt.args.queryPatternInfo, tt.args.searcher, tt.args.repoSet)
+			repoSet := &zoektquery.RepoSet{Set: map[string]bool{}}
+			for _, r := range tt.repoSet {
+				repoSet.Set[r] = true
+			}
+
+			info := &search.TextPatternInfo{
+				FilePatternsReposMustInclude: tt.include,
+				FilePatternsReposMustExclude: tt.exclude,
+				PathPatternsAreRegExps:       true,
+			}
+
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), info, searcher, repoSet)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(gotRepoSet, tt.wantRepoSet) {
-				t.Errorf("createNewRepoSetWithRepoHasFileInputs() gotRepoSet = %v, want %v", gotRepoSet, tt.wantRepoSet)
+
+			var got []string
+			for r := range gotRepoSet.Set {
+				got = append(got, r)
+			}
+
+			sort.Strings(got)
+			sort.Strings(tt.wantRepoSet)
+			if !cmp.Equal(tt.wantRepoSet, got) {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tt.wantRepoSet, got))
 			}
 		})
 	}
@@ -750,6 +877,7 @@ func Test_zoektIndexedRepos(t *testing.T) {
 		"foo/indexed-three@",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
+		"foo/multi-rev@a:b",
 	)
 
 	zoektRepoList := &zoekt.RepoList{

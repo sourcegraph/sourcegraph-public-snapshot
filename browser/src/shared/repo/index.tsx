@@ -33,9 +33,3 @@ export interface OpenDiffInSourcegraphProps
         headRev: string
     }
 }
-
-export interface MaybeDiffSpec {
-    isDelta: boolean
-    isSplitDiff?: boolean
-    isBase?: boolean
-}

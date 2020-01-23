@@ -9,16 +9,60 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## 3.12.0 (unreleased)
+## 3.13.0 (unreleased)
 
 ### Added
 
-- Experimental feature flag `BitbucketServerFastPerm` can be enabled to speed up fetching ACL data from Bitbucket Server instances. This requires [Bitbucket Server Sourcegraph plugin](https://github.com/sourcegraph/bitbucket-server-plugin) to be installed.
-- Bitbucket Server repositories with the label `archived` can be excluded from search with `archived:no` [syntax](https://docs.sourcegraph.com/user/search/queries). [#5494](https://github.com/sourcegraph/sourcegraph/issues/5494)
-- Add button to download file in code view. [#5478](https://github.com/sourcegraph/sourcegraph/issues/5478)
-- Skip LFS content when cloning git repositories. [#7322](https://github.com/sourcegraph/sourcegraph/issues/7322)
+- Experimental: the search query input now provides syntax highlighting, hover tooltips, and diagnostics on filters in search queries. Requires the global settings value `{ "experimentalFeatures": { "smartSearchField": true } }`.
 
 ### Changed
+
+### Fixed
+
+- After adding/removing a gitserver replica the admin interface will correctly report that repositories that need to move replicas as cloning. [#7970](https://github.com/sourcegraph/sourcegraph/issues/7970)
+
+### Removed
+
+- All repository fields related to `enabled` and `disabled` have been removed from the GraphQL API. These fields have been deprecated since 3.4. [#3971](https://github.com/sourcegraph/sourcegraph/pull/3971)
+- The deprecated extension API `Hover.__backcompatContents` was removed.
+
+## 3.12.2 (unreleased)
+
+### Fixed
+
+- A regression in 3.12.0 which caused [Automation find-leaked-credentials campaigns](https://docs.sourcegraph.com/user/automation#finding-leaked-credentials) to not return any results for private repositories. [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914)
+
+## 3.12.1
+
+### Fixed
+
+- The ephemeral `/site-config.json` escape-hatch config file has moved to `$HOME/site-config.json`, to support non-root container environments. [#7873](https://github.com/sourcegraph/sourcegraph/issues/7873)
+- Fixed an issue where repository permissions would sometimes not be cached, due to improper Redis nil value handling. [#7912](https://github.com/sourcegraph/sourcegraph/issues/7912)
+
+## 3.12.0
+
+### Added
+
+- Bitbucket Server repositories with the label `archived` can be excluded from search with `archived:no` [syntax](https://docs.sourcegraph.com/user/search/queries). [#5494](https://github.com/sourcegraph/sourcegraph/issues/5494)
+- Add button to download file in code view. [#5478](https://github.com/sourcegraph/sourcegraph/issues/5478)
+- The new `allowOrgs` site config setting in GitHub `auth.providers` enables admins to restrict GitHub logins to members of specific GitHub organizations. [#4195](https://github.com/sourcegraph/sourcegraph/issues/4195)
+- Support case field in repository search. [#7671](https://github.com/sourcegraph/sourcegraph/issues/7671)
+- Skip LFS content when cloning git repositories. [#7322](https://github.com/sourcegraph/sourcegraph/issues/7322)
+- Hover tooltips and _Find Reference_ results now display a badge to indicate when a result is search-based. These indicators can be disabled by adding `{ "experimentalFeatures": { "showBadgeAttachments": false } }` in global settings.
+- Automation campaigns can now be created as drafts, which can be shared and updated without creating changesets (pull requests) on code hosts. When ready, a draft can then be published, either completely or changeset by changeset, to create changesets on the code host. [#7659](https://github.com/sourcegraph/sourcegraph/pull/7659)
+- Experimental: feature flag `BitbucketServerFastPerm` can be enabled to speed up fetching ACL data from Bitbucket Server instances. This requires [Bitbucket Server Sourcegraph plugin](https://github.com/sourcegraph/bitbucket-server-plugin) to be installed.
+- Experimental: A site configuration field `{ "experimentalFeatures" { "tls.external": true } }` which allows you to configure SSL/TLS settings for Sourcegraph contacting your code hosts. Currently just supports turning off TLS/SSL verification. [#71](https://github.com/sourcegraph/sourcegraph/issues/71)
+- Experimental: To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Requires the site configuration value `{ "experimentalFeatures": { "searchMultipleRevisionsPerRepository": true } }`. Previously this was only supported for diff and commit searches.
+- Experimental: interactive search mode, which helps users construct queries using UI elements. Requires the site configuration value `{ "experimentalFeatures": { "splitSearchModes": true } }`. The existing plain text search format is still available via the dropdown menu on the left of the search bar.
+- A case sensitivity toggle now appears in the search bar.
+- Add explicit repository permissions support with site configuration field `{ "permissions.userMapping" { "enabled": true, "bindID": "email" } }`.
+
+### Changed
+
+- The "Files" tab in the search results page has been renamed to "Filenames" for clarity.
+- The search query builder now lives on its own page at `/search/query-builder`. The home search page has a link to it.
+- User passwords when using builtin auth are limited to 256 characters. Existing passwords longer than 256 characters will continue to work.
+- GraphQL API: Campaign.changesetCreationStatus has been renamed to Campaign.status to be aligned with CampaignPlan. [#7654](https://github.com/sourcegraph/sourcegraph/pull/7654)
 
 ### Fixed
 
@@ -26,8 +70,26 @@ All notable changes to Sourcegraph are documented in this file.
 - We resolve relative symbolic links from the directory of the symlink, rather than the root of the repository. [#6034](https://github.com/sourcegraph/sourcegraph/issues/6034)
 - Show errors on repository settings page when repo-updater is down. [#3593](https://github.com/sourcegraph/sourcegraph/issues/3593)
 - Remove benign warning that verifying config took more than 10s when updating or saving an external service. [#7176](https://github.com/sourcegraph/sourcegraph/issues/7176)
+- repohasfile search filter works again (regressed in 3.10). [#7380](https://github.com/sourcegraph/sourcegraph/issues/7380)
+- Structural search can now run on very large repositories containing any number of files. [#7133](https://github.com/sourcegraph/sourcegraph/issues/7133)
 
 ### Removed
+
+- The deprecated GraphQL mutation `setAllRepositoriesEnabled` has been removed. [#7478](https://github.com/sourcegraph/sourcegraph/pull/7478)
+- The deprecated GraphQL mutation `deleteRepository` has been removed. [#7483](https://github.com/sourcegraph/sourcegraph/pull/7483)
+
+## 3.11.4
+
+### Fixed
+
+- The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
+- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.12.1` will need to manually modify their `docker run` command to use `sourcegraph/server:3.12.1` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
+
+## 3.11.1
+
+### Fixed
+
+- The syncing process for newly created Automation changesets has been fixed again after they have erroneously been marked as deleted in the database. [#7522](https://github.com/sourcegraph/sourcegraph/pull/7522)
 
 ## 3.11.0
 

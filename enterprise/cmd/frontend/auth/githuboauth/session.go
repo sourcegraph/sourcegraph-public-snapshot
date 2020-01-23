@@ -19,13 +19,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"golang.org/x/oauth2"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
 	clientID    string
 	allowSignup bool
+	allowOrgs   []string
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
@@ -44,10 +45,17 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
+	ghClient := s.newClient(token.AccessToken)
+
 	// 🚨 SECURITY: Ensure that the user email is verified
-	verifiedEmails := s.getVerifiedEmails(ctx, token)
+	verifiedEmails := getVerifiedEmails(ctx, ghClient)
 	if len(verifiedEmails) == 0 {
 		return nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
+	}
+
+	// 🚨 SECURITY: Ensure that the user is part of one of the white listed orgs, if any.
+	if !s.verifyUserOrgs(ctx, ghClient) {
+		return nil, "Could not verify user is part of the allowed GitHub organizations.", errors.New("couldn't verify user is part of allowed GitHub organizations")
 	}
 
 	// Try every verified email in succession until the first that succeeds
@@ -118,12 +126,15 @@ func derefInt64(i *int64) int64 {
 	return *i
 }
 
+func (s *sessionIssuerHelper) newClient(token string) *githubsvc.Client {
+	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
+	return githubsvc.NewClient(apiURL, token, nil)
+}
+
 // getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,
 // it will be the first email in the returned list. It only checks the first 100 user emails.
-func (s *sessionIssuerHelper) getVerifiedEmails(ctx context.Context, token *oauth2.Token) (verifiedEmails []string) {
-	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
-	ghClient := githubsvc.NewClient(apiURL, "", nil)
-	emails, err := ghClient.GetAuthenticatedUserEmails(ctx, token.AccessToken)
+func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.Client) (verifiedEmails []string) {
+	emails, err := ghClient.GetAuthenticatedUserEmails(ctx)
 	if err != nil {
 		log15.Warn("Could not get GitHub authenticated user emails", "error", err)
 		return nil
@@ -140,6 +151,31 @@ func (s *sessionIssuerHelper) getVerifiedEmails(ctx context.Context, token *oaut
 		verifiedEmails = append(verifiedEmails, email.Email)
 	}
 	return verifiedEmails
+}
+
+func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.Client) bool {
+	if len(s.allowOrgs) == 0 {
+		return true
+	}
+
+	userOrgs, err := ghClient.GetAuthenticatedUserOrgs(ctx)
+	if err != nil {
+		log15.Warn("Could not get GitHub authenticated user organizations", "error", err)
+		return false
+	}
+
+	allowed := make(map[string]bool, len(s.allowOrgs))
+	for _, org := range s.allowOrgs {
+		allowed[org] = true
+	}
+
+	for _, org := range userOrgs {
+		if allowed[org.Login] {
+			return true
+		}
+	}
+
+	return false
 }
 
 func SignOutURL(githubURL string) (string, error) {

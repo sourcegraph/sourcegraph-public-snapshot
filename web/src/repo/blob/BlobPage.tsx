@@ -36,11 +36,11 @@ import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
 import { ThemeProps } from '../../../../shared/src/theme'
 
-export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
+function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
 }
 
-export const fetchBlob = memoizeObservable(
+const fetchBlob = memoizeObservable(
     (args: {
         repoName: string
         commitID: string

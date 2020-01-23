@@ -11,8 +11,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-
-	"github.com/kylelemons/godebug/pretty"
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -57,11 +56,10 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, search.CommitParameters{
-		RepoRevs:          repoRevs,
-		Info:              &search.PatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
-		Query:             query,
-		Diff:              true,
-		TextSearchOptions: git.TextSearchOptions{Pattern: "p"},
+		RepoRevs:    repoRevs,
+		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
+		Query:       query,
+		Diff:        true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +82,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 			matches:     []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
 		},
 	}; !reflect.DeepEqual(results, want) {
-		t.Errorf("results\ngot  %v\nwant %v\ndiff: %v", results, want, pretty.Compare(results, want))
+		t.Errorf("results\ngot  %v\nwant %v\ndiff: %v", results, want, cmp.Diff(results, want))
 	}
 	if limitHit {
 		t.Error("limitHit")

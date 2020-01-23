@@ -10,11 +10,12 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
     src="http://example.com/alice.png"
   />
    
-  <strong
+  <span
+    className="font-weight-bold "
     data-tooltip="alice@example.com"
   >
     Alice Zhao
-  </strong>
+  </span>
    
   committed 
   <span
@@ -36,11 +37,12 @@ exports[`GitCommitNodeByline author 1`] = `
     src="http://example.com/alice.png"
   />
    
-  <strong
+  <span
+    className="font-weight-bold "
     data-tooltip="alice@example.com"
   >
     Alice Zhao
-  </strong>
+  </span>
    
   committed 
   <span
@@ -64,24 +66,27 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
    
   <img
     className="user-avatar icon-inline mr-1"
-    data-tooltip="bYang (Bob Yang) (committer)"
+    data-tooltip="bYang (committer)"
     src="http://example.com/bob.png"
   />
    
-  <strong
+  <span
+    className="font-weight-bold "
     data-tooltip="alice@example.com"
   >
     Alice Zhao
-  </strong>
+  </span>
    
   authored
    and
    
-  <strong
-    data-tooltip="bob@example.com"
+  <a
+    className="font-weight-bold "
+    data-tooltip="Bob Yang <bob@example.com>"
+    href="https://example.com/bobyang"
   >
-    bYang (Bob Yang)
-  </strong>
+    bYang
+  </a>
    
   committed 
   <span
@@ -105,24 +110,27 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
    
   <img
     className="user-avatar icon-inline mr-1"
-    data-tooltip="bYang (Bob Yang) (committer)"
+    data-tooltip="bYang (committer)"
     src="http://example.com/bob.png"
   />
    
-  <strong
+  <span
+    className="font-weight-bold "
     data-tooltip="alice@example.com"
   >
     Alice Zhao
-  </strong>
+  </span>
    
   authored
    and
    
-  <strong
-    data-tooltip="bob@example.com"
+  <a
+    className="font-weight-bold "
+    data-tooltip="Bob Yang <bob@example.com>"
+    href="https://example.com/bobyang"
   >
-    bYang (Bob Yang)
-  </strong>
+    bYang
+  </a>
    
   committed 
   <span
@@ -144,11 +152,12 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
     src="http://example.com/alice.png"
   />
    
-  <strong
+  <span
+    className="font-weight-bold "
     data-tooltip="alice@example.com"
   >
     Alice Zhao
-  </strong>
+  </span>
    
   committed 
   <span
@@ -170,11 +179,12 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
     src="http://example.com/alice.png"
   />
    
-  <strong
+  <span
+    className="font-weight-bold "
     data-tooltip="alice@example.com"
   >
     Alice Zhao
-  </strong>
+  </span>
    
   committed 
   <span

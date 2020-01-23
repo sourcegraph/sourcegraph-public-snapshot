@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
@@ -10,9 +11,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestConfigureGitCommand(t *testing.T) {
+func TestConfigureRemoteGitCommand(t *testing.T) {
 	expectedEnv := []string{
 		"GIT_ASKPASS=true",
 		"GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30",
@@ -43,7 +47,7 @@ func TestConfigureGitCommand(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(strings.Join(test.input.Args, " "), func(t *testing.T) {
-			configureGitCommand(test.input)
+			configureRemoteGitCommand(test.input, nil)
 			if !reflect.DeepEqual(test.input.Env, test.expectedEnv) {
 				t.Errorf("\ngot:  %s\nwant: %s\n", test.input.Env, test.expectedEnv)
 			}
@@ -51,6 +55,39 @@ func TestConfigureGitCommand(t *testing.T) {
 				t.Errorf("\ngot:  %s\nwant: %s\n", test.input.Args, test.expectedArgs)
 			}
 		})
+	}
+}
+
+func TestConfigureRemoteGitCommand_tls(t *testing.T) {
+	baseEnv := []string{
+		"GIT_ASKPASS=true",
+		"GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30",
+	}
+
+	cases := []struct {
+		conf *schema.TlsExternal
+		want []string
+	}{{
+		conf: nil,
+		want: nil,
+	}, {
+		conf: &schema.TlsExternal{},
+		want: nil,
+	}, {
+		conf: &schema.TlsExternal{
+			InsecureSkipVerify: true,
+		},
+		want: []string{
+			"GIT_SSL_NO_VERIFY=true",
+		},
+	}}
+	for _, tc := range cases {
+		cmd := exec.Command("git", "clone")
+		configureRemoteGitCommand(cmd, tc.conf)
+		want := append(baseEnv, tc.want...)
+		if !reflect.DeepEqual(cmd.Env, want) {
+			t.Errorf("mismatch for %#+v (-want +got):\n%s", tc.conf, cmp.Diff(want, cmd.Env))
+		}
 	}
 }
 
@@ -160,7 +197,7 @@ func TestProgressWriter(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			var w progressWriter
 			for _, write := range testCase.writes {
-				w.Write([]byte(write))
+				_, _ = w.Write([]byte(write))
 			}
 			if actual := w.String(); testCase.text != actual {
 				t.Fatalf("\ngot:\n%s\nwant:\n%s\n", actual, testCase.text)
@@ -233,6 +270,41 @@ func TestUpdateFileIfDifferent(t *testing.T) {
 	}
 	if update("baz") {
 		t.Fatal("expected update to not update file")
+	}
+}
+
+func TestLogErrors(t *testing.T) {
+	cases := []struct {
+		stderr string
+		logged string
+	}{{
+		stderr: "",
+		logged: "",
+	}, {
+		stderr: "fatal: bad object HEAD\n",
+		logged: "",
+	}, {
+		stderr: "error: packfile .git/objects/pack/pack-a.pack does not match index",
+		logged: "org/repo error: packfile .git/objects/pack/pack-a.pack does not match index\n",
+	}, {
+		stderr: `error: packfile .git/objects/pack/pack-a.pack does not match index
+error: packfile .git/objects/pack/pack-b.pack does not match index
+fatal: bad object HEAD
+`,
+		logged: `org/repo error: packfile .git/objects/pack/pack-a.pack does not match index
+org/repo error: packfile .git/objects/pack/pack-b.pack does not match index
+`,
+	}}
+	for _, c := range cases {
+		var b strings.Builder
+		printf := func(format string, v ...interface{}) {
+			fmt.Fprintf(&b, format, v...)
+		}
+		logErrors(printf, "org/repo", []byte(c.stderr))
+		got := b.String()
+		if got != c.logged {
+			t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(c.logged, got))
+		}
 	}
 }
 

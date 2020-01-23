@@ -7,7 +7,7 @@ Code intelligence provides advanced code navigation and cross-references for you
 - Find references
 - Symbol search
 
-Code intelligence works out of the box with all of the most popular [programming language extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
+Code intelligence works out of the box with all of the most popular [programming language extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) using our search-based [basic code intelligence](./basic_code_intelligence.md).
 
 There are two ways to get more precise code intelligence:
 

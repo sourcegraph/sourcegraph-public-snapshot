@@ -1,4 +1,4 @@
-# Setting the URL
+# Configuring the external URL
 
 It is highly recommended that you do NOT make any of the nodes running Sourcegraph directly accessible to the Internet. Instead, configure an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or equivalent to forward traffic to `httpNodePort` or `httpsNodePort` on any of the nodes in your cluster.
 

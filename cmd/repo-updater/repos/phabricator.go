@@ -143,7 +143,6 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
 			ServiceType: "phabricator",
 			ServiceID:   serviceID,
 		},
-		Enabled: true,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -181,7 +180,7 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
 func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
-	cf := httpcli.NewHTTPClientFactory()
+	cf := httpcli.NewExternalHTTPClientFactory()
 
 	for {
 		phabs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{

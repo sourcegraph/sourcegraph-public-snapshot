@@ -34,4 +34,3 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
         {/* eslint-enable react/jsx-no-bind */}
     </div>
 ))
-export default GlobalCampaignsArea

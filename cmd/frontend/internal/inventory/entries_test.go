@@ -70,11 +70,11 @@ func TestContext_Entries(t *testing.T) {
 	}
 	if want := (Inventory{
 		Languages: []Lang{
-			{Name: "Go", TotalBytes: 13, TotalLines: 2},
+			{Name: "Go", TotalBytes: 21, TotalLines: 2},
 			{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
 		},
 	}); !reflect.DeepEqual(inv, want) {
-		t.Errorf("got  %#v\nwant %#v", inv, want)
+		t.Fatalf("got  %#v\nwant %#v", inv, want)
 	}
 
 	// Check that our mocks were called as expected.
@@ -106,7 +106,7 @@ func TestContext_Entries(t *testing.T) {
 		},
 		"f.go": {
 			Languages: []Lang{
-				{Name: "Go", TotalBytes: 1, TotalLines: 1},
+				{Name: "Go", TotalBytes: 9, TotalLines: 1},
 			},
 		},
 	}; !reflect.DeepEqual(cacheSetCalls, want) {

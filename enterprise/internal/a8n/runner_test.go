@@ -30,6 +30,74 @@ type refAndTarget struct {
 	target string
 }
 
+func TestRunCampaignJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	store := NewStoreWithClock(dbconn.Global, clock)
+
+	defaultBranches := []refAndTarget{
+		{"refs/heads/master", "fc21c1a0a79047416c14642b3ca964faba9442e2"},
+	}
+
+	rs := []*repos.Repo{
+		testRepo(0, github.ServiceType),
+	}
+
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	err := reposStore.UpsertRepos(ctx, rs...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	campaignType := &testCampaignType{diff: testDiff, description: testDescription}
+	search := yieldRepos(rs...)
+	commitID := yieldDefaultBranches(defaultBranches)
+
+	u := createTestUser(ctx, t)
+	plan := &a8n.CampaignPlan{
+		CampaignType: "test",
+		Arguments:    `{}`,
+		UserID:       u.ID,
+	}
+
+	runner := NewRunnerWithClock(store, campaignType, search, commitID, clock)
+	err = runner.CreatePlanAndJobs(ctx, plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// At this point the job has been created an added to the DB
+	// We need to fetch and pass it to runCampaignJob. In prod, this is done
+	// in a background process
+	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+		CampaignPlanID: plan.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jobs) != 1 {
+		t.Fatalf("expected 1 job, got %d", len(jobs))
+	}
+	if !jobs[0].FinishedAt.IsZero() {
+		t.Fatalf("job should not be finished")
+	}
+
+	// Launch background worker
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go RunCampaignJobs(ctx, store, clock, 100*time.Millisecond)
+	waitRunner(t, runner)
+}
+
 func TestRunner(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -65,7 +133,13 @@ func TestRunner(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+	user := createTestUser(ctx, t)
+
+	testPlan := &a8n.CampaignPlan{
+		CampaignType: "test",
+		Arguments:    `{}`,
+		UserID:       user.ID,
+	}
 
 	tests := []struct {
 		name string
@@ -76,6 +150,7 @@ func TestRunner(t *testing.T) {
 
 		runErr string
 
+		planFn   func() *a8n.CampaignPlan
 		wantPlan *a8n.CampaignPlan
 		wantJobs func(plan *a8n.CampaignPlan, rs []*repos.Repo, branches []refAndTarget) []*a8n.CampaignJob
 	}{
@@ -124,7 +199,7 @@ func TestRunner(t *testing.T) {
 			wantJobs:     wantNoJobs,
 		},
 		{
-			name:         "multi search results and successfull execution",
+			name:         "multi search results and successful execution",
 			search:       yieldRepos(rs...),
 			commitID:     yieldDefaultBranches(defaultBranches),
 			campaignType: &testCampaignType{diff: testDiff, description: testDescription},
@@ -243,6 +318,22 @@ func TestRunner(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:         "missing user",
+			search:       yieldRepos(rs...),
+			commitID:     yieldDefaultBranches(defaultBranches),
+			campaignType: &testCampaignType{},
+			wantPlan:     nil,
+			wantJobs:     wantNoJobs,
+			planFn: func() *a8n.CampaignPlan {
+				p := testPlan.Clone()
+				p.CreatedAt = now
+				p.UpdatedAt = now
+				p.UserID = 0
+				return p
+			},
+			runErr: `pq: insert or update on table "campaign_plans" violates foreign key constraint "campaign_plans_user_id_fkey"`,
+		},
 	}
 
 	for _, tc := range tests {
@@ -253,14 +344,28 @@ func TestRunner(t *testing.T) {
 			}
 
 			plan := testPlan.Clone()
-
-			runner := NewRunnerWithClock(store, tc.campaignType, tc.search, tc.commitID, clock)
-			err := runner.Run(ctx, plan)
-			if have, want := fmt.Sprint(err), tc.runErr; have != want {
-				t.Fatalf("have runner.Run error: %q\nwant error: %q", have, want)
+			if tc.planFn != nil {
+				plan = tc.planFn()
 			}
 
-			waitRunner(t, runner)
+			runner := NewRunnerWithClock(store, tc.campaignType, tc.search, tc.commitID, clock)
+			err := runner.CreatePlanAndJobs(ctx, plan)
+			if have, want := fmt.Sprint(err), tc.runErr; have != want {
+				t.Fatalf("have runner.CreatePlanAndJobs error: %q\nwant error: %q", have, want)
+			}
+			// At this point the job has been created an added to the DB
+			// We need to fetch and pass it to runCampaignJob. In prod, this is done
+			// in a background process
+			haveJobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+				CampaignPlanID: plan.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			for i := range haveJobs {
+				runCampaignJob(ctx, clock, store, tc.campaignType, haveJobs[i])
+			}
 
 			if tc.wantPlan == nil && plan.ID == 0 {
 				return
@@ -277,13 +382,6 @@ func TestRunner(t *testing.T) {
 			planIgnore := cmpopts.IgnoreFields(a8n.CampaignPlan{}, "ID")
 			if diff := cmp.Diff(havePlan, tc.wantPlan, planIgnore); diff != "" {
 				t.Fatalf("CampaignPlan diff: %s", diff)
-			}
-
-			haveJobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
-				CampaignPlanID: plan.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
 			}
 
 			sort.Slice(haveJobs, func(i, j int) bool {
@@ -320,7 +418,7 @@ index 851b23a..140f333 100644
 +++ b/README.md
 @@ -1,3 +1,4 @@
  # README
- 
+
 +Let's add a line here.
  This file is hostEd at sourcegraph.com and is a test file.
 `
@@ -335,18 +433,21 @@ const testDescription = `Added three important lines:
 func waitRunner(t *testing.T, r *Runner) {
 	t.Helper()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	done := make(chan struct{})
 	go func() {
 		defer func() { close(done) }()
-		err := r.Wait()
+		err := r.Wait(ctx)
 		if err != nil {
 			t.Errorf("runner.Wait failed: %s", err)
 		}
 	}()
 
 	select {
-	case <-time.After(1 * time.Second):
-		t.Fatalf("timeout reached")
+	case <-ctx.Done():
+		t.Fatal(ctx.Err())
 	case <-done:
 	}
 }
@@ -359,9 +460,8 @@ func testRepo(num int, serviceType string) *repos.Repo {
 	extSvcID := fmt.Sprintf("extsvc:%s:%d", serviceType, num)
 
 	return &repos.Repo{
-		Name:    fmt.Sprintf("repo-%d", num),
-		URI:     fmt.Sprintf("repo-%d", num),
-		Enabled: true,
+		Name: fmt.Sprintf("repo-%d", num),
+		URI:  fmt.Sprintf("repo-%d", num),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", num),
 			ServiceType: serviceType,

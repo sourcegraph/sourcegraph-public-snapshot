@@ -15,6 +15,7 @@ import {
     SEARCH_REQUEST,
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
+import { NEVER } from 'rxjs'
 
 let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
 
@@ -109,10 +110,12 @@ describe('SearchResultsList', () => {
             final: null,
         },
         extensionsController: { executeCommand: sinon.spy(), services: extensionsController.services },
-        platformContext: { forceUpdateTooltip: sinon.spy() },
+        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
         telemetryService: NOOP_TELEMETRY_SERVICE,
         patternType: GQL.SearchPatternType.regexp,
         setPatternType: sinon.spy(),
+        caseSensitive: false,
+        setCaseSensitivity: sinon.spy(),
 
         interactiveSearchMode: false,
         filtersInQuery: {},
@@ -223,7 +226,7 @@ describe('SearchResultsList', () => {
         const showMore = sinon.spy()
         const props = {
             ...defaultProps,
-            resultsOrError: mockResults({ resultCount: 31, limitHit: true }),
+            resultsOrError: mockResults({ resultCount: 2, limitHit: true }),
             onShowMoreResultsClick: showMore,
         }
         const { container, rerender } = render(
@@ -246,7 +249,7 @@ describe('SearchResultsList', () => {
             <BrowserRouter>
                 <SearchResultsList
                     {...defaultProps}
-                    resultsOrError={mockResults({ resultCount: 1001, limitHit: false })}
+                    resultsOrError={mockResults({ resultCount: 4, limitHit: false })}
                 />
             </BrowserRouter>
         )

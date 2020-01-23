@@ -8,16 +8,17 @@ import (
 
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 func (c *Client) Exists(ctx context.Context, args *struct {
-	RepoName string
-	Commit   string
-	Path     string
-}) (*lsif.LSIFDump, error) {
+	RepoID api.RepoID
+	Commit string
+	Path   string
+}) (*lsif.LSIFUpload, error) {
 	query := queryValues{}
-	query.Set("repository", args.RepoName)
+	query.SetInt("repositoryId", int64(args.RepoID))
 	query.Set("commit", args.Commit)
 	query.Set("path", args.Path)
 
@@ -27,7 +28,7 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 	}
 
 	payload := struct {
-		Dump *lsif.LSIFDump `json:"dump"`
+		Upload *lsif.LSIFUpload `json:"upload"`
 	}{}
 
 	_, err := c.do(ctx, req, &payload)
@@ -35,19 +36,19 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	return payload.Dump, nil
+	return payload.Upload, nil
 }
 
 func (c *Client) Upload(ctx context.Context, args *struct {
-	RepoName string
+	RepoID   api.RepoID
 	Commit   graphqlbackend.GitObjectID
 	Root     string
 	Blocking *bool
 	MaxWait  *int32
 	Body     io.ReadCloser
-}) (string, bool, error) {
+}) (int64, bool, error) {
 	query := queryValues{}
-	query.Set("repository", args.RepoName)
+	query.SetInt("repositoryId", int64(args.RepoID))
 	query.Set("commit", string(args.Commit))
 	query.Set("root", args.Root)
 	query.SetOptionalBool("blocking", args.Blocking)
@@ -61,74 +62,75 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 	}
 
 	payload := struct {
-		ID string `json:"id"`
+		ID int64 `json:"id"`
 	}{}
 
 	meta, err := c.do(ctx, req, &payload)
 	if err != nil {
-		return "", false, err
+		return 0, false, err
 	}
 
 	return payload.ID, meta.statusCode == http.StatusAccepted, nil
+
 }
 
 func (c *Client) Definitions(ctx context.Context, args *struct {
-	RepoName  string
+	RepoID    api.RepoID
 	Commit    graphqlbackend.GitObjectID
 	Path      string
 	Line      int32
 	Character int32
-	DumpID    int64
+	UploadID  int64
 }) ([]*lsif.LSIFLocation, string, error) {
 	return c.locationQuery(ctx, &struct {
 		Operation string
-		RepoName  string
+		RepoID    api.RepoID
 		Commit    graphqlbackend.GitObjectID
 		Path      string
 		Line      int32
 		Character int32
-		DumpID    int64
+		UploadID  int64
 		Limit     *int32
 		Cursor    *string
 	}{
 		Operation: "definitions",
-		RepoName:  args.RepoName,
+		RepoID:    args.RepoID,
 		Commit:    args.Commit,
 		Path:      args.Path,
 		Line:      args.Line,
 		Character: args.Character,
-		DumpID:    args.DumpID,
+		UploadID:  args.UploadID,
 	})
 }
 
 func (c *Client) References(ctx context.Context, args *struct {
-	RepoName  string
+	RepoID    api.RepoID
 	Commit    graphqlbackend.GitObjectID
 	Path      string
 	Line      int32
 	Character int32
-	DumpID    int64
+	UploadID  int64
 	Limit     *int32
 	Cursor    *string
 }) ([]*lsif.LSIFLocation, string, error) {
 	return c.locationQuery(ctx, &struct {
 		Operation string
-		RepoName  string
+		RepoID    api.RepoID
 		Commit    graphqlbackend.GitObjectID
 		Path      string
 		Line      int32
 		Character int32
-		DumpID    int64
+		UploadID  int64
 		Limit     *int32
 		Cursor    *string
 	}{
 		Operation: "references",
-		RepoName:  args.RepoName,
+		RepoID:    args.RepoID,
 		Commit:    args.Commit,
 		Path:      args.Path,
 		Line:      args.Line,
 		Character: args.Character,
-		DumpID:    args.DumpID,
+		UploadID:  args.UploadID,
 		Limit:     args.Limit,
 		Cursor:    args.Cursor,
 	})
@@ -136,22 +138,22 @@ func (c *Client) References(ctx context.Context, args *struct {
 
 func (c *Client) locationQuery(ctx context.Context, args *struct {
 	Operation string
-	RepoName  string
+	RepoID    api.RepoID
 	Commit    graphqlbackend.GitObjectID
 	Path      string
 	Line      int32
 	Character int32
-	DumpID    int64
+	UploadID  int64
 	Limit     *int32
 	Cursor    *string
 }) ([]*lsif.LSIFLocation, string, error) {
 	query := queryValues{}
-	query.Set("repository", args.RepoName)
+	query.SetInt("repositoryId", int64(args.RepoID))
 	query.Set("commit", string(args.Commit))
 	query.Set("path", args.Path)
 	query.SetInt("line", int64(args.Line))
 	query.SetInt("character", int64(args.Character))
-	query.SetInt("dumpId", int64(args.DumpID))
+	query.SetInt("uploadId", int64(args.UploadID))
 	query.SetOptionalInt32("limit", args.Limit)
 
 	req := &lsifRequest{
@@ -173,20 +175,20 @@ func (c *Client) locationQuery(ctx context.Context, args *struct {
 }
 
 func (c *Client) Hover(ctx context.Context, args *struct {
-	RepoName  string
+	RepoID    api.RepoID
 	Commit    graphqlbackend.GitObjectID
 	Path      string
 	Line      int32
 	Character int32
-	DumpID    int64
+	UploadID  int64
 }) (string, lsp.Range, error) {
 	query := queryValues{}
-	query.Set("repository", args.RepoName)
+	query.SetInt("repositoryId", int64(args.RepoID))
 	query.Set("commit", string(args.Commit))
 	query.Set("path", args.Path)
 	query.SetInt("line", int64(args.Line))
 	query.SetInt("character", int64(args.Character))
-	query.SetInt("dumpId", int64(args.DumpID))
+	query.SetInt("uploadID", int64(args.UploadID))
 
 	req := &lsifRequest{
 		path:  fmt.Sprintf("/hover"),

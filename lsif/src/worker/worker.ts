@@ -14,11 +14,13 @@ import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
 import { UploadManager } from '../shared/store/uploads'
 import * as pgModels from '../shared/models/pg'
-import { convertUpload } from './conversion/conversion'
+import { convertDatabase, updateCommitsAndDumpsVisibleFromTip } from './conversion/conversion'
 import { pick } from 'lodash'
 import AsyncPolling from 'async-polling'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
+import { EntityManager } from 'typeorm'
+import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
 
 /**
  * Runs the worker that converts LSIF uploads.
@@ -43,14 +45,14 @@ async function main(logger: Logger): Promise<void> {
 
     // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const dumpManager = new DumpManager(connection, settings.STORAGE_ROOT)
+    const dumpManager = new DumpManager(connection)
     const uploadManager = new UploadManager(connection)
     const dependencyManager = new DependencyManager(connection)
 
     // Start metrics server
     startMetricsServer(logger)
 
-    const convert = async (upload: pgModels.LsifUpload): Promise<void> => {
+    const convert = async (upload: pgModels.LsifUpload, entityManager: EntityManager): Promise<void> => {
         logger.debug('Selected upload to convert', { uploadId: upload.id })
 
         let span: Span | undefined
@@ -70,9 +72,37 @@ async function main(logger: Logger): Promise<void> {
             metrics.uploadConversionDurationHistogram,
             metrics.uploadConversionDurationErrorsCounter,
             (): Promise<void> =>
-                logAndTraceCall(ctx, 'Converting upload', (ctx: TracingContext) =>
-                    convertUpload(connection, dumpManager, dependencyManager, fetchConfiguration, upload, ctx)
-                )
+                logAndTraceCall(ctx, 'Converting upload', async (ctx: TracingContext) => {
+                    // Convert the database and populate the cross-dump package data
+                    await convertDatabase(entityManager, dumpManager, dependencyManager, upload, ctx)
+
+                    // Remove overlapping dumps that would cause a unique index error once this upload has
+                    // transitioned into the completed state. As this is done in a transaction, we do not
+                    // delete the files on disk right away. These files will be cleaned up by a worker in
+                    // a future cleanup task.
+                    await dumpManager.deleteOverlappingDumps(
+                        upload.repositoryId,
+                        upload.commit,
+                        upload.root,
+                        { logger, span },
+                        entityManager
+                    )
+
+                    // Update the conversion state after we've written the dump database file as the
+                    // next step assumes that the processed upload is present in the dumps views. The
+                    // remainder of the task may still fail, in which case the entire transaction is
+                    // rolled back, so we don't want to commit yet.
+                    await uploadManager.markComplete(upload, entityManager)
+
+                    // Update visibility flag for this repository.
+                    await updateCommitsAndDumpsVisibleFromTip(
+                        entityManager,
+                        dumpManager,
+                        SRC_FRONTEND_INTERNAL,
+                        upload,
+                        ctx
+                    )
+                })
         )
     }
 

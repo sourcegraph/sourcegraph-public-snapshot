@@ -219,9 +219,9 @@ func TestMiddleware(t *testing.T) {
 	authedHandler.Handle("/", Middleware.App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
-			w.Write([]byte("This is the home"))
+			_, _ = w.Write([]byte("This is the home"))
 		case "/page":
-			w.Write([]byte("This is a page"))
+			_, _ = w.Write([]byte("This is a page"))
 		case "/require-authn":
 			actr := actor.FromContext(r.Context())
 			if actr.UID == 0 {
@@ -229,7 +229,7 @@ func TestMiddleware(t *testing.T) {
 			} else if actr.UID != mockedUserID {
 				t.Errorf("in authn expected-endpoint, actor with incorrect UID was set; %d != %d", actr.UID, mockedUserID)
 			}
-			w.Write([]byte("Authenticated"))
+			_, _ = w.Write([]byte("Authenticated"))
 		default:
 			http.Error(w, "", http.StatusNotFound)
 		}

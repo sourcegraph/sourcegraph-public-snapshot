@@ -46,16 +46,12 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 	baseURL = NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	var opts []httpcli.Opt
 	if c.Certificate != "" {
-		pool, err := httpcli.NewCertPool(c.Certificate)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
 	cli, err := cf.Doer(opts...)
@@ -133,7 +129,6 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 		ExternalRepo: gitlab.ExternalRepoSpec(proj, *s.baseURL),
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
-		Enabled:      true,
 		Archived:     proj.Archived,
 		Sources: map[string]*SourceInfo{
 			urn: {

@@ -4,17 +4,18 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type repositoryCollectionResolver struct {
-	commitCollectionResolvers map[string]*commitCollectionResolver
+	commitCollectionResolvers map[api.RepoID]*commitCollectionResolver
 }
 
 // resolve returns a GitTreeEntryResolver for the given repository, commit, and path. This will cache
 // the repository, commit, and path resolvers if they have been previously constructed with this same
 // struct instance. If the commit resolver cannot be constructed, a nil resolver is returned.
-func (r *repositoryCollectionResolver) resolve(ctx context.Context, repoName, commit, path string) (*graphqlbackend.GitTreeEntryResolver, error) {
-	commitCollectionResolver, err := r.resolveRepository(ctx, repoName)
+func (r *repositoryCollectionResolver) resolve(ctx context.Context, repoID api.RepoID, commit, path string) (*graphqlbackend.GitTreeEntryResolver, error) {
+	commitCollectionResolver, err := r.resolveRepository(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -28,12 +29,12 @@ func (r *repositoryCollectionResolver) resolve(ctx context.Context, repoName, co
 }
 
 // resolveRepository returns a commitCollectionResolver with the given resolved repository.
-func (r *repositoryCollectionResolver) resolveRepository(ctx context.Context, repoName string) (*commitCollectionResolver, error) {
-	if payload, ok := r.commitCollectionResolvers[repoName]; ok {
+func (r *repositoryCollectionResolver) resolveRepository(ctx context.Context, repoID api.RepoID) (*commitCollectionResolver, error) {
+	if payload, ok := r.commitCollectionResolvers[repoID]; ok {
 		return payload, nil
 	}
 
-	repositoryResolver, err := resolveRepository(ctx, repoName)
+	repositoryResolver, err := resolveRepository(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +44,7 @@ func (r *repositoryCollectionResolver) resolveRepository(ctx context.Context, re
 		pathCollectionResolvers: map[string]*pathCollectionResolver{},
 	}
 
-	r.commitCollectionResolvers[repoName] = payload
+	r.commitCollectionResolvers[repoID] = payload
 	return payload, nil
 }
 

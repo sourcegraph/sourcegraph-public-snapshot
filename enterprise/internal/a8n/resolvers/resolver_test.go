@@ -67,7 +67,7 @@ func TestCampaigns(t *testing.T) {
 		httpFactory: cf,
 	}
 
-	s, err := graphqlbackend.NewSchema(sr, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -962,6 +962,12 @@ type CampaignPlan struct {
 func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
+	dbtesting.SetupGlobalTestDB(t)
+
+	user := createTestUser(ctx, t)
+	act := actor.FromUser(user.ID)
+	ctx = actor.WithActor(ctx, act)
+
 	t.Run("invalid patch", func(t *testing.T) {
 		args := graphqlbackend.CreateCampaignPlanFromPatchesArgs{
 			Patches: []graphqlbackend.CampaignPlanPatch{
@@ -987,7 +993,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			t.Skip()
 		}
 
-		dbtesting.SetupGlobalTestDB(t)
 		rcache.SetupForTest(t)
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
@@ -1010,8 +1015,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 
 		reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 		repo := &repos.Repo{
-			Name:    fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
-			Enabled: true,
+			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
 				ServiceType: "github",
@@ -1031,7 +1035,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 		store := ee.NewStoreWithClock(dbconn.Global, clock)
 
 		sr := &Resolver{store: store}
-		s, err := graphqlbackend.NewSchema(sr, nil)
+		s, err := graphqlbackend.NewSchema(sr, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1167,7 +1171,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 			Name:        fmt.Sprintf("github.com/sourcegraph/sourcegraph-%d", i),
 			URI:         fmt.Sprintf("github.com/sourcegraph/sourcegraph-%d", i),
 			Description: "Code search and navigation tool",
-			Enabled:     true,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          fmt.Sprintf("external-id-%d", i),
 				ServiceType: "github",
@@ -1189,9 +1192,11 @@ func TestCampaignPlanResolver(t *testing.T) {
 
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
+	user := createTestUser(ctx, t)
 	plan := &a8n.CampaignPlan{
 		CampaignType: "COMBY",
 		Arguments:    `{"scopeQuery": "file:README.md"}`,
+		UserID:       user.ID,
 	}
 	err := store.CreateCampaignPlan(ctx, plan)
 	if err != nil {
@@ -1222,7 +1227,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 	}
 
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1471,4 +1476,22 @@ func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.Bitbu
 	}
 
 	return repos
+}
+
+var testUser = db.NewUser{
+	Email:                "test@sourcegraph.com",
+	Username:             "test",
+	DisplayName:          "Test",
+	Password:             "test",
+	EmailIsVerified:      true,
+	FailIfNotInitialUser: false,
+}
+
+func createTestUser(ctx context.Context, t *testing.T) *types.User {
+	t.Helper()
+	user, err := db.Users.Create(ctx, testUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return user
 }

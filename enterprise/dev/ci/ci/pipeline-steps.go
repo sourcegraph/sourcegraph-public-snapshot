@@ -150,7 +150,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s jest --runInBand ./e2e/github.test"),
+			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
@@ -188,7 +188,7 @@ func wait(pipeline *bk.Pipeline) {
 
 func triggerE2E(c Config) func(*bk.Pipeline) {
 	// hardFail if we publish docker images
-	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",
@@ -282,12 +282,6 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 		}
 
 		cmdDir := func() string {
-			cmdDirByApp := map[string]string{
-				"lsif-server": "lsif",
-			}
-			if cmdDir, ok := cmdDirByApp[app]; ok {
-				return cmdDir
-			}
 			if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
 				fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
 				return "cmd/" + app

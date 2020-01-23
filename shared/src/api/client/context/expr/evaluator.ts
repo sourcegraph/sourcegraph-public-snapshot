@@ -50,7 +50,7 @@ const FUNCS: { [name: string]: (...args: any[]) => any } = {
     json: (obj: any): string => JSON.stringify(obj),
 }
 
-export function exec(node: ExpressionNode, context: ComputedContext): any {
+function exec(node: ExpressionNode, context: ComputedContext): any {
     if ('Literal' in node) {
         switch (node.Literal.type) {
             case TokenType.String:

@@ -49,7 +49,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { parseSearchURLPatternType } from './search'
+import { parseSearchURLPatternType, searchURLIsCaseSensitive } from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
@@ -108,6 +108,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     searchPatternType: GQL.SearchPatternType
 
     /**
+     * Whether the current search is case sensitive.
+     */
+    searchCaseSensitivity: boolean
+
+    /**
      * filtersInQuery is the source of truth for the filter values currently in the query.
      *
      * The data structure is a map, where the key is a uniquely assigned string in the form `repoType-numberOfFilterAdded`.
@@ -126,6 +131,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether to display the option to toggle between interactive and omni search modes.
      */
     splitSearchModes: boolean
+
+    /**
+     * Whether to display the MonacoQueryInput search field.
+     */
+    smartSearchField: boolean
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -176,6 +186,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         // The patternType in the URL query parameter. If none is provided, default to literal.
         // This will be updated with the default in settings when the web app mounts.
         const urlPatternType = parseSearchURLPatternType(window.location.search) || GQL.SearchPatternType.literal
+        const urlCase = searchURLIsCaseSensitive(window.location.search)
         const currentSearchMode = localStorage.getItem(SEARCH_MODE_KEY)
 
         this.state = {
@@ -185,9 +196,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             searchPatternType: urlPatternType,
+            searchCaseSensitivity: urlCase,
             filtersInQuery: {},
             splitSearchModes: false,
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
+            smartSearchField: false,
         }
     }
 
@@ -249,12 +262,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         this.subscriptions.add(
             from(this.platformContext.settings).subscribe(settingsCascade => {
-                const splitSearchModes =
-                    settingsCascade.final &&
-                    !isErrorLike(settingsCascade.final) &&
-                    settingsCascade.final.experimentalFeatures?.splitSearchModes
-
-                this.setState({ splitSearchModes })
+                if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+                    const { splitSearchModes, smartSearchField } = settingsCascade.final.experimentalFeatures || {}
+                    this.setState({ splitSearchModes, smartSearchField })
+                }
             })
         )
 
@@ -359,12 +370,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     telemetryService={eventLogger}
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     patternType={this.state.searchPatternType}
+                                    caseSensitive={this.state.searchCaseSensitivity}
                                     splitSearchModes={this.state.splitSearchModes}
                                     interactiveSearchMode={this.state.interactiveSearchMode}
                                     toggleSearchMode={this.toggleSearchMode}
                                     filtersInQuery={this.state.filtersInQuery}
                                     onFiltersInQueryChange={this.onFiltersInQueryChange}
                                     setPatternType={this.setPatternType}
+                                    setCaseSensitivity={this.setCaseSensitivity}
+                                    smartSearchField={this.state.smartSearchField}
                                 />
                             )}
                         />
@@ -392,6 +406,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     private setPatternType = (patternType: GQL.SearchPatternType): void => {
         this.setState({
             searchPatternType: patternType,
+        })
+    }
+
+    private setCaseSensitivity = (caseSensitive: boolean): void => {
+        this.setState({
+            searchCaseSensitivity: caseSensitive,
         })
     }
 }

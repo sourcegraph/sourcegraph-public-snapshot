@@ -5,10 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
@@ -23,9 +26,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 		defer done()
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
-		s := NewStoreWithClock(tx, func() time.Time {
+		clock := func() time.Time {
 			return now.UTC().Truncate(time.Microsecond)
-		})
+		}
+		s := NewStoreWithClock(tx, clock)
 
 		ctx := context.Background()
 
@@ -41,7 +45,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ChangesetIDs:   []int64{int64(i) + 1},
 						CampaignPlanID: 42 + int64(i),
 						ClosedAt:       now,
-						PublishedAt:    now,
 					}
 
 					if i%2 == 0 {
@@ -171,7 +174,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c.Description += "-updated"
 					c.AuthorID++
 					c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
-					c.PublishedAt = c.PublishedAt.Add(5 * time.Second)
 
 					if c.NamespaceUserID != 0 {
 						c.NamespaceUserID++
@@ -325,7 +327,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignIDs:         []int64{int64(i) + 1},
 						ExternalID:          fmt.Sprintf("foobar-%d", i),
 						ExternalServiceType: "github",
-						ExternalDeletedAt:   now,
 					}
 
 					changesets = append(changesets, th)
@@ -339,6 +340,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, have := range changesets {
 					if have.ID == 0 {
 						t.Fatal("id should not be zero")
+					}
+
+					if have.IsDeleted() {
+						t.Fatal("changeset is deleted")
 					}
 
 					want := have.Clone()
@@ -520,8 +525,38 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatal(err)
 					}
 
+					if len(have) != len(changesets) {
+						t.Fatalf("have 0 changesets. want %d", len(changesets))
+					}
+
+					for _, c := range changesets {
+						c.SetDeleted()
+						c.UpdatedAt = now
+					}
+
+					if err := s.UpdateChangesets(ctx, changesets...); err != nil {
+						t.Fatal(err)
+					}
+
+					have, _, err = s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
+					if err != nil {
+						t.Fatal(err)
+					}
+
 					if len(have) != 0 {
-						t.Fatalf("have %d changesets. want 0", len(have))
+						t.Fatalf("have %d changesets. want 0", len(changesets))
+					}
+				}
+
+				// Limit of -1 should return all ChangeSets
+				{
+					have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: -1})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if len(have) != 3 {
+						t.Fatalf("have %d changesets. want 3", len(have))
 					}
 				}
 			})
@@ -578,7 +613,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, c := range changesets {
 					c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
 					c.ExternalServiceType = bitbucketserver.ServiceType
-					c.ExternalDeletedAt = c.ExternalDeletedAt.Add(time.Second)
 
 					if c.RepoID != 0 {
 						c.RepoID++
@@ -1938,6 +1972,49 @@ func testStore(db *sql.DB) func(*testing.T) {
 						cursor = next
 					}
 				})
+
+				t.Run("WithCampaignPlanID", func(t *testing.T) {
+					for i := 1; i <= len(changesetJobs); i++ {
+						c := &a8n.Campaign{
+							Name:            fmt.Sprintf("Upgrade ES-Lint %d", i),
+							Description:     "All the Javascripts are belong to us",
+							AuthorID:        4567,
+							NamespaceUserID: 4567,
+							CampaignPlanID:  1234 + int64(i),
+						}
+
+						err := s.CreateCampaign(ctx, c)
+						if err != nil {
+							t.Fatal(err)
+						}
+						job := changesetJobs[i-1]
+
+						job.CampaignID = c.ID
+						err = s.UpdateChangesetJob(ctx, job)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						opts := ListChangesetJobsOpts{CampaignPlanID: c.CampaignPlanID}
+						ts, next, err := s.ListChangesetJobs(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						}
+
+						have, want := ts, changesetJobs[i-1:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+				})
 			})
 
 			t.Run("Update", func(t *testing.T) {
@@ -2166,18 +2243,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("ResetFailedChangesetJobs", func(t *testing.T) {
 				campaignID := 9999
 				jobs := []*a8n.ChangesetJob{
-					{StartedAt: now},
 					// completed, no errors
 					{StartedAt: now, FinishedAt: now, ChangesetID: 23},
-					// not completed, error
-					{StartedAt: now, Error: "error1"},
 					// completed, error
 					{StartedAt: now, FinishedAt: now, Error: "error1"},
 					// completed, another error
 					{StartedAt: now, FinishedAt: now, Error: "error2"},
 				}
 
-				mustReset := make(map[int64]bool)
 				for i, j := range jobs {
 					j.CampaignID = int64(campaignID)
 					j.CampaignJobID = int64(i)
@@ -2187,9 +2260,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatal(err)
 					}
 
-					if j.Error != "" && !j.StartedAt.IsZero() && !j.FinishedAt.IsZero() {
-						mustReset[j.ID] = true
-					}
+				}
+
+				mustReset := map[int64]bool{
+					jobs[1].ID: true,
+					jobs[2].ID: true,
 				}
 
 				err := s.ResetFailedChangesetJobs(ctx, int64(campaignID))
@@ -2217,9 +2292,361 @@ func testStore(db *sql.DB) func(*testing.T) {
 						if !job.StartedAt.IsZero() {
 							t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
 						}
+					} else {
+						if job.StartedAt.IsZero() {
+							t.Errorf("job should not be reset but StartedAt is zero: %+v", job.StartedAt)
+						}
+						if job.FinishedAt.IsZero() {
+							t.Errorf("job should not be reset but FinishedAt is zero: %+v", job.FinishedAt)
+						}
 					}
 				}
 			})
+
+			t.Run("ResetChangesetJobs", func(t *testing.T) {
+				campaignID := 12345
+				jobs := []*a8n.ChangesetJob{
+					// completed, no errors
+					{StartedAt: now, FinishedAt: now, ChangesetID: 12345},
+					// completed, error
+					{StartedAt: now, FinishedAt: now, Error: "error1"},
+				}
+
+				for i, j := range jobs {
+					j.CampaignID = int64(campaignID)
+					j.CampaignJobID = int64(i)
+
+					err := s.CreateChangesetJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+				}
+
+				err := s.ResetChangesetJobs(ctx, int64(campaignID))
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != len(jobs) {
+					t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
+				}
+
+				for _, job := range have {
+					if job.Error != "" {
+						t.Errorf("job should be reset but has error: %+v", job.Error)
+					}
+					if !job.FinishedAt.IsZero() {
+						t.Errorf("job should be reset but has FinishedAt: %+v", job.FinishedAt)
+					}
+					if !job.StartedAt.IsZero() {
+						t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
+					}
+				}
+			})
+
+			t.Run("GetLatestChangesetJobCreatedAt", func(t *testing.T) {
+				plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+				err := s.CreateCampaignPlan(ctx, plan)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				campaign := testCampaign(123, plan.ID)
+				err = s.CreateCampaign(ctx, campaign)
+				if err != nil {
+					t.Fatal(err)
+				}
+				campaignJob := &a8n.CampaignJob{
+					CampaignPlanID: plan.ID,
+					BaseRef:        "x",
+					RepoID:         int32(123),
+				}
+				err = s.CreateCampaignJob(ctx, campaignJob)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 0 ChangesetJob, 1 CampaignJobs
+				have, err := s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Job counts don't match, should get back null
+				if !have.IsZero() {
+					t.Fatalf("publishedAt is not zero: %v", have)
+				}
+
+				changesetJob1 := &a8n.ChangesetJob{
+					CampaignID:    campaign.ID,
+					CampaignJobID: campaignJob.ID,
+				}
+				err = s.CreateChangesetJob(ctx, changesetJob1)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 1 ChangesetJob, 1 CampaignJobs
+				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Job counts are the same, we should get a valid time
+				if !have.Equal(clock()) {
+					t.Fatalf("want %v, got %v", clock(), have)
+				}
+
+				// Create another round to ensure that we get the latest date
+				// when there are more than one
+				oldClock := clock
+				defer func() {
+					clock = oldClock
+				}()
+				clock = func() time.Time {
+					return oldClock().Add(5 * time.Minute)
+				}
+				oldStore := s
+				defer func() {
+					s = oldStore
+				}()
+				s = NewStoreWithClock(tx, clock)
+				campaignJob = &a8n.CampaignJob{
+					CampaignPlanID: plan.ID,
+					BaseRef:        "x",
+					RepoID:         int32(123),
+				}
+				err = s.CreateCampaignJob(ctx, campaignJob)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 1 ChangesetJob, 2 CampaignJobs
+				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Job counts don't match, should get back null
+				if !have.IsZero() {
+					t.Fatalf("publishedAt is not zero: %v", have)
+				}
+
+				// Add another changesetjob
+				changesetJob2 := &a8n.ChangesetJob{
+					CampaignID:    campaign.ID,
+					CampaignJobID: campaignJob.ID,
+				}
+				err = s.CreateChangesetJob(ctx, changesetJob2)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 2 ChangesetJob, 2 CampaignJobs
+				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Job counts are the same, we should get a valid time
+				if !have.Equal(clock()) {
+					t.Fatalf("want %v, got %v", clock(), have)
+				}
+			})
 		})
+	}
+}
+
+func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
+		ctx := context.Background()
+
+		// Create a test repo
+		reposStore := repos.NewDBStore(db, sql.TxOptions{})
+		repo := &repos.Repo{
+			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "external-id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:github:4": {
+					ID:       "extsvc:github:4",
+					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+				},
+			},
+		}
+		if err := reposStore.UpsertRepos(context.Background(), repo); err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("GetPendingCampaignJobsWhenNoneAvailable", func(t *testing.T) {
+			tx, done := dbtest.NewTx(t, db)
+			defer done()
+			s := NewStoreWithClock(tx, clock)
+
+			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
+				return errors.New("rollback")
+			}
+			ran, err := s.ProcessPendingCampaignJob(ctx, process)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ran {
+				// We shouldn't have any pending jobs yet
+				t.Fatalf("process function should not have run")
+			}
+		})
+
+		t.Run("GetPendingCampaignJobsWhenAvailable", func(t *testing.T) {
+			tx, done := dbtest.NewTx(t, db)
+			defer done()
+			s := NewStoreWithClock(tx, clock)
+
+			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
+				return errors.New("rollback")
+			}
+			plan := &a8n.CampaignPlan{
+				CampaignType: "test",
+			}
+			err := s.CreateCampaignPlan(context.Background(), plan)
+			if err != nil {
+				t.Fatal(err)
+			}
+			job := &a8n.CampaignJob{
+				ID:             0,
+				CampaignPlanID: plan.ID,
+				RepoID:         int32(repo.ID),
+				Rev:            "",
+				BaseRef:        "abc",
+				Diff:           "",
+				Description:    "",
+				Error:          "",
+			}
+			err = s.CreateCampaignJob(context.Background(), job)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ran, err := s.ProcessPendingCampaignJob(ctx, process)
+			if err != nil && err.Error() != "rollback" {
+				t.Fatal(err)
+			}
+			if !ran {
+				// We shouldn't have any pending jobs yet
+				t.Fatalf("process function should have run")
+			}
+		})
+
+		t.Run("GetPendingCampaignJobsWhenAvailableLocking", func(t *testing.T) {
+			tx, done := dbtest.NewTx(t, db)
+			defer done()
+			s := NewStoreWithClock(tx, clock)
+
+			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
+				time.Sleep(100 * time.Millisecond)
+				return errors.New("rollback")
+			}
+			plan := &a8n.CampaignPlan{
+				CampaignType: "test",
+			}
+			err := s.CreateCampaignPlan(context.Background(), plan)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = s.CreateCampaignJob(context.Background(), &a8n.CampaignJob{
+				ID:             0,
+				CampaignPlanID: plan.ID,
+				RepoID:         int32(repo.ID),
+				Rev:            "",
+				BaseRef:        "abc",
+				Diff:           "",
+				Description:    "",
+				Error:          "",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var runCount int64
+			errChan := make(chan error, 2)
+
+			for i := 0; i < 2; i++ {
+				go func() {
+					ran, err := s.ProcessPendingCampaignJob(ctx, process)
+					if ran {
+						atomic.AddInt64(&runCount, 1)
+					}
+					errChan <- err
+				}()
+			}
+			for i := 0; i < 2; i++ {
+				err := <-errChan
+				if err != nil && err.Error() != "rollback" {
+					t.Fatal(err)
+				}
+			}
+
+			rc := atomic.LoadInt64(&runCount)
+			if rc != 1 {
+				t.Errorf("Want %d, got %d", 1, rc)
+			}
+		})
+	}
+}
+
+func testStoreLocking(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		s := NewStoreWithClock(db, func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		})
+
+		testKey := "test-acquire"
+		s1, err := s.Transact(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s1.Done(nil)
+
+		s2, err := s.Transact(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s2.Done(nil)
+
+		// Get lock
+		ok, err := s1.TryAcquireAdvisoryLock(context.Background(), testKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatalf("Could not acquire lock")
+		}
+
+		// Try and get acquired lock
+		ok, err = s2.TryAcquireAdvisoryLock(context.Background(), testKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
+			t.Fatal("Should not have acquired lock")
+		}
+
+		// Release lock
+		s1.Done(nil)
+
+		// Try and get released lock
+		ok, err = s2.TryAcquireAdvisoryLock(context.Background(), testKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatal("Could not acquire lock")
+		}
 	}
 }
