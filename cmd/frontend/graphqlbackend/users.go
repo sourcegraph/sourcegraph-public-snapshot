@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -151,16 +150,4 @@ func (r *staticUserConnectionResolver) TotalCount() int32 { return int32(len(r.u
 
 func (r *staticUserConnectionResolver) PageInfo() *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(false) // not paginated
-}
-
-func sliceAtoi(sa []string) ([]int32, error) {
-	si := make([]int32, 0, len(sa))
-	for _, a := range sa {
-		i, err := strconv.Atoi(a)
-		if err != nil {
-			return nil, err
-		}
-		si = append(si, int32(i))
-	}
-	return si, nil
 }
