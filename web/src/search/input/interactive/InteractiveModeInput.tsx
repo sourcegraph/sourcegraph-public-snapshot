@@ -30,6 +30,7 @@ import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSens
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
 import { isFiniteFilter } from './filters'
+import { convertPlainTextToInteractiveQuery } from '../helpers'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -65,7 +66,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         super(props)
 
         const searchParams = new URLSearchParams(props.location.search)
-        const filtersInQuery: FiltersToTypeAndValue = {}
+        let filtersInQuery: FiltersToTypeAndValue = {}
 
         const allFilters = [...filterTypeKeys, ...negatedFilters]
         for (const filter of allFilters.filter(key => key !== FilterTypes.case)) {
@@ -87,6 +88,18 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                     }
                 }
             }
+        }
+
+        // We only want to call this when we are toggling from plain text mode.
+        // When we toggle from plain text mode, if there are filters that exist, props.filtersInQuery
+        // won't be empty. What to do if it is empty?
+        const onlyQueryParam = searchParams.get('q')
+        if (onlyQueryParam) {
+            const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(
+                onlyQueryParam
+            )
+            filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
+            this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
         }
 
         this.props.onFiltersInQueryChange(filtersInQuery)
