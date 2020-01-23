@@ -291,8 +291,7 @@ export const githubCodeHost: CodeHost = {
     textFieldResolvers: [commentTextFieldResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
-        const header = document.querySelector('.repohead-details-container')
-        const repoHeaderHasPrivateMarker = !!header?.querySelector('.private')
+        const repoHeaderHasPrivateMarker = !!document.querySelector('.repohead .private')
         return {
             ...parseURL(),
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
