@@ -199,20 +199,27 @@ func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface
 	return userEmails, nil
 }
 
-// ListByUser returns a list of emails that are associated to the given user.
-func (*userEmails) ListByUser(ctx context.Context, userID int32) ([]*UserEmail, error) {
-	if Mocks.UserEmails.ListByUser != nil {
-		return Mocks.UserEmails.ListByUser(userID)
-	}
-
-	return (&userEmails{}).getBySQL(ctx, "WHERE user_id=$1 ORDER BY created_at ASC, email ASC", userID)
+// UserEmailsListOptions specifies the options for listing user emails.
+type UserEmailsListOptions struct {
+	// UserID specifies the id of the user for listing emails.
+	UserID int32
+	// OnlyVerified excludes unverified emails from the list.
+	OnlyVerified bool
 }
 
-// ListVerifiedByUser returns a list of verified emails that are associated to the given user.
-func (*userEmails) ListVerifiedByUser(ctx context.Context, userID int32) ([]*UserEmail, error) {
-	if Mocks.UserEmails.ListVerifiedByUser != nil {
-		return Mocks.UserEmails.ListVerifiedByUser(userID)
+// ListByUser returns a list of emails that are associated to the given user.
+func (*userEmails) ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error) {
+	if Mocks.UserEmails.ListByUser != nil {
+		return Mocks.UserEmails.ListByUser(ctx, opt)
 	}
 
-	return (&userEmails{}).getBySQL(ctx, "WHERE user_id=$1 AND verified_at IS NOT NULL ORDER BY created_at ASC, email ASC", userID)
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("user_id=%s", opt.UserID),
+	}
+	if opt.OnlyVerified {
+		conds = append(conds, sqlf.Sprintf("verified_at IS NOT NULL"))
+	}
+
+	q := sqlf.Sprintf("WHERE %s ORDER BY created_at ASC, email ASC", sqlf.Join(conds, "AND"))
+	return (&userEmails{}).getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }

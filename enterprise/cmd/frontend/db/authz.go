@@ -24,6 +24,9 @@ type authzStore struct {
 	store *PermsStore
 }
 
+// GrantPendingPermissions grants pending permissions for a user, which implements the db.AuthzStore interface.
+// It uses provided arguments to retrieve information directly from the database to offload security concerns
+// from the caller.
 func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.GrantPendingPermissionsArgs) error {
 	if args.UserID <= 0 {
 		return nil
@@ -40,7 +43,10 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	switch cfg.BindID {
 	case "email":
 		// 🚨 SECURITY: It is critical to ensure only grant emails that are verified.
-		emails, err := db.UserEmails.ListVerifiedByUser(ctx, args.UserID)
+		emails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+			UserID:       args.UserID,
+			OnlyVerified: true,
+		})
 		if err != nil {
 			return errors.Wrap(err, "list verified emails")
 		}
