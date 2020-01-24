@@ -289,7 +289,7 @@ type PercentilesOptions struct {
 // one entry for each period in the time span. Each `PercentileValue` object in the result will contain exactly
 // `len(percentiles)` values.
 func (l *eventLogs) PercentilesPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, field string, percentiles []float64, opt *PercentilesOptions) ([]PercentileValue, error) {
-	conds := []*sqlf.Query{sqlf.Sprintf("argument IS NOT NULL")}
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.ByEventNamePrefix != nil {
 			conds = append(conds, sqlf.Sprintf("name LIKE %s", *opt.ByEventNamePrefix+"%"))
