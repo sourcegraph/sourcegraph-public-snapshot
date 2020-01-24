@@ -109,7 +109,7 @@ func estimate(labels []string) string {
 }
 
 func state(state string) string {
-	if state == "closed" {
+	if strings.EqualFold(state, "closed") {
 		return "x"
 	}
 	return " "
@@ -145,12 +145,23 @@ func categories(issue *Issue) map[string]string {
 }
 
 func emojis(categories map[string]string) string {
+	sorted := make([]string, 0, len(categories))
+	length := 0
+
+	for _, emoji := range categories {
+		sorted = append(sorted, emoji)
+		length += len(emoji)
+	}
+
+	sort.Strings(sorted)
+
 	// Generous four bytes for each emoji. We don't have
 	// to be precise, since append will allocate more if needed.
-	s := make([]byte, 0, 4*len(categories))
-	for _, emoji := range categories {
+	s := make([]byte, 0, length)
+	for _, emoji := range sorted {
 		s = append(s, emoji...)
 	}
+
 	return string(s)
 }
 
