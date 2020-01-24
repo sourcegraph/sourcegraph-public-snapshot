@@ -1,7 +1,6 @@
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
@@ -12,6 +11,7 @@ import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 export interface FileDiffNodeProps extends ThemeProps {
     node: GQL.IFileDiff | GQL.IPreviewFileDiff
@@ -69,6 +69,13 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                 {renderAnchor && <a id={anchor} />}
                 <div className={`file-diff-node card ${this.props.className || ''}`}>
                     <div className="card-header file-diff-node__header">
+                        <button type="button" className="btn btn-sm btn-icon mr-2" onClick={this.toggleExpand}>
+                            {this.state.expanded ? (
+                                <ChevronDownIcon className="icon-inline" />
+                            ) : (
+                                <ChevronRightIcon className="icon-inline" />
+                            )}
+                        </button>
                         <div className="file-diff-node__header-path-stat">
                             <DiffStat
                                 added={node.stat.added}
@@ -97,13 +104,6 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                                     View
                                 </Link>
                             )}
-                            <button type="button" className="btn btn-sm btn-icon ml-2" onClick={this.toggleExpand}>
-                                {this.state.expanded ? (
-                                    <ChevronDownIcon className="icon-inline" />
-                                ) : (
-                                    <ChevronUpIcon className="icon-inline" />
-                                )}
-                            </button>
                         </div>
                     </div>
                     {this.state.expanded && (

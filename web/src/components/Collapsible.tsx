@@ -1,7 +1,7 @@
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 interface Props {
     /**
@@ -57,7 +57,6 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                     isExpanded ? 'mb-3' : ''
                 }`}
             >
-                <span className={titleClassName}>{title}</span>
                 <button
                     type="button"
                     className={classNames('btn btn-icon', wholeTitleClickable && 'stretched-link')}
@@ -67,9 +66,10 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                     {isExpanded ? (
                         <ChevronDownIcon className="icon-inline" aria-label="Close section" />
                     ) : (
-                        <ChevronUpIcon className="icon-inline" aria-label="Expand section" />
+                        <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                     )}
                 </button>
+                <span className={titleClassName}>{title}</span>
             </div>
             {isExpanded && children}
         </div>
