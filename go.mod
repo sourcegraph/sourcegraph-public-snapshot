@@ -134,7 +134,9 @@ require (
 	github.com/segmentio/fasthash v1.0.1
 	github.com/sergi/go-diff v1.1.0
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
+	github.com/shurcooL/githubv4 v0.0.0-20191127044304-8f68eb5628d0
 	github.com/shurcooL/go v0.0.0-20191216061654-b114cc39af9f // indirect
+	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
 	github.com/shurcooL/highlight_go v0.0.0-20191220045850-130f78146f9c // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
