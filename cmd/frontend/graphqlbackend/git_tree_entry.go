@@ -8,15 +8,29 @@ import (
 	"path"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+var metricLabels = []string{"origin"}
+var codeIntelRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "lsif",
+	Name:      "requests",
+	Help:      "Counts LSIF requests.",
+}, metricLabels)
+
+func init() {
+	prometheus.MustRegister(codeIntelRequests)
+}
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
@@ -212,6 +226,8 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context) (LSIFQueryResolver, err
 	if EnterpriseResolvers.codeIntelResolver == nil {
 		return nil, codeIntelOnlyInEnterprise
 	}
+
+	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
 
 	return EnterpriseResolvers.codeIntelResolver.LSIF(ctx, &LSIFQueryArgs{
 		Repository: r.Repository(),
