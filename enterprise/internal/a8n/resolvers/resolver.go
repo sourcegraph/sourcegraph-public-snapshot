@@ -487,6 +487,9 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	if typeName == "" {
 		return nil, errors.New("cannot create CampaignPlan without Type")
 	}
+	if typeName == "credentials" {
+		return nil, errors.New("unsupported campaign type")
+	}
 	campaignType, err := ee.NewCampaignType(typeName, specArgs, r.httpFactory)
 	if err != nil {
 		return nil, err

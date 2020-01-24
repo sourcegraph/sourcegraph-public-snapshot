@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
 import combyJsonSchema from '../../../../../../schema/campaign-types/comby.schema.json'
-import credentialsJsonSchema from '../../../../../../schema/campaign-types/credentials.schema.json'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { CampaignType } from '../backend'
@@ -28,7 +27,6 @@ interface Props extends ThemeProps {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const jsonSchemaByType: { [K in CampaignType]: any } = {
     comby: combyJsonSchema,
-    credentials: credentialsJsonSchema,
 }
 
 const defaultInputByType: { [K in CampaignType]: string } = {
@@ -36,10 +34,6 @@ const defaultInputByType: { [K in CampaignType]: string } = {
     "scopeQuery": "repo:github.com/foo/bar",
     "matchTemplate": "",
     "rewriteTemplate": ""
-}`,
-    credentials: `{
-    "scopeQuery": "repo:github.com/foo/bar",
-    "matchers": [{ "type": "npm" }]
 }`,
 }
 
