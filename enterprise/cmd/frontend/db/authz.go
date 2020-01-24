@@ -75,12 +75,19 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 		return fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
 	}
 
+	txs, err := s.store.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "start transaction")
+	}
+	defer txs.Done(&err)
+
 	for _, bindID := range bindIDs {
-		if err := s.store.GrantPendingPermissions(ctx, args.UserID, &iauthz.UserPendingPermissions{
+		err = txs.GrantPendingPermissions(ctx, args.UserID, &iauthz.UserPendingPermissions{
 			BindID: bindID,
 			Perm:   args.Perm,
 			Type:   args.Type,
-		}); err != nil {
+		})
+		if err != nil {
 			return errors.Wrap(err, "grant pending permissions")
 		}
 	}

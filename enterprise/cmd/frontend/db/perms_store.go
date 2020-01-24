@@ -134,14 +134,11 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *iauthz.RepoPermi
 	defer func() { save(&err, p.TracingFields()...) }()
 
 	// Open a transaction for update consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	txs, err := s.Transact(ctx)
+	if err != nil {
 		return err
 	}
-	defer tx.commitOrRollback(&err)
-
-	// Make another PermsStore with this underlying transaction.
-	txs := NewPermsStore(tx, s.clock)
+	defer txs.Done(&err)
 
 	// Retrieve currently stored user IDs of this repository.
 	var oldIDs *roaring.Bitmap
@@ -353,14 +350,11 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, bindIDs []st
 	defer func() { save(&err, append(p.TracingFields(), otlog.String("bindIDs", strings.Join(bindIDs, ",")))...) }()
 
 	// Open a transaction for update consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	txs, err := s.Transact(ctx)
+	if err != nil {
 		return err
 	}
-	defer tx.commitOrRollback(&err)
-
-	// Make another PermsStore with this underlying transaction.
-	txs := NewPermsStore(tx, s.clock)
+	defer txs.Done(&err)
 
 	var q *sqlf.Query
 
@@ -691,19 +685,22 @@ DO UPDATE SET
 // GrantPendingPermissions grants the user has given ID with pending permissions found in p.
 // It "merges" rows in pending permissions tables to effective permissions tables, i.e. permissions
 // are unioned not replaced.
+// This method starts its own transaction if the caller hasn't started one already.
 func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
 
-	// Open a transaction for update consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
-		return err
+	var txs *PermsStore
+	if s.inTx() {
+		txs = s
+	} else {
+		// Open a transaction for update consistency.
+		txs, err = s.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer txs.Done(&err)
 	}
-	defer tx.commitOrRollback(&err)
-
-	// Make another PermsStore with this underlying transaction.
-	txs := NewPermsStore(tx, s.clock)
 
 	vals, err := txs.load(ctx, loadUserPendingPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
@@ -766,7 +763,7 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 		Provider: authz.ProviderSourcegraph,
 	}
 	var oldIDs *roaring.Bitmap
-	vals, err = s.load(ctx, loadUserPermissionsQuery(up, "FOR UPDATE"))
+	vals, err = txs.load(ctx, loadUserPermissionsQuery(up, "FOR UPDATE"))
 	if err != nil {
 		if err != ErrPermsNotFound {
 			return errors.Wrap(err, "load user permissions")
@@ -1065,18 +1062,48 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 	return loaded, nil
 }
 
-func (s *PermsStore) tx(ctx context.Context) (*sqlTx, error) {
+// tx begins a new transaction.
+func (s *PermsStore) tx(ctx context.Context) (*sql.Tx, error) {
 	switch t := s.db.(type) {
 	case *sql.Tx:
-		return &sqlTx{t}, nil
+		return t, nil
 	case *sql.DB:
 		tx, err := t.BeginTx(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
-		return &sqlTx{tx}, nil
+		return tx, nil
 	default:
 		panic(fmt.Sprintf("can't open transaction with unknown implementation of dbutil.DB: %T", t))
+	}
+}
+
+// Transact begins a new transaction and make a new PermsStore over it.
+func (s *PermsStore) Transact(ctx context.Context) (*PermsStore, error) {
+	tx, err := s.tx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return NewPermsStore(tx, s.clock), nil
+}
+
+// inTx returns true if the current PermsStore wraps an underlying transaction.
+func (s *PermsStore) inTx() bool {
+	_, ok := s.db.(*sql.Tx)
+	return ok
+}
+
+// Done commits the transaction if error is nil. Otherwise, rolls back the transaction.
+func (s *PermsStore) Done(err *error) {
+	if !s.inTx() {
+		return
+	}
+
+	tx := s.db.(*sql.Tx)
+	if err == nil || *err == nil {
+		_ = tx.Commit()
+	} else {
+		_ = tx.Rollback()
 	}
 }
 
