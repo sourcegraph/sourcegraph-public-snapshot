@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -80,6 +81,14 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 	if !conf.EventLoggingEnabled() {
 		return nil, nil
 	}
+
+	var payload json.RawMessage
+	if args.Argument != nil {
+		if err := json.Unmarshal([]byte(*args.Argument), &payload); err != nil {
+			return nil, err
+		}
+	}
+
 	actor := actor.FromContext(ctx)
 	return nil, usagestats.LogEvent(ctx, usagestats.Event{
 		EventName:    args.Event,
@@ -87,6 +96,6 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		UserID:       actor.UID,
 		UserCookieID: args.UserCookieID,
 		Source:       args.Source,
-		Argument:     args.Argument,
+		Argument:     payload,
 	})
 }

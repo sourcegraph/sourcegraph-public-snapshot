@@ -324,7 +324,7 @@ Referenced by:
  user_id           | integer                  | not null
  anonymous_user_id | text                     | not null
  source            | text                     | not null
- argument          | text                     | not null
+ argument          | jsonb                    | not null
  version           | text                     | not null
  timestamp         | timestamp with time zone | not null
 Indexes:

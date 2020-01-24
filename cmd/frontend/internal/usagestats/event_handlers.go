@@ -23,18 +23,18 @@ type Event struct {
 	UserCookieID string
 	URL          string
 	Source       string
-	Argument     *string
+	Argument     json.RawMessage
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(userID int32, eventName, argument string) error {
+func LogBackendEvent(userID int32, eventName string, argument json.RawMessage) error {
 	return LogEvent(context.Background(), Event{
 		EventName:    eventName,
 		UserID:       userID,
 		UserCookieID: "",
 		URL:          "",
 		Source:       "BACKEND",
-		Argument:     &argument,
+		Argument:     argument,
 	})
 }
 
@@ -51,14 +51,14 @@ func LogEvent(ctx context.Context, args Event) error {
 }
 
 type bigQueryEvent struct {
-	EventName       string `json:"name"`
-	AnonymousUserID string `json:"anonymous_user_id"`
-	UserID          int    `json:"user_id"`
-	URL             string `json:"url"`
-	Source          string `json:"source"`
-	Argument        string `json:"argument,omitempty"`
-	Timestamp       string `json:"timestamp"`
-	Version         string `json:"version"`
+	EventName       string          `json:"name"`
+	AnonymousUserID string          `json:"anonymous_user_id"`
+	UserID          int             `json:"user_id"`
+	URL             string          `json:"url"`
+	Source          string          `json:"source"`
+	Argument        json.RawMessage `json:"argument,omitempty"`
+	Timestamp       string          `json:"timestamp"`
+	Version         string          `json:"version"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -69,17 +69,13 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if pubSubDotComEventsTopicID == "" {
 		return nil
 	}
-	var arg string
-	if args.Argument != nil {
-		arg = *args.Argument
-	}
 	event, err := json.Marshal(bigQueryEvent{
 		EventName:       args.EventName,
 		UserID:          int(args.UserID),
 		AnonymousUserID: args.UserCookieID,
 		URL:             args.URL,
 		Source:          args.Source,
-		Argument:        arg,
+		Argument:        args.Argument,
 		Timestamp:       time.Now().UTC().Format(time.RFC3339),
 		Version:         version.Version(),
 	})
@@ -90,7 +86,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 }
 
 // logLocalEvent logs users events.
-func logLocalEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument *string) error {
+func logLocalEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument json.RawMessage) error {
 	if name == "SearchSubmitted" {
 		err := logSiteSearchOccurred()
 		if err != nil {
@@ -110,10 +106,8 @@ func logLocalEvent(ctx context.Context, name, url string, userID int32, userCook
 		UserID:          uint32(userID),
 		AnonymousUserID: userCookieID,
 		Source:          source,
+		Argument:        argument,
 		Timestamp:       timeNow().UTC(),
-	}
-	if argument != nil {
-		info.Argument = *argument
 	}
 	return db.EventLogs.Insert(ctx, info)
 }
