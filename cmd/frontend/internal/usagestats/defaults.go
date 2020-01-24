@@ -6,4 +6,3 @@ const (
 	defaultMonths  = 3
 	maxStorageDays = 93
 )
-
