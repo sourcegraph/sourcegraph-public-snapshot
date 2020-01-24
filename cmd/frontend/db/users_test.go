@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -581,72 +580,4 @@ func normalizeUsers(users []*types.User) []*types.User {
 		u.UpdatedAt = u.UpdatedAt.Local().Round(time.Second)
 	}
 	return users
-}
-
-func TestUsers_CreateAndGrantPendingPermissions(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-
-	Authz = &mockAuthzStore{}
-	defer func() {
-		Authz = &authzStore{}
-	}()
-
-	tests := []struct {
-		name           string
-		opts           NewUser
-		expectCalled   bool
-		expectUsername string
-		expectEmail    string
-	}{
-		{
-			name: "create with an unverified email",
-			opts: NewUser{
-				Email:                 "alice@example.com",
-				Username:              "alice",
-				DisplayName:           "alice",
-				Password:              "right-password",
-				EmailVerificationCode: "email-code",
-			},
-			expectCalled:   true,
-			expectUsername: "alice",
-			expectEmail:    "",
-		},
-		{
-			name: "create with a verified email",
-			opts: NewUser{
-				Email:           "bob@example.com",
-				Username:        "bob",
-				DisplayName:     "bob",
-				Password:        "right-password",
-				EmailIsVerified: true,
-			},
-			expectCalled:   true,
-			expectUsername: "bob",
-			expectEmail:    "bob@example.com",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			calledGrantPendingPermissions := false
-			Mocks.Authz.GrantPendingPermissions = func(_ context.Context, args *GrantPendingPermissionsArgs) error {
-				calledGrantPendingPermissions = true
-				if test.expectUsername != args.Username {
-					return fmt.Errorf("args.Username: want %q but got %q", test.expectUsername, args.Username)
-				} else if test.expectEmail != args.VerifiedEmail {
-					return fmt.Errorf("args.Email: want %q but got %q", test.expectEmail, args.VerifiedEmail)
-				}
-				return nil
-			}
-			_, err := Users.Create(ctx, test.opts)
-			if err != nil {
-				t.Fatal(err)
-			} else if test.expectCalled != calledGrantPendingPermissions {
-				t.Fatalf("calledGrantPendingPermissions: want %v but got %v", test.expectCalled, calledGrantPendingPermissions)
-			}
-		})
-	}
 }

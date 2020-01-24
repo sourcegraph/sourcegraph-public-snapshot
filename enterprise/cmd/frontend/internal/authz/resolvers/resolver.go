@@ -127,6 +127,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	)
 	if args.Email != nil {
 		bindID = *args.Email
+		// 🚨 SECURITY: It is critical to ensure the email is verified.
 		user, err = db.Users.GetByVerifiedEmail(ctx, *args.Email)
 	} else if args.Username != nil {
 		bindID = *args.Username

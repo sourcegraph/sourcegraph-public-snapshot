@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -30,31 +31,61 @@ func (s *authzStore) init() {
 	})
 }
 
-// 🚨 SECURITY: It is the caller's responsibility to ensure the supplied email is verified.
+// GrantPendingPermissions grants pending permissions for a user, which implements the db.AuthzStore interface.
+// It uses provided arguments to retrieve information directly from the database to offload security concerns
+// from the caller.
 func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.GrantPendingPermissionsArgs) error {
+	if args.UserID <= 0 {
+		return nil
+	}
+
 	s.init()
+
+	// Note: It's possible that there are more than one verified emails associated to the user and all of them
+	// have pending permissions due to any previous grant failures, we can safely grant all of them whenever
+	// possible because permissions are unioned.
+	var bindIDs []string
 
 	// Note: we purposely don't check cfg.PermissionsUserMapping.Enabled here because admin could disable the
 	// feature by mistake while a user has valid pending permissions.
-	var bindID string
 	cfg := globals.PermissionsUserMapping()
 	switch cfg.BindID {
 	case "email":
-		bindID = args.VerifiedEmail
+		// 🚨 SECURITY: It is critical to ensure only grant emails that are verified.
+		emails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+			UserID:       args.UserID,
+			OnlyVerified: true,
+		})
+		if err != nil {
+			return errors.Wrap(err, "list verified emails")
+		}
+		bindIDs = make([]string, len(emails))
+		for i := range emails {
+			bindIDs[i] = emails[i].Email
+		}
+
 	case "username":
-		bindID = args.Username
+		user, err := db.Users.GetByID(ctx, args.UserID)
+		if err != nil {
+			return errors.Wrap(err, "get user")
+		}
+		bindIDs = append(bindIDs, user.Username)
+
 	default:
 		return fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
 	}
 
-	if bindID == "" {
-		return nil
+	for _, bindID := range bindIDs {
+		if err := s.store.GrantPendingPermissions(ctx, args.UserID, &iauthz.UserPendingPermissions{
+			BindID: bindID,
+			Perm:   args.Perm,
+			Type:   args.Type,
+		}); err != nil {
+			return errors.Wrap(err, "grant pending permissions")
+		}
 	}
-	return s.store.GrantPendingPermissions(ctx, args.UserID, &iauthz.UserPendingPermissions{
-		BindID: bindID,
-		Perm:   args.Perm,
-		Type:   args.Type,
-	})
+
+	return nil
 }
 
 func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedReposArgs) ([]*types.Repo, error) {
