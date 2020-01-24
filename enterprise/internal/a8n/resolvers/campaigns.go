@@ -125,6 +125,9 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 }
 
 func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	if r.Campaign.CampaignPlanID == 0 {
+		return &graphqlbackend.DateTime{Time: r.Campaign.CreatedAt}, nil
+	}
 	if !r.Campaign.PublishedAt.IsZero() {
 		return &graphqlbackend.DateTime{Time: r.Campaign.PublishedAt}, nil
 	}
