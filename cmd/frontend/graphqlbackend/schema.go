@@ -39,19 +39,6 @@ type Mutation {
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
-    # Preview the plan for a campaign, including its diff.
-    # The returned CampaignPlan can be referred to when creating the campaign.
-    # It is cached with a short TTL.
-    # The campaign plan is computed asynchronously.
-    # Check its status property and query it by its id to see its latest state.
-    previewCampaignPlan(
-        specification: CampaignPlanSpecification!
-        # Whether to wait to finish computing the plan before returning.
-        # If false, callers must poll the CampaignPlan using its node ID to track progress and get results.
-        # If the plan is not ready within an interval that would result in request timeouts,
-        # the query will return anyway, so the caller must check the result's CampaignPlan.status.
-        wait: Boolean = false
-    ): CampaignPlan!
     # Create a campaign plan from patches (in unified diff format) that are computed by the caller.
     #
     # To create the campaign, call createCampaign with the returned CampaignPlan.id in the
@@ -61,14 +48,6 @@ type Mutation {
         # created from this campaign plan.
         patches: [CampaignPlanPatch!]!
     ): CampaignPlan!
-    # Cancel a campaign plan that is being generated.
-    # Cancellation expresses a desinterest in the campaign plan and is best-effort.
-    # It may not be relied upon.
-    # The return of this mutation does not mean the plan was fully cancelled yet,
-    # only that the desinterest in the campaign plan was acknowledged.
-    # This mutation is idempotent and a noop if called for a completed campaign plan.
-    # There is no requirement to call this mutation, it is a performance optimization.
-    cancelCampaignPlan(plan: ID!): EmptyResponse
     # Updates a campaign.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Retries creating changesets of the campaign plan that could not be successfully created on the code host.
@@ -426,19 +405,6 @@ type Mutation {
     ): EmptyResponse!
 }
 
-# The specification of what changesets Sourcegraph will open when the campaign is created.
-input CampaignPlanSpecification {
-    # A known campaign type.
-    # Currently only "comby" is supported.
-    type: String!
-
-    # JSONC string that configures the changes that Sourcegraph will open changesets for when the campaign is created.
-    #
-    # Schema for comby:
-    # { scopeQuery: string, matchTemplate: string, rewriteTemplate: string }
-    arguments: JSONCString!
-}
-
 # A patch to apply to a repository (in a new branch) when a campaign is created from the parent
 # campaign plan.
 input CampaignPlanPatch {
@@ -470,7 +436,7 @@ input CreateCampaignInput {
     # If null, existing changesets can be added manually.
     # If set, no changesets can be added manually, they will be created by Sourcegraph
     # after creating the campaign according to the precomputed campaign plan.
-    # Will error if the plan has been purged already and needs to be recomputed by another call to previewCampaignPlan.
+    # Will error if the plan has been purged already and needs to be recreated.
     # Will error if the plan is not completed yet.
     # Using a campaign plan for a campaign will retain it for the lifetime of the campaign and prevents it from being purged.
     plan: ID
@@ -501,16 +467,10 @@ input UpdateCampaignInput {
 }
 
 # A preview of changes that will be applied by a campaign.
-# It is chached and addressable by its ID for a limited amount of time.
+# It is cached and addressable by its ID for a limited amount of time.
 type CampaignPlan implements Node {
     # The unique ID of this campaign plan.
     id: ID!
-
-    # The campaign type.
-    type: String!
-
-    # The JSONC string that configures how Sourcegraph generates the diff and changesets.
-    arguments: JSONCString!
 
     # The progress status of generating changesets.
     status: BackgroundProcessStatus!
