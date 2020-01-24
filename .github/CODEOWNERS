@@ -115,13 +115,13 @@ tslint.config.js @sourcegraph/web
 # Regression testing
 /web/src/regression @beyang
 
-# Frontend
+# Web
 /shared @sourcegraph/web
 /web @sourcegraph/web
 /ui @sourcegraph/web
 /client @sourcegraph/web
 /enterprise/ui @sourcegraph/web
-/cmd/frontend/internal/app/jscontext @slimsag
+/cmd/frontend/internal/app/jscontext @sourcegraph/web @slimsag
 /packages/@sourcegraph @sourcegraph/web
 /web/src/site-admin/externalServices.tsx @beyang
 /shared/src/components/activation/ @beyang
@@ -135,11 +135,10 @@ tslint.config.js @sourcegraph/web
 /internal/eventlogger @dadlerj
 
 # Automation
-*/a8n/* @sourcegraph/automation
-/enterprise/internal/a8n @sourcegraph/automation
-/internal/a8n @sourcegraph/automation
-**/campaigns/** @sourcegraph/automation
-web/**/campaigns/** @sourcegraph/automation @sourcegraph/web
+/cmd/frontend/graphqlbackend/a8n.go @sourcegraph/automation-core
+/enterprise/internal/a8n @sourcegraph/automation-core
+/internal/a8n @sourcegraph/automation-core
+/web/**/campaigns/** @sourcegraph/automation-web @mrnugget @sourcegraph/web
 
 # Auth
 /cmd/frontend/auth/ @beyang
@@ -273,6 +272,9 @@ Dockerfile @sourcegraph/distribution
 /cmd/loadtest @beyang
 /internal/hubspot/ @dadlerj
 /internal/highlight/ @slimsag
+
+# Changes to the GraphQL API should be approved by both the team owning the backend and the consumers
+/cmd/frontend/graphqlbackend/schema.graphql @sourcegraph/web @sourcegraph/core-services
 
 # These are configured through Renovate config.
 # See ../renovate.json and https://github.com/sourcegraph/renovate-config/blob/master/renovate.json
