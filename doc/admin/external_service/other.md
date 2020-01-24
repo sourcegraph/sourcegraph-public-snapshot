@@ -74,7 +74,7 @@ wget https://storage.googleapis.com/sourcegraph-artifacts/src-expose/latest/darw
 # wget https://storage.googleapis.com/sourcegraph-artifacts/src-expose/latest/linux-amd64/src-expose
 
 chmod +x src-expose
-./src-expose "echo sync command here" dir1 dir2 dir3
+./src-expose dir1 dir2 dir3
 ```
 
 `src-expose` will output a configuration to use. It may scroll by quickly due to snapshot logging, so scroll up. However, this configuration should work:
