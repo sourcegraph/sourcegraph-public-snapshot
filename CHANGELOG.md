@@ -27,6 +27,12 @@ All notable changes to Sourcegraph are documented in this file.
 - All repository fields related to `enabled` and `disabled` have been removed from the GraphQL API. These fields have been deprecated since 3.4. [#3971](https://github.com/sourcegraph/sourcegraph/pull/3971)
 - The deprecated extension API `Hover.__backcompatContents` was removed.
 
+## 3.12.3
+
+### Fixed
+
+- Fixed an issue in `sourcegraph/*` Docker images where data folders were either not created or had incorrect permissions - preventing the use of Docker volumes. [#7991](https://github.com/sourcegraph/sourcegraph/pull/7991)
+
 ## 3.12.2
 
 ### Added
