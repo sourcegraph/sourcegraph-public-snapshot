@@ -34,7 +34,15 @@ Array [
         <p
           className="form-text text-muted"
         >
-          e.g., codehost/organization/repository
+          Find the Sourcegraph repository name in the URL (e.g., 
+          http:
+          //
+          localhost
+          /
+          <strong>
+            &lt;REPOSITORY_NAME&gt;
+          </strong>
+          )
         </p>
       </div>
       <div

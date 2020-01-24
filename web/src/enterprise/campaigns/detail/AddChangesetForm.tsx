@@ -7,6 +7,7 @@ import { RepoNotFoundError } from '../../../../../shared/src/backend/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 async function addChangeset({
     campaignID,
@@ -88,33 +89,6 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
         },
         [campaignID, externalID, onAdd, repoName, setError]
     )
-    const onChangeRepoName = (repoName: string): void => {
-        try {
-            const url = new URL(repoName)
-            // match for github and bitbucket pr urls
-            const githubRegex = /\/pull\/([0-9]+).*$/
-            const bitbucketRegex = /\/pull-requests\/([0-9]+).*$/
-            const githubMatches = githubRegex.exec(url.pathname)
-            if (githubMatches) {
-                setRepoName(url.hostname + url.pathname.substring(0, url.pathname.indexOf('/pull/')))
-                if (githubMatches[1]) {
-                    setExternalID(githubMatches[1])
-                }
-            } else {
-                const bitbucketMatches = bitbucketRegex.exec(url.pathname)
-                if (bitbucketMatches) {
-                    setRepoName(url.hostname + url.pathname.substring(0, url.pathname.indexOf('/pull-requests/')))
-                    if (bitbucketMatches[1]) {
-                        setExternalID(bitbucketMatches[1])
-                    }
-                } else {
-                    setRepoName(repoName)
-                }
-            }
-        } catch {
-            setRepoName(repoName)
-        }
-    }
     return (
         <>
             <h3>Track changeset</h3>
@@ -130,9 +104,12 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                             className="form-control mr-1"
                             placeholder="Repository name"
                             value={repoName}
-                            onChange={event => onChangeRepoName(event.target.value)}
+                            onChange={event => setRepoName(event.target.value)}
                         />
-                        <p className="form-text text-muted">e.g., codehost/organization/repository</p>
+                        <p className="form-text text-muted">
+                            Find the Sourcegraph repository name in the URL (e.g., {window.location.protocol}//
+                            {window.location.host}/<strong>&lt;REPOSITORY_NAME&gt;</strong>)
+                        </p>
                     </div>
                     <div className="form-group mr-3 mb-0">
                         <label htmlFor="changeset-number">Changeset number</label>
