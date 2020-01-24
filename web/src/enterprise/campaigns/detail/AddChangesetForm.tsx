@@ -88,33 +88,80 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
         },
         [campaignID, externalID, onAdd, repoName, setError]
     )
+    const onChangeRepoName = (repoName: string): void => {
+        try {
+            const url = new URL(repoName)
+            // match for github and bitbucket pr urls
+            const githubRegex = /\/pull\/([0-9]+).*$/
+            const bitbucketRegex = /\/pull-requests\/([0-9]+).*$/
+            const githubMatches = githubRegex.exec(url.pathname)
+            if (githubMatches) {
+                setRepoName(url.hostname + url.pathname.substring(0, url.pathname.indexOf('/pull/')))
+                if (githubMatches[1]) {
+                    setExternalID(githubMatches[1])
+                }
+            } else {
+                const bitbucketMatches = bitbucketRegex.exec(url.pathname)
+                if (bitbucketMatches) {
+                    setRepoName(url.hostname + url.pathname.substring(0, url.pathname.indexOf('/pull-requests/')))
+                    if (bitbucketMatches[1]) {
+                        setExternalID(bitbucketMatches[1])
+                    }
+                } else {
+                    setRepoName(repoName)
+                }
+            }
+        } catch {
+            setRepoName(repoName)
+        }
+    }
     return (
         <>
-            <Form className="form-inline" onSubmit={submit}>
-                <input
-                    required={true}
-                    type="text"
-                    size={35}
-                    className="form-control mr-1"
-                    placeholder="Repository name"
-                    value={repoName}
-                    onChange={event => setRepoName(event.target.value)}
-                />
-                <input
-                    required={true}
-                    type="text"
-                    size={16}
-                    className="form-control mr-1"
-                    placeholder="Changeset number"
-                    value={externalID}
-                    onChange={event => setExternalID(event.target.value)}
-                />
+            <Form onSubmit={submit}>
+                <div className="d-flex">
+                    <div className="form-group mr-3 mb-0">
+                        <label htmlFor="changeset-repo">
+                            <h3>Repository name</h3>
+                        </label>
+                        <input
+                            required={true}
+                            name="changeset-repo"
+                            type="text"
+                            size={35}
+                            className="form-control mr-1"
+                            placeholder="Repository name"
+                            value={repoName}
+                            onChange={event => onChangeRepoName(event.target.value)}
+                        />
+                        <p className="form-text text-muted">
+                            Name of the repository in Sourcegraph {window.location.protocol}//{window.location.host}
+                            /$REPOSITORY_NAME
+                        </p>
+                    </div>
+                    <div className="form-group mr-3 mb-0">
+                        <label htmlFor="changeset-number">
+                            <h3>Changeset number</h3>
+                        </label>
+                        <input
+                            required={true}
+                            name="changeset-number"
+                            type="number"
+                            min={1}
+                            step={1}
+                            size={16}
+                            className="form-control mr-1"
+                            placeholder="Changeset number"
+                            value={externalID}
+                            onChange={event => setExternalID(event.target.value + '')}
+                        />
+                    </div>
+                </div>
                 <button type="submit" className="btn btn-primary mr-1">
                     Add changeset
+                    {isLoading && <LoadingSpinner className="ml-2 icon-inline" />}
                 </button>
-                {isLoading && <LoadingSpinner className="icon-inline" />}
             </Form>
-            {error && <ErrorAlert error={error} />}
+            {error && <ErrorAlert error={error} className="mt-3" />}
         </>
     )
 }
