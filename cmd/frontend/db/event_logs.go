@@ -26,12 +26,16 @@ type Event struct {
 	URL             string
 	UserID          uint32
 	AnonymousUserID string
-	Argument        *json.RawMessage
+	Argument        json.RawMessage
 	Source          string
 	Timestamp       time.Time
 }
 
 func (*eventLogs) Insert(ctx context.Context, e *Event) error {
+	if e.Argument == nil {
+		e.Argument = json.RawMessage([]byte(`{}`))
+	}
+
 	_, err := dbconn.Global.ExecContext(
 		ctx,
 		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",

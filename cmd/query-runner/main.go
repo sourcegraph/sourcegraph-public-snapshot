@@ -344,6 +344,5 @@ func logEvent(userID int32, eventName, eventType string) {
 	contents, _ := json.Marshal(map[string]string{
 		"event_type": eventType,
 	})
-	payload := json.RawMessage(contents)
-	eventlogger.LogEvent(userID, eventName, &payload)
+	eventlogger.LogEvent(userID, eventName, json.RawMessage(contents))
 }

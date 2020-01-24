@@ -23,11 +23,11 @@ type Event struct {
 	UserCookieID string
 	URL          string
 	Source       string
-	Argument     *json.RawMessage
+	Argument     json.RawMessage
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(userID int32, eventName string, argument *json.RawMessage) error {
+func LogBackendEvent(userID int32, eventName string, argument json.RawMessage) error {
 	return LogEvent(context.Background(), Event{
 		EventName:    eventName,
 		UserID:       userID,
@@ -51,14 +51,14 @@ func LogEvent(ctx context.Context, args Event) error {
 }
 
 type bigQueryEvent struct {
-	EventName       string           `json:"name"`
-	AnonymousUserID string           `json:"anonymous_user_id"`
-	UserID          int              `json:"user_id"`
-	URL             string           `json:"url"`
-	Source          string           `json:"source"`
-	Argument        *json.RawMessage `json:"argument,omitempty"`
-	Timestamp       string           `json:"timestamp"`
-	Version         string           `json:"version"`
+	EventName       string          `json:"name"`
+	AnonymousUserID string          `json:"anonymous_user_id"`
+	UserID          int             `json:"user_id"`
+	URL             string          `json:"url"`
+	Source          string          `json:"source"`
+	Argument        json.RawMessage `json:"argument,omitempty"`
+	Timestamp       string          `json:"timestamp"`
+	Version         string          `json:"version"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -86,7 +86,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 }
 
 // logLocalEvent logs users events.
-func logLocalEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument *json.RawMessage) error {
+func logLocalEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument json.RawMessage) error {
 	if name == "SearchSubmitted" {
 		err := logSiteSearchOccurred()
 		if err != nil {

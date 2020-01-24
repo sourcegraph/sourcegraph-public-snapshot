@@ -82,7 +82,7 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		return nil, nil
 	}
 
-	var payload *json.RawMessage
+	var payload json.RawMessage
 	if args.Argument != nil {
 		if err := json.Unmarshal([]byte(*args.Argument), &payload); err != nil {
 			return nil, err

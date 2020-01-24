@@ -165,7 +165,7 @@ var logStageEvent = func(userID int32, event string, isAuthenticated bool) error
 }
 
 // LogEvent logs users events.
-func LogEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument *json.RawMessage) error {
+func LogEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument json.RawMessage) error {
 	info := &db.Event{
 		Name:            name,
 		URL:             url,
