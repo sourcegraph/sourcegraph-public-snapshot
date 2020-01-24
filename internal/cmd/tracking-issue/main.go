@@ -31,6 +31,18 @@ func main() {
 }
 
 func run(token, org, milestone, labels string) (err error) {
+	if token == "" {
+		return fmt.Errorf("no -token given")
+	}
+
+	if org == "" {
+		return fmt.Errorf("no -org given")
+	}
+
+	if milestone == "" {
+		return fmt.Errorf("no -milestone given")
+	}
+
 	ctx := context.Background()
 	cli := githubv4.NewClient(
 		oauth2.NewClient(ctx, oauth2.StaticTokenSource(
@@ -54,7 +66,7 @@ func run(token, org, milestone, labels string) (err error) {
 		estimate := estimate(issue.Labels)
 		categories := categories(issue)
 		assignee := assignee(issue.Assignees)
-		title := title(issue)
+		title := title(issue, milestone)
 
 		item := fmt.Sprintf("- [%s] %s [#%d](%s) __%s__ %s\n",
 			state,
@@ -86,11 +98,22 @@ func run(token, org, milestone, labels string) (err error) {
 	return nil
 }
 
-func title(issue *Issue) string {
+func title(issue *Issue, milestone string) string {
+	var title string
+
 	if issue.Private {
-		return issue.Repository
+		title = issue.Repository
+	} else {
+		title = issue.Title
 	}
-	return issue.Title
+
+	// Cross off issues that were originally planned
+	// for the milestone but are no longer in it.
+	if issue.Milestone != milestone {
+		title = "~" + title + "~"
+	}
+
+	return title
 }
 
 func days(estimate string) float64 {
@@ -209,21 +232,28 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 		Milestone struct{ Title string }
 	}
 
+	type search struct {
+		PageInfo struct {
+			EndCursor   githubv4.String
+			HasNextPage bool
+		}
+		Nodes []struct {
+			issue `graphql:"... on Issue"`
+		}
+	}
+
 	var q struct {
-		Search struct {
-			PageInfo struct {
-				EndCursor   githubv4.String
-				HasNextPage bool
-			}
-			Nodes []struct {
-				issue `graphql:"... on Issue"`
-			}
-		} `graphql:"search(first: 100, type: ISSUE, after: $cursor, query: $query)"`
+		Milestoned   search `graphql:"milestoned: search(first: $milestonedCount, type: ISSUE, after: $milestonedCursor, query: $milestonedQuery)"`
+		Demilestoned search `graphql:"demilestoned: search(first: $demilestonedCount, type: ISSUE, after: $demilestonedCursor, query: $demilestonedQuery)"`
 	}
 
 	variables := map[string]interface{}{
-		"cursor": (*githubv4.String)(nil),
-		"query":  githubv4.String(listIssuesSearchQuery(org, milestone, labels)),
+		"milestonedCount":    githubv4.Int(100),
+		"demilestonedCount":  githubv4.Int(100),
+		"milestonedCursor":   (*githubv4.String)(nil),
+		"demilestonedCursor": (*githubv4.String)(nil),
+		"milestonedQuery":    githubv4.String(listIssuesSearchQuery(org, milestone, labels, false)),
+		"demilestonedQuery":  githubv4.String(listIssuesSearchQuery(org, milestone, labels, true)),
 	}
 
 	for {
@@ -232,7 +262,9 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 			return nil, err
 		}
 
-		for _, n := range q.Search.Nodes {
+		nodes := append(q.Milestoned.Nodes, q.Demilestoned.Nodes...)
+
+		for _, n := range nodes {
 			i := n.issue
 
 			issue := &Issue{
@@ -259,24 +291,37 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 			issues = append(issues, issue)
 		}
 
-		if !q.Search.PageInfo.HasNextPage {
-			break
+		var hasNextPage bool
+		if q.Milestoned.PageInfo.HasNextPage {
+			hasNextPage = true
+			variables["milestonedCursor"] = githubv4.NewString(q.Milestoned.PageInfo.EndCursor)
+		} else {
+			variables["milestonedCount"] = githubv4.Int(0)
 		}
 
-		variables["cursor"] = githubv4.NewString(q.Search.PageInfo.EndCursor)
+		if q.Demilestoned.PageInfo.HasNextPage {
+			hasNextPage = true
+			variables["demilestonedCursor"] = githubv4.NewString(q.Demilestoned.PageInfo.EndCursor)
+		} else {
+			variables["demilestonedCount"] = githubv4.Int(0)
+		}
+
+		if !hasNextPage {
+			break
+		}
 	}
 
 	return issues, nil
 }
 
-func listIssuesSearchQuery(org, milestone string, labels []string) string {
+func listIssuesSearchQuery(org, milestone string, labels []string, demilestoned bool) string {
 	var q strings.Builder
 
-	if org != "" {
-		fmt.Fprintf(&q, "org:%q", org)
-	}
+	fmt.Fprintf(&q, "org:%q", org)
 
-	if milestone != "" {
+	if demilestoned {
+		fmt.Fprintf(&q, ` -milestone:%q label:"planned/%s"`, milestone, milestone)
+	} else {
 		fmt.Fprintf(&q, " milestone:%q", milestone)
 	}
 
