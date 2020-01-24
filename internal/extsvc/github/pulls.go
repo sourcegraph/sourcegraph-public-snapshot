@@ -648,6 +648,15 @@ fragment pr on PullRequest {
 	headRefOid, baseRefOid, headRefName, baseRefName
 	author { ...actor }
 	participants(first: 100) { nodes { ...actor } }
+    commits(last: 1) {
+    nodes {
+      commit {
+          status {
+            state
+          }
+        }
+      }
+    }
 	timelineItems(
 	first: 250
 	itemTypes: [
