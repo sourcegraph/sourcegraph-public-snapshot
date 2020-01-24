@@ -675,7 +675,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 	campaign, err := svc.PublishCampaign(ctx, campaignID)
 	if err != nil {
-		return nil, errors.Wrap(err, "closing campaign")
+		return nil, errors.Wrap(err, "publishing campaign")
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
