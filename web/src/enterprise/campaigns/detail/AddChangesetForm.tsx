@@ -97,7 +97,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                         <label htmlFor="changeset-repo">Repository name</label>
                         <input
                             required={true}
-                            name="changeset-repo"
+                            id="changeset-repo"
                             type="text"
                             size={35}
                             className="form-control mr-1"
@@ -114,7 +114,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                         <label htmlFor="changeset-number">Changeset number</label>
                         <input
                             required={true}
-                            name="changeset-number"
+                            id="changeset-number"
                             type="number"
                             min={1}
                             step={1}
