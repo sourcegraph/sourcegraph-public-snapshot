@@ -84,9 +84,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const triggerError = useError()
 
     const campaignUpdates = useMemo(() => new Subject<void>(), [])
-
     const changesetUpdates = useMemo(() => new Subject<void>(), [])
-    const nextChangesetUpdate = useCallback(changesetUpdates.next.bind(changesetUpdates), [changesetUpdates])
 
     // Fetch campaign if ID was given
     const [campaign, setCampaign] = useState<GQL.ICampaign | GQL.ICampaignPlan | null>()
@@ -129,12 +127,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         type: (fetchedCampaign?.plan?.type as CampaignType) ?? MANUAL_CAMPAIGN_TYPE,
                         arguments: fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null,
                     })
-                    nextChangesetUpdate()
+                    changesetUpdates.next()
                 },
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
-    }, [campaignID, triggerError, nextChangesetUpdate, campaignUpdates, _fetchCampaignById])
+    }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById])
 
     const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'>(
         campaignID ? 'viewing' : 'editing'
@@ -197,11 +195,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     tap(campaign => {
                         setCampaign(campaign)
                         if (campaign && campaign.changesets.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
-                            nextChangesetUpdate()
+                            changesetUpdates.next()
                         }
                     })
                 ),
-            [previewCampaignPlans, nextChangesetUpdate]
+            [previewCampaignPlans, changesetUpdates]
         )
     )
 
@@ -358,6 +356,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         } catch (err) {
             setAlertError(asError(err))
         }
+    }
+
+    const onAddChangeset = (): void => {
+        // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
+        campaignUpdates.next()
+        changesetUpdates.next()
     }
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
@@ -567,7 +571,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             />
                             {/* only campaigns that have no plan can add changesets manually */}
                             {!campaign.plan && campaign.viewerCanAdminister && (
-                                <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
+                                <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
                             )}
                         </>
                     )}
