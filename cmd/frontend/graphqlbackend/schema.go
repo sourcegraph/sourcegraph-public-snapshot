@@ -2922,6 +2922,8 @@ type User implements Node & SettingsSubject & Namespace {
     #
     # Only the user and site admins can access this field.
     siteAdmin: Boolean!
+    # Whether the user account uses built in auth.
+    builtinAuth: Boolean!
     # The latest settings for the user.
     #
     # Only the user and site admins can access this field.
@@ -4309,6 +4311,8 @@ type DotcomQuery {
         #
         # Only Sourcegraph.com site admins may perform this query with account == null.
         account: ID
+        # Returns product subscriptions from users with usernames or email addresses that match the query.
+        query: String
     ): ProductSubscriptionConnection!
     # The invoice that would be generated for a new or updated subscription. This is used to show
     # users a preview of the credits, debits, and other billing information before creating or

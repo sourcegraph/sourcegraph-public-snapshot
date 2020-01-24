@@ -19,7 +19,7 @@ func CheckOrgAccess(ctx context.Context, orgID int32) error {
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
-	currentUser, err := currentUser(ctx)
+	currentUser, err := CurrentUser(ctx)
 	if err != nil {
 		return err
 	}

@@ -1011,10 +1011,9 @@ INSERT INTO campaigns (
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   name,
@@ -1026,8 +1025,7 @@ RETURNING
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 `
 
 func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -1056,7 +1054,6 @@ func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		changesetIDs,
 		nullInt64Column(c.CampaignPlanID),
 		nullTimeColumn(c.ClosedAt),
-		nullTimeColumn(c.PublishedAt),
 	), nil
 }
 
@@ -1113,9 +1110,8 @@ SET (
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  closed_at
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1128,8 +1124,7 @@ RETURNING
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 `
 
 func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -1151,7 +1146,6 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		changesetIDs,
 		nullInt64Column(c.CampaignPlanID),
 		nullTimeColumn(c.ClosedAt),
-		nullTimeColumn(c.PublishedAt),
 		c.ID,
 	), nil
 }
@@ -1245,8 +1239,7 @@ SELECT
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 FROM campaigns
 WHERE %s
 LIMIT 1
@@ -1312,8 +1305,7 @@ SELECT
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 FROM campaigns
 WHERE %s
 ORDER BY id ASC
@@ -1361,16 +1353,18 @@ INSERT INTO campaign_plans (
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 )
-VALUES (%s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_type,
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 `
 
 func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
@@ -1394,6 +1388,7 @@ func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		nullTimeColumn(c.CanceledAt),
 		c.CreatedAt,
 		c.UpdatedAt,
+		c.UserID,
 	), nil
 }
 
@@ -1417,8 +1412,9 @@ SET (
   campaign_type,
   arguments,
   canceled_at,
-  updated_at
-) = (%s, %s, %s, %s)
+  updated_at,
+  user_id
+) = (%s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1426,7 +1422,8 @@ RETURNING
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 `
 
 func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
@@ -1443,6 +1440,7 @@ func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		arguments,
 		nullTimeColumn(c.CanceledAt),
 		c.UpdatedAt,
+		c.UserID,
 		c.ID,
 	), nil
 }
@@ -1553,7 +1551,8 @@ SELECT
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 FROM campaign_plans
 WHERE %s
 LIMIT 1
@@ -1676,7 +1675,8 @@ SELECT
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 FROM campaign_plans
 WHERE %s
 ORDER BY id ASC
@@ -2581,7 +2581,6 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
 		&dbutil.NullInt64{N: &c.CampaignPlanID},
 		&dbutil.NullTime{Time: &c.ClosedAt},
-		&dbutil.NullTime{Time: &c.PublishedAt},
 	)
 }
 
@@ -2593,6 +2592,7 @@ func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
 		&dbutil.NullTime{Time: &c.CanceledAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
+		&c.UserID,
 	)
 }
 

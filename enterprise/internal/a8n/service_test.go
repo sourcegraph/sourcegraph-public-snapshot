@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -41,10 +42,7 @@ func TestService(t *testing.T) {
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
-	u, err := db.Users.Create(ctx, testUser)
-	if err != nil {
-		t.Fatal(err)
-	}
+	user := createTestUser(ctx, t)
 
 	store := NewStoreWithClock(dbconn.Global, clock)
 
@@ -54,7 +52,7 @@ func TestService(t *testing.T) {
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	err = reposStore.UpsertRepos(ctx, rs...)
+	err := reposStore.UpsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +77,7 @@ func TestService(t *testing.T) {
 			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
 		}
 
-		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches)
+		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -115,13 +113,13 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaign", func(t *testing.T) {
-		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(u.ID, plan.ID)
+		campaign := testCampaign(user.ID, plan.ID)
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
 
 		// Without CampaignJobs it should fail
@@ -146,10 +144,6 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if campaign.PublishedAt.IsZero() {
-			t.Fatalf("PublishedAt is zero")
-		}
-
 		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
 		if err != nil {
 			t.Fatal(err)
@@ -168,7 +162,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignAsDraft", func(t *testing.T) {
-		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -182,16 +176,12 @@ func TestService(t *testing.T) {
 			}
 		}
 
-		campaign := testCampaign(u.ID, plan.ID)
+		campaign := testCampaign(user.ID, plan.ID)
 
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
 		err = svc.CreateCampaign(ctx, campaign, true)
 		if err != nil {
 			t.Fatal(err)
-		}
-
-		if !campaign.PublishedAt.IsZero() {
-			t.Fatalf("PublishedAt is not zero")
 		}
 
 		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
@@ -212,7 +202,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateChangesetJobForCampaignJob", func(t *testing.T) {
-		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -224,7 +214,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(u.ID, plan.ID)
+		campaign := testCampaign(user.ID, plan.ID)
 		err = store.CreateCampaign(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
@@ -284,7 +274,7 @@ func TestService(t *testing.T) {
 					tc.err = "<nil>"
 				}
 
-				plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+				plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
 				err = store.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -297,7 +287,7 @@ func TestService(t *testing.T) {
 				}
 
 				svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
-				campaign := testCampaign(u.ID, plan.ID)
+				campaign := testCampaign(user.ID, plan.ID)
 
 				err = svc.CreateCampaign(ctx, campaign, tc.draft)
 				if err != nil {
@@ -354,10 +344,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
-	u, err := db.Users.Create(ctx, testUser)
-	if err != nil {
-		t.Fatal(err)
-	}
+	user := createTestUser(ctx, t)
 
 	var rs []*repos.Repo
 	for i := 0; i < 4; i++ {
@@ -365,7 +352,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	err = reposStore.UpsertRepos(ctx, rs...)
+	err := reposStore.UpsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -596,9 +583,9 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			)
 
 			if tt.manualCampaign {
-				campaign = testCampaign(u.ID, 0)
+				campaign = testCampaign(user.ID, 0)
 			} else {
-				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{}`}
+				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{}`, UserID: user.ID}
 				err = store.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -613,7 +600,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 					}
 					oldCampaignJobsByID[j.ID] = j
 				}
-				campaign = testCampaign(u.ID, plan.ID)
+				campaign = testCampaign(user.ID, plan.ID)
 			}
 
 			err = svc.CreateCampaign(ctx, campaign, tt.draft)
@@ -630,7 +617,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			oldTime := now
 			now = now.Add(5 * time.Second)
 
-			newPlan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{}`}
+			newPlan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{}`, UserID: user.ID}
 			err = store.CreateCampaignPlan(ctx, newPlan)
 			if err != nil {
 				t.Fatal(err)
@@ -854,6 +841,15 @@ var testUser = db.NewUser{
 	DisplayName:           "thorsten",
 	Password:              "1234",
 	EmailVerificationCode: "foobar",
+}
+
+func createTestUser(ctx context.Context, t *testing.T) *types.User {
+	t.Helper()
+	user, err := db.Users.Create(ctx, testUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return user
 }
 
 func testCampaignJob(plan int64, repo uint32, t time.Time) *a8n.CampaignJob {

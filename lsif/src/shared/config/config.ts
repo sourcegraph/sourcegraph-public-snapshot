@@ -15,11 +15,6 @@ export interface Configuration {
     postgresDSN: string
 
     /**
-     * The access token for lightstep tracing.
-     */
-    lightstepAccessToken: string
-
-    /**
      * Whether or not to enable Jaeger.
      */
     useJaeger: boolean
@@ -65,7 +60,7 @@ export async function waitForConfiguration(logger: Logger): Promise<() => Config
  * @param newConfiguration The new configuration instance.
  */
 function requireRestart(oldConfiguration: Configuration, newConfiguration: Configuration): boolean {
-    const fields = ['postgresDSN', 'lightstepProject', 'lightstepAccessToken', 'useJaeger']
+    const fields = ['postgresDSN', 'useJaeger']
     return !isEqual(pick(oldConfiguration, fields), pick(newConfiguration, fields))
 }
 
@@ -111,7 +106,6 @@ async function loadConfiguration(): Promise<Configuration> {
 
     return {
         postgresDSN: serviceConnections.postgresDSN,
-        lightstepAccessToken: site.lightstepAccessToken,
         useJaeger: site.useJaeger || false,
     }
 }

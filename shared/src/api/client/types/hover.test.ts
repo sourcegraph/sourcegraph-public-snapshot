@@ -9,16 +9,6 @@ describe('HoverMerged', () => {
         test('0 hovers', () => expect(fromHoverMerged([])).toBeNull())
         test('empty hovers', () => expect(fromHoverMerged([null, undefined])).toBeNull())
         test('empty string hovers', () => expect(fromHoverMerged([{ contents: { value: '' } }])).toBeNull())
-        test('backcompat {language, value}', () =>
-            expect(
-                fromHoverMerged([{ contents: 'z' as any, __backcompatContents: [{ language: 'l', value: 'x' }] }])
-            ).toEqual({
-                contents: [{ kind: MarkupKind.Markdown, value: '```l\nx\n```\n' }],
-            }))
-        test('backcompat string', () =>
-            expect(fromHoverMerged([{ contents: 'z' as any, __backcompatContents: ['x'] }])).toEqual({
-                contents: [{ kind: MarkupKind.Markdown, value: 'x' }],
-            }))
         test('1 MarkupContent', () =>
             expect(fromHoverMerged([{ contents: { kind: MarkupKind.Markdown, value: 'x' } }])).toEqual({
                 contents: [{ kind: MarkupKind.Markdown, value: 'x' }],

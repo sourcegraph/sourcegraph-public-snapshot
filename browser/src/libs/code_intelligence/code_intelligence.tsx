@@ -291,7 +291,7 @@ export interface CodeIntelligenceProps
 
 export const createOverlayMount = (codeHostName: string): HTMLElement => {
     const mount = document.createElement('div')
-    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
+    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`, 'theme-light')
     document.body.appendChild(mount)
     return mount
 }

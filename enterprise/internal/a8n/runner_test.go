@@ -61,7 +61,13 @@ func TestRunCampaignJobs(t *testing.T) {
 	campaignType := &testCampaignType{diff: testDiff, description: testDescription}
 	search := yieldRepos(rs...)
 	commitID := yieldDefaultBranches(defaultBranches)
-	plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+
+	u := createTestUser(ctx, t)
+	plan := &a8n.CampaignPlan{
+		CampaignType: "test",
+		Arguments:    `{}`,
+		UserID:       u.ID,
+	}
 
 	runner := NewRunnerWithClock(store, campaignType, search, commitID, clock)
 	err = runner.CreatePlanAndJobs(ctx, plan)
@@ -127,7 +133,13 @@ func TestRunner(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+	user := createTestUser(ctx, t)
+
+	testPlan := &a8n.CampaignPlan{
+		CampaignType: "test",
+		Arguments:    `{}`,
+		UserID:       user.ID,
+	}
 
 	tests := []struct {
 		name string
@@ -138,6 +150,7 @@ func TestRunner(t *testing.T) {
 
 		runErr string
 
+		planFn   func() *a8n.CampaignPlan
 		wantPlan *a8n.CampaignPlan
 		wantJobs func(plan *a8n.CampaignPlan, rs []*repos.Repo, branches []refAndTarget) []*a8n.CampaignJob
 	}{
@@ -305,6 +318,22 @@ func TestRunner(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:         "missing user",
+			search:       yieldRepos(rs...),
+			commitID:     yieldDefaultBranches(defaultBranches),
+			campaignType: &testCampaignType{},
+			wantPlan:     nil,
+			wantJobs:     wantNoJobs,
+			planFn: func() *a8n.CampaignPlan {
+				p := testPlan.Clone()
+				p.CreatedAt = now
+				p.UpdatedAt = now
+				p.UserID = 0
+				return p
+			},
+			runErr: `pq: insert or update on table "campaign_plans" violates foreign key constraint "campaign_plans_user_id_fkey"`,
+		},
 	}
 
 	for _, tc := range tests {
@@ -315,6 +344,9 @@ func TestRunner(t *testing.T) {
 			}
 
 			plan := testPlan.Clone()
+			if tc.planFn != nil {
+				plan = tc.planFn()
+			}
 
 			runner := NewRunnerWithClock(store, tc.campaignType, tc.search, tc.commitID, clock)
 			err := runner.CreatePlanAndJobs(ctx, plan)

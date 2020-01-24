@@ -64,3 +64,18 @@ The Sourcegraph instance's site admin must [update the `corsOrigin` site config 
   // ...
 }
 ```
+
+## Access token scopes
+
+Sourcegraph requires an access token with `api` permissions (and `sudo`, if you are using an `external` identity provider type). These permissions are required for the following reasons:
+
+We are actively collaborating with GitLab to improve our integration (e.g. the [Sourcegraph GitLab native integration](https://docs.gitlab.com/ee/integration/sourcegraph.html) and [better APIs for querying repository permissions](https://gitlab.com/gitlab-org/gitlab/issues/20532)).
+
+| Request Type | Required GitLab scope | Sourcegraph usage |
+|--------------|-----------------------|-------------------|
+| [`GET /projects`](https://docs.gitlab.com/ee/api/projects.html#list-all-projects) | `api` | (1) For repository discovery when specifying `projectQuery` in external service configuration; (2) If using an `external` identity provider type, also used as a test query to ensure token is `sudo` (`sudo` not required otherwise). |
+| [`GET /users`](https://docs.gitlab.com/ee/api/users.html#list-users) | `read_user` or `api` | If you are using an `external` identity provider type, used to discover user accounts. |
+| [`GET /users/:id`](https://docs.gitlab.com/ee/api/users.html#single-user) | `read_user` or `api` | If using GitLab OAuth, used to fetch user metadata during the OAuth sign in process. |
+| [`GET /projects/:id`](https://docs.gitlab.com/ee/api/projects.html#get-single-project) | `api` | (1) If using GitLab OAuth and repository permissions, used to determine if a user has access to a given _project_; (2) Used to query repository metadata (e.g. description) for display on Sourcegraph. |
+| [`GET /projects/:id/repository/tree`](https://docs.gitlab.com/ee/api/repositories.html#list-repository-tree) | `api` | If using GitLab OAuth and repository permissions, used to verify a given user has access to the file contents of a repository within a project (i.e. does not merely have `Guest` permissions). |
+| (future) write access | `api` | graph site-admins (only) to perform large-scale code refactors, with Sourcegraph issuing and managing the merge requests on GitLab repositories, company-wide. |

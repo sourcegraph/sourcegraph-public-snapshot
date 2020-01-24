@@ -214,7 +214,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 </DropdownToggle>
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
-                    <h3>External service status</h3>
+                    <h3>Code host status</h3>
                     {isErrorLike(this.state.messagesOrError) ? (
                         <ErrorAlert
                             className="status-messages-nav-item__entry mb-0"
@@ -226,10 +226,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     ) : (
                         <StatusMessagesNavItemEntry
                             title="Repositories up to date"
-                            text="All repositories hosted on the configured code hosts are cloned."
+                            text="All repositories hosted on the configured code hosts are synced."
                             showLink={this.props.isSiteAdmin}
                             linkTo="/site-admin/external-services"
-                            linkText="Configure synced repositories"
+                            linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
                             entryType="success"
                         />

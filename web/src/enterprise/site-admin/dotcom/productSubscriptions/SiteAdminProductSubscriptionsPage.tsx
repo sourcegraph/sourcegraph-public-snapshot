@@ -4,9 +4,8 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
@@ -65,7 +64,6 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
                     headComponent={SiteAdminProductSubscriptionNodeHeader}
                     nodeComponent={SiteAdminProductSubscriptionNode}
                     nodeComponentProps={nodeProps}
-                    hideSearch={true}
                     updates={this.updates}
                     history={this.props.history}
                     location={this.props.location}
@@ -74,12 +72,15 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
         )
     }
 
-    private queryProductSubscriptions = (args: { first?: number }): Observable<GQL.IProductSubscriptionConnection> =>
+    private queryProductSubscriptions = (args: {
+        first?: number
+        query?: string
+    }): Observable<GQL.IProductSubscriptionConnection> =>
         queryGraphQL(
             gql`
-                query ProductSubscriptions($first: Int, $account: ID) {
+                query ProductSubscriptions($first: Int, $account: ID, $query: String) {
                     dotcom {
-                        productSubscriptions(first: $first, account: $account) {
+                        productSubscriptions(first: $first, account: $account, query: $query) {
                             nodes {
                                 ...ProductSubscriptionFields
                             }
@@ -94,14 +95,11 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
             `,
             {
                 first: args.first,
+                query: args.query,
             } as GQL.IProductSubscriptionsOnDotcomQueryArguments
         ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.dotcom || !data.dotcom.productSubscriptions || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-                return data.dotcom.productSubscriptions
-            })
+            map(dataOrThrowErrors),
+            map(data => data.dotcom.productSubscriptions)
         )
 
     private onDidUpdateProductSubscription = (): void => this.updates.next()
