@@ -103,8 +103,9 @@ func title(issue *Issue, milestone string) string {
 
 	if issue.Private {
 		title = issue.Repository
+	} else {
+		title = issue.Title
 	}
-	title = issue.Title
 
 	// Cross off issues that were originally planned
 	// for the milestone but are no longer in it.
