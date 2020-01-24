@@ -193,19 +193,16 @@ export class BlobPage extends React.PureComponent<Props, State> {
     }
 
     public render(): React.ReactNode {
-        if (isErrorLike(this.state.blobOrError)) {
-            return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.blobOrError.message)} />
-            )
-        }
-
         let renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
         // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
         // - If file contains richHTML and url does not include a line number: We render in richHTML.
         // - If file does not contain richHTML or the url includes a line number: We render in code view.
         if (!renderMode) {
             renderMode =
-                this.state.blobOrError && this.state.blobOrError.richHTML && !parseHash(this.props.location.hash).line
+                this.state.blobOrError &&
+                !isErrorLike(this.state.blobOrError) &&
+                this.state.blobOrError.richHTML &&
+                !parseHash(this.props.location.hash).line
                     ? 'rendered'
                     : 'code'
         }
@@ -263,6 +260,19 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 />
             </>
         )
+
+        if (isErrorLike(this.state.blobOrError)) {
+            return (
+                <>
+                    {alwaysRender}
+                    <HeroPage
+                        icon={AlertCircleIcon}
+                        title="Error"
+                        subtitle={upperFirst(this.state.blobOrError.message)}
+                    />
+                </>
+            )
+        }
 
         if (!this.state.blobOrError) {
             // Render placeholder for layout before content is fetched.
