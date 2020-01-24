@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - After adding/removing a gitserver replica the admin interface will correctly report that repositories that need to move replicas as cloning. [#7970](https://github.com/sourcegraph/sourcegraph/issues/7970)
+- Show download button for images. [#7924](https://github.com/sourcegraph/sourcegraph/issues/7924)
 
 ### Removed
 
