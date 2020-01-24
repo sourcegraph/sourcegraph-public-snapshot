@@ -58,11 +58,11 @@ Repositories must be listed individually:
 
 ## Experimental: src-expose
 
-`src-expose` is a tool to periodically snapshot local directories and serve them as Git repositories over HTTP. This is a useful way to get code from other version control systems into Sourcegraph, or textual artifacts from non version controlled systems (eg configuration) into Sourcegraph.
+`src-expose` is a tool to periodically snapshot local directories and serve them as Git repositories over HTTP. This is a useful way to get code from other version control systems or textual artifacts from non version controlled systems (eg configuration) into Sourcegraph.
 
 ### Quick start
 
-Start up sourcegraph insiders
+Start up a Sourcegraph instance
 
 <pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.12.1</code></pre>
 
@@ -85,7 +85,7 @@ chmod +x src-expose
     // url should be reachable by Sourcegraph.
     // "http://host.docker.internal:3434" works from Sourcegraph when using Docker for Desktop.
     "url": "http://host.docker.internal:3434",
-    "repos": ["src-expose"] // This may change in versions later than 3.9
+    "repos": ["src-expose"]
 }
 ```
 
@@ -93,7 +93,7 @@ Go to Admin > External services > Add external service > Single Git repositories
 
 ### Advanced configuration
 
-The command line argument used by the quick start is for quickly validating the approach. However, you may have more complicated scenarious for snapshotting. In that case you can pass a YAML configuration file:
+The command line argument used by the quick start is for quickly validating the approach. However, you may have more complicated scenarios for snapshotting. In that case you can pass a YAML configuration file:
 
 ``` shell
 src-expose -snapshot-config config.yaml
@@ -108,4 +108,3 @@ Alternatively you can serve git repositories. See `src-expose serve -help`.
 ## Configuration
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/other_external_service.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/other) to see rendered content.</div>
-
