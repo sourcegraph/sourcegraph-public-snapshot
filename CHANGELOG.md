@@ -29,6 +29,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.12.2 (unreleased)
 
+### Added
+
+- Experimental: The site configuration field `automation.readAccess.enabled` allows site-admins to give read-only access for Automation campaigns to non-site-admins. This is a setting for the experimental feature Automation and will only have an effect when Automation is enabled under `experimentalFeatures`. [#8013](https://github.com/sourcegraph/sourcegraph/issues/8013)
+
 ### Fixed
 
 - A regression in 3.12.0 which caused [Automation find-leaked-credentials campaigns](https://docs.sourcegraph.com/user/automation#finding-leaked-credentials) to not return any results for private repositories. [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914)
