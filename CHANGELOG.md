@@ -31,6 +31,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - A regression in 3.12.0 which caused [Automation find-leaked-credentials campaigns](https://docs.sourcegraph.com/user/automation#finding-leaked-credentials) to not return any results for private repositories. [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914)
+- A regression in 3.12.0 which removed the horizontal bar between search result matches.
 
 ## 3.12.1
 
