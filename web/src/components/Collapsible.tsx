@@ -59,7 +59,10 @@ export const Collapsible: React.FunctionComponent<Props> = ({
             >
                 <button
                     type="button"
-                    className={classNames('btn btn-icon', wholeTitleClickable && 'stretched-link')}
+                    className={classNames(
+                        'btn btn-icon collapsible__expand-btn',
+                        wholeTitleClickable && 'stretched-link'
+                    )}
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >
