@@ -60,13 +60,11 @@ Repositories must be listed individually:
 
 `src-expose` is a tool to periodically snapshot local directories and serve them as Git repositories over HTTP. This is a useful way to get code from other version control systems into Sourcegraph, or textual artifacts from non version controlled systems (eg configuration) into Sourcegraph.
 
-> `src-expose` is currently unreleased. It requires `insiders` builds of Sourcegraph. It will be available in Sourcegraph 3.9.
-
 ### Quick start
 
 Start up sourcegraph insiders
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:insiders</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.12.1</code></pre>
 
 Pick a directory you want to export from, then run:
 
@@ -82,12 +80,12 @@ chmod +x src-expose
 `src-expose` will output a configuration to use. It may scroll by quickly due to snapshot logging, so scroll up. However, this configuration should work:
 
 ``` javascript
-{
-  "url": "http://host.docker.internal:3434",
-  "repos": [
-    "hack-ignore-me"
-  ],
-  "experimental.srcExpose": true
+ {
+    // url is the http url to src-expose (listening on 127.0.0.1:3434)
+    // url should be reachable by Sourcegraph.
+    // "http://host.docker.internal:3434" works from Sourcegraph when using Docker for Desktop.
+    "url": "http://host.docker.internal:3434",
+    "repos": ["src-expose"] // This may change in versions later than 3.9
 }
 ```
 
