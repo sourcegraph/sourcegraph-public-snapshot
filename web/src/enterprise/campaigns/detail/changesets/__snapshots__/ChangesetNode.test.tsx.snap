@@ -191,7 +191,7 @@ Object {
         </span>
       </div>
     }
-    titleClassName="campaign-node__content flex-fill"
+    titleClassName="changeset-node__content flex-fill"
     wholeTitleClickable={false}
   >
     <FileDiffNode

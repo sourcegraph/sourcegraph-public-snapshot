@@ -148,7 +148,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         <li className="list-group-item e2e-changeset-node">
             {fileDiffNodes ? (
                 <Collapsible
-                    titleClassName="campaign-node__content flex-fill"
+                    titleClassName="changeset-node__content flex-fill"
                     title={changesetNodeRow}
                     wholeTitleClickable={false}
                 >
