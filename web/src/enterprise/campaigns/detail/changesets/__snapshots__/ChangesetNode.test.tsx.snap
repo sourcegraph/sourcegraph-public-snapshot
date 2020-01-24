@@ -17,7 +17,7 @@ Object {
         />
       </div>
       <div
-        className="campaign-node__content flex-fill"
+        className="changeset-node__content flex-fill"
       >
         <h3
           className="m-0"
@@ -70,7 +70,7 @@ Object {
         />
       </div>
       <div
-        className="campaign-node__content flex-fill"
+        className="changeset-node__content flex-fill"
       >
         <h3
           className="m-0"
@@ -145,7 +145,7 @@ Object {
           />
         </div>
         <div
-          className="campaign-node__content flex-fill"
+          className="changeset-node__content flex-fill"
         >
           <h3
             className="m-0"
