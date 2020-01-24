@@ -244,22 +244,40 @@ describe('Code intelligence regression test suite', () => {
         before(async function() {
             this.timeout(30 * 1000)
 
-            for (const { repo, commit } of [
-                { repo: 'prometheus-common', commit: prometheusCommonLSIFCommit },
-                { repo: 'prometheus-client-golang', commit: prometheusClientHeadCommit },
-            ]) {
-                innerResourceManager.add(
-                    'LSIF upload',
-                    `${repo} upload`,
-                    await uploadAndEnsure(
-                        driver,
-                        config,
-                        gqlClient,
-                        `github.com/sourcegraph-testing/${repo}`,
+            const repoCommits = [
+                { repository: 'prometheus-common', commit: prometheusCommonLSIFCommit },
+                { repository: 'prometheus-client-golang', commit: prometheusClientHeadCommit },
+            ]
+
+            for (const { repository } of repoCommits) {
+                // First, remove all existing uploads for the repository
+                await clearUploads(gqlClient, repository)
+            }
+
+            const uploadUrls = []
+            for (const { repository, commit } of repoCommits) {
+                // Upload each upload in parallel and get back the upload status URLs
+                uploadUrls.push(
+                    await performUpload(config, {
+                        repository: `github.com/sourcegraph-testing/${repository}`,
                         commit,
-                        '/'
-                    )
+                        root: '/',
+                        filename: `lsif-data/github.com/sourcegraph-testing/${repository}@${commit.substring(
+                            0,
+                            12
+                        )}.lsif`,
+                    })
                 )
+
+                innerResourceManager.add('LSIF upload', `${repository} upload`, () =>
+                    clearUploads(gqlClient, repository)
+                )
+            }
+
+            for (const uploadUrl of uploadUrls) {
+                // Check the upload status URLs to ensure that they succeed, then ensure
+                // that they are all listed as one of the "active" uploads for that repo
+                await ensureUpload(driver, uploadUrl)
             }
 
             await clearUploads(gqlClient, 'github.com/sourcegraph-testing/prometheus-redefinitions')
@@ -364,7 +382,7 @@ describe('Code intelligence regression test suite', () => {
 //
 // Code navigation utilities
 
-export interface CodeNavigationTestCase {
+interface CodeNavigationTestCase {
     /**
      * The source page.
      */
@@ -401,7 +419,7 @@ export interface CodeNavigationTestCase {
     expectedReferences?: TestLocation[]
 }
 
-export interface TestLocation {
+interface TestLocation {
     url: string
 
     /**
@@ -417,7 +435,7 @@ export interface TestLocation {
  * and reference panels. Will compare hover text. Will compare location of each file match or
  * the target of the page navigated to on jump-to-definition (in the case of a single definition).
  */
-export async function testCodeNavigation(
+async function testCodeNavigation(
     driver: Driver,
     config: Pick<Config, 'sourcegraphBaseUrl'>,
     {
@@ -605,7 +623,7 @@ function normalizeWhitespace(s: string): string {
  * Return a promise that updates the global settings to their original value. This return value
  * is suitable for use with the resource manager's destroy queue.
  */
-export async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
+async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
     const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
     const newContents = applyEdits(
         oldContents,
@@ -624,44 +642,9 @@ export async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: bo
 }
 
 /**
- * Upload a single LSIF upload and ensure the upload is successfully processed
- * and is visible from the tip of the default branch.
- */
-export async function uploadAndEnsure(
-    driver: Driver,
-    config: Pick<Config, 'sourcegraphBaseUrl'>,
-    gqlClient: GraphQLClient,
-    repository: string,
-    commit: string,
-    root: string
-): Promise<() => Promise<void>> {
-    // First, remove all existing uploads for the repository
-    await clearUploads(gqlClient, repository)
-
-    // Upload each upload in parallel and get back the upload status URLs
-    const uploadUrl = await performUpload(config, {
-        repository,
-        commit,
-        root,
-        filename: `lsif-data/${repository}@${commit.substring(0, 12)}.lsif`,
-    })
-
-    // Check the upload status URLs to ensure that they succeed, then ensure
-    // that they are all listed as one of the "active" uploads for that repo
-    await ensureUpload(driver, config, {
-        repository,
-        commit,
-        root,
-        uploadUrl,
-    })
-
-    return (): Promise<void> => clearUploads(gqlClient, repository)
-}
-
-/**
  * Delete all LSIF uploads for a repository.
  */
-export async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise<void> {
+async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise<void> {
     const { nodes, hasNextPage } = await gqlClient
         .queryGraphQL(
             gql`
@@ -779,11 +762,7 @@ async function performUpload(
  * list of uploads for that repository and ensure that it's visible in the list of
  * uploads visible at the tip of the default branch.
  */
-async function ensureUpload(
-    driver: Driver,
-    config: Pick<Config, 'sourcegraphBaseUrl'>,
-    { repository, commit, root, uploadUrl }: { repository: string; commit: string; root: string; uploadUrl: string }
-): Promise<void> {
+async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
     const pendingUploadStateMessages = ['Upload is queued.', 'Upload is currently being processed...']
 
     await driver.page.goto(uploadUrl)
@@ -798,16 +777,11 @@ async function ensureUpload(
     }
 
     // Ensure upload is successful
-    const text = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
-    expect(text).toEqual('Upload completed successfully.')
+    const stateText = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
+    expect(stateText).toEqual('Upload processed successfully.')
 
-    await driver.page.goto(`${config.sourcegraphBaseUrl}/${repository}/-/settings/code-intelligence`)
-
-    const commitElem = await driver.page.waitForSelector('.e2e-upload-commit')
-    const actualCommit = await commitElem.evaluate(elem => elem.textContent)
-    expect(actualCommit).toEqual(commit.substr(0, 7))
-
-    const rootElem = await driver.page.waitForSelector('.e2e-upload-root')
-    const actualRoot = await rootElem.evaluate(elem => elem.textContent)
-    expect(actualRoot).toEqual(root)
+    const isLatestForRepoText = await (await driver.page.waitFor('.e2e-is-latest-for-repo')).evaluate(
+        elem => elem.textContent
+    )
+    expect(isLatestForRepoText).toEqual('yes')
 }

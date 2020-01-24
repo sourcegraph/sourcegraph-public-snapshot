@@ -971,9 +971,6 @@ declare module 'sourcegraph' {
          */
         contents: MarkupContent
 
-        /** @deprecated */
-        __backcompatContents?: (MarkupContent | string | { language: string; value: string })[]
-
         /**
          * The range to which this hover applies. When missing, the editor will use the range at the current
          * position or the current position itself.

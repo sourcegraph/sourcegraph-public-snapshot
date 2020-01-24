@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE event_logs
+ALTER COLUMN timestamp DROP DEFAULT;
+
+COMMIT;

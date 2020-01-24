@@ -147,6 +147,15 @@ func Providers() []Provider {
 	return providers
 }
 
+func BuiltinAuthEnabled() bool {
+	for _, p := range Providers() {
+		if p.Config().Builtin != nil {
+			return true
+		}
+	}
+	return false
+}
+
 type sortProviders []Provider
 
 func (p sortProviders) Len() int {

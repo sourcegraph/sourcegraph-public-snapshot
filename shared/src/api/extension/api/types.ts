@@ -34,7 +34,6 @@ export function fromLocation(
 export function fromHover(hover: sourcegraph.Badged<sourcegraph.Hover>): sourcegraph.Badged<clientType.Hover> {
     return {
         contents: hover.contents,
-        __backcompatContents: hover.__backcompatContents,
         range: fromRange(hover.range),
         badge: hover.badge,
     }

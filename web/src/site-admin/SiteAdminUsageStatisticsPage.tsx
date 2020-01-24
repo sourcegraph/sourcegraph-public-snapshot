@@ -141,7 +141,7 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
                     {this.props.node.usageStatistics && this.props.node.usageStatistics.lastActiveTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                     ) : (
-                        'n/a'
+                        'never'
                     )}
                 </td>
                 <td className="site-admin-usage-statistics-page__date-column">
@@ -149,7 +149,7 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
                     this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
                     ) : (
-                        'n/a'
+                        'never'
                     )}
                 </td>
             </tr>

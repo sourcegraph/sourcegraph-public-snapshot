@@ -17,9 +17,6 @@ import (
 	"time"
 
 	"github.com/gchaincl/sqlhooks"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
-	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -65,7 +62,11 @@ func ConnectToDB(dataSource string) error {
 	registerPrometheusCollector(Global, "_app")
 	configureConnectionPool(Global)
 
-	if err := DoMigrate(NewMigrate(Global, dataSource)); err != nil {
+	m, err := dbutil.NewMigrate(Global, dataSource)
+	if err != nil {
+		return err
+	}
+	if err := dbutil.DoMigrate(m); err != nil {
 		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
 
@@ -207,59 +208,4 @@ func configureConnectionPool(db *sql.DB) {
 	db.SetMaxOpenConns(maxOpen)
 	db.SetMaxIdleConns(maxOpen)
 	db.SetConnMaxLifetime(time.Minute)
-}
-
-type stdoutLogger struct{}
-
-func (logger stdoutLogger) Printf(format string, v ...interface{}) {
-	fmt.Printf(format, v...)
-}
-func (logger stdoutLogger) Verbose() bool {
-	return true
-}
-
-func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	d, err := bindata.WithInstance(dbutil.NewMigrationSourceLoader(dataSource))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	m, err := migrate.NewWithInstance("go-bindata", d, "postgres", driver)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// In case another process was faster and runs migrations, we will wait
-	// this long
-	m.LockTimeout = 5 * time.Minute
-	if os.Getenv("LOG_MIGRATE_TO_STDOUT") != "" {
-		m.Log = stdoutLogger{}
-	}
-
-	return m
-}
-
-func DoMigrate(m *migrate.Migrate) (err error) {
-	err = m.Up()
-	if err == nil || err == migrate.ErrNoChange {
-		return nil
-	}
-
-	if os.IsNotExist(err) {
-		// This should only happen if the DB is ahead of the migrations available
-		version, dirty, verr := m.Version()
-		if verr != nil {
-			return verr
-		}
-		if dirty { // this shouldn't happen, but checking anyways
-			return err
-		}
-		log15.Warn("WARNING: Detected an old version of Sourcegraph. The database has migrated to a newer version. If you have applied a rollback, this is expected and you can ignore this warning. If not, please contact support@sourcegraph.com for further assistance.", "db_version", version)
-		return nil
-	}
-	return err
 }

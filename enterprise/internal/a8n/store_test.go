@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -45,7 +46,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ChangesetIDs:   []int64{int64(i) + 1},
 						CampaignPlanID: 42 + int64(i),
 						ClosedAt:       now,
-						PublishedAt:    now,
 					}
 
 					if i%2 == 0 {
@@ -175,7 +175,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c.Description += "-updated"
 					c.AuthorID++
 					c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
-					c.PublishedAt = c.PublishedAt.Add(5 * time.Second)
 
 					if c.NamespaceUserID != 0 {
 						c.NamespaceUserID++
@@ -1983,7 +1982,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 							AuthorID:        4567,
 							NamespaceUserID: 4567,
 							CampaignPlanID:  1234 + int64(i),
-							PublishedAt:     now,
 						}
 
 						err := s.CreateCampaign(ctx, c)
@@ -2465,9 +2463,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Microsecond)
-		s := NewStoreWithClock(db, func() time.Time {
-			return now.UTC().Truncate(time.Microsecond)
-		})
+		clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
 		ctx := context.Background()
 
 		// Create a test repo
@@ -2491,6 +2487,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		}
 
 		t.Run("GetPendingCampaignJobsWhenNoneAvailable", func(t *testing.T) {
+			tx, done := dbtest.NewTx(t, db)
+			defer done()
+			s := NewStoreWithClock(tx, clock)
+
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				return errors.New("rollback")
 			}
@@ -2505,6 +2505,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailable", func(t *testing.T) {
+			tx, done := dbtest.NewTx(t, db)
+			defer done()
+			s := NewStoreWithClock(tx, clock)
+
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				return errors.New("rollback")
 			}
@@ -2529,12 +2533,6 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer func() {
-				err := s.DeleteCampaignJob(ctx, job.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}()
 			ran, err := s.ProcessPendingCampaignJob(ctx, process)
 			if err != nil && err.Error() != "rollback" {
 				t.Fatal(err)
@@ -2546,12 +2544,17 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailableLocking", func(t *testing.T) {
+			dbtesting.SetupGlobalTestDB(t)
+			user := createTestUser(ctx, t)
+			s := NewStoreWithClock(db, clock)
+
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				time.Sleep(100 * time.Millisecond)
 				return errors.New("rollback")
 			}
 			plan := &a8n.CampaignPlan{
 				CampaignType: "test",
+				UserID:       user.ID,
 			}
 			err := s.CreateCampaignPlan(context.Background(), plan)
 			if err != nil {

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -352,6 +353,10 @@ func runCampaignJob(ctx context.Context, clock func() time.Time, store *Store, c
 		job.Error = "Campaign execution canceled."
 		return
 	}
+
+	// Ensure that we run as the user who created the plan
+	act := actor.FromUser(p.UserID)
+	ctx = actor.WithActor(ctx, act)
 
 	job.StartedAt = clock()
 
