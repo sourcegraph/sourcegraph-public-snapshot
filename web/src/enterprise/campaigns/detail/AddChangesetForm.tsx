@@ -7,7 +7,6 @@ import { RepoNotFoundError } from '../../../../../shared/src/backend/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 async function addChangeset({
     campaignID,
