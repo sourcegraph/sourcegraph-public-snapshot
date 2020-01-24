@@ -177,7 +177,7 @@ func calcEndDate(startDate time.Time, periods int, periodType PeriodType) (time.
 		return startDate.AddDate(0, periods, 0), true
 	}
 
-	return startDate, false
+	return time.Time{}, false
 }
 
 // CountUniqueUsersOptions provides options for counting unique users.
