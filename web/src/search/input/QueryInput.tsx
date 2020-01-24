@@ -496,13 +496,7 @@ export class QueryInput extends React.Component<Props, State> {
             }
 
             // 🚨 PRIVACY: never provide any private data in { code_search: { suggestion: { type } } }.
-            eventLogger.log('SearchSuggestionSelected', {
-                code_search: {
-                    suggestion: {
-                        type: suggestion.type,
-                    },
-                },
-            })
+            eventLogger.log('SearchSuggestionSelected', { type: suggestion.type })
 
             // if separate word is being typed and suggestion with url is selected
             if (
