@@ -15,9 +15,7 @@ exports[`AddChangesetForm renders the form 1`] = `
       <label
         htmlFor="changeset-repo"
       >
-        <h3>
-          Repository name
-        </h3>
+        Repository name
       </label>
       <input
         className="form-control mr-1"
@@ -45,9 +43,7 @@ exports[`AddChangesetForm renders the form 1`] = `
       <label
         htmlFor="changeset-number"
       >
-        <h3>
-          Changeset number
-        </h3>
+        Changeset number
       </label>
       <input
         className="form-control mr-1"

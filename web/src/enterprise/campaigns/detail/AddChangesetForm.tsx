@@ -120,9 +120,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
             <Form onSubmit={submit}>
                 <div className="d-flex">
                     <div className="form-group mr-3 mb-0">
-                        <label htmlFor="changeset-repo">
-                            <h3>Repository name</h3>
-                        </label>
+                        <label htmlFor="changeset-repo">Repository name</label>
                         <input
                             required={true}
                             name="changeset-repo"
@@ -139,9 +137,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                         </p>
                     </div>
                     <div className="form-group mr-3 mb-0">
-                        <label htmlFor="changeset-number">
-                            <h3>Changeset number</h3>
-                        </label>
+                        <label htmlFor="changeset-number">Changeset number</label>
                         <input
                             required={true}
                             name="changeset-number"
