@@ -360,6 +360,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
+    const onAddChangeset = (): void => {
+        // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
+        campaignUpdates.next()
+        nextChangesetUpdate()
+    }
+
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
 
     return (
@@ -567,7 +573,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             />
                             {/* only campaigns that have no plan can add changesets manually */}
                             {!campaign.plan && campaign.viewerCanAdminister && (
-                                <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
+                                <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
                             )}
                         </>
                     )}
