@@ -181,6 +181,15 @@ const (
 	ChangesetReviewStateCommented        ChangesetReviewState = "COMMENTED"
 )
 
+// ChangesetCheckState constants.
+type ChangesetCheckState string
+
+const (
+	ChangesetCheckStatePending ChangesetCheckState = "PENDING"
+	ChangesetCheckStatePassed  ChangesetCheckState = "PASSED"
+	ChangesetCheckStateFailed  ChangesetCheckState = "FAILED"
+)
+
 // Valid returns true if the given Changeset is valid.
 func (s ChangesetReviewState) Valid() bool {
 	switch s {

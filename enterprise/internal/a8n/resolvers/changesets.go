@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/rand"
 	"sort"
 	"sync"
 
@@ -213,6 +214,27 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 	sort.Sort(events)
 
 	return events.ReviewState()
+}
+
+var dummyCheckStates = []interface{}{
+	a8n.ChangesetCheckStatePending,
+	a8n.ChangesetCheckStatePassed,
+	a8n.ChangesetCheckStateFailed,
+	nil,
+	errors.New("Error"),
+}
+
+func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheckState, error) {
+	state := dummyCheckStates[rand.Intn(len(dummyCheckStates))]
+	switch v := state.(type) {
+	case a8n.ChangesetCheckState:
+		return &v, nil
+	case error:
+		return nil, v
+	case nil:
+		return nil, nil
+	}
+	return nil, errors.New("invalid state")
 }
 
 func (r *changesetResolver) Events(ctx context.Context, args *struct {
