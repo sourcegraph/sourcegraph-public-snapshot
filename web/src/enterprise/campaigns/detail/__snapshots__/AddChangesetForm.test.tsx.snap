@@ -23,7 +23,7 @@ Array [
         </label>
         <input
           className="form-control mr-1"
-          name="changeset-repo"
+          id="changeset-repo"
           onChange={[Function]}
           placeholder="Repository name"
           required={true}
@@ -55,8 +55,8 @@ Array [
         </label>
         <input
           className="form-control mr-1"
+          id="changeset-number"
           min={1}
-          name="changeset-number"
           onChange={[Function]}
           placeholder="Changeset number"
           required={true}
