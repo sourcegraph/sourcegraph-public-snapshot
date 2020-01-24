@@ -307,6 +307,7 @@ export const queryChangesets = (
                                 body
                                 state
                                 reviewState
+                                checkState
                                 repository {
                                     name
                                     url

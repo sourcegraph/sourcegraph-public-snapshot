@@ -189,6 +189,10 @@ Object {
             expandedCounts={true}
           />
         </span>
+        <Memo(ErrorIcon)
+          className="text-error"
+          data-tooltip="Some checks failed"
+        />
       </div>
     }
     titleClassName="campaign-node__content flex-fill"
