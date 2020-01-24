@@ -28,7 +28,6 @@ interface Props extends ThemeProps {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const jsonSchemaByType: { [K in CampaignType]: any } = {
     comby: combyJsonSchema,
-    credentials: credentialsJsonSchema,
 }
 
 const defaultInputByType: { [K in CampaignType]: string } = {
@@ -36,10 +35,6 @@ const defaultInputByType: { [K in CampaignType]: string } = {
     "scopeQuery": "repo:github.com/foo/bar",
     "matchTemplate": "",
     "rewriteTemplate": ""
-}`,
-    credentials: `{
-    "scopeQuery": "repo:github.com/foo/bar",
-    "matchers": [{ "type": "npm" }]
 }`,
 }
 
