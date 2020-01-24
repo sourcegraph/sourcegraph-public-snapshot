@@ -46,7 +46,7 @@ func allowReadAccess(ctx context.Context) error {
 	}
 
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return false, err
+		return err
 	}
 
 	return nil
@@ -91,9 +91,8 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 }
 
 func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetPlanResolver, error) {
-	// TODO: allow read access
-	// 🚨 SECURITY: Only site admins may access changesets for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -111,9 +110,8 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 }
 
 func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
-	// TODO: allow read access
-	// 🚨 SECURITY: Only site admins may access campaign plans for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -363,12 +361,10 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 }
 
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
-	// TODO: allow read access
-	// 🚨 SECURITY: Only site admins may read campaigns for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
-
 	return &campaignsConnectionResolver{
 		store: r.store,
 		opts: ee.ListCampaignsOpts{
@@ -472,12 +468,10 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 }
 
 func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
-	// TODO: allow read access
-	// 🚨 SECURITY: Only site admins may read changesets for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
-
 	return &changesetsConnectionResolver{
 		store: r.store,
 		opts: ee.ListChangesetsOpts{
