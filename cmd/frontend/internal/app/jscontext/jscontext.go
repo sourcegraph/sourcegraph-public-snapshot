@@ -188,8 +188,9 @@ func publicSiteConfiguration() schema.SiteConfiguration {
 		updateChannel = "release"
 	}
 	return schema.SiteConfiguration{
-		AuthPublic:    c.AuthPublic,
-		UpdateChannel: updateChannel,
+		AutomationReadAccessEnabled: c.AutomationReadAccessEnabled,
+		AuthPublic:                  c.AuthPublic,
+		UpdateChannel:               updateChannel,
 	}
 }
 

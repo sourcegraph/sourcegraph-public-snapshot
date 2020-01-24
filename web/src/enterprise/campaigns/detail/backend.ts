@@ -23,6 +23,7 @@ export type CampaignType = 'comby' | 'credentials' | 'regexSearchReplace'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
+        __typename
         id
         author {
             username
@@ -42,7 +43,7 @@ const campaignFragment = gql`
         closedAt
         publishedAt
         url
-        __typename
+        viewerCanAdminister
         changesets {
             totalCount
             nodes {

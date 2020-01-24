@@ -32,7 +32,7 @@ describe('CampaignDetails', () => {
             )
         ).toMatchSnapshot())
 
-    const EXISTING_CAMPAIGN_DETAILS = (
+    const renderCampaignDetails = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
         <CampaignDetails
             campaignID="c"
             history={history}
@@ -50,6 +50,7 @@ describe('CampaignDetails', () => {
                     changesets: { nodes: [] as GQL.IExternalChangeset[], totalCount: 2 },
                     changesetPlans: { nodes: [] as GQL.IChangesetPlan[], totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
+                    viewerCanAdminister,
                     status: {
                         __typename: 'BackgroundProcessStatus',
                         completedCount: 3,
@@ -64,14 +65,18 @@ describe('CampaignDetails', () => {
         />
     )
 
-    test('viewing existing', () => {
-        const component = renderer.create(EXISTING_CAMPAIGN_DETAILS)
-        act(() => undefined) // eslint-disable-line @typescript-eslint/no-floating-promises
-        expect(component).toMatchSnapshot()
-    })
+    for (const viewerCanAdminister of [true, false]) {
+        describe(`viewerCanAdminister: ${viewerCanAdminister}`, () => {
+            test('viewing existing', () => {
+                const component = renderer.create(renderCampaignDetails({ viewerCanAdminister }))
+                act(() => undefined) // eslint-disable-line @typescript-eslint/no-floating-promises
+                expect(component).toMatchSnapshot()
+            })
+        })
+    }
 
     test('editing existing', () => {
-        const component = renderer.create(EXISTING_CAMPAIGN_DETAILS)
+        const component = renderer.create(renderCampaignDetails({ viewerCanAdminister: true }))
         act(() => undefined) // eslint-disable-line @typescript-eslint/no-floating-promises
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         act(() =>

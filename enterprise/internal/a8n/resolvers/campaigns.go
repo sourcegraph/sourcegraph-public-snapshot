@@ -95,6 +95,14 @@ func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserReso
 	return graphqlbackend.UserByIDInt32(ctx, r.AuthorID)
 }
 
+func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+	currentUser, err := backend.CurrentUser(ctx)
+	if err != nil {
+		return false, err
+	}
+	return currentUser.SiteAdmin, nil
+}
+
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {
 	return path.Join("/campaigns", string(r.ID())), nil
 }
@@ -175,8 +183,8 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
-	// 🚨 SECURITY: Only site admins may access the counts for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
