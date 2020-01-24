@@ -18,6 +18,7 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 ENV CACHE_DIR=/mnt/cache/replacer
+RUN mkdir -p ${CACHE_DIR} && chown -R sourcegraph:sourcegraph ${CACHE_DIR}
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/replacer"]
 COPY replacer /usr/local/bin/

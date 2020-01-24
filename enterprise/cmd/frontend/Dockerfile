@@ -15,6 +15,7 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 ENV CONFIGURATION_MODE=server PGDATABASE=sg PGHOST=pgsql PGPORT=5432 PGSSLMODE=disable PGUSER=sg PUBLIC_REPO_REDIRECTS=true
+RUN mkdir -p /mnt/cache/frontend && chown -R sourcegraph:sourcegraph /mnt/cache/frontend
 USER sourcegraph
 CMD ["serve"]
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/frontend"]
