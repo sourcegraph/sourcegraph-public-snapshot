@@ -30,8 +30,12 @@ the web hook.
 
 > NOTE: Alerts have a link back to the relevant Grafana panel. In order for these links to work properly Grafana needs
 > to know under which external URL it is running (note: this is usually different from the direct access URL you used
-> earlier). Set the environment variable `GF_SERVER_ROOT_URL` to the your Sourcegraph instance external URL followed
+> earlier). Set the environment variable `GF_SERVER_ROOT_URL` to your Sourcegraph instance external URL followed
 > by the path `/-/debug/grafana`.
- 
+
+# Other alert channel types
+
+Other alert channel types are configured in a way similar to the Slack alert channel type described above. Choose the
+appropriate channel type and provide the necessary information for that type. 
  
     
