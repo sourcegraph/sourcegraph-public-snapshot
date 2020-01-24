@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
@@ -92,6 +93,14 @@ func (r *campaignResolver) Description() string {
 
 func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	return graphqlbackend.UserByIDInt32(ctx, r.AuthorID)
+}
+
+func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+	currentUser, err := backend.CurrentUser(ctx)
+	if err != nil {
+		return false, err
+	}
+	return currentUser.SiteAdmin, nil
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {

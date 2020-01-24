@@ -18,7 +18,11 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
     <div className="container mt-4">
         {/* eslint-disable react/jsx-no-bind */}
         <Switch>
-            <Route render={props => <GlobalCampaignListPage {...props} />} path={match.url} exact={true} />
+            <Route
+                render={props => <GlobalCampaignListPage {...outerProps} {...props} />}
+                path={match.url}
+                exact={true}
+            />
             <Route
                 path={`${match.url}/new`}
                 render={props => <CampaignDetails {...outerProps} {...props} />}

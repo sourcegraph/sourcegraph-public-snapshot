@@ -9,7 +9,7 @@ import { parseISO, isBefore, addMinutes } from 'date-fns'
 
 interface Props {
     campaign:
-        | Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt' | 'changesets'>
+        | Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt' | 'changesets'>
         | Pick<GQL.ICampaignPlan, '__typename'>
 
     /** The campaign status. */
@@ -58,9 +58,11 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                             : 'Only a subset of changesets has'}{' '}
                         been created on code hosts yet.
                     </div>
-                    <button type="button" className="mb-3 btn btn-primary" onClick={onPublish}>
-                        Publish campaign
-                    </button>
+                    {campaign.viewerCanAdminister && (
+                        <button type="button" className="mb-3 btn btn-primary" onClick={onPublish}>
+                            Publish campaign
+                        </button>
+                    )}
                 </>
             )}
             {campaign.__typename === 'Campaign' && campaign.closedAt ? (
@@ -89,7 +91,8 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
             ))}
             {status.state === GQL.BackgroundProcessState.ERRORED &&
                 campaign?.__typename === 'Campaign' &&
-                !campaign.closedAt && (
+                !campaign.closedAt &&
+                campaign.viewerCanAdminister && (
                     <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
                         Retry failed jobs
                     </button>

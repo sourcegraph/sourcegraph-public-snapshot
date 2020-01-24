@@ -224,6 +224,7 @@ type CampaignResolver interface {
 	Name() string
 	Description() string
 	Author(ctx context.Context) (*UserResolver, error)
+	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
 	CreatedAt() DateTime

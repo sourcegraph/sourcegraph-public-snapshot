@@ -224,7 +224,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }, [campaign, campaignPlanSpec])
 
     if (campaign === undefined && campaignID) {
-        return <LoadingSpinner className="icon-inline mx-auto my-4" />
+        return (
+            <div className="text-center">
+                <LoadingSpinner className="icon-inline mx-auto my-4" />
+            </div>
+        )
     }
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
@@ -393,7 +397,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         {(mode === 'saving' || mode === 'deleting' || mode === 'closing') && (
                             <LoadingSpinner className="mr-2" />
                         )}
-                        {campaignID &&
+                        {campaign &&
+                            campaign.__typename === 'Campaign' &&
                             (mode === 'editing' || mode === 'saving' ? (
                                 <>
                                     <button type="submit" className="btn btn-primary mr-1" disabled={mode === 'saving'}>
@@ -404,65 +409,63 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     </button>
                                 </>
                             ) : (
-                                <>
-                                    <button
-                                        type="button"
-                                        id="e2e-campaign-edit"
-                                        className="btn btn-secondary mr-1"
-                                        onClick={onEdit}
-                                        disabled={mode === 'deleting' || mode === 'closing'}
-                                    >
-                                        Edit
-                                    </button>
-                                    {campaign && campaign.__typename === 'Campaign' && (
-                                        <>
-                                            {!campaign.closedAt && (
-                                                <details className="campaign-details__details">
-                                                    <summary>
-                                                        <span className="btn btn-secondary mr-1 dropdown-toggle">
-                                                            Close
-                                                        </span>
-                                                    </summary>
-                                                    <CloseDeleteCampaignPrompt
-                                                        message={
-                                                            <p>
-                                                                Close campaign <b>{campaign.name}</b>?
-                                                            </p>
-                                                        }
-                                                        changesetsCount={campaign.changesets.totalCount}
-                                                        closeChangesets={closeChangesets}
-                                                        onCloseChangesetsToggle={setCloseChangesets}
-                                                        buttonText="Close"
-                                                        onButtonClick={onClose}
-                                                        buttonClassName="btn-secondary"
-                                                        buttonDisabled={mode === 'deleting' || mode === 'closing'}
-                                                        className="position-absolute campaign-details__details-menu"
-                                                    />
-                                                </details>
-                                            )}
+                                campaign.viewerCanAdminister && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            id="e2e-campaign-edit"
+                                            className="btn btn-secondary mr-1"
+                                            onClick={onEdit}
+                                            disabled={mode === 'deleting' || mode === 'closing'}
+                                        >
+                                            Edit
+                                        </button>
+                                        {!campaign.closedAt && (
                                             <details className="campaign-details__details">
                                                 <summary>
-                                                    <span className="btn btn-danger dropdown-toggle">Delete</span>
+                                                    <span className="btn btn-secondary mr-1 dropdown-toggle">
+                                                        Close
+                                                    </span>
                                                 </summary>
                                                 <CloseDeleteCampaignPrompt
                                                     message={
                                                         <p>
-                                                            Delete campaign <b>{campaign.name}</b>?
+                                                            Close campaign <b>{campaign.name}</b>?
                                                         </p>
                                                     }
                                                     changesetsCount={campaign.changesets.totalCount}
                                                     closeChangesets={closeChangesets}
                                                     onCloseChangesetsToggle={setCloseChangesets}
-                                                    buttonText="Delete"
-                                                    onButtonClick={onDelete}
-                                                    buttonClassName="btn-danger"
+                                                    buttonText="Close"
+                                                    onButtonClick={onClose}
+                                                    buttonClassName="btn-secondary"
                                                     buttonDisabled={mode === 'deleting' || mode === 'closing'}
                                                     className="position-absolute campaign-details__details-menu"
                                                 />
                                             </details>
-                                        </>
-                                    )}
-                                </>
+                                        )}
+                                        <details className="campaign-details__details">
+                                            <summary>
+                                                <span className="btn btn-danger dropdown-toggle">Delete</span>
+                                            </summary>
+                                            <CloseDeleteCampaignPrompt
+                                                message={
+                                                    <p>
+                                                        Delete campaign <strong>{campaign.name}</strong>?
+                                                    </p>
+                                                }
+                                                changesetsCount={campaign.changesets.totalCount}
+                                                closeChangesets={closeChangesets}
+                                                onCloseChangesetsToggle={setCloseChangesets}
+                                                buttonText="Delete"
+                                                onButtonClick={onDelete}
+                                                buttonClassName="btn-danger"
+                                                buttonDisabled={mode === 'deleting' || mode === 'closing'}
+                                                className="position-absolute campaign-details__details-menu"
+                                            />
+                                        </details>
+                                    </>
+                                )
                             ))}
                     </span>
                 </div>
@@ -563,7 +566,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 history={history}
                             />
                             {/* only campaigns that have no plan can add changesets manually */}
-                            {!campaign.plan && (
+                            {!campaign.plan && campaign.viewerCanAdminister && (
                                 <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
                             )}
                         </>
