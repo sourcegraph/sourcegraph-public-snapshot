@@ -155,8 +155,6 @@ func emojis(categories map[string]string) string {
 
 	sort.Strings(sorted)
 
-	// Generous four bytes for each emoji. We don't have
-	// to be precise, since append will allocate more if needed.
 	s := make([]byte, 0, length)
 	for _, emoji := range sorted {
 		s = append(s, emoji...)
