@@ -30,7 +30,7 @@ class ServerAdminWrapper {
         logEvent(eventAction)
     }
 
-    public trackAction(eventAction: string): void {
+    public trackAction(eventAction: string, eventProperties?: any): void {
         if (this.isAuthenicated) {
             if (eventAction === 'SearchResultsQueried') {
                 logUserEvent(GQL.UserEvent.SEARCHQUERY)
@@ -47,7 +47,7 @@ class ServerAdminWrapper {
                 logUserEvent(GQL.UserEvent.STAGEMONITOR)
             }
         }
-        logEvent(eventAction)
+        logEvent(eventAction, eventProperties)
     }
 }
 
