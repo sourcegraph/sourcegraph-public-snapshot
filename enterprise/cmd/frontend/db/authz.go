@@ -21,13 +21,13 @@ func NewAuthzStore() db.AuthzStore {
 
 type authzStore struct {
 	once  sync.Once
-	store *iauthz.Store
+	store *PermsStore
 }
 
 // The global DB is not initialized when NewAuthzStore is called, so we need to create the store at runtime.
 func (s *authzStore) init() {
 	s.once.Do(func() {
-		s.store = iauthz.NewStore(dbconn.Global, time.Now)
+		s.store = NewPermsStore(dbconn.Global, time.Now)
 	})
 }
 
@@ -102,7 +102,7 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 		Provider: args.Provider,
 	}
 	if err := s.store.LoadUserPermissions(ctx, p); err != nil {
-		if err == iauthz.ErrNotFound {
+		if err == ErrPermsNotFound {
 			return []*types.Repo{}, nil
 		}
 		return nil, err
