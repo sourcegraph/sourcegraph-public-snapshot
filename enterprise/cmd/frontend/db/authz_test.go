@@ -51,11 +51,15 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 
 	s := NewAuthzStore(dbconn.Global, clock).(*authzStore)
 
+	type update struct {
+		bindIDs []string
+		repoID  int32
+	}
 	tests := []struct {
 		name          string
 		config        *schema.PermissionsUserMapping
 		args          *db.GrantPendingPermissionsArgs
-		update        func(ctx context.Context, s *PermsStore) error
+		updates       []update
 		expectRepoIDs []uint32
 	}{
 		{
@@ -68,37 +72,19 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
 			},
-			update: func(ctx context.Context, s *PermsStore) error {
-				err := s.SetRepoPendingPermissions(ctx, []string{"alice@example.com"}, &iauthz.RepoPermissions{
-					RepoID:   1,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(1),
-					Provider: authz.ProviderSourcegraph,
-				})
-				if err != nil {
-					return err
-				}
-
-				err = s.SetRepoPendingPermissions(ctx, []string{"alice2@example.com"}, &iauthz.RepoPermissions{
-					RepoID:   2,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(1),
-					Provider: authz.ProviderSourcegraph,
-				})
-				if err != nil {
-					return err
-				}
-
-				err = s.SetRepoPendingPermissions(ctx, []string{"alice3@example.com"}, &iauthz.RepoPermissions{
-					RepoID:   3,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(1),
-					Provider: authz.ProviderSourcegraph,
-				})
-				if err != nil {
-					return err
-				}
-				return nil
+			updates: []update{
+				{
+					bindIDs: []string{"alice@example.com"},
+					repoID:  1,
+				},
+				{
+					bindIDs: []string{"alice2@example.com"},
+					repoID:  2,
+				},
+				{
+					bindIDs: []string{"alice3@example.com"},
+					repoID:  3,
+				},
 			},
 			expectRepoIDs: []uint32{1, 2},
 		},
@@ -112,26 +98,15 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
 			},
-			update: func(ctx context.Context, s *PermsStore) error {
-				err := s.SetRepoPendingPermissions(ctx, []string{"alice"}, &iauthz.RepoPermissions{
-					RepoID:   1,
-					Perm:     authz.Read,
-					Provider: authz.ProviderSourcegraph,
-				})
-				if err != nil {
-					return err
-				}
-
-				err = s.SetRepoPendingPermissions(ctx, []string{"bob"}, &iauthz.RepoPermissions{
-					RepoID:   2,
-					Perm:     authz.Read,
-					Provider: authz.ProviderSourcegraph,
-				})
-				if err != nil {
-					return err
-				}
-
-				return nil
+			updates: []update{
+				{
+					bindIDs: []string{"alice"},
+					repoID:  1,
+				},
+				{
+					bindIDs: []string{"bob"},
+					repoID:  2,
+				},
 			},
 			expectRepoIDs: []uint32{1},
 		},
@@ -142,8 +117,13 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 
 			globals.SetPermissionsUserMapping(test.config)
 
-			if test.update != nil {
-				if err = test.update(ctx, s.store); err != nil {
+			for _, update := range test.updates {
+				err := s.store.SetRepoPendingPermissions(ctx, update.bindIDs, &iauthz.RepoPermissions{
+					RepoID:   update.repoID,
+					Perm:     authz.Read,
+					Provider: authz.ProviderSourcegraph,
+				})
+				if err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -178,10 +158,14 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 
 	s := NewAuthzStore(dbconn.Global, clock).(*authzStore)
 
+	type update struct {
+		repoID  int32
+		userIDs []uint32
+	}
 	tests := []struct {
 		name        string
 		args        *db.AuthorizedReposArgs
-		update      func(ctx context.Context, s *PermsStore) error
+		updates     []update
 		expectRepos []*types.Repo
 	}{
 		{
@@ -201,20 +185,19 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 				Type:     authz.PermRepos,
 				Provider: authz.ProviderSourcegraph,
 			},
-			update: func(ctx context.Context, s *PermsStore) error {
-				for _, repoID := range []int32{1, 2, 3} {
-					err := s.SetRepoPermissions(ctx, &iauthz.RepoPermissions{
-						RepoID:   repoID,
-						Perm:     authz.Read,
-						UserIDs:  toBitmap(1),
-						Provider: authz.ProviderSourcegraph,
-					})
-					if err != nil {
-						return err
-					}
-				}
-
-				return nil
+			updates: []update{
+				{
+					repoID:  1,
+					userIDs: []uint32{1},
+				},
+				{
+					repoID:  2,
+					userIDs: []uint32{1},
+				},
+				{
+					repoID:  3,
+					userIDs: []uint32{1},
+				},
 			},
 			expectRepos: []*types.Repo{
 				{ID: 1},
@@ -233,20 +216,11 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 				Type:     authz.PermRepos,
 				Provider: authz.ProviderSourcegraph,
 			},
-			update: func(ctx context.Context, s *PermsStore) error {
-				for _, repoID := range []int32{1, 2, 3} {
-					err := s.SetRepoPermissions(ctx, &iauthz.RepoPermissions{
-						RepoID:   repoID,
-						Perm:     authz.Read,
-						UserIDs:  toBitmap(1),
-						Provider: authz.ProviderSourcegraph,
-					})
-					if err != nil {
-						return err
-					}
-				}
-
-				return nil
+			updates: []update{
+				{
+					repoID:  1,
+					userIDs: []uint32{1},
+				},
 			},
 			expectRepos: []*types.Repo{},
 		},
@@ -255,8 +229,14 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			defer cleanupPermsTables(t, s.store)
 
-			if test.update != nil {
-				if err := test.update(ctx, s.store); err != nil {
+			for _, update := range test.updates {
+				err := s.store.SetRepoPermissions(ctx, &iauthz.RepoPermissions{
+					RepoID:   update.repoID,
+					Perm:     authz.Read,
+					UserIDs:  toBitmap(update.userIDs...),
+					Provider: authz.ProviderSourcegraph,
+				})
+				if err != nil {
 					t.Fatal(err)
 				}
 			}
