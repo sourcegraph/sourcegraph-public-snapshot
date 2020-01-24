@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -20,13 +21,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-func initAuthz() {
+func initAuthz(d dbutil.DB) {
 	db.ExternalServices = edb.NewExternalServicesStore()
-	db.Authz = edb.NewAuthzStore()
+	db.Authz = edb.NewAuthzStore(d, func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	})
 
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {

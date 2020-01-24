@@ -41,6 +41,10 @@ func NewPermsStore(db dbutil.DB, clock func() time.Time) *PermsStore {
 // LoadUserPermissions loads stored user permissions into p. An ErrPermsNotFound is returned
 // when there are no valid permissions available.
 func (s *PermsStore) LoadUserPermissions(ctx context.Context, p *iauthz.UserPermissions) (err error) {
+	if Mocks.Perms.LoadUserPermissions != nil {
+		return Mocks.Perms.LoadUserPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -687,6 +691,10 @@ DO UPDATE SET
 // are unioned not replaced.
 // This method starts its own transaction if the caller hasn't started one already.
 func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
+	if Mocks.Perms.GrantPendingPermissions != nil {
+		return Mocks.Perms.GrantPendingPermissions(ctx, userID, p)
+	}
+
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
 
@@ -1080,6 +1088,10 @@ func (s *PermsStore) tx(ctx context.Context) (*sql.Tx, error) {
 
 // Transact begins a new transaction and make a new PermsStore over it.
 func (s *PermsStore) Transact(ctx context.Context) (*PermsStore, error) {
+	if Mocks.Perms.Transact != nil {
+		return Mocks.Perms.Transact(ctx)
+	}
+
 	tx, err := s.tx(ctx)
 	if err != nil {
 		return nil, err
