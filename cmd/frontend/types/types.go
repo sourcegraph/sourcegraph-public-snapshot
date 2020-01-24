@@ -143,6 +143,34 @@ type Stages struct {
 	Automate  int32 `json:"auto"`
 }
 
+type CodeIntelUsageStatistics struct {
+	DailyActivities   []*CodeIntelUsagePeriod
+	WeeklyActivities  []*CodeIntelUsagePeriod
+	MonthlyActivities []*CodeIntelUsagePeriod
+}
+
+type CodeIntelUsagePeriod struct {
+	StartTime                    time.Time
+	PreciseHoverStatistics       *CodeIntelEventStatistics
+	FuzzyHoverStatistics         *CodeIntelEventStatistics
+	PreciseDefinitionsStatistics *CodeIntelEventStatistics
+	FuzzyDefinitionsStatistics   *CodeIntelEventStatistics
+	PreciseReferencesStatistics  *CodeIntelEventStatistics
+	FuzzyReferencesStatistics    *CodeIntelEventStatistics
+}
+
+type CodeIntelEventStatistics struct {
+	UsersCount     int32
+	EventsCount    int32
+	EventLatencies *CodeIntelEventLatencies
+}
+
+type CodeIntelEventLatencies struct {
+	P50 float64
+	P90 float64
+	P99 float64
+}
+
 type SurveyResponse struct {
 	ID        int32
 	UserID    *int32
