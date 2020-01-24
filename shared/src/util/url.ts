@@ -9,6 +9,7 @@ import {
     isNegatableFilter,
 } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
+import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 
 export interface RepoSpec {
     /**
@@ -544,10 +545,12 @@ export function buildSearchURLQuery(
 
     const patternTypeInQuery = parsePatternTypeFromQuery(query)
     if (patternTypeInQuery) {
-        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-        const newQuery = query.replace(patternTypeRegexp, '')
+        const newQuery = query.replace(
+            query.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
+            ''
+        )
         searchParams.set('q', newQuery)
-        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
+        searchParams.set('patternType', patternTypeInQuery.value)
         query = newQuery
     } else {
         searchParams.set('q', query)
@@ -556,12 +559,11 @@ export function buildSearchURLQuery(
 
     const caseInQuery = parseCaseSensitivityFromQuery(query)
     if (caseInQuery) {
-        const caseRegexp = /\bcase:(?<type>yes|no)\b/i
-        const newQuery = query.replace(caseRegexp, '')
+        const newQuery = query.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
         searchParams.set('q', newQuery)
 
-        if (caseInQuery === 'yes') {
-            searchParams.set('case', caseInQuery)
+        if (caseInQuery.value === 'yes') {
+            searchParams.set('case', caseInQuery.value)
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
             // queries breaking when only `repo:` filters are specified.
@@ -617,19 +619,39 @@ export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndV
     return searchParams
 }
 
-function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
-    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-    const matches = query.match(patternTypeRegexp)
-    if (matches?.groups?.type) {
-        return matches.groups.type as SearchPatternType
+function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (
+                token.type === 'filter' &&
+                token.filterType.token.value.toLowerCase() === 'patterntype' &&
+                token.filterValue
+            ) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
     }
 
     return undefined
 }
 
-function parseCaseSensitivityFromQuery(query: string): string | undefined {
-    const caseRegexp = /\bcase:(?<option>yes|no)\b/i
-    const matches = query.match(caseRegexp)
-
-    return matches?.groups?.option
+function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (token.type === 'filter' && token.filterType.token.value.toLowerCase() === 'case' && token.filterValue) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
+    }
+    return undefined
 }

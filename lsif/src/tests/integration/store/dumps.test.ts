@@ -1,7 +1,6 @@
 import * as util from '../integration-test-util'
 import * as pgModels from '../../../shared/models/pg'
 import nock from 'nock'
-import rmfr from 'rmfr'
 import { Connection } from 'typeorm'
 import { DumpManager } from '../../../shared/store/dumps'
 import { fail } from 'assert'
@@ -11,7 +10,6 @@ import { pick } from 'lodash'
 describe('DumpManager', () => {
     let connection!: Connection
     let cleanup!: () => Promise<void>
-    let storageRoot!: string
     let dumpManager!: DumpManager
 
     let counter = 100
@@ -22,13 +20,10 @@ describe('DumpManager', () => {
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await util.createCleanPostgresDatabase())
-        storageRoot = await util.createStorageRoot()
-        dumpManager = new DumpManager(connection, storageRoot)
+        dumpManager = new DumpManager(connection)
     })
 
     afterAll(async () => {
-        await rmfr(storageRoot)
-
         if (cleanup) {
             await cleanup()
         }
@@ -465,7 +460,7 @@ describe('discoverAndUpdateCommit', () => {
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
         try {
-            const dumpManager = new DumpManager(connection, '')
+            const dumpManager = new DumpManager(connection)
             await util.insertDump(connection, dumpManager, repositoryId, ca, '')
 
             await dumpManager.updateCommits(
@@ -496,7 +491,7 @@ describe('discoverAndUpdateCommit', () => {
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
         try {
-            const dumpManager = new DumpManager(connection, '')
+            const dumpManager = new DumpManager(connection)
             await util.insertDump(connection, dumpManager, repositoryId, ca, '')
             await dumpManager.updateCommits(
                 repositoryId,
@@ -527,7 +522,7 @@ describe('discoverAndUpdateCommit', () => {
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
         try {
-            const dumpManager = new DumpManager(connection, '')
+            const dumpManager = new DumpManager(connection)
 
             // This test ensures the following does not make a gitserver request.
             // As we did not register a nock interceptor, any request will result
@@ -569,7 +564,7 @@ describe('discoverAndUpdateTips', () => {
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
         try {
-            const dumpManager = new DumpManager(connection, '')
+            const dumpManager = new DumpManager(connection)
             await dumpManager.updateCommits(
                 repositoryId,
                 new Map<string, Set<string>>([

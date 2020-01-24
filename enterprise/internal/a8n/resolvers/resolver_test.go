@@ -962,6 +962,12 @@ type CampaignPlan struct {
 func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
+	dbtesting.SetupGlobalTestDB(t)
+
+	user := createTestUser(ctx, t)
+	act := actor.FromUser(user.ID)
+	ctx = actor.WithActor(ctx, act)
+
 	t.Run("invalid patch", func(t *testing.T) {
 		args := graphqlbackend.CreateCampaignPlanFromPatchesArgs{
 			Patches: []graphqlbackend.CampaignPlanPatch{
@@ -987,7 +993,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			t.Skip()
 		}
 
-		dbtesting.SetupGlobalTestDB(t)
 		rcache.SetupForTest(t)
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
@@ -1187,9 +1192,11 @@ func TestCampaignPlanResolver(t *testing.T) {
 
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
+	user := createTestUser(ctx, t)
 	plan := &a8n.CampaignPlan{
 		CampaignType: "COMBY",
 		Arguments:    `{"scopeQuery": "file:README.md"}`,
+		UserID:       user.ID,
 	}
 	err := store.CreateCampaignPlan(ctx, plan)
 	if err != nil {
@@ -1469,4 +1476,22 @@ func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.Bitbu
 	}
 
 	return repos
+}
+
+var testUser = db.NewUser{
+	Email:                "test@sourcegraph.com",
+	Username:             "test",
+	DisplayName:          "Test",
+	Password:             "test",
+	EmailIsVerified:      true,
+	FailIfNotInitialUser: false,
+}
+
+func createTestUser(ctx context.Context, t *testing.T) *types.User {
+	t.Helper()
+	user, err := db.Users.Create(ctx, testUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return user
 }

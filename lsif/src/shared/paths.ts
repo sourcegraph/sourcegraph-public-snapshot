@@ -44,21 +44,3 @@ export async function ensureDirectory(directoryPath: string): Promise<void> {
         }
     }
 }
-
-/**
- * Delete the file if it exists. Throws errors that are not ENOENT.
- *
- * @param filePath The path to delete.
- */
-export async function tryDeleteFile(filePath: string): Promise<boolean> {
-    try {
-        await fs.unlink(filePath)
-        return true
-    } catch (error) {
-        if (!(error && error.code === 'ENOENT')) {
-            throw error
-        }
-
-        return false
-    }
-}
