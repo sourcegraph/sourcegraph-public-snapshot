@@ -9,13 +9,11 @@ class ServerAdminWrapper {
     private isAuthenicated = false
 
     constructor() {
-        if (window.context && !window.context.sourcegraphDotComMode) {
-            authenticatedUser.subscribe(user => {
-                if (user) {
-                    this.isAuthenicated = true
-                }
-            })
-        }
+        authenticatedUser.subscribe(user => {
+            if (user) {
+                this.isAuthenicated = true
+            }
+        })
     }
 
     public trackPageView(eventAction: string, logAsActiveUser: boolean = true): void {

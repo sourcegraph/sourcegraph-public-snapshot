@@ -3,9 +3,9 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	usagestatsdeprecated "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
@@ -16,7 +16,9 @@ import (
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("usage statistics are not available on sourcegraph.com")
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+			return nil, err
+		}
 	}
 
 	stats, err := usagestats.GetByUserID(ctx, r.user.ID)
@@ -64,9 +66,6 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
 }) (*EmptyResponse, error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, nil
-	}
 	actor := actor.FromContext(ctx)
 	return nil, usagestatsdeprecated.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
 }
