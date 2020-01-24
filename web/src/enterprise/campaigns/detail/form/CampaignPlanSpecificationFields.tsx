@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
 import combyJsonSchema from '../../../../../../schema/campaign-types/comby.schema.json'
-import credentialsJsonSchema from '../../../../../../schema/campaign-types/credentials.schema.json'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { CampaignType } from '../backend'
