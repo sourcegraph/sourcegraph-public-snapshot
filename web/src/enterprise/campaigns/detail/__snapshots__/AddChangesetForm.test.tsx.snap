@@ -1,69 +1,70 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`AddChangesetForm renders the form 1`] = `
-<form
-  className=" "
-  onInvalid={[Function]}
-  onSubmit={[Function]}
->
-  <div
-    className="d-flex"
+Array [
+  <h3>
+    Track changeset
+  </h3>,
+  <form
+    className=" "
+    onInvalid={[Function]}
+    onSubmit={[Function]}
   >
     <div
-      className="form-group mr-3 mb-0"
+      className="d-flex"
     >
-      <label
-        htmlFor="changeset-repo"
+      <div
+        className="form-group mr-3 mb-0"
       >
-        Repository name
-      </label>
-      <input
-        className="form-control mr-1"
-        name="changeset-repo"
-        onChange={[Function]}
-        placeholder="Repository name"
-        required={true}
-        size={35}
-        type="text"
-        value=""
-      />
-      <p
-        className="form-text text-muted"
+        <label
+          htmlFor="changeset-repo"
+        >
+          Repository name
+        </label>
+        <input
+          className="form-control mr-1"
+          name="changeset-repo"
+          onChange={[Function]}
+          placeholder="Repository name"
+          required={true}
+          size={35}
+          type="text"
+          value=""
+        />
+        <p
+          className="form-text text-muted"
+        >
+          e.g., codehost/organization/repository
+        </p>
+      </div>
+      <div
+        className="form-group mr-3 mb-0"
       >
-        Name of the repository in Sourcegraph 
-        http:
-        //
-        localhost
-        /$REPOSITORY_NAME
-      </p>
+        <label
+          htmlFor="changeset-number"
+        >
+          Changeset number
+        </label>
+        <input
+          className="form-control mr-1"
+          min={1}
+          name="changeset-number"
+          onChange={[Function]}
+          placeholder="Changeset number"
+          required={true}
+          size={16}
+          step={1}
+          type="number"
+          value=""
+        />
+      </div>
     </div>
-    <div
-      className="form-group mr-3 mb-0"
+    <button
+      className="btn btn-primary mr-1"
+      type="submit"
     >
-      <label
-        htmlFor="changeset-number"
-      >
-        Changeset number
-      </label>
-      <input
-        className="form-control mr-1"
-        min={1}
-        name="changeset-number"
-        onChange={[Function]}
-        placeholder="Changeset number"
-        required={true}
-        size={16}
-        step={1}
-        type="number"
-        value=""
-      />
-    </div>
-  </div>
-  <button
-    className="btn btn-primary mr-1"
-    type="submit"
-  >
-    Add changeset
-  </button>
-</form>
+      Add changeset
+    </button>
+  </form>,
+]
 `;

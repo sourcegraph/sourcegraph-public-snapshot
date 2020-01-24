@@ -117,6 +117,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
     }
     return (
         <>
+            <h3>Track changeset</h3>
             <Form onSubmit={submit}>
                 <div className="d-flex">
                     <div className="form-group mr-3 mb-0">
@@ -131,10 +132,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                             value={repoName}
                             onChange={event => onChangeRepoName(event.target.value)}
                         />
-                        <p className="form-text text-muted">
-                            Name of the repository in Sourcegraph {window.location.protocol}//{window.location.host}
-                            /$REPOSITORY_NAME
-                        </p>
+                        <p className="form-text text-muted">e.g., codehost/organization/repository</p>
                     </div>
                     <div className="form-group mr-3 mb-0">
                         <label htmlFor="changeset-number">Changeset number</label>
