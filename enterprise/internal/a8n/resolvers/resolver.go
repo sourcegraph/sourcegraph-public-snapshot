@@ -91,7 +91,7 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 }
 
 func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetPlanResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign jobs.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 }
 
 func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign plans.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
@@ -468,7 +468,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 }
 
 func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
