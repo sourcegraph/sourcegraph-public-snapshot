@@ -593,6 +593,9 @@ type Campaign implements Node {
     # The user who authored the campaign.
     author: User!
 
+    # Whether the current user can edit or delete this campaign.
+    viewerCanAdminister: Boolean!
+
     # The URL to this campaign.
     url: String!
 

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -39,9 +40,21 @@ func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
 	return &Resolver{store: ee.NewStore(db)}
 }
 
-func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExternalChangesetResolver, error) {
-	// 🚨 SECURITY: Only site admins may access changesets for now.
+func allowReadAccess(ctx context.Context) error {
+	if readAccess := conf.AutomationReadAccessEnabled(); readAccess {
+		return nil
+	}
+
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExternalChangesetResolver, error) {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -59,8 +72,8 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 }
 
 func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignResolver, error) {
-	// 🚨 SECURITY: Only site admins may access campaigns for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -78,8 +91,8 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 }
 
 func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetPlanResolver, error) {
-	// 🚨 SECURITY: Only site admins may access changesets for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign jobs.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -97,8 +110,8 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 }
 
 func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
-	// 🚨 SECURITY: Only site admins may access campaign plans for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign plans.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -348,11 +361,10 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 }
 
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may read campaigns for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
-
 	return &campaignsConnectionResolver{
 		store: r.store,
 		opts: ee.ListCampaignsOpts{
@@ -456,11 +468,10 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 }
 
 func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may read changesets for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
-
 	return &changesetsConnectionResolver{
 		store: r.store,
 		opts: ee.ListChangesetsOpts{
