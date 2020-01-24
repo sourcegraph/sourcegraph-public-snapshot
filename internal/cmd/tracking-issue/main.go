@@ -272,9 +272,18 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 func listIssuesSearchQuery(org, milestone string, labels []string) string {
 	var q strings.Builder
 
-	fmt.Fprintf(&q, "org:%q milestone:%q", org, milestone)
+	if org != "" {
+		fmt.Fprintf(&q, "org:%q", org)
+	}
+
+	if milestone != "" {
+		fmt.Fprintf(&q, " milestone:%q", milestone)
+	}
+
 	for _, label := range labels {
-		fmt.Fprintf(&q, " label:%q", label)
+		if label != "" {
+			fmt.Fprintf(&q, " label:%q", label)
+		}
 	}
 
 	return q.String()
