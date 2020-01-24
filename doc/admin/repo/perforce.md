@@ -8,7 +8,7 @@ Screenshot of using Sourcegraph for code navigation in a Perforce repository:
 
 ## src-expose
 
-We have an experimental alternative for importing perforce code into Sourcegraph: [src-expose](../external_service/other.md#experimental-src-expose).
+We have an experimental alternative for importing Perforce code into Sourcegraph: [src-expose](../external_service/other.md#experimental-src-expose).
 
 ## Instructions
 
