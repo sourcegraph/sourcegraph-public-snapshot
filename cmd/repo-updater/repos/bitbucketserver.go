@@ -200,6 +200,26 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 	return nil
 }
 
+func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
+	updated, err := s.client.UpdatePullRequest(ctx, &bitbucketserver.UpdatePullRequestInput{
+		PullRequestID: strconv.Itoa(pr.ID),
+		Title:         pr.Title,
+		Description:   pr.Description,
+		ToRef:         pr.ToRef,
+	})
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = updated
+	return nil
+}
+
 // ExternalServices returns a singleton slice containing the external service.
 func (s BitbucketServerSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}

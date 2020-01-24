@@ -410,6 +410,25 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	return c.send(ctx, "GET", path, nil, nil, pr)
 }
 
+type UpdatePullRequestInput struct {
+	PullRequestID string `json:"-"`
+
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	ToRef       Ref    `json:"toRef"`
+}
+
+func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%s",
+		in.ToRef.Repository.Project.Key,
+		in.ToRef.Repository.Slug,
+		in.PullRequestID,
+	)
+	pr := &PullRequest{}
+	return pr, c.send(ctx, "POST", path, nil, in, pr)
+}
+
 // ErrAlreadyExists is returned by Client.CreatePullRequest when a Pull Request
 // for the given FromRef and ToRef already exists.
 type ErrAlreadyExists struct {

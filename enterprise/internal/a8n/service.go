@@ -405,12 +405,7 @@ func RunChangesetJob(
 		}
 
 		if outdated {
-			ucs, ok := src.(repos.UpdateChangesetSource)
-			if !ok {
-				return errors.Errorf("updating changesets on code host of repo %q is not implemented", repo.Name)
-			}
-
-			err := ucs.UpdateChangeset(ctx, &cs)
+			err := ccs.UpdateChangeset(ctx, &cs)
 			if err != nil {
 				return errors.Wrap(err, "updating changeset")
 			}
