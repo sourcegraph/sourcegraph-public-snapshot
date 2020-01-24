@@ -155,6 +155,12 @@ func Middleware(next http.Handler) http.Handler {
 		var requestErrorCause error
 		ctx = context.WithValue(ctx, requestErrorCauseKey, &requestErrorCause)
 
+		origin := "unknown"
+		if r.Header.Get("Origin") == trackOrigin {
+			origin = trackOrigin
+		}
+		ctx = WithRequestOrigin(ctx, origin)
+
 		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
 
 		if routeName == "graphql" {
@@ -170,12 +176,6 @@ func Middleware(next http.Handler) http.Handler {
 		span.SetOperationName("Serve: " + routeName)
 		span.SetTag("Route", routeName)
 		ext.HTTPStatusCode.Set(span, uint16(m.Code))
-
-		origin := "unknown"
-		if r.Header.Get("Origin") == trackOrigin {
-			origin = trackOrigin
-		}
-		ctx = WithRequestOrigin(ctx, origin)
 
 		labels := prometheus.Labels{
 			"route":  routeName,
