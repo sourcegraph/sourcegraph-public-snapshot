@@ -3,7 +3,7 @@
 exports[`ChangesetNode renders a changesetplan with publishing disabled 1`] = `
 Object {
   "children": <div
-    className="campaign-node__content flex-fill"
+    className="changeset-node__content changeset-node__content--no-collapse flex-fill"
   >
     <div
       className="d-flex align-items-center m-1"
@@ -56,7 +56,7 @@ Object {
 exports[`ChangesetNode renders a changesetplan with publishing enabled 1`] = `
 Object {
   "children": <div
-    className="campaign-node__content flex-fill"
+    className="changeset-node__content changeset-node__content--no-collapse flex-fill"
   >
     <div
       className="d-flex align-items-center m-1"

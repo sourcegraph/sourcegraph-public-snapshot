@@ -165,7 +165,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     ))}
                 </Collapsible>
             ) : (
-                <div className="campaign-node__content flex-fill">{changesetNodeRow}</div>
+                <div className="changeset-node__content changeset-node__content--no-collapse flex-fill">
+                    {changesetNodeRow}
+                </div>
             )}
         </li>
     )
