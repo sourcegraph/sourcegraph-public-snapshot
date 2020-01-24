@@ -100,6 +100,9 @@ func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error
 	if err != nil {
 		return false, err
 	}
+	if currentUser == nil {
+		return false, backend.ErrNotAuthenticated
+	}
 	return currentUser.SiteAdmin, nil
 }
 
