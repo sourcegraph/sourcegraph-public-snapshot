@@ -3,6 +3,7 @@
 .query-input2 {
     flex: 1 1 auto;
     position: relative;
+    z-index: 2 !important;
 
     // The width of the toggle icons in the query input.
     $toggle-icon-width: 24px;
