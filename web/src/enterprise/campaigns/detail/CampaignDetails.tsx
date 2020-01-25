@@ -169,14 +169,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const nextPreviewCampaignPlan = useCallback(previewCampaignPlans.next.bind(previewCampaignPlans), [
         previewCampaignPlans,
     ])
-    const [, setIsLoadingPreview] = useState<boolean>(false)
     useObservable(
         useMemo(
             () =>
                 previewCampaignPlans.pipe(
                     tap(() => {
                         setAlertError(undefined)
-                        setIsLoadingPreview(true)
                         setCampaign(undefined)
                     }),
                     switchMap(plan => _fetchCampaignPlanById(plan)),
