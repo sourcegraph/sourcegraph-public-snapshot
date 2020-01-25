@@ -45,9 +45,8 @@ func LogEvent(ctx context.Context, args Event) error {
 	}
 	if envvar.SourcegraphDotComMode() {
 		return publishSourcegraphDotComEvent(args)
-	} else {
-		return logLocalEvent(ctx, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument)
 	}
+	return logLocalEvent(ctx, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument)
 }
 
 type bigQueryEvent struct {

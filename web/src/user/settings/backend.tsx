@@ -94,9 +94,6 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  * @deprecated Use logEvent
  */
 export function logUserEvent(event: GQL.UserEvent): void {
-    if (window.context && window.context.sourcegraphDotComMode) {
-        return
-    }
     mutateGraphQL(
         gql`
             mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
