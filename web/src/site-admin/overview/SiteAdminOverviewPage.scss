@@ -1,0 +1,14 @@
+.site-admin-overview-page {
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+        grid-gap: 1rem;
+
+        position: relative; // so .stretched-link works
+    }
+    &__grid-cell {
+        &--full-width {
+            grid-column: 1 / -1;
+        }
+    }
+}
