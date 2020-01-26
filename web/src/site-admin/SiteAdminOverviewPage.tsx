@@ -1,10 +1,10 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import * as React from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Observable, Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { Observable, of } from 'rxjs'
+import { map, catchError } from 'rxjs/operators'
 import { ActivationProps, percentageDone } from '../../../shared/src/components/activation/Activation'
 import { ActivationChecklist } from '../../../shared/src/components/activation/ActivationChecklist'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
@@ -16,6 +16,8 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
 import { ErrorAlert } from '../components/alerts'
+import { useObservable } from '../util/useObservable'
+import { ErrorLike, asError, isErrorLike } from '../../../shared/src/util/errors'
 
 interface Props extends ActivationProps {
     history: H.History
@@ -23,13 +25,15 @@ interface Props extends ActivationProps {
     isLightTheme: boolean
 }
 
-interface State {
-    info?: OverviewInfo
-    stats?: GQL.ISiteUsageStatistics
-    error?: Error
-}
-
-const fetchOverview: () => Observable<OverviewInfo> = () =>
+const fetchOverview = (): Observable<{
+    repositories: number | null
+    users: number
+    orgs: number
+    surveyResponses: {
+        totalCount: number
+        averageScore: number
+    }
+}> =>
     queryGraphQL(gql`
         query Overview {
             repositories {
@@ -56,7 +60,7 @@ const fetchOverview: () => Observable<OverviewInfo> = () =>
         }))
     )
 
-const fetchWeeklyActiveUsers: () => Observable<GQL.ISiteUsageStatistics> = () =>
+const fetchWeeklyActiveUsers = (): Observable<GQL.ISiteUsageStatistics> =>
     queryGraphQL(gql`
         query WAUs {
             site {
@@ -78,116 +82,107 @@ const fetchWeeklyActiveUsers: () => Observable<GQL.ISiteUsageStatistics> = () =>
 /**
  * A page displaying an overview of site admin information.
  */
-export class SiteAdminOverviewPage extends React.Component<Props, State> {
-    public state: State = {}
-
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
+export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
+    useEffect(() => {
         eventLogger.logViewEvent('SiteAdminOverview')
+    }, [])
 
-        this.subscriptions.add(fetchOverview().subscribe(info => this.setState({ info })))
-        this.subscriptions.add(
-            fetchWeeklyActiveUsers().subscribe(
-                stats => this.setState({ stats }),
-                error => this.setState({ error })
-            )
-        )
+    const info = useObservable(
+        useMemo(() => fetchOverview().pipe(catchError(error => of<ErrorLike>(asError(error)))), [])
+    )
+
+    const stats = useObservable(
+        useMemo(() => fetchWeeklyActiveUsers().pipe(catchError(error => of<ErrorLike>(asError(error)))), [])
+    )
+
+    let setupPercentage = 0
+    if (props.activation) {
+        setupPercentage = percentageDone(props.activation.completed)
     }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        let setupPercentage = 0
-        if (this.props.activation) {
-            setupPercentage = percentageDone(this.props.activation.completed)
-        }
-        return (
-            <div className="site-admin-overview-page">
-                <PageTitle title="Overview - Admin" />
-                {this.props.overviewComponents.length > 0 && (
-                    <div className="mb-4">
-                        {this.props.overviewComponents.map((C, i) => (
-                            <C key={i} />
-                        ))}
-                    </div>
-                )}
-                {!this.state.info && <LoadingSpinner className="icon-inline" />}
-                <div className="list-group">
-                    {this.state.info && (
-                        <>
-                            {this.props.activation && this.props.activation.completed && (
-                                <Collapsible
-                                    title={
-                                        <>{setupPercentage < 100 ? 'Get started with Sourcegraph' : 'Setup status'}</>
-                                    }
-                                    defaultExpanded={setupPercentage < 100}
-                                    className="list-group-item"
-                                    titleClassName="h4 mb-0 mt-2 font-weight-normal p-2"
-                                >
-                                    {this.props.activation.completed && (
-                                        <ActivationChecklist
-                                            history={this.props.history}
-                                            steps={this.props.activation.steps}
-                                            completed={this.props.activation.completed}
-                                        />
-                                    )}
-                                </Collapsible>
-                            )}
-                            {this.state.info.repositories !== null && (
-                                <Link
-                                    to="/site-admin/repositories"
-                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
-                                >
-                                    {numberWithCommas(this.state.info.repositories)}{' '}
-                                    {pluralize('repository', this.state.info.repositories, 'repositories')}
-                                </Link>
-                            )}
-                            {this.state.info.users > 1 && (
-                                <Link
-                                    to="/site-admin/users"
-                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
-                                >
-                                    {numberWithCommas(this.state.info.users)} {pluralize('user', this.state.info.users)}
-                                </Link>
-                            )}
-                            {this.state.info.orgs > 1 && (
-                                <Link
-                                    to="/site-admin/organizations"
-                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
-                                >
-                                    {numberWithCommas(this.state.info.orgs)}{' '}
-                                    {pluralize('organization', this.state.info.orgs)}
-                                </Link>
-                            )}
-                            {this.state.info.users > 1 && (
-                                <Link
-                                    to="/site-admin/surveys"
-                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
-                                >
-                                    {numberWithCommas(this.state.info.surveyResponses.totalCount)}{' '}
-                                    {pluralize('user survey response', this.state.info.surveyResponses.totalCount)}
-                                </Link>
-                            )}
-                            {this.state.info.users > 1 && this.state.stats && (
+    return (
+        <div className="site-admin-overview-page">
+            <PageTitle title="Overview - Admin" />
+            {props.overviewComponents.length > 0 && (
+                <div className="mb-4">
+                    {props.overviewComponents.map((C, i) => (
+                        <C key={i} />
+                    ))}
+                </div>
+            )}
+            {info === undefined && <LoadingSpinner className="icon-inline" />}
+            <div className="list-group">
+                {info && !isErrorLike(info) && (
+                    <>
+                        {props.activation && props.activation.completed && (
+                            <Collapsible
+                                title={<>{setupPercentage < 100 ? 'Get started with Sourcegraph' : 'Setup status'}</>}
+                                defaultExpanded={setupPercentage < 100}
+                                className="list-group-item"
+                                titleClassName="h4 mb-0 mt-2 font-weight-normal p-2"
+                            >
+                                {props.activation.completed && (
+                                    <ActivationChecklist
+                                        history={props.history}
+                                        steps={props.activation.steps}
+                                        completed={props.activation.completed}
+                                    />
+                                )}
+                            </Collapsible>
+                        )}
+                        {info.repositories !== null && (
+                            <Link
+                                to="/site-admin/repositories"
+                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                            >
+                                {numberWithCommas(info.repositories)}{' '}
+                                {pluralize('repository', info.repositories, 'repositories')}
+                            </Link>
+                        )}
+                        {info.users > 1 && (
+                            <Link
+                                to="/site-admin/users"
+                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                            >
+                                {numberWithCommas(info.users)} {pluralize('user', info.users)}
+                            </Link>
+                        )}
+                        {info.orgs > 1 && (
+                            <Link
+                                to="/site-admin/organizations"
+                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                            >
+                                {numberWithCommas(info.orgs)} {pluralize('organization', info.orgs)}
+                            </Link>
+                        )}
+                        {info.users > 1 && (
+                            <Link
+                                to="/site-admin/surveys"
+                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                            >
+                                {numberWithCommas(info.surveyResponses.totalCount)}{' '}
+                                {pluralize('user survey response', info.surveyResponses.totalCount)}
+                            </Link>
+                        )}
+                        {info.users > 1 &&
+                            stats !== undefined &&
+                            (isErrorLike(stats) ? (
+                                <ErrorAlert className="mb-3" error={stats} />
+                            ) : (
                                 <Collapsible
                                     title={
                                         <>
-                                            {this.state.stats.waus[1].userCount}{' '}
-                                            {pluralize('active user', this.state.stats.waus[1].userCount)} last week
+                                            {stats.waus[1].userCount}{' '}
+                                            {pluralize('active user', stats.waus[1].userCount)} last week
                                         </>
                                     }
                                     defaultExpanded={true}
                                     className="list-group-item"
                                     titleClassName="h5 mb-0 font-weight-normal p-2"
                                 >
-                                    {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
-                                    {this.state.stats && (
+                                    {stats && (
                                         <UsageChart
-                                            {...this.props}
-                                            stats={this.state.stats}
+                                            {...props}
+                                            stats={stats}
                                             chartID="waus"
                                             showLegend={false}
                                             header={
@@ -207,21 +202,10 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                         />
                                     )}
                                 </Collapsible>
-                            )}
-                        </>
-                    )}
-                </div>
+                            ))}
+                    </>
+                )}
             </div>
-        )
-    }
-}
-
-interface OverviewInfo {
-    repositories: number | null
-    users: number
-    orgs: number
-    surveyResponses: {
-        totalCount: number
-        averageScore: number
-    }
+        </div>
+    )
 }
