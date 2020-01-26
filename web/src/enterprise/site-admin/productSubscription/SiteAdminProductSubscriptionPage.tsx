@@ -22,9 +22,18 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props> {
     }
 
     public render(): JSX.Element | null {
+        const licenseKey = new URLSearchParams(this.props.location.search).get('licenseKey')
         return (
             <div className="site-admin-product-subscription-page">
                 <PageTitle title="Sourcegraph product subscription" />
+                {licenseKey && (
+                    <div className="alert alert-success">
+                        <strong>Your trial has started!</strong>
+                        <p>
+                            Your trial license key has been added to site configuration. You've unlocked more features.
+                        </p>
+                    </div>
+                )}
                 <ProductSubscriptionStatus showTrueUpStatus={true} />
             </div>
         )

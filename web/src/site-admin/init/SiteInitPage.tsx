@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 import { Redirect } from 'react-router'
-import H from 'history'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SignUpArgs, SignUpForm } from '../../auth/SignUpForm'
 import { BrandLogo } from '../../components/branding/BrandLogo'
@@ -14,8 +13,6 @@ interface Props extends ThemeProps {
      * `window.context.needsSiteInit` is used.
      */
     needsSiteInit?: typeof window.context.needsSiteInit
-
-    history: H.History
 }
 
 /**
@@ -26,7 +23,6 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
     authenticatedUser,
     needsSiteInit = window.context.needsSiteInit,
     isLightTheme,
-    history,
 }) => {
     const doSiteInit = useCallback(
         (args: SignUpArgs): Promise<void> =>
@@ -43,10 +39,14 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                 if (resp.status !== 200) {
                     return resp.text().then(text => Promise.reject(new Error(text)))
                 }
-                history.replace('/site-admin')
+
+                // Force hard-reload because site initialization changes global window.context
+                // values that our application can't react to without a hard reload.
+                window.location.replace('/site-admin')
+
                 return Promise.resolve()
             }),
-        [history]
+        []
     )
 
     if (!needsSiteInit) {
