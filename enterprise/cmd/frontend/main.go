@@ -73,7 +73,6 @@ func main() {
 
 	go bitbucketServerWebhook.Upsert(30 * time.Second)
 
-	go a8n.RunCampaignJobs(ctx, a8nStore, clock, 5*time.Second)
 	go a8n.RunChangesetJobs(ctx, a8nStore, clock, gitserver.DefaultClient, 5*time.Second)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)

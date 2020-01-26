@@ -6,9 +6,6 @@ import * as H from 'history'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
 
-jest.mock('./form/CampaignPlanSpecificationFields', () => ({
-    CampaignPlanSpecificationFields: 'CampaignPlanSpecificationFields',
-}))
 jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +16,7 @@ jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 const history = H.createMemoryHistory()
 
 describe('CampaignDetails', () => {
-    test('creation form', () =>
+    test('creation form for empty manual campaign', () =>
         expect(
             createRenderer().render(
                 <CampaignDetails
@@ -32,6 +29,34 @@ describe('CampaignDetails', () => {
             )
         ).toMatchSnapshot())
 
+    test('creation form given existing plan', () => {
+        const component = renderer.create(
+            <CampaignDetails
+                campaignID={undefined}
+                history={history}
+                location={{ ...history.location, search: 'plan=p' }}
+                authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
+                isLightTheme={true}
+                _fetchCampaignPlanById={() =>
+                    of({
+                        __typename: 'CampaignPlan' as const,
+                        id: 'c',
+                        changesets: { nodes: [] as GQL.IChangesetPlan[], totalCount: 2 },
+                        status: {
+                            completedCount: 3,
+                            pendingCount: 3,
+                            errors: ['a'],
+                            state: GQL.BackgroundProcessState.PROCESSING,
+                        },
+                    })
+                }
+            />
+        )
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        act(() => undefined)
+        expect(component.toJSON()).toMatchSnapshot()
+    })
+
     const renderCampaignDetails = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
         <CampaignDetails
             campaignID="c"
@@ -40,19 +65,19 @@ describe('CampaignDetails', () => {
             authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
             isLightTheme={true}
             _fetchCampaignById={() =>
-                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                 of({
-                    __typename: 'Campaign',
+                    __typename: 'Campaign' as const,
                     id: 'c',
+                    name: 'n',
                     description: 'd',
-                    author: { username: 'alice' },
-                    plan: { type: 'comby', arguments: '{}' },
+                    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                    author: { username: 'alice' } as GQL.IUser,
+                    plan: { id: 'p' },
                     changesets: { nodes: [] as GQL.IExternalChangeset[], totalCount: 2 },
                     changesetPlans: { nodes: [] as GQL.IChangesetPlan[], totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     viewerCanAdminister,
                     status: {
-                        __typename: 'BackgroundProcessStatus',
                         completedCount: 3,
                         pendingCount: 3,
                         errors: ['a'],
@@ -60,7 +85,9 @@ describe('CampaignDetails', () => {
                     },
                     createdAt: '2020-01-01',
                     updatedAt: '2020-01-01',
-                } as GQL.ICampaign)
+                    publishedAt: '2020-01-01',
+                    closedAt: null,
+                })
             }
         />
     )

@@ -8,7 +8,6 @@ import {
     IUpdateCampaignInput,
     ICreateCampaignInput,
     ICampaignPlan,
-    ICampaignPlanSpecification,
     IChangesetPlansOnCampaignArguments,
     IChangesetPlanConnection,
     IChangesetsOnCampaignArguments,
@@ -87,8 +86,6 @@ const campaignFragment = gql`
         }
         plan {
             id
-            type
-            arguments
         }
         # TODO move to separate query and configure from/to
         changesetCountsOverTime {
@@ -109,8 +106,6 @@ const campaignPlanFragment = gql`
     fragment CampaignPlanFields on CampaignPlan {
         __typename
         id
-        type
-        arguments
         status {
             completedCount
             pendingCount
@@ -171,26 +166,6 @@ export async function createCampaign(input: ICreateCampaignInput): Promise<ICamp
         { input }
     ).toPromise()
     return dataOrThrowErrors(result).createCampaign
-}
-
-export function previewCampaignPlan(
-    specification: ICampaignPlanSpecification,
-    wait: boolean = false
-): Observable<ICampaignPlan> {
-    return mutateGraphQL(
-        gql`
-            mutation PreviewCampaignPlan($specification: CampaignPlanSpecification!, $wait: Boolean!) {
-                previewCampaignPlan(specification: $specification, wait: $wait) {
-                    ...CampaignPlanFields
-                }
-            }
-            ${campaignPlanFragment}
-        `,
-        { specification, wait }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(mutation => mutation.previewCampaignPlan)
-    )
 }
 
 export async function retryCampaign(campaignID: ID): Promise<void> {
