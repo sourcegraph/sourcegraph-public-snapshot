@@ -279,8 +279,8 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
     public render(): JSX.Element | null {
         return (
             <div className="site-admin-survey-responses-page">
-                <PageTitle title="Survey Responses - Admin" />
-                <h2>Survey responses</h2>
+                <PageTitle title="User feedback survey - Admin" />
+                <h2>User feedback survey</h2>
                 <p>
                     After using Sourcegraph for a few days, users are presented with a request to answer "How likely is
                     it that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some
