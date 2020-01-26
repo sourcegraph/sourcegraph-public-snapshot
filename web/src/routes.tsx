@@ -24,11 +24,6 @@ export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string 
      * @default () => true
      */
     condition?: (props: LayoutRouteComponentProps<Params>) => boolean
-
-    /**
-     * Whether or not to force the width of the page to be narrow.
-     */
-    forceNarrowWidth?: boolean
 }
 
 /**
@@ -67,13 +62,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/sign-in',
         render: lazyComponent(() => import('./auth/SignInPage'), 'SignInPage'),
         exact: true,
-        forceNarrowWidth: true,
     },
     {
         path: '/sign-up',
         render: lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage'),
         exact: true,
-        forceNarrowWidth: true,
     },
     {
         path: '/settings',
@@ -96,7 +89,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/site-admin/init',
         exact: true,
         render: lazyComponent(() => import('./site-admin/SiteInitPage'), 'SiteInitPage'),
-        forceNarrowWidth: false,
     },
     {
         path: '/site-admin',
@@ -113,7 +105,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/password-reset',
         render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
         exact: true,
-        forceNarrowWidth: true,
     },
     {
         path: '/explore',
