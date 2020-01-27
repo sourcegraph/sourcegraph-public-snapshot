@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"text/template"
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
+	"github.com/fatih/color"
 	"github.com/sourcegraph/jsonx"
 )
 
@@ -90,6 +93,42 @@ func parseTemplate(text string) (*template.Template, error) {
 		"htmlToPlainText":                   searchTemplateFuncs["htmlToPlainText"],
 		"buildVersionHasNewSearchInterface": searchTemplateFuncs["buildVersionHasNewSearchInterface"],
 		"renderResult":                      searchTemplateFuncs["renderResult"],
+
+		// `src campaign plans create-from-patches`
+		"friendlyCampaignPlanCreatedMessage": func(campaignPlan CampaignPlan) string {
+			var buf bytes.Buffer
+			fmt.Fprintln(&buf)
+			fmt.Fprintln(&buf, color.HiGreenString("✔  Campaign plan saved."), "To preview and run the campaign (and create branches and changesets):")
+			fmt.Fprintln(&buf)
+			fmt.Fprintln(&buf, " ", color.HiCyanString("▶ Web:"), campaignPlan.PreviewURL, color.HiBlackString("or"))
+			cliCommand := fmt.Sprintf("src campaigns create -name='Campaign name' -desc='My first CLI-created campaign' -plan=%s", campaignPlan.ID)
+			fmt.Fprintln(&buf, " ", color.HiCyanString("▶ CLI:"), cliCommand)
+			return buf.String()
+		},
+
+		// `src campaign create`
+		"friendlyCampaignCreatedMessage": func(campaign Campaign) string {
+			var buf bytes.Buffer
+			fmt.Fprintln(&buf)
+
+			message := "See the progress of changeset creation on code hosts:"
+			if campaign.PublishedAt.IsZero() {
+				message = "Publish the campaign and all of its changesets or single changesets individually to create pull requests on code hosts:"
+			}
+
+			fmt.Fprintln(&buf, color.HiGreenString("✔  Campaign created."), message)
+			fmt.Fprintln(&buf)
+
+			u, err := resolveURL(cfg.Endpoint, campaign.URL)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to resolve campaign URL: %s\n", err)
+				return buf.String()
+			}
+
+			fmt.Fprintln(&buf, " ", color.HiCyanString("▶ Web:"), u)
+
+			return buf.String()
+		},
 	})
 	return tmpl.Parse(text)
 }
@@ -105,4 +144,18 @@ func execTemplate(tmpl *template.Template, data interface{}) error {
 // json.MarshalIndent, but with defaults.
 func marshalIndent(v interface{}) ([]byte, error) {
 	return json.MarshalIndent(v, "", "  ")
+}
+
+func resolveURL(endpoint, u string) (string, error) {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return "", err
+	}
+
+	base, err := url.Parse(endpoint)
+	if err != nil {
+		return "", err
+	}
+
+	return base.ResolveReference(parsed).String(), nil
 }

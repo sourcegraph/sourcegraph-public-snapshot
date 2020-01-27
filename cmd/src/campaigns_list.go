@@ -45,35 +45,11 @@ Examples:
 			return err
 		}
 
-		query := `query Campaigns($first: Int, $changesetsFirst: Int) {
+		query := campaignFragment + `
+query Campaigns($first: Int, $changesetsFirst: Int) {
   campaigns(first: $first) {
     nodes {
-      id
-      name
-      description
-      createdAt
-      updatedAt
-
-	  changesets(first: $changesetsFirst) {
-        nodes {
-          id
-          state
-          reviewState
-          repository {
-            id
-            name
-          }
-          externalURL {
-            url
-            serviceType
-          }
-          createdAt
-          updatedAt
-        }
-
-        totalCount
-		pageInfo { hasNextPage }
-      }
+	  ... campaign
     }
   }
 }
@@ -81,32 +57,7 @@ Examples:
 
 		var result struct {
 			Campaigns struct {
-				Nodes []struct {
-					ID          string
-					Name        string
-					Description string
-					CreatedAt   time.Time
-					UpdatedAt   time.Time
-					Changesets  struct {
-						Nodes []struct {
-							ID          string
-							State       string
-							ReviewState string
-							Repository  struct {
-								ID   string
-								Name string
-							}
-							ExternalURL struct {
-								URL         string
-								ServiceType string
-							}
-							CreatedAt time.Time
-							UpdatedAt time.Time
-						}
-						TotalCount int
-						PageInfo   struct{ HasNextPage bool }
-					}
-				}
+				Nodes []Campaign
 			}
 		}
 
@@ -135,4 +86,66 @@ Examples:
 		handler:   handler,
 		usageFunc: usageFunc,
 	})
+}
+
+const campaignFragment = `
+fragment campaign on Campaign {
+  id
+  name
+  description
+  url
+  publishedAt
+  createdAt
+  updatedAt
+
+  changesets(first: $changesetsFirst) {
+    nodes {
+      id
+      state
+      reviewState
+      repository {
+        id
+        name
+      }
+      externalURL {
+        url
+        serviceType
+      }
+      createdAt
+      updatedAt
+    }
+
+    totalCount
+    pageInfo { hasNextPage }
+  }
+}
+`
+
+type Campaign struct {
+	ID          string
+	Name        string
+	Description string
+	URL         string
+	PublishedAt time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Changesets  struct {
+		Nodes []struct {
+			ID          string
+			State       string
+			ReviewState string
+			Repository  struct {
+				ID   string
+				Name string
+			}
+			ExternalURL struct {
+				URL         string
+				ServiceType string
+			}
+			CreatedAt time.Time
+			UpdatedAt time.Time
+		}
+		TotalCount int
+		PageInfo   struct{ HasNextPage bool }
+	}
 }

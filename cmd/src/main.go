@@ -22,6 +22,7 @@ The options are:
 
 	-config=$HOME/src-config.json    specifies a file containing {"accessToken": "<secret>", "endpoint": "https://sourcegraph.com"}
 	-endpoint=                       specifies the endpoint to use e.g. "https://sourcegraph.com" (overrides -config, if any)
+	-v                               print verbose output
 
 The commands are:
 
@@ -33,6 +34,7 @@ The commands are:
 	config          manages global, org, and user settings
 	extsvc          manages external services
 	extensions,ext  manages extensions (experimental)
+	actions         runs actions to generate campaign plans (experimental)
 	campaigns       manages campaigns (experimental)
 	lsif            manages LSIF data
 	version         display and compare the src-cli version against the recommended version for your instance
@@ -44,6 +46,7 @@ Use "src [command] -h" for more information about a command.
 var (
 	configPath = flag.String("config", "", "")
 	endpoint   = flag.String("endpoint", "", "")
+	verbose    = flag.Bool("v", false, "print verbose output")
 )
 
 // commands contains all registered subcommands.

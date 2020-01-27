@@ -26,6 +26,15 @@ Examples:
 		$ echo '[{"repository": $repo, "baseRevision": "master", "patch": $patch}]' |\
 		  src campaigns plans create-from-patches
 
+  Create a campaign plan from patches.json produced by 'src actions exec':
+
+		$ src actions exec -f action.json > patches.json
+		$ src campaign plan create-from-patches < patches.json
+
+  Create a campaign plan by piping output of 'src actions exec' into 'src campaign plan create-from-patches':
+
+		$ src actions exec -f action.json | src campaign plan create-from-patches < patches.json
+
 `
 
 	flagSet := flag.NewFlagSet("create-from-patches", flag.ExitOnError)
@@ -36,7 +45,7 @@ Examples:
 	}
 	var (
 		changesetsFlag = flagSet.Int("changesets", 1000, "Returns the first n changesets in the plan.")
-		formatFlag     = flagSet.String("f", "{{.PreviewURL}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{len .Changesets}} changesets") or "{{.|json}}")`)
+		formatFlag     = flagSet.String("f", "{{friendlyCampaignPlanCreatedMessage .}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{len .Changesets}} changesets") or "{{.|json}}")`)
 		apiFlags       = newAPIFlags(flagSet)
 	)
 

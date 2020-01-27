@@ -19,7 +19,6 @@ Usage:
 The commands are:
 
 	create-from-patches  creates plan from patches to repository branches
-	create               creates a plan from a specification and provides a preview of the changesets
 
 Use "src campaigns plans [command] -h" for more information about a command.
 `
@@ -45,8 +44,6 @@ func campaignPlanFragment(first int) string {
 	return fmt.Sprintf(`
 fragment CampaignPlanFields on CampaignPlan {
     id
-    type
-    arguments
     status {
         completedCount
         pendingCount
@@ -157,8 +154,6 @@ type Status struct {
 
 type CampaignPlan struct {
 	ID         string `json:"id"`
-	Type       string `json:"type"`
-	Arguments  string `json:"arguments"`
 	Status     Status `json:"status"`
 	Changesets struct {
 		Nodes      []ChangesetPlan `json:"nodes"`
