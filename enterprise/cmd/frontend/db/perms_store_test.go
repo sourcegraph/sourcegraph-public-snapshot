@@ -1178,6 +1178,128 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 	}
 }
 
+func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, clock)
+		defer cleanupPermsTables(t, s)
+
+		ctx := context.Background()
+
+		// Set permissions with different providers for user 1 and 2
+		if err := s.SetRepoPermissions(ctx, &iauthz.RepoPermissions{
+			RepoID:   1,
+			Perm:     authz.Read,
+			UserIDs:  toBitmap(1, 2),
+			Provider: authz.ProviderSourcegraph,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.SetRepoPermissions(ctx, &iauthz.RepoPermissions{
+			RepoID:   2,
+			Perm:     authz.Read,
+			UserIDs:  toBitmap(1, 2),
+			Provider: authz.ProviderBitbucketServer,
+		}); err != nil {
+			t.Fatal(err)
+		}
+
+		// Remove all permissions for the user=1
+		if err := s.DeleteAllUserPermissions(ctx, 1); err != nil {
+			t.Fatal(err)
+		}
+
+		// Check user=1 should not have any permissions now
+		err := s.LoadUserPermissions(ctx, &iauthz.UserPermissions{
+			UserID:   1,
+			Perm:     authz.Read,
+			Type:     authz.PermRepos,
+			Provider: authz.ProviderSourcegraph,
+		})
+		if err != ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+		}
+
+		err = s.LoadUserPermissions(ctx, &iauthz.UserPermissions{
+			UserID:   1,
+			Perm:     authz.Read,
+			Type:     authz.PermRepos,
+			Provider: authz.ProviderBitbucketServer,
+		})
+		if err != ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+		}
+
+		// Check user=2 shoud not be affected
+		p := &iauthz.UserPermissions{
+			UserID:   2,
+			Perm:     authz.Read,
+			Type:     authz.PermRepos,
+			Provider: authz.ProviderSourcegraph,
+		}
+		err = s.LoadUserPermissions(ctx, p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "p.IDs", []uint32{1}, bitmapToArray(p.IDs))
+
+		p = &iauthz.UserPermissions{
+			UserID:   2,
+			Perm:     authz.Read,
+			Type:     authz.PermRepos,
+			Provider: authz.ProviderBitbucketServer,
+		}
+		err = s.LoadUserPermissions(ctx, p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "p.IDs", []uint32{2}, bitmapToArray(p.IDs))
+	}
+}
+
+func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, clock)
+		defer cleanupPermsTables(t, s)
+
+		ctx := context.Background()
+
+		// Set pending permissions for alice and bob
+		if err := s.SetRepoPendingPermissions(ctx, []string{"alice", "bob"}, &iauthz.RepoPermissions{
+			RepoID: 1,
+			Perm:   authz.Read,
+		}); err != nil {
+			t.Fatal(err)
+		}
+
+		// Remove all pending permissions for alice
+		if err := s.DeleteAllUserPendingPermissions(ctx, []string{"alice"}); err != nil {
+			t.Fatal(err)
+		}
+
+		// Check alice should not have any pending permissions now
+		err := s.LoadUserPendingPermissions(ctx, &iauthz.UserPendingPermissions{
+			BindID: "alice",
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		})
+		if err != ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+		}
+
+		// Check bob shoud not be affected
+		p := &iauthz.UserPendingPermissions{
+			BindID: "bob",
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		}
+		err = s.LoadUserPendingPermissions(ctx, p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "p.IDs", []uint32{1}, bitmapToArray(p.IDs))
+	}
+}
+
 func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, time.Now)

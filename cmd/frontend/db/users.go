@@ -376,6 +376,10 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 }
 
 func (u *users) Delete(ctx context.Context, id int32) error {
+	if Mocks.Users.Delete != nil {
+		return Mocks.Users.Delete(ctx, id)
+	}
+
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
@@ -440,6 +444,10 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 }
 
 func (u *users) HardDelete(ctx context.Context, id int32) error {
+	if Mocks.Users.HardDelete != nil {
+		return Mocks.Users.HardDelete(ctx, id)
+	}
+
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {

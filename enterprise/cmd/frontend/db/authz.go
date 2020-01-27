@@ -86,6 +86,8 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	return nil
 }
 
+// AuthorizedRepos checks if a user is authorized to access repositories in the candidate list,
+// which implements the db.AuthzStore interface.
 func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedReposArgs) ([]*types.Repo, error) {
 	if len(args.Repos) == 0 {
 		return args.Repos, nil
@@ -110,4 +112,25 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 		filtered[i] = r.Repo
 	}
 	return filtered, nil
+}
+
+// RevokeUserPermissions deletes both effective and pending permissions that could be related to a user,
+// which implements the db.AuthzStore interface. It proactively clean up left-over pending permissions to
+// prevent accidental reuse (i.e. another user with same username or email address(es) but not the same person).
+func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeUserPermissionsArgs) error {
+	txs, err := s.store.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "start transaction")
+	}
+	defer txs.Done(&err)
+
+	if err = txs.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
+		return err
+	}
+
+	bindIDs := append([]string{args.Username}, args.VerifiedEmails...)
+	if err := txs.DeleteAllUserPendingPermissions(ctx, bindIDs); err != nil {
+		return err
+	}
+	return nil
 }

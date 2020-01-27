@@ -718,7 +718,7 @@ DO UPDATE SET
 // between the given user ID and the bind ID found in p.
 func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
-	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
+	defer func() { save(&err, append(p.TracingFields(), otlog.Int32("userID", userID))...) }()
 
 	var txs *PermsStore
 	if s.inTx() {
@@ -978,6 +978,41 @@ func (s *PermsStore) ListPendingUsers(ctx context.Context) (bindIDs []string, er
 	}
 
 	return bindIDs, nil
+}
+
+// DeleteAllUserPermissions deletes all rows with given user ID from the "user_permissions" table,
+// which effectively removes access to all repositories for the user.
+func (s *PermsStore) DeleteAllUserPermissions(ctx context.Context, userID int32) (err error) {
+	ctx, save := s.observe(ctx, "DeleteAllUserPermissions", "")
+	defer func() { save(&err, otlog.Int32("userID", userID)) }()
+
+	// NOTE: Practically, we don't need to clean up "repo_permissions" table because the value of "id" column
+	// that is associated with this user will be invalidated automatically by deleting this row.
+	if err = s.execute(ctx, sqlf.Sprintf(`DELETE FROM user_permissions WHERE user_id = %s`, userID)); err != nil {
+		return errors.Wrap(err, "execute delete user permissions query")
+	}
+
+	return nil
+}
+
+// DeleteAllUserPendingPermissions deletes all rows with given bind IDs from the "user_pending_permissions" table.
+// It accepts list of bind IDs because a user has multiple bind IDs, e.g. username and email addresses.
+func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, bindIDs []string) (err error) {
+	ctx, save := s.observe(ctx, "DeleteAllUserPendingPermissions", "")
+	defer func() { save(&err, otlog.String("bindIDs", strings.Join(bindIDs, ","))) }()
+
+	// NOTE: Practically, we don't need to clean up "repo_pending_permissions" table because the value of "id" column
+	// that is associated with this user will be invalidated automatically by deleting this row.
+	items := make([]*sqlf.Query, len(bindIDs))
+	for i := range bindIDs {
+		items[i] = sqlf.Sprintf("%s", bindIDs[i])
+	}
+	q := sqlf.Sprintf(`DELETE FROM user_pending_permissions WHERE bind_id IN (%s)`, sqlf.Join(items, ","))
+	if err = s.execute(ctx, q); err != nil {
+		return errors.Wrap(err, "execute delete user pending permissions query")
+	}
+
+	return nil
 }
 
 func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query) (err error) {
