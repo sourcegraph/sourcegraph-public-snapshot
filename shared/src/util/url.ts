@@ -1,13 +1,7 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
-import {
-    FiltersToTypeAndValue,
-    filterTypeKeys,
-    negatedFilters,
-    NegatedFilters,
-    isNegatableFilter,
-} from '../search/interactive/util'
+import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 
 export interface RepoSpec {

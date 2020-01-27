@@ -8,7 +8,6 @@ import {
     withWorkspaceRootInputRevision,
 } from './url'
 import { SearchPatternType } from '../graphql/schema'
-import { FilterTypes } from '../search/interactive/util'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
