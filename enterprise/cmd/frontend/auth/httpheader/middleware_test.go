@@ -19,7 +19,7 @@ import (
 // helper program, which helps with manual testing of the HTTP auth proxy behavior.
 func TestMiddleware(t *testing.T) {
 	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EliteTags}, "test-signature", nil
+		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
 	}
 	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
@@ -117,7 +117,7 @@ func TestMiddleware(t *testing.T) {
 
 func TestMiddleware_stripPrefix(t *testing.T) {
 	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EliteTags}, "test-signature", nil
+		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
 	}
 	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 

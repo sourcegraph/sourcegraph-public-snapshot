@@ -34,7 +34,7 @@ func InfoForProductPlan(ctx context.Context, planID string) (licenseTags []strin
 	case plan.Product.Name == "Enterprise Starter":
 		tags = licensing.EnterpriseStarterTags
 	case plan.Product.Name == "Enterprise":
-		tags = licensing.EnterpriseBasicTags
+		tags = licensing.EnterpriseTags
 	default:
 		return nil, nil, fmt.Errorf("unable to determine license tags for plan %q (nickname %q)", planID, plan.Nickname)
 	}

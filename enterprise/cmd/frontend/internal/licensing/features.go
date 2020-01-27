@@ -22,9 +22,6 @@ const (
 	// code hosts are GitHub, GitLab, and Bitbucket Server.
 	FeatureACLs Feature = "acls"
 
-	// FeatureExtensionWhitelist is whether whitelisting extensions in this Sourcegraph instance is allowed.
-	FeatureExtensionWhitelist Feature = "extension-whitelist"
-
 	// FeatureRemoteExtensionsAllowDisallow is whether the site admin may explictly specify a list
 	// of allowed remote extensions and prevent any other remote extensions from being used. It does
 	// not apply to locally published extensions.
@@ -52,22 +49,19 @@ func isFeatureEnabled(info license.Info, feature Feature) bool {
 	switch feature {
 	case FeatureCustomBranding:
 		// Custom branding only available in Enterprise Plus and Elite.
-		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag)
+		return !info.HasTag(EnterpriseTag) && !info.HasTag(EnterpriseStarterTag)
 	case FeatureACLs:
 		// ACLs only available in Enterprise Plus and Elite.
-		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag)
-	case FeatureExtensionWhitelist:
-		// Extension whitelist only available in Enterprise Plus and Elite.
-		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag)
+		return !info.HasTag(EnterpriseTag) && !info.HasTag(EnterpriseStarterTag)
 	case FeatureRemoteExtensionsAllowDisallow:
 		// Explictly allowing/disallowing remote extensions by extension ID only available in Enterprise Plus and Elite.
-		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag)
+		return !info.HasTag(EnterpriseTag) && !info.HasTag(EnterpriseStarterTag)
 	case FeatureExtensionRegistry:
 		// Local extension registry only available in Elite.
-		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag) && !info.HasTag(EnterprisePlusTag)
+		return !info.HasTag(EnterpriseTag) && !info.HasTag(EnterpriseStarterTag) && !info.HasTag(EnterprisePlusTag)
 	case FeatureAutomation:
 		// Automation only available in Elite.
-		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag) && !info.HasTag(EnterprisePlusTag)
+		return !info.HasTag(EnterpriseTag) && !info.HasTag(EnterpriseStarterTag) && !info.HasTag(EnterprisePlusTag)
 	}
 	return false
 }

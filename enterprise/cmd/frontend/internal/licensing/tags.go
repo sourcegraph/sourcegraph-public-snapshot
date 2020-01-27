@@ -3,8 +3,8 @@ package licensing
 import "strings"
 
 const (
-	// EnterpriseBasicTag is the license tag for Elite.
-	EnterpriseBasicTag = "basic"
+	// EnterpriseTag is the license tag for Enterprise.
+	EnterpriseTag = "basic"
 	// EnterpriseStarterTag is the license tag for Enterprise Starter.
 	// Deprecated: This exists for backwards compatibility, future licenses should use EnterprisePlusTags instead.
 	EnterpriseStarterTag = "starter"
@@ -17,8 +17,8 @@ const (
 )
 
 var (
-	// EnterpriseBasicTags are the license tags for Enterprise.
-	EnterpriseBasicTags = []string{EnterpriseBasicTag}
+	// EnterpriseTags are the license tags for Enterprise.
+	EnterpriseTags = []string{EnterpriseTag}
 	// EnterpriseStarterTags are the license tags for Enterprise Starter.
 	// Deprecated: This exists for backwards compatibility, future licenses should use EnterprisePlusTags instead.
 	EnterpriseStarterTags = []string{EnterpriseStarterTag}
@@ -45,7 +45,7 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 	}
 
 	var name string
-	if hasTag(EnterpriseBasicTag) {
+	if hasTag(EnterpriseTag) {
 		name = "Enterprise"
 	} else if hasTag(EnterprisePlusTag) {
 		name = "Enterprise Plus"
