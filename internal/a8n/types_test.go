@@ -116,6 +116,18 @@ func TestChangesetEvents(t *testing.T) {
 			CreatedAt: now,
 		}
 
+		commit := &github.PullRequestCommit{
+			Commit: github.Commit{
+				OID:             "123",
+				Message:         "Test Commit",
+				MessageHeadline: "",
+				URL:             "",
+				Status: github.Status{
+					State: "SUCCESS",
+				},
+			},
+		}
+
 		cases = append(cases, testCase{"github",
 			Changeset{
 				ID: 23,
@@ -130,6 +142,7 @@ func TestChangesetEvents(t *testing.T) {
 							Comments: reviewComments[2:],
 						}},
 						{Type: "ClosedEvent", Item: closedEvent},
+						{Type: "PullRequestCommit", Item: commit},
 					},
 				},
 			},
@@ -163,6 +176,11 @@ func TestChangesetEvents(t *testing.T) {
 				Kind:        ChangesetEventKindGitHubClosed,
 				Key:         closedEvent.Key(),
 				Metadata:    closedEvent,
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubCommit,
+				Key:         commit.Key(),
+				Metadata:    commit,
 			}},
 		})
 	}

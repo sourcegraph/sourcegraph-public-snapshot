@@ -50,6 +50,7 @@ type Commit struct {
 	Message         string
 	MessageHeadline string
 	URL             string
+	Status          Status
 	Committer       GitActor
 	CommittedDate   time.Time
 	PushedDate      time.Time
@@ -57,19 +58,7 @@ type Commit struct {
 
 // A Status represents a Commit status.
 type Status struct {
-	Contexts []StatusContext // The individual status contexts for this commit.
-	State    string          // The combined commit status.
-}
-
-// A StatusContext represents an individual commit status context
-type StatusContext struct {
-	AvatarURL   string
-	Context     string
-	Description string
-	State       string
-	TargetURL   string
-	CreatedAt   time.Time
-	Creator     Actor
+	State string // The combined commit status.
 }
 
 // PullRequest is a GitHub pull request.
@@ -188,6 +177,14 @@ func (e PullRequestReview) Key() string {
 // That's why this type doesn't have a Key method like the others.
 type PullRequestReviewThread struct {
 	Comments []*PullRequestReviewComment
+}
+
+type PullRequestCommit struct {
+	Commit Commit
+}
+
+func (c PullRequestCommit) Key() string {
+	return c.Commit.OID
 }
 
 // PullRequestReviewComment represents a review comment on a given pull request.
@@ -328,6 +325,8 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 		i.Item = new(PullRequestReviewComment)
 	case "PullRequestReviewThread":
 		i.Item = new(PullRequestReviewThread)
+	case "PullRequestCommit":
+		i.Item = new(PullRequestCommit)
 	case "ReopenedEvent":
 		i.Item = new(ReopenedEvent)
 	case "ReviewDismissedEvent":
@@ -343,7 +342,7 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 	}
 
 	if len(v.Item) > 0 {
-		data = []byte(v.Item)
+		data = v.Item
 	}
 
 	return json.Unmarshal(data, i.Item)
@@ -623,146 +622,213 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 }
 
 const pullRequestFragments = `
-fragment actor on Actor { avatarUrl, login, url }
+fragment actor on Actor {
+  avatarUrl
+  login
+  url
+}
+
 fragment commit on Commit {
-	oid, message, messageHeadline, committedDate, pushedDate, url
-	committer {
-	avatarUrl, email, name
-	user { ...actor }
-	}
+  oid
+  message
+  messageHeadline
+  committedDate
+  pushedDate
+  url
+  committer {
+    avatarUrl
+    email
+    name
+    user {
+      ...actor
+    }
+  }
+  status {
+    state
+  }
 }
+
 fragment review on PullRequestReview {
-	databaseId
-	author { ...actor }
-	authorAssociation
-	body
-	state
-	url
-	createdAt
-	updatedAt
-	commit { ...commit }
-	includesCreatedEdit
+  databaseId
+  author {
+    ...actor
+  }
+  authorAssociation
+  body
+  state
+  url
+  createdAt
+  updatedAt
+  commit {
+    ...commit
+  }
+  includesCreatedEdit
 }
+
 fragment pr on PullRequest {
-	id, title, body, state, url, number, createdAt, updatedAt
-	headRefOid, baseRefOid, headRefName, baseRefName
-	author { ...actor }
-	participants(first: 100) { nodes { ...actor } }
-    commits(last: 1) {
+  id
+  title
+  body
+  state
+  url
+  number
+  createdAt
+  updatedAt
+  headRefOid
+  baseRefOid
+  headRefName
+  baseRefName
+  author {
+    ...actor
+  }
+  participants(first: 100) {
     nodes {
-      commit {
-          status {
+      ...actor
+    }
+  }
+  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, PULL_REQUEST_COMMIT]) {
+    nodes {
+      __typename
+      ... on PullRequestCommit {
+        commit {
+          ...commit
+        }
+      }
+      ... on AssignedEvent {
+        actor {
+          ...actor
+        }
+        assignee {
+          ...actor
+        }
+        createdAt
+      }
+      ... on ClosedEvent {
+        actor {
+          ...actor
+        }
+        createdAt
+        url
+      }
+      ... on IssueComment {
+        databaseId
+        author {
+          ...actor
+        }
+        authorAssociation
+        body
+        createdAt
+        editor {
+          ...actor
+        }
+        url
+        updatedAt
+        includesCreatedEdit
+        publishedAt
+      }
+      ... on RenamedTitleEvent {
+        actor {
+          ...actor
+        }
+        previousTitle
+        currentTitle
+        createdAt
+      }
+      ... on MergedEvent {
+        actor {
+          ...actor
+        }
+        mergeRefName
+        url
+        commit {
+          ...commit
+        }
+        createdAt
+      }
+      ... on PullRequestReview {
+        ...review
+      }
+      ... on PullRequestReviewThread {
+        comments(last: 100) {
+          nodes {
+            databaseId
+            author {
+              ...actor
+            }
+            authorAssociation
+            editor {
+              ...actor
+            }
+            commit {
+              ...commit
+            }
+            body
             state
+            url
+            createdAt
+            updatedAt
+            includesCreatedEdit
           }
         }
       }
+      ... on ReopenedEvent {
+        actor {
+          ...actor
+        }
+        createdAt
+      }
+      ... on ReviewDismissedEvent {
+        actor {
+          ...actor
+        }
+        review {
+          ...review
+        }
+        dismissalMessage
+        createdAt
+      }
+      ... on ReviewRequestRemovedEvent {
+        actor {
+          ...actor
+        }
+        requestedReviewer {
+          ...actor
+        }
+        requestedTeam: requestedReviewer {
+          ... on Team {
+            name
+            url
+            avatarUrl
+          }
+        }
+        createdAt
+      }
+      ... on ReviewRequestedEvent {
+        actor {
+          ...actor
+        }
+        requestedReviewer {
+          ...actor
+        }
+        requestedTeam: requestedReviewer {
+          ... on Team {
+            name
+            url
+            avatarUrl
+          }
+        }
+        createdAt
+      }
+      ... on UnassignedEvent {
+        actor {
+          ...actor
+        }
+        assignee {
+          ...actor
+        }
+        createdAt
+      }
     }
-	timelineItems(
-	first: 250
-	itemTypes: [
-		ASSIGNED_EVENT
-		CLOSED_EVENT
-		ISSUE_COMMENT
-		RENAMED_TITLE_EVENT
-		MERGED_EVENT
-		PULL_REQUEST_REVIEW
-		PULL_REQUEST_REVIEW_THREAD
-		REOPENED_EVENT
-		REVIEW_DISMISSED_EVENT
-		REVIEW_REQUEST_REMOVED_EVENT
-		REVIEW_REQUESTED_EVENT
-		UNASSIGNED_EVENT
-	]
-	) {
-	nodes {
-		__typename
-		... on AssignedEvent {
-		actor { ...actor }
-		assignee { ...actor }
-		createdAt
-		}
-		... on ClosedEvent {
-		actor { ...actor }
-		createdAt
-		url
-		}
-		... on IssueComment {
-		databaseId
-		author { ...actor }
-		authorAssociation
-		body
-		createdAt
-		editor { ...actor }
-		url
-		updatedAt
-		includesCreatedEdit
-		publishedAt
-		}
-		... on RenamedTitleEvent {
-		actor { ...actor }
-		previousTitle
-		currentTitle
-		createdAt
-		}
-		... on MergedEvent {
-		actor { ...actor }
-		mergeRefName
-		url
-		commit { ...commit }
-		createdAt
-		}
-		... on PullRequestReview {
-		...review
-		}
-		... on PullRequestReviewThread {
-		comments(last: 100) {
-			nodes {
-			databaseId
-			author { ...actor }
-			authorAssociation
-			editor { ...actor }
-			commit { ...commit }
-			body
-			state
-			url
-			createdAt
-			updatedAt
-			includesCreatedEdit
-			}
-		}
-		}
-		... on ReopenedEvent {
-		actor { ...actor }
-		createdAt
-		}
-		... on ReviewDismissedEvent {
-		actor { ...actor }
-		review { ...review }
-		dismissalMessage
-		createdAt
-		}
-		... on ReviewRequestRemovedEvent {
-		actor { ...actor }
-		requestedReviewer { ...actor }
-		requestedTeam: requestedReviewer {
-			... on Team { name url avatarUrl }
-		}
-		createdAt
-		}
-		... on ReviewRequestedEvent {
-		actor { ...actor }
-		requestedReviewer { ...actor }
-		requestedTeam: requestedReviewer {
-			... on Team { name url avatarUrl }
-		}
-		createdAt
-		}
-		... on UnassignedEvent {
-		actor { ...actor }
-		assignee { ...actor }
-		createdAt
-		}
-	}
-	}
+  }
 }
 `
