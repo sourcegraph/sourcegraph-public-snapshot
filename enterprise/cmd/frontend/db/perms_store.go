@@ -80,6 +80,10 @@ AND provider = %s
 // LoadRepoPermissions loads stored repository permissions into p. An ErrPermsNotFound is
 // returned when there are no valid permissions available.
 func (s *PermsStore) LoadRepoPermissions(ctx context.Context, p *iauthz.RepoPermissions) (err error) {
+	if Mocks.Perms.LoadRepoPermissions != nil {
+		return Mocks.Perms.LoadRepoPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -134,6 +138,10 @@ AND provider = %s
 //  ---------+------------+--------------+-------------+------------
 //         1 |       read | bitmap{1, 2} | sourcegraph | <DateTime>
 func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *iauthz.RepoPermissions) (err error) {
+	if Mocks.Perms.SetRepoPermissions != nil {
+		return Mocks.Perms.SetRepoPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "SetRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -297,6 +305,10 @@ DO UPDATE SET
 // LoadUserPendingPermissions returns pending permissions found by given parameters.
 // An ErrPermsNotFound is returned when there are no pending permissions available.
 func (s *PermsStore) LoadUserPendingPermissions(ctx context.Context, p *iauthz.UserPendingPermissions) (err error) {
+	if Mocks.Perms.LoadUserPendingPermissions != nil {
+		return Mocks.Perms.LoadUserPendingPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -350,6 +362,10 @@ AND object_type = %s
 //  ---------+------------+--------------+------------
 //         1 |       read | bitmap{1, 2} | <DateTime>
 func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, bindIDs []string, p *iauthz.RepoPermissions) (err error) {
+	if Mocks.Perms.SetRepoPendingPermissions != nil {
+		return Mocks.Perms.SetRepoPendingPermissions(ctx, bindIDs, p)
+	}
+
 	ctx, save := s.observe(ctx, "SetRepoPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.String("bindIDs", strings.Join(bindIDs, ",")))...) }()
 
@@ -691,10 +707,6 @@ DO UPDATE SET
 // are unioned not replaced.
 // This method starts its own transaction if the caller hasn't started one already.
 func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
-	if Mocks.Perms.GrantPendingPermissions != nil {
-		return Mocks.Perms.GrantPendingPermissions(ctx, userID, p)
-	}
-
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
 
@@ -916,6 +928,10 @@ AND object_type = %s
 
 // ListPendingUsers returns a list of bind IDs who have pending permissions.
 func (s *PermsStore) ListPendingUsers(ctx context.Context) (bindIDs []string, err error) {
+	if Mocks.Perms.ListPendingUsers != nil {
+		return Mocks.Perms.ListPendingUsers(ctx)
+	}
+
 	ctx, save := s.observe(ctx, "ListPendingUsers", "")
 	defer save(&err)
 
@@ -1088,10 +1104,6 @@ func (s *PermsStore) tx(ctx context.Context) (*sql.Tx, error) {
 
 // Transact begins a new transaction and make a new PermsStore over it.
 func (s *PermsStore) Transact(ctx context.Context) (*PermsStore, error) {
-	if Mocks.Perms.Transact != nil {
-		return Mocks.Perms.Transact(ctx)
-	}
-
 	tx, err := s.tx(ctx)
 	if err != nil {
 		return nil, err

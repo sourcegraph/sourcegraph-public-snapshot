@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -24,11 +24,9 @@ type Resolver struct {
 	store *edb.PermsStore
 }
 
-var _ graphqlbackend.AuthzResolver = &Resolver{}
-
-func NewResolver() graphqlbackend.AuthzResolver {
+func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		store: edb.NewPermsStore(dbconn.Global, time.Now),
+		store: edb.NewPermsStore(db, clock),
 	}
 }
 
