@@ -156,7 +156,7 @@ export class QueryInput extends React.Component<Props, State> {
             props.settingsCascade.final &&
             props.settingsCascade.final['search.hideSuggestions']
 
-        if (!this.props.withoutSuggestions || hideSuggestionsSetting) {
+        if (!hideSuggestionsSetting && !this.props.withoutSuggestions) {
             // Show suggestions on input change.
             this.subscriptions.add(
                 this.inputValues.subscribe(() => {
