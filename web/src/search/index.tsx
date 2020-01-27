@@ -1,11 +1,6 @@
 import { escapeRegExp } from 'lodash'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
-import {
-    FiltersToTypeAndValue,
-    filterTypeKeys,
-    FilterTypes,
-    negatedFilters,
-} from '../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
