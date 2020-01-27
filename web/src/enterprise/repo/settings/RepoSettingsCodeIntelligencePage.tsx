@@ -1,5 +1,5 @@
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import React, { FunctionComponent, useCallback, useEffect, useState, useRef } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useState, useMemo } from 'react'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { Link } from '../../../../../shared/src/components/Link'
@@ -34,7 +34,7 @@ const HideIncompleteLSIFUploadsToggle: FunctionComponent<HideIncompleteLSIFUploa
     </div>
 )
 
-const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: Subject<void> }> = ({ node, onDelete }) => {
+const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: () => void }> = ({ node, onDelete }) => {
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
     const deleteUpload = async (): Promise<void> => {
@@ -51,7 +51,7 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: Subje
 
         try {
             await deleteLsifUpload({ id: node.id }).toPromise()
-            onDelete.next()
+            onDelete()
         } catch (err) {
             setDeletionOrError(err)
         }
@@ -130,7 +130,8 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
     // force each filter connection to refresh. As these lists can share the
     // same underlying entity, we need to refresh both at once on deletion of
     // any upload.
-    const onDelete = useRef(new Subject<void>())
+    const onDeleteSubject = useMemo(() => new Subject<void>(), [])
+    const onDeleteCallback = useMemo(() => onDeleteSubject.next.bind(onDeleteSubject), [onDeleteSubject])
 
     const queryLatestUploads = useCallback(
         (args: FilteredConnectionQueryArgs) =>
@@ -164,7 +165,7 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                     cross-repository <em>Find References</em> requests.
                 </p>
 
-                <FilteredConnection<GQL.ILSIFUpload, { onDelete: Subject<void> }>
+                <FilteredConnection<GQL.ILSIFUpload, { onDelete: () => void }>
                     className="list-group list-group-flush mt-3"
                     noun="upload"
                     pluralNoun="uploads"
@@ -173,8 +174,8 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                     noSummaryIfAllNodesVisible={true}
                     queryConnection={queryLatestUploads}
                     nodeComponent={LsifUploadNode}
-                    nodeComponentProps={{ onDelete: onDelete.current }}
-                    updates={onDelete.current}
+                    nodeComponentProps={{ onDelete: onDeleteCallback }}
+                    updates={onDeleteSubject}
                     history={props.history}
                     location={props.location}
                     listClassName="list-group list-group-flush"
@@ -194,14 +195,14 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                 >
                     <p>These uploads provide code intelligence for branches and older commits.</p>
 
-                    <FilteredConnection<GQL.ILSIFUpload, { onDelete: Subject<void> }>
+                    <FilteredConnection<GQL.ILSIFUpload, { onDelete: () => void }>
                         className="list-group list-group-flush mt-3"
                         noun="upload"
                         pluralNoun="uploads"
                         queryConnection={queryUploads}
                         nodeComponent={LsifUploadNode}
-                        nodeComponentProps={{ onDelete: onDelete.current }}
-                        updates={onDelete.current}
+                        nodeComponentProps={{ onDelete: onDeleteCallback }}
+                        updates={onDeleteSubject}
                         history={props.history}
                         location={props.location}
                         listClassName="list-group list-group-flush"
