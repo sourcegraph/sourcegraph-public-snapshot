@@ -28,7 +28,7 @@ Prerequisites:
 - Sourcegraph builtin authentication must be enabled and Sourcegraph must be directly accessible
   from the host that runs the test script (e.g., additional auth proxies will break the tests). This
   requirement may be removed at a later date.
-- Install [`direnv`](https://direnv.net) and create a `.envrc` file at the root of this repository.
+- Install [`direnv`](https://direnv.net) and create a `.envrc` file at the root of that repository.
 
 Run the tests:
 

@@ -5,7 +5,7 @@ Run `yarn run build` to build, `yarn run watch` to build on any changes to files
 
 ## Cutting a release
 
-First, ensure you are on `master` and have the latest version of this code built:
+First, ensure you are on `master` and have the latest version of that code built:
 
 ```sh
 git checkout master

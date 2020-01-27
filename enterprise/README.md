@@ -11,4 +11,4 @@ This directory contains Sourcegraph Enterprise code. The [`../src/enterprise/` d
 ### Build notes
 
 You'll need to clone https://github.com/sourcegraph/dev-private to the same directory that contains
-this repository.
+that repository.

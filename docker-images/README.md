@@ -9,7 +9,7 @@ If you are looking for our non-derivative Docker images, see e.g. `/cmd/.../Dock
 
 ### Building
 
-These images are not yet built on CI. To build one, you must sign in to our Docker Hub and run `make <image name>` in this directory. For example:
+These images are not yet built on CI. To build one, you must sign in to our Docker Hub and run `make <image name>` in that directory. For example:
 
 ```Makefile
 make alpine
