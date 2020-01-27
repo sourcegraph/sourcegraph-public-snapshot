@@ -32,14 +32,14 @@ There are two types of Automation campaigns:
 3. Create the campaign
 4. Track changesets by adding them to the campaign through the form on the Campaign page
 
-### Creating a campaign from a patches
+### Creating a campaign from a set of patches
 
 **Required**: The [`src` CLI tool](https://github.com/sourcegraph/src-cli). 
 
 Short overview:
 
 1. Create an `action.json` file that contains an action definition.
-2. Create a set of patches by execution the action over repositories: `src actions exec -f action.json > patches.json`
+2. Create a set of patches by executing the action over repositories: `src actions exec -f action.json > patches.json`
 3. Save the patches in Sourcegraph by creating a campaign plan based on these patches: `src campaign plan create-from-patches < patches.json`
 4. Create a campaign from the campaign plan: `src campaigns create -name='Campaign name' -desc='Description' -plan=<plan-ID-returned-by-previous-command>`
 
