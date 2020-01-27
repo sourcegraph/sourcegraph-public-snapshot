@@ -277,6 +277,11 @@ function getModeFromExtension(ext: string): string | undefined {
         case 're': // reason has the same language server as ocaml
             return 'ocaml'
 
+        // Pascal
+        case 'p':
+        case 'pas':
+            return 'pascal'
+
         // Perl
         case 'pl':
         case 'al':
