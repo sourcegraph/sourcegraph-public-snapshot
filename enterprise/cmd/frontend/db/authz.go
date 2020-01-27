@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -86,6 +87,8 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	return nil
 }
 
+// AuthorizedRepos checks if a user is authorized to access repositories in the candidate list,
+// which implements the db.AuthzStore interface.
 func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedReposArgs) ([]*types.Repo, error) {
 	if len(args.Repos) == 0 {
 		return args.Repos, nil
@@ -110,4 +113,26 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 		filtered[i] = r.Repo
 	}
 	return filtered, nil
+}
+
+// RevokeUserPermissions deletes both effective and pending permissions that could be related to a user,
+// which implements the db.AuthzStore interface. It proactively clean up left-over pending permissions to
+// prevent accidental reuse (i.e. another user with same username or email address(es) but not the same person).
+// The situation of left-over pending permissions is possible but highly unlikely, so we're doing it at best effort,
+// the removal of effective permissions is much more important.
+func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeUserPermissionsArgs) error {
+	errs := new(multierror.Error)
+	if err := s.store.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	bindIDs := make([]string, 1, len(args.VerifiedEmails)+1)
+	bindIDs[0] = args.Username
+	for _, email := range args.VerifiedEmails {
+		bindIDs = append(bindIDs, email)
+	}
+	if err := s.store.DeleteAllUserPendingPermissions(ctx, bindIDs); err != nil {
+		errs = multierror.Append(errs, err)
+	}
+	return errs.ErrorOrNil()
 }
