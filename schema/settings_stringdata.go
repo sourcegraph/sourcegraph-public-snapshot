@@ -209,6 +209,12 @@ const SettingsSchemaJSON = `{
         }
       }
     }
+  },
+  "search.hideSuggestions": {
+    "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
+    "type": "boolean",
+    "default": false,
+    "!go": { "pointer": true }
   }
 }
 `
