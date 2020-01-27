@@ -215,7 +215,8 @@ func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheck
 	// codehosts we compute the ReviewState from the Metadata field of a
 	// Changeset.
 	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
-		return nil, errors.New("CheckState currently only available for GitHub")
+		// TODO: Implement for BitBucket
+		return nil, nil
 	}
 
 	opts := ee.ListChangesetEventsOpts{

@@ -564,6 +564,9 @@ func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
 		return commits[i].CommittedDate.Before(commits[j].CommittedDate)
 	})
 
+	if len(commits) == 0 {
+		return nil, nil
+	}
 	// We want the most recent commit
 	latest := commits[len(commits)-1]
 
