@@ -38,14 +38,6 @@ type UpdateCampaignArgs struct {
 	}
 }
 
-type PreviewCampaignPlanArgs struct {
-	Specification struct {
-		Type      string
-		Arguments JSONCString
-	}
-	Wait bool
-}
-
 type CreateCampaignPlanFromPatchesArgs struct {
 	Patches []CampaignPlanPatch
 }
@@ -54,10 +46,6 @@ type CampaignPlanPatch struct {
 	Repository   graphql.ID
 	BaseRevision string
 	Patch        string
-}
-
-type CancelCampaignPlanArgs struct {
-	Plan graphql.ID
 }
 
 type DeleteCampaignArgs struct {
@@ -106,10 +94,8 @@ type A8NResolver interface {
 
 	AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error)
 
-	PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error)
 	CreateCampaignPlanFromPatches(ctx context.Context, args CreateCampaignPlanFromPatchesArgs) (CampaignPlanResolver, error)
 	CampaignPlanByID(ctx context.Context, id graphql.ID) (CampaignPlanResolver, error)
-	CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error)
 
 	ChangesetPlanByID(ctx context.Context, id graphql.ID) (ChangesetPlanResolver, error)
 }
@@ -123,25 +109,11 @@ func (r *schemaResolver) AddChangesetsToCampaign(ctx context.Context, args *AddC
 	return EnterpriseResolvers.a8nResolver.AddChangesetsToCampaign(ctx, args)
 }
 
-func (r *schemaResolver) PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error) {
-	if EnterpriseResolvers.a8nResolver == nil {
-		return nil, a8nOnlyInEnterprise
-	}
-	return EnterpriseResolvers.a8nResolver.PreviewCampaignPlan(ctx, args)
-}
-
 func (r *schemaResolver) CreateCampaignPlanFromPatches(ctx context.Context, args CreateCampaignPlanFromPatchesArgs) (CampaignPlanResolver, error) {
 	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
 	return EnterpriseResolvers.a8nResolver.CreateCampaignPlanFromPatches(ctx, args)
-}
-
-func (r *schemaResolver) CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error) {
-	if EnterpriseResolvers.a8nResolver == nil {
-		return nil, a8nOnlyInEnterprise
-	}
-	return EnterpriseResolvers.a8nResolver.CancelCampaignPlan(ctx, args)
 }
 
 func (r *schemaResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
@@ -224,6 +196,7 @@ type CampaignResolver interface {
 	Name() string
 	Description() string
 	Author(ctx context.Context) (*UserResolver, error)
+	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
 	CreatedAt() DateTime
@@ -234,7 +207,7 @@ type CampaignResolver interface {
 	Plan(ctx context.Context) (CampaignPlanResolver, error)
 	Status(context.Context) (BackgroundProcessStatus, error)
 	ClosedAt() *DateTime
-	PublishedAt() *DateTime
+	PublishedAt(ctx context.Context) (*DateTime, error)
 	ChangesetPlans(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
 }
 
@@ -280,6 +253,7 @@ type ChangesetPlanResolver interface {
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() ChangesetPlanResolver
 	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
+	PublicationEnqueued(ctx context.Context) (bool, error)
 }
 
 type ChangesetEventsConnectionResolver interface {
@@ -310,11 +284,6 @@ type CampaignPlanArgResolver interface {
 	Value() string
 }
 
-type CampaignPlanSpecification interface {
-	Type() string
-	Arguments() string
-}
-
 type BackgroundProcessStatus interface {
 	CompletedCount() int32
 	PendingCount() int32
@@ -326,9 +295,6 @@ type BackgroundProcessStatus interface {
 
 type CampaignPlanResolver interface {
 	ID() graphql.ID
-
-	Type() string
-	Arguments() (JSONCString, error)
 
 	Status(ctx context.Context) (BackgroundProcessStatus, error)
 

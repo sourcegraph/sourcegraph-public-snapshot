@@ -6,32 +6,33 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 type lsifQueryResolver struct {
-	repoName string
-	commit   graphqlbackend.GitObjectID
-	path     string
-	upload   *lsif.LSIFUpload
+	repoID api.RepoID
+	commit graphqlbackend.GitObjectID
+	path   string
+	upload *lsif.LSIFUpload
 }
 
 var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
 
 func (r *lsifQueryResolver) Commit(ctx context.Context) (*graphqlbackend.GitCommitResolver, error) {
-	return resolveCommit(ctx, r.repoName, r.upload.Commit)
+	return resolveCommit(ctx, r.repoID, r.upload.Commit)
 }
 
 func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	opts := &struct {
-		RepoName  string
+		RepoID    api.RepoID
 		Commit    graphqlbackend.GitObjectID
 		Path      string
 		Line      int32
 		Character int32
 		UploadID  int64
 	}{
-		RepoName:  r.repoName,
+		RepoID:    r.repoID,
 		Commit:    r.commit,
 		Path:      r.path,
 		Line:      args.Line,
@@ -52,7 +53,7 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 
 func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	opts := &struct {
-		RepoName  string
+		RepoID    api.RepoID
 		Commit    graphqlbackend.GitObjectID
 		Path      string
 		Line      int32
@@ -61,7 +62,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 		Limit     *int32
 		Cursor    *string
 	}{
-		RepoName:  r.repoName,
+		RepoID:    r.repoID,
 		Commit:    r.commit,
 		Path:      r.path,
 		Line:      args.Line,
@@ -93,14 +94,14 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 
 func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.HoverResolver, error) {
 	text, lspRange, err := client.DefaultClient.Hover(ctx, &struct {
-		RepoName  string
+		RepoID    api.RepoID
 		Commit    graphqlbackend.GitObjectID
 		Path      string
 		Line      int32
 		Character int32
 		UploadID  int64
 	}{
-		RepoName:  r.repoName,
+		RepoID:    r.repoID,
 		Commit:    r.commit,
 		Path:      r.path,
 		Line:      args.Line,

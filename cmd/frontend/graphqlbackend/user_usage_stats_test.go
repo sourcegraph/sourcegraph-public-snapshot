@@ -5,7 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 

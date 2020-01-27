@@ -928,7 +928,7 @@ declare module 'sourcegraph' {
      * A style for {@link BadgeAttachmentRenderOptions}.
      */
     export interface ThemableBadgeAttachmentStyle {
-        /** The icon (a base64-encoded PNG icon) to display next to the wrapped value. */
+        /** The icon (a base64-encoded image icon) to display next to the wrapped value. */
         icon?: string
 
         /** The CSS background-color property value for the attachment. */
@@ -957,7 +957,7 @@ declare module 'sourcegraph' {
      * A wrapper around a providable type (currently hover and locations) with additional
      * context to enable displaying badges next to the wrapped result value in the UI.
      */
-    type Badged<T extends {}> = T & {
+    export type Badged<T extends object> = T & {
         badge?: BadgeAttachmentRenderOptions
     }
 
@@ -970,9 +970,6 @@ declare module 'sourcegraph' {
          * The contents of this hover.
          */
         contents: MarkupContent
-
-        /** @deprecated */
-        __backcompatContents?: (MarkupContent | string | { language: string; value: string })[]
 
         /**
          * The range to which this hover applies. When missing, the editor will use the range at the current

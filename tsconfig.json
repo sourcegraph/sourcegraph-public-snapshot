@@ -2,8 +2,12 @@
   "extends": "@sourcegraph/tsconfig",
   "references": [
     { "path": "shared" },
+    { "path": "shared/src/e2e" },
     { "path": "web" },
+    { "path": "web/src/e2e" },
+    { "path": "web/src/regression" },
     { "path": "browser" },
+    { "path": "browser/src/e2e" },
     { "path": "lsif" },
     { "path": "schema" },
     { "path": "packages/sourcegraph-extension-api" },

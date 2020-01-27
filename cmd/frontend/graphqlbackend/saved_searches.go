@@ -84,7 +84,7 @@ func (r savedSearchResolver) UserID() *graphql.ID {
 	if r.s.UserID == nil {
 		return nil
 	}
-	userID := marshalUserID(*r.s.UserID)
+	userID := MarshalUserID(*r.s.UserID)
 	return &userID
 }
 

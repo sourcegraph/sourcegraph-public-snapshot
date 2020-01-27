@@ -23,7 +23,7 @@ export const BadgeAttachment: React.FunctionComponent<{
         >
             {style.icon && isEncodedImage(style.icon) && (
                 <img
-                    className="line-decoration-attachment__contents"
+                    className="badge-decoration-attachment__contents"
                     // eslint-disable-next-line react/forbid-dom-props
                     style={{
                         color: style.color,

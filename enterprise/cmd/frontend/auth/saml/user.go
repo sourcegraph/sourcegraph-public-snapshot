@@ -50,7 +50,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		return ""
 	}
 	attr := samlAssertionValues(assertions.Values)
-	email := firstNonempty(attr.Get("email"), attr.Get("emailaddress"))
+	email := firstNonempty(attr.Get("email"), attr.Get("emailaddress"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"), attr.Get("http://schemas.xmlsoap.org/claims/EmailAddress"))
 	if email == "" && mightBeEmail(assertions.NameID) {
 		email = assertions.NameID
 	}
@@ -65,8 +65,8 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 			AccountID:   assertions.NameID,
 		},
 		email:                email,
-		unnormalizedUsername: firstNonempty(attr.Get("login"), attr.Get("uid"), email),
-		displayName:          firstNonempty(attr.Get("displayName"), attr.Get("givenName")+" "+attr.Get("surname")),
+		unnormalizedUsername: firstNonempty(attr.Get("login"), attr.Get("uid"), attr.Get("username"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"), email),
+		displayName:          firstNonempty(attr.Get("displayName"), attr.Get("givenName")+" "+attr.Get("surname"), attr.Get("http://schemas.xmlsoap.org/claims/CommonName"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname")),
 		accountData:          assertions,
 	}
 	if assertions.NameID == "" {

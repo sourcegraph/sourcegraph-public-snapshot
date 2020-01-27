@@ -67,6 +67,11 @@ func (r *Cache) GetMulti(keys ...string) [][]byte {
 
 	strVals := make([][]byte, len(vals))
 	for i, val := range vals {
+		// MGET returns nil as not found.
+		if val == nil {
+			continue
+		}
+
 		b, err := redis.Bytes(val, nil)
 		if err != nil {
 			log15.Warn("failed to parse bytes from Redis value", "value", val)

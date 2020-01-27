@@ -4,7 +4,14 @@ interface Resource {
     /**
      * Resource type
      */
-    type: 'User' | 'External service' | 'Authentication provider' | 'Global setting' | 'Organization' | 'Configuration'
+    type:
+        | 'User'
+        | 'External service'
+        | 'Authentication provider'
+        | 'Global setting'
+        | 'Organization'
+        | 'Configuration'
+        | 'LSIF upload'
 
     /**
      * Name of the resource, printed upon creation and destruction. This should uniquely identify

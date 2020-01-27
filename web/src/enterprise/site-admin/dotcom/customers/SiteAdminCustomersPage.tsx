@@ -78,7 +78,7 @@ export class SiteAdminProductCustomersPage extends React.Component<Props> {
         return (
             <div className="site-admin-customers-page">
                 <PageTitle title="Customers" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+                <div className="d-flex justify-content-between align-items-center mb-1">
                     <h2 className="mb-0">Customers</h2>
                 </div>
                 <p>User accounts may be linked to a customer on the billing system.</p>

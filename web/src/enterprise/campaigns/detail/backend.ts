@@ -8,18 +8,21 @@ import {
     IUpdateCampaignInput,
     ICreateCampaignInput,
     ICampaignPlan,
-    ICampaignPlanSpecification,
     IChangesetPlansOnCampaignArguments,
     IChangesetPlanConnection,
     IChangesetsOnCampaignArguments,
-    IExternalChangesetConnection,
+    IEmptyResponse,
+    IChangesetPlan,
+    IExternalChangeset,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
+import { Connection } from '../../../components/FilteredConnection'
 
-export type CampaignType = 'comby' | 'credentials'
+export type CampaignType = 'comby' | 'credentials' | 'regexSearchReplace'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
+        __typename
         id
         author {
             username
@@ -35,9 +38,11 @@ const campaignFragment = gql`
         description
         createdAt
         updatedAt
+        publishedAt
         closedAt
+        publishedAt
         url
-        __typename
+        viewerCanAdminister
         changesets {
             totalCount
             nodes {
@@ -58,10 +63,29 @@ const campaignFragment = gql`
                 }
             }
         }
+        changesetPlans {
+            totalCount
+            nodes {
+                id
+                __typename
+                id
+                repository {
+                    id
+                    name
+                    url
+                }
+                diff {
+                    fileDiffs {
+                        totalCount
+                        diffStat {
+                            ...DiffStatFields
+                        }
+                    }
+                }
+            }
+        }
         plan {
             id
-            type
-            arguments
         }
         # TODO move to separate query and configure from/to
         changesetCountsOverTime {
@@ -82,8 +106,6 @@ const campaignPlanFragment = gql`
     fragment CampaignPlanFields on CampaignPlan {
         __typename
         id
-        type
-        arguments
         status {
             completedCount
             pendingCount
@@ -144,26 +166,6 @@ export async function createCampaign(input: ICreateCampaignInput): Promise<ICamp
         { input }
     ).toPromise()
     return dataOrThrowErrors(result).createCampaign
-}
-
-export function previewCampaignPlan(
-    specification: ICampaignPlanSpecification,
-    wait: boolean = false
-): Observable<ICampaignPlan> {
-    return mutateGraphQL(
-        gql`
-            mutation PreviewCampaignPlan($specification: CampaignPlanSpecification!, $wait: Boolean!) {
-                previewCampaignPlan(specification: $specification, wait: $wait) {
-                    ...CampaignPlanFields
-                }
-            }
-            ${campaignPlanFragment}
-        `,
-        { specification, wait }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(mutation => mutation.previewCampaignPlan)
-    )
 }
 
 export async function retryCampaign(campaignID: ID): Promise<void> {
@@ -265,7 +267,7 @@ export const fetchCampaignPlanById = (campaignPlan: ID): Observable<ICampaignPla
 export const queryChangesets = (
     campaign: ID,
     { first }: IChangesetsOnCampaignArguments
-): Observable<IExternalChangesetConnection> =>
+): Observable<Connection<IExternalChangeset | IChangesetPlan>> =>
     queryGraphQL(
         gql`
             query CampaignChangesets($campaign: ID!, $first: Int) {
@@ -305,9 +307,38 @@ export const queryChangesets = (
                                 }
                             }
                         }
+                        changesetPlans(first: $first) {
+                            totalCount
+                            nodes {
+                                __typename
+                                id
+                                repository {
+                                    id
+                                    name
+                                    url
+                                }
+                                publicationEnqueued
+                                diff {
+                                    fileDiffs {
+                                        nodes {
+                                            ...PreviewFileDiffFields
+                                        }
+                                        totalCount
+                                        pageInfo {
+                                            hasNextPage
+                                        }
+                                        diffStat {
+                                            ...DiffStatFields
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+
+            ${PreviewFileDiffFields}
 
             ${FileDiffFields}
 
@@ -325,7 +356,10 @@ export const queryChangesets = (
             if (node.__typename !== 'Campaign') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return node.changesets
+            return {
+                totalCount: node.changesetPlans.totalCount + node.changesets.totalCount,
+                nodes: [...node.changesetPlans.nodes, ...node.changesets.nodes],
+            }
         })
     )
 
@@ -349,6 +383,7 @@ export const queryChangesetPlans = (
                                     name
                                     url
                                 }
+                                publicationEnqueued
                                 diff {
                                     fileDiffs {
                                         nodes {
@@ -388,3 +423,32 @@ export const queryChangesetPlans = (
             return node.changesets
         })
     )
+
+export async function publishCampaign(campaign: ID): Promise<ICampaign> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation PublishCampaign($campaign: ID!) {
+                publishCampaign(campaign: $campaign) {
+                    ...CampaignFields
+                }
+            }
+            ${campaignFragment}
+        `,
+        { campaign }
+    ).toPromise()
+    return dataOrThrowErrors(result).publishCampaign
+}
+
+export async function publishChangeset(changesetPlan: ID): Promise<IEmptyResponse> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation PublishChangeset($changesetPlan: ID!) {
+                publishChangeset(changesetPlan: $changesetPlan) {
+                    alwaysNil
+                }
+            }
+        `,
+        { changesetPlan }
+    ).toPromise()
+    return dataOrThrowErrors(result).publishChangeset
+}

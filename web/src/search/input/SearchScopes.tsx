@@ -33,15 +33,11 @@ export const SearchScopes: React.FunctionComponent<Props> = ({
 
     const onSearchScopeClicked = useCallback(
         (value: string): void => {
-            eventLogger.log('SearchScopeClicked', {
-                search_filter: {
-                    value,
-                },
-            })
+            eventLogger.log('SearchScopeClicked', { search_filter: value })
 
             const newQuery = toggleSearchFilter(query, value)
 
-            submitSearch(history, newQuery, 'filter', patternType)
+            submitSearch(history, newQuery, 'filter', patternType, false)
         },
         [history, patternType, query]
     )

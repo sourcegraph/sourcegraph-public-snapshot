@@ -251,7 +251,7 @@ func TestRepos_List(t *testing.T) {
 
 	want := mustCreate(ctx, t, &types.Repo{Name: "r"})
 
-	repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
+	repos, err := Repos.List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,28 +277,28 @@ func TestRepos_List_fork(t *testing.T) {
 	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Fork: true}})
 
 	{
-		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, OnlyForks: true})
+		repos, err := Repos.List(ctx, ReposListOptions{OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, yours, repos)
 	}
 	{
-		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, NoForks: true})
+		repos, err := Repos.List(ctx, ReposListOptions{NoForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, mine, repos)
 	}
 	{
-		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, NoForks: true, OnlyForks: true})
+		repos, err := Repos.List(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, nil, repos)
 	}
 	{
-		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
+		repos, err := Repos.List(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -345,7 +345,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
+		repos, err := Repos.List(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -390,7 +390,7 @@ func TestRepos_List_query1(t *testing.T) {
 		{"mno/p", []api.RepoName{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, Enabled: true})
+		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -436,7 +436,7 @@ func TestRepos_List_query2(t *testing.T) {
 		{"def/m", []api.RepoName{"def/mno"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, Enabled: true})
+		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -509,7 +509,7 @@ func TestRepos_List_sort(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy, Enabled: true})
+		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -570,7 +570,6 @@ func TestRepos_List_patterns(t *testing.T) {
 		repos, err := Repos.List(ctx, ReposListOptions{
 			IncludePatterns: test.includePatterns,
 			ExcludePattern:  test.excludePattern,
-			Enabled:         true,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -695,7 +694,6 @@ func TestRepos_List_queryPattern(t *testing.T) {
 	for _, test := range tests {
 		repos, err := Repos.List(ctx, ReposListOptions{
 			PatternQuery: test.q,
-			Enabled:      true,
 		})
 		if err != nil {
 			if test.err == "" {
@@ -721,14 +719,14 @@ func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
 
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
-		_, err := Repos.List(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}, Enabled: true})
+		_, err := Repos.List(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
 
 	t.Run("Query and ExcludePattern", func(t *testing.T) {
-		_, err := Repos.List(ctx, ReposListOptions{Query: "x", ExcludePattern: "y", Enabled: true})
+		_, err := Repos.List(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}

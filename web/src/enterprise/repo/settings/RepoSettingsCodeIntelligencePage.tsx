@@ -20,11 +20,11 @@ const HideIncompleteLSIFUploadsToggle: FunctionComponent<HideIncompleteLSIFUploa
     onToggle,
 }) => (
     <div className="lsif-uploads-filter-toggle">
-        <label className="radio-buttons__item lsif-uploads-filter-toggle-label" title="Hide incomplete uploads">
-            <Toggle value={onlyCompleted} onToggle={onToggle} title="Hide incomplete uploads" />
+        <label className="radio-buttons__item lsif-uploads-filter-toggle-label" title="Show only processed uploads">
+            <Toggle value={onlyCompleted} onToggle={onToggle} title="Show only processed uploads" />
 
             <small>
-                <div className="radio-buttons__label">Hide incomplete uploads</div>
+                <div className="radio-buttons__label">Show only processed uploads</div>
             </small>
         </label>
     </div>
@@ -34,8 +34,10 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload }> = ({ node }) 
     <div className="w-100 list-group-item py-2 lsif-data__main">
         <div className="lsif-data__meta">
             <div className="lsif-data__meta-root">
-                <code>{node.projectRoot?.commit.abbreviatedOID || node.inputCommit.substring(0, 7)}</code>
-                <span className="ml-2">
+                <code className="e2e-upload-commit">
+                    {node.projectRoot?.commit.abbreviatedOID || node.inputCommit.substring(0, 7)}
+                </code>
+                <span className="ml-2 e2e-upload-root">
                     {node.projectRoot ? (
                         <Link to={node.projectRoot.url}>
                             <strong>{node.projectRoot.path || '/'}</strong>

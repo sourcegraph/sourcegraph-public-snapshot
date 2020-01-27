@@ -104,7 +104,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Omit<Pattern
                 </div>
                 {typeof totalCount === 'number' && totalCount > 0 && (
                     <div className="card-footer">
-                        <Link to={`/search?${buildSearchURLQuery('repo:', this.props.patternType)}`}>
+                        <Link to={`/search?${buildSearchURLQuery('repo:', this.props.patternType, false)}`}>
                             View all {totalCount} {pluralize('repository', totalCount, 'repositories')}
                             <ChevronRightIcon className="icon-inline" />
                         </Link>

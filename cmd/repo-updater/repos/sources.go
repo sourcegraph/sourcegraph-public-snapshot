@@ -148,8 +148,12 @@ type SourceError struct {
 
 func (s *SourceError) Error() string {
 	if multiErr, ok := s.Err.(*multierror.Error); ok {
-		multiErr.ErrorFormat = sourceErrorFormatFunc
-		return multiErr.Error()
+		// Create new Error with custom formatter. Do not mutate otherwise can
+		// race with other callers of Error.
+		return (&multierror.Error{
+			Errors:      multiErr.Errors,
+			ErrorFormat: sourceErrorFormatFunc,
+		}).Error()
 	}
 	return s.Err.Error()
 }

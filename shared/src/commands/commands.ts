@@ -15,7 +15,7 @@ import { PlatformContext } from '../platform/context'
  */
 export function registerBuiltinClientCommands(
     { settings: settingsService, commands: commandRegistry, textDocumentLocations }: Services,
-    context: Pick<PlatformContext, 'requestGraphQL'>
+    context: Pick<PlatformContext, 'requestGraphQL' | 'telemetryService'>
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -99,6 +99,21 @@ export function registerBuiltinClientCommands(
                         mightContainPrivateInfo: true,
                     })
                 ).toPromise(),
+        })
+    )
+
+    /**
+     * Sends a telemetry event to the Sourcegraph instance with the correct anonymous user id.
+     */
+    subscription.add(
+        commandRegistry.registerCommand({
+            command: 'logTelemetryEvent',
+            run: (eventName: string, eventProperties?: any): Promise<any> => {
+                if (context.telemetryService) {
+                    context.telemetryService.log(eventName, eventProperties)
+                }
+                return Promise.resolve()
+            },
         })
     )
 

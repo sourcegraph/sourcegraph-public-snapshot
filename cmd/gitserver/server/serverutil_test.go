@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
@@ -196,7 +197,7 @@ func TestProgressWriter(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			var w progressWriter
 			for _, write := range testCase.writes {
-				w.Write([]byte(write))
+				_, _ = w.Write([]byte(write))
 			}
 			if actual := w.String(); testCase.text != actual {
 				t.Fatalf("\ngot:\n%s\nwant:\n%s\n", actual, testCase.text)
@@ -269,6 +270,41 @@ func TestUpdateFileIfDifferent(t *testing.T) {
 	}
 	if update("baz") {
 		t.Fatal("expected update to not update file")
+	}
+}
+
+func TestLogErrors(t *testing.T) {
+	cases := []struct {
+		stderr string
+		logged string
+	}{{
+		stderr: "",
+		logged: "",
+	}, {
+		stderr: "fatal: bad object HEAD\n",
+		logged: "",
+	}, {
+		stderr: "error: packfile .git/objects/pack/pack-a.pack does not match index",
+		logged: "org/repo error: packfile .git/objects/pack/pack-a.pack does not match index\n",
+	}, {
+		stderr: `error: packfile .git/objects/pack/pack-a.pack does not match index
+error: packfile .git/objects/pack/pack-b.pack does not match index
+fatal: bad object HEAD
+`,
+		logged: `org/repo error: packfile .git/objects/pack/pack-a.pack does not match index
+org/repo error: packfile .git/objects/pack/pack-b.pack does not match index
+`,
+	}}
+	for _, c := range cases {
+		var b strings.Builder
+		printf := func(format string, v ...interface{}) {
+			fmt.Fprintf(&b, format, v...)
+		}
+		logErrors(printf, "org/repo", []byte(c.stderr))
+		got := b.String()
+		if got != c.logged {
+			t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(c.logged, got))
+		}
 	}
 }
 

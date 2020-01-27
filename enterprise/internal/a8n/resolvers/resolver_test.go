@@ -949,11 +949,9 @@ type Status struct {
 }
 
 type CampaignPlan struct {
-	ID           string
-	CampaignType string `json:"type"`
-	Arguments    string
-	Status       Status
-	Changesets   struct {
+	ID         string
+	Status     Status
+	Changesets struct {
 		Nodes []ChangesetPlan
 	}
 	PreviewURL string
@@ -961,6 +959,12 @@ type CampaignPlan struct {
 
 func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
+
+	dbtesting.SetupGlobalTestDB(t)
+
+	user := createTestUser(ctx, t)
+	act := actor.FromUser(user.ID)
+	ctx = actor.WithActor(ctx, act)
 
 	t.Run("invalid patch", func(t *testing.T) {
 		args := graphqlbackend.CreateCampaignPlanFromPatchesArgs{
@@ -987,7 +991,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			t.Skip()
 		}
 
-		dbtesting.SetupGlobalTestDB(t)
 		rcache.SetupForTest(t)
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
@@ -1010,8 +1013,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 
 		reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 		repo := &repos.Repo{
-			Name:    fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
-			Enabled: true,
+			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
 				ServiceType: "github",
@@ -1043,8 +1045,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
         createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "master", patch: %q}]) {
           ... on CampaignPlan {
             id
-            type
-            arguments
             status {
               completedCount
               pendingCount
@@ -1098,13 +1098,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testDiff, 1))
 
 		result := response.CreateCampaignPlanFromPatches
-		if have, want := result.CampaignType, "patch"; have != want {
-			t.Fatalf("have CampaignType %q, want %q", have, want)
-		}
-
-		if have, want := result.Arguments, ""; have != want {
-			t.Fatalf("have Arguments %q, want %q", have, want)
-		}
 
 		wantStatus := Status{
 			State:          "COMPLETED",
@@ -1167,7 +1160,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 			Name:        fmt.Sprintf("github.com/sourcegraph/sourcegraph-%d", i),
 			URI:         fmt.Sprintf("github.com/sourcegraph/sourcegraph-%d", i),
 			Description: "Code search and navigation tool",
-			Enabled:     true,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          fmt.Sprintf("external-id-%d", i),
 				ServiceType: "github",
@@ -1189,9 +1181,11 @@ func TestCampaignPlanResolver(t *testing.T) {
 
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
+	user := createTestUser(ctx, t)
 	plan := &a8n.CampaignPlan{
-		CampaignType: "COMBY",
-		Arguments:    `{"scopeQuery": "file:README.md"}`,
+		CampaignType: "patch",
+		Arguments:    "{}",
+		UserID:       user.ID,
 	}
 	err := store.CreateCampaignPlan(ctx, plan)
 	if err != nil {
@@ -1234,8 +1228,6 @@ func TestCampaignPlanResolver(t *testing.T) {
         node(id: %q) {
           ... on CampaignPlan {
             id
-            type
-            arguments
             status {
               completedCount
               pendingCount
@@ -1286,14 +1278,6 @@ func TestCampaignPlanResolver(t *testing.T) {
         }
       }
 	`, marshalCampaignPlanID(plan.ID), len(jobs)))
-
-	if have, want := response.Node.CampaignType, plan.CampaignType; have != want {
-		t.Fatalf("have CampaignType %q, want %q", have, want)
-	}
-
-	if have, want := response.Node.Arguments, plan.Arguments; have != want {
-		t.Fatalf("have Arguments %q, want %q", have, want)
-	}
 
 	wantStatus := Status{
 		State:          "COMPLETED",
@@ -1471,4 +1455,22 @@ func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.Bitbu
 	}
 
 	return repos
+}
+
+var testUser = db.NewUser{
+	Email:                "test@sourcegraph.com",
+	Username:             "test",
+	DisplayName:          "Test",
+	Password:             "test",
+	EmailIsVerified:      true,
+	FailIfNotInitialUser: false,
+}
+
+func createTestUser(ctx context.Context, t *testing.T) *types.User {
+	t.Helper()
+	user, err := db.Users.Create(ctx, testUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return user
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -26,9 +27,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 		defer done()
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
-		s := NewStoreWithClock(tx, func() time.Time {
+		clock := func() time.Time {
 			return now.UTC().Truncate(time.Microsecond)
-		})
+		}
+		s := NewStoreWithClock(tx, clock)
 
 		ctx := context.Background()
 
@@ -44,7 +46,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ChangesetIDs:   []int64{int64(i) + 1},
 						CampaignPlanID: 42 + int64(i),
 						ClosedAt:       now,
-						PublishedAt:    now,
 					}
 
 					if i%2 == 0 {
@@ -174,7 +175,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c.Description += "-updated"
 					c.AuthorID++
 					c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
-					c.PublishedAt = c.PublishedAt.Add(5 * time.Second)
 
 					if c.NamespaceUserID != 0 {
 						c.NamespaceUserID++
@@ -925,8 +925,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(campaignPlans); i++ {
 					c := &a8n.CampaignPlan{
-						CampaignType: "COMBY",
-						Arguments:    `{"scopeQuery": "file:README.md"}`,
+						CampaignType: "patch",
+						Arguments:    `{}`,
 						CanceledAt:   now,
 					}
 
@@ -1665,7 +1665,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 			for _, tc := range tests {
 				plan := &a8n.CampaignPlan{
-					CampaignType: "comby",
+					CampaignType: "patch",
 					CanceledAt:   tc.planCanceledAt,
 				}
 				err := s.CreateCampaignPlan(ctx, plan)
@@ -1752,7 +1752,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 
 			for _, tc := range tests {
-				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{"foobar":"barfoo"}`}
+				plan := &a8n.CampaignPlan{CampaignType: "patch", Arguments: `{}`}
 
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
@@ -1971,6 +1971,49 @@ func testStore(db *sql.DB) func(*testing.T) {
 						}
 
 						cursor = next
+					}
+				})
+
+				t.Run("WithCampaignPlanID", func(t *testing.T) {
+					for i := 1; i <= len(changesetJobs); i++ {
+						c := &a8n.Campaign{
+							Name:            fmt.Sprintf("Upgrade ES-Lint %d", i),
+							Description:     "All the Javascripts are belong to us",
+							AuthorID:        4567,
+							NamespaceUserID: 4567,
+							CampaignPlanID:  1234 + int64(i),
+						}
+
+						err := s.CreateCampaign(ctx, c)
+						if err != nil {
+							t.Fatal(err)
+						}
+						job := changesetJobs[i-1]
+
+						job.CampaignID = c.ID
+						err = s.UpdateChangesetJob(ctx, job)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						opts := ListChangesetJobsOpts{CampaignPlanID: c.CampaignPlanID}
+						ts, next, err := s.ListChangesetJobs(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						}
+
+						have, want := ts, changesetJobs[i-1:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
 					}
 				})
 			})
@@ -2307,6 +2350,112 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 			})
+
+			t.Run("GetLatestChangesetJobCreatedAt", func(t *testing.T) {
+				plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+				err := s.CreateCampaignPlan(ctx, plan)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				campaign := testCampaign(123, plan.ID)
+				err = s.CreateCampaign(ctx, campaign)
+				if err != nil {
+					t.Fatal(err)
+				}
+				campaignJob := &a8n.CampaignJob{
+					CampaignPlanID: plan.ID,
+					BaseRef:        "x",
+					RepoID:         int32(123),
+				}
+				err = s.CreateCampaignJob(ctx, campaignJob)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 0 ChangesetJob, 1 CampaignJobs
+				have, err := s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Job counts don't match, should get back null
+				if !have.IsZero() {
+					t.Fatalf("publishedAt is not zero: %v", have)
+				}
+
+				changesetJob1 := &a8n.ChangesetJob{
+					CampaignID:    campaign.ID,
+					CampaignJobID: campaignJob.ID,
+				}
+				err = s.CreateChangesetJob(ctx, changesetJob1)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 1 ChangesetJob, 1 CampaignJobs
+				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Job counts are the same, we should get a valid time
+				if !have.Equal(clock()) {
+					t.Fatalf("want %v, got %v", clock(), have)
+				}
+
+				// Create another round to ensure that we get the latest date
+				// when there are more than one
+				oldClock := clock
+				defer func() {
+					clock = oldClock
+				}()
+				clock = func() time.Time {
+					return oldClock().Add(5 * time.Minute)
+				}
+				oldStore := s
+				defer func() {
+					s = oldStore
+				}()
+				s = NewStoreWithClock(tx, clock)
+				campaignJob = &a8n.CampaignJob{
+					CampaignPlanID: plan.ID,
+					BaseRef:        "x",
+					RepoID:         int32(123),
+				}
+				err = s.CreateCampaignJob(ctx, campaignJob)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 1 ChangesetJob, 2 CampaignJobs
+				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Job counts don't match, should get back null
+				if !have.IsZero() {
+					t.Fatalf("publishedAt is not zero: %v", have)
+				}
+
+				// Add another changesetjob
+				changesetJob2 := &a8n.ChangesetJob{
+					CampaignID:    campaign.ID,
+					CampaignJobID: campaignJob.ID,
+				}
+				err = s.CreateChangesetJob(ctx, changesetJob2)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// 2 ChangesetJob, 2 CampaignJobs
+				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Job counts are the same, we should get a valid time
+				if !have.Equal(clock()) {
+					t.Fatalf("want %v, got %v", clock(), have)
+				}
+			})
 		})
 	}
 }
@@ -2314,16 +2463,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Microsecond)
-		s := NewStoreWithClock(db, func() time.Time {
-			return now.UTC().Truncate(time.Microsecond)
-		})
+		clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
 		ctx := context.Background()
 
 		// Create a test repo
 		reposStore := repos.NewDBStore(db, sql.TxOptions{})
 		repo := &repos.Repo{
-			Name:    fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
-			Enabled: true,
+			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
 				ServiceType: "github",
@@ -2341,6 +2487,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		}
 
 		t.Run("GetPendingCampaignJobsWhenNoneAvailable", func(t *testing.T) {
+			tx, done := dbtest.NewTx(t, db)
+			defer done()
+			s := NewStoreWithClock(tx, clock)
+
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				return errors.New("rollback")
 			}
@@ -2355,6 +2505,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailable", func(t *testing.T) {
+			tx, done := dbtest.NewTx(t, db)
+			defer done()
+			s := NewStoreWithClock(tx, clock)
+
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				return errors.New("rollback")
 			}
@@ -2379,12 +2533,6 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer func() {
-				err := s.DeleteCampaignJob(ctx, job.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}()
 			ran, err := s.ProcessPendingCampaignJob(ctx, process)
 			if err != nil && err.Error() != "rollback" {
 				t.Fatal(err)
@@ -2396,12 +2544,17 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailableLocking", func(t *testing.T) {
+			dbtesting.SetupGlobalTestDB(t)
+			user := createTestUser(ctx, t)
+			s := NewStoreWithClock(db, clock)
+
 			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
 				time.Sleep(100 * time.Millisecond)
 				return errors.New("rollback")
 			}
 			plan := &a8n.CampaignPlan{
 				CampaignType: "test",
+				UserID:       user.ID,
 			}
 			err := s.CreateCampaignPlan(context.Background(), plan)
 			if err != nil {
@@ -2427,10 +2580,10 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			for i := 0; i < 2; i++ {
 				go func() {
 					ran, err := s.ProcessPendingCampaignJob(ctx, process)
-					errChan <- err
 					if ran {
 						atomic.AddInt64(&runCount, 1)
 					}
+					errChan <- err
 				}()
 			}
 			for i := 0; i < 2; i++ {

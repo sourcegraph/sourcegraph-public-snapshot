@@ -503,7 +503,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			OnlyRepoIDs:     true,
 			IncludePatterns: includePatterns,
 			ExcludePattern:  unionRegExps(excludePatterns),
-			Enabled:         true,
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 			LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
 			NoForks:      op.noForks,

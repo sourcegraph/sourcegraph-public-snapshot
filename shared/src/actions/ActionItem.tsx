@@ -30,7 +30,7 @@ export interface ActionItemAction {
 
 export interface ActionItemComponentProps
     extends ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip'> {
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     location: H.Location
 
     iconClassName?: string

@@ -276,7 +276,6 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 		ExternalRepo: github.ExternalRepoSpec(r, *s.baseURL),
 		Description:  r.Description,
 		Fork:         r.IsFork,
-		Enabled:      true,
 		Archived:     r.IsArchived,
 		Sources: map[string]*SourceInfo{
 			urn: {
@@ -370,7 +369,8 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 			// Catch 404 to handle
 			if page == 1 {
 				if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
-					oerr, err = err, nil
+					oerr = fmt.Errorf("organisation %q not found", org)
+					err = nil
 				}
 			}
 

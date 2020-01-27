@@ -1,23 +1,22 @@
-package git_test
+package git
 
 import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestIsAbsoluteRevision(t *testing.T) {
 	yes := []string{"8cb03d28ad1c6a875f357c5d862237577b06e57c", "20697a062454c29d84e3f006b22eb029d730cd00"}
 	no := []string{"ref: refs/heads/appsinfra/SHEP-20-review", "master", "HEAD", "refs/heads/master", "20697a062454c29d84e3f006b22eb029d730cd0", "20697a062454c29d84e3f006b22eb029d730cd000", "  20697a062454c29d84e3f006b22eb029d730cd00  ", "20697a062454c29d84e3f006b22eb029d730cd0 "}
 	for _, s := range yes {
-		if !git.IsAbsoluteRevision(s) {
+		if !IsAbsoluteRevision(s) {
 			t.Errorf("%q should be an absolute revision", s)
 		}
 	}
 	for _, s := range no {
-		if git.IsAbsoluteRevision(s) {
+		if IsAbsoluteRevision(s) {
 			t.Errorf("%q should not be an absolute revision", s)
 		}
 	}
@@ -42,7 +41,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := git.ResolveRevision(ctx, test.repo, nil, test.branch, nil)
+		commitID, err := ResolveRevision(ctx, test.repo, nil, test.branch, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -73,7 +72,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := git.ResolveRevision(ctx, test.repo, nil, test.branch, nil)
+		commitID, err := ResolveRevision(ctx, test.repo, nil, test.branch, nil)
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -105,7 +104,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := git.ResolveRevision(ctx, test.repo, nil, test.tag, nil)
+		commitID, err := ResolveRevision(ctx, test.repo, nil, test.tag, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -136,7 +135,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := git.ResolveRevision(ctx, test.repo, nil, test.tag, nil)
+		commitID, err := ResolveRevision(ctx, test.repo, nil, test.tag, nil)
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue

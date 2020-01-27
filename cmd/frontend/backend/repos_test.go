@@ -54,7 +54,7 @@ func TestReposService_List(t *testing.T) {
 
 	calledList := db.Mocks.Repos.MockList(t, "r1", "r2")
 
-	repos, err := s.List(ctx, db.ReposListOptions{Enabled: true})
+	repos, err := s.List(ctx, db.ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

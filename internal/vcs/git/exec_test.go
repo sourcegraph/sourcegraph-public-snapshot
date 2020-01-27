@@ -1,10 +1,8 @@
-package git_test
+package git
 
 import (
 	"fmt"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestExecSafe(t *testing.T) {
@@ -56,7 +54,7 @@ func TestExecSafe(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
-			stdout, stderr, exitCode, err := git.ExecSafe(ctx, repo, test.args)
+			stdout, stderr, exitCode, err := ExecSafe(ctx, repo, test.args)
 			if err == nil && test.wantError {
 				t.Errorf("got error %v, want error %v", err, test.wantError)
 			}

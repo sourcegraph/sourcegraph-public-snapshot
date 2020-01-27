@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/kylelemons/godebug/pretty"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -147,8 +146,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	}
 
 	githubRepo := (&repos.Repo{
-		Name:    "github.com/foo/bar",
-		Enabled: false,
+		Name: "github.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
 			ServiceType: "github",
@@ -175,8 +173,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	}
 
 	gitlabRepo := (&repos.Repo{
-		Name:    "gitlab.com/foo/bar",
-		Enabled: false,
+		Name: "gitlab.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "1",
 			ServiceType: "gitlab",
@@ -206,8 +203,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	}
 
 	bitbucketServerRepo := (&repos.Repo{
-		Name:    "bitbucketserver.mycorp.com/foo/bar",
-		Enabled: false,
+		Name: "bitbucketserver.mycorp.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "1",
 			ServiceType: "bitbucketServer",
@@ -764,7 +760,6 @@ func TestRepoLookup(t *testing.T) {
 		Name:        "github.com/foo/bar",
 		Description: "The description",
 		Language:    "barlang",
-		Enabled:     true,
 		Archived:    false,
 		Fork:        false,
 		CreatedAt:   now,
@@ -793,7 +788,6 @@ func TestRepoLookup(t *testing.T) {
 		Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 		Description: "The stripe-go lib",
 		Language:    "barlang",
-		Enabled:     true,
 		Archived:    false,
 		Fork:        false,
 		CreatedAt:   now,
@@ -822,7 +816,6 @@ func TestRepoLookup(t *testing.T) {
 	gitlabRepository := &repos.Repo{
 		Name:        "gitlab.com/gitlab-org/gitaly",
 		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-		Enabled:     true,
 		URI:         "gitlab.com/gitlab-org/gitaly",
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -1117,7 +1110,7 @@ func TestRepoLookup(t *testing.T) {
 				t.Errorf("response: %s", cmp.Diff(have, want))
 			}
 
-			if diff := pretty.Compare(res, tc.result); diff != "" {
+			if diff := cmp.Diff(res, tc.result); diff != "" {
 				t.Fatalf("RepoLookup:\n%s", diff)
 			}
 

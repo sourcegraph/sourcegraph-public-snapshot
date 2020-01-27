@@ -11,23 +11,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 type Resolver struct {
-	store *iauthz.Store
+	store *edb.PermsStore
 }
 
-var _ graphqlbackend.AuthzResolver = &Resolver{}
-
-func NewResolver() graphqlbackend.AuthzResolver {
+func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		store: iauthz.NewStore(dbconn.Global, time.Now),
+		store: edb.NewPermsStore(db, clock),
 	}
 }
 
@@ -35,11 +34,6 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
-	}
-
-	cfg := conf.Get().SiteConfiguration
-	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
-		return nil, errors.New("permissions user mapping is not enabled")
 	}
 
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
@@ -70,9 +64,10 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		RepoID:   int32(repoID),
 		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
 		UserIDs:  roaring.NewBitmap(),
-		Provider: iauthz.ProviderSourcegraph,
+		Provider: authz.ProviderSourcegraph,
 	}
-	switch cfg.PermissionsUserMapping.BindID {
+	cfg := globals.PermissionsUserMapping()
+	switch cfg.BindID {
 	case "email":
 		emails, err := db.UserEmails.GetVerifiedEmails(ctx, bindIDs...)
 		if err != nil {
@@ -96,7 +91,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		}
 
 	default:
-		return nil, fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.PermissionsUserMapping.BindID)
+		return nil, fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
 	}
 
 	pendingBindIDs := make([]string, 0, len(bindIDSet))
@@ -124,11 +119,6 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		return nil, err
 	}
 
-	cfg := conf.Get().SiteConfiguration
-	if cfg.PermissionsUserMapping == nil || !cfg.PermissionsUserMapping.Enabled {
-		return nil, errors.New("permissions user mapping is not enabled")
-	}
-
 	var (
 		err    error
 		bindID string
@@ -136,6 +126,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	)
 	if args.Email != nil {
 		bindID = *args.Email
+		// 🚨 SECURITY: It is critical to ensure the email is verified.
 		user, err = db.Users.GetByVerifiedEmail(ctx, *args.Email)
 	} else if args.Username != nil {
 		bindID = *args.Username
@@ -152,8 +143,8 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		p := &iauthz.UserPermissions{
 			UserID:   user.ID,
 			Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-			Type:     iauthz.PermRepos,
-			Provider: iauthz.ProviderSourcegraph,
+			Type:     authz.PermRepos,
+			Provider: authz.ProviderSourcegraph,
 		}
 		err = r.store.LoadUserPermissions(ctx, p)
 		ids = p.IDs
@@ -161,20 +152,66 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		p := &iauthz.UserPendingPermissions{
 			BindID: bindID,
 			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-			Type:   iauthz.PermRepos,
+			Type:   authz.PermRepos,
 		}
 		err = r.store.LoadUserPendingPermissions(ctx, p)
 		ids = p.IDs
 	}
-	if err != nil && err != iauthz.ErrNotFound {
+	if err != nil && err != edb.ErrPermsNotFound {
 		return nil, err
 	}
-	if ids == nil {
+	// If no row is found, we return an empty list to the consumer.
+	if err == edb.ErrPermsNotFound {
 		ids = roaring.NewBitmap()
 	}
 
 	return &repositoryConnectionResolver{
 		ids:   ids,
+		first: args.First,
+		after: args.After,
+	}, nil
+}
+
+func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	return r.store.ListPendingUsers(ctx)
+}
+
+func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.RepoAuthorizedUserArgs) (graphqlbackend.UserConnectionResolver, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.RepositoryID)
+	if err != nil {
+		return nil, err
+	}
+	// Make sure the repo ID is valid.
+	if _, err = db.Repos.Get(ctx, repoID); err != nil {
+		return nil, err
+	}
+
+	p := &iauthz.RepoPermissions{
+		RepoID:   int32(repoID),
+		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
+		Provider: authz.ProviderSourcegraph,
+	}
+	err = r.store.LoadRepoPermissions(ctx, p)
+	if err != nil && err != edb.ErrPermsNotFound {
+		return nil, err
+	}
+	// If no row is found, we return an empty list to the consumer.
+	if err == edb.ErrPermsNotFound {
+		p.UserIDs = roaring.NewBitmap()
+	}
+
+	return &userConnectionResolver{
+		ids:   p.UserIDs,
 		first: args.First,
 		after: args.After,
 	}, nil

@@ -74,6 +74,16 @@ will be detected automatically while Grafana is running.
 More behavior can be controlled with
 [environmental variables](https://grafana.com/docs/installation/configuration/).
 
+## Set up alerts
+
+1. [Set up alert channels](monitoring/slack_alert_channel.md)
+1. Set up an alert
+    1. Navigate to the dashboard that contains the panel with the metric you want to alert on.
+    1. The panel title has a small dropdown next to it. Choose Edit.
+    1. On the left navigation bar choose the `Bell` icon for Alert.
+    1. Fill out the rule and add a notification by picking a channel you created before.
+    1. Verify your rule by running `Test Rule` or viewing `State History`.    
+
 ## Additional monitoring and tracing systems
 
 Sourcegraph supports forwarding internal performance and debugging information to many monitoring and tracing systems.

@@ -34,7 +34,6 @@ type LSIFRepositoryUploadsQueryArgs struct {
 type LSIFUploadResolver interface {
 	ID() graphql.ID
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
-	InputRepoName() string
 	InputCommit() string
 	InputRoot() string
 	State() string
@@ -64,10 +63,10 @@ type LSIFQueryResolver interface {
 }
 
 type LSIFQueryArgs struct {
-	RepoName string
-	Commit   GitObjectID
-	Path     string
-	UploadID int64
+	Repository *RepositoryResolver
+	Commit     GitObjectID
+	Path       string
+	UploadID   int64
 }
 
 type LSIFQueryPositionArgs struct {

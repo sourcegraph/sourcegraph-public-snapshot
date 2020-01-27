@@ -5,6 +5,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { GlobalNavbar } from './GlobalNavbar'
 import { createLocation, createMemoryHistory } from 'history'
+import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
 
 const PROPS: GlobalNavbar['props'] = {
     authenticatedUser: null,
@@ -22,8 +23,10 @@ const PROPS: GlobalNavbar['props'] = {
     themePreference: ThemePreference.Light,
     patternType: GQL.SearchPatternType.literal,
     setPatternType: () => undefined,
+    caseSensitive: false,
+    setCaseSensitivity: () => undefined,
     platformContext: {} as any,
-    settingsCascade: {} as any,
+    settingsCascade: NOOP_SETTINGS_CASCADE,
     showCampaigns: false,
     telemetryService: {} as any,
     hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
@@ -32,6 +35,7 @@ const PROPS: GlobalNavbar['props'] = {
     interactiveSearchMode: false,
     toggleSearchMode: () => undefined,
     onFiltersInQueryChange: () => undefined,
+    smartSearchField: false,
 }
 
 describe('GlobalNavbar', () => {

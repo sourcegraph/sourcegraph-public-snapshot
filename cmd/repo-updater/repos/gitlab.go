@@ -129,7 +129,6 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 		ExternalRepo: gitlab.ExternalRepoSpec(proj, *s.baseURL),
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
-		Enabled:      true,
 		Archived:     proj.Archived,
 		Sources: map[string]*SourceInfo{
 			urn: {

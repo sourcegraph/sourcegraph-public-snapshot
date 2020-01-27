@@ -9,7 +9,7 @@ import {
     interactiveBuildSearchURLQuery,
 } from './url'
 import { SearchPatternType } from '../graphql/schema'
-import { SuggestionTypes } from '../search/suggestions/util'
+import { FilterTypes } from '../search/interactive/util'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
@@ -289,19 +289,31 @@ describe('withWorkspaceRootInputRevision', () => {
 
 describe('buildSearchURLQuery', () => {
     it('builds the URL query for a regular expression search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.regexp)).toBe('q=foo&patternType=regexp'))
+        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false)).toBe('q=foo&patternType=regexp'))
     it('builds the URL query for a literal search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.literal)).toBe('q=foo&patternType=literal'))
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal, false)).toBe('q=foo&patternType=literal'))
     it('handles an empty query', () =>
-        expect(buildSearchURLQuery('', SearchPatternType.regexp)).toBe('q=&patternType=regexp'))
+        expect(buildSearchURLQuery('', SearchPatternType.regexp, false)).toBe('q=&patternType=regexp'))
     it('handles characters that need encoding', () =>
-        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp)).toBe('q=foo+bar%25baz&patternType=regexp'))
+        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false)).toBe(
+            'q=foo+bar%25baz&patternType=regexp'
+        ))
     it('preserves / and : for readability', () =>
-        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp)).toBe('q=repo:foo/bar&patternType=regexp'))
+        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false)).toBe(
+            'q=repo:foo/bar&patternType=regexp'
+        ))
     it('overrides the patternType parameter if a patternType field exists in the query', () =>
-        expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp)).toBe(
+        expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false)).toBe(
             'q=foo+&patternType=literal'
         ))
+    it('builds the URL query with a case parameter if caseSensitive is true', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal, true)).toBe('q=foo&patternType=literal&case=yes'))
+    it('appends the case parameter if `case:yes` exists in the query', () =>
+        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false)).toBe(
+            'q=foo+&patternType=literal&case=yes'
+        ))
+    it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>
+        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true)).toBe('q=foo+&patternType=literal'))
 })
 
 describe('lprToSelectionsZeroIndexed', () => {
@@ -437,7 +449,7 @@ describe('interactiveBuildSearchURLQuery', () => {
         const result = new URLSearchParams('repo=gorilla/mux')
         expect(
             interactiveBuildSearchURLQuery({
-                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
+                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
             }).toString()
         ).toBe(result.toString())
     })
@@ -446,8 +458,8 @@ describe('interactiveBuildSearchURLQuery', () => {
         const result = new URLSearchParams('repo=gorilla/mux&repo=gorilla/muxy')
         expect(
             interactiveBuildSearchURLQuery({
-                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
-                'repo 2': { type: SuggestionTypes.repo, value: 'gorilla/muxy', editable: false },
+                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
+                'repo 2': { type: FilterTypes.repo, value: 'gorilla/muxy', editable: false },
             }).toString()
         ).toBe(result.toString())
     })
@@ -456,8 +468,8 @@ describe('interactiveBuildSearchURLQuery', () => {
         const result = new URLSearchParams('repo=gorilla/mux&file=test')
         expect(
             interactiveBuildSearchURLQuery({
-                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
-                'file 2': { type: SuggestionTypes.file, value: 'test', editable: false },
+                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
+                'file 2': { type: FilterTypes.file, value: 'test', editable: false },
             }).toString()
         ).toBe(result.toString())
     })
@@ -466,8 +478,8 @@ describe('interactiveBuildSearchURLQuery', () => {
         const result = new URLSearchParams('repo=gorilla/mux&file=test')
         expect(
             interactiveBuildSearchURLQuery({
-                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
-                'file 2': { type: SuggestionTypes.file, value: 'test', editable: false },
+                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
+                'file 2': { type: FilterTypes.file, value: 'test', editable: false },
             }).toString()
         ).toBe(result.toString())
     })
