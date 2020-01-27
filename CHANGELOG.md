@@ -18,6 +18,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- experimentalFeatures.splitSearchModes was removed as a site configuration option. It should be set in global/org/user settings.
+
 ### Fixed
 
 - After adding/removing a gitserver replica the admin interface will correctly report that repositories that need to move replicas as cloning. [#7970](https://github.com/sourcegraph/sourcegraph/issues/7970)
