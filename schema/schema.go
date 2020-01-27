@@ -389,9 +389,11 @@ type GitHubAuthProvider struct {
 type GitHubAuthorization struct {
 	// Ttl description: The TTL of how long to cache permissions data. This is 3 hours by default.
 	//
-	// Decreasing the TTL will increase the load on the code host API. If you have X repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.
+	// Decreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).
 	//
 	// If set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).
+	//
+	// Public repositories are cached once for all users per cache TTL period.
 	Ttl string `json:"ttl,omitempty"`
 }
 
@@ -474,9 +476,11 @@ type GitLabAuthorization struct {
 	IdentityProvider IdentityProvider `json:"identityProvider"`
 	// Ttl description: The TTL of how long to cache permissions data. This is 3 hours by default.
 	//
-	// Decreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.
+	// Decreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).
 	//
 	// If set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).
+	//
+	// Public and internal repositories are cached once for all users per cache TTL period.
 	Ttl string `json:"ttl,omitempty"`
 }
 
