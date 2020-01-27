@@ -124,11 +124,7 @@ func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeU
 		errs = multierror.Append(errs, err)
 	}
 
-	bindIDs := make([]string, 1, len(args.VerifiedEmails)+1)
-	bindIDs[0] = args.Username
-	for _, email := range args.VerifiedEmails {
-		bindIDs = append(bindIDs, email)
-	}
+	bindIDs := append([]string{args.Username}, args.VerifiedEmails...)
 	if err := s.store.DeleteAllUserPendingPermissions(ctx, bindIDs); err != nil {
 		errs = multierror.Append(errs, err)
 	}
