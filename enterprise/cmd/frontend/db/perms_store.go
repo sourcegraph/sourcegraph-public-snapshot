@@ -702,10 +702,20 @@ DO UPDATE SET
 	), nil
 }
 
-// GrantPendingPermissions grants the user has given ID with pending permissions found in p.
-// It "merges" rows in pending permissions tables to effective permissions tables, i.e. permissions
-// are unioned not replaced.
-// This method starts its own transaction if the caller hasn't started one already.
+// GrantPendingPermissions is used to grant pending permissions when the associated bind ID becomes effective
+// for a given user, e.g. username as bind ID when a user is created, email as bind ID when the email
+// address is verified. Because there could be multiple bind IDs that are associated with a single user
+// (i.e. multiple email addresses), it merges data from "repo_pending_permissions" and "user_pending_permissions"
+// tables to "repo_permissions" and "user_permissions" tables for the user, i.e. permissions are unioned
+// not replaced, which is one of the main differences from SetRepoPermissions/SetRepoPendingPermissions.
+// Another main difference is that multiple calls to this method are not idempotent as it conceptually
+// does nothing when there is no data in the pending permissions tables for the user.
+//
+// This method starts its own transaction for update consistency if the caller hasn't started one already.
+//
+// 🚨 SECURITY: This method takes arbitrary string as a valid bind ID and does not interpret the meaning
+// of the value it represents. Therefore, it is caller's responsibility to ensure the legitimate relation
+// between the given user ID and the bind ID found in p.
 func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
@@ -714,7 +724,6 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	if s.inTx() {
 		txs = s
 	} else {
-		// Open a transaction for update consistency.
 		txs, err = s.Transact(ctx)
 		if err != nil {
 			return err
