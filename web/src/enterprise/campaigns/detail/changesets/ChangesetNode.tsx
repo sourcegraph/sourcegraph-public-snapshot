@@ -6,6 +6,7 @@ import {
     IFileDiff,
     IPreviewFileDiff,
     ChangesetState,
+    ChangesetCheckState,
 } from '../../../../../../shared/src/graphql/schema'
 import React, { useState } from 'react'
 import {
@@ -14,6 +15,9 @@ import {
     changesetStageLabels,
     changesetStatusColorClasses,
     changesetStateIcons,
+    changesetCheckStateIcons,
+    changesetCheckStateColors,
+    changesetCheckStateTooltips,
 } from './presentation'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
@@ -70,6 +74,10 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         node.__typename === 'ExternalChangeset'
             ? changesetReviewStateIcons[node.reviewState]
             : changesetReviewStateIcons[ChangesetReviewState.PENDING]
+    const ChangesetCheckStateIcon =
+        node.__typename === 'ExternalChangeset' && node.checkState
+            ? changesetCheckStateIcons[node.checkState]
+            : changesetCheckStateIcons[ChangesetCheckState.PENDING]
     const changesetState = node.__typename === 'ExternalChangeset' ? node.state : ChangesetState.OPEN
     const changesetNodeRow = (
         <div className="d-flex align-items-center m-1">
@@ -128,6 +136,12 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                 <span className="flex-shrink-0 flex-grow-0">
                     <DiffStat {...fileDiffs.diffStat} expandedCounts={true}></DiffStat>
                 </span>
+            )}
+            {node.__typename === 'ExternalChangeset' && node.checkState && (
+                <ChangesetCheckStateIcon
+                    className={changesetCheckStateColors[node.checkState]}
+                    data-tooltip={changesetCheckStateTooltips[node.checkState]}
+                />
             )}
             {enablePublishing && node.__typename === 'ChangesetPlan' && !node.publicationEnqueued && (
                 <>
