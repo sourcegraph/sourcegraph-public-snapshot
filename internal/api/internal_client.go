@@ -353,7 +353,7 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 func checkAPIResponse(resp *http.Response) error {
 	if 200 > resp.StatusCode || resp.StatusCode > 299 {
 		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp.Body)
+		_, _ = buf.ReadFrom(resp.Body)
 		b := buf.Bytes()
 		errString := string(b)
 		if errString != "" {

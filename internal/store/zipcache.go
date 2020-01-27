@@ -37,7 +37,7 @@ type zipCacheShard struct {
 
 func (c *ZipCache) shardFor(path string) *zipCacheShard {
 	h := fnv.New32()
-	io.WriteString(h, path)
+	_, _ = io.WriteString(h, path)
 	return &c.shards[h.Sum32()%uint32(len(c.shards))]
 }
 

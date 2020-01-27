@@ -53,7 +53,7 @@ Retrying the Buildkite step can help determine whether the test is flaky or brok
 To run all e2e tests locally against your dev server, **create a user `test` with password `test`, promote as site admin**, then run:
 
 ```
-env GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
+env TEST_USER_PASSWORD=test GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
 ```
 
 > There's a test token in `../dev-private/enterprise/dev/external-services-config.json`
@@ -69,7 +69,7 @@ You can single-out one test with `test.only`:
         })
 ```
 
-Alternatively, you can use `-t` to filter tests: `env ... test-e2e -t "some test name"`.
+Alternatively, you can use `-g` to filter tests: `env ... test-e2e -g "some test name"`.
 
 ### Viewing e2e tests live in CI
 
@@ -209,5 +209,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 
 For testing with a single Docker image, run something like
 ```
-IMAGE=sourcegraph/server:3.11.4 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.12.3 ./dev/run-server-image.sh
 ```

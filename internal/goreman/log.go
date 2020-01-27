@@ -41,7 +41,7 @@ func (l *clogger) writeBuffers(line []byte) {
 	fmt.Printf("%s %*s | ", now, maxProcNameLength, l.proc)
 	ct.ResetColor()
 	l.buffers = append(l.buffers, line)
-	l.buffers.WriteTo(os.Stdout)
+	_, _ = l.buffers.WriteTo(os.Stdout)
 	l.buffers = l.buffers[0:0]
 	mutex.Unlock()
 }

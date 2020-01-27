@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/kylelemons/godebug/pretty"
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
@@ -289,7 +289,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 				expectedRecording.notifications = append(expectedRecording.notifications, s.updateQueue.notifyEnqueue)
 			}
 			if !reflect.DeepEqual(expectedRecording, r) {
-				t.Log(pretty.Compare(expectedRecording, r))
+				t.Log(cmp.Diff(expectedRecording, r))
 				t.Fatalf("\nexpected\n%s\ngot\n%s", spew.Sdump(expectedRecording), spew.Sdump(r))
 			}
 		})

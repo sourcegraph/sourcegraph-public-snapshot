@@ -90,7 +90,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 		data = sourceMappingURLLineRegex.ReplaceAll(bundle, []byte{})
 	}
-	w.Write(data)
+	_, _ = w.Write(data)
 
 	if !wantSourceMap && sourceMap != nil {
 		// Append `//# sourceMappingURL=` directive to JS bundle if we have a source map. It is

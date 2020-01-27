@@ -23,4 +23,6 @@ var (
 	ExternalAccounts = &userExternalAccounts{}
 
 	OrgInvitations = &orgInvitations{}
+
+	Authz AuthzStore = &authzStore{}
 )

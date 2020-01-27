@@ -31,7 +31,9 @@ func (Goreman) RestartAll(args struct{}, ret *string) (err error) {
 
 // start rpc server.
 func startServer(addr string) error {
-	rpc.Register(Goreman{})
+	if err := rpc.Register(Goreman{}); err != nil {
+		return err
+	}
 	server, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err

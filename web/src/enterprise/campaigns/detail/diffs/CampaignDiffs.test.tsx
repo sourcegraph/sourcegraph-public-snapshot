@@ -3,7 +3,7 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { CampaignDiffs } from './CampaignDiffs'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { of } from 'rxjs'
+import { of, Subject } from 'rxjs'
 
 jest.mock('mdi-react/SourcePullIcon', () => 'SourcePullIcon')
 
@@ -41,6 +41,7 @@ describe('CampaignDiffs', () => {
                                 ],
                             } as GQL.IChangesetPlanConnection)
                         }
+                        changesetUpdates={new Subject<void>()}
                     />
                 )
                 .toJSON()

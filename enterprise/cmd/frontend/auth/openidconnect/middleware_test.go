@@ -46,7 +46,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 
 	s.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(providerJSON{
+		_ = json.NewEncoder(w).Encode(providerJSON{
 			Issuer:      oidcProvider.Issuer,
 			AuthURL:     oidcProvider.Issuer + "/oauth2/v1/authorize",
 			TokenURL:    oidcProvider.Issuer + "/oauth2/v1/token",
@@ -72,7 +72,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 			t.Errorf("got redirect_uri %v, want %v", redirectURI, want)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fmt.Sprintf(`{
+		_, _ = w.Write([]byte(fmt.Sprintf(`{
 			"access_token": "aaaaa",
 			"token_type": "Bearer",
 			"expires_in": 3600,
@@ -91,7 +91,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 			t.Fatalf("No bearer token found in authz header %q", authzHeader)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fmt.Sprintf(`{
+		_, _ = w.Write([]byte(fmt.Sprintf(`{
 			"sub": %q,
 			"profile": "This is a profile",
 			"email": "`+email+`",

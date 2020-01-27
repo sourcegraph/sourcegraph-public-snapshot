@@ -15,7 +15,17 @@ export const queryCampaigns = ({ first }: FilteredConnectionQueryArgs): Observab
                         name
                         description
                         url
+                        createdAt
                         closedAt
+                        changesets {
+                            totalCount
+                            nodes {
+                                state
+                            }
+                        }
+                        changesetPlans {
+                            totalCount
+                        }
                     }
                     totalCount
                 }

@@ -13,14 +13,49 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
+
+func TestClient_ListCloned(t *testing.T) {
+	addrs := []string{"gitserver-0", "gitserver-1"}
+	cli := &gitserver.Client{
+		Addrs: func(ctx context.Context) []string { return addrs },
+		HTTPClient: httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			switch r.URL.String() {
+			case "http://gitserver-0/list?cloned":
+				return &http.Response{
+					Body: ioutil.NopCloser(bytes.NewBufferString(`["repo0-a", "repo0-b"]`)),
+				}, nil
+			case "http://gitserver-1/list?cloned":
+				return &http.Response{
+					Body: ioutil.NopCloser(bytes.NewBufferString(`["repo1-a", "repo1-b"]`)),
+				}, nil
+			default:
+				return nil, fmt.Errorf("unexpected url: %s", r.URL.String())
+			}
+		}),
+	}
+
+	want := []string{"repo0-a", "repo1-a", "repo1-b"}
+	got, err := cli.ListCloned(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	sort.Strings(got)
+	sort.Strings(want)
+	if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
+		t.Errorf("mismatch for (-want +got):\n%s", cmp.Diff(want, got))
+	}
+}
 
 func TestClient_Archive(t *testing.T) {
 	root, err := ioutil.TempDir("", t.Name())

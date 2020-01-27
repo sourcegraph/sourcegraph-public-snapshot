@@ -35,7 +35,6 @@ import (
 
 func main() {
 	initLicensing()
-	initAuthz()
 	initResolvers()
 	initLSIFEndpoints()
 
@@ -43,6 +42,7 @@ func main() {
 	if err := dbconn.ConnectToDB(""); err != nil {
 		log.Fatal(err)
 	}
+	initAuthz(dbconn.Global)
 
 	ctx := context.Background()
 	go func() {
@@ -71,7 +71,8 @@ func main() {
 	githubWebhook := a8n.NewGitHubWebhook(a8nStore, repositories, clock)
 	bitbucketServerWebhook := a8n.NewBitbucketServerWebhook(a8nStore, repositories, clock)
 
-	go a8n.RunCampaignJobs(ctx, a8nStore, clock, 5*time.Second)
+	go bitbucketServerWebhook.Upsert(30 * time.Second)
+
 	go a8n.RunChangesetJobs(ctx, a8nStore, clock, gitserver.DefaultClient, 5*time.Second)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
@@ -115,7 +116,11 @@ func initLicensing() {
 func initResolvers() {
 	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
 	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
-	graphqlbackend.NewAuthzResolver = authzResolvers.NewResolver
+	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
+		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {
+			return time.Now().UTC().Truncate(time.Microsecond)
+		})
+	}
 }
 
 func initLSIFEndpoints() {

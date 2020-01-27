@@ -31,7 +31,13 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from './search'
+import {
+    parseSearchURLQuery,
+    PatternTypeProps,
+    InteractiveSearchProps,
+    CaseSensitivityProps,
+    SmartSearchFieldProps,
+} from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
@@ -60,7 +66,9 @@ export interface LayoutProps
         ThemePreferenceProps,
         ActivationProps,
         PatternTypeProps,
-        InteractiveSearchProps {
+        CaseSensitivityProps,
+        InteractiveSearchProps,
+        SmartSearchFieldProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -153,30 +161,21 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
-                        {props.routes.map(({ render, condition = () => true, ...route }) => {
-                            const isFullWidth = !route.forceNarrowWidth
-                            return (
+                        {props.routes.map(
+                            ({ render, condition = () => true, ...route }) =>
                                 condition(props) && (
                                     <Route
                                         {...route}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
-                                            <div
-                                                className={[
-                                                    'layout__app-router-container',
-                                                    `layout__app-router-container--${
-                                                        isFullWidth ? 'full-width' : 'restricted'
-                                                    }`,
-                                                ].join(' ')}
-                                            >
+                                            <div className="layout__app-router-container">
                                                 {render({ ...props, ...routeComponentProps })}
                                             </div>
                                         )}
                                     />
                                 )
-                            )
-                        })}
+                        )}
                         {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>

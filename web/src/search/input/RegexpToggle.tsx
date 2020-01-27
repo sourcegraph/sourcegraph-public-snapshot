@@ -5,14 +5,16 @@ import { submitSearch } from '../helpers'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { Subscription, fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { PatternTypeProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps } from '..'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import classNames from 'classnames'
 
-interface RegexpToggleProps extends PatternTypeProps {
+export interface RegexpToggleProps extends PatternTypeProps, CaseSensitivityProps {
     navbarSearchQuery: string
     history: H.History
     filtersInQuery?: FiltersToTypeAndValue
     hasGlobalQueryBehavior?: boolean
+    className?: string
 }
 
 export class RegexpToggle extends React.Component<RegexpToggleProps> {
@@ -46,14 +48,21 @@ export class RegexpToggle extends React.Component<RegexpToggleProps> {
             <div
                 ref={this.toggleCheckbox}
                 onClick={this.toggle}
-                className="btn btn-icon icon-inline regexp-toggle e2e-regexp-toggle"
+                className={classNames(
+                    'btn btn-icon icon-inline query-input2__toggle e2e-regexp-toggle',
+                    this.props.className
+                )}
                 role="checkbox"
                 aria-checked={isRegexp}
                 aria-label="Regular expression toggle"
                 tabIndex={0}
                 data-tooltip={`${isRegexp ? 'Disable' : 'Enable'} regular expressions`}
             >
-                <span className={isRegexp ? 'regexp-toggle--active e2e-regexp-toggle--active' : ''}>
+                <span
+                    className={`query-input2__toggle-icon ${
+                        isRegexp ? 'query-input2__toggle-icon--active e2e-regexp-toggle--active' : ''
+                    }`}
+                >
                     <RegexIcon />
                 </span>
             </div>
@@ -75,6 +84,7 @@ export class RegexpToggle extends React.Component<RegexpToggleProps> {
                 this.props.navbarSearchQuery,
                 'filter',
                 newPatternType,
+                this.props.caseSensitive,
                 undefined,
                 this.props.filtersInQuery
             )

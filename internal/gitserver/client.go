@@ -38,19 +38,20 @@ import (
 
 var requestMeter = metrics.NewRequestMeter("gitserver", "Total number of requests sent to gitserver.")
 
+// defaultTransport is the default transport used in the default client and the
+// default reverse proxy. nethttp.Transport will propagate opentracing spans.
+var defaultTransport = &nethttp.Transport{
+	RoundTripper: requestMeter.Transport(&http.Transport{
+		// Default is 2, but we can send many concurrent requests
+		MaxIdleConnsPerHost: 500,
+	}, func(u *url.URL) string {
+		// break it down by API function call (ie "/archive", "/exec", "/is-repo-cloneable", etc)
+		return u.Path
+	}),
+}
+
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-var DefaultClient = NewClient(&http.Client{
-	// nethttp.Transport will propagate opentracing spans
-	Transport: &nethttp.Transport{
-		RoundTripper: requestMeter.Transport(&http.Transport{
-			// Default is 2, but we can send many concurrent requests
-			MaxIdleConnsPerHost: 500,
-		}, func(u *url.URL) string {
-			// break it down by API function call (ie "/archive", "/exec", "/is-repo-cloneable", etc)
-			return u.Path
-		}),
-	},
-})
+var DefaultClient = NewClient(&http.Client{Transport: defaultTransport})
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
@@ -86,8 +87,8 @@ type Client struct {
 	UserAgent string
 }
 
-// addrForRepo returns the gitserver address to use for the given repo name.
-func (c *Client) addrForRepo(ctx context.Context, repo api.RepoName) string {
+// AddrForRepo returns the gitserver address to use for the given repo name.
+func (c *Client) AddrForRepo(ctx context.Context, repo api.RepoName) string {
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	return c.addrForKey(ctx, string(repo))
 }
@@ -99,6 +100,10 @@ func (c *Client) addrForKey(ctx context.Context, key string) string {
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
+	return addrForKey(addrs, key)
+}
+
+func addrForKey(addrs []string, key string) string {
 	sum := md5.Sum([]byte(key))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(addrs))
 	return addrs[serverIndex]
@@ -151,7 +156,7 @@ func (c *Client) ArchiveURL(ctx context.Context, repo Repo, opt ArchiveOptions) 
 
 	return &url.URL{
 		Scheme:   "http",
-		Host:     c.addrForRepo(ctx, repo.Name),
+		Host:     c.AddrForRepo(ctx, repo.Name),
 		Path:     "/archive",
 		RawQuery: q.Encode(),
 	}
@@ -481,11 +486,23 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 		err   error
 		repos []string
 	)
-	for _, addr := range c.Addrs(ctx) {
+	addrs := c.Addrs(ctx)
+	for _, addr := range addrs {
 		wg.Add(1)
 		go func(addr string) {
 			defer wg.Done()
 			r, e := c.doListOne(ctx, "?cloned", addr)
+
+			// Only include repos that belong on addr.
+			if len(r) > 0 {
+				filtered := r[:0]
+				for _, repo := range r {
+					if addrForKey(addrs, repo) == addr {
+						filtered = append(filtered, repo)
+					}
+				}
+				r = filtered
+			}
 			mu.Lock()
 			if e != nil {
 				err = e
@@ -654,7 +671,7 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr := c.addrForRepo(ctx, r)
+		addr := c.AddrForRepo(ctx, r)
 		shard := shards[addr]
 
 		if shard == nil {
@@ -761,7 +778,7 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, p
 
 	uri := op
 	if !strings.HasPrefix(op, "http") {
-		uri = "http://" + c.addrForRepo(ctx, repo) + "/" + op
+		uri = "http://" + c.AddrForRepo(ctx, repo) + "/" + op
 	}
 
 	req, err := http.NewRequest(method, uri, bytes.NewReader(reqBody))

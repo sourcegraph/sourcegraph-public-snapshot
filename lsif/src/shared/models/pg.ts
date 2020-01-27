@@ -32,10 +32,10 @@ export class LsifUpload {
     public id!: DumpId
 
     /**
-     *  The name of the source repository.
+     * The internal identifier of the source repository.
      */
-    @Column('text')
-    public repository!: string
+    @Column('text', { name: 'repository_id' })
+    public repositoryId!: number
 
     /**
      *  The source commit.
@@ -137,10 +137,10 @@ export class Commit {
     public id!: number
 
     /**
-     * The name of the source repository.
+     * The internal identifier of the source repository.
      */
-    @Column('text')
-    public repository!: string
+    @Column('text', { name: 'repository_id' })
+    public repositoryId!: number
 
     /**
      * The source commit.

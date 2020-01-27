@@ -66,7 +66,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             className="file-match-children"
           >
             <div
-              className="file-match-children__item-code-wrapper"
+              className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
             >
               <a
                 className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
@@ -117,7 +117,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 </VisibilitySensor>
               </a>
               <div
-                className="file-match-children__item-badge-row"
+                className="file-match-children__item-badge-row e2e-badge-row"
               />
             </div>
           </div>
@@ -262,7 +262,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             className="file-match-children"
           >
             <div
-              className="file-match-children__item-code-wrapper"
+              className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
             >
               <a
                 className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
@@ -337,7 +337,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 </VisibilitySensor>
               </a>
               <div
-                className="file-match-children__item-badge-row"
+                className="file-match-children__item-badge-row e2e-badge-row"
               />
             </div>
           </div>
@@ -414,7 +414,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             className="file-match-children"
           >
             <div
-              className="file-match-children__item-code-wrapper"
+              className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
             >
               <a
                 className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
@@ -465,7 +465,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 </VisibilitySensor>
               </a>
               <div
-                className="file-match-children__item-badge-row"
+                className="file-match-children__item-badge-row e2e-badge-row"
               />
             </div>
           </div>

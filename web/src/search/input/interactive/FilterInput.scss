@@ -1,15 +1,19 @@
-$filter-input-margin-y: 0.5rem;
+$filter-input-margin-y: 0.125rem;
 $filter-input-padding: 0.25rem;
 
 .filter-input {
-    margin: $filter-input-margin-y 0.25rem;
+    margin: $filter-input-margin-y 0.25rem $filter-input-margin-y 0;
     border: 1px solid $color-border;
     padding: $filter-input-padding;
     border-radius: 2px;
     background-color: $color-bg-2;
 
-    &--active {
+    &--active-homepage {
         min-width: 50%;
+    }
+
+    &--active {
+        min-width: 35%;
     }
 
     &--uneditable {
@@ -18,7 +22,7 @@ $filter-input-padding: 0.25rem;
 
     &__form {
         display: inline-flex;
-        vertical-align: bottom;
+        vertical-align: middle;
         align-items: center;
         width: 100%;
     }
@@ -30,8 +34,14 @@ $filter-input-padding: 0.25rem;
         flex: 1 1 auto;
     }
 
+    &__label {
+        padding-right: 0.25rem;
+    }
+
     &__input-field {
         width: 100%;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
     }
 
     &__close {
@@ -56,6 +66,35 @@ $filter-input-padding: 0.25rem;
         border: solid 1px #1b548a;
         border-top: none;
         padding: 0;
+    }
+
+    &__radio {
+        padding: 0 0.25rem;
+    }
+
+    &__radio-label {
+        padding: 0 0.25rem;
+    }
+
+    &__radio-button-container {
+        display: flex;
+        align-self: flex-end;
+    }
+
+    &__negation-button {
+        border: 1px solid transparent;
+        margin-right: 0.25rem;
+
+        &--active {
+            border: 1px solid $color-border-active;
+            border-radius: 2px;
+            .theme-dark & {
+                background: $color-bg-5;
+            }
+            .theme-light & {
+                background: $color-light-bg-3;
+            }
+        }
     }
 }
 

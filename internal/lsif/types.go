@@ -4,11 +4,12 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type LSIFUpload struct {
 	ID                int64      `json:"id"`
-	Repository        string     `json:"repository"`
+	RepositoryID      api.RepoID `json:"repositoryId"`
 	Commit            string     `json:"commit"`
 	Root              string     `json:"root"`
 	Filename          string     `json:"filename"`
@@ -22,8 +23,8 @@ type LSIFUpload struct {
 }
 
 type LSIFLocation struct {
-	Repository string    `json:"repository"`
-	Commit     string    `json:"commit"`
-	Path       string    `json:"path"`
-	Range      lsp.Range `json:"range"`
+	RepositoryID api.RepoID `json:"repositoryId"`
+	Commit       string     `json:"commit"`
+	Path         string     `json:"path"`
+	Range        lsp.Range  `json:"range"`
 }

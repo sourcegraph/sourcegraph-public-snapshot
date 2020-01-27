@@ -370,7 +370,6 @@ func TestGithubSource_GetRepo(t *testing.T) {
 				want := &Repo{
 					Name:        "github.com/sourcegraph/sourcegraph",
 					Description: "Code search and navigation tool (self-hosted)",
-					Enabled:     true,
 					URI:         "github.com/sourcegraph/sourcegraph",
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",

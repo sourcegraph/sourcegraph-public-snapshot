@@ -3,8 +3,10 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SignUpArgs, SignUpForm } from '../auth/SignUpForm'
 import { submitTrialRequest } from '../marketing/backend'
+import { BrandLogo } from '../components/branding/BrandLogo'
+import { ThemeProps } from '../../../shared/src/theme'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: GQL.IUser | null
 }
 
@@ -21,10 +23,7 @@ export class SiteInitPage extends React.Component<Props> {
         return (
             <div className="site-init-page">
                 <div className="site-init-page__content">
-                    <img
-                        className="site-init-page__logo"
-                        src={`${window.context.assetsRoot}/img/sourcegraph-light-head-logo.svg`}
-                    />
+                    <BrandLogo className="site-init-page__logo" isLightTheme={this.props.isLightTheme} />
                     {this.props.authenticatedUser ? (
                         // If there's already a user but the site is not initialized, then the we're in an
                         // unexpected state, likely because of a previous bug or because someone manually modified

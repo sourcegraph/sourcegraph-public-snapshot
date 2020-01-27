@@ -28,6 +28,18 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "showBadgeAttachments": {
+          "description": "Enables the UI indicators for code intelligence precision.",
+          "type": "boolean",
+          "default": true,
+          "!go": { "pointer": true }
+        },
+        "smartSearchField": {
+          "description": "Enables displaying a search field that provides syntax highlighting, hover tooltips and diagnostics for search queries.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"
@@ -197,6 +209,12 @@ const SettingsSchemaJSON = `{
         }
       }
     }
+  },
+  "search.hideSuggestions": {
+    "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
+    "type": "boolean",
+    "default": false,
+    "!go": { "pointer": true }
   }
 }
 `

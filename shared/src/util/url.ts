@@ -1,9 +1,15 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
-import { FiltersToTypeAndValue } from '../search/interactive/util'
-import { suggestionTypeKeys } from '../search/suggestions/util'
+import {
+    FiltersToTypeAndValue,
+    filterTypeKeys,
+    negatedFilters,
+    NegatedFilters,
+    isNegatableFilter,
+} from '../search/interactive/util'
 import { isEmpty } from 'lodash'
+import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 
 export interface RepoSpec {
     /**
@@ -528,6 +534,7 @@ export function withWorkspaceRootInputRevision(
 export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
+    caseSensitive: boolean,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
     let searchParams = new URLSearchParams()
@@ -538,13 +545,45 @@ export function buildSearchURLQuery(
 
     const patternTypeInQuery = parsePatternTypeFromQuery(query)
     if (patternTypeInQuery) {
-        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-        const newQuery = query.replace(patternTypeRegexp, '')
+        const newQuery = query.replace(
+            query.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
+            ''
+        )
         searchParams.set('q', newQuery)
-        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
+        searchParams.set('patternType', patternTypeInQuery.value)
+        query = newQuery
     } else {
         searchParams.set('q', query)
         searchParams.set('patternType', patternType)
+    }
+
+    const caseInQuery = parseCaseSensitivityFromQuery(query)
+    if (caseInQuery) {
+        const newQuery = query.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
+        searchParams.set('q', newQuery)
+
+        if (caseInQuery.value === 'yes') {
+            searchParams.set('case', caseInQuery.value)
+        } else {
+            // For now, remove case when case:no, since it's the default behavior. Avoids
+            // queries breaking when only `repo:` filters are specified.
+            //
+            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
+            searchParams.delete('case')
+        }
+
+        query = newQuery
+    } else {
+        searchParams.set('q', query)
+        if (caseSensitive) {
+            searchParams.set('case', 'yes')
+        } else {
+            // For now, remove case when case:no, since it's the default behavior. Avoids
+            // queries breaking when only `repo:` filters are specified.
+            //
+            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
+            searchParams.delete('case')
+        }
     }
 
     return searchParams
@@ -563,9 +602,15 @@ export function buildSearchURLQuery(
 export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
     const searchParams = new URLSearchParams()
 
-    for (const searchType of suggestionTypeKeys) {
+    for (const searchType of [...filterTypeKeys, ...negatedFilters]) {
         for (const [, filterValue] of Object.entries(filtersInQuery)) {
             if (filterValue.type === searchType) {
+                if (filterValue.negated) {
+                    if (isNegatableFilter(searchType)) {
+                        searchParams.append(NegatedFilters[searchType], filterValue.value)
+                    }
+                    continue
+                }
                 searchParams.append(searchType, filterValue.value)
             }
         }
@@ -574,12 +619,39 @@ export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndV
     return searchParams
 }
 
-function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
-    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-    const matches = query.match(patternTypeRegexp)
-    if (matches?.groups?.type) {
-        return matches.groups.type as SearchPatternType
+function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (
+                token.type === 'filter' &&
+                token.filterType.token.value.toLowerCase() === 'patterntype' &&
+                token.filterValue
+            ) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
     }
 
+    return undefined
+}
+
+function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (token.type === 'filter' && token.filterType.token.value.toLowerCase() === 'case' && token.filterValue) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
+    }
     return undefined
 }

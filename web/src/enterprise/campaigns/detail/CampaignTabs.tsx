@@ -7,10 +7,20 @@ import { CampaignDiffs } from './diffs/CampaignDiffs'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { queryChangesets, queryChangesetPlans } from './backend'
 import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
+import { Subject } from 'rxjs'
 
 interface Props extends ThemeProps {
-    campaign: Pick<GQL.ICampaign | GQL.ICampaignPlan, '__typename' | 'id' | 'changesets'>
+    campaign:
+        | (Pick<GQL.ICampaign, '__typename' | 'id'> & {
+              changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
+              changesetPlans: Pick<GQL.ICampaign['changesetPlans'], 'nodes' | 'totalCount'>
+          })
+        | (Pick<GQL.ICampaignPlan, '__typename' | 'id'> & {
+              changesets: Pick<GQL.ICampaignPlan['changesets'], 'nodes' | 'totalCount'>
+          })
     persistLines: boolean
+    campaignUpdates: Subject<void>
+    changesetUpdates: Subject<void>
 
     history: H.History
     location: H.Location
@@ -35,6 +45,8 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
     location,
     className = '',
     isLightTheme,
+    campaignUpdates,
+    changesetUpdates,
 }) => {
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
@@ -44,8 +56,15 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
         [campaign]
     )
 
-    const totalAdditions = useMemo(() => sumDiffStat(campaign.changesets.nodes, 'added'), [campaign.changesets.nodes])
-    const totalDeletions = useMemo(() => sumDiffStat(campaign.changesets.nodes, 'deleted'), [campaign.changesets.nodes])
+    const changesets = useMemo(
+        () =>
+            campaign.__typename === 'Campaign'
+                ? [...campaign.changesets.nodes, ...campaign.changesetPlans.nodes]
+                : campaign.changesets.nodes,
+        [campaign]
+    )
+    const totalAdditions = useMemo(() => sumDiffStat(changesets, 'added'), [changesets])
+    const totalDeletions = useMemo(() => sumDiffStat(changesets, 'deleted'), [changesets])
 
     return (
         <TabsWithLocalStorageViewStatePersistence
@@ -66,7 +85,10 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                     label: (
                         <span className="e2e-campaign-changesets-tab">
                             Changesets{' '}
-                            <span className="badge badge-secondary badge-pill">{campaign.changesets.totalCount}</span>
+                            <span className="badge badge-secondary badge-pill">
+                                {campaign.changesets.totalCount +
+                                    (campaign.__typename === 'Campaign' ? campaign.changesetPlans.totalCount : 0)}
+                            </span>
                         </span>
                     ),
                 },
@@ -76,6 +98,9 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
             <CampaignChangesets
                 key="changesets"
                 queryChangesetsConnection={queryChangesetsConnection}
+                enablePublishing={campaign.__typename === 'Campaign'}
+                campaignUpdates={campaignUpdates}
+                changesetUpdates={changesetUpdates}
                 history={history}
                 location={location}
                 className="mt-3"
@@ -84,6 +109,7 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
             <CampaignDiffs
                 key="diff"
                 queryChangesetsConnection={queryChangesetsConnection}
+                changesetUpdates={changesetUpdates}
                 persistLines={persistLines}
                 history={history}
                 location={location}

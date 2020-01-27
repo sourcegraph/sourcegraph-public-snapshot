@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -20,12 +21,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-func initAuthz() {
+func initAuthz(d dbutil.DB) {
 	db.ExternalServices = edb.NewExternalServicesStore()
+	db.Authz = edb.NewAuthzStore(d, func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	})
 
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
@@ -186,7 +191,7 @@ func authzProvidersFromConfig(
 		warnings = append(warnings, bbsWarnings...)
 	}
 
-	// 🚨 SECURITY: Warn the admin when both code host authz provider and the Sourcegraph authz provider are configured.
+	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
 	if cfg.SiteConfiguration.PermissionsUserMapping != nil &&
 		cfg.SiteConfiguration.PermissionsUserMapping.Enabled && len(providers) > 0 {
 		serviceTypes := make([]string, len(providers))
@@ -194,7 +199,7 @@ func authzProvidersFromConfig(
 			serviceTypes[i] = strconv.Quote(providers[i].ServiceType())
 		}
 		msg := fmt.Sprintf(
-			"The Sourcegraph permissions (`permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
+			"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
 			strings.Join(serviceTypes, ", "))
 		seriousProblems = append(seriousProblems, msg)
 	}

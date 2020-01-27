@@ -122,12 +122,17 @@ func (*userEmails) Verify(ctx context.Context, userID int32, email, code string)
 	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email); err != nil {
 		return false, err
 	}
+
 	return true, nil
 }
 
 // SetVerified bypasses the normal email verification code process and manually sets the verified
 // status for an email.
 func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
+	if Mocks.UserEmails.SetVerified != nil {
+		return Mocks.UserEmails.SetVerified(ctx, userID, email, verified)
+	}
+
 	var res sql.Result
 	var err error
 	if verified {
@@ -194,10 +199,27 @@ func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface
 	return userEmails, nil
 }
 
-func (*userEmails) ListByUser(ctx context.Context, userID int32) ([]*UserEmail, error) {
+// UserEmailsListOptions specifies the options for listing user emails.
+type UserEmailsListOptions struct {
+	// UserID specifies the id of the user for listing emails.
+	UserID int32
+	// OnlyVerified excludes unverified emails from the list.
+	OnlyVerified bool
+}
+
+// ListByUser returns a list of emails that are associated to the given user.
+func (*userEmails) ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error) {
 	if Mocks.UserEmails.ListByUser != nil {
-		return Mocks.UserEmails.ListByUser(userID)
+		return Mocks.UserEmails.ListByUser(ctx, opt)
 	}
 
-	return (&userEmails{}).getBySQL(ctx, "WHERE user_id=$1 ORDER BY created_at ASC, email ASC", userID)
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("user_id=%s", opt.UserID),
+	}
+	if opt.OnlyVerified {
+		conds = append(conds, sqlf.Sprintf("verified_at IS NOT NULL"))
+	}
+
+	q := sqlf.Sprintf("WHERE %s ORDER BY created_at ASC, email ASC", sqlf.Join(conds, "AND"))
+	return (&userEmails{}).getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }

@@ -19,7 +19,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { Suggestion, SuggestionItem, createSuggestion, fuzzySearchFilters } from './Suggestion'
 import { RegexpToggle } from './RegexpToggle'
-import { PatternTypeProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions } from '../searchFilterSuggestions'
 import {
@@ -37,6 +37,8 @@ import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import { CaseSensitivityToggle } from './CaseSensitivityToggle'
+import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -44,7 +46,7 @@ import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive
  */
 export const queryUpdates = new Subject<string>()
 
-interface Props extends PatternTypeProps {
+interface Props extends PatternTypeProps, CaseSensitivityProps, SettingsCascadeProps {
     location: H.Location
     history: H.History
 
@@ -149,7 +151,12 @@ export class QueryInput extends React.Component<Props, State> {
         // (will be used in next PR to push to queryHistory (undo/redo))
         this.subscriptions.add(this.inputValues.subscribe(queryState => this.props.onChange(queryState)))
 
-        if (!this.props.withoutSuggestions) {
+        const hideSuggestionsSetting =
+            isSettingsValid(props.settingsCascade) &&
+            props.settingsCascade.final &&
+            props.settingsCascade.final['search.hideSuggestions']
+
+        if (!hideSuggestionsSetting && !this.props.withoutSuggestions) {
             // Show suggestions on input change.
             this.subscriptions.add(
                 this.inputValues.subscribe(() => {
@@ -353,8 +360,14 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const hideSuggestionsSetting =
+            isSettingsValid(this.props.settingsCascade) &&
+            this.props.settingsCascade.final &&
+            this.props.settingsCascade.final['search.hideSuggestions']
+
         const showSuggestions =
             !this.props.withoutSuggestions &&
+            !hideSuggestionsSetting &&
             this.state.showSuggestions &&
             (this.state.suggestions.values.length > 0 || this.state.loadingSuggestions)
 
@@ -430,11 +443,18 @@ export class QueryInput extends React.Component<Props, State> {
                                         )}
                                     </ul>
                                 )}
-                                <RegexpToggle
-                                    {...this.props}
-                                    navbarSearchQuery={this.props.value.query}
-                                    filtersInQuery={this.props.filterQuery}
-                                />
+                                <div className="query-input2__toggle-container">
+                                    <CaseSensitivityToggle
+                                        {...this.props}
+                                        navbarSearchQuery={this.props.value.query}
+                                        filtersInQuery={this.props.filterQuery}
+                                    />
+                                    <RegexpToggle
+                                        {...this.props}
+                                        navbarSearchQuery={this.props.value.query}
+                                        filtersInQuery={this.props.filterQuery}
+                                    />
+                                </div>
                             </div>
                         </div>
                     )
@@ -488,13 +508,7 @@ export class QueryInput extends React.Component<Props, State> {
             }
 
             // 🚨 PRIVACY: never provide any private data in { code_search: { suggestion: { type } } }.
-            eventLogger.log('SearchSuggestionSelected', {
-                code_search: {
-                    suggestion: {
-                        type: suggestion.type,
-                    },
-                },
-            })
+            eventLogger.log('SearchSuggestionSelected', { type: suggestion.type })
 
             // if separate word is being typed and suggestion with url is selected
             if (

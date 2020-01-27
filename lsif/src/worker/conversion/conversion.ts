@@ -44,10 +44,10 @@ export async function convertDatabase(
         )
 
         // Move the temp file where it can be found by the server
-        await fs.rename(tempFile, dbFilename(settings.STORAGE_ROOT, upload.id, upload.repository, upload.commit))
+        await fs.rename(tempFile, dbFilename(settings.STORAGE_ROOT, upload.id))
 
         logger.info('Converted upload', {
-            repository: upload.repository,
+            repositoryId: upload.repositoryId,
             commit: upload.commit,
             root: upload.root,
         })
@@ -67,28 +67,30 @@ export async function convertDatabase(
  *
  * @param entityManager The EntityManager to use as part of a transaction.
  * @param dumpManager The dumps manager instance.
- * @param fetchConfiguration A function that returns the current configuration.
+ * @param frontendUrl The url of the frontend internal API.
  * @param upload The processed upload record.
  * @param ctx The tracing context.
  */
 export async function updateCommitsAndDumpsVisibleFromTip(
     entityManager: EntityManager,
     dumpManager: DumpManager,
-    fetchConfiguration: () => { gitServers: string[] },
+    frontendUrl: string,
     upload: pgModels.LsifUpload,
     ctx: TracingContext
 ): Promise<void> {
-    const gitserverUrls = fetchConfiguration().gitServers
-
-    const tipCommit = await dumpManager.discoverTip({ repository: upload.repository, gitserverUrls, ctx })
+    const tipCommit = await dumpManager.discoverTip({
+        repositoryId: upload.repositoryId,
+        frontendUrl,
+        ctx,
+    })
     if (tipCommit === undefined) {
         throw new Error('No tip commit available for repository')
     }
 
     const commits = await dumpManager.discoverCommits({
-        repository: upload.repository,
+        repositoryId: upload.repositoryId,
         commit: upload.commit,
-        gitserverUrls,
+        frontendUrl,
         ctx,
     })
 
@@ -100,9 +102,9 @@ export async function updateCommitsAndDumpsVisibleFromTip(
         // the tip and all dumps will be invisible.
 
         const tipCommits = await dumpManager.discoverCommits({
-            repository: upload.repository,
+            repositoryId: upload.repositoryId,
             commit: tipCommit,
-            gitserverUrls,
+            frontendUrl,
             ctx,
         })
 
@@ -114,6 +116,6 @@ export async function updateCommitsAndDumpsVisibleFromTip(
         }
     }
 
-    await dumpManager.updateCommits(upload.repository, commits, ctx, entityManager)
-    await dumpManager.updateDumpsVisibleFromTip(upload.repository, tipCommit, ctx, entityManager)
+    await dumpManager.updateCommits(upload.repositoryId, commits, ctx, entityManager)
+    await dumpManager.updateDumpsVisibleFromTip(upload.repositoryId, tipCommit, ctx, entityManager)
 }

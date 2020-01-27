@@ -7,7 +7,13 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { authRequired } from '../auth'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from '../search'
+import {
+    parseSearchURLQuery,
+    PatternTypeProps,
+    InteractiveSearchProps,
+    CaseSensitivityProps,
+    SmartSearchFieldProps,
+} from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
@@ -31,7 +37,9 @@ interface Props
         ThemePreferenceProps,
         ActivationProps,
         PatternTypeProps,
-        InteractiveSearchProps {
+        CaseSensitivityProps,
+        InteractiveSearchProps,
+        SmartSearchFieldProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null
@@ -179,6 +187,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                             {...this.props}
                                             navbarSearchState={this.props.navbarSearchQueryState}
                                             onChange={this.props.onNavbarQueryChange}
+                                            smartSearchField={this.props.smartSearchField}
                                         />
                                     </div>
                                 )}

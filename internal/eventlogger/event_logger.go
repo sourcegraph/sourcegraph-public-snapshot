@@ -1,6 +1,7 @@
 package eventlogger
 
 import (
+	"encoding/json"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -14,7 +15,7 @@ import (
 type TelemetryRequest struct {
 	UserID    int32
 	EventName string
-	Argument  string
+	Argument  json.RawMessage
 }
 
 // LogEvent sends a payload representing an event to the api/telemetry endpoint.
@@ -25,7 +26,7 @@ type TelemetryRequest struct {
 // to wait for the frontend to start.
 //
 // Note: This does not block since it creates a new goroutine.
-func LogEvent(userID int32, name, argument string) {
+func LogEvent(userID int32, name string, argument json.RawMessage) {
 	go func() {
 		err := logEvent(userID, name, argument)
 		if err != nil {
@@ -35,7 +36,7 @@ func LogEvent(userID int32, name, argument string) {
 }
 
 // logEvent sends a payload representing some user event to the InternalClient telemetry API
-func logEvent(userID int32, name, argument string) error {
+func logEvent(userID int32, name string, argument json.RawMessage) error {
 	reqBody := &TelemetryRequest{
 		UserID:    userID,
 		EventName: name,

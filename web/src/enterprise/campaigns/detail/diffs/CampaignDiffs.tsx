@@ -2,18 +2,19 @@ import * as H from 'history'
 import * as React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
 import { FileDiffTabNodeProps, FileDiffTabNode } from '../FileDiffTabNode'
-import { Observable } from 'rxjs'
+import { Observable, Subject } from 'rxjs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 
 interface Props extends ThemeProps {
     queryChangesetsConnection: (
         args: FilteredConnectionQueryArgs
-    ) => Observable<GQL.IExternalChangesetConnection | GQL.IChangesetPlanConnection>
+    ) => Observable<Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>>
     persistLines: boolean
     history: H.History
     location: H.Location
+    changesetUpdates: Subject<void>
     className?: string
 }
 
@@ -27,11 +28,12 @@ export const CampaignDiffs: React.FunctionComponent<Props> = ({
     history,
     location,
     className,
+    changesetUpdates,
 }) => (
     <div className={className}>
         <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<FileDiffTabNodeProps, 'node'>>
             className="mt-2"
-            // updates={changesetUpdates}
+            updates={changesetUpdates}
             nodeComponent={FileDiffTabNode}
             nodeComponentProps={{
                 persistLines,

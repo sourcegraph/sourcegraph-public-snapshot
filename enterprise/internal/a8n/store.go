@@ -63,7 +63,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 }
 
 // ProcessPendingChangesetJobs attempts to fetch one pending changeset job.
-// A pending job is one that has never been started, its campaign is published and its plan is not cancelled.
+// A pending job is one that has never been started and its plan is not cancelled.
 // If found, 'process' is called. We guarantee that if process is called it will have exclusive global access to
 // the job. All operations on the job should be done using the supplied store as they will run in a transaction.
 // Returning an error will roll back the transaction.
@@ -100,7 +100,6 @@ UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	JOIN campaign_plans p ON p.id = c.campaign_plan_id
 	WHERE j.started_at IS NULL
 	AND p.canceled_at IS NULL
-	AND c.published_at IS NOT NULL
 	ORDER BY j.id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
@@ -288,7 +287,7 @@ func (s *Store) CreateChangesets(ctx context.Context, cs ...*a8n.Changeset) erro
 			exist = append(exist, cs[i].ID)
 		}
 
-		return int64(cs[i].ID), 1, err
+		return cs[i].ID, 1, err
 	})
 	if err != nil {
 		return err
@@ -553,7 +552,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -633,7 +632,7 @@ func (s *Store) UpdateChangesets(ctx context.Context, cs ...*a8n.Changeset) erro
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		i++
 		err = scanChangeset(cs[i], sc)
-		return int64(cs[i].ID), 1, err
+		return cs[i].ID, 1, err
 	})
 }
 
@@ -763,7 +762,7 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -867,7 +866,7 @@ func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetE
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		i++
 		err = scanChangesetEvent(cs[i], sc)
-		return int64(cs[i].ID), 1, err
+		return cs[i].ID, 1, err
 	})
 }
 
@@ -996,7 +995,7 @@ func (s *Store) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaign(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1012,10 +1011,9 @@ INSERT INTO campaigns (
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   name,
@@ -1027,8 +1025,7 @@ RETURNING
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 `
 
 func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -1057,7 +1054,6 @@ func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		changesetIDs,
 		nullInt64Column(c.CampaignPlanID),
 		nullTimeColumn(c.ClosedAt),
-		nullTimeColumn(c.PublishedAt),
 	), nil
 }
 
@@ -1098,7 +1094,7 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *a8n.Campaign) error {
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaign(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1114,9 +1110,8 @@ SET (
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  closed_at
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1129,8 +1124,7 @@ RETURNING
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 `
 
 func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -1152,7 +1146,6 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		changesetIDs,
 		nullInt64Column(c.CampaignPlanID),
 		nullTimeColumn(c.ClosedAt),
-		nullTimeColumn(c.PublishedAt),
 		c.ID,
 	), nil
 }
@@ -1246,8 +1239,7 @@ SELECT
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 FROM campaigns
 WHERE %s
 LIMIT 1
@@ -1289,7 +1281,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -1313,8 +1305,7 @@ SELECT
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 FROM campaigns
 WHERE %s
 ORDER BY id ASC
@@ -1351,7 +1342,7 @@ func (s *Store) CreateCampaignPlan(ctx context.Context, c *a8n.CampaignPlan) err
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaignPlan(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1362,16 +1353,18 @@ INSERT INTO campaign_plans (
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 )
-VALUES (%s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_type,
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 `
 
 func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
@@ -1395,6 +1388,7 @@ func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		nullTimeColumn(c.CanceledAt),
 		c.CreatedAt,
 		c.UpdatedAt,
+		c.UserID,
 	), nil
 }
 
@@ -1407,7 +1401,7 @@ func (s *Store) UpdateCampaignPlan(ctx context.Context, c *a8n.CampaignPlan) err
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaignPlan(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1418,8 +1412,9 @@ SET (
   campaign_type,
   arguments,
   canceled_at,
-  updated_at
-) = (%s, %s, %s, %s)
+  updated_at,
+  user_id
+) = (%s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1427,7 +1422,8 @@ RETURNING
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 `
 
 func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
@@ -1444,6 +1440,7 @@ func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		arguments,
 		nullTimeColumn(c.CanceledAt),
 		c.UpdatedAt,
+		c.UserID,
 		c.ID,
 	), nil
 }
@@ -1554,7 +1551,8 @@ SELECT
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 FROM campaign_plans
 WHERE %s
 LIMIT 1
@@ -1658,7 +1656,7 @@ func (s *Store) ListCampaignPlans(ctx context.Context, opts ListCampaignPlansOpt
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -1677,7 +1675,8 @@ SELECT
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 FROM campaign_plans
 WHERE %s
 ORDER BY id ASC
@@ -1712,7 +1711,7 @@ func (s *Store) CreateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaignJob(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1781,7 +1780,7 @@ func (s *Store) UpdateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaignJob(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -1852,7 +1851,7 @@ DELETE FROM campaign_jobs WHERE id = %s
 `
 
 // CountCampaignJobsOpts captures the query options needed for
-// counting code mods.
+// counting campaign jobs
 type CountCampaignJobsOpts struct {
 	CampaignPlanID int64
 	OnlyFinished   bool
@@ -1988,7 +1987,7 @@ func (s *Store) ListCampaignJobs(ctx context.Context, opts ListCampaignJobsOpts)
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -2082,7 +2081,7 @@ func (s *Store) CreateChangesetJob(ctx context.Context, c *a8n.ChangesetJob) err
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanChangesetJob(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -2142,7 +2141,7 @@ func (s *Store) UpdateChangesetJob(ctx context.Context, c *a8n.ChangesetJob) err
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanChangesetJob(c, sc)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 }
 
@@ -2238,6 +2237,34 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 	return sqlf.Sprintf(countChangesetJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
+// GetLatestChangesetJobCreatedAt returns the most recent created_at time for all changeset jobs
+// for a campaign. But only if they have all been created, one for each CampaignJob belonging to the CampaignPlan attached to the Campaign. If not, it returns a zero time.Time.
+func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID int64) (time.Time, error) {
+	q := sqlf.Sprintf(getLatestChangesetJobPublishedAtFmtstr, campaignID)
+	var createdAt time.Time
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		err = sc.Scan(&dbutil.NullTime{Time: &createdAt})
+		if err != nil {
+			return 0, 0, err
+		}
+		return 0, 1, nil
+	})
+	if err != nil {
+		return createdAt, err
+	}
+	return createdAt, nil
+}
+
+var getLatestChangesetJobPublishedAtFmtstr = `
+SELECT
+  max(changeset_jobs.created_at)
+FROM campaign_jobs
+INNER JOIN campaigns ON campaign_jobs.campaign_plan_id = campaigns.campaign_plan_id
+LEFT JOIN changeset_jobs ON changeset_jobs.campaign_job_id = campaign_jobs.id
+WHERE campaigns.id = %s
+HAVING count(*) FILTER (WHERE changeset_jobs.created_at IS NULL) = 0;
+`
+
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
 type GetChangesetJobOpts struct {
 	ID            int64
@@ -2246,7 +2273,7 @@ type GetChangesetJobOpts struct {
 	ChangesetID   int64
 }
 
-// GetChangesetJob gets a code mod matching the given options.
+// GetChangesetJob gets a ChangesetJob matching the given options.
 func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (*a8n.ChangesetJob, error) {
 	q := getChangesetJobQuery(&opts)
 
@@ -2308,11 +2335,12 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 }
 
 // ListChangesetJobsOpts captures the query options needed for
-// listing code mods.
+// listing changeset jobs.
 type ListChangesetJobsOpts struct {
-	CampaignID int64
-	Cursor     int64
-	Limit      int
+	CampaignID     int64
+	CampaignPlanID int64
+	Cursor         int64
+	Limit          int
 }
 
 // ListChangesetJobs lists ChangesetJobs with the given filters.
@@ -2326,7 +2354,7 @@ func (s *Store) ListChangesetJobs(ctx context.Context, opts ListChangesetJobsOpt
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
-		return int64(c.ID), 1, err
+		return c.ID, 1, err
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -2337,21 +2365,24 @@ func (s *Store) ListChangesetJobs(ctx context.Context, opts ListChangesetJobsOpt
 	return cs, next, err
 }
 
-var listChangesetJobsQueryFmtstr = `
+var listChangesetJobsQueryFmtstrSelect = `
 -- source: internal/a8n/store.go:ListChangesetJobs
 SELECT
-  id,
-  campaign_id,
-  campaign_job_id,
-  changeset_id,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
+  changeset_jobs.id,
+  changeset_jobs.campaign_id,
+  changeset_jobs.campaign_job_id,
+  changeset_jobs.changeset_id,
+  changeset_jobs.error,
+  changeset_jobs.started_at,
+  changeset_jobs.finished_at,
+  changeset_jobs.created_at,
+  changeset_jobs.updated_at
 FROM changeset_jobs
+`
+
+var listChangesetJobsQueryFmtstrConditions = `
 WHERE %s
-ORDER BY id ASC
+ORDER BY changeset_jobs.id ASC
 `
 
 func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
@@ -2366,17 +2397,24 @@ func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
 	}
 
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("id >= %s", opts.Cursor),
+		sqlf.Sprintf("changeset_jobs.id >= %s", opts.Cursor),
 	}
 
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.CampaignID))
+		preds = append(preds, sqlf.Sprintf("changeset_jobs.campaign_id = %s", opts.CampaignID))
 	}
 
-	return sqlf.Sprintf(
-		listChangesetJobsQueryFmtstr+limitClause,
-		sqlf.Join(preds, "\n AND "),
-	)
+	var joinClause string
+	if opts.CampaignPlanID != 0 {
+		joinClause = "JOIN campaigns ON changeset_jobs.campaign_id = campaigns.id"
+
+		preds = append(preds, sqlf.Sprintf("campaigns.campaign_plan_id = %s", opts.CampaignPlanID))
+	}
+
+	queryTemplate := listChangesetJobsQueryFmtstrSelect + joinClause +
+		listChangesetJobsQueryFmtstrConditions + limitClause
+
+	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
 }
 
 // ResetFailedChangesetJobs resets the Error, StartedAt and FinishedAt fields
@@ -2543,7 +2581,6 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
 		&dbutil.NullInt64{N: &c.CampaignPlanID},
 		&dbutil.NullTime{Time: &c.ClosedAt},
-		&dbutil.NullTime{Time: &c.PublishedAt},
 	)
 }
 
@@ -2555,6 +2592,7 @@ func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
 		&dbutil.NullTime{Time: &c.CanceledAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
+		&c.UserID,
 	)
 }
 

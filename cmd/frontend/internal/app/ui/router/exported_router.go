@@ -14,4 +14,5 @@ const (
 	RouteSignIn        = "sign-in"
 	RouteSignUp        = "sign-up"
 	RoutePasswordReset = "password-reset"
+	RouteRaw           = "raw"
 )
