@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -119,14 +118,19 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 // which implements the db.AuthzStore interface. It proactively clean up left-over pending permissions to
 // prevent accidental reuse (i.e. another user with same username or email address(es) but not the same person).
 func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeUserPermissionsArgs) error {
-	errs := new(multierror.Error)
-	if err := s.store.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
-		errs = multierror.Append(errs, err)
+	txs, err := s.store.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "start transaction")
+	}
+	defer txs.Done(&err)
+
+	if err = txs.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
+		return err
 	}
 
 	bindIDs := append([]string{args.Username}, args.VerifiedEmails...)
-	if err := s.store.DeleteAllUserPendingPermissions(ctx, bindIDs); err != nil {
-		errs = multierror.Append(errs, err)
+	if err := txs.DeleteAllUserPendingPermissions(ctx, bindIDs); err != nil {
+		return err
 	}
-	return errs.ErrorOrNil()
+	return nil
 }
