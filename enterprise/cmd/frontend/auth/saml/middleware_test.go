@@ -169,7 +169,7 @@ func TestMiddleware(t *testing.T) {
 	defer idpHTTPServer.Close()
 
 	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
+		return &license.Info{Tags: licensing.EliteTags}, "test-signature", nil
 	}
 	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 

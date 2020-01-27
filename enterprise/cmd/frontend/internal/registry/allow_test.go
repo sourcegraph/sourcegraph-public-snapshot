@@ -15,7 +15,7 @@ import (
 
 func TestIsRemoteExtensionAllowed(t *testing.T) {
 	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
+		return &license.Info{Tags: licensing.EliteTags}, "test-signature", nil
 	}
 	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 	defer conf.Mock(nil)
@@ -59,7 +59,7 @@ func sameElements(a, b []string) bool {
 
 func TestFilterRemoteExtensions(t *testing.T) {
 	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
+		return &license.Info{Tags: licensing.EliteTags}, "test-signature", nil
 	}
 	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 

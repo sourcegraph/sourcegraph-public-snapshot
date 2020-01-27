@@ -3,9 +3,13 @@ package licensing
 import "strings"
 
 const (
-	// EnterpriseStarterTag is the license tag for Enterprise Starter (which includes only a subset
-	// of Enterprise features).
+	// EnterpriseBasicTag is the license tag for Elite.
+	EnterpriseBasicTag = "basic"
+	// EnterpriseStarterTag is the license tag for Enterprise Starter.
+	// Deprecated: This exists for backwards compatibility, future licenses should use EnterprisePlusTags instead.
 	EnterpriseStarterTag = "starter"
+	// EnterprisePlusTag is the license tag for Enterprise Plus.
+	EnterprisePlusTag = "plus"
 
 	// TrueUpUserCountTag is the license tag that indicates that the licensed user count can be
 	// exceeded and will be charged later.
@@ -13,12 +17,15 @@ const (
 )
 
 var (
-	// EnterpriseStarterTags is the license tags for Enterprise Starter.
+	// EnterpriseBasicTags are the license tags for Enterprise.
+	EnterpriseBasicTags = []string{EnterpriseBasicTag}
+	// EnterpriseStarterTags are the license tags for Enterprise Starter.
+	// Deprecated: This exists for backwards compatibility, future licenses should use EnterprisePlusTags instead.
 	EnterpriseStarterTags = []string{EnterpriseStarterTag}
-
-	// EnterpriseTags is the license tags for Enterprise (intentionally empty because it has no
-	// feature restrictions)
-	EnterpriseTags = []string{}
+	// EnterprisePlusTags are the license tags for Enterprise Plus.
+	EnterprisePlusTags = []string{EnterprisePlusTag}
+	// EliteTags is the license tags for Elite (intentionally empty because it has no feature restrictions)
+	EliteTags = []string{}
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
@@ -38,8 +45,14 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 	}
 
 	var name string
-	if hasTag("starter") {
-		name = " Starter"
+	if hasTag(EnterpriseBasicTag) {
+		name = "Enterprise"
+	} else if hasTag(EnterprisePlusTag) {
+		name = "Enterprise Plus"
+	} else if hasTag(EnterpriseStarterTag) {
+		name = "Enterprise Starter"
+	} else {
+		name = "Elite"
 	}
 
 	var misc []string
@@ -53,5 +66,5 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 		name += " (" + strings.Join(misc, ", ") + ")"
 	}
 
-	return "Sourcegraph Enterprise" + name
+	return "Sourcegraph " + name
 }

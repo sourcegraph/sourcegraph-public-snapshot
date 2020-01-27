@@ -27,10 +27,14 @@ func InfoForProductPlan(ctx context.Context, planID string) (licenseTags []strin
 	switch {
 	case plan.Product.Metadata["licenseTags"] != "":
 		tags = license.ParseTagsInput(plan.Product.Metadata["licenseTags"])
+	case plan.Product.Name == "Elite":
+		tags = licensing.EliteTags
+	case plan.Product.Name == "Enterprise Plus":
+		tags = licensing.EnterprisePlusTags
 	case plan.Product.Name == "Enterprise Starter":
 		tags = licensing.EnterpriseStarterTags
 	case plan.Product.Name == "Enterprise":
-		tags = licensing.EnterpriseTags
+		tags = licensing.EnterpriseBasicTags
 	default:
 		return nil, nil, fmt.Errorf("unable to determine license tags for plan %q (nickname %q)", planID, plan.Nickname)
 	}

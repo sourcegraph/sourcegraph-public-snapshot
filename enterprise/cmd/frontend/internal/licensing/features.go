@@ -14,19 +14,29 @@ type Feature string
 // The list of features. For each feature, add a new const here and the checking logic in
 // isFeatureEnabled below.
 const (
-	// FeatureACLs is whether ACLs may be used, such as GitHub or GitLab repository permissions and
-	// integration with GitHub/GitLab for user authentication.
+	// FeatureCustomBranding is whether custom branding in this Sourcegraph instance is allowed.
+	FeatureCustomBranding Feature = "custom-branding"
+
+	// FeatureACLs is whether ACLs may be used for repository permissions (code host authz providers or native
+	// permissions user mapping) and integration with code hosts for user authentication. Currently supported
+	// code hosts are GitHub, GitLab, and Bitbucket Server.
 	FeatureACLs Feature = "acls"
+
+	// FeatureExtensionWhitelist is whether whitelisting extensions in this Sourcegraph instance is allowed.
+	FeatureExtensionWhitelist Feature = "extension-whitelist"
+
+	// FeatureRemoteExtensionsAllowDisallow is whether the site admin may explictly specify a list
+	// of allowed remote extensions and prevent any other remote extensions from being used. It does
+	// not apply to locally published extensions.
+	FeatureRemoteExtensionsAllowDisallow Feature = "remote-extensions-allow-disallow"
 
 	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance is
 	// allowed. If not, then extensions must be published to Sourcegraph.com. All instances may use
 	// extensions published to Sourcegraph.com.
 	FeatureExtensionRegistry Feature = "private-extension-registry"
 
-	// FeatureRemoteExtensionsAllowDisallow is whether the site admin may explictly specify a list
-	// of allowed remote extensions and prevent any other remote extensions from being used. It does
-	// not apply to locally published extensions.
-	FeatureRemoteExtensionsAllowDisallow = "remote-extensions-allow-disallow"
+	// FeatureAutomation is whether using automation in this Sourcegraph instance is allowed.
+	FeatureAutomation Feature = "automation"
 )
 
 func isFeatureEnabled(info license.Info, feature Feature) bool {
@@ -40,16 +50,24 @@ func isFeatureEnabled(info license.Info, feature Feature) bool {
 
 	// Add feature-specific logic here.
 	switch feature {
+	case FeatureCustomBranding:
+		// Custom branding only available in Enterprise Plus and Elite.
+		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag)
 	case FeatureACLs:
-		// Enterprise Starter does not support ACLs.
-		return !info.HasTag(EnterpriseStarterTag)
-	case FeatureExtensionRegistry:
-		// Enterprise Starter does not support a local extension registry.
-		return !info.HasTag(EnterpriseStarterTag)
+		// ACLs only available in Enterprise Plus and Elite.
+		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag)
+	case FeatureExtensionWhitelist:
+		// Extension whitelist only available in Enterprise Plus and Elite.
+		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag)
 	case FeatureRemoteExtensionsAllowDisallow:
-		// Enterprise Starter does not support explictly allowing/disallowing remote extensions by
-		// extension ID.
-		return !info.HasTag(EnterpriseStarterTag)
+		// Explictly allowing/disallowing remote extensions by extension ID only available in Enterprise Plus and Elite.
+		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag)
+	case FeatureExtensionRegistry:
+		// Local extension registry only available in Elite.
+		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag) && !info.HasTag(EnterprisePlusTag)
+	case FeatureAutomation:
+		// Automation only available in Elite.
+		return !info.HasTag(EnterpriseBasicTag) && !info.HasTag(EnterpriseStarterTag) && !info.HasTag(EnterprisePlusTag)
 	}
 	return false
 }

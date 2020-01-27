@@ -117,7 +117,7 @@ func TestMiddleware(t *testing.T) {
 	defer cleanup()
 
 	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
+		return &license.Info{Tags: licensing.EliteTags}, "test-signature", nil
 	}
 	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
@@ -297,7 +297,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	defer cleanup()
 
 	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
+		return &license.Info{Tags: licensing.EliteTags}, "test-signature", nil
 	}
 	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
