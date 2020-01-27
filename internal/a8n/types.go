@@ -1,6 +1,7 @@
 package a8n
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -548,6 +549,37 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 		states[s] = true
 	}
 	return SelectReviewState(states), nil
+}
+
+func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
+	commits := make([]*github.Commit, 0, len(ce))
+	for _, e := range ce {
+		if e.Kind != ChangesetEventKindGitHubCommit {
+			continue
+		}
+		commits = append(commits, e.Metadata.(*github.Commit))
+	}
+
+	sort.Slice(commits, func(i, j int) bool {
+		return commits[i].CommittedDate.Before(commits[j].CommittedDate)
+	})
+
+	// We want the most recent commit
+	latest := commits[len(commits)-1]
+
+	state := ChangesetCheckStatePending
+	switch latest.Status.State {
+	case "ERROR", "FAILURE":
+		state = ChangesetCheckStateFailed
+	case "EXPECTED", "PENDING":
+		state = ChangesetCheckStatePending
+	case "SUCCESS":
+		state = ChangesetCheckStatePassed
+	default:
+		return nil, nil
+	}
+
+	return &state, nil
 }
 
 // Actor returns the actor of the ChangesetEvent.

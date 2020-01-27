@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"math/rand"
 	"sort"
 	"sync"
 
@@ -206,35 +205,30 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 		return a8n.ChangesetReviewStatePending, err
 	}
 
-	events := make(a8n.ChangesetEvents, len(es))
-	for i, e := range es {
-		events[i] = e
-	}
-
+	events := a8n.ChangesetEvents(es)
 	sort.Sort(events)
-
 	return events.ReviewState()
 }
 
-var dummyCheckStates = []interface{}{
-	a8n.ChangesetCheckStatePending,
-	a8n.ChangesetCheckStatePassed,
-	a8n.ChangesetCheckStateFailed,
-	nil,
-	errors.New("Error"),
-}
-
 func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheckState, error) {
-	state := dummyCheckStates[rand.Intn(len(dummyCheckStates))]
-	switch v := state.(type) {
-	case a8n.ChangesetCheckState:
-		return &v, nil
-	case error:
-		return nil, v
-	case nil:
-		return nil, nil
+	// ChangesetEvents are currently only implemented for GitHub. For other
+	// codehosts we compute the ReviewState from the Metadata field of a
+	// Changeset.
+	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
+		return nil, errors.New("CheckState currently only available for GitHub")
 	}
-	return nil, errors.New("invalid state")
+
+	opts := ee.ListChangesetEventsOpts{
+		ChangesetIDs: []int64{r.Changeset.ID},
+		Limit:        -1,
+	}
+	es, _, err := r.store.ListChangesetEvents(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	events := a8n.ChangesetEvents(es)
+	return events.CheckState()
 }
 
 func (r *changesetResolver) Events(ctx context.Context, args *struct {
