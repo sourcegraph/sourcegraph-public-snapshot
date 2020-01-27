@@ -24,38 +24,6 @@ export function parseSearchURLQuery(query: string): string | undefined {
 }
 
 /**
- * Parses the query out of the URL search params for interactive mode. This will parse
- * each individual filter's query parameter (for example, `file=` or `repo=`) in addition
- * to the raw query parameter (`q=`)
- *
- * @param query the URL query parameters
- */
-// export function interactiveParseSearchURLQuery(query: string): string | undefined {
-//     const searchParams = new URLSearchParams(query)
-//     const finalQueryParts = []
-//     for (const filterType of [...filterTypeKeys, ...negatedFilters].filter(key => key !== FilterTypes.case)) {
-//         // Ignore `case:` filter, since SearchResults and SourcegraphWebApp components will
-//         // call `searchURLISCaseSensitive` to check for case sensitivity in both interactive
-//         // and non-interacive modes.
-//         for (const filterValue of searchParams.getAll(filterType)) {
-//             finalQueryParts.push(`${filterType}:${filterValue}`)
-//         }
-//     }
-
-//     const querySearchParams = searchParams.get('q')
-
-//     if (querySearchParams) {
-//         finalQueryParts.push(querySearchParams)
-//     }
-
-//     if (finalQueryParts.length > 0) {
-//         return finalQueryParts.join(' ')
-//     }
-
-//     return undefined
-// }
-
-/**
  * Parses the pattern type out of the URL search params (the 'patternType' parameter). If the 'pattern' parameter
  * is not present, or it is an invalid value, it returns undefined.
  */

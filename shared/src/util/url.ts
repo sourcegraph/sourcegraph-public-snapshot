@@ -603,33 +603,6 @@ export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): str
     return individualTokens.join(' ')
 }
 
-// /**
-//  * Builds a URL query for a given interactive mode query (without leading `?`).
-//  * Returns a URLSearchParams object containing the filters and values in the
-//  * search query.
-//  *
-//  * @param filtersInQuery the map representing the filters added to the query
-//  */
-// export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
-//     const searchParams = new URLSearchParams()
-
-//     for (const searchType of [...filterTypeKeys, ...negatedFilters]) {
-//         for (const [, filterValue] of Object.entries(filtersInQuery)) {
-//             if (filterValue.type === searchType) {
-//                 if (filterValue.negated) {
-//                     if (isNegatableFilter(searchType)) {
-//                         searchParams.append(NegatedFilters[searchType], filterValue.value)
-//                     }
-//                     continue
-//                 }
-//                 searchParams.append(searchType, filterValue.value)
-//             }
-//         }
-//     }
-
-//     return searchParams
-// }
-
 function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
     const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
     const matches = query.match(patternTypeRegexp)
