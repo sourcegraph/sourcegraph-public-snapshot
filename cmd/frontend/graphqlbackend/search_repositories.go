@@ -25,18 +25,18 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	}
 
 	fieldWhitelist := map[string]struct{}{
-		query.FieldRepo:        {},
-		query.FieldRepoGroup:   {},
-		query.FieldType:        {},
-		query.FieldDefault:     {},
-		query.FieldIndex:       {},
-		query.FieldCount:       {},
-		query.FieldMax:         {},
-		query.FieldTimeout:     {},
-		query.FieldFork:        {},
-		query.FieldArchived:    {},
-		query.FieldCase:        {},
-		query.FieldRepoHasFile: {},
+		query.FieldRepo:               {},
+		query.FieldRepoGroup:          {},
+		query.FieldType:               {},
+		query.FieldDefault:            {},
+		query.FieldIndex:              {},
+		query.FieldCount:              {},
+		query.FieldMax:                {},
+		query.FieldTimeout:            {},
+		query.FieldFork:               {},
+		query.FieldArchived:           {},
+		query.FieldCase:               {},
+		query.FieldRepoHasFile:        {},
 		query.FieldRepoHasCommitAfter: {},
 	}
 	// Don't return repo results if the search contains fields that aren't on the whitelist.
