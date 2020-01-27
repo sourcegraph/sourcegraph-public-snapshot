@@ -579,7 +579,9 @@ func expandUsernamesToEmails(ctx context.Context, values []string) (expandedValu
 		} else if err != nil {
 			return nil, err
 		}
-		emails, err := db.UserEmails.ListByUser(ctx, user.ID)
+		emails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+			UserID: user.ID,
+		})
 		if err != nil {
 			return nil, err
 		}

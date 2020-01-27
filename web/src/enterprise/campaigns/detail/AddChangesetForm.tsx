@@ -90,31 +90,48 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
     )
     return (
         <>
-            <Form className="form-inline" onSubmit={submit}>
-                <input
-                    required={true}
-                    type="text"
-                    size={35}
-                    className="form-control mr-1"
-                    placeholder="Repository name"
-                    value={repoName}
-                    onChange={event => setRepoName(event.target.value)}
-                />
-                <input
-                    required={true}
-                    type="text"
-                    size={16}
-                    className="form-control mr-1"
-                    placeholder="Changeset number"
-                    value={externalID}
-                    onChange={event => setExternalID(event.target.value)}
-                />
+            <h3>Track changeset</h3>
+            <Form onSubmit={submit}>
+                <div className="d-flex">
+                    <div className="form-group mr-3 mb-0">
+                        <label htmlFor="changeset-repo">Repository name</label>
+                        <input
+                            required={true}
+                            id="changeset-repo"
+                            type="text"
+                            size={35}
+                            className="form-control mr-1"
+                            placeholder="Repository name"
+                            value={repoName}
+                            onChange={event => setRepoName(event.target.value)}
+                        />
+                        <p className="form-text text-muted">
+                            Find the Sourcegraph repository name in the URL (e.g., {window.location.protocol}//
+                            {window.location.host}/<strong>&lt;REPOSITORY_NAME&gt;</strong>)
+                        </p>
+                    </div>
+                    <div className="form-group mr-3 mb-0">
+                        <label htmlFor="changeset-number">Changeset number</label>
+                        <input
+                            required={true}
+                            id="changeset-number"
+                            type="number"
+                            min={1}
+                            step={1}
+                            size={16}
+                            className="form-control mr-1"
+                            placeholder="Changeset number"
+                            value={externalID}
+                            onChange={event => setExternalID(event.target.value + '')}
+                        />
+                    </div>
+                </div>
                 <button type="submit" className="btn btn-primary mr-1">
                     Add changeset
+                    {isLoading && <LoadingSpinner className="ml-2 icon-inline" />}
                 </button>
-                {isLoading && <LoadingSpinner className="icon-inline" />}
             </Form>
-            {error && <ErrorAlert error={error} />}
+            {error && <ErrorAlert error={error} className="mt-3" />}
         </>
     )
 }

@@ -2,10 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
@@ -15,9 +13,6 @@ func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 	Weeks  *int32
 	Months *int32
 }) (*siteUsageStatisticsResolver, error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("site usage statistics are not available on sourcegraph.com")
-	}
 	opt := &usagestats.SiteUsageStatisticsOptions{}
 	if args.Days != nil {
 		d := int(*args.Days)

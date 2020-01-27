@@ -185,11 +185,7 @@ export function addExternalService(
                 eventLogger.log('AddExternalServiceFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('AddExternalServiceSucceeded', {
-                externalService: {
-                    kind: data.addExternalService.kind,
-                },
-            })
+            eventLogger.log('AddExternalServiceSucceeded')
             return data.addExternalService
         })
     )

@@ -5,5 +5,5 @@
     "rootDir": ".",
     "outDir": "out",
   },
-  "include": ["*.json", "campaign-types/*.json"],
+  "include": ["*.json"],
 }

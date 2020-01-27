@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -57,9 +56,6 @@ type userConnectionResolver struct {
 func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, int, error) {
 	if r.activePeriod == nil {
 		return nil, 0, errors.New("activePeriod must not be nil")
-	}
-	if r.activePeriod != nil && envvar.SourcegraphDotComMode() {
-		return nil, 0, errors.New("usage statistics are not available on sourcegraph.com")
 	}
 	r.once.Do(func() {
 		var err error

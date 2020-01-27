@@ -11,7 +11,6 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -123,6 +122,10 @@ type NewUser struct {
 // order to avoid a race condition where multiple initial site admins could be created or zero site
 // admins could be created.
 func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
+	if Mocks.Users.Create != nil {
+		return Mocks.Users.Create(ctx, info)
+	}
+
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -269,20 +272,6 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, tx, orgs); err != nil {
 			return nil, err
 		}
-	}
-
-	var verifiedEmail string
-	if info.Email != "" && info.EmailIsVerified {
-		verifiedEmail = info.Email
-	}
-	if err = Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
-		UserID:        id,
-		Username:      info.Username,
-		VerifiedEmail: verifiedEmail,
-		Perm:          authz.Read,
-		Type:          authz.PermRepos,
-	}); err != nil {
-		return nil, err
 	}
 
 	return &types.User{

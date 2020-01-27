@@ -14,23 +14,42 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Experimental: the search query input now provides syntax highlighting, hover tooltips, and diagnostics on filters in search queries. Requires the global settings value `{ "experimentalFeatures": { "smartSearchField": true } }`.
+- Added a setting `search.hideSuggestions`, which when set to `false`, will hide search suggestions in the search bar.
 
 ### Changed
+
+- experimentalFeatures.splitSearchModes was removed as a site configuration option. It should be set in global/org/user settings.
 
 ### Fixed
 
 - After adding/removing a gitserver replica the admin interface will correctly report that repositories that need to move replicas as cloning. [#7970](https://github.com/sourcegraph/sourcegraph/issues/7970)
+- Show download button for images. [#7924](https://github.com/sourcegraph/sourcegraph/issues/7924)
 
 ### Removed
 
 - All repository fields related to `enabled` and `disabled` have been removed from the GraphQL API. These fields have been deprecated since 3.4. [#3971](https://github.com/sourcegraph/sourcegraph/pull/3971)
 - The deprecated extension API `Hover.__backcompatContents` was removed.
 
-## 3.12.2 (unreleased)
+## 3.12.3
+
+### Fixed
+
+- Fixed an issue in `sourcegraph/*` Docker images where data folders were either not created or had incorrect permissions - preventing the use of Docker volumes. [#7991](https://github.com/sourcegraph/sourcegraph/pull/7991)
+
+## 3.12.2
+
+### Added
+
+- Experimental: The site configuration field `automation.readAccess.enabled` allows site-admins to give read-only access for Automation campaigns to non-site-admins. This is a setting for the experimental feature Automation and will only have an effect when Automation is enabled under `experimentalFeatures`. [#8013](https://github.com/sourcegraph/sourcegraph/issues/8013)
 
 ### Fixed
 
 - A regression in 3.12.0 which caused [Automation find-leaked-credentials campaigns](https://docs.sourcegraph.com/user/automation#finding-leaked-credentials) to not return any results for private repositories. [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914)
+- A regression in 3.12.0 which removed the horizontal bar between search result matches.
+- Manual Automation campaigns were wrongly displayed as being in draft mode. [#8009](https://github.com/sourcegraph/sourcegraph/issues/8009)
+- Manual campaigns could be published and create the wrong changesets on code hosts, even though the campaign was never in draft mode (see line above). [#8012](https://github.com/sourcegraph/sourcegraph/pull/8012)
+- A regression in 3.12.0 which caused manual campaigns to not properly update the UI after adding a changeset. [#8023](https://github.com/sourcegraph/sourcegraph/pull/8023)
+- Minor improvements to manual campaign form fields. [#8033](https://github.com/sourcegraph/sourcegraph/pull/8033)
 
 ## 3.12.1
 
@@ -83,7 +102,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
-- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.12.1` will need to manually modify their `docker run` command to use `sourcegraph/server:3.12.1` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
+- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.12.3` will need to manually modify their `docker run` command to use `sourcegraph/server:3.12.3` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
 
 ## 3.11.1
 
