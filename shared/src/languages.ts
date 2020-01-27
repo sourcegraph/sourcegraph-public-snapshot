@@ -414,9 +414,12 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'vbs':
             return 'vbscrip'
 
-        // Verilog
+        // Verilog, including SystemVerilog
         case 'v':
         case 'veo':
+        case 'sv':
+        case 'svh':
+        case 'svi':
             return 'verilog'
 
         // VIM
