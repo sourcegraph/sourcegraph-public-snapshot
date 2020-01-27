@@ -18,9 +18,7 @@ import {
  * URL query parameter, as this represents the query that appears in the main query input in both modes.
  *
  */
-export function parseSearchURLQuery(
-    query: string,
-): string | undefined {
+export function parseSearchURLQuery(query: string): string | undefined {
     const searchParams = new URLSearchParams(query)
     return searchParams.get('q') || undefined
 }

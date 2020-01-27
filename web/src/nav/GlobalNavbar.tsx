@@ -111,8 +111,8 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
             if (query) {
                 if (this.props.interactiveSearchMode) {
                     const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(query)
-                        this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
-                        this.props.onFiltersInQueryChange(filtersInQuery)
+                    this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+                    this.props.onFiltersInQueryChange(filtersInQuery)
                 } else {
                     this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
                 }
