@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/shurcooL/go/ctxhttp"
 	"github.com/sourcegraph/go-diff/diff"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 type ActionRepoStatus struct {
