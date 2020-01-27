@@ -118,8 +118,6 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 // RevokeUserPermissions deletes both effective and pending permissions that could be related to a user,
 // which implements the db.AuthzStore interface. It proactively clean up left-over pending permissions to
 // prevent accidental reuse (i.e. another user with same username or email address(es) but not the same person).
-// The situation of left-over pending permissions is possible but highly unlikely, so we're doing it at best effort,
-// the removal of effective permissions is much more important.
 func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeUserPermissionsArgs) error {
 	errs := new(multierror.Error)
 	if err := s.store.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
