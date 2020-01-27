@@ -26,6 +26,7 @@ import { InteractiveModeInput } from '../search/input/interactive/InteractiveMod
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
+import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
 
 interface Props
     extends SettingsCascadeProps,
@@ -82,9 +83,14 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         super(props)
 
         // Reads initial state from the props (i.e. URL parameters).
-        const navbarQuery = parseSearchURLQuery(props.location.search || '')
-        if (navbarQuery) {
-            props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+        const query = parseSearchURLQuery(props.location.search || '')
+        if (query) {
+            if (props.interactiveSearchMode) {
+                const { navbarQuery } = convertPlainTextToInteractiveQuery(query)
+                props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+            } else {
+                props.onNavbarQueryChange({ query, cursorPosition: query.length })
+            }
         } else {
             // If we have no component state, then we may have gotten unmounted during a route change.
             const query = props.location.state ? props.location.state.query : ''
@@ -101,9 +107,15 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.location.search !== this.props.location.search) {
-            const navbarQuery = parseSearchURLQuery(this.props.location.search || '')
-            if (navbarQuery) {
-                this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+            const query = parseSearchURLQuery(this.props.location.search || '')
+            if (query) {
+                if (this.props.interactiveSearchMode) {
+                    const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(query)
+                        this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+                        this.props.onFiltersInQueryChange(filtersInQuery)
+                } else {
+                    this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
+                }
             }
         }
     }
