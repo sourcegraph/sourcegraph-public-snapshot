@@ -55,6 +55,7 @@ func TestDeleteUser(t *testing.T) {
 		}
 	})
 
+	// Mocking all database interactions here, but they are all thoroughly tested in the lower layer in "db" package.
 	resetMocks()
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
