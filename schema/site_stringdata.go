@@ -78,12 +78,6 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "splitSearchModes": {
-          "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "bitbucketServerFastPerm": {
           "description": "Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. This requires the installation of the Bitbucket Server Sourcegraph plugin. Warning: there may be performance degradation under significant load.",
           "type": "string",

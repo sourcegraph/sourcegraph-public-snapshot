@@ -342,8 +342,6 @@ type ExperimentalFeatures struct {
 	EventLogging string `json:"eventLogging,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: Enables searching multiple revisions of the same repository (using `repo:myrepo@branch1:branch2`).
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
-	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
-	SplitSearchModes string `json:"splitSearchModes,omitempty"`
 	// StructuralSearch description: Enables structural search.
 	StructuralSearch string `json:"structuralSearch,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
