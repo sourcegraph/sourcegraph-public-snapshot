@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Experimental: the search query input now provides syntax highlighting, hover tooltips, and diagnostics on filters in search queries. Requires the global settings value `{ "experimentalFeatures": { "smartSearchField": true } }`.
+- Added a setting `search.hideSuggestions`, which when set to `false`, will hide search suggestions in the search bar.
 
 ### Changed
 

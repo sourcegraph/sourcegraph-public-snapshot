@@ -38,6 +38,7 @@ import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 import { CaseSensitivityToggle } from './CaseSensitivityToggle'
+import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -45,7 +46,7 @@ import { CaseSensitivityToggle } from './CaseSensitivityToggle'
  */
 export const queryUpdates = new Subject<string>()
 
-interface Props extends PatternTypeProps, CaseSensitivityProps {
+interface Props extends PatternTypeProps, CaseSensitivityProps, SettingsCascadeProps {
     location: H.Location
     history: H.History
 
@@ -150,7 +151,12 @@ export class QueryInput extends React.Component<Props, State> {
         // (will be used in next PR to push to queryHistory (undo/redo))
         this.subscriptions.add(this.inputValues.subscribe(queryState => this.props.onChange(queryState)))
 
-        if (!this.props.withoutSuggestions) {
+        const hideSuggestionsSetting =
+            isSettingsValid(props.settingsCascade) &&
+            props.settingsCascade.final &&
+            props.settingsCascade.final['search.hideSuggestions']
+
+        if (!hideSuggestionsSetting && !this.props.withoutSuggestions) {
             // Show suggestions on input change.
             this.subscriptions.add(
                 this.inputValues.subscribe(() => {
@@ -354,8 +360,14 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const hideSuggestionsSetting =
+            isSettingsValid(this.props.settingsCascade) &&
+            this.props.settingsCascade.final &&
+            this.props.settingsCascade.final['search.hideSuggestions']
+
         const showSuggestions =
             !this.props.withoutSuggestions &&
+            !hideSuggestionsSetting &&
             this.state.showSuggestions &&
             (this.state.suggestions.values.length > 0 || this.state.loadingSuggestions)
 
