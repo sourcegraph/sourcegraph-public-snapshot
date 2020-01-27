@@ -21,7 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -68,7 +69,7 @@ var baseURL = &url.URL{
 
 func getSiteActivityJSON() ([]byte, error) {
 	days, weeks, months := 2, 1, 1
-	siteActivity, err := usagestats.GetSiteUsageStatistics(&usagestats.SiteUsageStatisticsOptions{
+	siteActivity, err := usagestats.GetSiteUsageStatistics(context.Background(), &usagestats.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
@@ -93,9 +94,14 @@ func updateURL(ctx context.Context) string {
 	q.Set("hasExtURL", strconv.FormatBool(conf.UsingExternalURL()))
 	q.Set("signup", strconv.FormatBool(conf.IsBuiltinSignupAllowed()))
 
-	count, err := usagestats.GetUsersActiveTodayCount()
+	// TODO(Dan): migrate this to the new usagestats package.
+	//
+	// For the time being, instances will report daily active users through the legacy package via this argument,
+	// as well as using the new package through the `act` argument below. This will allow comparison during the
+	// transition.
+	count, err := usagestatsdeprecated.GetUsersActiveTodayCount()
 	if err != nil {
-		logFunc("usagestats.GetUsersActiveTodayCount failed", "error", err)
+		logFunc("usagestatsdeprecated.GetUsersActiveTodayCount failed", "error", err)
 	}
 	q.Set("u", strconv.Itoa(count))
 	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})

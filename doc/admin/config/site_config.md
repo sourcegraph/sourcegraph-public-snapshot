@@ -40,27 +40,53 @@ If you are having trouble accessing the web UI, you can make edits to your site 
 
 #### Single-container Docker instances
 
+For Sourcegraph v3.12.1+ use:
+
 ```sh
-docker exec -it $CONTAINER -- sh -c 'apk add --no-cache nano && nano /site-config.json'
+docker exec -it $CONTAINER sh -c 'apk add --no-cache nano && nano ~/site-config.json'
 ```
 
 Or if you prefer using a Vim editor:
 
 ```sh
-docker exec -it $CONTAINER -- vi /site-config.json
+docker exec -it $CONTAINER sh -c 'vi ~/site-config.json'
 ```
+
+> **Note:** Not running Sourcegraph v3.12.1+? Use the following:
+>
+> ```sh
+> docker exec -it $CONTAINER sh -c 'apk add --no-cache nano && nano /site-config.json'
+> ```
+>
+> Or if you prefer using a Vim editor:
+>
+> ```sh
+> docker exec -it $CONTAINER sh -c 'vi /site-config.json'
+> ```
 
 #### Kubernetes cluster instances
 
 ```sh
-kubectl exec -it $FRONTEND_POD -- sh -c 'apk add --no-cache nano && nano /site-config.json'
+kubectl exec -it $FRONTEND_POD -- sh -c 'apk add --no-cache nano && nano ~/site-config.json'
 ```
 
 Or if you prefer using a Vim editor:
 
 ```sh
-kubectl exec -it $FRONTEND_POD -- vi /site-config.json
+kubectl exec -it $FRONTEND_POD -- sh -c 'vi ~/site-config.json'
 ```
+
+> **Note:** Not running Sourcegraph v3.12.1+? Use the following:
+>
+> ```sh
+> kubectl exec -it $FRONTEND_POD -- sh -c 'apk add --no-cache nano && nano /site-config.json'
+> ```
+>
+> Or if you prefer using a Vim editor:
+>
+> ```sh
+> kubectl exec -it $FRONTEND_POD -- sh -c 'vi /site-config.json'
+> ```
 
 Then simply save your changes (type <kbd>ctrl+x</kbd> and <kbd>y</kbd> to exit `nano` and save your changes). Your changes will be applied immediately in the same was as if you had made them through the web UI.
 

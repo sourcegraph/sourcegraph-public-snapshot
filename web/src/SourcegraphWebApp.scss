@@ -93,6 +93,9 @@ $table-border-color-light: #e4e9f1;
 // Progress
 $progress-height: auto;
 
+// Collapsible
+$collapsible-expand-btn-width: 1.25rem;
+
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
@@ -248,6 +251,7 @@ body,
 @import './user/area/UserArea';
 @import './org/OrgsArea';
 @import './components/AnimatedAlert';
+@import './components/Collapsible';
 @import './components/DismissibleAlert';
 @import './marketing/SurveyPage';
 @import './components/SingleValueCard';

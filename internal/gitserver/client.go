@@ -100,6 +100,10 @@ func (c *Client) addrForKey(ctx context.Context, key string) string {
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
+	return addrForKey(addrs, key)
+}
+
+func addrForKey(addrs []string, key string) string {
 	sum := md5.Sum([]byte(key))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(addrs))
 	return addrs[serverIndex]
@@ -482,11 +486,23 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 		err   error
 		repos []string
 	)
-	for _, addr := range c.Addrs(ctx) {
+	addrs := c.Addrs(ctx)
+	for _, addr := range addrs {
 		wg.Add(1)
 		go func(addr string) {
 			defer wg.Done()
 			r, e := c.doListOne(ctx, "?cloned", addr)
+
+			// Only include repos that belong on addr.
+			if len(r) > 0 {
+				filtered := r[:0]
+				for _, repo := range r {
+					if addrForKey(addrs, repo) == addr {
+						filtered = append(filtered, repo)
+					}
+				}
+				r = filtered
+			}
 			mu.Lock()
 			if e != nil {
 				err = e
