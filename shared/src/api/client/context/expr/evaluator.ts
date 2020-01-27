@@ -46,7 +46,7 @@ export const EMPTY_COMPUTED_CONTEXT: ComputedContext = {
 }
 
 const FUNCS: { [name: string]: (...args: any[]) => any } = {
-    get: (obj: any, key: string): any => obj[key],
+    get: (obj: any, key: string): any => obj?.[key] ?? undefined,
     json: (obj: any): string => JSON.stringify(obj),
 }
 

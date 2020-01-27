@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -20,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -480,66 +477,6 @@ func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionA
 	}, nil
 }
 
-func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.PreviewCampaignPlanArgs) (graphqlbackend.CampaignPlanResolver, error) {
-	var err error
-	tr, ctx := trace.New(ctx, "Resolver.PreviewCampaignPlan", args.Specification.Type)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	// 🚨 SECURITY: Only site admins may update campaigns for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-	user, err := backend.CurrentUser(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
-	}
-	if user == nil {
-		return nil, backend.ErrNotAuthenticated
-	}
-
-	specArgs := string(args.Specification.Arguments)
-	typeName := strings.ToLower(args.Specification.Type)
-	if typeName == "" {
-		return nil, errors.New("cannot create CampaignPlan without Type")
-	}
-	campaignType, err := ee.NewCampaignType(typeName, specArgs, r.httpFactory)
-	if err != nil {
-		return nil, err
-	}
-	plan := &a8n.CampaignPlan{
-		CampaignType: typeName,
-		Arguments:    specArgs,
-		UserID:       user.ID,
-	}
-	runner := ee.NewRunner(r.store, campaignType, graphqlbackend.SearchRepos, nil)
-
-	tr.LogFields(log.Int64("plan_id", plan.ID), log.Bool("Wait", args.Wait))
-
-	if args.Wait {
-		err := runner.CreatePlanAndJobs(ctx, plan)
-		if err != nil {
-			return nil, err
-		}
-		err = runner.Wait(ctx)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		act := actor.FromContext(ctx)
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		ctx = actor.WithActor(ctx, act)
-		err := runner.CreatePlanAndJobs(ctx, plan)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
-}
-
 func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graphqlbackend.CreateCampaignPlanFromPatchesArgs) (graphqlbackend.CampaignPlanResolver, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignPlanFromPatches", "")
@@ -594,49 +531,6 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 	}
 
 	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
-}
-
-func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (res *graphqlbackend.EmptyResponse, err error) {
-	// 🚨 SECURITY: Only site admins may update campaigns for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	id, err := unmarshalCampaignPlanID(args.Plan)
-	if err != nil {
-		return nil, err
-	}
-
-	tx, err := r.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer tx.Done(&err)
-
-	plan, err := tx.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: id})
-	if err != nil {
-		return nil, err
-	}
-
-	if !plan.CanceledAt.IsZero() {
-		return &graphqlbackend.EmptyResponse{}, nil
-	}
-
-	status, err := tx.GetCampaignPlanStatus(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if status.Finished() {
-		return &graphqlbackend.EmptyResponse{}, nil
-	}
-
-	plan.CanceledAt = time.Now().UTC()
-
-	err = tx.UpdateCampaignPlan(ctx, plan)
-
-	return &graphqlbackend.EmptyResponse{}, err
 }
 
 func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.CloseCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {

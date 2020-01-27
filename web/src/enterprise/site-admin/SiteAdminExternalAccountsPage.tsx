@@ -54,7 +54,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
         return (
             <div className="user-settings-external-accounts-page">
                 <PageTitle title="External accounts" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">External user accounts</h2>
                     <Link to="/site-admin/auth/providers" className="btn btn-secondary">
                         View auth providers

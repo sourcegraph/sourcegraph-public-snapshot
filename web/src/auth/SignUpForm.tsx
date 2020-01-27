@@ -163,13 +163,6 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                     .catch(error => this.setState({ error: asError(error), loading: false }))
             ).subscribe()
         )
-        eventLogger.log('InitiateSignUp', {
-            signup: {
-                user_info: {
-                    signup_email: this.state.email,
-                    signup_username: this.state.username,
-                },
-            },
-        })
+        eventLogger.log('InitiateSignUp')
     }
 }

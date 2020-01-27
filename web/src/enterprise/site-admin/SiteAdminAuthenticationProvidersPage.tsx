@@ -76,9 +76,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
         return (
             <div className="site-admin-authentication-page">
                 <PageTitle title="Authentication providers - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Authentication providers</h2>
-                </div>
+                <h2>Authentication providers</h2>
                 <p>
                     Authentication providers allow users to sign into Sourcegraph. See{' '}
                     <a href="https://docs.sourcegraph.com/admin/auth">authentication documentation</a> about configuring
