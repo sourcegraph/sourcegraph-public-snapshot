@@ -280,6 +280,7 @@ function getModeFromExtension(ext: string): string | undefined {
         // Pascal
         case 'p':
         case 'pas':
+        case 'pp':
             return 'pascal'
 
         // Perl
@@ -421,6 +422,11 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'svh':
         case 'svi':
             return 'verilog'
+
+        // VHDL
+        case 'vhd':
+        case 'vhdl':
+            return 'vhdl'
 
         // VIM
         case 'vim':
