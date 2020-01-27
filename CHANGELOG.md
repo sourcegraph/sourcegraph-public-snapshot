@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - After adding/removing a gitserver replica the admin interface will correctly report that repositories that need to move replicas as cloning. [#7970](https://github.com/sourcegraph/sourcegraph/issues/7970)
 - Show download button for images. [#7924](https://github.com/sourcegraph/sourcegraph/issues/7924)
+- gitserver backoffs trying to re-clone repositories if they fail to clone. In the case of large monorepos that failed this lead to gitserver constantly cloning them and using many resources. [#7804](https://github.com/sourcegraph/sourcegraph/issues/7804)
 
 ### Removed
 
