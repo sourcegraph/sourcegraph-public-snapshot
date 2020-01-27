@@ -8,8 +8,15 @@ import { PatternTypeProps, CaseSensitivityProps, SmartSearchFieldProps } from '.
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { QueryInput } from './QueryInput'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 
-interface Props extends ActivationProps, PatternTypeProps, CaseSensitivityProps, SmartSearchFieldProps, ThemeProps {
+interface Props
+    extends ActivationProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        SmartSearchFieldProps,
+        SettingsCascadeProps,
+        ThemeProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
