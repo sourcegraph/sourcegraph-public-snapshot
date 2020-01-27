@@ -82,7 +82,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         super(props)
 
         // Reads initial state from the props (i.e. URL parameters).
-        const navbarQuery = parseSearchURLQuery(props.location.search || '', this.props.interactiveSearchMode, true)
+        const navbarQuery = parseSearchURLQuery(props.location.search || '')
         if (navbarQuery) {
             props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
         } else {
@@ -101,7 +101,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.location.search !== this.props.location.search) {
-            const navbarQuery = parseSearchURLQuery(this.props.location.search || '', false)
+            const navbarQuery = parseSearchURLQuery(this.props.location.search || '')
             if (navbarQuery) {
                 this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
             }

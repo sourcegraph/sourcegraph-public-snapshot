@@ -536,28 +536,31 @@ export function buildSearchURLQuery(
     caseSensitive: boolean,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
-    let searchParams = new URLSearchParams()
+    const searchParams = new URLSearchParams()
+    let filtersQuery = ''
+    let fullQuery = query
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        searchParams = interactiveBuildSearchURLQuery(filtersInQuery)
+        filtersQuery = generateFiltersQuery(filtersInQuery)
+        fullQuery = `${query} ${filtersQuery}`
     }
 
-    const patternTypeInQuery = parsePatternTypeFromQuery(query)
+    const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
         const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-        const newQuery = query.replace(patternTypeRegexp, '')
+        const newQuery = fullQuery.replace(patternTypeRegexp, '')
         searchParams.set('q', newQuery)
         searchParams.set('patternType', patternTypeInQuery.toLowerCase())
-        query = newQuery
+        fullQuery = newQuery
     } else {
         searchParams.set('q', query)
         searchParams.set('patternType', patternType)
     }
 
-    const caseInQuery = parseCaseSensitivityFromQuery(query)
+    const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
     if (caseInQuery) {
         const caseRegexp = /\bcase:(?<type>yes|no)\b/i
-        const newQuery = query.replace(caseRegexp, '')
+        const newQuery = fullQuery.replace(caseRegexp, '')
         searchParams.set('q', newQuery)
 
         if (caseInQuery === 'yes') {
@@ -570,9 +573,9 @@ export function buildSearchURLQuery(
             searchParams.delete('case')
         }
 
-        query = newQuery
+        fullQuery = newQuery
     } else {
-        searchParams.set('q', query)
+        searchParams.set('q', fullQuery)
         if (caseSensitive) {
             searchParams.set('case', 'yes')
         } else {
@@ -590,32 +593,42 @@ export function buildSearchURLQuery(
         .replace(/%3A/g, ':')
 }
 
-/**
- * Builds a URL query for a given interactive mode query (without leading `?`).
- * Returns a URLSearchParams object containing the filters and values in the
- * search query.
- *
- * @param filtersInQuery the map representing the filters added to the query
- */
-export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
-    const searchParams = new URLSearchParams()
+export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
+    const fieldKeys = Object.keys(filtersInQuery)
+    const individualTokens: string[] = []
+    fieldKeys
+        .filter(key => filtersInQuery[key].value.trim().length > 0)
+        .map(key => individualTokens.push(`${filtersInQuery[key].type}:${filtersInQuery[key].value}`))
 
-    for (const searchType of [...filterTypeKeys, ...negatedFilters]) {
-        for (const [, filterValue] of Object.entries(filtersInQuery)) {
-            if (filterValue.type === searchType) {
-                if (filterValue.negated) {
-                    if (isNegatableFilter(searchType)) {
-                        searchParams.append(NegatedFilters[searchType], filterValue.value)
-                    }
-                    continue
-                }
-                searchParams.append(searchType, filterValue.value)
-            }
-        }
-    }
-
-    return searchParams
+    return individualTokens.join(' ')
 }
+
+// /**
+//  * Builds a URL query for a given interactive mode query (without leading `?`).
+//  * Returns a URLSearchParams object containing the filters and values in the
+//  * search query.
+//  *
+//  * @param filtersInQuery the map representing the filters added to the query
+//  */
+// export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
+//     const searchParams = new URLSearchParams()
+
+//     for (const searchType of [...filterTypeKeys, ...negatedFilters]) {
+//         for (const [, filterValue] of Object.entries(filtersInQuery)) {
+//             if (filterValue.type === searchType) {
+//                 if (filterValue.negated) {
+//                     if (isNegatableFilter(searchType)) {
+//                         searchParams.append(NegatedFilters[searchType], filterValue.value)
+//                     }
+//                     continue
+//                 }
+//                 searchParams.append(searchType, filterValue.value)
+//             }
+//         }
+//     }
+
+//     return searchParams
+// }
 
 function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
     const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i

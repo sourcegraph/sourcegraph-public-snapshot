@@ -222,7 +222,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
     public render(): JSX.Element | null {
         const isSearchHomepage =
-            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search, true)
+            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search)
 
         let logoSrc = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'

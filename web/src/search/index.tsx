@@ -20,15 +20,9 @@ import {
  */
 export function parseSearchURLQuery(
     query: string,
-    interactiveMode: boolean,
-    navbarQueryOnly?: boolean
 ): string | undefined {
-    if (!interactiveMode || navbarQueryOnly) {
-        const searchParams = new URLSearchParams(query)
-        return searchParams.get('q') || undefined
-    }
-
-    return interactiveParseSearchURLQuery(query)
+    const searchParams = new URLSearchParams(query)
+    return searchParams.get('q') || undefined
 }
 
 /**
@@ -38,30 +32,30 @@ export function parseSearchURLQuery(
  *
  * @param query the URL query parameters
  */
-export function interactiveParseSearchURLQuery(query: string): string | undefined {
-    const searchParams = new URLSearchParams(query)
-    const finalQueryParts = []
-    for (const filterType of [...filterTypeKeys, ...negatedFilters].filter(key => key !== FilterTypes.case)) {
-        // Ignore `case:` filter, since SearchResults and SourcegraphWebApp components will
-        // call `searchURLISCaseSensitive` to check for case sensitivity in both interactive
-        // and non-interacive modes.
-        for (const filterValue of searchParams.getAll(filterType)) {
-            finalQueryParts.push(`${filterType}:${filterValue}`)
-        }
-    }
+// export function interactiveParseSearchURLQuery(query: string): string | undefined {
+//     const searchParams = new URLSearchParams(query)
+//     const finalQueryParts = []
+//     for (const filterType of [...filterTypeKeys, ...negatedFilters].filter(key => key !== FilterTypes.case)) {
+//         // Ignore `case:` filter, since SearchResults and SourcegraphWebApp components will
+//         // call `searchURLISCaseSensitive` to check for case sensitivity in both interactive
+//         // and non-interacive modes.
+//         for (const filterValue of searchParams.getAll(filterType)) {
+//             finalQueryParts.push(`${filterType}:${filterValue}`)
+//         }
+//     }
 
-    const querySearchParams = searchParams.get('q')
+//     const querySearchParams = searchParams.get('q')
 
-    if (querySearchParams) {
-        finalQueryParts.push(querySearchParams)
-    }
+//     if (querySearchParams) {
+//         finalQueryParts.push(querySearchParams)
+//     }
 
-    if (finalQueryParts.length > 0) {
-        return finalQueryParts.join(' ')
-    }
+//     if (finalQueryParts.length > 0) {
+//         return finalQueryParts.join(' ')
+//     }
 
-    return undefined
-}
+//     return undefined
+// }
 
 /**
  * Parses the pattern type out of the URL search params (the 'patternType' parameter). If the 'pattern' parameter
