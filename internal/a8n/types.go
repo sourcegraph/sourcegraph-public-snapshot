@@ -552,16 +552,16 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 }
 
 func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
-	commits := make([]*github.Commit, 0, len(ce))
+	commits := make([]*github.PullRequestCommit, 0, len(ce))
 	for _, e := range ce {
 		if e.Kind != ChangesetEventKindGitHubCommit {
 			continue
 		}
-		commits = append(commits, e.Metadata.(*github.Commit))
+		commits = append(commits, e.Metadata.(*github.PullRequestCommit))
 	}
 
 	sort.Slice(commits, func(i, j int) bool {
-		return commits[i].CommittedDate.Before(commits[j].CommittedDate)
+		return commits[i].Commit.CommittedDate.Before(commits[j].Commit.CommittedDate)
 	})
 
 	if len(commits) == 0 {
@@ -571,7 +571,7 @@ func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
 	latest := commits[len(commits)-1]
 
 	state := ChangesetCheckStatePending
-	switch latest.Status.State {
+	switch latest.Commit.Status.State {
 	case "ERROR", "FAILURE":
 		state = ChangesetCheckStateFailed
 	case "EXPECTED", "PENDING":
@@ -1076,7 +1076,7 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		case ChangesetEventKindGitHubUnassigned:
 			return new(github.UnassignedEvent), nil
 		case ChangesetEventKindGitHubCommit:
-			return new(github.Commit), nil
+			return new(github.PullRequestCommit), nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
