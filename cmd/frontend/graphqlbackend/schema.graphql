@@ -773,7 +773,7 @@ type ExternalChangeset implements Node {
     diff: RepositoryComparison
 
     # The state of the continuous integration checks on this changeset
-    # It can be null if no checks have been configured
+    # It can be null if no checks have been configured.
     checkState: ChangesetCheckState
 }
 
