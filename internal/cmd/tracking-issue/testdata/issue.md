@@ -20,7 +20,7 @@
 @kzh: __13.00d__
 
 - [ ] Simplify Bitbucket Server plugin interaction with Sourcegraph [#7824](https://github.com/sourcegraph/sourcegraph/issues/7824) __3d__ 
-- [ ] a8n/core: Support updating changesets on BitbucketServer [#7762](https://github.com/sourcegraph/sourcegraph/issues/7762) __1d__ 🛠️
+- [x] a8n/core: Support updating changesets on BitbucketServer [#7762](https://github.com/sourcegraph/sourcegraph/issues/7762) __1d__ 🛠️
 - [x] a8n: Move "default branch" check to execution of CampaignJob [#7725](https://github.com/sourcegraph/sourcegraph/issues/7725) __2d__ 🛠️
 - [ ] Send pings about Automation usage to Sourcegraph [#7711](https://github.com/sourcegraph/sourcegraph/issues/7711) __1d__ 
 - [ ] a8n/core: Extend CreateCampaignInput to accept Branch and persist it [#7687](https://github.com/sourcegraph/sourcegraph/issues/7687) __2d__ 🛠️
@@ -62,33 +62,33 @@
 - [ ] ~a8n/core: Extend GraphQL API to include participant users involved in the campaign~ [#7552](https://github.com/sourcegraph/sourcegraph/issues/7552) __1d__ 🛠️
 - [ ] ~a8n/core: Expose comments of all changesets in campaign in GraphQL API~ [#7548](https://github.com/sourcegraph/sourcegraph/issues/7548) __2d__ 🛠️
 
-@tsenart: __3.50d__
+@tsenart: __2.50d__
 
 - [ ] Reject invalid externalURL with non-/ path [#7884](https://github.com/sourcegraph/sourcegraph/issues/7884) __0.5d__ 🐛
-- [ ] sourcegraph/security-issues [#55](https://github.com/sourcegraph/security-issues/issues/55) __1d__ 
 - [ ] Core Services: 3.13 Tracking Issue [#7719](https://github.com/sourcegraph/sourcegraph/issues/7719) __?d__ 
 - [ ] Prevent upgrading more than one minor version at a time [#7702](https://github.com/sourcegraph/sourcegraph/issues/7702) __1d__ 🐛
 - [ ] sourcegraph/security-issues [#54](https://github.com/sourcegraph/security-issues/issues/54) __1d__ 
-- [ ] sourcegraph/security-issues [#53](https://github.com/sourcegraph/security-issues/issues/53) __?d__ 
 
-@unknwon: __16.00d__
+@unknwon: __15.00d__
 
+- [x] Bitbucket Cloud external service doesn't respect custom URLs [#7990](https://github.com/sourcegraph/sourcegraph/issues/7990) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/557475593)
 - [ ] Make new pricing tiers reflected in feature access [#7927](https://github.com/sourcegraph/sourcegraph/issues/7927) __1d__ 🐛
 - [x] authz code logs warnings about Redis returning nil values [#7912](https://github.com/sourcegraph/sourcegraph/issues/7912) __0.5d__ 🐛
 - [x] RFC 40: Move call to the Authz methods into application layer [#7878](https://github.com/sourcegraph/sourcegraph/issues/7878) __1d__ 🧶
-- [ ] RFC 40: Add Prometheus metrics [#7827](https://github.com/sourcegraph/sourcegraph/issues/7827) __1d__ 🛠️
+- [ ] sourcegraph/security-issues [#55](https://github.com/sourcegraph/security-issues/issues/55) __1d__ 
 - [x] RFC 40: Add unit tests for GraphQL APIs [#7748](https://github.com/sourcegraph/sourcegraph/issues/7748) __1d__ 🧶
 - [ ] Enable HTTP Strict Transport Security (HSTS) on sourcegraph.com (and all subdomains) [#7660](https://github.com/sourcegraph/sourcegraph/issues/7660) __0.5d__ 🔒
 - [ ] It is not clear how to configure Sourcegraph to just access public repositories [#7587](https://github.com/sourcegraph/sourcegraph/issues/7587) __0.5d__ 🐛
+- [ ] sourcegraph/security-issues [#53](https://github.com/sourcegraph/security-issues/issues/53) __?d__ 
 - [ ] Enforce minimum password requirements [#7521](https://github.com/sourcegraph/sourcegraph/issues/7521) __0.5d__ 🔒
 - [x] RFC 40: Handle user deletion [#7302](https://github.com/sourcegraph/sourcegraph/issues/7302) __1d__ 
 - [ ] Querying repository by name with github.com prefix always returns empty string for name [#5125](https://github.com/sourcegraph/sourcegraph/issues/5125) __1.5d__ 🐛
 - [ ] unused site setting git.cloneURLToRepositoryName [#3768](https://github.com/sourcegraph/sourcegraph/issues/3768) __0.5d__ 🧶
 - [ ] postgresql: (Auto)tune DB pool sizes based on max_connections [#3473](https://github.com/sourcegraph/sourcegraph/issues/3473) __3d__ [👩](https://app.hubspot.com/contacts/2762526/company/419771425)
 - [ ] Redis AOF file grows unbounded due to frequent container restarts [#3300](https://github.com/sourcegraph/sourcegraph/issues/3300) __2d__ 
-- [ ] Auth: explicit session invalidation [#1126](https://github.com/sourcegraph/sourcegraph/issues/1126) __2d__ 🔒
+- [x] ~RFC 40: Add Prometheus metrics~ [#7827](https://github.com/sourcegraph/sourcegraph/issues/7827) __1d__ 🛠️
+- [ ] ~Auth: explicit session invalidation~ [#1126](https://github.com/sourcegraph/sourcegraph/issues/1126) __2d__ 🔒
 
 Unassigned: __0.00d__
 
-- [ ] ~~ [#0]() __?d__ 
 - [ ] ~Ref glob search perf followups~ [#7642](https://github.com/sourcegraph/sourcegraph/issues/7642) __2d__ 🧶

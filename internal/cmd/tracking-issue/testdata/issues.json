@@ -1,17 +1,5 @@
 [
   {
-   "Title": "",
-   "Body": "",
-   "Number": 0,
-   "URL": "",
-   "State": "",
-   "Repository": "",
-   "Private": false,
-   "Labels": [],
-   "Assignees": [],
-   "Milestone": ""
-  },
-  {
    "Title": "e2e: log all e2e failures into central location for triage",
    "Body": "Either googledocs or airtable. Will allow us to track all failed builds, and then triage them to understand why they failed.\r\n\r\nCurrently we rely on devs self reporting in a central tracking issue. Rather we can pro-actively investigate all failures.\r\n\r\nI (@keegancsmith) will timebox 30min a day to triaging failures. This will help me get intimate with our e2e stack so I can improve stuff.",
    "Number": 8026,
@@ -65,6 +53,25 @@
    ],
    "Assignees": [
     "mrnugget"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Bitbucket Cloud external service doesn't respect custom URLs",
+   "Body": "Reported by https://app.hubspot.com/contacts/2762526/company/557475593\r\n\r\n\u003ethere’s already a field for ‘url’ [for the Bitbucket Cloud external service] but entering a value there doesn’t seem to change the URL of the API calls from Sourcegraph to Bitbucket. ",
+   "Number": 7990,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7990",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bitbucket",
+    "customer",
+    "estimate/1d",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
    ],
    "Milestone": "3.13"
   },
@@ -273,7 +280,7 @@
     "estimate/1d"
    ],
    "Assignees": [
-    "tsenart"
+    "unknwon"
    ],
    "Milestone": "3.13"
   },
@@ -315,25 +322,6 @@
    ],
    "Assignees": [
     "mrnugget"
-   ],
-   "Milestone": "3.13"
-  },
-  {
-   "Title": "RFC 40: Add Prometheus metrics",
-   "Body": "This issue tracks the implementation of adding Prometheus metrics for [RFC 40: Explicit Repository Permissions Model](https://docs.google.com/document/d/167WV_rhBg3oj0yw9fHwUMlB-8BR3ktk2FSsKiUQo55Y/edit).",
-   "Number": 7827,
-   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7827",
-   "State": "OPEN",
-   "Repository": "sourcegraph/sourcegraph",
-   "Private": false,
-   "Labels": [
-    "estimate/1d",
-    "planned/3.13",
-    "roadmap",
-    "team/core-services"
-   ],
-   "Assignees": [
-    "unknwon"
    ],
    "Milestone": "3.13"
   },
@@ -439,7 +427,7 @@
    "Body": "This is a follow-up to #7683 \r\n\r\nRight now we only support updating changesets on GitHub. But since Bitbucket Server is otherwise fully-supported, we need to add this too.\r\n\r\nWhat we need to do:\r\n\r\n1. Add a `UpdatePullRequest` method to the BitbucketServer client.\r\n2. Add `UpdateChangeset` method to `BitbucketServerSource`\r\n3. Merge the `UpdateChangesetSource` back into the `ChangesetSource` [here](https://github.com/sourcegraph/sourcegraph/blob/141d351bb7a50c1c739b1ae3854840f980b9a84d/cmd/repo-updater/repos/sources.go#L90-L109) now that we have feature-parity",
    "Number": 7762,
    "URL": "https://github.com/sourcegraph/sourcegraph/issues/7762",
-   "State": "OPEN",
+   "State": "CLOSED",
    "Repository": "sourcegraph/sourcegraph",
    "Private": false,
    "Labels": [
@@ -765,7 +753,7 @@
     "planned/3.13"
    ],
    "Assignees": [
-    "tsenart"
+    "unknwon"
    ],
    "Milestone": "3.13"
   },
@@ -1210,26 +1198,6 @@
    "Milestone": "3.13"
   },
   {
-   "Title": "Auth: explicit session invalidation",
-   "Body": "Provide an explicit session invalidation mechanism for Sourcegraph.\r\n\r\nCurrently, sessions are invalidated after they expire (configurable via the `auth.sessionExpiry` option) or on user sign-out. Proposal is to also enable explicit session invalidation in the following scenarios:\r\n* An admin manually invalidates all sessions for a given user.\r\n* A user's existing sessions are invalidated after successful password reset under built-in auth.",
-   "Number": 1126,
-   "URL": "https://github.com/sourcegraph/sourcegraph/issues/1126",
-   "State": "OPEN",
-   "Repository": "sourcegraph/sourcegraph",
-   "Private": false,
-   "Labels": [
-    "auth",
-    "estimate/2d",
-    "planned/3.13",
-    "security",
-    "team/core-services"
-   ],
-   "Assignees": [
-    "unknwon"
-   ],
-   "Milestone": "3.13"
-  },
-  {
    "Title": "docs: Document using an alternate clone URL for repos",
    "Body": "Some sites put an HTTPS or SSH proxy in front of their code host to reduce load. Some sites also use a service like AWS CodeCommit to do the same. In these cases, the repos still should be treated as being repos on the original code host, not the proxy site.\r\n\r\nFor example, I have a GitHub repo github.com/foo/bar. I want Sourcegraph to clone it using the URL https://cloneproxy.example.com/foo/bar.git. But I still want the \"Go to GitHub repository\" button, etc., to take me to https://github.com/foo/bar.\r\n\r\n- Document workaround of using `ssh_config` or `gitconfig`'s `insteadOf`\r\n- Support this as a first-class feature (not scheduled yet)\r\n\r\nThe actual code work is not prioritized, this is just a docs change.",
    "Number": 658,
@@ -1268,6 +1236,25 @@
     "keegancsmith"
    ],
    "Milestone": "3.13"
+  },
+  {
+   "Title": "RFC 40: Add Prometheus metrics",
+   "Body": "This issue tracks the implementation of adding Prometheus metrics for [RFC 40: Explicit Repository Permissions Model](https://docs.google.com/document/d/167WV_rhBg3oj0yw9fHwUMlB-8BR3ktk2FSsKiUQo55Y/edit).",
+   "Number": 7827,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7827",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "estimate/1d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "Backlog"
   },
   {
    "Title": "a8n Spike: Add ability to \"stack diffs\" (RFC 92)",
@@ -1369,5 +1356,25 @@
     "keegancsmith"
    ],
    "Milestone": ""
+  },
+  {
+   "Title": "Auth: explicit session invalidation",
+   "Body": "Provide an explicit session invalidation mechanism for Sourcegraph.\r\n\r\nCurrently, sessions are invalidated after they expire (configurable via the `auth.sessionExpiry` option) or on user sign-out. Proposal is to also enable explicit session invalidation in the following scenarios:\r\n* An admin manually invalidates all sessions for a given user.\r\n* A user's existing sessions are invalidated after successful password reset under built-in auth.",
+   "Number": 1126,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/1126",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "auth",
+    "estimate/2d",
+    "planned/3.13",
+    "security",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "Backlog"
   }
  ]

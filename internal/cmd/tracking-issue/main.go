@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -266,6 +267,8 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 		"demilestonedQuery":  githubv4.String(listIssuesSearchQuery(org, milestone, labels, true)),
 	}
 
+	var emptyIssue issue
+
 	for {
 		err := cli.Query(ctx, &q, variables)
 		if err != nil {
@@ -275,6 +278,11 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 		nodes := append(q.Milestoned.Nodes, q.Demilestoned.Nodes...)
 
 		for _, n := range nodes {
+			// GitHub's GraphQL API sometimes sends empty issue nodes.
+			if reflect.DeepEqual(n.issue, emptyIssue) {
+				continue
+			}
+
 			i := n.issue
 
 			issue := &Issue{
