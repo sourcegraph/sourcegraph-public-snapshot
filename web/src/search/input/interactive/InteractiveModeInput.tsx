@@ -91,7 +91,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         }
 
         // This allows us to parse filters from the raw query in the `q=` parameter. This is useful
-        // when we are in interactive mode, but do nothave a URL that is in the interactive mode format.
+        // when we are in interactive mode, but do not have a URL that is in the interactive mode format.
         const onlyQueryParam = searchParams.get('q')
         if (onlyQueryParam !== null && onlyQueryParam.length > 0) {
             const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(
