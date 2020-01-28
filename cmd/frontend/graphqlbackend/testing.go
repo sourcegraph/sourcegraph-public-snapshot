@@ -1,7 +1,6 @@
 package graphqlbackend
 
 import (
-	"database/sql"
 	"sync"
 	"testing"
 
@@ -14,7 +13,7 @@ var (
 	parsedSchema    *graphql.Schema
 )
 
-func mustParseGraphQLSchema(t *testing.T, db *sql.DB) *graphql.Schema {
+func mustParseGraphQLSchema(t *testing.T) *graphql.Schema {
 	t.Helper()
 
 	parseSchemaOnce.Do(func() {
