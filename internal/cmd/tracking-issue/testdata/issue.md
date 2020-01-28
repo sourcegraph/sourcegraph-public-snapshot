@@ -1,5 +1,5 @@
 
-@keegancsmith: __16.50d__
+@keegancsmith: __15.50d__
 
 - [ ] e2e: log all e2e failures into central location for triage [#8026](https://github.com/sourcegraph/sourcegraph/issues/8026) __1d__ 
 - [x] gitserver: Correctly report if repos are cloning after rebalance [#7970](https://github.com/sourcegraph/sourcegraph/issues/7970) __1d__ 🐛🕵️
@@ -29,7 +29,7 @@
 - [ ] Address repohascommitafter search filter performance bottleneck [#6745](https://github.com/sourcegraph/sourcegraph/issues/6745) __0.5d__ 
 - [ ] Error fetching commit author info from GraphQL API [#5335](https://github.com/sourcegraph/sourcegraph/issues/5335) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/814799425)🐛
 
-@mrnugget: __14.00d__
+@mrnugget: __11.00d__
 
 - [x] Creating a manual campaign -> unexpected draft mode [#8009](https://github.com/sourcegraph/sourcegraph/issues/8009) __?d__ [👩](https://app.hubspot.com/contacts/2762526/company/608245740)
 - [ ] a8n: Updating partially published Campaigns is not supported [#7915](https://github.com/sourcegraph/sourcegraph/issues/7915) __2d__ 🐛
@@ -49,7 +49,7 @@
 - [ ] Backend returns invalid filter chip with space "lang:ignore list" [#6498](https://github.com/sourcegraph/sourcegraph/issues/6498) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/419771425)🐛
 - [ ] Impossible to search for colons in literal search [#6490](https://github.com/sourcegraph/sourcegraph/issues/6490) __2d__ 🐛
 
-@ryanslade: __15.00d__
+@ryanslade: __12.00d__
 
 - [x] Add setting to enable read-only mode for automation for all Sourcegraph users [#8013](https://github.com/sourcegraph/sourcegraph/issues/8013) __?d__ [👩](https://app.hubspot.com/contacts/2762526/company/608245740)
 - [x] a8n/auth: Regex search/replace doesn't work in private repos [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914) __1d__ 🐛
@@ -88,7 +88,7 @@
 - [ ] Redis AOF file grows unbounded due to frequent container restarts [#3300](https://github.com/sourcegraph/sourcegraph/issues/3300) __2d__ 
 - [ ] Auth: explicit session invalidation [#1126](https://github.com/sourcegraph/sourcegraph/issues/1126) __2d__ 🔒
 
-Unassigned: __2.00d__
+Unassigned: __0.00d__
 
 - [ ] ~~ [#0]() __?d__ 
 - [ ] ~Ref glob search perf followups~ [#7642](https://github.com/sourcegraph/sourcegraph/issues/7642) __2d__ 🧶
