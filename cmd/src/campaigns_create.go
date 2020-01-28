@@ -1,14 +1,23 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"regexp"
+	"strings"
 
 	"github.com/pkg/errors"
 )
 
 func init() {
 	usage := `
+Create a campaign with the given attributes. If -name or -desc are not specified $EDITOR will open a temporary Markdown file to edit both.
+
 Examples:
 
   Create a campaign with the given name, description and campaign plan:
@@ -33,8 +42,8 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		nameFlag        = flagSet.String("name", "", "Name of the campaign. (required)")
-		descriptionFlag = flagSet.String("desc", "", "Description for the campaign. (required)")
+		nameFlag        = flagSet.String("name", "", "Name of the campaign. ")
+		descriptionFlag = flagSet.String("desc", "", "Description for the campaign in Markdown.")
 		namespaceFlag   = flagSet.String("namespace", "", "ID of the namespace under which to create the campaign. The namespace can be the GraphQL ID of a Sourcegraph user or organisation. If not specified, the ID of the authenticated user is queried and used. (Required)")
 		planIDFlag      = flagSet.String("plan", "", "ID of campaign plan the campaign should turn into changesets. If no plan is specified, a campaign is created to which changesets can be added manually.")
 		draftFlag       = flagSet.Bool("draft", false, "Create the campaign as a draft (which won't create pull requests on code hosts)")
@@ -48,12 +57,30 @@ Examples:
 	handler := func(args []string) error {
 		flagSet.Parse(args)
 
-		if *nameFlag == "" {
-			return &usageError{errors.New("-name must be specified")}
+		var name, description string
+
+		if *nameFlag == "" || *descriptionFlag == "" {
+			editor := &CampaignEditor{
+				Name:        *nameFlag,
+				Description: *descriptionFlag,
+			}
+
+			var err error
+			name, description, err = editor.EditAndExtract()
+			if err != nil {
+				return err
+			}
+		} else {
+			name = *nameFlag
+			description = *descriptionFlag
 		}
 
-		if *descriptionFlag == "" {
-			return &usageError{errors.New("-desc must be specified")}
+		if name == "" {
+			return &usageError{errors.New("campaign name cannot be blank")}
+		}
+
+		if description == "" {
+			return &usageError{errors.New("campaign description cannot be blank")}
 		}
 
 		var namespace string
@@ -85,8 +112,8 @@ Examples:
 		}
 
 		input := map[string]interface{}{
-			"name":        *nameFlag,
-			"description": *descriptionFlag,
+			"name":        name,
+			"description": description,
 			"namespace":   namespace,
 			"plan":        nullString(*planIDFlag),
 			"draft":       *draftFlag,
@@ -126,3 +153,111 @@ const createcampaignMutation = `mutation CreateCampaign($input: CreateCampaignIn
   }
 }
 `
+
+const (
+	sep    = "------- EVERYTHING BELOW THIS LINE WILL BE IGNORED -------"
+	notice = `You are creating a new campaign.
+Write a name and description for this campaign in this file.
+The first line of text is the name and the rest is the description.`
+)
+
+type CampaignEditor struct {
+	Name        string
+	Description string
+}
+
+func (e *CampaignEditor) EditAndExtract() (string, string, error) {
+	f, err := ioutil.TempFile("", "new-campaign")
+	if err != nil {
+		return "", "", err
+	}
+	defer os.Remove(f.Name())
+
+	err = e.writeTemplate(f)
+	if err != nil {
+		return "", "", err
+	}
+
+	err = openInEditor(f.Name())
+	if err != nil {
+		return "", "", errors.Wrap(err, "Failed to open text editor to edit campaign")
+	}
+
+	content, err := extractContent(f.Name())
+	if err != nil {
+		return "", "", err
+	}
+
+	var name, description string
+
+	parts := strings.SplitN(content, "\n\n", 2)
+	if len(parts) >= 1 {
+		name = strings.TrimSpace(strings.Replace(parts[0], "\n", " ", -1))
+	}
+	if len(parts) >= 2 {
+		description = strings.TrimSpace(parts[1])
+	}
+
+	return name, description, nil
+}
+
+func (e *CampaignEditor) writeTemplate(f *os.File) error {
+	template := e.Name + "\n\n" + e.Description
+	template += "\n\n" + sep
+	template += "\n\n" + notice
+
+	_, err := f.WriteString(template)
+	return err
+}
+
+func extractContent(file string) (string, error) {
+	fileContent, err := ioutil.ReadFile(file)
+	if err != nil {
+		return "", err
+	}
+
+	trimmed := bytes.TrimSpace(fileContent)
+
+	scanner := bufio.NewScanner(bytes.NewReader(trimmed))
+
+	content := []string{}
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == sep {
+			break
+		}
+		content = append(content, line)
+	}
+	if err = scanner.Err(); err != nil {
+		return "", err
+	}
+
+	return strings.Join(content, "\n"), nil
+}
+
+func openInEditor(file string) error {
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		return errors.New("$EDITOR is not set")
+	}
+
+	cmd := exec.Command(editor)
+
+	r := regexp.MustCompile(`\b(?:[gm]?vim)(?:\.exe)?$`)
+	if r.MatchString(cmd.Path) {
+		cmd.Args = append(cmd.Args, "--cmd", "set ft=markdown")
+	}
+
+	cmd.Args = append(cmd.Args, file)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	tty, err := os.OpenFile("/dev/tty", os.O_RDONLY, 0660)
+	if err == nil {
+		cmd.Stdin = tty
+	}
+
+	return cmd.Run()
+}
