@@ -621,6 +621,8 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	return &pr, nil
 }
 
+// This fragment was formatted using the "prettify" button in the GitHub API explorer:
+// https://developer.github.com/v4/explorer/
 const pullRequestFragments = `
 fragment actor on Actor {
   avatarUrl
