@@ -240,19 +240,19 @@ type pingPayload struct {
 	RemoteIP             string           `json:"remote_ip"`
 	RemoteSiteVersion    string           `json:"remote_site_version"`
 	RemoteSiteID         string           `json:"remote_site_id"`
-	HasUpdate            bool             `json:"has_update"`
-	UniqueUsersToday     int32            `json:"unique_users_today"`
+	HasUpdate            string           `json:"has_update"`
+	UniqueUsersToday     string           `json:"unique_users_today"`
 	SiteActivity         *json.RawMessage `json:"site_activity"`
 	InstallerEmail       string           `json:"installer_email"`
-	AuthProviders        []string         `json:"auth_providers"`
-	ExtServices          []string         `json:"ext_services"`
-	BuiltinSignupAllowed bool             `json:"builtin_signup_allowed"`
+	AuthProviders        string           `json:"auth_providers"`
+	ExtServices          string           `json:"ext_services"`
+	BuiltinSignupAllowed string           `json:"builtin_signup_allowed"`
 	DeployType           string           `json:"deploy_type"`
-	TotalUserAccounts    int32            `json:"total_user_accounts"`
-	HasExternalURL       bool             `json:"has_external_url"`
-	HasRepos             bool             `json:"has_repos"`
-	EverSearched         bool             `json:"ever_searched"`
-	EverFindRefs         bool             `json:"ever_find_refs"`
+	TotalUserAccounts    string           `json:"total_user_accounts"`
+	HasExternalURL       string           `json:"has_external_url"`
+	HasRepos             string           `json:"has_repos"`
+	EverSearched         string           `json:"ever_searched"`
+	EverFindRefs         string           `json:"ever_find_refs"`
 	Timestamp            string           `json:"timestamp"`
 }
 
@@ -269,19 +269,19 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 		RemoteIP:             clientAddr,
 		RemoteSiteVersion:    pr.ClientVersionString,
 		RemoteSiteID:         pr.ClientSiteID,
-		HasUpdate:            hasUpdate,
-		UniqueUsersToday:     pr.UniqueUsers,
+		HasUpdate:            strconv.FormatBool(hasUpdate),
+		UniqueUsersToday:     strconv.FormatInt(int64(pr.UniqueUsers), 10),
 		SiteActivity:         pr.Activity,
 		InstallerEmail:       pr.InitialAdminEmail,
-		AuthProviders:        pr.AuthProviders,
-		ExtServices:          pr.ExternalServices,
-		BuiltinSignupAllowed: pr.BuiltinSignupAllowed,
+		AuthProviders:        strings.Join(pr.AuthProviders, ","),
+		ExtServices:          strings.Join(pr.ExternalServices, ","),
+		BuiltinSignupAllowed: strconv.FormatBool(pr.BuiltinSignupAllowed),
 		DeployType:           pr.DeployType,
-		TotalUserAccounts:    pr.TotalUsers,
-		HasExternalURL:       pr.HasExtURL,
-		HasRepos:             pr.HasRepos,
-		EverSearched:         pr.EverSearched,
-		EverFindRefs:         pr.EverFindRefs,
+		TotalUserAccounts:    strconv.FormatInt(int64(pr.TotalUsers), 10),
+		HasExternalURL:       strconv.FormatBool(pr.HasExtURL),
+		HasRepos:             strconv.FormatBool(pr.HasRepos),
+		EverSearched:         strconv.FormatBool(pr.EverSearched),
+		EverFindRefs:         strconv.FormatBool(pr.EverFindRefs),
 		Timestamp:            time.Now().UTC().Format(time.RFC3339),
 	})
 	if err != nil {
