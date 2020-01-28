@@ -189,9 +189,6 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetReviewState, error) {
-	// ChangesetEvents are currently only implemented for GitHub. For other
-	// codehosts we compute the ReviewState from the Metadata field of a
-	// Changeset.
 	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
 		return r.Changeset.ReviewState()
 	}
@@ -211,9 +208,6 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 }
 
 func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheckState, error) {
-	// ChangesetEvents are currently only implemented for GitHub. For other
-	// codehosts we compute the ReviewState from the Metadata field of a
-	// Changeset.
 	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
 		// TODO: Implement for BitBucket
 		return nil, nil
