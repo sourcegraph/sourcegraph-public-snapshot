@@ -35,7 +35,7 @@ describe('Search input helpers', () => {
                                 negated: false,
                             },
                             archived: {
-                                type: 'archived' as FilterTypes,
+                                type: 'archived' as const,
                                 value: 'no',
                                 editable: false,
                                 negated: false,
