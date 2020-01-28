@@ -16,6 +16,7 @@
     "steps": {
       "description": "An array of steps that are executed sequentially in each repository.",
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "title": "ActionStep",
