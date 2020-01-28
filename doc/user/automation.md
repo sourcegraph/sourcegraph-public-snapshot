@@ -45,6 +45,8 @@ Short overview:
 
 Read on for the longer version.
 
+**Note about scalability**: the patches are generated on the machine on which the `src` CLI tool is being run. You can tune the number of parallel jobs with the `-j` parameter. If you still run into performance issues, feel free to use a bigger machine, possibly closer to your Sourcegraph instance so that downloading archives of repositories is faster.
+
 #### Defining an action
 
 The first thing we need is a definition of an "action". An action is what produces a patch and describes what commands and Docker containers to run over which repositories.
