@@ -365,3 +365,100 @@ func TestChangesetEventsReviewState(t *testing.T) {
 		}
 	}
 }
+
+func TestChangesetEventCheckState(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	testCommit := func(daysAgo int, statuses ...string) *ChangesetEvent {
+		commit := &github.PullRequestCommit{
+			Commit: github.Commit{
+				CommittedDate: now.Add(-24 * time.Duration(daysAgo) * time.Hour),
+			},
+		}
+		for _, s := range statuses {
+			commit.Commit.Status.Contexts = append(commit.Commit.Status.Contexts, github.Context{
+				State: s,
+			})
+		}
+		ce := &ChangesetEvent{
+			Kind:     ChangesetEventKindGitHubCommit,
+			Metadata: commit,
+		}
+		return ce
+	}
+	pState := func(s ChangesetCheckState) *ChangesetCheckState {
+		return &s
+	}
+
+	tests := []struct {
+		name string
+		ce   ChangesetEvents
+		want *ChangesetCheckState
+	}{
+		{
+			name: "empty slice",
+			ce:   nil,
+			want: nil,
+		},
+		{
+			name: "single success",
+			ce: ChangesetEvents{
+				testCommit(1, "SUCCESS"),
+			},
+			want: pState(ChangesetCheckStatePassed),
+		},
+		{
+			name: "single pending",
+			ce: ChangesetEvents{
+				testCommit(1, "PENDING"),
+			},
+			want: pState(ChangesetCheckStatePending),
+		},
+		{
+			name: "single pending",
+			ce: ChangesetEvents{
+				testCommit(1, "ERROR"),
+			},
+			want: pState(ChangesetCheckStateFailed),
+		},
+		{
+			name: "pending + error",
+			ce: ChangesetEvents{
+				testCommit(1, "ERROR", "PENDING"),
+			},
+			want: pState(ChangesetCheckStatePending),
+		},
+		{
+			name: "pending + success",
+			ce: ChangesetEvents{
+				testCommit(1, "SUCCESS", "PENDING"),
+			},
+			want: pState(ChangesetCheckStatePending),
+		},
+		{
+			name: "success + error",
+			ce: ChangesetEvents{
+				testCommit(1, "SUCCESS", "ERROR"),
+			},
+			want: pState(ChangesetCheckStateFailed),
+		},
+		{
+			name: "success x2",
+			ce: ChangesetEvents{
+				testCommit(1, "SUCCESS", "SUCCESS"),
+			},
+			want: pState(ChangesetCheckStatePassed),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := tc.ce.CheckState()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatalf(diff)
+			}
+		})
+	}
+}
