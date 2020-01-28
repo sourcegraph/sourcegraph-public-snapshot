@@ -42,7 +42,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				Schema:  mustParseGraphQLSchema(t, nil),
+				Schema:  mustParseGraphQLSchema(t),
 				Query: `
 				mutation {
 					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
@@ -108,7 +108,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				Schema:  mustParseGraphQLSchema(t, nil),
+				Schema:  mustParseGraphQLSchema(t),
 				Query: `
 				mutation {
 					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all", "site-admin:sudo"], note: "n") {
@@ -141,7 +141,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
-				Schema:  mustParseGraphQLSchema(t, nil),
+				Schema:  mustParseGraphQLSchema(t),
 				Query: `
 				mutation {
 					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
@@ -230,7 +230,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				Schema:  mustParseGraphQLSchema(t, nil),
+				Schema:  mustParseGraphQLSchema(t),
 				Query: `
 				mutation {
 					deleteAccessToken(byID: "` + string(token1GQLID) + `") {
@@ -261,7 +261,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
-				Schema:  mustParseGraphQLSchema(t, nil),
+				Schema:  mustParseGraphQLSchema(t),
 				Query: `
 				mutation {
 					deleteAccessToken(byID: "` + string(token1GQLID) + `") {

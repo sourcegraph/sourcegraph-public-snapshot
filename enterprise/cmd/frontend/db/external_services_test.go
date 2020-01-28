@@ -313,7 +313,13 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "BITBUCKETCLOUD",
-			desc:   "invalid git url type",
+			desc:   "bad apiURL scheme",
+			config: `{"apiURL": "badscheme://api.bitbucket.org"}`,
+			assert: includes("apiURL: Does not match pattern '^https?://'"),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid gitURLType",
 			config: `{"gitURLType": "bad"}`,
 			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
 		},

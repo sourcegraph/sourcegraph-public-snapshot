@@ -87,7 +87,11 @@ func generate(issues []*Issue, milestone string) string {
 		}
 
 		items[assignee] = append(items[assignee], item)
-		workloads[assignee] += days(estimate)
+
+		// Exclude work that is no longer planned
+		if issue.Milestone == milestone {
+			workloads[assignee] += days(estimate)
+		}
 	}
 
 	sort.Strings(assignees)

@@ -93,7 +93,7 @@ func TestDeleteUser(t *testing.T) {
 			name: "soft delete a user",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t),
 					Query: `
 				mutation {
 					deleteUser(user: "VXNlcjo2") {
@@ -115,7 +115,7 @@ func TestDeleteUser(t *testing.T) {
 			name: "hard delete a user",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t),
 					Query: `
 				mutation {
 					deleteUser(user: "VXNlcjo2", hard: true) {

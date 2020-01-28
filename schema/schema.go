@@ -113,6 +113,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 
 // BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
 type BitbucketCloudConnection struct {
+	// ApiURL description: The API URL of Bitbucket Cloud, such as https://api.bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
+	ApiURL string `json:"apiURL,omitempty"`
 	// AppPassword description: The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding "username" field.
 	AppPassword string `json:"appPassword"`
 	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "teams" configuration.
@@ -135,7 +137,7 @@ type BitbucketCloudConnection struct {
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	// Teams description: An array of team names identifying Bitbucket Cloud teams whose repositories should be mirrored on Sourcegraph.
 	Teams []string `json:"teams,omitempty"`
-	// Url description: URL of Bitbucket Cloud, such as https://bitbucket.org.
+	// Url description: URL of Bitbucket Cloud, such as https://bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding "appPassword" field.
 	Username string `json:"username"`

@@ -17,7 +17,7 @@ func TestOrganization(t *testing.T) {
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: mustParseGraphQLSchema(t, nil),
+			Schema: mustParseGraphQLSchema(t),
 			Query: `
 				{
 					organization(name: "acme") {
@@ -42,7 +42,7 @@ func TestNode_Org(t *testing.T) {
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: mustParseGraphQLSchema(t, nil),
+			Schema: mustParseGraphQLSchema(t),
 			Query: `
 				{
 					node(id: "T3JnOjE=") {
