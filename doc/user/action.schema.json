@@ -19,6 +19,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "title": "ActionStep",
         "required": ["type"],
         "properties": {
