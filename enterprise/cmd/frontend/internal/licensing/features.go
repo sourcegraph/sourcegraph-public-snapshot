@@ -80,7 +80,7 @@ func CheckFeature(feature Feature) error {
 		return newFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
 	}
 	if !isFeatureEnabled(*info, feature) {
-		return newFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated for Sourcegraph Enterprise Starter. Upgrade to Sourcegraph Enterprise to use this feature.", feature))
+		return newFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated for %s. Upgrade Sourcegraph subscription to higher tier to use this feature.", ProductNameWithBrand(true, info.Tags), feature))
 	}
 	return nil // feature is activated for current license
 }

@@ -248,7 +248,7 @@ const SiteSchemaJSON = `{
       "group": "Security"
     },
     "branding": {
-      "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
+      "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise Plus.",
       "type": "object",
       "additionalProperties": false,
       "properties": {

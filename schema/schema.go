@@ -253,7 +253,7 @@ type BrandAssets struct {
 
 // Branding description: Customize Sourcegraph homepage logo and search icon.
 //
-// Only available in Sourcegraph Enterprise.
+// Only available in Sourcegraph Enterprise Plus.
 type Branding struct {
 	// BrandName description: String to display everywhere the brand name should be displayed. Defaults to "Sourcegraph"
 	BrandName string       `json:"brandName,omitempty"`
@@ -854,7 +854,7 @@ type SiteConfiguration struct {
 	AutomationReadAccessEnabled *bool `json:"automation.readAccess.enabled,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
 	//
-	// Only available in Sourcegraph Enterprise.
+	// Only available in Sourcegraph Enterprise Plus.
 	Branding *Branding `json:"branding,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
