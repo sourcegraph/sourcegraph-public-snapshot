@@ -765,8 +765,8 @@ type ExternalChangeset implements Node {
     # Only returned if the changeset has not been merged or closed.
     diff: RepositoryComparison
 
-    # The state of the continuous integration checks on this changeset
-    # It can be null if no checks have been configured
+    # The state of the continuous integration checks on this changeset.
+    # It can be null if no checks have been configured.
     checkState: ChangesetCheckState
 }
 
