@@ -66,7 +66,7 @@ var baseURL = &url.URL{
 	Path:   "/.api/updates",
 }
 
-func getSiteActivityJSON() (*json.RawMessage, error) {
+func marshalSiteActivityJSON() (*json.RawMessage, error) {
 	days, weeks, months := 2, 1, 1
 	siteActivity, err := usagestats.GetSiteUsageStatistics(context.Background(), &usagestats.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
@@ -120,9 +120,9 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
 	}
-	act, err := getSiteActivityJSON()
+	act, err := marshalSiteActivityJSON()
 	if err != nil {
-		logFunc("getSiteActivityJSON failed", "error", err)
+		logFunc("marshalSiteActivityJSON failed", "error", err)
 	}
 	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
