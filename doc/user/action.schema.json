@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "action.schema.json#",
+  "title": "Action",
+  "description": "Definition of an action that can be executed with the 'src' CLI.",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scopeQuery", "steps"],
+  "properties": {
+    "scopeQuery": {
+      "description": "A Sourcegraph search query that should yield the list of repositories over which the action is executed. For each search result the associated repository is used. That means for repository results, the repository is simply used unchanged. For file matches the repository is used only once (e.g. search yields two matches in the same repository, action is only run once over this repository) ",
+      "type": "string",
+      "examples": ["repo:github.com/sourcegraph repohasfile:main.go", "repohasfile:package.lock jest"]
+    },
+    "steps": {
+      "description": "An array of steps that are executed sequentially in each repository.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "title": "ActionStep",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "description": "The type of the step",
+            "type": "string",
+            "enum": ["command", "docker"],
+            "default": "command"
+          },
+          "args": {
+            "description": "The arguments for the step. If the step is a \"command\" step, the \"args\" define the command. If it is a \"docker\" step, the args are passed to the \"docker run\" as the last arguments when starting the container.",
+            "type": "array",
+            "examples": [
+              ["sh", "-c", "echo '# Installation' > INSTALL.md"]
+            ]
+          },
+          "dockerfile": {
+            "description": "An inline Dockerfile that gets turned into a Docker image for this step. The step will then be executed in a container using this image. If \"type\" is \"docker\" then either \"dockerfile\" or \"image\" must be specified.",
+            "type": "string",
+            "examples": [
+              "FROM alpine:3 \n CMD find /work -iname '*.md' -type f | xargs -n 1 sed -i s/this/that/g"
+            ]
+          },
+          "image": {
+            "description": "Name of a Docker image. The step will then be executed in a container using this image. If \"type\" is \"docker\" then either \"dockerfile\" or \"image\" must be specified.",
+            "type": "string",
+            "examples": [
+              "golang:1.13-alpine"
+            ]
+          },
+          "cacheDirs": {
+            "description": "A list of directories that will be created as temporary directories on the host machine and mounted under the given path in the Docker containers. The directories persist across multiple steps, making them useful to cache, for example, runtime or package management output (yarn and npm caches).",
+            "type": "array",
+            "examples": [
+              ["/cache"]
+            ]
+          }
+        }
+      },
+      "examples": [
+        [ { "type": "command", "args": ["sh", "-c", "echo '# Installation' > INSTALL.md"] } ],
+        [ { "type": "docker", "image": "golang:1.13-alpine", "args": ["go", "fix", "/work/..."] } ],
+        [ { "type": "docker", "dockerfile": "FROM alpine:3 \n CMD find /work -iname '*.md' -type f | xargs -n 1 sed -i s/this/that/g" } ]
+      ]
+    }
+  },
+  "examples": [
+    {
+      "scopeQuery": "repo:go-diff -repohasfile:INSTALL.md",
+      "steps": [
+        {
+          "type": "command",
+          "args": ["sh", "-c", "echo '# Installation' > INSTALL.md"]
+        },
+        {
+          "type": "docker",
+          "dockerfile": "FROM alpine:3 \n CMD find /work -iname '*.md' -type f | xargs -n 1 sed -i s/this/that/g"
+        },
+        {
+          "type": "docker",
+          "image": "golang:1.13-alpine",
+          "args": ["go", "fix", "/work/..."]
+        }
+      ]
+    }
+  ]
+}

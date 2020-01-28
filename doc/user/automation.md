@@ -205,6 +205,10 @@ Now we're ready to run the campaign:
 1. Run the action and create a campaign plan: `src actions exec -f action.json`
 1. Follow the printed instructions to create and run the campaign on Sourcegraph
 
+## Schema for Action definitions
+
+<div markdown-func=jsonschemadoc jsonschemadoc:path="user/action.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/user/automation) to see rendered content.</div>
+
 ## Note for Automation developers
 
 If you are looking to run automation on a larger scale in the local dev environment, follow the [guide on automation development](../dev/automation_development.md).
