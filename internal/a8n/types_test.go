@@ -122,9 +122,7 @@ func TestChangesetEvents(t *testing.T) {
 				Message:         "Test Commit",
 				MessageHeadline: "",
 				URL:             "",
-				Status: github.Status{
-					State: "SUCCESS",
-				},
+				Status:          github.Status{},
 			},
 		}
 

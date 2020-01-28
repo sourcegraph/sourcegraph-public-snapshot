@@ -58,7 +58,15 @@ type Commit struct {
 
 // A Status represents a Commit status.
 type Status struct {
-	State string // The combined commit status.
+	Contexts []Context
+}
+
+// Context represent the individual commit status context
+type Context struct {
+	ID          string
+	Context     string
+	Description string
+	State       string
 }
 
 // PullRequest is a GitHub pull request.
@@ -646,7 +654,12 @@ fragment commit on Commit {
     }
   }
   status {
-    state
+    contexts {
+      context
+      id
+      description
+      state
+    }
   }
 }
 

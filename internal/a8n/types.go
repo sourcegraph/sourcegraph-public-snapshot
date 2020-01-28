@@ -1,6 +1,7 @@
 package a8n
 
 import (
+	"reflect"
 	"strings"
 	"time"
 
@@ -550,6 +551,8 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 	return SelectReviewState(states), nil
 }
 
+// CheckState returns the overall review state based on all commit
+// contexts for the latest commit
 func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
 	var latest github.Commit
 	for _, e := range ce {
@@ -566,16 +569,29 @@ func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
 		return nil, nil
 	}
 
+	states := make(map[ChangesetCheckState]bool)
+	for _, c := range latest.Status.Contexts {
+		switch c.State {
+		case "ERROR", "FAILURE":
+			states[ChangesetCheckStateFailed] = true
+		case "EXPECTED", "PENDING":
+			states[ChangesetCheckStatePending] = true
+		case "SUCCESS":
+			states[ChangesetCheckStatePassed] = true
+		}
+	}
+
 	state := ChangesetCheckStatePending
-	switch latest.Status.State {
-	case "ERROR", "FAILURE":
-		state = ChangesetCheckStateFailed
-	case "EXPECTED", "PENDING":
+	switch {
+	case states[ChangesetCheckStatePending]:
+		// If are pending, overall is Pending
 		state = ChangesetCheckStatePending
-	case "SUCCESS":
+	case states[ChangesetCheckStateFailed]:
+		// If no pending, but have errors then overall is Failed
+		state = ChangesetCheckStateFailed
+	case states[ChangesetCheckStatePassed]:
+		// No pending or errors then overall is Passed
 		state = ChangesetCheckStatePassed
-	default:
-		return nil, nil
 	}
 
 	return &state, nil
@@ -838,7 +854,7 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 			e.UpdatedAt = o.UpdatedAt
 		}
 
-		if e, o := e.Commit, o.Commit; e != o {
+		if e, o := e.Commit, o.Commit; !reflect.DeepEqual(e, o) {
 			updateGitHubCommit(&e, &o)
 		}
 
@@ -963,7 +979,7 @@ func updateGitHubPullRequestReview(e, o *github.PullRequestReview) {
 		e.UpdatedAt = o.UpdatedAt
 	}
 
-	if e, o := e.Commit, o.Commit; e != o {
+	if e, o := e.Commit, o.Commit; !reflect.DeepEqual(e, o) {
 		updateGitHubCommit(&e, &o)
 	}
 
