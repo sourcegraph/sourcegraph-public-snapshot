@@ -39,9 +39,10 @@ There are two types of Automation campaigns:
 Short overview:
 
 1. Create an `action.json` file that contains an action definition.
-2. Create a set of patches by executing the action over repositories: `src actions exec -f action.json > patches.json`
-3. Save the patches in Sourcegraph by creating a campaign plan based on these patches: `src campaign plan create-from-patches < patches.json`
-4. Create a campaign from the campaign plan: `src campaigns create -name='Campaign name' -desc='Description' -plan=<plan-ID-returned-by-previous-command>`
+1. _Optional_: See repositories the action would run over: `src actions scope-query -f action.json`
+1. Create a set of patches by executing the action over repositories: `src actions exec -f action.json > patches.json`
+1. Save the patches in Sourcegraph by creating a campaign plan based on these patches: `src campaign plan create-from-patches < patches.json`
+1. Create a campaign from the campaign plan: `src campaigns create -plan=<plan-ID-returned-by-previous-command>`
 
 Read on for the longer version.
 
@@ -135,7 +136,13 @@ $ src campaigns create -name='My campaign name' \
    -plan=Q2FtcGFpZ25QbGFuOjg=
 ```
 
-This will create a campaign on the Sourcegraph instance and asychronously create a pull request for each patch on the code hosts on which the repositories are hosted.
+If you have `$EDITOR` configured you can use the configured editor to edit the name and Markdown description of the campaign:
+
+```
+$ src campaigns create -plan=Q2FtcGFpZ25QbGFuOjg=
+```
+
+The `src campaigns create` command will create a campaign on the Sourcegraph instance and asychronously create a pull request for each patch on the code hosts on which the repositories are hosted.
 
 Check progress by opening the campaign on your Sourcegraph instance.
 
