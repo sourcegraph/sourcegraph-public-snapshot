@@ -29,7 +29,7 @@ describe('Search input helpers', () => {
                     newQuery.filtersInQuery ===
                         ({
                             case: {
-                                type: 'case' as FilterTypes,
+                                type: 'case' as const,
                                 value: 'yes',
                                 editable: false,
                                 negated: false,
