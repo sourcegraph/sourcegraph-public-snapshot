@@ -36,6 +36,21 @@ This involves adding a new add-on to your Bitbucket Server instance and see the 
 }
 ```
 
+### Experimental Faster ACL permissions fetching
+
+The plugin also supports an experimental method of faster ACL permissions fetching that aims to improve search speed. You can enable this in the experimental section of the [site configuration](../admin/config/site_config.md):
+
+```json
+{
+  // ...
+  "experimentalFeatures": {
+    "bitbucketServerFastPerm": "enabled"
+  }
+  // ...
+}
+```
+The speed improvements are subtle and more noticable for larger instances with thousands of repositories. This may remove the occasional slow search that has incurred the overhead of refreshing expired permissions information.
+
 ## Browser extension
 
 The [Sourcegraph browser extension](browser_extension.md) supports Bitbucket Server. When installed in your web browser, it adds hover tooltips, go-to-definition, find-references, and code search to files and pull requests viewed on Bitbucket Server.

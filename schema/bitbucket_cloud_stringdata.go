@@ -14,7 +14,7 @@ const BitbucketCloudSchemaJSON = `{
   "required": ["url", "username", "appPassword"],
   "properties": {
     "url": {
-      "description": "URL of Bitbucket Cloud, such as https://bitbucket.org.",
+      "description": "URL of Bitbucket Cloud, such as https://bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.",
       "type": "string",
       "not": {
         "type": "string",
@@ -23,6 +23,17 @@ const BitbucketCloudSchemaJSON = `{
       "pattern": "^https?://",
       "format": "uri",
       "examples": ["https://bitbucket.org"]
+    },
+    "apiURL": {
+      "description": "The API URL of Bitbucket Cloud, such as https://api.bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.",
+      "type": "string",
+      "not": {
+        "type": "string",
+        "pattern": "example\\.com"
+      },
+      "pattern": "^https?://",
+      "format": "uri",
+      "examples": ["https://api.bitbucket.org"]
     },
     "username": {
       "description": "The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding \"appPassword\" field.",

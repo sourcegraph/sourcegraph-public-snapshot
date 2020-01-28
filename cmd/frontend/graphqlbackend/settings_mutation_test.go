@@ -33,7 +33,7 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  mustParseGraphQLSchema(t, nil),
+			Schema:  mustParseGraphQLSchema(t),
 			Query: `
 				mutation($value: JSONValue) {
 					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {
@@ -77,7 +77,7 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  mustParseGraphQLSchema(t, nil),
+			Schema:  mustParseGraphQLSchema(t),
 			Query: `
 				mutation($contents: String!) {
 					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {

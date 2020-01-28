@@ -20,7 +20,7 @@ func TestOrgs(t *testing.T) {
 	db.Mocks.Orgs.Count = func(context.Context, db.OrgsListOptions) (int, error) { return 2, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: mustParseGraphQLSchema(t, nil),
+			Schema: mustParseGraphQLSchema(t),
 			Query: `
 				{
 					organizations {

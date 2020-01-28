@@ -1,6 +1,7 @@
 package bitbucketcloud
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -20,7 +21,7 @@ func GetenvTestBitbucketCloudUsername() string {
 
 // NewTestClient returns a bitbucketcloud.Client that records its interactions
 // to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
+func NewTestClient(t testing.TB, name string, update bool, apiURL *url.URL) (*Client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", normalize(name))
@@ -34,7 +35,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli := NewClient(hc)
+	cli := NewClient(apiURL, hc)
 	cli.Username = GetenvTestBitbucketCloudUsername()
 	cli.AppPassword = os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD")
 

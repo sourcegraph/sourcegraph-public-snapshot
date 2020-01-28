@@ -585,7 +585,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			if tt.manualCampaign {
 				campaign = testCampaign(user.ID, 0)
 			} else {
-				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{}`, UserID: user.ID}
+				plan := &a8n.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
 				err = store.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -617,7 +617,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			oldTime := now
 			now = now.Add(5 * time.Second)
 
-			newPlan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{}`, UserID: user.ID}
+			newPlan := &a8n.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
 			err = store.CreateCampaignPlan(ctx, newPlan)
 			if err != nil {
 				t.Fatal(err)

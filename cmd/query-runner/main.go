@@ -341,5 +341,8 @@ func searchURL(query, utmSource string) string {
 }
 
 func logEvent(userID int32, eventName, eventType string) {
-	eventlogger.LogEvent(userID, eventName, fmt.Sprintf(`{"event_type": "%s"}`, eventType))
+	contents, _ := json.Marshal(map[string]string{
+		"event_type": eventType,
+	})
+	eventlogger.LogEvent(userID, eventName, json.RawMessage(contents))
 }
