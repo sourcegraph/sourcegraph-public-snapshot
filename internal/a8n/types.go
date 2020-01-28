@@ -552,16 +552,16 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 }
 
 func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
-	commits := make([]*github.PullRequestCommit, 0, len(ce))
+	commits := make([]github.Commit, 0, len(ce))
 	for _, e := range ce {
 		if e.Kind != ChangesetEventKindGitHubCommit {
 			continue
 		}
-		commits = append(commits, e.Metadata.(*github.PullRequestCommit))
+		commits = append(commits, e.Metadata.(*github.PullRequestCommit).Commit)
 	}
 
 	sort.Slice(commits, func(i, j int) bool {
-		return commits[i].Commit.CommittedDate.Before(commits[j].Commit.CommittedDate)
+		return commits[i].CommittedDate.Before(commits[j].CommittedDate)
 	})
 
 	if len(commits) == 0 {
@@ -571,7 +571,7 @@ func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
 	latest := commits[len(commits)-1]
 
 	state := ChangesetCheckStatePending
-	switch latest.Commit.Status.State {
+	switch latest.Status.State {
 	case "ERROR", "FAILURE":
 		state = ChangesetCheckStateFailed
 	case "EXPECTED", "PENDING":
