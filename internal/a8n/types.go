@@ -1,7 +1,6 @@
 package a8n
 
 import (
-	"sort"
 	"strings"
 	"time"
 
@@ -552,23 +551,20 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 }
 
 func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
-	commits := make([]github.Commit, 0, len(ce))
+	var latest github.Commit
 	for _, e := range ce {
 		if e.Kind != ChangesetEventKindGitHubCommit {
 			continue
 		}
-		commits = append(commits, e.Metadata.(*github.PullRequestCommit).Commit)
+		current := e.Metadata.(*github.PullRequestCommit).Commit
+		if latest.CommittedDate.Before(current.CommittedDate) {
+			latest = current
+		}
 	}
 
-	sort.Slice(commits, func(i, j int) bool {
-		return commits[i].CommittedDate.Before(commits[j].CommittedDate)
-	})
-
-	if len(commits) == 0 {
+	if latest.CommittedDate.IsZero() {
 		return nil, nil
 	}
-	// We want the most recent commit
-	latest := commits[len(commits)-1]
 
 	state := ChangesetCheckStatePending
 	switch latest.Status.State {
