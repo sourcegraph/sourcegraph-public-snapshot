@@ -1,0 +1,1373 @@
+[
+  {
+   "Title": "",
+   "Body": "",
+   "Number": 0,
+   "URL": "",
+   "State": "",
+   "Repository": "",
+   "Private": false,
+   "Labels": [],
+   "Assignees": [],
+   "Milestone": ""
+  },
+  {
+   "Title": "e2e: log all e2e failures into central location for triage",
+   "Body": "Either googledocs or airtable. Will allow us to track all failed builds, and then triage them to understand why they failed.\r\n\r\nCurrently we rely on devs self reporting in a central tracking issue. Rather we can pro-actively investigate all failures.\r\n\r\nI (@keegancsmith) will timebox 30min a day to triaging failures. This will help me get intimate with our e2e stack so I can improve stuff.",
+   "Number": 8026,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/8026",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "e2e-tests",
+    "estimate/1d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Add setting to enable read-only mode for automation for all Sourcegraph users",
+   "Body": "https://app.hubspot.com/contacts/2762526/company/608245740 wants to send out manual campaigns to their entire organization. This means that all Sourcegraph users on their instance must be able to view campaigns in a read-only mode. We have confirmed that they do not have any repository restrictions, so it is ok for there to be solely two different roles:\r\n\r\n1. **Admins** (current functionality) - can perform all operations with Campaigns\r\n1. **Users** - can view campaigns in read-only mode. This is a setting that can be enabled and is off by default (not all customers will want to grant everyone access to everything in this way). \r\n\r\nWe will obviously enhance this functionality in the future, this is just a simple case to start and solve an immediate need for a customer.\r\n\r\nSee [slack thread](https://sourcegraph.slack.com/archives/CMMTWQQ49/p1579824093037600) for additional context.",
+   "Number": 8013,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/8013",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "customer",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "ryanslade",
+    "mrnugget",
+    "felixfbecker"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Creating a manual campaign -\u003e unexpected draft mode",
+   "Body": "Repros on master. When you create a new manual campaign, it is in draft mode after creation:\r\n\r\n![image](https://user-images.githubusercontent.com/1976/73045053-314a0980-3e21-11ea-9fa8-9c94b7b3d809.png)\r\n\r\nIt should not be in draft mode because (1) I clicked **Create** not **Create draft** (that button is not shown for manual campaigns) and (2) draft mode is meaningless for manual campaigns.\r\n\r\nBlocks tomorrow's rollout at https://app.hubspot.com/contacts/2762526/company/608245740 cc @christinaforney ",
+   "Number": 8009,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/8009",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "customer",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "mrnugget"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "gitserver: Correctly report if repos are cloning after rebalance",
+   "Body": "When adding/removing a gitserver replica we don't report that any repos need cloning. This issue is about fixing our reporting here. The broader work needed is captured in https://github.com/sourcegraph/sourcegraph/issues/2485\r\n\r\nPart of https://github.com/sourcegraph/sourcegraph/issues/2485",
+   "Number": 7970,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7970",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "estimate/1d",
+    "gitserver",
+    "spike",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "zoekt: support indexing multiple branches in zoekt-archive-index",
+   "Body": "Parent issue: https://github.com/sourcegraph/sourcegraph/issues/6728\r\n\r\nThe first step in supporting indexing multiple branches is for our indexing method to handle multiple branches. Right now we index tarballs via `zoekt-archive-index`. This issue is about supporting passing multiple tarballs (or zips) into zoekt-archive-index such that each tarball represents a branch. See the parent issue for much more context/discussion on this topic.\r\n\r\nRequested by https://app.hubspot.com/contacts/2762526/company/554338610",
+   "Number": 7930,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7930",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "customer",
+    "estimate/2d",
+    "feature-request",
+    "planned/3.13",
+    "search",
+    "spike",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Make new pricing tiers reflected in feature access",
+   "Body": "From @juliasourceress :\r\n\r\n\u003eJust had a client call and they're interested in our middle Enterprise Plus tier. Chatted with Dan and it sounds like we don't currently gate nor get pings back on usage of any of those \"Plus\" features (I think most notable ones are respecting repo permissions \u0026 extensions whitelist, but dan please chime in). Could we slot either a gate or at least a ping back/stats on those into the next release? Getting this info from clients will definitely impact new ARR as well as upsell potential.\r\n\r\nAnd my response:\r\n\r\n\u003eLooks like we DO have enforcement for this (see https://sourcegraph.com/github.com/sourcegraph/sourcegraph@837b3b25d94e180864c7d1b7276a235a1ed9933a/-/blob/enterprise/cmd/frontend/internal/licensing/features.go#L19:2) but that we are not yet restricting it from basic Enterprise tier: https://sourcegraph.com/github.com/sourcegraph/sourcegraph@837b3b25d94e180864c7d1b7276a235a1ed9933a/-/blob/enterprise/cmd/frontend/internal/licensing/features.go#L45:23\r\n\u003e\r\n\u003eSo this might be an easy update actually!\r\n\u003e\r\n\u003eBasically we just need to add the new tiers (Enterprise Plus and Elite) to our backend and update features to map to them: https://sourcegraph.com/github.com/sourcegraph/sourcegraph@837b3b2/-/blob/enterprise/cmd/frontend/internal/dotcom/billing/plans.go#L27\r\n",
+   "Number": 7927,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7927",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "estimate/1d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "download button not shown for images",
+   "Body": "an oversight in the download button feature. Here's an example: https://sourcegraph.com/github.com/sourcegraph/sourcegraph@66502dc3cd664deff6687c1f243731a82189e5e1/-/blob/ui/assets/img/code-hero-sample.png",
+   "Number": 7924,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7924",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "estimate/0.5d",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n: Updating partially published Campaigns is not supported",
+   "Body": "Right now we don't support updating a Campaign's changesets when they've\nonly been partially published. We have an explicit check in the code\nthat makes sure to only update changesets if the Campaign has been\npublished.\n\nBut that means that we don't support the following scenario:\n\n1. Create Campaign with 10 changesets *in draft mode*\n2. Publish 2 of 10 changesets, creating them on code hosts\n3. Update Campaign to change name, description or arguments (`scopeQuery`, `matchTemplate`, ...)\n4. 2 already-published changesets are updated/closed on code hosts.\n\nSupporting this is not trivial, since we'd effectively need to detect\nwhether we're in this subset-published mode and depending on that, do a\ndifferent update than we'd do otherwise.\n\n#### Option A\n\nIn the normal update path (all or no changesets are published), we create \"missing changesets\" on codehosts that haven't been created before.\n\nBut in this new subset-update path (where only subset of changesets is published), we haven't created `ChangesetJobs` for all repositories yet, so we shouldn't create those now.\n\nInstead, we should _only_ update the Changesets that have already been published, but _only_ if the updated Campaign would create them again.\n\nIf the updated Campaign would _not_ create them again, we'd need to close them.\n\n#### Option B\n\nAnother possibility: when you update a Campaign, all already-published changesets are closed by default and only recreated/updated when you re-publish them individually or publish the whole Campaign.",
+   "Number": 7915,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7915",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "bug",
+    "estimate/2d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "mrnugget"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n/auth: Regex search/replace doesn't work in private repos",
+   "Body": "In order to reproduce, make sure that you have two external services:\r\n\r\n1. GitHub external service with your token that clones `github.com/sourcegraph/automation-testing`, a public repo\r\n2. GitHub external service with `sd9` token (see 1Password) that clones `github.com/sd9/ava`\r\n\r\n\r\nPreview a CampaignPlan for `automation-testing` repo with these\r\nparameters:\r\n\r\n```json\r\n{\"scopeQuery\": \"repo:github.com/sourcegraph/automation-testing\",\"regexpMatch\": \"This\", \"textReplace\": \"That\"}\r\n```\r\n\r\n([Click here to run this in local API console](http://localhost:3080/api/console#%7B%22variables%22%3A%22%7B%5Cn%20%20%5C%22spec%5C%22%3A%20%7B%5Cn%20%20%20%20%5C%22type%5C%22%3A%20%5C%22regexSearchReplace%5C%22%2C%5Cn%20%20%20%20%5C%22arguments%5C%22%3A%20%5C%22%7B%5C%5C%5C%22scopeQuery%5C%5C%5C%22%3A%20%5C%5C%5C%22repo%3Agithub.com%2Fsourcegraph%2Fautomation-testing%5C%5C%5C%22%2C%5C%5C%5C%22regexpMatch%5C%5C%5C%22%3A%20%5C%5C%5C%22This%5C%5C%5C%22%2C%20%5C%5C%5C%22textReplace%5C%5C%5C%22%3A%20%5C%5C%5C%22That%5C%5C%5C%22%7D%5C%22%5Cn%20%20%7D%2C%5Cn%20%20%5C%22wait%5C%22%3A%20true%5Cn%7D%22%2C%22query%22%3A%22mutation%20PreviewCombyCampaign(%24spec%3A%20CampaignPlanSpecification!%2C%20%24wait%3A%20Boolean!)%20%7B%5Cn%20%20previewCampaignPlan(specification%3A%20%24spec%2C%20wait%3A%20%24wait)%20%7B%5Cn%20%20%20%20__typename%5Cn%20%20%20%20...%20on%20CampaignPlan%20%7B%5Cn%20%20%20%20%20%20...CampaignPlanFields%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%7D%5Cn%5Cnfragment%20CampaignPlanFields%20on%20CampaignPlan%20%7B%5Cn%20%20id%5Cn%20%20type%5Cn%20%20arguments%5Cn%20%20status%20%7B%5Cn%20%20%20%20completedCount%5Cn%20%20%20%20pendingCount%5Cn%20%20%20%20state%5Cn%20%20%20%20errors%5Cn%20%20%7D%5Cn%20%20changesets%20%7B%5Cn%20%20%20%20totalCount%5Cn%20%20%20%20nodes%20%7B%5Cn%20%20%20%20%20%20diff%20%7B%5Cn%20%20%20%20%20%20%20%20baseRepository%20%7B%20name%20%7D%5Cn%20%20%20%20%20%20%20%20fileDiffs%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20rawDiff%5Cn%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%7D%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%7D%22%7D))\r\n\r\nThat returns a few results.\r\n\r\nNow, if I change the `scopeQuery` to search `github.com/sd9/ava` it doesn't return anything:\r\n\r\n```json\r\n{\"scopeQuery\": \"repo:github.com/sd9/ava\",\"regexpMatch\": \"This\", \"textReplace\": \"That\"}\r\n```\r\n\r\n([Click here to run this in local API console](http://localhost:3080/api/console#%7B%22variables%22%3A%22%7B%5Cn%20%20%5C%22spec%5C%22%3A%20%7B%5Cn%20%20%20%20%5C%22type%5C%22%3A%20%5C%22regexSearchReplace%5C%22%2C%5Cn%20%20%20%20%5C%22arguments%5C%22%3A%20%5C%22%7B%5C%5C%5C%22scopeQuery%5C%5C%5C%22%3A%20%5C%5C%5C%22repo%3Agithub.com%2Fsourcegraph%2Fautomation-testing%5C%5C%5C%22%2C%5C%5C%5C%22regexpMatch%5C%5C%5C%22%3A%20%5C%5C%5C%22This%5C%5C%5C%22%2C%20%5C%5C%5C%22textReplace%5C%5C%5C%22%3A%20%5C%5C%5C%22That%5C%5C%5C%22%7D%5C%22%5Cn%20%20%7D%2C%5Cn%20%20%5C%22wait%5C%22%3A%20true%5Cn%7D%22%2C%22query%22%3A%22mutation%20PreviewCombyCampaign(%24spec%3A%20CampaignPlanSpecification!%2C%20%24wait%3A%20Boolean!)%20%7B%5Cn%20%20previewCampaignPlan(specification%3A%20%24spec%2C%20wait%3A%20%24wait)%20%7B%5Cn%20%20%20%20__typename%5Cn%20%20%20%20...%20on%20CampaignPlan%20%7B%5Cn%20%20%20%20%20%20...CampaignPlanFields%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%7D%5Cn%5Cnfragment%20CampaignPlanFields%20on%20CampaignPlan%20%7B%5Cn%20%20id%5Cn%20%20type%5Cn%20%20arguments%5Cn%20%20status%20%7B%5Cn%20%20%20%20completedCount%5Cn%20%20%20%20pendingCount%5Cn%20%20%20%20state%5Cn%20%20%20%20errors%5Cn%20%20%7D%5Cn%20%20changesets%20%7B%5Cn%20%20%20%20totalCount%5Cn%20%20%20%20nodes%20%7B%5Cn%20%20%20%20%20%20diff%20%7B%5Cn%20%20%20%20%20%20%20%20baseRepository%20%7B%20name%20%7D%5Cn%20%20%20%20%20%20%20%20fileDiffs%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20rawDiff%5Cn%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%7D%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%7D%22%7D))\r\n\r\n\r\nBut if I run the search manually, by [searching for `repo:github.com/sd9/ava This` in regexp-mode](http://localhost:3080/search?q=repo:github.com/sd9/ava+This\u0026patternType=regexp)), I get results.\r\n\r\nJust not in Automation, which in combination with https://github.com/sourcegraph/sourcegraph/issues/7912 makes me think that this has something to do with auth",
+   "Number": 7914,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7914",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "bug",
+    "estimate/1d",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "ryanslade"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "authz code logs warnings about Redis returning nil values",
+   "Body": "1. Make sure `github.com/sourcegraph/automation-testing` is cloned\r\n1. Go to `http://localhost:3080/campaigns/new`\r\n1. Select `Regexp search and replace` as `Type`\r\n1. Enter the following as `Arguments`. It's only **important that the `scopeQuery` matches at least one repository:\r\n```json\r\n{\r\n    \"scopeQuery\": \"automation-testing\",\r\n    \"regexpMatch\": \"this\\\\sis\",\r\n    \"textReplace\": \"that thou\"\r\n}\r\n```\r\n1. Hit `Preview changes`\r\n\r\nWhat you'll see is \"Preview changes complete\" but no changes.\r\n\r\nIn the log output you'll see something this:\r\n\r\n```\r\n10:11:24  frontend | WARN failed to parse bytes from Redis value, value: \u003cnil\u003e\r\n```\r\n\r\nI tried to get a backtrace of why that happens and it looks like that\r\nwhen we do a search in an Automation campaign we end up creating\r\n`repositoryResolvers` and those access the `authz` code:\r\n\r\n```\r\ngoroutine 176 [running]:\r\ngithub.com/sourcegraph/sourcegraph/internal/rcache.(*Cache).GetMulti(0xc00202b220, 0xc001dd5d00, 0x1, 0x1, 0x0, 0x0, 0x0)\r\n /Users/thorstenball/work/sourcegraph/internal/rcache/rcache.go:64 +0x40b\r\ngithub.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github.(*Provider).getCachedPublicRepos(0xc001b5e870, 0x3af05a0, 0xc001fa2090, 0xc001e21818, 0x1, 0x1, 0xc001fa2150, 0x0, 0x0)\r\n /Users/thorstenball/work/sourcegraph/enterprise/cmd/frontend/internal/authz/github/github.go:183 +0x3f5\r\ngithub.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github.(*Provider).RepoPerms.func1(0xc001dd5ce0, 0x0, 0x0)\r\n /Users/thorstenball/work/sourcegraph/enterprise/cmd/frontend/internal/authz/github/github.go:67 +0x144\r\ngithub.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github.(*Provider).RepoPerms(0xc001b5e870, 0x3af05a0, 0xc001fa2090, 0x0, 0xc001e21818, 0x1, 0x1, 0x0, 0x0, 0x0, ...)\r\n /Users/thorstenball/work/sourcegraph/enterprise/cmd/frontend/internal/authz/github/github.go:113 +0x450\r\ngithub.com/sourcegraph/sourcegraph/cmd/frontend/db.authzFilter(0x3af05a0, 0xc001fa2090, 0xc001e21810, 0x1, 0x1, 0xc000000002, 0x0, 0x0, 0x0, 0x0, ...)\r\n /Users/thorstenball/work/sourcegraph/cmd/frontend/db/repos_perm.go:187 +0x1cea\r\ngithub.com/sourcegraph/sourcegraph/cmd/frontend/db.(*repos).getReposBySQL(0x4dfa4c0, 0x3af05a0, 0xc001f6e420, 0xc001f90101, 0xc001f6e6c0, 0x0, 0x0, 0x0, 0x0, 0x0)\r\n /Users/thorstenball/work/sourcegraph/cmd/frontend/db/repos.go:202 +0x804\r\ngithub.com/sourcegraph/sourcegraph/cmd/frontend/db.(*repos).List(0x4dfa4c0, 0x3af05a0, 0xc001f6e420, 0x0, 0x0, 0xc001d03530, 0x1, 0x1, 0x0, 0x0, ...)\r\n /Users/thorstenball/work/sourcegraph/cmd/frontend/db/repos.go:334 +0x80b\r\ngithub.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.resolveRepositories(0x3af05a0, 0xc001d431a0, 0xc001d66a60, 0x1, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, ...)\r\n /Users/thorstenball/work/sourcegraph/cmd/frontend/graphqlbackend/search.go:502 +0x1ecd\r\ngithub.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.(*searchResolver).resolveRepositories(0xc001190cf0, 0x3af05a0, 0xc001f6e240, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, ...)\r\n /Users/thorstenball/work/sourcegraph/cmd/frontend/graphqlbackend/search.go:313 +0xa3f\r\ngithub.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.(*searchResolver).determineRepos(0xc001190cf0, 0x3af0560, 0xc001fb6840, 0xc001f6e180, 0xbf81cdae8bce8988, 0x1526064ba6, 0x4dd22c0, 0x0, 0x0, 0x0, ...)\r\n /Users/thorstenball/work/sourcegraph/cmd/frontend/graphqlbackend/search_results.go:860 +0xec\r\ngithub.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.(*searchResolver).doResults(0xc001190cf0, 0x3af0560, 0xc001fbef60, 0x0, 0x0, 0x0, 0x0, 0x0)\r\n /Users/thorstenball/work/sourcegraph/cmd/frontend/graphqlbackend/search_results.go:969 +0x431\r\ngithub.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.(*searchResolver).resultsWithTimeoutSuggestion(0xc001190cf0, 0x3af0560, 0xc001fbef60, 0x0, 0x0, 0x0)\r\n /Users/thorstenball/work/sourcegraph/cmd/frontend/graphqlbackend/search_results.go:506 +0xbe\r\ngithub.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.(*searchResolver).Results(0xc001190cf0, 0x3af0560, 0xc001fbef60, 0x0, 0x0, 0x0)\r\n /Users/thorstenball/work/sourcegraph/cmd/frontend/graphqlbackend/search_results.go:477 +0x165\r\ngithub.com/sourcegraph/sourcegraph/enterprise/internal/a8n.(*regexSearchReplace).generateDiff(0xc001af0d00, 0x3af0560, 0xc001fbef60, 0xc0017c60a0, 0x12, 0xc001adc2a0, 0x28, 0x0, 0x0, 0x0, ...)\r\n /Users/thorstenball/work/sourcegraph/enterprise/internal/a8n/campaign_type.go:308 +0x3e3\r\ngithub.com/sourcegraph/sourcegraph/enterprise/internal/a8n.runCampaignJob(0x3af0560, 0xc001fbef60, 0x326c7b0, 0xc001b47ac0, 0x3ad6220, 0xc001af0d00, 0xc001a2b110)\r\n /Users/thorstenball/work/sourcegraph/enterprise/internal/a8n/runner.go:380 +0xabc\r\ngithub.com/sourcegraph/sourcegraph/enterprise/internal/a8n.RunCampaignJobs.func1(0x3af0520, 0xc000052120, 0xc001b47ac0, 0x1e, 0xa, 0x1, 0xc001adc2a0, 0x28, 0xc0017765c0, 0x11, ...)\r\n /Users/thorstenball/work/sourcegraph/enterprise/internal/a8n/runner.go:293 +0xce\r\ngithub.com/sourcegraph/sourcegraph/enterprise/internal/a8n.(*Store).ProcessPendingCampaignJob(0xc000324d80, 0x3af0520, 0xc000052120, 0xc0003f0370, 0x0, 0x0, 0x0)\r\n /Users/thorstenball/work/sourcegraph/enterprise/internal/a8n/store.go:143 +0x50d\r\ngithub.com/sourcegraph/sourcegraph/enterprise/internal/a8n.RunCampaignJobs.func2()\r\n /Users/thorstenball/work/sourcegraph/enterprise/internal/a8n/runner.go:302 +0x112\r\ncreated by github.com/sourcegraph/sourcegraph/enterprise/internal/a8n.RunCampaignJobs\r\n /Users/thorstenball/work/sourcegraph/enterprise/internal/a8n/runner.go:314 +0x2f2\r\n```\r\n\r\nThe problem comes from this function here:\r\n\r\nhttps://github.com/sourcegraph/sourcegraph/blob/97af9d04a8ce24d88dde2e79cb02261622da058f/internal/rcache/rcache.go#L68-L76\r\n\r\nIt's called with different keys and some return a value and others don't. I checked their values in Redis directly:\r\n\r\n```\r\n$ redis-cli\r\n127.0.0.1:6379\u003e GET v2:githubAuthz:https://github.com/:r:MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==\r\n\"{\\\"Public\\\":true,\\\"TTL\\\":10800000000000}\"\r\n127.0.0.1:6379\u003e GET v2:githubAuthz:https://github.com/:r:MDEwOlJlcG9zaXRvcnkxOTM4Mzc5MTA=\r\n(nil)\r\n```\r\n\r\nIt seems like the code can't handle `nil` values.",
+   "Number": 7912,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7912",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "auth",
+    "bug",
+    "estimate/0.5d",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Extract and dump type information for Dart LSIF ",
+   "Body": "I'm supporting the Dart LSIF effort in '20% time'. I'm working with @chrismwendt on using crossdart for dumping LSIF data. I'm working closely with extracting static types and adding type hovers to the dump format.",
+   "Number": 7908,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7908",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "code-intel",
+    "estimate/4d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "rvantonder"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Reject invalid externalURL with non-/ path",
+   "Body": "We don't support non-root externalURLs #103 (eg `https://example.com/sourcegraph`) yet, but people sometimes miss this (eg #7876). It should reject or warn (just in the JSON Schema is fine) if there is a non-root-path external URL.\r\n\r\n",
+   "Number": 7884,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7884",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "estimate/0.5d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "tsenart"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "RFC 40: Move call to the Authz methods into application layer",
+   "Body": "This issue tracks the follow up work of improve code structure for #7754, in particular:\r\n- [x] https://github.com/sourcegraph/sourcegraph/pull/7754#discussion_r367744941\n- [x] https://github.com/sourcegraph/sourcegraph/pull/7754#discussion_r367748125\r\n- [x] https://github.com/sourcegraph/sourcegraph/pull/7754#discussion_r367750144\r\n",
+   "Number": 7878,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7878",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "debt",
+    "estimate/1d",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "REDACTED",
+   "Body": "",
+   "Number": 55,
+   "URL": "https://github.com/sourcegraph/security-issues/issues/55",
+   "State": "OPEN",
+   "Repository": "sourcegraph/security-issues",
+   "Private": true,
+   "Labels": [
+    "estimate/1d"
+   ],
+   "Assignees": [
+    "tsenart"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Automation should never miss search results",
+   "Body": "In its current state Automation campaigns might miss search results because of the way it interacts with our search infrastructure. See [this comment chain](https://github.com/sourcegraph/sourcegraph/pull/7790#discussion_r367736633) for the full context. Below are a few excerpts\r\n\r\n---\r\n\r\n@rvantonder in https://github.com/sourcegraph/sourcegraph/pull/7790#discussion_r367736633:\r\n\r\n\u003e Here's a breakdown of things:\r\n\u003e \r\n\u003e - for the repo question: this  (to me) is a problem where we don't have the possibility of two things at the same time: (1) a clean way to operate on a repo given we know what the repo is already and (2) a filtering mechanism to only run on certain files, or with certain constraints. The nice thing about replacer is that it actually solves (1) as far as the API is concerned: just give it the repo, it'll do the fetching, and it'll run comby on all the files (there is a way to filter files, but it is not _exactly_ the same as what we support in the query). But the point is there's no danger of fiddling with queries/escaping. The problem: the replacer interface is too rudimentary to understand/implement the full spectrum of our search query. The frontend/search interface (2) _does_ understand the full query and can perform the filtering mechanism (useful!) but the problem is that we need to mess around with the query to do that properly. I agree this is the best possible option right now, but there is another danger hidden in (2). Next point.\r\n\u003e \r\n\u003e - Any time we ever call `newSearch`, we are never guaranteed to find all matches. For search/replace, it is imperative that we (a) always try our hardest to replace every instance (i.e., we will wait!) or (b) if we don't get everything, we need to know about what was missed. It would be great if there was a knob to say 'search and replace this, just guarantee me that you found every single instance', but there is a ton of search functionality across concerns (index/searcher/...) that make adding such a knob very very hard IMO, and it would be easier to build such a \"guaranteed searcher\" 'from scratch in replacer than try layer it onto search. The alternative is that we are cognizant of the limitations of search and monitor it when it tells us 'there were more results, but I didn't return them'. If we go this route, we will need to add a lot of (TBH probably annoying) logic that checks the state of returned results, refetches, and all that. I'm not even sure how we can guarantee that pans out, since search can skip repos _or_ files. It is brittle for this purpose brittle. Pagination gives me some hope that we can do finer accounting and do 'retry' operations in a much easier way (right now we'd have to do the accounting ourselves, somehow).\r\n\u003e \r\n\u003e So we have bigger problems than that repo issue. Just for this regex campaign mode, I realized that since this is using searcher, partial results will return quickly, and so I basically will add `count:10000` with no real guarantee that all of the matches are covered. \r\n\u003e \r\n\u003e For example, when I create these campaigns locally:\r\n\u003e \r\n\u003e ```\r\n\u003e {\r\n\u003e     \"scopeQuery\": \"repo:github.com/sourcegraph/sourcegraph file:.*\",\r\n\u003e     \"regexMatch\": \"func\",\r\n\u003e     \"textReplace\": \"foo\"\r\n\u003e }\r\n\u003e ```\r\n\u003e \r\n\u003e will have 1048 matches (and returns quickly) while\r\n\u003e \r\n\u003e ```\r\n\u003e {\r\n\u003e     \"scopeQuery\": \"repo:github.com/sourcegraph/sourcegraph file:.* count:10000\",\r\n\u003e     \"regexMatch\": \"func\",\r\n\u003e     \"textReplace\": \"foo\"\r\n\u003e }\r\n\u003e ```\r\n\u003e \r\n\u003e will have 10647.\r\n\u003e \r\n\u003e But there's an even bigger problem than the number of matches getting cut off by `count` or `timer`: it is that when we filter using, e.g., `file`, the list of files can _also_ be cut off. So for example, the query\r\n\u003e \r\n\u003e ```\r\n\u003e {\r\n\u003e     \"scopeQuery\": \"repo:github.com/torvalds/linux index:no file:.* count:10000\",\r\n\u003e     \"regexMatch\": \"TODO\",\r\n\u003e     \"textReplace\": \"DONE\"\r\n\u003e }\r\n\u003e ```\r\n\u003e \r\n\u003e on my machine will return only 15 matches. That's because we return some number of files (I think 1000 and `count` doesn't appear to do anything) and there are only 15 matches in those files. If I want to force search to try harder, I actually have to use the `regexMatch` value in the `scopeQuery`:\r\n\u003e \r\n\u003e ```\r\n\u003e {\r\n\u003e     \"scopeQuery\": \"repo:github.com/torvalds/linux TODO index:no file:.* count:10000\",\r\n\u003e     \"regexMatch\": \"TODO\",\r\n\u003e     \"textReplace\": \"yo\"\r\n\u003e }\r\n\u003e ```\r\n\u003e \r\n\u003e This finds 1776 matches. Does this find all the matches? _I still don't know_ and that's the problem. Long term we'll have to think about how to either rearchitect search code or queries to handle this issue, or build up a dedicated replacer service. There's contention in designing for 'time-to-first-result' and 'match-and-replace-all-instances-at-almost-any-cost'.\r\n\r\n---\r\n\r\n@rvantonder in https://github.com/sourcegraph/sourcegraph/pull/7790#discussion_r367868835:\r\n\r\n\u003e To be clear, what I mean is that we need to do (possibly significant) extra work compared to what the current search code is geared towards, not that it's at odds.\r\n\u003e \r\n\u003e @keegancsmith probably has better insight, but my gut reaction is that using indexed search results/Zoekt is a no go. It is a black box and takes lots of shortcuts in ways that's hard to guarantee that it returns all matches, whether content or files (issue in #7709 may be indicative). Which implies using searcher logic. But searcher doesn't do repo filtering, that happens in the frontend. So there is an interface to cut out here.\r\n\r\n---\r\n\r\n@mrnugget in https://github.com/sourcegraph/sourcegraph/pull/7790#discussion_r367877914:\r\n\r\n\u003e There's two problems we have to address:\r\n\u003e \r\n\u003e   1. We need to reliably come up with a list of repositories over which to run Automation campaigns.\r\n\u003e   2. We need to find every search result in each one of these repositories.\r\n\u003e \r\n\u003e With our current state of campaign types and our roadmpa, I think (1) is already (or can be made) reliable by restricting scopeQuery to only accept repo:. That should always give us the full list of repositories that match the scopeQuery.\r\n\u003e \r\n\u003e The problem is that once you do that, you start to come up with a lot of false positives. Example: you run a NPM credentials campaign with \"scopeQuery\": \"repo:github\". That returns 200 repos, but only 3 of those have an .npmrc file. So I decided to add file:.npmrc to the scopeQuery. Problem is that, apparently, we're now not reliable anymore without adding count:99999 to it. For regex-search-replace the problem is even bigger, because it can yield more hits.\r\n\u003e \r\n\u003e Problem (2) is what we're discussing this in this comment chain and now becomes more important with regex-search-and-replace and future campaigns that will run in the background and proactively scan/search repositories.\r\n\u003e \r\n\u003e I hope that we, builders of code search, can up with a way that allows us to make use of the search infrastructure we already have in a reliable way 😄\r\n\u003e \r\n\u003e  [... comment by @rvantonder ...]\r\n\u003e \r\n\u003e This comment combined with your earlier comment makes me think again of the idea of combining searcher/replacer into a single service with added \"run code over git repo\" functionality.",
+   "Number": 7861,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7861",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "bug",
+    "debt",
+    "estimate/3d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "mrnugget"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n: Finish implementation of `src actions exec`",
+   "Body": "I want to finish https://github.com/sourcegraph/src-cli/pull/80, check off the TODOs mentioned in the PR and possibly adding improvements.",
+   "Number": 7850,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7850",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "estimate/3d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "mrnugget"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "RFC 40: Add Prometheus metrics",
+   "Body": "This issue tracks the implementation of adding Prometheus metrics for [RFC 40: Explicit Repository Permissions Model](https://docs.google.com/document/d/167WV_rhBg3oj0yw9fHwUMlB-8BR3ktk2FSsKiUQo55Y/edit).",
+   "Number": 7827,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7827",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "estimate/1d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Simplify Bitbucket Server plugin interaction with Sourcegraph",
+   "Body": "There are some improvements that can be made to the existing plugin interaction between Bitbucket Server and Sourcegraph.\r\n\r\n**Webhooks**\r\nWe can remove the unnecessary REST API to CRUD webhooks. There only needs to be a single webhook (that exist by default) to dispatch event payloads that are helpful to automation. This does not have to be configurable to the extent of changing event scope, name, etc.\r\n\r\nThe webhook can be toggled (on/off + secret) on the Bitbucket Server Sourcegraph admin page. The secret here will be used to HMAC sign payloads. The secret configured on Sourcegraph will have to match this one.\r\n\r\n**Configuration**\r\nClean up the BBS configuration on Sourcegraph. It is currently fragmented between the experimental site administration config (for faster permissions) and BBS external service (webhook secret). Ideally, everything will be moved to the BBS extsvc on a per instance basis.\r\n```\r\n\"plugin\": {\r\n  \"webhook\": {\r\n     \"secret\": \"secret\"\r\n  },\r\n  \"acl_endpoints\": {\r\n    \"enabled\": \"true\"\r\n  }\r\n} \r\n```\r\n\r\n**Version** \r\nThe BBS plugin will expose a HTTP endpoint (`/version`) that the Sourcegraph instance can ping to discover which features are enabled/available.",
+   "Number": 7824,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7824",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bitbucket",
+    "estimate/3d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "kzh"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "search: Implement AND / OR / NOT for file contents",
+   "Body": "This the umbrella issue for reaching feature parity with OpenGrok. This is an OKR of the Core Services team in Q1 2020.\r\n\r\nRelated to #7154",
+   "Number": 7823,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7823",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "estimate/2d",
+    "planned/3.13",
+    "search",
+    "spike",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "rvantonder"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "gitserver: implement back-off on reclone operation",
+   "Body": "Our reclone operation can fail. In particular we have seen instances of large monorepos fail. Constantly recloning leads to load on the codehost and Sourcegraph =\u003e impacts users.\r\n\r\nhttps://app.hubspot.com/contacts/2762526/company/555146901/",
+   "Number": 7804,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7804",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "customer",
+    "estimate/1d",
+    "gitserver",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Test and document src-expose on ec2 with docker-compose and startup",
+   "Body": "This issue is targeted at testing out and documenting Sourcegraph with src-expose for https://app.hubspot.com/contacts/2762526/company/947819054/\r\n\r\n- Happy with just a static binary that they can run alongside Sourcegraph docker containers.\r\n- They do not care about having history\r\n- Fine with writing the script and figuring out how to shard Perforce repo into smaller Git repos themselves\r\n- Want us to provide an init script they can use so it reruns across restarts\r\n- Keegan to follow-up with instructions for setting this up.\r\n\r\n",
+   "Number": 7803,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7803",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "customer",
+    "estimate/1d",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Remove published_at fields from Campaign and ChangesetJob",
+   "Body": "published_at is used to indicate that the campaign is no longer in draft mode but the only effect it has is to enable changeset jobs to begin being processed.\r\n\r\nWe've since added individual published_at columns to each changeset job so that they can be published individually. This make published_at on the campaign redundant. ",
+   "Number": 7782,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7782",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "debt",
+    "estimate/2d",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "ryanslade"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n/core: Support updating changesets on BitbucketServer",
+   "Body": "This is a follow-up to #7683 \r\n\r\nRight now we only support updating changesets on GitHub. But since Bitbucket Server is otherwise fully-supported, we need to add this too.\r\n\r\nWhat we need to do:\r\n\r\n1. Add a `UpdatePullRequest` method to the BitbucketServer client.\r\n2. Add `UpdateChangeset` method to `BitbucketServerSource`\r\n3. Merge the `UpdateChangesetSource` back into the `ChangesetSource` [here](https://github.com/sourcegraph/sourcegraph/blob/141d351bb7a50c1c739b1ae3854840f980b9a84d/cmd/repo-updater/repos/sources.go#L90-L109) now that we have feature-parity",
+   "Number": 7762,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7762",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/1d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "kzh"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Write C# LSIF indexer",
+   "Body": "I discussed this with @efritz and @chrismwendt: I'm going to help out the @sourcegraph/code-intel team by trying to write an LSIF indexer.\r\n\r\nSpec: https://github.com/microsoft/language-server-protocol/blob/master/indexFormat/specification.md\r\n\r\nI'll update this ticket in the future with more information.",
+   "Number": 7760,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7760",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "code-intel",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "mrnugget"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "RFC 40: Add unit tests for GraphQL APIs",
+   "Body": "This issue tracks the progress of unit tests of GraphQL APIs for [RFC 40: Explicit Repository Permissions Model](https://docs.google.com/document/d/167WV_rhBg3oj0yw9fHwUMlB-8BR3ktk2FSsKiUQo55Y/edit).\r\n",
+   "Number": 7748,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7748",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "debt",
+    "estimate/1d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n: Move \"default branch\" check to execution of CampaignJob",
+   "Body": "Current state when creating a new CampaignPlan (\"Preview changes\"):\r\n\r\n* We open a transaction\r\n* For each repo the `scopeQuery` yields we create a `CampaignJob`\r\n* For each `CampaignJob` we ask `gitserver` for its default branch\r\n* If `gitserver` cannot determine a default branch the transaction is rolled back\r\n* Otherwise: transaction is committed\r\n\r\n[Here is the code](https://github.com/sourcegraph/sourcegraph/blob/9c41958efbd5ba9bb43c426137d219e935d6ce23/enterprise/internal/a8n/runner.go#L158-L213).\r\n\r\nThat means the transaction is open for the duration of time it takes to\r\nask `gitserver` for _all_ default branches.\r\n\r\nThat's not a problem per se, but it is bad UX since it might take a\r\nwhile until the user sees _something_ after hitting the `\"Preview\r\nchanges\"` button.\r\n\r\nI propose that we move the determination of a `CampaignJob`s `BaseRef`\r\nand `Rev` out of the transaction and set those when actually running the\r\njob [here](https://github.com/sourcegraph/sourcegraph/blob/9c41958efbd5ba9bb43c426137d219e935d6ce23/enterprise/internal/a8n/runner.go#L280-L283).\r\n\r\nThat would require making `rev` and `base_ref` nullable fields in the\r\ndatabase and since we have a database unique constraint on\r\n`(campaign_plan_id, repo_id, rev)` we have to find out how that works\r\nwith `NULL` fields.\r\n\r\nThe upsides:\r\n\r\n1. We don't hammer `gitserver` with possibly hundreds of requests in a tight loop\r\n2. One request failing won't fail the whole `CampaignPlan` but instead result in a single errored `CampaignJob`\r\n3. The user will get faster feedback when previewing changes because the transaction will be much faster since it's not bound to `gitserver` anymore",
+   "Number": 7725,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7725",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/2d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "kzh"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n Spike: Arbitrary code execution on the server",
+   "Body": "This is a spike to find out what it would take to run \"src actions\" as implemented in https://github.com/sourcegraph/src-cli/pull/80 in Sourcegraph, instead of locally.\n\nThe expected result is that we know\n\n1.) what the technical implementation would look like in detail\n2.) how long it would roughly take to implement\n3.) possible tradeoffs\n\nand can add that information to the RFC.",
+   "Number": 7723,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7723",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/3d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "mrnugget"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Core Services: 3.13 Tracking Issue",
+   "Body": "### Status\r\n\r\nThis tracking issue is **approved**.\r\n\r\n### Availability\r\n\r\nPeriod is the January 21st until February 17th. Please put in the days you won't be working and the number of working days for the period.\r\n\r\n- @keegancsmith **Not working:** 4th \u0026 5th February, **Availability:** 18d\r\n- @kzh **Availability** 20d\r\n- @mrnugget - **Not working:** 6th \u0026 7th February (presumably), **Availability:** 18d\r\n- @rvantonder 19d\r\n- @ryanslade **Availability** 20d\r\n- @tsenart 5d (for coding)\r\n- @unknwon **Not working:** Jan 24th (Chinese New Year), **Availability:** 19d\r\n\r\n### Planned work\r\n\r\n@keegancsmith: __18.50d__\r\n\r\n- [ ] e2e: log all e2e failures into central location for triage [#8026](https://github.com/sourcegraph/sourcegraph/issues/8026) __1d__ \r\n- [x] gitserver: Correctly report if repos are cloning after rebalance [#7970](https://github.com/sourcegraph/sourcegraph/issues/7970) __1d__ 🐛🕵️\r\n- [ ] zoekt: support indexing multiple branches in zoekt-archive-index [#7930](https://github.com/sourcegraph/sourcegraph/issues/7930) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/554338610)\r\n- [x] download button not shown for images [#7924](https://github.com/sourcegraph/sourcegraph/issues/7924) __0.5d__ \r\n- [x] gitserver: implement back-off on reclone operation [#7804](https://github.com/sourcegraph/sourcegraph/issues/7804) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/555146901)🐛\r\n- [x] Test and document src-expose on ec2 with docker-compose and startup [#7803](https://github.com/sourcegraph/sourcegraph/issues/7803) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/947819054)\r\n- [ ] Ref glob search perf followups [#7642](https://github.com/sourcegraph/sourcegraph/issues/7642) __2d__ 🧶\r\n- [ ] Code host fingerprinter [#7464](https://github.com/sourcegraph/sourcegraph/issues/7464) __1d__ 🕵️\r\n- [ ] Exclude directories from search results [#6870](https://github.com/sourcegraph/sourcegraph/issues/6870) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/464956351)\r\n- [ ] gitserver should auto-recover from corrupt repository clones [#6676](https://github.com/sourcegraph/sourcegraph/issues/6676) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/407948923)🐛🕵️\r\n- [ ] Gitlab OAuth certificate signed by unknown authority [#4652](https://github.com/sourcegraph/sourcegraph/issues/4652) __0.5d__ 🐛👩\r\n- [x] repos: Stop reading repo.enabled [#3971](https://github.com/sourcegraph/sourcegraph/issues/3971) __0.5d__ 🧶\r\n- [ ] Support SSH key credentials directly in external service configs [#3924](https://github.com/sourcegraph/sourcegraph/issues/3924) __2d__ 👩\r\n- [ ] docs: Ensure new arch for repo-updater is reflected in dev docs [#3911](https://github.com/sourcegraph/sourcegraph/issues/3911) __0.5d__ 🧶\r\n- [ ] docs: Document using an alternate clone URL for repos [#658](https://github.com/sourcegraph/sourcegraph/issues/658) __0.5d__ 🧶\r\n- [ ] Support internal CA or self-signed TLS certificates for all external communication [#71](https://github.com/sourcegraph/sourcegraph/issues/71) __2d__ 👩\r\n\r\n@kzh: __13.00d__\r\n\r\n- [ ] Simplify Bitbucket Server plugin interaction with Sourcegraph [#7824](https://github.com/sourcegraph/sourcegraph/issues/7824) __3d__ \r\n- [ ] a8n/core: Support updating changesets on BitbucketServer [#7762](https://github.com/sourcegraph/sourcegraph/issues/7762) __1d__ 🛠️\r\n- [x] a8n: Move \"default branch\" check to execution of CampaignJob [#7725](https://github.com/sourcegraph/sourcegraph/issues/7725) __2d__ 🛠️\r\n- [ ] Send pings about Automation usage to Sourcegraph [#7711](https://github.com/sourcegraph/sourcegraph/issues/7711) __1d__ \r\n- [ ] a8n/core: Extend CreateCampaignInput to accept Branch and persist it [#7687](https://github.com/sourcegraph/sourcegraph/issues/7687) __2d__ 🛠️\r\n- [x] Password-reset link not rendered for non-admin users [#7520](https://github.com/sourcegraph/sourcegraph/issues/7520) __0.5d__ 🐛\r\n- [ ] Forbidden - CSRF token invalid [#7368](https://github.com/sourcegraph/sourcegraph/issues/7368) __2d__ 🐛\r\n- [ ] Address repohascommitafter search filter performance bottleneck [#6745](https://github.com/sourcegraph/sourcegraph/issues/6745) __0.5d__ \r\n- [ ] Error fetching commit author info from GraphQL API [#5335](https://github.com/sourcegraph/sourcegraph/issues/5335) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/814799425)🐛\r\n\r\n@mrnugget: __14.00d__\r\n\r\n- [x] Creating a manual campaign -\u003e unexpected draft mode [#8009](https://github.com/sourcegraph/sourcegraph/issues/8009) __?d__ [👩](https://app.hubspot.com/contacts/2762526/company/608245740)\r\n- [ ] a8n: Updating partially published Campaigns is not supported [#7915](https://github.com/sourcegraph/sourcegraph/issues/7915) __2d__ 🐛\r\n- [x] Automation should never miss search results [#7861](https://github.com/sourcegraph/sourcegraph/issues/7861) __3d__ 🐛🧶\r\n- [ ] a8n: Finish implementation of `src actions exec` [#7850](https://github.com/sourcegraph/sourcegraph/issues/7850) __3d__ 🛠️\r\n- [ ] Write C# LSIF indexer [#7760](https://github.com/sourcegraph/sourcegraph/issues/7760) __?d__ 🛠️\r\n- [ ] a8n Spike: Arbitrary code execution on the server [#7723](https://github.com/sourcegraph/sourcegraph/issues/7723) __3d__ 🛠️\r\n- [ ] a8n Spike: Add ability to \"stack diffs\" (RFC 92) [#7721](https://github.com/sourcegraph/sourcegraph/issues/7721) __3d__ 🛠️\r\n\r\n@rvantonder: __16.00d__\r\n\r\n- [ ] Extract and dump type information for Dart LSIF  [#7908](https://github.com/sourcegraph/sourcegraph/issues/7908) __4d__ 🛠️\r\n- [ ] search: Implement AND / OR / NOT for file contents [#7823](https://github.com/sourcegraph/sourcegraph/issues/7823) __2d__ 🕵️\r\n- [ ] Trailing backslash at end of expression: `` when searching for valid regexp [#7604](https://github.com/sourcegraph/sourcegraph/issues/7604) __1d__ 🐛👩\r\n- [ ] Enforce warnings for unsupported parameters and filters in structural search [#7293](https://github.com/sourcegraph/sourcegraph/issues/7293) __1d__ 🧶\r\n- [ ] search filter `archived`/`fork` \"yes/no/only\" values are confusing [#7003](https://github.com/sourcegraph/sourcegraph/issues/7003) __4d__ [👩](https://app.hubspot.com/contacts/2762526/company/1749284052)🛠️\r\n- [ ] Backend returns invalid filter chip with space \"lang:ignore list\" [#6498](https://github.com/sourcegraph/sourcegraph/issues/6498) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/419771425)🐛\r\n- [ ] Impossible to search for colons in literal search [#6490](https://github.com/sourcegraph/sourcegraph/issues/6490) __2d__ 🐛\r\n\r\n@ryanslade: __12.00d__\r\n\r\n- [x] Add setting to enable read-only mode for automation for all Sourcegraph users [#8013](https://github.com/sourcegraph/sourcegraph/issues/8013) __?d__ [👩](https://app.hubspot.com/contacts/2762526/company/608245740)\r\n- [x] a8n/auth: Regex search/replace doesn't work in private repos [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914) __1d__ 🐛\r\n- [x] Remove published_at fields from Campaign and ChangesetJob [#7782](https://github.com/sourcegraph/sourcegraph/issues/7782) __2d__ 🧶\r\n- [ ] a8n/core: GraphQL API for an extended campaign list view [#7553](https://github.com/sourcegraph/sourcegraph/issues/7553) __2d__ 🛠️\r\n- [ ] a8n/core: Expose labels of all changesets in campaign in GraphQL API [#7549](https://github.com/sourcegraph/sourcegraph/issues/7549) __1d__ \r\n- [ ] Diagnose and fix slow /.api/registry/extensions endpoint [#7544](https://github.com/sourcegraph/sourcegraph/issues/7544) __1d__ 🧶\r\n- [ ] a8n/core: Expose CI status on changesets [#7093](https://github.com/sourcegraph/sourcegraph/issues/7093) __2d__ 🛠️\r\n- [ ] a8n: Heuristic syncing of Changesets and ChangesetEvents [#6388](https://github.com/sourcegraph/sourcegraph/issues/6388) __3d__ 🧶\r\n\r\n@tsenart: __3.50d__\r\n\r\n- [ ] Reject invalid externalURL with non-/ path [#7884](https://github.com/sourcegraph/sourcegraph/issues/7884) __0.5d__ 🐛\r\n- [ ] sourcegraph/security-issues [#55](https://github.com/sourcegraph/security-issues/issues/55) __1d__ \r\n- [ ] Core Services: 3.13 Tracking Issue [#7719](https://github.com/sourcegraph/sourcegraph/issues/7719) __?d__ \r\n- [ ] Prevent upgrading more than one minor version at a time [#7702](https://github.com/sourcegraph/sourcegraph/issues/7702) __1d__ 🐛\r\n- [ ] sourcegraph/security-issues [#54](https://github.com/sourcegraph/security-issues/issues/54) __1d__ \r\n- [ ] sourcegraph/security-issues [#53](https://github.com/sourcegraph/security-issues/issues/53) __?d__ \r\n\r\n@unknwon: __15.50d__\r\n\r\n- [ ] Make new pricing tiers reflected in feature access [#7927](https://github.com/sourcegraph/sourcegraph/issues/7927) __0.5d__ 🐛\r\n- [x] authz code logs warnings about Redis returning nil values [#7912](https://github.com/sourcegraph/sourcegraph/issues/7912) __0.5d__ 🐛\r\n- [x] RFC 40: Move call to the Authz methods into application layer [#7878](https://github.com/sourcegraph/sourcegraph/issues/7878) __1d__ 🧶\r\n- [ ] RFC 40: Add Prometheus metrics [#7827](https://github.com/sourcegraph/sourcegraph/issues/7827) __1d__ 🛠️\r\n- [x] RFC 40: Add unit tests for GraphQL APIs [#7748](https://github.com/sourcegraph/sourcegraph/issues/7748) __1d__ 🧶\r\n- [ ] Enable HTTP Strict Transport Security (HSTS) on sourcegraph.com (and all subdomains) [#7660](https://github.com/sourcegraph/sourcegraph/issues/7660) __0.5d__ 🔒\r\n- [ ] It is not clear how to configure Sourcegraph to just access public repositories [#7587](https://github.com/sourcegraph/sourcegraph/issues/7587) __0.5d__ 🐛\r\n- [ ] Enforce minimum password requirements [#7521](https://github.com/sourcegraph/sourcegraph/issues/7521) __0.5d__ 🔒\r\n- [x] RFC 40: Handle user deletion [#7302](https://github.com/sourcegraph/sourcegraph/issues/7302) __1d__ \r\n- [ ] Querying repository by name with github.com prefix always returns empty string for name [#5125](https://github.com/sourcegraph/sourcegraph/issues/5125) __1.5d__ 🐛\r\n- [ ] unused site setting git.cloneURLToRepositoryName [#3768](https://github.com/sourcegraph/sourcegraph/issues/3768) __0.5d__ 🧶\r\n- [ ] postgresql: (Auto)tune DB pool sizes based on max_connections [#3473](https://github.com/sourcegraph/sourcegraph/issues/3473) __3d__ [👩](https://app.hubspot.com/contacts/2762526/company/419771425)\r\n- [ ] Redis AOF file grows unbounded due to frequent container restarts [#3300](https://github.com/sourcegraph/sourcegraph/issues/3300) __2d__ \r\n- [ ] Auth: explicit session invalidation [#1126](https://github.com/sourcegraph/sourcegraph/issues/1126) __2d__ 🔒\r\n\r\n#### Legend\r\n\r\n- 👩 Customer issue\r\n- 🐛 Bug\r\n- 🧶 Technical debt\r\n- 🛠️ [Roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit#heading=h.5nwl5fv52ess)\r\n- 🕵️ [Spike](https://en.wikipedia.org/wiki/Spike_(software_development))\r\n- 🔒 Security issue",
+   "Number": 7719,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7719",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "planned/3.13",
+    "team/core-services",
+    "tracking"
+   ],
+   "Assignees": [
+    "tsenart"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Send pings about Automation usage to Sourcegraph",
+   "Body": "As discussed in yesterday's @sourcegraph/core-services sync.\r\n\r\nIn order to measure our progress towards our OKRs this quarter we need to take measurements. Since one key results is about how many customers use Automation and how many Campaigns they've run, what we need to measure is exactly that.\r\n\r\nFor that we can use pings and report back number of campaigns run by customer.",
+   "Number": 7711,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7711",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/1d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "kzh"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Prevent upgrading more than one minor version at a time",
+   "Body": "I have seen two customers in the past day incorrectly upgrade more than two minor versions at one time, leading to migration failures taking down their instance.\r\n\r\nThis is a failure on our part, because nobody should have to be realizing this on their own (or through our (missing!) documentation #7699 ): If you upgrade Sourcegraph more than two minor versions at once and we require you don't, you should be getting an obvious error explaining you need to do it in increments.\r\n",
+   "Number": 7702,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7702",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "estimate/1d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "tsenart"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "REDACTED",
+   "Body": "",
+   "Number": 54,
+   "URL": "https://github.com/sourcegraph/security-issues/issues/54",
+   "State": "OPEN",
+   "Repository": "sourcegraph/security-issues",
+   "Private": true,
+   "Labels": [
+    "estimate/1d",
+    "planned/3.13"
+   ],
+   "Assignees": [
+    "tsenart"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n/core: Extend CreateCampaignInput to accept Branch and persist it",
+   "Body": "This ticket represents the backend portion of https://github.com/sourcegraph/sourcegraph/issues/7646\r\n\r\nSee also this comment: https://github.com/sourcegraph/sourcegraph/issues/7646#issuecomment-575616952",
+   "Number": 7687,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7687",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/2d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "kzh"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Enable HTTP Strict Transport Security (HSTS) on sourcegraph.com (and all subdomains)",
+   "Body": "https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security\r\n\r\nCurrently we redirect from http to https but we don't set the Strict-Transport-Security header.",
+   "Number": 7660,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7660",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "estimate/0.5d",
+    "planned/3.13",
+    "security",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Trailing backslash at end of expression: `` when searching for valid regexp",
+   "Body": "https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%28%5C+%7C%5C.%7C%29getOrganization%5C%28\u0026patternType=regexp\r\n\r\nThis is a perfectly valid re2 expression: https://play.golang.org/p/qxzlrpx1ecm\r\n\r\nThe problem is by our query parser as two seperate regexp terms: `(\\ |\\.|)getOrganization\\(` becomes `(\\ ` and `|\\.|)getOrganization\\(` since we split using spaces.\r\n\r\nAFAIK we have some planned work already to make this better in the near future I believe, filing this for tracking purposes anyway.",
+   "Number": 7604,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7604",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "customer",
+    "estimate/1d",
+    "planned/3.13",
+    "search",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "rvantonder"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "It is not clear how to configure Sourcegraph to just access public repositories",
+   "Body": "A user wanted to trial sourcegraph without entering their private code. \r\n\r\nHe got to external service configuration page with no trouble, but when he got there he wasn’t sure how to get just his public repositories into Sourcegraph and assumed giving it an access token would do that.\r\n\r\nHe decided to save without entering a GitHub access token, which gave him an error when saving: `repositoryQuery array must have at least 1 items\" After fixing that, he got an unfriendly error:\r\n\r\n```\r\nExternal service created, but we encountered a problem while validating the external service: failed to list GitHub repositories for search: page=1, searchString=\"user:Andoryuuta\": request to http://127.0.0.1:3180/search/repositories?page=1\u0026per_page=100\u0026q=user%3AAndoryuuta returned status 401: Bad credentials\r\n```\r\n\r\n1. The main problem here is that it is not clear how to configure Sourcegraph to just access public repositories.\r\n2. If we require an access token we should inform users of that in our JSON schema not through a bad error message.",
+   "Number": 7587,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7587",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "estimate/0.5d",
+    "onboarding-test-1",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n/core: GraphQL API for an extended campaign list view",
+   "Body": "From [RFC 20](https://docs.google.com/document/d/1UY9B_kLlwRtYj-fuv7XZS1-Mu99Czx9Ojm7sgEmoQIA/edit)\r\n\r\nAn overall campaign list shows all active campaigns (globally, and for a specific namespace) and some indication of their progress",
+   "Number": 7553,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7553",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/2d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "ryanslade"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n/core: Expose labels of all changesets in campaign in GraphQL API",
+   "Body": "From [RFC 20](https://docs.google.com/document/d/1UY9B_kLlwRtYj-fuv7XZS1-Mu99Czx9Ojm7sgEmoQIA/edit)\r\n\r\nWe want to sync labels on changesets in one direction so that they appear on the campaign page.",
+   "Number": 7549,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7549",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/1d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "ryanslade"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Diagnose and fix slow /.api/registry/extensions endpoint",
+   "Body": "Site24x7 is [frequently alerting us](https://www.site24x7.com/app/client#/home/monitors/187445000011952001/Summary) due to sporadic timeouts on this endpoint. To prevent on-call burnout, we should either fix this endpoint or remove this alert.\r\n\r\nAn independent Vegeta probe that ran for around a day in our tooling cluster confirms that the issue is not with Site24x7.\r\n\r\n```\r\nRequests      [total, rate]            78892, 1.00\r\nDuration      [total, attack, wait]    21h54m56.904110981s, 21h54m55.999913712s, 904.197269ms\r\nLatencies     [mean, 50, 95, 99, max]  2.276716911s, 633.933313ms, 9.46170857s, 32.209758157s, 1m0.000479738s\r\nBytes In      [total, mean]            0, 0.00\r\nBytes Out     [total, mean]            0, 0.00\r\nSuccess       [ratio]                  99.73%\r\nStatus Codes  [code:count]             0:211  200:78680  502:1  \r\nError Set:\r\nGet https://sourcegraph.com/.api/registry/extensions: net/http: request canceled (Client.Timeout exceeded while awaiting headers)\r\nnet/http: request canceled (Client.Timeout exceeded while reading body)\r\n502 Bad Gateway\r\nread tcp 10.28.2.29:38709-\u003e104.26.9.187:443: read: connection reset by peer\r\nGet https://sourcegraph.com/.api/registry/extensions: read tcp 10.28.2.29:46311-\u003e104.26.8.187:443: read: connection reset by peer\r\n```\r\n\r\n",
+   "Number": 7544,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7544",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "api",
+    "debt",
+    "estimate/1d",
+    "extensions",
+    "ops \u0026 tools \u0026 dev",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "ryanslade"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "REDACTED",
+   "Body": "",
+   "Number": 53,
+   "URL": "https://github.com/sourcegraph/security-issues/issues/53",
+   "State": "OPEN",
+   "Repository": "sourcegraph/security-issues",
+   "Private": true,
+   "Labels": [
+    "planned/3.13"
+   ],
+   "Assignees": [
+    "tsenart"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Enforce minimum password requirements",
+   "Body": "Right now our built-in auth provider allows passwords as short as 1 character. I think we should enforce some minimum password length by default (e.g. 12 characters for sourcegraph.com) which is configurable per instance.\r\n\r\nThis is not urgent because there is no private code on sourcegraph.com and most customers use some form of SSO.\r\n\r\nAssigning to @tsenart to triage.",
+   "Number": 7521,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7521",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "auth",
+    "estimate/0.5d",
+    "planned/3.13",
+    "security",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Password-reset link not rendered for non-admin users",
+   "Body": "A (non-customer) user reported having trouble resetting their password, from which I discovered this.\r\n\r\nWhen using builtin auth, the password reset page link is not rendered for non-admin users on the settings page due to this conditional:\r\n\r\nhttps://sourcegraph.com/github.com/sourcegraph/sourcegraph@9f1dcaf/-/blob/web/src/user/settings/sidebaritems.ts#L15-21\r\n\r\nThis is likely due to a regression in the behavior added a year ago in e5c49ff8fdd331ca01dda477b0ddc38d37c79efa in which non-admin users could list auth providers (which at first glance sounds like the wrong approach to me, and I assume probably to someone else who then made them listable by admins only -- thus breaking this)\r\n\r\nWorkaround: users can still navigate to the page directly via https://sourcegraph.com/settings/password which will redirect them to the appropriate page as long as they are signed in already.",
+   "Number": 7520,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7520",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "auth",
+    "bug",
+    "estimate/0.5d",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "kzh"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Forbidden - CSRF token invalid",
+   "Body": "I've been following the quick-start + GitLab instructions for getting the new integration working within GitLab.\r\n\r\nI got a must be logged into sourcegraph error in GitLab and even though I was logged in, I thought perhaps it needs the OAuth authentication setup - so I followed the instructions for configuring that and logged in.\r\n\r\nThe GitLab sign-in doesn't work - \"The redirect URI included is not valid.\" though I'm pretty sure I followed the instructions - not sure if it's not happy about the port or the http sourcegraph (it's https).\r\n\r\nNow every request to login (with the regular account I was previously using) is failing with \"Forbidden - CSRF token invalid\".\r\n\r\nI've cleared cookies, session, tried new browsers, etc. - same issue.\r\n\r\nI see a graphQL log \r\n![image](https://user-images.githubusercontent.com/692676/71368847-09902900-2577-11ea-9fc3-85a406a6707d.png)\r\n\r\nahead of each of the login attempt - not sure if that's \"using up\" the CSRF token.\r\n\r\nI can't access the site configuration because I can't login so I can't undo the GitLab OAuth setup either.\r\n",
+   "Number": 7368,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7368",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "auth",
+    "bug",
+    "estimate/2d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "kzh"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "RFC 40: Handle user deletion",
+   "Body": "This issue tracks implementation of user deletion event handle logic for [RFC 40: Explicit Repository Permissions Model](https://docs.google.com/document/d/167WV_rhBg3oj0yw9fHwUMlB-8BR3ktk2FSsKiUQo55Y/edit).\r\n\r\n- [x] Remove all user permissions\r\n- [x] Also clean up pending permission for the user (by username and email address(es)) just in case",
+   "Number": 7302,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7302",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "estimate/1d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Enforce warnings for unsupported parameters and filters in structural search",
+   "Body": "The documentation covers that some of the [search parameters](https://docs.sourcegraph.com/user/search/queries) are unsupported. Specifically, things like `case` (structural search is always case sensitive) and `-lang` and multiple `lang` options just don't make sense contextually. \r\n\r\nThe code currently just ignores these options, and as a quality measure I want to enforce and warn/alert on any such usages. Note that this is aligned with the higher level goals outlined in RFC 75, where we separate and explicitly define and enforce how Sourcegraph's parameters interact with various kinds of search.",
+   "Number": 7293,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7293",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "debt",
+    "estimate/1d",
+    "planned/3.13",
+    "search",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "rvantonder"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n/core: Expose CI status on changesets",
+   "Body": "A customer asked for mirroring the CI status on the changeset list. This will probably require a webhook of some sort on the supported codehosts.\r\n\r\n---\r\nProposed schema change\r\n```graphql\r\nenum CIState {\r\n\tPENDING # this can probably be mapped to the \"awaiting\" as well as \"running\" state of github as well\r\n\tPASSED\r\n\tFAILED\r\n}\r\n\r\ntype ExternalChangeset {\r\n\tciState: CIState!\r\n}\r\n```",
+   "Number": 7093,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7093",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/2d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "ryanslade"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "search filter `archived`/`fork` \"yes/no/only\" values are confusing",
+   "Body": "A user was confused by the fact that `archived:yes` turned up repositories when there were in fact no repositories on their Sourcegraph instance. In fact, it just \"includes\" archived repositories and `archived:only` shows no repositories as expected.\r\n\r\nWe should rename these somehow to make this more clear.\r\n\r\nCustomers:\r\n- https://app.hubspot.com/contacts/2762526/company/1749284052 ",
+   "Number": 7003,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7003",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "customer",
+    "estimate/4d",
+    "planned/3.13",
+    "roadmap",
+    "search",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "rvantonder"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Exclude directories from search results",
+   "Body": "Requested by [$CUSTOMER](https://app.hubspot.com/contacts/2762526/company/464956351)\r\n\r\nCustomer scenario:\r\n\r\n\u003e Hi, this is not super urgent, but, is there a way to unlist a repository (or even better, a directory within a repository) from Sourcegraph?\r\n\u003e The repository REDACTED_REPO_NAME does ML on code and contains a dataset that duplicates large amounts of code from two large repos. This is causing problems with Sourcegraph surfacing the code there rather than in the original repos and confusing people searching for the original code.\r\n\u003e Ideally, we should be able to index the mobile/SmartLinter repo but not index the duplicated code under data/. Failing this, we would be fine with un-listing that repo from Sourcegraph altogether. Advice?\r\n\r\nPossible solution: add a `.sourcegraph/config.json` or `.sourcegraphignore` file that allows a repository to configure Sourcegraph's behavior, including whether or not certain directories are excluded (by default) from search results.",
+   "Number": 6870,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/6870",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "customer",
+    "estimate/2d",
+    "feature-request",
+    "p2",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Address repohascommitafter search filter performance bottleneck",
+   "Body": "This issue is to track fixing the `repohascommitafter` search filter performance bottleneck. At the moment, it is preemptively generating a list of repository that satisfy the commit after date. Then it searches over that list. Instead, we can do this on the fly to avoid extraneous network requests.",
+   "Number": 6745,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/6745",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "estimate/0.5d",
+    "perf",
+    "planned/3.13",
+    "search",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "kzh"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "gitserver should auto-recover from corrupt repository clones",
+   "Body": "An admin ran into an issue where a repository was corrupt and search was failing because of it:\r\n\r\n```\r\n1 error occurred: * diff search failed: failed to search commit diffs REDACTED@: git command [git log --no-prefix --max-count=31 --unified=0 --extended-regexp --regexp-ignore-case --all-match --author= -z --no-abbrev-commit --format=oneline --no-color --source --no-patch --no-merges -GREDACTED --regexp-ignore-case --pickaxe-regex --extended-regexp --] failed (output: \"\"): exit status 128 (stderr: \"error: packfile .git/objects/pack/pack-REDACTED.pack does not match ... (truncated)\")\r\n```\r\n\r\nThis is the state the repository was in:\r\n\r\n```\r\n$ docker exec -it gitserver-7 sh -c 'cd /data/repos/REDACTED \u0026\u0026 time git log -- -n 1 HEAD'\r\nerror: packfile .git/objects/pack/pack-REDACTED.pack does not match index\r\nerror: packfile .git/objects/pack/pack-REDACTED.pack does not match index\r\nerror: packfile .git/objects/pack/pack-REDACTED.pack does not match index\r\nerror: packfile .git/objects/pack/pack-REDACTED.pack does not match index\r\nerror: packfile .git/objects/pack/pack-REDACTED.pack does not match index\r\nerror: packfile .git/objects/pack/pack-REDACTED.pack does not match index\r\nfatal: bad object HEAD\r\nCommand exited with non-zero status 128\r\nreal    0m 0.00s\r\nuser    0m 0.00s\r\nsys    0m 0.00s\r\n```\r\n\r\nDeleting the repository from disk manually was needed to recover from this. Gitserver should automatically handle this case somehow.\r\n\r\nReported by https://app.hubspot.com/contacts/2762526/company/407948923\r\n\r\ncc @sourcegraph/core-services ",
+   "Number": 6676,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/6676",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "customer",
+    "estimate/1d",
+    "gitserver",
+    "planned/3.13",
+    "spike",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Backend returns invalid filter chip with space \"lang:ignore list\"",
+   "Body": "![2019-11-07 22 58 57](https://user-images.githubusercontent.com/10532611/68431342-41533500-01b2-11ea-897a-95ee0ebb306b.gif)\r\n\r\nCustomers:\r\n- https://app.hubspot.com/contacts/2762526/company/419771425 \r\n",
+   "Number": 6498,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/6498",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "api",
+    "bug",
+    "customer",
+    "estimate/2d",
+    "planned/3.13",
+    "search",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "rvantonder"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Impossible to search for colons in literal search",
+   "Body": "It is impossible to search for a `:` character in literal search mode because we treat it as a special character to denote a search filter. Escaping `\\:` does not work, and you can't wrap it in quotes. \r\n\r\nSlack thread: https://sourcegraph.slack.com/archives/C07KZF47K/p1572557671374200\r\n",
+   "Number": 6490,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/6490",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "estimate/2d",
+    "planned/3.13",
+    "search",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "rvantonder"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n: Heuristic syncing of Changesets and ChangesetEvents",
+   "Body": "Currently, repo-updater syncs every single `Changeset` (regardless of state) and its full list of `ChangesetEvents` every time a sync runs. This behaviour limits our scalability to customers with large (and many) campaigns.\r\n\r\nTo solve this, we should introduce some **heuristics** based syncing logic for this data that takes into account the following (and potentially other) factors:\r\n\r\n- Previous Changeset state (i.e. OPEN, CLOSED, etc): Do we need to sync closed changesets?\r\n- `updated_at`: If something was updated recently, it should be synced last\r\n- Last changeset event: Perhaps changesets with more activity are more likely to receive further activity soon after, so we should sync them first?\r\n- Changesets can be unattached to Campaigns: we can stop updating/syncing them and then even delete them if they haven't been reattached after a while\r\n\r\nThese factors ought to be inputs to a **Scheduler** which is also able to **pace** updates over time according to some defined configuration, as well as report **its state**.\r\n\r\nIf you have other ideas, please add them here.\r\n\r\nFor prior art on a heurisitcs scheduler we already have for **git** updates:\r\n- https://github.com/sourcegraph/sourcegraph/blob/master/cmd/repo-updater/repos/scheduler.go",
+   "Number": 6388,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/6388",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "debt",
+    "estimate/3d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "ryanslade"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Error fetching commit author info from GraphQL API",
+   "Body": "- **Sourcegraph version:** sgdev\r\n\r\n(Not entirely sure who to assign this to, so I just grabbed the core team. Feel free to reassign.)\r\n\r\nReported by a customer:\r\n* https://app.hubspot.com/contacts/2762526/company/814799425\r\n\r\nAny ideas about potential workaround to get this data on search results until a fix is live?\r\n\r\n#### Steps to reproduce:\r\n\r\n1. Run the query at https://sourcegraph.sgdev.org/api/console#%7B%22query%22%3A%22query%20(%24query%3A%20String!)%20%7B%5Cn%20%20search(query%3A%20%24query)%20%7B%5Cn%20%20%20%20results%20%7B%5Cn%20%20%20%20%20%20results%20%7B%5Cn%20%20%20%20%20%20%20%20...%20on%20FileMatch%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20file%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20%20%20commit%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20%20%20%20%20author%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20person%7B%5Cn%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20email%5Cn%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%7D%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%7D%5Cn%22%2C%22variables%22%3A%22%7B%5Cn%20%20%5C%22query%5C%22%3A%20%5C%22sourcegraph%2Fsourcegraph%5C%22%5Cn%7D%22%7D\r\n\r\n2. See error:\r\n\r\n![image](https://user-images.githubusercontent.com/5589410/63541983-1a029b00-c4d4-11e9-9397-8de30be1e897.png)\r\n\r\nThe same issue exists for all fields within the `person` object, but does not occur for other fields in the `author` object one level above that.\r\n\r\n#### Expected behavior:\r\n\r\nAuthor information should be available\r\n\r\n#### Actual behavior:\r\n\r\n`\"json: error calling MarshalJSON for type json.RawMessage: invalid character '}' looking for beginning of value\\n\"`\r\n\r\nLooks like an unexpected empty string/nil error. Like the search API isn't populating that field for some reason?",
+   "Number": 5335,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/5335",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "api",
+    "bug",
+    "customer",
+    "estimate/1d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "kzh"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Querying repository by name with github.com prefix always returns empty string for name",
+   "Body": "Run this GraphQL query on k8s.sgdev.org:\r\n\r\n```graphql\r\nquery {\r\n  repository(name:\"github.com/asdasd\") {\r\n    name\r\n  }\r\n}\r\n```\r\n\r\n[API console link](https://k8s.sgdev.org/api/console#%7B%22query%22%3A%22%23%20Type%20queries%20here%2C%20with%20completion%2C%20validation%2C%20and%20hovers.%5Cn%23%5Cn%23%20Here's%20an%20example%20query%20to%20get%20you%20started%3A%5Cn%5Cnquery%20%7B%5Cn%20%20repository(name%3A%5C%22github.com%2Fasdasd%5C%22)%20%7B%5Cn%20%20%20%20name%5Cn%20%20%7D%5Cn%7D%5Cn%22%7D)\r\n\r\nYou can use any repo name, as long as it starts with `github.com/` (even just that string).\r\n\r\nit returns this result:\r\n\r\n```json\r\n{\r\n  \"data\": {\r\n    \"repository\": {\r\n      \"name\": \"\"\r\n    }\r\n  }\r\n}\r\n```\r\n\r\nAn empty string should never be returned. A repo with an empty name obviously doesn't exist.\r\n\r\nInterestingly, when you add other fields, you notice you can query for its `id`, but if you add e.g. `createdAt` or `description` those fields (not the `repository` field itself) fail with a \"repo not found\" error:\r\n\r\n```graphql\r\nquery {\r\n  repository(name:\"github.com/asdasd\") {\r\n    name\r\n    id\r\n    createdAt\r\n    description\r\n  }\r\n}\r\n```\r\n\r\nResult:\r\n\r\n```json\r\n{\r\n  \"data\": {\r\n    \"repository\": {\r\n      \"name\": \"\",\r\n      \"id\": \"UmVwb3NpdG9yeTow\",\r\n      \"createdAt\": \"2019-08-07T15:04:24Z\",\r\n      \"description\": null\r\n    }\r\n  },\r\n  \"errors\": [\r\n    {\r\n      \"message\": \"repo not found\",\r\n      \"path\": [\r\n        \"repository\",\r\n        \"description\"\r\n      ]\r\n    }\r\n  ]\r\n}\r\n```\r\n\r\nNote that the browser extension / native integrations do this query and interprets this result as the repo existing, which breaks code intelligence.\r\n\r\nI cannot reproduce this with sourcegraph.com, so I suspect it only happens with certain external service configurations.",
+   "Number": 5125,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/5125",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "estimate/1.5d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Gitlab OAuth certificate signed by unknown authority",
+   "Body": "- **Sourcegraph version:** 3.5.0\r\n- **Platform information:** redhat 7.6, Docker version 1.13.1, GitLab Community Edition 11.5.2, Gitlab https certificate with internal authority  \r\n\r\n#### Steps to reproduce:\r\n\r\n1. Setting Gitlab and sourcegraph  Oauth \r\n2. Try to Sign in with GitLab\r\n\r\n#### Actual behavior:\r\nResult is a blanck page with this line of error \r\nPost https://gitlab.intranet.xxx/oauth/token: x509: certificate signed by unknown authority\r\n\r\nNo errors in logs.\r\n\r\nIs there a way to configure certificate in management console for gitlab oauth ? (like the option \"certificate\" in external service , GitLab projects )\r\n\r\nThank you",
+   "Number": 4652,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/4652",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "bug",
+    "customer",
+    "estimate/0.5d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "repos: Stop reading repo.enabled",
+   "Body": "Follow-up from https://github.com/sourcegraph/sourcegraph/issues/3291\r\n\r\nAlso find other uses of enabled that can be removed. Once we stop using the field, we can drop the column in two releases.",
+   "Number": 3971,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/3971",
+   "State": "CLOSED",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "debt",
+    "estimate/0.5d",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Support SSH key credentials directly in external service configs",
+   "Body": "Today, users have to [jump through hoops](https://docs.sourcegraph.com/admin/repo/auth) to make Sourcegraph talk SSH when cloning repositories.\r\n\r\nSimilarly to what we do with client certificates, we should support configuring SSH credentials directly in external service configuration.\r\n\r\nThis would allow us to make `GitoliteSource` in repo updater talk directly to Gitolite instead of proxying requests to gitserver.",
+   "Number": 3924,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/3924",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "auth",
+    "customer",
+    "estimate/2d",
+    "feature-request",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "docs: Ensure new arch for repo-updater is reflected in dev docs",
+   "Body": "",
+   "Number": 3911,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/3911",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "debt",
+    "docs",
+    "estimate/0.5d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "unused site setting git.cloneURLToRepositoryName",
+   "Body": "The documentation for this setting is \r\n\r\n\u003e JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.\r\n\r\nHowever, I do not see anywhere in our codebase we actually read this setting. We should remove this field. cc @sourcegraph/core-services to discuss.",
+   "Number": 3768,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/3768",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "debt",
+    "estimate/0.5d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "postgresql: (Auto)tune DB pool sizes based on max_connections",
+   "Body": "We have had Sourcegraph.com and customer issues due to opening too many connections to postgresql. We should consider to either:\r\n\r\n1. Autotune our db pool sizes. We can query max_connections.\r\n2. Autotune max_connections (probably can't due to different sized envs)\r\n3. Adjust DB pool size to be much more conservative.\r\n\r\nCustomers:\r\n- https://app.hubspot.com/contacts/2762526/company/419771425 ",
+   "Number": 3473,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/3473",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "customer",
+    "estimate/3d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Redis AOF file grows unbounded due to frequent container restarts",
+   "Body": "_Issue description written by @tsenart and copied here from another private issue._\r\n\r\n### Background\r\n\r\n$CUSTOMER had a P0 incident due to the Redis AOF file not getting compacted as it should. It seems that the reason this happened is due to frequent container restarts.\r\n\r\nThe default Redis configuration for when the AOF file should get compacted is:\r\n\r\n```\r\n# Automatic rewrite of the append only file.\r\n# Redis is able to automatically rewrite the log file implicitly calling\r\n# BGREWRITEAOF when the AOF log size grows by the specified percentage.\r\n#\r\n# This is how it works: Redis remembers the size of the AOF file after the\r\n# latest rewrite (if no rewrite has happened since the restart, the size of\r\n# the AOF at startup is used).\r\n#\r\n# This base size is compared to the current size. If the current size is\r\n# bigger than the specified percentage, the rewrite is triggered. Also\r\n# you need to specify a minimal size for the AOF file to be rewritten, this\r\n# is useful to avoid rewriting the AOF file even if the percentage increase\r\n# is reached but it is still pretty small.\r\n#\r\n# Specify a percentage of zero in order to disable the automatic AOF\r\n# rewrite feature.\r\n\r\nauto-aof-rewrite-percentage 100\r\nauto-aof-rewrite-min-size 64mb\r\n```\r\n\r\nIn particular, `if no rewrite has happened since the restart, the size of the AOF at startup is used` is of particular concern and would explain what we're seeing. If the Docker container restarts frequently enough, redis won't have the chance to reach 100% of the previous AOF base size, so the next time around it starts up, it takes the AOF file size *at that point* as the new base over which it needs to double again. This can go ad-nauseum, theoretically.\r\n\r\n### Remediation\r\n\r\n$CUSTOMER is setting up monitoring of disk space usage and has a working playbook for manually triggering AOF file compaction.\r\n\r\n### Resolution\r\n\r\nAs far as I understand it, this seems like a design issue in Redis and it should only affect our Docker image deployment because of all the restarts that other processes can trigger.\r\n\r\n#### Action Items:\r\n\r\n1. [ ] **Create a work-around on our side**: Instead of relying on automatic background compaction, we can trigger it every-time after redis comes up. This can be done via the sourcegraph-frontend, or through a redis run script in `sourcegraph/server`.\r\n\r\n3. [ ] Open an issue (or find one) in Redis upstream.\r\n2. [ ] Figure out why the Docker container is restarting so often. See Relevant Logs section for a possible hint.\r\n\r\n\r\n### Incident Log\r\nhttps://sourcegraph.slack.com/archives/GDS3PJ8GK/p1554732996001200\r\n\r\n### Relevant Logs\r\n\r\n[Similarly to what $CUSTOMER is seeing](https://console.cloud.google.com/logs/viewer?authuser=1\u0026organizationId=1006954638239\u0026project=sourcegraph-dev\u0026resource=container%2Fcluster_name%2Fdogfood%2Fnamespace_id%2Fdefault\u0026minLogLevel=0\u0026expandAll=false\u0026timestamp=2019-04-08T17%3A13%3A40.800000000Z\u0026customFacets\u0026limitCustomFacetWidth=true\u0026interval=NO_LIMIT\u0026scrollTimestamp=2019-03-23T07%3A17%3A40.000000000Z\u0026pinnedLogId=jzf1w8f880bcc\u0026pinnedLogTimestamp=2019-03-23T07%3A17%3A03Z\u0026advancedFilter=resource.type%3D%22container%22%0Aresource.labels.cluster_name%3D%22dogfood%22%0Aresource.labels.container_name%3D%22sourcegraph-server%22%0Aresource.labels.namespace_id%3D%22default%22%0Aresource.labels.instance_id%3D%22355508537060902802%22%0Aresource.labels.zone%3D%22us-central1-a%22%0Aresource.labels.project_id%3D%22sourcegraph-dev%22%0Atimestamp%3E%3D%222019-03-23T07%3A13%3A00.000000000Z%22), our Dogfood docker deployment has seen occurrences where the container crashes for no apparent reason, followed by Redis errors on startup.",
+   "Number": 3300,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/3300",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "estimate/2d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Auth: explicit session invalidation",
+   "Body": "Provide an explicit session invalidation mechanism for Sourcegraph.\r\n\r\nCurrently, sessions are invalidated after they expire (configurable via the `auth.sessionExpiry` option) or on user sign-out. Proposal is to also enable explicit session invalidation in the following scenarios:\r\n* An admin manually invalidates all sessions for a given user.\r\n* A user's existing sessions are invalidated after successful password reset under built-in auth.",
+   "Number": 1126,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/1126",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "auth",
+    "estimate/2d",
+    "planned/3.13",
+    "security",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "unknwon"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "docs: Document using an alternate clone URL for repos",
+   "Body": "Some sites put an HTTPS or SSH proxy in front of their code host to reduce load. Some sites also use a service like AWS CodeCommit to do the same. In these cases, the repos still should be treated as being repos on the original code host, not the proxy site.\r\n\r\nFor example, I have a GitHub repo github.com/foo/bar. I want Sourcegraph to clone it using the URL https://cloneproxy.example.com/foo/bar.git. But I still want the \"Go to GitHub repository\" button, etc., to take me to https://github.com/foo/bar.\r\n\r\n- Document workaround of using `ssh_config` or `gitconfig`'s `insteadOf`\r\n- Support this as a first-class feature (not scheduled yet)\r\n\r\nThe actual code work is not prioritized, this is just a docs change.",
+   "Number": 658,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/658",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "debt",
+    "docs",
+    "estimate/0.5d",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "Support internal CA or self-signed TLS certificates for all external communication",
+   "Body": "- Issue type: Feature Request\r\n- Sourcegraph version: 2.7.6\r\n- OS Version: N/A\r\n- Docker version: N/A\r\n\r\nWe have a private GitHub Enterprise instance running under a self-signed private Certificate Authority. Because of this, we need to tell the Sourcegraph image about this CA, or Git will complain:\r\n\r\n```\r\nfatal: unable to access 'https://github.example.com/user/repo.git': server certificate verification failed. \r\n```\r\n\r\nThe configuration option in [`github.certificate`](https://about.sourcegraph.com/docs/config/settings/#certificate-string) is available, but it only applies to Sourcegraph, not to processes that `gitserver` controls. As well, since it only seems to handle server certificates and not CAs, it will have to be updated every time the GitHub Enterprise server rotates its certs.\r\n\r\nOur workaround, which you are welcome to document, is to install the certificate in the Docker image, so the OS handles it. In a `Dockerfile`:\r\n\r\n```Dockerfile\r\nFROM sourcegraph/server:2.7.6\r\nCOPY ssl/certificate-authority.crt /usr/local/share/ca-certificates\r\nRUN /usr/sbin/update-ca-certificates\r\n```\r\n\r\nRunning this derived image makes everything work magically, because Sourcegraph also trusts the CAs provided by the OS.",
+   "Number": 71,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/71",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "customer",
+    "estimate/2d",
+    "gitserver",
+    "planned/3.13",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": "3.13"
+  },
+  {
+   "Title": "a8n Spike: Add ability to \"stack diffs\" (RFC 92)",
+   "Body": "This is a spike for the technical implementation of [RFC 92](https://docs.google.com/document/d/1m6WH47vl-DFynfEdjpGez2pj7bTO3MRFAPpDgEDlvFI/edit#heading=h.kfdzelmr4v06).\n\nThe expected result is that we know\n\n1.) what the technical implementation would look like in detail\n2.) how long it would roughly take to implement\n3.) possible tradeoffs\n\nand can add that information to the RFC.",
+   "Number": 7721,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7721",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/3d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "mrnugget"
+   ],
+   "Milestone": "Backlog"
+  },
+  {
+   "Title": "Ref glob search perf followups",
+   "Body": "https://github.com/sourcegraph/sourcegraph/pull/7641#pullrequestreview-340956998",
+   "Number": 7642,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7642",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "debt",
+    "estimate/2d",
+    "perf",
+    "planned/3.13",
+    "search",
+    "team/core-services"
+   ],
+   "Assignees": [],
+   "Milestone": ""
+  },
+  {
+   "Title": "a8n/core: Extend GraphQL API to include participant users involved in the campaign",
+   "Body": "From [RFC 20](https://docs.google.com/document/d/1UY9B_kLlwRtYj-fuv7XZS1-Mu99Czx9Ojm7sgEmoQIA/edit)\r\n\r\nThis should appear on the campaign detail page",
+   "Number": 7552,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7552",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/1d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "ryanslade"
+   ],
+   "Milestone": "Backlog"
+  },
+  {
+   "Title": "a8n/core: Expose comments of all changesets in campaign in GraphQL API",
+   "Body": "From [RFC 20](https://docs.google.com/document/d/1UY9B_kLlwRtYj-fuv7XZS1-Mu99Czx9Ojm7sgEmoQIA/edit)\r\n\r\nWe want to sync comments on changesets in one direction so that they appear on the campaign page.",
+   "Number": 7548,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7548",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "automation",
+    "automation-planning",
+    "estimate/2d",
+    "planned/3.13",
+    "roadmap",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "ryanslade"
+   ],
+   "Milestone": "Backlog"
+  },
+  {
+   "Title": "Code host fingerprinter",
+   "Body": "An experiment to drastically simplify our onboarding process for most first time admins. A user gives us an URL from the code host and we discover what kind of code host it is and a reasonable config for it. We should be able to discover what kind of code host most are via normalizing URLs and trying well-known and unique queries.\r\n\r\nThe deliverable for this experiment is a simple binary which takes the URL and spits out our guess. If it seems to work reasonably well, we can look into integrating it into an onboarding flow.",
+   "Number": 7464,
+   "URL": "https://github.com/sourcegraph/sourcegraph/issues/7464",
+   "State": "OPEN",
+   "Repository": "sourcegraph/sourcegraph",
+   "Private": false,
+   "Labels": [
+    "estimate/1d",
+    "planned/3.13",
+    "spike",
+    "team/core-services"
+   ],
+   "Assignees": [
+    "keegancsmith"
+   ],
+   "Milestone": ""
+  }
+ ]

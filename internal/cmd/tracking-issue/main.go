@@ -55,6 +55,11 @@ func run(token, org, milestone, labels string) (err error) {
 		return err
 	}
 
+	fmt.Print(generate(issues, milestone))
+	return nil
+}
+
+func generate(issues []*Issue, milestone string) string {
 	var (
 		assignees []string
 		workloads = map[string]float64{}
@@ -91,15 +96,16 @@ func run(token, org, milestone, labels string) (err error) {
 
 	sort.Strings(assignees)
 
+	var w strings.Builder
 	for _, assignee := range assignees {
-		fmt.Printf("\n%s: __%.2fd__\n\n", assignee, workloads[assignee])
+		fmt.Fprintf(&w, "\n%s: __%.2fd__\n\n", assignee, workloads[assignee])
 
 		for _, item := range items[assignee] {
-			fmt.Print(item)
+			fmt.Fprint(&w, item)
 		}
 	}
 
-	return nil
+	return w.String()
 }
 
 func title(issue *Issue, milestone string) string {
