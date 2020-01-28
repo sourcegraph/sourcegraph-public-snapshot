@@ -219,7 +219,9 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 		return a8n.ChangesetReviewStatePending, err
 	}
 
-	events := a8n.ChangesetEvents(es)
+	// Make a copy of events so that we can safely sort it
+	events := make(a8n.ChangesetEvents, len(es))
+	copy(events, es)
 	sort.Sort(events)
 	return events.ReviewState()
 }
