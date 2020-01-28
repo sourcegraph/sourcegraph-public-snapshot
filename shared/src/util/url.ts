@@ -531,12 +531,10 @@ export function buildSearchURLQuery(
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
     const searchParams = new URLSearchParams()
-    let filtersQuery = ''
     let fullQuery = query
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        filtersQuery = generateFiltersQuery(filtersInQuery)
-        fullQuery = `${query} ${filtersQuery}`
+        fullQuery = [fullQuery, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
     }
 
     const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
@@ -587,6 +585,11 @@ export function buildSearchURLQuery(
         .replace(/%3A/g, ':')
 }
 
+/**
+ * Creates the raw string representation of the filters currently in the query in interactive mode.
+ *
+ * @param filtersInQuery the map representing the filters currently in an interactive mode query.
+ */
 export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
     const fieldKeys = Object.keys(filtersInQuery)
     const individualTokens: string[] = []

@@ -69,4 +69,5 @@
     },
   ],
   "go.lintTool": "golangci-lint",
+  "go.inferGopath": false,
 }

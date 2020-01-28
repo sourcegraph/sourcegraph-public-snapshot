@@ -2,21 +2,6 @@ import { FiltersToTypeAndValue, FilterTypes } from '../../../../shared/src/searc
 import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
 import { uniqueId } from 'lodash'
 
-/**
- * Creates the raw string representation of the filters currently in the query in interactive mode.
- *
- * @param filtersInQuery the map representing the filters currently in an interactive mode query.
- */
-export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
-    const fieldKeys = Object.keys(filtersInQuery)
-    const individualTokens: string[] = []
-    fieldKeys
-        .filter(key => filtersInQuery[key].value.trim().length > 0)
-        .map(key => individualTokens.push(`${filtersInQuery[key].type}:${filtersInQuery[key].value}`))
-
-    return individualTokens.join(' ')
-}
-
 export function convertPlainTextToInteractiveQuery(
     query: string
 ): { filtersInQuery: FiltersToTypeAndValue; navbarQuery: string } {
@@ -34,7 +19,9 @@ export function convertPlainTextToInteractiveQuery(
                     editable: false,
                 }
             } else if (member.token.type === 'literal' || member.token.type === 'quoted') {
-                newNavbarQuery += ` ${query.substring(member.range.start, member.range.end)}`
+                newNavbarQuery = [newNavbarQuery, query.substring(member.range.start, member.range.end)]
+                    .filter(query => query.length > 0)
+                    .join(' ')
             }
         }
     }

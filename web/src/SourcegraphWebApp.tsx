@@ -55,7 +55,8 @@ import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
-import { generateFiltersQuery, convertPlainTextToInteractiveQuery } from './search/input/helpers'
+import { convertPlainTextToInteractiveQuery } from './search/input/helpers'
+import { generateFiltersQuery } from '../../shared/src/util/url'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -299,9 +300,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         event.preventDefault()
         localStorage.setItem(SEARCH_MODE_KEY, this.state.interactiveSearchMode ? 'omni' : 'interactive')
         if (this.state.interactiveSearchMode) {
-            const newQuery = `${this.state.navbarSearchQueryState.query} ${generateFiltersQuery(
-                this.state.filtersInQuery
-            )}`
+            const queries = [this.state.navbarSearchQueryState.query, generateFiltersQuery(this.state.filtersInQuery)]
+            const newQuery = queries.filter(query => query.length > 0).join(' ')
+
             this.setState(state => ({
                 interactiveSearchMode: !state.interactiveSearchMode,
                 navbarSearchQueryState: { query: newQuery, cursorPosition: newQuery.length },
