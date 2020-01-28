@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -167,7 +166,7 @@ type CampaignEditor struct {
 }
 
 func (e *CampaignEditor) EditAndExtract() (string, string, error) {
-	f, err := ioutil.TempFile("", "new-campaign")
+	f, err := ioutil.TempFile("", "new-campaign*.md")
 	if err != nil {
 		return "", "", err
 	}
@@ -242,14 +241,7 @@ func openInEditor(file string) error {
 		return errors.New("$EDITOR is not set")
 	}
 
-	cmd := exec.Command(editor)
-
-	r := regexp.MustCompile(`\b(?:[gm]?vim)(?:\.exe)?$`)
-	if r.MatchString(cmd.Path) {
-		cmd.Args = append(cmd.Args, "--cmd", "set ft=markdown")
-	}
-
-	cmd.Args = append(cmd.Args, file)
+	cmd := exec.Command(editor, file)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
