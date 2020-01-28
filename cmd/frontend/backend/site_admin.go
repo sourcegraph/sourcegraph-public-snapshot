@@ -18,7 +18,7 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
-	user, err := currentUser(ctx)
+	user, err := CurrentUser(ctx)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,9 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 	return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as %s or as an admin (%s)", subjectUser.Username, isSiteAdminErr.Error())}
 }
 
-func currentUser(ctx context.Context) (*types.User, error) {
+// CurrentUser gets the current authenticated user
+// It returns nil, nil if no user is found
+func CurrentUser(ctx context.Context) (*types.User, error) {
 	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {

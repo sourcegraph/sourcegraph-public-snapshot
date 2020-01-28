@@ -135,6 +135,7 @@ type ProductSubscriptionArgs struct {
 type ProductSubscriptionsArgs struct {
 	graphqlutil.ConnectionArgs
 	Account *graphql.ID
+	Query   *string
 }
 
 // ProductSubscriptionConnection is the interface for the GraphQL type

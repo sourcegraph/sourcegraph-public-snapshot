@@ -31,6 +31,7 @@ WORKDIR /
 COPY .ctags.d /.ctags.d
 
 ENV CACHE_DIR=/mnt/cache/symbols
+RUN mkdir -p ${CACHE_DIR}
 EXPOSE 3184
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/symbols"]
 COPY symbols /usr/local/bin/

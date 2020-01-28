@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -20,8 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -39,9 +37,21 @@ func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
 	return &Resolver{store: ee.NewStore(db)}
 }
 
-func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExternalChangesetResolver, error) {
-	// 🚨 SECURITY: Only site admins may access changesets for now.
+func allowReadAccess(ctx context.Context) error {
+	if readAccess := conf.AutomationReadAccessEnabled(); readAccess {
+		return nil
+	}
+
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExternalChangesetResolver, error) {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -59,8 +69,8 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 }
 
 func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignResolver, error) {
-	// 🚨 SECURITY: Only site admins may access campaigns for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -78,8 +88,8 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 }
 
 func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetPlanResolver, error) {
-	// 🚨 SECURITY: Only site admins may access changesets for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign jobs.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -97,8 +107,8 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 }
 
 func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
-	// 🚨 SECURITY: Only site admins may access campaign plans for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign plans.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -348,11 +358,10 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 }
 
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may read campaigns for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
-
 	return &campaignsConnectionResolver{
 		store: r.store,
 		opts: ee.ListCampaignsOpts{
@@ -456,66 +465,16 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 }
 
 func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may read changesets for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
-
 	return &changesetsConnectionResolver{
 		store: r.store,
 		opts: ee.ListChangesetsOpts{
 			Limit: int(args.GetFirst()),
 		},
 	}, nil
-}
-
-func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.PreviewCampaignPlanArgs) (graphqlbackend.CampaignPlanResolver, error) {
-	var err error
-	tr, ctx := trace.New(ctx, "Resolver.PreviewCampaignPlan", args.Specification.Type)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	// 🚨 SECURITY: Only site admins may update campaigns for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	specArgs := string(args.Specification.Arguments)
-	typeName := strings.ToLower(args.Specification.Type)
-	if typeName == "" {
-		return nil, errors.New("cannot create CampaignPlan without Type")
-	}
-	campaignType, err := ee.NewCampaignType(typeName, specArgs, r.httpFactory)
-	if err != nil {
-		return nil, err
-	}
-	plan := &a8n.CampaignPlan{CampaignType: typeName, Arguments: specArgs}
-	runner := ee.NewRunner(r.store, campaignType, graphqlbackend.SearchRepos, nil)
-
-	tr.LogFields(log.Int64("plan_id", plan.ID), log.Bool("Wait", args.Wait))
-
-	if args.Wait {
-		err := runner.CreatePlanAndJobs(ctx, plan)
-		if err != nil {
-			return nil, err
-		}
-		err = runner.Wait(ctx)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		act := actor.FromContext(ctx)
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		ctx = actor.WithActor(ctx, act)
-		err := runner.CreatePlanAndJobs(ctx, plan)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
 }
 
 func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graphqlbackend.CreateCampaignPlanFromPatchesArgs) (graphqlbackend.CampaignPlanResolver, error) {
@@ -529,6 +488,14 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 	// 🚨 SECURITY: Only site admins may create campaign plans for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
+	}
+
+	user, err := backend.CurrentUser(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	}
+	if user == nil {
+		return nil, backend.ErrNotAuthenticated
 	}
 
 	patches := make([]a8n.CampaignPlanPatch, len(args.Patches))
@@ -558,55 +525,12 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches)
+	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
-}
-
-func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (res *graphqlbackend.EmptyResponse, err error) {
-	// 🚨 SECURITY: Only site admins may update campaigns for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	id, err := unmarshalCampaignPlanID(args.Plan)
-	if err != nil {
-		return nil, err
-	}
-
-	tx, err := r.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer tx.Done(&err)
-
-	plan, err := tx.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: id})
-	if err != nil {
-		return nil, err
-	}
-
-	if !plan.CanceledAt.IsZero() {
-		return &graphqlbackend.EmptyResponse{}, nil
-	}
-
-	status, err := tx.GetCampaignPlanStatus(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if status.Finished() {
-		return &graphqlbackend.EmptyResponse{}, nil
-	}
-
-	plan.CanceledAt = time.Now().UTC()
-
-	err = tx.UpdateCampaignPlan(ctx, plan)
-
-	return &graphqlbackend.EmptyResponse{}, err
 }
 
 func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.CloseCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
@@ -656,7 +580,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 	campaign, err := svc.PublishCampaign(ctx, campaignID)
 	if err != nil {
-		return nil, errors.Wrap(err, "closing campaign")
+		return nil, errors.Wrap(err, "publishing campaign")
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil

@@ -10,7 +10,6 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -63,8 +62,9 @@ func TestCleanupExpired(t *testing.T) {
 	repoOld := path.Join(root, "repo-old", ".git")
 	repoGCNew := path.Join(root, "repo-gc-new", ".git")
 	repoGCOld := path.Join(root, "repo-gc-old", ".git")
+	repoBoom := path.Join(root, "repo-boom", ".git")
 	remote := path.Join(root, "remote", ".git")
-	for _, path := range []string{repoNew, repoOld, repoGCNew, repoGCOld, remote} {
+	for _, path := range []string{repoNew, repoOld, repoGCNew, repoGCOld, repoBoom, remote} {
 		cmd := exec.Command("git", "--bare", "init", path)
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
@@ -73,6 +73,9 @@ func TestCleanupExpired(t *testing.T) {
 
 	origRepoRemoteURL := repoRemoteURL
 	repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
+		if string(dir) == repoBoom {
+			return "", errors.Errorf("boom")
+		}
 		return remote, nil
 	}
 	defer func() { repoRemoteURL = origRepoRemoteURL }()
@@ -85,6 +88,14 @@ func TestCleanupExpired(t *testing.T) {
 		}
 		return fi.ModTime()
 	}
+	recloneTime := func(path string) time.Time {
+		t.Helper()
+		ts, err := getRecloneTime(GitDir(path))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return ts
+	}
 
 	writeFile(t, filepath.Join(repoGCNew, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 	writeFile(t, filepath.Join(repoGCOld, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
@@ -92,11 +103,10 @@ func TestCleanupExpired(t *testing.T) {
 	for path, delta := range map[string]time.Duration{
 		repoOld:   2 * repoTTL,
 		repoGCOld: 2 * repoTTLGC,
+		repoBoom:  2 * repoTTL,
 	} {
 		ts := time.Now().Add(-delta)
-		cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(ts.Unix(), 10))
-		cmd.Dir = path
-		if err := cmd.Run(); err != nil {
+		if err := setRecloneTime(GitDir(path), ts); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.Chtimes(filepath.Join(path, "HEAD"), ts, ts); err != nil {
@@ -104,10 +114,13 @@ func TestCleanupExpired(t *testing.T) {
 		}
 	}
 
+	now := time.Now()
 	repoNewTime := modTime(repoNew)
 	repoOldTime := modTime(repoOld)
 	repoGCNewTime := modTime(repoGCNew)
 	repoGCOldTime := modTime(repoGCOld)
+	repoBoomTime := modTime(repoBoom)
+	repoBoomRecloneTime := recloneTime(repoBoom)
 
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
@@ -127,6 +140,17 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	if !repoGCOldTime.Before(modTime(repoGCOld)) {
 		t.Error("expected repoGCOld to be recloned during clean up")
+	}
+
+	// repos that fail to clone need to have recloneTime updated
+	if repoBoomTime.Before(modTime(repoBoom)) {
+		t.Fatal("expected repoBoom to fail to reclone due to hardcoding getRemoteURL failure")
+	}
+	if !repoBoomRecloneTime.Before(recloneTime(repoBoom)) {
+		t.Error("expected repoBoom reclone time to be updated")
+	}
+	if !now.After(recloneTime(repoBoom)) {
+		t.Error("expected repoBoom reclone time to be updated to not now")
 	}
 }
 

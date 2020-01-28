@@ -38,7 +38,7 @@ export async function getCompletionItems(
     if (token.type === 'literal') {
         // Offer autocompletion of filter values
         return {
-            suggestions: FILTER_TYPE_COMPLETIONS.filter(({ label }) => label.startsWith(token.value)).map(
+            suggestions: FILTER_TYPE_COMPLETIONS.filter(({ label }) => label.startsWith(token.value.toLowerCase())).map(
                 (suggestion): Monaco.languages.CompletionItem => ({
                     ...suggestion,
                     range: toMonacoRange(range),

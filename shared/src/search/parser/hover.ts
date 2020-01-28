@@ -14,7 +14,9 @@ export const getHoverResult = (
         return null
     }
     const { filterType } = tokenAtColumn.token
-    const matchedFilterDefinition = FILTERS.find(({ aliases }) => aliases.includes(filterType.token.value))
+    const matchedFilterDefinition = FILTERS.find(({ aliases }) =>
+        aliases.includes(filterType.token.value.toLowerCase())
+    )
     if (!matchedFilterDefinition) {
         return null
     }

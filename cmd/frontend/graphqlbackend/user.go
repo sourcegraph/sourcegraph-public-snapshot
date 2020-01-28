@@ -7,6 +7,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -113,6 +114,10 @@ func (r *UserResolver) DisplayName() *string {
 		return nil
 	}
 	return &r.user.DisplayName
+}
+
+func (r *UserResolver) BuiltinAuth() bool {
+	return r.user.BuiltinAuth && providers.BuiltinAuthEnabled()
 }
 
 func (r *UserResolver) AvatarURL() *string {

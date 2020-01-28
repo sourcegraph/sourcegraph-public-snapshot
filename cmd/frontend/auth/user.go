@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var MockGetAndSaveUser func(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error)
@@ -32,6 +34,7 @@ type GetAndSaveUserOp struct {
 //       (Note: most clients should look up by email, as username is typically insecure.)
 //    d. If op.CreateIfNotExist is true, attempt to create a new user with the properties
 //       specified in op.UserProps. This may fail if the desired username is already taken.
+//    e. If a new user is successfully created, attempt to grant pending permissions.
 // 2. Ensure that the user is associated with the external account information. This means
 //    creating the external account if it does not already exist or updating it if it
 //    already does.
@@ -103,6 +106,15 @@ func GetAndSaveUser(ctx context.Context, op GetAndSaveUserOp) (userID int32, saf
 		case err != nil:
 			return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", err
 		}
+
+		if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
+			UserID: userID,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		}); err != nil {
+			log15.Error("Failed to grant user pending permissions", "userID", userID, "error", err)
+		}
+
 		return userID, true, true, "", nil
 	}()
 	if err != nil {

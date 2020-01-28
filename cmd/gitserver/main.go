@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
@@ -51,6 +52,7 @@ func main() {
 		ReposDir:                reposDir,
 		DeleteStaleRepositories: runRepoCleanup,
 		DesiredPercentFree:      wantPctFree2,
+		StderrErrorLog:          maybeCreateStderrErrorLog(),
 	}
 	gitserver.RegisterMetrics()
 
@@ -124,4 +126,21 @@ func parsePercent(s string) (int, error) {
 		return 0, fmt.Errorf("excessively high value given for percentage: %d", p)
 	}
 	return p, nil
+}
+
+// TODO(keegancsmith) remove! Temporary logging to understand errors in
+// production. https://github.com/sourcegraph/sourcegraph/issues/6676
+func maybeCreateStderrErrorLog() *log.Logger {
+	// HACK runRepoCleanup is only set for sourcegraph.com
+	if !runRepoCleanup {
+		return nil
+	}
+	path := filepath.Join(reposDir, "git-stderr-error.log")
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Printf("WARN failed to open stderrErrorLog.log: %v", err)
+		return nil
+	}
+
+	return log.New(f, "", log.LstdFlags)
 }

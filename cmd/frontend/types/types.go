@@ -77,6 +77,7 @@ type User struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	SiteAdmin   bool
+	BuiltinAuth bool
 	Tags        []string
 }
 
@@ -150,4 +151,16 @@ type SurveyResponse struct {
 	Reason    *string
 	Better    *string
 	CreatedAt time.Time
+}
+
+type Event struct {
+	ID              int32
+	Name            string
+	URL             string
+	UserID          *int32
+	AnonymousUserID string
+	Argument        string
+	Source          string
+	Version         string
+	Timestamp       time.Time
 }

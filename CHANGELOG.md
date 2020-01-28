@@ -14,16 +14,55 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Experimental: the search query input now provides syntax highlighting, hover tooltips, and diagnostics on filters in search queries. Requires the global settings value `{ "experimentalFeatures": { "smartSearchField": true } }`.
+- Added a setting `search.hideSuggestions`, which when set to `false`, will hide search suggestions in the search bar.
+- An experimental tool [src-expose](https://docs.sourcegraph.com/admin/external_service/other#experimental-src-expose) to import code from any code host.
 
 ### Changed
 
+- experimentalFeatures.splitSearchModes was removed as a site configuration option. It should be set in global/org/user settings.
+
 ### Fixed
+
+- After adding/removing a gitserver replica the admin interface will correctly report that repositories that need to move replicas as cloning. [#7970](https://github.com/sourcegraph/sourcegraph/issues/7970)
+- Show download button for images. [#7924](https://github.com/sourcegraph/sourcegraph/issues/7924)
+- gitserver backoffs trying to re-clone repositories if they fail to clone. In the case of large monorepos that failed this lead to gitserver constantly cloning them and using many resources. [#7804](https://github.com/sourcegraph/sourcegraph/issues/7804)
+- **Monitoring:** Fixed an issue with the **Frontend** -> **Search responses by status** panel which caused search response types to not be aggregated as expected. [#7627](https://github.com/sourcegraph/sourcegraph/issues/7627)
+- **Monitoring:** Fixed an issue with the **Replacer**, **Repo Updater**, and **Searcher** dashboards would incorrectly report on a metric from the unrelated query-runner service. [#7531](https://github.com/sourcegraph/sourcegraph/issues/7531)
 
 ### Removed
 
 - All repository fields related to `enabled` and `disabled` have been removed from the GraphQL API. These fields have been deprecated since 3.4. [#3971](https://github.com/sourcegraph/sourcegraph/pull/3971)
+- The deprecated extension API `Hover.__backcompatContents` was removed.
 
-## 3.12.0 (unreleased)
+## 3.12.3
+
+### Fixed
+
+- Fixed an issue in `sourcegraph/*` Docker images where data folders were either not created or had incorrect permissions - preventing the use of Docker volumes. [#7991](https://github.com/sourcegraph/sourcegraph/pull/7991)
+
+## 3.12.2
+
+### Added
+
+- Experimental: The site configuration field `automation.readAccess.enabled` allows site-admins to give read-only access for Automation campaigns to non-site-admins. This is a setting for the experimental feature Automation and will only have an effect when Automation is enabled under `experimentalFeatures`. [#8013](https://github.com/sourcegraph/sourcegraph/issues/8013)
+
+### Fixed
+
+- A regression in 3.12.0 which caused [Automation find-leaked-credentials campaigns](https://docs.sourcegraph.com/user/automation#finding-leaked-credentials) to not return any results for private repositories. [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914)
+- A regression in 3.12.0 which removed the horizontal bar between search result matches.
+- Manual Automation campaigns were wrongly displayed as being in draft mode. [#8009](https://github.com/sourcegraph/sourcegraph/issues/8009)
+- Manual campaigns could be published and create the wrong changesets on code hosts, even though the campaign was never in draft mode (see line above). [#8012](https://github.com/sourcegraph/sourcegraph/pull/8012)
+- A regression in 3.12.0 which caused manual campaigns to not properly update the UI after adding a changeset. [#8023](https://github.com/sourcegraph/sourcegraph/pull/8023)
+- Minor improvements to manual campaign form fields. [#8033](https://github.com/sourcegraph/sourcegraph/pull/8033)
+
+## 3.12.1
+
+### Fixed
+
+- The ephemeral `/site-config.json` escape-hatch config file has moved to `$HOME/site-config.json`, to support non-root container environments. [#7873](https://github.com/sourcegraph/sourcegraph/issues/7873)
+- Fixed an issue where repository permissions would sometimes not be cached, due to improper Redis nil value handling. [#7912](https://github.com/sourcegraph/sourcegraph/issues/7912)
+
+## 3.12.0
 
 ### Added
 
@@ -67,7 +106,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
-- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.12.0` will need to manually modify their `docker run` command to use `sourcegraph/server:3.12.0` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
+- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.12.3` will need to manually modify their `docker run` command to use `sourcegraph/server:3.12.3` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
 
 ## 3.11.1
 

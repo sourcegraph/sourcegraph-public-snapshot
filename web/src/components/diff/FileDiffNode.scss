@@ -7,7 +7,6 @@
     &__header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
 
         overflow-x: hidden;
 
@@ -19,6 +18,7 @@
             display: flex;
             align-items: center;
             overflow: hidden;
+            flex-grow: 1;
         }
         &-path {
             white-space: pre;

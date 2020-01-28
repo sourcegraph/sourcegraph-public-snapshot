@@ -263,6 +263,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             <div className="d-flex align-items-start">
                                 <SearchModeToggle {...this.props} interactiveSearchMode={true} />
                                 <QueryInput
+                                    {...this.props}
                                     location={this.props.location}
                                     history={this.props.history}
                                     value={this.props.navbarSearchState}

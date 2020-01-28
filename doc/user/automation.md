@@ -4,6 +4,8 @@
 
 [Sourcegraph automation](https://about.sourcegraph.com/product/automation) allows large-scale code changes across many repositories and different code hosts.
 
+**Important**: If you're on Sourcegraph 3.12 or older, you might also want to look at the old documentation: "[Automation documentation for Sourcegraph 3.12](https://docs.sourcegraph.com/@3.12/user/automation)"
+
 ## Configuration
 
 In order to use the Automation preview, a site-admin of your Sourcegraph instance must enable it in the site configuration settings e.g. `sourcegraph.example.com/site-admin/configuration`
@@ -16,84 +18,125 @@ In order to use the Automation preview, a site-admin of your Sourcegraph instanc
 }
 ```
 
-## Creating a new campaign
+## Usage
 
-1. After enabling the feature flag, navigate to `sourcegraph.example.com/campaigns` or simply click the "Campaigns" entry in the navigation bar at the top.
-1. Click `Create new campaign`.
-1. Enter the name and an optional description for your campaign.
-1. Select the type of campaign to run. See the list of supported campaign types and functionality below.
-1. Configure the campaign type by editing its parameters.
-1. Now generate a preview of the changes that would be made by the campaign by clicking `Preview changes`. Wait for all repositories to be processed. This might take a while when the the campaign runs over hundreds of repositories.
-1. Once the preview is fully computed, you'll see a list of patches that would be turned into changesets (i.e. pull requests on GitHub) on the code hosts associated with each repository.
-1. Feel free to change the arguments and create a new preview.
-1. When you're happy with the proposed changes click `Create`. **This will asynchronously create the changesets (i.e. pull requests) on the code hosts**. Once created, changeset progress (e.g., `open`, `merged`) can be tracked in the campaign view.
+There are two types of Automation campaigns:
 
-Automation requires that your [external service](../admin/external_service.md) is using a token with **write access** in order to create changesets on your code host.
+- Manual campaigns to which you can manually add changesets (pull requests) and track their progress
+- Campaigns created from a set of patches
 
-## Current limitations
+### Creating a manual campaign
 
-Automation is still in beta and currently has some limitations to keep in mind:
+1. Go to `/campaigns` on your Sourcegraph instance and click on the "New campaign" button
+2. Fill in a name for the campaign and a description
+3. Create the campaign
+4. Track changesets by adding them to the campaign through the form on the Campaign page
 
-- We currently only support GitHub and Bitbucket Server code hosts in Automation.
-- The maximum number of repositories which an Automation campaign can process is 200.
+### Creating a campaign from a set of patches
 
-If you have a specific automation workflow in mind that is not covered by our current feature set or exceeds our repository limit, let us know at <support@sourcegraph.com>.
+**Required**: The [`src` CLI tool](https://github.com/sourcegraph/src-cli). 
 
-## Supported campaign types and functionality
+Short overview:
 
-Our focus is to deliver _general_ functionality (e.g., centralized monitoring of a large set of pull requests on different code hosts) as well as _tailored_ solutions for large-scale code changes and workflows (e.g., detect leaked NPM credentials).
+1. Create an `action.json` file that contains an action definition.
+2. Create a set of patches by executing the action over repositories: `src actions exec -f action.json > patches.json`
+3. Save the patches in Sourcegraph by creating a campaign plan based on these patches: `src campaign plan create-from-patches < patches.json`
+4. Create a campaign from the campaign plan: `src campaigns create -name='Campaign name' -desc='Description' -plan=<plan-ID-returned-by-previous-command>`
 
-### Regex search and replace
+Read on for the longer version.
 
-We support regular expression search and replace using [RE2 syntax](https://github.com/google/re2/wiki/Syntax). A scope query allows to narrow the set of repositories to process. Specific files can also be filtered by changing the `file:` parameter in the scope query.
+#### Defining an action
 
-| Name            | Description                                                                                    |
-| --------------- | ---------------------------------------------------------------------------------------------- |
-| scopeQuery      | Search query to narrow down repositories to be included in this campaign.                      |
-| regexMatch      | A regular expression. We support [RE2 syntax](https://github.com/google/re2/wiki/Syntax)
-| textReplace     | Replacement text for `regexMatch`. You may refer to match groups using `$1` or `${1}` syntax.  |
+The first thing we need is a definition of an "action". An action is what produces a patch and describes what commands and Docker containers to run over which repositories.
 
-### Comby search and replace
+Example:
 
-We support search and replace functionality using [Comby](https://comby.dev), which is a tailored solution for syntactic, lint-like code changes.
+```json
+{
+  "scopeQuery": "repo:go-* -repohasfile:INSTALL.md",
+  "steps": [
+    {
+      "type": "command",
+      "args": ["sh", "-c", "echo '# Installation' > INSTALL.md"]
+    },
+    {
+      "type": "docker",
+      "dockerfile": "FROM alpine:3 \n CMD find /work -iname '*.md' -type f | xargs -n 1 sed -i s/this/that/g"
+    },
+    {
+      "type": "docker",
+      "image": "golang:1.13-alpine",
+      "args": ["go", "fix", "/work/..."]
+    }
+  ]
+}
+```
 
-Parameters:
+This action runs over every repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
 
-| Name            | Description                                                                                    |
-| --------------- | ---------------------------------------------------------------------------------------------- |
-| scopeQuery      | Search query to narrow down repositories to be included in this campaign.                            |
-| matchTemplate   | The template to match against in source files. See the [Comby documentation](https://comby.dev/#match-syntax) for syntax. |
-| rewriteTemplate | The template to use for the replacements. See the [Comby documentation](https://comby.dev/#match-syntax) for syntax.      |
+The first step creates an `INSTALL.md` file by running `sh` in each repository on the machine on which `src` is executed.
 
-Note: the `scopeQuery` filter for `comby` narrows the set of repositories and will currently run on _all_ files in the repository. Future improvements will allow to restrict changes using the `file:` filter.
+The second step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
 
-### Finding leaked credentials
+The third step pulls the `golang:1.13-alpine` image from Docker hub, starts a container from it and runs `go fix /work/...` in it.
 
-This campaign type finds possibly leaked credentials across your codebase and creates changesets that remove or replace the credentials.
+Save that definition in a file called `action.json` (or any other name of your choosing).
 
-Parameters:
+#### Executing an action to produce patches
 
-| Name            | Description                                                                                    |
-| --------------- | ---------------------------------------------------------------------------------------------- |
-| scopeQuery      | Search query to narrow down repositories to be included in this campaign.                      |
-| matchers        | A list of credential "matchers" that are run.                                                  |
+With our action defined we can now execute it:
 
-Properties of a `matcher`:
+```
+$ src actions exec -f action.json
+```
 
-| Name            | Description                                                                                    |
-| --------------- | ---------------------------------------------------------------------------------------------- |
-| type            | The type of the matcher. Currently supported: `"npm"`                   .                      |
-| replaceWith     | An optional string that the credentials are replaced with.                                     |
+This command is going to:
 
+1. Download or build the required Docker images.
+2. Download a copy of the repositories matched by the `"scopeQuery"` from the Sourcegraph instance.
+3. Execute the action in each repository in parallel (the maximum number of parallel jobs can be configured with `-j`, the default is number of cores on the machine)
+4. Produce a diff for each repository between a fresh copy of the repository's contents and directory in which the action ran.
 
-The currently available matcher types:
+The output can either be saved into a file by redirecting it:
 
-1. `npm`: finds (and optionally replaces) NPM registry tokens and passwords in `.npmrc` files.
+```
+$ src actions exec -f action.json > patches.json
+```
 
-### Manual changeset monitoring
+Or it can be piped straight into the next command we're going to use to save the patches on the Sourcegraph instance:
 
-Manual campaigns keep track of existing changesets from various code hosts. You can manually add each changeset you would like to track (such as a GitHub pull request), and can track them to completion.
+```
+$ src actions exec -f action.json | src campaign plan create-from-patches
+```
 
----
+#### Creating a campaign plan from patches
+
+The next step is to save the set of patches on the Sourcegraph instance so they can be run together as a campaign.
+
+To do that we use the following command:
+
+```
+$ src campaign plan create-from-patches < patches.json
+```
+
+Or, again, pipe the patches directly into it.
+
+When the command successfully ran, it will print a URL with which you can preview the changesets that would be created on the codehosts, or a command for the `src` tool to create a campaign from the campaign plan.
+
+#### Creating a campaign
+
+If you're happy with the campaign plan and its patches, it's time to create changesets (pull requests) on the code hosts by creating a campaign:
+
+```
+$ src campaigns create -name='My campaign name' \
+   -desc='My first CLI-created campaign'
+   -plan=Q2FtcGFpZ25QbGFuOjg=
+```
+
+This will create a campaign on the Sourcegraph instance and asychronously create a pull request for each patch on the code hosts on which the repositories are hosted.
+
+Check progress by opening the campaign on your Sourcegraph instance.
+
+## Note for Automation developers
 
 If you are looking to run automation on a larger scale in the local dev environment, follow the [guide on automation development](../dev/automation_development.md).

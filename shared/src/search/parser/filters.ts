@@ -110,13 +110,18 @@ export const FILTERS: readonly FilterDefinition[] = [
         aliases: ['timeout'],
         description: 'Duration before timeout',
     },
+    {
+        aliases: ['patterntype'],
+        discreteValues: ['regexp', 'literal', 'structural'],
+        description: 'The pattern type (regexp, literal, structural) in use',
+    },
 ]
 
 /**
  * Returns the {@link FilterDefinition} for the given filterType if it exists, or `undefined` otherwise.
  */
 export const getFilterDefinition = (filterType: string): FilterDefinition | undefined =>
-    FILTERS.find(({ aliases }) => aliases.some(a => a === filterType))
+    FILTERS.find(({ aliases }) => aliases.some(a => a === filterType.toLowerCase()))
 
 /**
  * Validates a filter given its type and value.

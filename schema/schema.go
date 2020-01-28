@@ -342,8 +342,6 @@ type ExperimentalFeatures struct {
 	EventLogging string `json:"eventLogging,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: Enables searching multiple revisions of the same repository (using `repo:myrepo@branch1:branch2`).
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
-	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
-	SplitSearchModes string `json:"splitSearchModes,omitempty"`
 	// StructuralSearch description: Enables structural search.
 	StructuralSearch string `json:"structuralSearch,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
@@ -391,9 +389,11 @@ type GitHubAuthProvider struct {
 type GitHubAuthorization struct {
 	// Ttl description: The TTL of how long to cache permissions data. This is 3 hours by default.
 	//
-	// Decreasing the TTL will increase the load on the code host API. If you have X repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.
+	// Decreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).
 	//
 	// If set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).
+	//
+	// Public repositories are cached once for all users per cache TTL period.
 	Ttl string `json:"ttl,omitempty"`
 }
 
@@ -476,9 +476,11 @@ type GitLabAuthorization struct {
 	IdentityProvider IdentityProvider `json:"identityProvider"`
 	// Ttl description: The TTL of how long to cache permissions data. This is 3 hours by default.
 	//
-	// Decreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.
+	// Decreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).
 	//
 	// If set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).
+	//
+	// Public and internal repositories are cached once for all users per cache TTL period.
 	Ttl string `json:"ttl,omitempty"`
 }
 
@@ -852,6 +854,8 @@ type SiteConfiguration struct {
 	AuthSessionExpiry string `json:"auth.sessionExpiry,omitempty"`
 	// AuthUserOrgMap description: Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{"*": ["org1", "org2"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `"*"`.
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
+	// AutomationReadAccessEnabled description: Enables read-only access to Automation campaigns for non-site-admin users. This is a setting for the experimental feature Automation. These will only have an effect when Automation is enabled under experimentalFeatures
+	AutomationReadAccessEnabled *bool `json:"automation.readAccess.enabled,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
 	//
 	// Only available in Sourcegraph Enterprise.
