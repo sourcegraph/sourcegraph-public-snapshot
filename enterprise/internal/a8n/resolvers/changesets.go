@@ -106,9 +106,14 @@ type changesetResolver struct {
 	preloadedRepo *repos.Repo
 
 	// cache repo because it's called more than once
-	once sync.Once
-	repo *graphqlbackend.RepositoryResolver
-	err  error
+	repoOnce sync.Once
+	repo     *graphqlbackend.RepositoryResolver
+	repoErr  error
+
+	// cache changeset events as they are used more than once
+	eventsOnce sync.Once
+	events     []*a8n.ChangesetEvent
+	eventsErr  error
 }
 
 const changesetIDKind = "ExternalChangeset"
@@ -123,17 +128,33 @@ func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
 }
 
 func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	r.once.Do(func() {
+	r.repoOnce.Do(func() {
 		if r.preloadedRepo != nil {
 			r.repo = newRepositoryResolver(r.preloadedRepo)
 		} else {
-			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.RepoID))
-			if r.err != nil {
+			r.repo, r.repoErr = graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.RepoID))
+			if r.repoErr != nil {
 				return
 			}
 		}
 	})
-	return r.repo, r.err
+	return r.repo, r.repoErr
+}
+
+func (r *changesetResolver) computeEvents(ctx context.Context) ([]*a8n.ChangesetEvent, error) {
+	r.eventsOnce.Do(func() {
+		opts := ee.ListChangesetEventsOpts{
+			ChangesetIDs: []int64{r.Changeset.ID},
+			Limit:        -1,
+		}
+		events, _, err := r.store.ListChangesetEvents(ctx, opts)
+		if err != nil {
+			r.eventsErr = err
+			return
+		}
+		r.events = events
+	})
+	return r.events, r.eventsErr
 }
 
 func (r *changesetResolver) ID() graphql.ID {
@@ -193,11 +214,7 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 		return r.Changeset.ReviewState()
 	}
 
-	opts := ee.ListChangesetEventsOpts{
-		ChangesetIDs: []int64{r.Changeset.ID},
-		Limit:        -1,
-	}
-	es, _, err := r.store.ListChangesetEvents(ctx, opts)
+	es, err := r.computeEvents(ctx)
 	if err != nil {
 		return a8n.ChangesetReviewStatePending, err
 	}
@@ -213,11 +230,7 @@ func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheck
 		return nil, nil
 	}
 
-	opts := ee.ListChangesetEventsOpts{
-		ChangesetIDs: []int64{r.Changeset.ID},
-		Limit:        -1,
-	}
-	es, _, err := r.store.ListChangesetEvents(ctx, opts)
+	es, err := r.computeEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
