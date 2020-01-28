@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/google/go-cmp/cmp"
 )
 
 func AssertGolden(t testing.TB, path string, update bool, want interface{}) {
@@ -27,9 +27,7 @@ func AssertGolden(t testing.TB, path string, update bool, want interface{}) {
 		t.Fatalf("failed to read golden file %q: %s", path, err)
 	}
 
-	if have, want := string(data), string(golden); have != want {
-		dmp := diffmatchpatch.New()
-		diffs := dmp.DiffMain(have, want, false)
-		t.Error(dmp.DiffPrettyText(diffs))
+	if diff := cmp.Diff(string(golden), string(data)); diff != "" {
+		t.Error(diff)
 	}
 }
