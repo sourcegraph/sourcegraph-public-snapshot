@@ -1,0 +1,53 @@
+{
+  "id": 43,
+  "version": 2,
+  "title": "This is a new title",
+  "description": "This is a new body",
+  "state": "OPEN",
+  "open": true,
+  "closed": false,
+  "createdDate": 1580213993810,
+  "updatedDate": 1580217091763,
+  "fromRef": {
+   "id": "refs/heads/milton/file1txt-1580213978330",
+   "repository": {
+    "slug": "automation-testing",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "toRef": {
+   "id": "refs/heads/master",
+   "repository": {
+    "slug": "automation-testing",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "locked": false,
+  "author": {
+   "user": {
+    "name": "milton",
+    "emailAddress": "dev@sourcegraph.com",
+    "id": 1,
+    "displayName": "milton woof",
+    "active": true,
+    "slug": "milton",
+    "type": "NORMAL"
+   },
+   "role": "AUTHOR",
+   "approved": false,
+   "status": "UNAPPROVED"
+  },
+  "reviewers": [],
+  "participants": [],
+  "links": {
+   "self": [
+    {
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/43"
+    }
+   ]
+  }
+ }
