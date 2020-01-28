@@ -412,6 +412,7 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 
 type UpdatePullRequestInput struct {
 	PullRequestID string `json:"-"`
+	Version       int    `json:"version"`
 
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -425,8 +426,9 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 		in.ToRef.Repository.Slug,
 		in.PullRequestID,
 	)
+
 	pr := &PullRequest{}
-	return pr, c.send(ctx, "POST", path, nil, in, pr)
+	return pr, c.send(ctx, "PUT", path, nil, in, pr)
 }
 
 // ErrAlreadyExists is returned by Client.CreatePullRequest when a Pull Request

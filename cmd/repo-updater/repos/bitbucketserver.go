@@ -206,12 +206,17 @@ func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset
 		return errors.New("Changeset is not a Bitbucket Server pull request")
 	}
 
-	updated, err := s.client.UpdatePullRequest(ctx, &bitbucketserver.UpdatePullRequestInput{
+	update := &bitbucketserver.UpdatePullRequestInput{
 		PullRequestID: strconv.Itoa(pr.ID),
-		Title:         pr.Title,
-		Description:   pr.Description,
-		ToRef:         pr.ToRef,
-	})
+		Title:         c.Title,
+		Description:   c.Body,
+		Version:       pr.Version,
+	}
+	update.ToRef.ID = c.BaseRef
+	update.ToRef.Repository.Slug = pr.ToRef.Repository.Slug
+	update.ToRef.Repository.Project.Key = pr.ToRef.Repository.Project.Key
+
+	updated, err := s.client.UpdatePullRequest(ctx, update)
 	if err != nil {
 		return err
 	}
