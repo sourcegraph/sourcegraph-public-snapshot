@@ -93,7 +93,7 @@ Format of the action JSON files:
 
 	An action JSON needs to specify:
 
-	- "scopeQuery" - a Sourcegraph search query to generate a list of repositories over which to run the action
+	- "scopeQuery" - a Sourcegraph search query to generate a list of repositories over which to run the action. Use 'src actions scope-query' to see which repositories are matched by the query
 	- "steps" - a list of action steps to execute in each repository
 
 	A single "step" can either be a command that's executed on the machine on which 'src actions exec' is executed.
@@ -318,7 +318,7 @@ Format of the action JSON files:
 			return err
 		}
 		if *verbose {
-			log.Printf("# %d repositories match.", len(repos))
+			log.Printf("# %d repositories match. Use 'src actions scope-query' for help with scoping.", len(repos))
 		}
 		for _, repo := range repos {
 			executor.enqueueRepo(repo)
