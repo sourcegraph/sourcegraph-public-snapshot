@@ -223,6 +223,17 @@ type ExternalChangesetsConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+type ChangesetLabelResolver interface {
+	Text() string
+	Color() string
+	Description() string
+}
+
+type ChangesetLabelsConnectionResolver interface {
+	Nodes(ctx context.Context) ([]ChangesetLabelResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+}
+
 type ExternalChangesetResolver interface {
 	ID() graphql.ID
 	ExternalID() string
@@ -239,6 +250,7 @@ type ExternalChangesetResolver interface {
 	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
 	Head(ctx context.Context) (*GitRefResolver, error)
 	Base(ctx context.Context) (*GitRefResolver, error)
+	Labels(ctx context.Context) (ChangesetLabelsConnectionResolver, error)
 }
 
 type ChangesetPlansConnectionResolver interface {

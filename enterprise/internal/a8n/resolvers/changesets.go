@@ -352,3 +352,45 @@ func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 		},
 	})
 }
+
+type changesetLabelsConnectionResolver struct {
+	count int
+}
+
+type changesetLabelResolver struct {
+	text        string
+	color       string
+	description string
+}
+
+func (r changesetLabelsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
+	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, r.count)
+	for i := 0; i <= r.count; i++ {
+		resolvers = append(resolvers, &changesetLabelResolver{
+			text:        "Label",
+			color:       "93ba13",
+			description: "Super awesome label",
+		})
+	}
+	return resolvers, nil
+}
+
+func (r changesetLabelsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return int32(r.count), nil
+}
+
+func (r *changesetResolver) Labels(ctx context.Context) (graphqlbackend.ChangesetLabelsConnectionResolver, error) {
+	return changesetLabelsConnectionResolver{count: 5}, nil
+}
+
+func (r *changesetLabelResolver) Text() string {
+	return r.text
+}
+
+func (r *changesetLabelResolver) Color() string {
+	return r.color
+}
+
+func (r *changesetLabelResolver) Description() string {
+	return r.description
+}
