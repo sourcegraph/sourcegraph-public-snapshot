@@ -448,6 +448,14 @@ func TestChangesetEventCheckState(t *testing.T) {
 			},
 			want: pState(ChangesetCheckStatePassed),
 		},
+		{
+			name: "pick latest commit",
+			ce: ChangesetEvents{
+				testCommit(1, "SUCCESS"),
+				testCommit(2, "ERROR"),
+			},
+			want: pState(ChangesetCheckStatePassed),
+		},
 	}
 
 	for _, tc := range tests {
