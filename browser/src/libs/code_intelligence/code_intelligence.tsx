@@ -99,6 +99,7 @@ import { SourcegraphIntegrationURLs } from '../../platform/context'
 import { requestGraphQLHelper } from '../../shared/backend/requestGraphQL'
 import { checkUserLoggedInAndFetchSettings } from '../../platform/settings'
 import { IS_LIGHT_THEME } from './consts'
+import { NotificationType } from 'sourcegraph'
 
 registerHighlightContributions()
 
@@ -214,6 +215,8 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
             Partial<PositionSpec> &
             Partial<ViewStateSpec> & { part?: DiffPart }
     ) => string
+
+    notificationClassNames: Record<NotificationType, string>
 
     /**
      * CSS classes for the command palette to customize styling
@@ -510,6 +513,7 @@ export function handleCodeHost({
                     telemetryService,
                     render,
                     ...codeHost.commandPaletteClassProps,
+                    notificationClassNames: codeHost.notificationClassNames,
                 })
             )
         )
