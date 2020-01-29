@@ -692,7 +692,7 @@ type ExternalChangeset implements Node {
     repository: Repository!
 
     # The campaigns that have this changeset in them.
-    campaigns(first: Int): CampaignConnection!
+    campaigns(first: Int, state: CampaignState = Any): CampaignConnection!
 
     # The events belonging to this changeset.
     events(first: Int): ChangesetEventConnection!
