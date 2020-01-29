@@ -404,7 +404,15 @@ func (l *eventLogs) calculatePercentilesPerPeriodBySQL(
 	qExprs := []*sqlf.Query{}
 	for i, p := range percentiles {
 		name := fmt.Sprintf("p%d\n", i)
-		countByPeriodExprs = append(countByPeriodExprs, sqlf.Sprintf("percentile_cont(%d) WITHIN GROUP (ORDER BY (argument->%s)::integer) AS "+name, p, field))
+		// Note: we can't go directly from jsonb -> integer in postgres 9.6, so we
+		// have to first cast it to a text type, and then to an integer to support
+		// queries on older instances.
+		countByPeriodExprs = append(countByPeriodExprs, sqlf.Sprintf(
+			"percentile_cont(%d) WITHIN GROUP (ORDER BY (argument->%s)::text::integer) AS "+name,
+			p,
+			field,
+		))
+
 		qExprs = append(qExprs, sqlf.Sprintf("COALESCE("+name+", 0)"))
 	}
 
