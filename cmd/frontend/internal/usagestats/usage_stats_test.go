@@ -12,44 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
-func TestStartOfWeek(t *testing.T) {
-	defer func() {
-		timeNow = time.Now
-	}()
-
-	want := time.Date(2020, 1, 19, 0, 0, 0, 0, time.UTC)
-
-	mockTimeNow(time.Date(2020, 1, 19, 5, 30, 10, 0, time.UTC))
-	got := startOfWeek(0)
-	if !want.Equal(got) {
-		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
-	}
-
-	mockTimeNow(time.Date(2020, 1, 23, 0, 0, 0, 0, time.UTC))
-	got = startOfWeek(0)
-	if !want.Equal(got) {
-		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
-	}
-
-	mockTimeNow(time.Date(2020, 1, 25, 23, 59, 59, 0, time.UTC))
-	got = startOfWeek(0)
-	if !want.Equal(got) {
-		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
-	}
-
-	mockTimeNow(time.Date(2020, 1, 28, 0, 0, 0, 0, time.UTC))
-	got = startOfWeek(1)
-	if !want.Equal(got) {
-		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
-	}
-
-	mockTimeNow(time.Date(2021, 1, 19, 0, 0, 0, 0, time.UTC))
-	got = startOfWeek(52)
-	if !want.Equal(got) {
-		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
-	}
-}
-
 func TestUserUsageStatistics_None(t *testing.T) {
 	setupForTest(t)
 
