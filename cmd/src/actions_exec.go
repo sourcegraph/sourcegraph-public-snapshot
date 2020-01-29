@@ -96,8 +96,7 @@ Format of the action JSON files:
 	- "scopeQuery" - a Sourcegraph search query to generate a list of repositories over which to run the action. Use 'src actions scope-query' to see which repositories are matched by the query
 	- "steps" - a list of action steps to execute in each repository
 
-	A single "step" can either be a command that's executed on the machine on which 'src actions exec' is executed.
-	Or it can be of type "docker" which then (optionally builds) and runs a container in which the repository is mounted.
+	A single "step" can either be a of type "command", which means the step is executed on the machine on which 'src actions exec' is executed, or it can be of type "docker" which then (optionally builds) and runs a container in which the repository is mounted.
 
 	This action has a single step that produces a README.md file in repositories whose name starts with "go-" and that doesn't have a README.md file yet:
 
