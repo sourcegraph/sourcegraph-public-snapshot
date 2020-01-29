@@ -47,7 +47,7 @@ go_build() {
 }
 export -f go_build
 
-echo "--- build go, symbols, and lsif concurrently"
+echo "--- build go and symbols concurrently"
 
 build_go_packages(){
    echo "--- go build"
@@ -77,7 +77,7 @@ build_symbols() {
 }
 export -f build_symbols
 
-parallel_run {} ::: build_symbols build_go_packages
+parallel_run {} ::: build_go_packages build_symbols
 
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
