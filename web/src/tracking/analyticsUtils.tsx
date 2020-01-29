@@ -5,12 +5,7 @@ import { eventLogger } from './eventLogger'
 interface EventQueryParameters {
     utm_campaign?: string
     utm_source?: string
-    utm_product_name?: string
-    utm_product_version?: string
-    /**
-     *  Editor machine_id property for syncing editor <-> webapp
-     */
-    editor_machine_id?: string
+    utm_medium?: string
 }
 
 /**
@@ -66,8 +61,7 @@ export function pageViewQueryParameters(url: string): EventQueryParameters {
     return {
         utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
         utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
-        utm_product_name: parsedUrl.searchParams.get('utm_product_name') || undefined,
-        utm_product_version: parsedUrl.searchParams.get('utm_product_version') || undefined,
+        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
     }
 }
 
@@ -78,35 +72,12 @@ export function pageViewQueryParameters(url: string): EventQueryParameters {
  */
 export function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
-    const eventParameters: { [key: string]: string } = {}
-    for (const [key, val] of parsedUrl.searchParams.entries()) {
-        eventParameters[camelCaseToUnderscore(key)] = val
-    }
-    const eventName = parsedUrl.searchParams.get('_event')
     const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
-    if (eventName || isBadgeRedirect) {
-        if (isBadgeRedirect) {
-            eventLogger.log('RepoBadgeRedirected', eventParameters)
-        } else if (eventName === 'CompletedAuth0SignIn') {
-            eventLogger.log('CompletedAuth0SignIn', eventParameters)
-        } else if (eventName === 'SignupCompleted') {
-            eventLogger.log('SignupCompleted', eventParameters)
-        } else if (eventName) {
-            eventLogger.log(eventName, eventParameters)
-        }
+    if (isBadgeRedirect) {
+        eventLogger.log('RepoBadgeRedirected')
     }
 
-    stripURLParameters(url, [
-        '_event',
-        '_source',
-        'utm_campaign',
-        'utm_source',
-        'utm_product_name',
-        'utm_product_version',
-        'badge',
-        'mid',
-        'toast',
-    ])
+    stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'badge'])
 }
 
 /**
@@ -120,11 +91,4 @@ function stripURLParameters(url: string, paramsToRemove: string[] = []): void {
         }
     }
     window.history.replaceState(window.history.state, window.document.title, parsedUrl.href)
-}
-
-function camelCaseToUnderscore(input: string): string {
-    if (input.startsWith('_')) {
-        input = input.substring(1)
-    }
-    return input.replace(/([A-Z])/g, $1 => `_${$1.toLowerCase()}`)
 }

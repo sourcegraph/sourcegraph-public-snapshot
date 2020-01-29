@@ -117,9 +117,7 @@ export interface LayoutProps
 }
 
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
-    const isSearchHomepage =
-        props.location.pathname === '/search' &&
-        !parseSearchURLQuery(props.location.search, props.interactiveSearchMode)
+    const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
@@ -161,30 +159,21 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
-                        {props.routes.map(({ render, condition = () => true, ...route }) => {
-                            const isFullWidth = !route.forceNarrowWidth
-                            return (
+                        {props.routes.map(
+                            ({ render, condition = () => true, ...route }) =>
                                 condition(props) && (
                                     <Route
                                         {...route}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
-                                            <div
-                                                className={[
-                                                    'layout__app-router-container',
-                                                    `layout__app-router-container--${
-                                                        isFullWidth ? 'full-width' : 'restricted'
-                                                    }`,
-                                                ].join(' ')}
-                                            >
+                                            <div className="layout__app-router-container">
                                                 {render({ ...props, ...routeComponentProps })}
                                             </div>
                                         )}
                                     />
                                 )
-                            )
-                        })}
+                        )}
                         {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>

@@ -11,8 +11,13 @@ import { Subject } from 'rxjs'
 
 interface Props extends ThemeProps {
     campaign:
-        | Pick<GQL.ICampaign, '__typename' | 'id' | 'changesets' | 'changesetPlans'>
-        | Pick<GQL.ICampaignPlan, '__typename' | 'id' | 'changesets'>
+        | (Pick<GQL.ICampaign, '__typename' | 'id'> & {
+              changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
+              changesetPlans: Pick<GQL.ICampaign['changesetPlans'], 'nodes' | 'totalCount'>
+          })
+        | (Pick<GQL.ICampaignPlan, '__typename' | 'id'> & {
+              changesets: Pick<GQL.ICampaignPlan['changesets'], 'nodes' | 'totalCount'>
+          })
     persistLines: boolean
     campaignUpdates: Subject<void>
     changesetUpdates: Subject<void>

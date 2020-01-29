@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/google/go-github/v28/github"
+	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 )
 
@@ -31,18 +32,35 @@ func main() {
 }
 
 func run(token, org, milestone, labels string) (err error) {
+	if token == "" {
+		return fmt.Errorf("no -token given")
+	}
+
+	if org == "" {
+		return fmt.Errorf("no -org given")
+	}
+
+	if milestone == "" {
+		return fmt.Errorf("no -milestone given")
+	}
+
 	ctx := context.Background()
-	cli := github.NewClient(
+	cli := githubv4.NewClient(
 		oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: token},
 		)),
 	)
 
-	issues, err := listIssues(ctx, cli, org, strings.Split(labels, ",")...)
+	issues, err := listIssues(ctx, cli, org, milestone, strings.Split(labels, ","))
 	if err != nil {
 		return err
 	}
 
+	fmt.Print(generate(issues, milestone))
+	return nil
+}
+
+func generate(issues []*Issue, milestone string) string {
 	var (
 		assignees []string
 		workloads = map[string]float64{}
@@ -50,21 +68,17 @@ func run(token, org, milestone, labels string) (err error) {
 	)
 
 	for _, issue := range issues {
-		if !partOf(milestone, issue) {
-			continue
-		}
-
 		state := state(issue.State)
 		estimate := estimate(issue.Labels)
 		categories := categories(issue)
-		assignee := assignee(issue.Assignee)
-		title := title(issue)
+		assignee := assignee(issue.Assignees)
+		title := title(issue, milestone)
 
 		item := fmt.Sprintf("- [%s] %s [#%d](%s) __%s__ %s\n",
 			state,
 			title,
-			*issue.Number,
-			*issue.HTMLURL,
+			issue.Number,
+			issue.URL,
 			estimate,
 			emojis(categories),
 		)
@@ -74,32 +88,43 @@ func run(token, org, milestone, labels string) (err error) {
 		}
 
 		items[assignee] = append(items[assignee], item)
-		workloads[assignee] += days(estimate)
+
+		// Exclude work that is no longer planned
+		if issue.Milestone == milestone {
+			workloads[assignee] += days(estimate)
+		}
 	}
 
 	sort.Strings(assignees)
 
+	var w strings.Builder
 	for _, assignee := range assignees {
-		fmt.Printf("\n%s: __%.2fd__\n\n", assignee, workloads[assignee])
+		fmt.Fprintf(&w, "\n%s: __%.2fd__\n\n", assignee, workloads[assignee])
 
 		for _, item := range items[assignee] {
-			fmt.Print(item)
+			fmt.Fprint(&w, item)
 		}
 	}
 
-	return nil
+	return w.String()
 }
 
-func title(issue *github.Issue) string {
-	if *issue.Repository.Private {
-		return *issue.Repository.FullName
+func title(issue *Issue, milestone string) string {
+	var title string
+
+	if issue.Private {
+		title = issue.Repository
+	} else {
+		title = issue.Title
 	}
-	return *issue.Title
-}
 
-func partOf(milestone string, issue *github.Issue) bool {
-	return milestone != "" && issue.Milestone != nil &&
-		*issue.Milestone.Title == milestone
+	// Cross off issues that were originally planned
+	// for the milestone but are no longer in it.
+	if issue.Milestone != milestone {
+		title = "~" + title + "~"
+	}
+
+	return title
 }
 
 func days(estimate string) float64 {
@@ -107,30 +132,30 @@ func days(estimate string) float64 {
 	return d
 }
 
-func estimate(labels []github.Label) string {
+func estimate(labels []string) string {
 	const prefix = "estimate/"
-	for _, l := range labels {
-		if strings.HasPrefix(*l.Name, prefix) {
-			return (*l.Name)[len(prefix):]
+	for _, label := range labels {
+		if strings.HasPrefix(label, prefix) {
+			return label[len(prefix):]
 		}
 	}
 	return "?d"
 }
 
-func state(state *string) string {
-	if state != nil && *state == "closed" {
+func state(state string) string {
+	if strings.EqualFold(state, "closed") {
 		return "x"
 	}
 	return " "
 }
 
-func categories(issue *github.Issue) map[string]string {
+func categories(issue *Issue) map[string]string {
 	categories := make(map[string]string, len(issue.Labels))
 
-	for _, l := range issue.Labels {
+	for _, label := range issue.Labels {
 		var emoji string
 
-		switch *l.Name {
+		switch label {
 		case "customer":
 			emoji = customer(issue)
 		case "roadmap":
@@ -146,7 +171,7 @@ func categories(issue *github.Issue) map[string]string {
 		}
 
 		if emoji != "" {
-			categories[*l.Name] = emoji
+			categories[label] = emoji
 		}
 	}
 
@@ -154,59 +179,175 @@ func categories(issue *github.Issue) map[string]string {
 }
 
 func emojis(categories map[string]string) string {
-	// Generous four bytes for each emoji. We don't have
-	// to be precise, since append will allocate more if needed.
-	s := make([]byte, 0, 4*len(categories))
+	sorted := make([]string, 0, len(categories))
+	length := 0
+
 	for _, emoji := range categories {
+		sorted = append(sorted, emoji)
+		length += len(emoji)
+	}
+
+	sort.Strings(sorted)
+
+	s := make([]byte, 0, length)
+	for _, emoji := range sorted {
 		s = append(s, emoji...)
 	}
+
 	return string(s)
 }
 
 var matcher = regexp.MustCompile(`https://app\.hubspot\.com/contacts/2762526/company/\d+`)
 
-func customer(issue *github.Issue) string {
-	if issue == nil || issue.Body == nil {
-		return ""
-	}
-
-	customer := matcher.FindString(*issue.Body)
+func customer(issue *Issue) string {
+	customer := matcher.FindString(issue.Body)
 	if customer == "" {
 		return "👩"
 	}
-
 	return "[👩](" + customer + ")"
 }
 
-func assignee(user *github.User) string {
-	if user == nil || user.Login == nil {
+func assignee(assignees []string) string {
+	if len(assignees) == 0 {
 		return "Unassigned"
 	}
-	return "@" + *user.Login
+	return "@" + assignees[0]
 }
 
-func listIssues(ctx context.Context, cli *github.Client, org string, labels ...string) (issues []*github.Issue, _ error) {
-	opt := &github.IssueListOptions{
-		Filter:      "all",
-		State:       "all",
-		Labels:      labels,
-		ListOptions: github.ListOptions{PerPage: 100},
+type Issue struct {
+	Title      string
+	Body       string
+	Number     int
+	URL        string
+	State      string
+	Repository string
+	Private    bool
+	Labels     []string
+	Assignees  []string
+	Milestone  string
+}
+
+func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string, labels []string) (issues []*Issue, _ error) {
+	type issue struct {
+		Title      string
+		Body       string
+		State      string
+		Number     int
+		URL        string
+		Repository struct {
+			NameWithOwner string
+			IsPrivate     bool
+		}
+		Assignees struct{ Nodes []struct{ Login string } } `graphql:"assignees(first: 25)"`
+		Labels    struct{ Nodes []struct{ Name string } }  `graphql:"labels(first:25)"`
+		Milestone struct{ Title string }
 	}
 
+	type search struct {
+		PageInfo struct {
+			EndCursor   githubv4.String
+			HasNextPage bool
+		}
+		Nodes []struct {
+			issue `graphql:"... on Issue"`
+		}
+	}
+
+	var q struct {
+		Milestoned   search `graphql:"milestoned: search(first: $milestonedCount, type: ISSUE, after: $milestonedCursor, query: $milestonedQuery)"`
+		Demilestoned search `graphql:"demilestoned: search(first: $demilestonedCount, type: ISSUE, after: $demilestonedCursor, query: $demilestonedQuery)"`
+	}
+
+	variables := map[string]interface{}{
+		"milestonedCount":    githubv4.Int(100),
+		"demilestonedCount":  githubv4.Int(100),
+		"milestonedCursor":   (*githubv4.String)(nil),
+		"demilestonedCursor": (*githubv4.String)(nil),
+		"milestonedQuery":    githubv4.String(listIssuesSearchQuery(org, milestone, labels, false)),
+		"demilestonedQuery":  githubv4.String(listIssuesSearchQuery(org, milestone, labels, true)),
+	}
+
+	var emptyIssue issue
+
 	for {
-		page, resp, err := cli.Issues.ListByOrg(ctx, org, opt)
+		err := cli.Query(ctx, &q, variables)
 		if err != nil {
 			return nil, err
 		}
 
-		issues = append(issues, page...)
+		nodes := append(q.Milestoned.Nodes, q.Demilestoned.Nodes...)
 
-		if resp.NextPage == 0 {
-			break
+		for _, n := range nodes {
+			// GitHub's GraphQL API sometimes sends empty issue nodes.
+			if reflect.DeepEqual(n.issue, emptyIssue) {
+				continue
+			}
+
+			i := n.issue
+
+			issue := &Issue{
+				Title:      i.Title,
+				Body:       i.Body,
+				State:      i.State,
+				Number:     i.Number,
+				URL:        i.URL,
+				Repository: i.Repository.NameWithOwner,
+				Private:    i.Repository.IsPrivate,
+				Assignees:  make([]string, 0, len(i.Assignees.Nodes)),
+				Labels:     make([]string, 0, len(i.Labels.Nodes)),
+				Milestone:  i.Milestone.Title,
+			}
+
+			for _, assignee := range i.Assignees.Nodes {
+				issue.Assignees = append(issue.Assignees, assignee.Login)
+			}
+
+			for _, label := range i.Labels.Nodes {
+				issue.Labels = append(issue.Labels, label.Name)
+			}
+
+			issues = append(issues, issue)
 		}
 
-		opt.Page = resp.NextPage
+		var hasNextPage bool
+		if q.Milestoned.PageInfo.HasNextPage {
+			hasNextPage = true
+			variables["milestonedCursor"] = githubv4.NewString(q.Milestoned.PageInfo.EndCursor)
+		} else {
+			variables["milestonedCount"] = githubv4.Int(0)
+		}
+
+		if q.Demilestoned.PageInfo.HasNextPage {
+			hasNextPage = true
+			variables["demilestonedCursor"] = githubv4.NewString(q.Demilestoned.PageInfo.EndCursor)
+		} else {
+			variables["demilestonedCount"] = githubv4.Int(0)
+		}
+
+		if !hasNextPage {
+			break
+		}
 	}
 
 	return issues, nil
+}
+
+func listIssuesSearchQuery(org, milestone string, labels []string, demilestoned bool) string {
+	var q strings.Builder
+
+	fmt.Fprintf(&q, "org:%q", org)
+
+	if demilestoned {
+		fmt.Fprintf(&q, ` -milestone:%q label:"planned/%s"`, milestone, milestone)
+	} else {
+		fmt.Fprintf(&q, " milestone:%q", milestone)
+	}
+
+	for _, label := range labels {
+		if label != "" {
+			fmt.Fprintf(&q, " label:%q", label)
+		}
+	}
+
+	return q.String()
 }

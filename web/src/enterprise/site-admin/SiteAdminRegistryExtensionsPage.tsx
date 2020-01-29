@@ -169,7 +169,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
         return (
             <div className="registry-extensions-page">
                 <PageTitle title="Registry extensions" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Registry extensions</h2>
                     <div>
                         <Link className="btn btn-link mr-sm-2" to="/extensions">

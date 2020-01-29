@@ -107,9 +107,9 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 		}
 		return &types.User{ID: 123}, nil
 	}
-	db.Mocks.UserEmails.ListByUser = func(id int32) ([]*db.UserEmail, error) {
-		if want := int32(123); id != want {
-			t.Errorf("got %v, want %v", id, want)
+	db.Mocks.UserEmails.ListByUser = func(_ context.Context, opt db.UserEmailsListOptions) ([]*db.UserEmail, error) {
+		if want := int32(123); opt.UserID != want {
+			t.Errorf("got %v, want %v", opt.UserID, want)
 		}
 		t := time.Now()
 		return []*db.UserEmail{

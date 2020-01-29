@@ -925,8 +925,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(campaignPlans); i++ {
 					c := &a8n.CampaignPlan{
-						CampaignType: "COMBY",
-						Arguments:    `{"scopeQuery": "file:README.md"}`,
+						CampaignType: "patch",
+						Arguments:    `{}`,
 						CanceledAt:   now,
 					}
 
@@ -1665,7 +1665,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 			for _, tc := range tests {
 				plan := &a8n.CampaignPlan{
-					CampaignType: "comby",
+					CampaignType: "patch",
 					CanceledAt:   tc.planCanceledAt,
 				}
 				err := s.CreateCampaignPlan(ctx, plan)
@@ -1752,7 +1752,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 
 			for _, tc := range tests {
-				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{"foobar":"barfoo"}`}
+				plan := &a8n.CampaignPlan{CampaignType: "patch", Arguments: `{}`}
 
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {

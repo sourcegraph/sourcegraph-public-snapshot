@@ -408,9 +408,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-configuration-page">
                 <PageTitle title="Configuration - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Site configuration</h2>
-                </div>
+                <h2>Site configuration</h2>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/config/site_config">documentation</Link> for more information.

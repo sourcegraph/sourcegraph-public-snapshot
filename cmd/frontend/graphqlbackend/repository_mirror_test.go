@@ -53,7 +53,7 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
-				Schema: mustParseGraphQLSchema(t, nil),
+				Schema: mustParseGraphQLSchema(t),
 				Query: `
 				mutation {
 					checkMirrorRepositoryConnection(repository: "UmVwb3NpdG9yeToxMjM=") {
@@ -109,7 +109,7 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
-				Schema: mustParseGraphQLSchema(t, nil),
+				Schema: mustParseGraphQLSchema(t),
 				Query: `
 				mutation {
 					checkMirrorRepositoryConnection(name: "my/repo") {

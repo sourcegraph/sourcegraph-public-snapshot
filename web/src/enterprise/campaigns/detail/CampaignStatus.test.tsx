@@ -21,109 +21,114 @@ const CAMPAIGN_PLAN: Pick<GQL.ICampaignPlan, '__typename'> = {
 }
 
 describe('CampaignStatus', () => {
-    test('closed campaign', () =>
-        expect(
-            createRenderer().render(
-                <CampaignStatus
-                    {...PROPS}
-                    campaign={{ ...CAMPAIGN, closedAt: '2020-01-01' }}
-                    status={{
-                        completedCount: 1,
-                        pendingCount: 0,
-                        errors: [],
-                        state: GQL.BackgroundProcessState.COMPLETED,
-                    }}
-                    onPublish={() => undefined}
-                />
-            )
-        ).toMatchSnapshot())
+    for (const viewerCanAdminister of [true, false]) {
+        const campaign = { ...CAMPAIGN, viewerCanAdminister }
+        describe(`viewerCanAdminister: ${viewerCanAdminister}`, () => {
+            test('closed campaign', () =>
+                expect(
+                    createRenderer().render(
+                        <CampaignStatus
+                            {...PROPS}
+                            campaign={{ ...campaign, closedAt: '2020-01-01' }}
+                            status={{
+                                completedCount: 1,
+                                pendingCount: 0,
+                                errors: [],
+                                state: GQL.BackgroundProcessState.COMPLETED,
+                            }}
+                            onPublish={() => undefined}
+                        />
+                    )
+                ).toMatchSnapshot())
 
-    test('drafted campaign', () =>
-        expect(
-            createRenderer().render(
-                <CampaignStatus
-                    {...PROPS}
-                    campaign={{ ...CAMPAIGN, publishedAt: null }}
-                    status={{
-                        completedCount: 1,
-                        pendingCount: 0,
-                        errors: [],
-                        state: GQL.BackgroundProcessState.COMPLETED,
-                    }}
-                    onPublish={() => undefined}
-                />
-            )
-        ).toMatchSnapshot())
+            test('drafted campaign', () =>
+                expect(
+                    createRenderer().render(
+                        <CampaignStatus
+                            {...PROPS}
+                            campaign={{ ...campaign, publishedAt: null }}
+                            status={{
+                                completedCount: 1,
+                                pendingCount: 0,
+                                errors: [],
+                                state: GQL.BackgroundProcessState.COMPLETED,
+                            }}
+                            onPublish={() => undefined}
+                        />
+                    )
+                ).toMatchSnapshot())
 
-    test('drafted campaign, some published', () =>
-        expect(
-            createRenderer().render(
-                <CampaignStatus
-                    {...PROPS}
-                    campaign={{
-                        ...CAMPAIGN,
-                        publishedAt: null,
-                        changesets: { totalCount: 1 } as GQL.IExternalChangesetConnection,
-                    }}
-                    status={{
-                        completedCount: 1,
-                        pendingCount: 0,
-                        errors: [],
-                        state: GQL.BackgroundProcessState.COMPLETED,
-                    }}
-                    onPublish={() => undefined}
-                />
-            )
-        ).toMatchSnapshot())
+            test('drafted campaign, some published', () =>
+                expect(
+                    createRenderer().render(
+                        <CampaignStatus
+                            {...PROPS}
+                            campaign={{
+                                ...campaign,
+                                publishedAt: null,
+                                changesets: { totalCount: 1 } as GQL.IExternalChangesetConnection,
+                            }}
+                            status={{
+                                completedCount: 1,
+                                pendingCount: 0,
+                                errors: [],
+                                state: GQL.BackgroundProcessState.COMPLETED,
+                            }}
+                            onPublish={() => undefined}
+                        />
+                    )
+                ).toMatchSnapshot())
 
-    test('campaign processing', () =>
-        expect(
-            createRenderer().render(
-                <CampaignStatus
-                    {...PROPS}
-                    campaign={CAMPAIGN}
-                    status={{
-                        completedCount: 3,
-                        pendingCount: 3,
-                        errors: ['a', 'b'],
-                        state: GQL.BackgroundProcessState.PROCESSING,
-                    }}
-                    onPublish={() => undefined}
-                />
-            )
-        ).toMatchSnapshot())
+            test('campaign processing', () =>
+                expect(
+                    createRenderer().render(
+                        <CampaignStatus
+                            {...PROPS}
+                            campaign={campaign}
+                            status={{
+                                completedCount: 3,
+                                pendingCount: 3,
+                                errors: ['a', 'b'],
+                                state: GQL.BackgroundProcessState.PROCESSING,
+                            }}
+                            onPublish={() => undefined}
+                        />
+                    )
+                ).toMatchSnapshot())
 
-    test('campaign plan processing', () =>
-        expect(
-            createRenderer().render(
-                <CampaignStatus
-                    {...PROPS}
-                    campaign={CAMPAIGN_PLAN}
-                    status={{
-                        completedCount: 3,
-                        pendingCount: 3,
-                        errors: ['a', 'b'],
-                        state: GQL.BackgroundProcessState.PROCESSING,
-                    }}
-                    onPublish={() => undefined}
-                />
-            )
-        ).toMatchSnapshot())
+            test('campaign plan processing', () =>
+                expect(
+                    createRenderer().render(
+                        <CampaignStatus
+                            {...PROPS}
+                            campaign={CAMPAIGN_PLAN}
+                            status={{
+                                completedCount: 3,
+                                pendingCount: 3,
+                                errors: ['a', 'b'],
+                                state: GQL.BackgroundProcessState.PROCESSING,
+                            }}
+                            onPublish={() => undefined}
+                        />
+                    )
+                ).toMatchSnapshot())
 
-    test('campaign errored', () =>
-        expect(
-            createRenderer().render(
-                <CampaignStatus
-                    {...PROPS}
-                    campaign={CAMPAIGN}
-                    status={{
-                        completedCount: 3,
-                        pendingCount: 0,
-                        errors: ['a', 'b'],
-                        state: GQL.BackgroundProcessState.ERRORED,
-                    }}
-                    onPublish={() => undefined}
-                />
-            )
-        ).toMatchSnapshot())
+            test('campaign errored', () =>
+                expect(
+                    createRenderer().render(
+                        <CampaignStatus
+                            {...PROPS}
+                            campaign={campaign}
+                            status={{
+                                completedCount: 3,
+                                pendingCount: 0,
+                                errors: ['a', 'b'],
+                                state: GQL.BackgroundProcessState.ERRORED,
+                            }}
+                            onPublish={() => undefined}
+                        />
+                    )
+                ).toMatchSnapshot())
+        })
+    }
 })

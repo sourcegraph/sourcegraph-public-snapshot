@@ -7,18 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-// GrantPendingPermissionsArgs contains required arguments to grant pending permissions for a user.
-// Both "Username" and "Email" could be supplied but only one of them will be used according to the
-// site configuration.
-// 🚨 SECURITY: It is the caller's responsibility to ensure the supplied email is verified.
+// GrantPendingPermissionsArgs contains required arguments to grant pending permissions for a user
+// by username or verified email address(es) according to the site configuration.
 type GrantPendingPermissionsArgs struct {
 	// The user ID that will be used to bind pending permissions.
 	UserID int32
-	// The username that will be used as bind ID.
-	Username string
-	// The verified email address that will be used as bind ID.
-	// 🚨 SECURITY: It is the caller's responsibility to ensure the email is verified.
-	VerifiedEmail string
 	// The permission level to be granted.
 	Perm authz.Perms
 	// The type of permissions to be granted.
@@ -40,23 +33,51 @@ type AuthorizedReposArgs struct {
 	Provider authz.ProviderType
 }
 
-// AuthzStore contains methods for assigning user permissions.
+// RevokeUserPermissionsArgs contains required arguments to revoke user permissions, it includes all
+// possible leads to grant or authorize access for a user.
+type RevokeUserPermissionsArgs struct {
+	// The user ID that will be used to revoke effective permissions.
+	UserID int32
+	// The username that will be used to revoke pending permissions.
+	Username string
+	// The list of verified emails that will be used to revoke pending permissions.
+	// Only provide verified emails because that is the definitive way to ensure the email ownership.
+	VerifiedEmails []string
+}
+
+// AuthzStore contains methods for manipulating user permissions.
 type AuthzStore interface {
-	// GrantPendingPermissions grants pending permissions for a user, it is a no-op in the OSS version.
+	// GrantPendingPermissions grants pending permissions for a user. It is a no-op in the OSS version.
 	GrantPendingPermissions(ctx context.Context, args *GrantPendingPermissionsArgs) error
 	// AuthorizedRepos checks if a user is authorized to access repositories in the candidate list.
 	// The returned list must be a list of repositories that are authorized to the given user.
 	// It is a no-op in the OSS version.
 	AuthorizedRepos(ctx context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error)
+	// RevokeUserPermissions deletes both effective and pending permissions that could be related to a user.
+	// It is a no-op in the OSS version.
+	RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) error
 }
 
 // authzStore is a no-op placeholder for the OSS version.
 type authzStore struct{}
 
-func (*authzStore) GrantPendingPermissions(_ context.Context, _ *GrantPendingPermissionsArgs) error {
+func (*authzStore) GrantPendingPermissions(ctx context.Context, args *GrantPendingPermissionsArgs) error {
+	if Mocks.Authz.GrantPendingPermissions != nil {
+		return Mocks.Authz.GrantPendingPermissions(ctx, args)
+	}
 	return nil
 }
 
-func (*authzStore) AuthorizedRepos(_ context.Context, _ *AuthorizedReposArgs) ([]*types.Repo, error) {
+func (*authzStore) AuthorizedRepos(ctx context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error) {
+	if Mocks.Authz.AuthorizedRepos != nil {
+		return Mocks.Authz.AuthorizedRepos(ctx, args)
+	}
 	return []*types.Repo{}, nil
+}
+
+func (*authzStore) RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) error {
+	if Mocks.Authz.RevokeUserPermissions != nil {
+		return Mocks.Authz.RevokeUserPermissions(ctx, args)
+	}
+	return nil
 }

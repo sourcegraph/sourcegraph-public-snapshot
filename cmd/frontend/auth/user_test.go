@@ -41,9 +41,10 @@ func TestGetAndSaveUser(t *testing.T) {
 		expErr     error
 
 		// expected side effects
-		expSavedExtAccts map[int32][]extsvc.ExternalAccountSpec
-		expUpdatedUsers  map[int32][]db.UserUpdate
-		expCreatedUsers  map[int32]db.NewUser
+		expSavedExtAccts                 map[int32][]extsvc.ExternalAccountSpec
+		expUpdatedUsers                  map[int32][]db.UserUpdate
+		expCreatedUsers                  map[int32]db.NewUser
+		expCalledGrantPendingPermissions bool
 	}
 	type outerCase struct {
 		description string
@@ -187,6 +188,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expCreatedUsers: map[int32]db.NewUser{
 					10001: userProps("u-new", "u-new@example.com", true),
 				},
+				expCalledGrantPendingPermissions: true,
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should NOT create user",
@@ -402,6 +404,10 @@ func TestGetAndSaveUser(t *testing.T) {
 									label, got, want, dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(want), spew.Sdump(got), false)))
 							}
 						}
+
+						if c.expCalledGrantPendingPermissions != m.calledGrantPendingPermissions {
+							t.Fatalf("calledGrantPendingPermissions: want %v but got %v", c.expCalledGrantPendingPermissions, m.calledGrantPendingPermissions)
+						}
 					})
 				}
 			}
@@ -479,11 +485,15 @@ func (m *mocks) apply() {
 		GetByUsername:      m.GetByUsername,
 		Update:             m.Update,
 	}
+	db.Mocks.Authz = db.MockAuthz{
+		GrantPendingPermissions: m.GrantPendingPermissions,
+	}
 }
 
 func (m *mocks) reset() {
 	db.Mocks.ExternalAccounts = db.MockExternalAccounts{}
 	db.Mocks.Users = db.MockUsers{}
+	db.Mocks.Authz = db.MockAuthz{}
 }
 
 // mocks provide mocking. It should only be used for one call of auth.GetAndSaveUser, because saves
@@ -504,6 +514,9 @@ type mocks struct {
 
 	// nextUserID is the user ID of the next created user.
 	nextUserID int32
+
+	// calledGrantPendingPermissions tracks if db.Authz.GrantPendingPermissions method is called.
+	calledGrantPendingPermissions bool
 }
 
 // LookupUserAndSave mocks db.ExternalAccounts.LookupUserAndSave
@@ -634,6 +647,12 @@ func (m *mocks) Update(id int32, update db.UserUpdate) error {
 
 	// Save user
 	m.updatedUsers[id] = append(m.updatedUsers[id], update)
+	return nil
+}
+
+// GrantPendingPermissions mocks db.Authz.GrantPendingPermissions
+func (m *mocks) GrantPendingPermissions(context.Context, *db.GrantPendingPermissionsArgs) error {
+	m.calledGrantPendingPermissions = true
 	return nil
 }
 

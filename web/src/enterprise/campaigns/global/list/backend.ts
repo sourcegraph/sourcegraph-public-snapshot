@@ -12,9 +12,6 @@ export const queryCampaigns = ({ first }: FilteredConnectionQueryArgs): Observab
                 campaigns(first: $first) {
                     nodes {
                         id
-                        plan {
-                            type
-                        }
                         name
                         description
                         url

@@ -237,9 +237,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         return (
             <div className="site-admin-usage-statistics-page">
                 <PageTitle title="Usage statistics - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Usage statistics</h2>
-                </div>
+                <h2>Usage statistics</h2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
                 {this.state.stats && (
                     <>

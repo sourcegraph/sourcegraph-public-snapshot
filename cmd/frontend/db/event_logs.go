@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -25,12 +26,17 @@ type Event struct {
 	URL             string
 	UserID          uint32
 	AnonymousUserID string
-	Argument        string
+	Argument        json.RawMessage
 	Source          string
 	Timestamp       time.Time
 }
 
 func (*eventLogs) Insert(ctx context.Context, e *Event) error {
+	argument := e.Argument
+	if argument == nil {
+		argument = json.RawMessage([]byte(`{}`))
+	}
+
 	_, err := dbconn.Global.ExecContext(
 		ctx,
 		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
@@ -39,7 +45,7 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 		e.UserID,
 		e.AnonymousUserID,
 		e.Source,
-		e.Argument,
+		argument,
 		version.Version(),
 		e.Timestamp.UTC(),
 	)
@@ -177,7 +183,7 @@ func calcEndDate(startDate time.Time, periods int, periodType PeriodType) (time.
 		return startDate.AddDate(0, periods, 0), true
 	}
 
-	return startDate, false
+	return time.Time{}, false
 }
 
 // CountUniqueUsersOptions provides options for counting unique users.
@@ -186,16 +192,16 @@ type CountUniqueUsersOptions struct {
 	RegisteredOnly bool
 	// If true, only include code host integration users. Otherwise, include all users.
 	IntegrationOnly bool
-	// If non-nil, only include users that logged an event with a given prefix.
-	ByEventNamePrefix *string
-	// If non-nil, only include users that logged a given event.
-	ByEventName *string
-	// If non-nil, only include users that logged any event that matches a list of given event names
-	ByEventNames *[]string
+	// If set, only include users that logged an event with a given prefix.
+	ByEventNamePrefix string
+	// If set, only include users that logged a given event.
+	ByEventName string
+	// If not empty, only include users that logged any event that matches a list of given event names
+	ByEventNames []string
 }
 
 // CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of a given type.
-// Returns an array of length `periods`, with one entry for each period in the time span.
+// Returns an array array of length `periods`, with one entry for each period in the time span.
 func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
@@ -205,15 +211,15 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 		if opt.IntegrationOnly {
 			conds = append(conds, sqlf.Sprintf("source = %s", integrationSource))
 		}
-		if opt.ByEventNamePrefix != nil {
-			conds = append(conds, sqlf.Sprintf("name LIKE %s", *opt.ByEventNamePrefix+"%"))
+		if opt.ByEventNamePrefix != "" {
+			conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.ByEventNamePrefix+"%"))
 		}
-		if opt.ByEventName != nil {
-			conds = append(conds, sqlf.Sprintf("name = %s", *opt.ByEventName))
+		if opt.ByEventName != "" {
+			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
 		}
-		if opt.ByEventNames != nil {
+		if len(opt.ByEventNames) > 0 {
 			items := []*sqlf.Query{}
-			for _, v := range *opt.ByEventNames {
+			for _, v := range opt.ByEventNames {
 				items = append(items, sqlf.Sprintf("%s", v))
 			}
 			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
@@ -230,28 +236,27 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 
 // CountEventsOptions provides options for counting events.
 type CountEventsOptions struct {
-	// If non-nil, only include events with a given prefix.
-	ByEventNamePrefix *string
-	// If non-nil, only include events that match the given event name.
-	ByEventName *string
-	// If non-nil, only include events that matches a list of given event names
-	ByEventNames *[]string
+	// If set, only include users that logged an event with a given prefix.
+	ByEventNamePrefix string
+	// If set, only include users that logged a given event.
+	ByEventName string
+	// If not empty, only include users that logged any event that matches a list of given event names
+	ByEventNames []string
 }
 
 // CountEventsPerPeriod provide a count of events in a given time span, broken up into periods of a given type.
-// Returns an array of length `periods`, with one entry for each period in the time span.
 func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, opt *CountEventsOptions) ([]UsageValue, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		if opt.ByEventNamePrefix != nil {
-			conds = append(conds, sqlf.Sprintf("name LIKE %s", *opt.ByEventNamePrefix+"%"))
+		if opt.ByEventNamePrefix != "" {
+			conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.ByEventNamePrefix+"%"))
 		}
-		if opt.ByEventName != nil {
-			conds = append(conds, sqlf.Sprintf("name = %s", *opt.ByEventName))
+		if opt.ByEventName != "" {
+			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
 		}
-		if opt.ByEventNames != nil {
+		if len(opt.ByEventNames) > 0 {
 			items := []*sqlf.Query{}
-			for _, v := range *opt.ByEventNames {
+			for _, v := range opt.ByEventNames {
 				items = append(items, sqlf.Sprintf("%s", v))
 			}
 			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
