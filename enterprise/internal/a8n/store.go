@@ -2584,7 +2584,6 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&c.AuthorID,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
-		&c.Draft,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
