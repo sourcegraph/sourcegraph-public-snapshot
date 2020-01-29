@@ -70,27 +70,27 @@ func GetByUserID(ctx context.Context, userID int32) (*types.UserUsageStatistics,
 func GetUsersActiveTodayCount(ctx context.Context) (int, error) {
 	now := timeNow().UTC()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	return db.EventLogs.CountUniquesAll(ctx, today, today.AddDate(0, 0, 1))
+	return db.EventLogs.CountUniqueUsersAll(ctx, today, today.AddDate(0, 0, 1))
 }
 
 // ListRegisteredUsersToday returns a list of the registered users that were active today.
 func ListRegisteredUsersToday(ctx context.Context) ([]int32, error) {
 	now := timeNow().UTC()
 	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	return db.EventLogs.ListUniquesAll(ctx, start, start.AddDate(0, 0, 1))
+	return db.EventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 1))
 }
 
 // ListRegisteredUsersThisWeek returns a list of the registered users that were active this week.
 func ListRegisteredUsersThisWeek(ctx context.Context) ([]int32, error) {
 	start := startOfWeek(0)
-	return db.EventLogs.ListUniquesAll(ctx, start, start.AddDate(0, 0, 7))
+	return db.EventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 7))
 }
 
 // ListRegisteredUsersThisMonth returns a list of the registered users that were active this month.
 func ListRegisteredUsersThisMonth(ctx context.Context) ([]int32, error) {
 	now := timeNow().UTC()
 	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-	return db.EventLogs.ListUniquesAll(ctx, start, start.AddDate(0, 1, 0))
+	return db.EventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 1, 0))
 }
 
 // SiteUsageStatisticsOptions contains options for the number of daily, weekly, and monthly periods in
@@ -141,7 +141,7 @@ func GetSiteUsageStatistics(ctx context.Context, opt *SiteUsageStatisticsOptions
 	}, nil
 }
 
-func startOfPeriod(periodType db.UniqueUserCountType, periodsAgo int) (time.Time, error) {
+func startOfPeriod(periodType db.PeriodType, periodsAgo int) (time.Time, error) {
 	switch periodType {
 	case db.Daily:
 		now := timeNow().UTC()
@@ -156,7 +156,7 @@ func startOfPeriod(periodType db.UniqueUserCountType, periodsAgo int) (time.Time
 }
 
 // activeUsers returns counts of active users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
-func activeUsers(ctx context.Context, periodType db.UniqueUserCountType, periods int) ([]*types.SiteActivityPeriod, error) {
+func activeUsers(ctx context.Context, periodType db.PeriodType, periods int) ([]*types.SiteActivityPeriod, error) {
 	if periods == 0 {
 		return []*types.SiteActivityPeriod{}, nil
 	}
@@ -166,17 +166,17 @@ func activeUsers(ctx context.Context, periodType db.UniqueUserCountType, periods
 	if err != nil {
 		return nil, err
 	}
-	uniques, err := db.EventLogs.CountUniquesPerPeriod(ctx, periodType, startDate, periods, nil)
+	uniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, startDate, periods, nil)
 	if err != nil {
 		return nil, err
 	}
-	registeredUniques, err := db.EventLogs.CountUniquesPerPeriod(ctx, periodType, startDate, periods, &db.CountUniquesOptions{
+	registeredUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, startDate, periods, &db.CountUniqueUsersOptions{
 		RegisteredOnly: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	integrationUniques, err := db.EventLogs.CountUniquesPerPeriod(ctx, periodType, startDate, periods, &db.CountUniquesOptions{
+	integrationUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, startDate, periods, &db.CountUniqueUsersOptions{
 		IntegrationOnly: true,
 	})
 	if err != nil {
@@ -184,27 +184,27 @@ func activeUsers(ctx context.Context, periodType db.UniqueUserCountType, periods
 	}
 
 	var activeUsers []*types.SiteActivityPeriod
-	for i, u := range uniques {
-		// Pull out data from each period. Note that CountUniquesPerPeriod will always
-		// return a slice of length `periods` due to the generate_series in the base
-		// query, so it is safe to read the following indices.
+	for i, u := range uniqueUsers {
+		// Pull out data from each period. Note that CountUniqueUsersPerPeriod will
+		// always return a slice of length `periods` due to the generate_series in
+		// the base query, so it is safe to read the following indices.
 		actPer := &types.SiteActivityPeriod{
 			StartTime:            u.Start,
 			UserCount:            int32(u.Count),
-			RegisteredUserCount:  int32(registeredUniques[i].Count),
-			AnonymousUserCount:   int32(u.Count - registeredUniques[i].Count),
-			IntegrationUserCount: int32(integrationUniques[i].Count),
+			RegisteredUserCount:  int32(registeredUniqueUsers[i].Count),
+			AnonymousUserCount:   int32(u.Count - registeredUniqueUsers[i].Count),
+			IntegrationUserCount: int32(integrationUniqueUsers[i].Count),
 			Stages:               nil,
 		}
 		activeUsers = append(activeUsers, actPer)
 	}
 
-	// Count stage uniques For the latest week and month only.
+	// Count stage unique users For the latest week and month only.
 	switch periodType {
 	case db.Weekly:
 		fallthrough
 	case db.Monthly:
-		activeUsers[0].Stages, err = stageUniques(activeUsers[0].StartTime)
+		activeUsers[0].Stages, err = stageUniqueUsers(activeUsers[0].StartTime)
 		if err != nil {
 			return nil, err
 		}
@@ -213,12 +213,12 @@ func activeUsers(ctx context.Context, periodType db.UniqueUserCountType, periods
 	return activeUsers, nil
 }
 
-var MockStageUniques func(startDate time.Time) (*types.Stages, error)
+var MockStageUniqueUsers func(startDate time.Time) (*types.Stages, error)
 
-// stageUniques returns the count of unique users on this instance in each stage of the Software Development Lifecycle since the given start date.
-func stageUniques(startDate time.Time) (*types.Stages, error) {
-	if MockStageUniques != nil {
-		return MockStageUniques(startDate)
+// stageUniqueUsers returns the count of unique users on this instance in each stage of the Software Development Lifecycle since the given start date.
+func stageUniqueUsers(startDate time.Time) (*types.Stages, error) {
+	if MockStageUniqueUsers != nil {
+		return MockStageUniqueUsers(startDate)
 	}
 
 	ctx := context.Background()
@@ -229,7 +229,7 @@ func stageUniques(startDate time.Time) (*types.Stages, error) {
 	// 1) any activity from a site admin
 	// 2) any usage of an API access token
 
-	manageUniques, err := db.EventLogs.CountUniquesByEventNamePrefix(ctx, startDate, endDate, "ViewSiteAdmin")
+	manageUniqueUsers, err := db.EventLogs.CountUniqueUsersByEventNamePrefix(ctx, startDate, endDate, "ViewSiteAdmin")
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func stageUniques(startDate time.Time) (*types.Stages, error) {
 	// 2) any file, repo, tree views
 	// 3) TODO(Dan): any code host integration usage (other than for code review)
 
-	codeUniques, err := db.EventLogs.CountUniquesByEventNames(ctx, startDate, endDate, []string{"ViewRepository", "ViewBlob", "ViewTree", "SearchResultsQueried"})
+	codeUniqueUsers, err := db.EventLogs.CountUniqueUsersByEventNames(ctx, startDate, endDate, []string{"ViewRepository", "ViewBlob", "ViewTree", "SearchResultsQueried"})
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func stageUniques(startDate time.Time) (*types.Stages, error) {
 	// 2) TODO(Dan): receiving a saved search notification (slack)
 	// 3) clicking a saved search notification (email or slack)
 	// 4) TODO(Dan): having a saved search defined in your user or org settings
-	verifyUniques, err := db.EventLogs.CountUniquesByEventNames(ctx, startDate, endDate, []string{"SavedSearchEmailClicked", "SavedSearchSlackClicked", "SavedSearchEmailNotificationSent"})
+	verifyUniqueUsers, err := db.EventLogs.CountUniqueUsersByEventNames(ctx, startDate, endDate, []string{"SavedSearchEmailClicked", "SavedSearchSlackClicked", "SavedSearchEmailNotificationSent"})
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +272,7 @@ func stageUniques(startDate time.Time) (*types.Stages, error) {
 	//// MONITOR ////
 	// 1) running a diff search
 	// 2) TODO(Dan): monitoring extension enabled (e.g. LightStep, Sentry, Datadog)
-	monitorUniques, err := db.EventLogs.CountUniquesByEventName(ctx, startDate, endDate, "DiffSearchResultsQueried")
+	monitorUniqueUsers, err := db.EventLogs.CountUniqueUsersByEventName(ctx, startDate, endDate, "DiffSearchResultsQueried")
 	if err != nil {
 		return nil, err
 	}
@@ -284,15 +284,15 @@ func stageUniques(startDate time.Time) (*types.Stages, error) {
 	// none currently
 
 	return &types.Stages{
-		Manage:    int32(manageUniques),
+		Manage:    int32(manageUniqueUsers),
 		Plan:      0,
-		Code:      int32(codeUniques),
+		Code:      int32(codeUniqueUsers),
 		Review:    0,
-		Verify:    int32(verifyUniques),
+		Verify:    int32(verifyUniqueUsers),
 		Package:   0,
 		Deploy:    0,
 		Configure: 0,
-		Monitor:   int32(monitorUniques),
+		Monitor:   int32(monitorUniqueUsers),
 		Secure:    0,
 		Automate:  0,
 	}, nil
