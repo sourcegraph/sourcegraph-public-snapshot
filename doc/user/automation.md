@@ -22,8 +22,8 @@ In order to use the Automation preview, a site-admin of your Sourcegraph instanc
 
 There are two types of Automation campaigns:
 
-- Manual campaigns to which you can manually add changesets (pull requests) and track their progress
-- Campaigns created from a set of patches
+- Manual campaigns to which you can manually add changesets (pull requests) and track their progress.
+- Campaigns created from a set of patches. With the `src` CLI tool you can not only create the campaign from an existing set of patches, but you can also _generate the patches_ for a number of repositories.
 
 ### Creating a manual campaign
 
@@ -34,7 +34,7 @@ There are two types of Automation campaigns:
 
 ### Creating a campaign from a set of patches
 
-**Required**: The [`src` CLI tool](https://github.com/sourcegraph/src-cli). 
+**Required**: The [`src` CLI tool](https://github.com/sourcegraph/src-cli). Make sure it is setup to point at your Sourcegraph instance by setting the `SRC_ENDPOINT` environment variable.
 
 Short overview:
 
@@ -46,13 +46,15 @@ Short overview:
 
 Read on for the longer version.
 
-**Note about scalability**: the patches are generated on the machine on which the `src` CLI tool is being run. You can tune the number of parallel jobs with the `-j` parameter. If you still run into performance issues, feel free to use a bigger machine, possibly closer to your Sourcegraph instance so that downloading archives of repositories is faster.
+> **Note about scalability**: the patches are generated on the machine on which the `src` CLI tool is being run. That means archives of the repositories in a campaign have to be downloaded from your Sourcegraph instance to the local machine. We're working on remote execution of campaign actions. For now feel free to use a bigger machine, possibly closer to your Sourcegraph instance so that downloading archives of repositories is faster, and use the `-j` parameter to tune the number of parallel jobs being executed.
 
 #### Defining an action
 
-The first thing we need is a definition of an "action". An action is what produces a patch and describes what commands and Docker containers to run over which repositories.
+The first thing we need is a definition of an "action". An action is what produces a patch and describes what commands or Docker containers to run over which repositories.
 
-Example:
+> **Note**: At the moment only two `"type"`s of steps are supported: `"docker"` and `"command"`. See `src actions exec -help` for more information.
+
+Here is an example defintion of an action:
 
 ```json
 {
@@ -61,6 +63,10 @@ Example:
     {
       "type": "command",
       "args": ["sh", "-c", "echo '# Installation' > INSTALL.md"]
+    },
+    {
+      "type": "command",
+      "args": ["sed", "-i", "", "s/No install instructions/See INSTALL.md/", "README.md"]
     },
     {
       "type": "docker",
@@ -77,11 +83,15 @@ Example:
 
 This action runs over every repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
 
-The first step creates an `INSTALL.md` file by running `sh` in each repository on the machine on which `src` is executed.
+The first step, a `"command"` step, creates an `INSTALL.md` file in the root directory of each repository by running `sh` in a temporary copy of each repository. **This is executed on the machine on which `src` is being run.** Note that the first element in `"args"` is the command itself.
 
-The second step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
+The second step, again a `"command"` step, runs the `sed` command to replace text in the `README.md` file in the root of each repository (the `-i ''` argument is only necessary for BSD versions of `sed` that usually come with macOS). Please note that the executed command is simply `sed` which means its arguments are _not_ expanded, as they would be in a shell. To achieve that, execute the `sed` as part of a shell invocation (using `sh -c` and passing in a single argument, for example, like in the first step).
 
-The third step pulls the `golang:1.13-alpine` image from Docker hub, starts a container from it and runs `go fix /work/...` in it.
+The third step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
+
+The fourth step pulls the `golang:1.13-alpine` image from Docker hub, starts a container from it and runs `go fix /work/...` in it.
+
+As you can see from these examples, the "output" of an action is the modified, local copy of a repository.
 
 Save that definition in a file called `action.json` (or any other name of your choosing).
 
@@ -95,9 +105,9 @@ $ src actions exec -f action.json
 
 This command is going to:
 
-1. Download or build the required Docker images.
-2. Download a copy of the repositories matched by the `"scopeQuery"` from the Sourcegraph instance.
-3. Execute the action in each repository in parallel (the maximum number of parallel jobs can be configured with `-j`, the default is number of cores on the machine)
+1. Download or build the required Docker images, if necessary.
+2. Download a ZIP archive of the repositories matched by the `"scopeQuery"` from the Sourcegraph instance to a local temporary directory in `/tmp`.
+3. Execute the action in each repository in parallel (the maximum number of parallel jobs can be configured with `-j`, the default is number of cores on the machine), with each step in an action being executed sequentially on the same copy of a repository. If a step in an action is of type `"command"` the command will be executed in the temporary directory that contains the copy of the repository. If the type is `"docker"` then a container will be launched in which the repository is mounted under `/work`.
 4. Produce a diff for each repository between a fresh copy of the repository's contents and directory in which the action ran.
 
 The output can either be saved into a file by redirecting it:
