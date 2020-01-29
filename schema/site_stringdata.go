@@ -78,12 +78,6 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "splitSearchModes": {
-          "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "bitbucketServerFastPerm": {
           "description": "Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. This requires the installation of the Bitbucket Server Sourcegraph plugin. Warning: there may be performance degradation under significant load.",
           "type": "string",
@@ -111,6 +105,12 @@ const SiteSchemaJSON = `{
       },
       "group": "Experimental",
       "hide": true
+    },
+    "automation.readAccess.enabled": {
+      "description": "Enables read-only access to Automation campaigns for non-site-admin users. This is a setting for the experimental feature Automation. These will only have an effect when Automation is enabled under experimentalFeatures",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Automation"
     },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",

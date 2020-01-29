@@ -29,9 +29,7 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-pings-page">
                 <PageTitle title="Pings - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Pings</h2>
-                </div>
+                <h2>Pings</h2>
                 <p>
                     Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It
                     sends only the high-level data below. It never sends code, repository names, usernames, or any other

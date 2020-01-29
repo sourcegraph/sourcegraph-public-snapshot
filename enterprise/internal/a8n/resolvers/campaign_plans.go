@@ -52,11 +52,6 @@ func (r *campaignPlanResolver) ID() graphql.ID {
 	return marshalCampaignPlanID(r.campaignPlan.ID)
 }
 
-func (r *campaignPlanResolver) Type() string { return r.campaignPlan.CampaignType }
-func (r *campaignPlanResolver) Arguments() (graphqlbackend.JSONCString, error) {
-	return graphqlbackend.JSONCString(r.campaignPlan.Arguments), nil
-}
-
 func (r *campaignPlanResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
 	return r.store.GetCampaignPlanStatus(ctx, r.campaignPlan.ID)
 }

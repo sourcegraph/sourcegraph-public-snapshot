@@ -9,13 +9,11 @@ class ServerAdminWrapper {
     private isAuthenicated = false
 
     constructor() {
-        if (window.context && !window.context.sourcegraphDotComMode) {
-            authenticatedUser.subscribe(user => {
-                if (user) {
-                    this.isAuthenicated = true
-                }
-            })
-        }
+        authenticatedUser.subscribe(user => {
+            if (user) {
+                this.isAuthenicated = true
+            }
+        })
     }
 
     public trackPageView(eventAction: string, logAsActiveUser: boolean = true): void {
@@ -30,7 +28,7 @@ class ServerAdminWrapper {
         logEvent(eventAction)
     }
 
-    public trackAction(eventAction: string): void {
+    public trackAction(eventAction: string, eventProperties?: any): void {
         if (this.isAuthenicated) {
             if (eventAction === 'SearchResultsQueried') {
                 logUserEvent(GQL.UserEvent.SEARCHQUERY)
@@ -47,7 +45,7 @@ class ServerAdminWrapper {
                 logUserEvent(GQL.UserEvent.STAGEMONITOR)
             }
         }
-        logEvent(eventAction)
+        logEvent(eventAction, eventProperties)
     }
 }
 

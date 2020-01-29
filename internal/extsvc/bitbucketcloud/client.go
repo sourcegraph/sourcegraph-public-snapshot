@@ -53,9 +53,10 @@ type Client struct {
 	RateLimit *rate.Limiter
 }
 
-// NewClient creates a new Bitbucket Cloud API client. If a nil
-// httpClient is provided, http.DefaultClient will be used.
-func NewClient(httpClient httpcli.Doer) *Client {
+// NewClient creates a new Bitbucket Cloud API client with given apiURL. If a nil httpClient
+// is provided, http.DefaultClient will be used. Both Username and AppPassword fields are
+// required to be set before calling any APIs.
+func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
@@ -72,7 +73,7 @@ func NewClient(httpClient httpcli.Doer) *Client {
 
 	return &Client{
 		httpClient: httpClient,
-		URL:        &url.URL{Scheme: "https", Host: "api.bitbucket.org"},
+		URL:        apiURL,
 		RateLimit:  rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests),
 	}
 }

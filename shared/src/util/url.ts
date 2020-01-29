@@ -1,13 +1,7 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
-import {
-    FiltersToTypeAndValue,
-    filterTypeKeys,
-    negatedFilters,
-    NegatedFilters,
-    isNegatableFilter,
-} from '../search/interactive/util'
+import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 
@@ -537,29 +531,30 @@ export function buildSearchURLQuery(
     caseSensitive: boolean,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
-    let searchParams = new URLSearchParams()
+    const searchParams = new URLSearchParams()
+    let fullQuery = query
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        searchParams = interactiveBuildSearchURLQuery(filtersInQuery)
+        fullQuery = [fullQuery, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
     }
 
-    const patternTypeInQuery = parsePatternTypeFromQuery(query)
+    const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        const newQuery = query.replace(
+        const newQuery = fullQuery.replace(
             query.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
             ''
         )
         searchParams.set('q', newQuery)
         searchParams.set('patternType', patternTypeInQuery.value)
-        query = newQuery
+        fullQuery = newQuery
     } else {
-        searchParams.set('q', query)
+        searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternType)
     }
 
-    const caseInQuery = parseCaseSensitivityFromQuery(query)
+    const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
     if (caseInQuery) {
-        const newQuery = query.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
+        const newQuery = fullQuery.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
         searchParams.set('q', newQuery)
 
         if (caseInQuery.value === 'yes') {
@@ -572,9 +567,9 @@ export function buildSearchURLQuery(
             searchParams.delete('case')
         }
 
-        query = newQuery
+        fullQuery = newQuery
     } else {
-        searchParams.set('q', query)
+        searchParams.set('q', fullQuery)
         if (caseSensitive) {
             searchParams.set('case', 'yes')
         } else {
@@ -593,30 +588,16 @@ export function buildSearchURLQuery(
 }
 
 /**
- * Builds a URL query for a given interactive mode query (without leading `?`).
- * Returns a URLSearchParams object containing the filters and values in the
- * search query.
+ * Creates the raw string representation of the filters currently in the query in interactive mode.
  *
- * @param filtersInQuery the map representing the filters added to the query
+ * @param filtersInQuery the map representing the filters currently in an interactive mode query.
  */
-export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
-    const searchParams = new URLSearchParams()
-
-    for (const searchType of [...filterTypeKeys, ...negatedFilters]) {
-        for (const [, filterValue] of Object.entries(filtersInQuery)) {
-            if (filterValue.type === searchType) {
-                if (filterValue.negated) {
-                    if (isNegatableFilter(searchType)) {
-                        searchParams.append(NegatedFilters[searchType], filterValue.value)
-                    }
-                    continue
-                }
-                searchParams.append(searchType, filterValue.value)
-            }
-        }
-    }
-
-    return searchParams
+export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
+    const fieldKeys = Object.keys(filtersInQuery)
+    return fieldKeys
+        .filter(key => filtersInQuery[key].value.trim().length > 0)
+        .map(key => `${filtersInQuery[key].negated ? '-' : ''}${filtersInQuery[key].type}:${filtersInQuery[key].value}`)
+        .join(' ')
 }
 
 function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {

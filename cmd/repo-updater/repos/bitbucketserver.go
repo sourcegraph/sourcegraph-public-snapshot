@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -44,7 +45,7 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 	if err != nil {
 		return nil, err
 	}
-	baseURL = NormalizeBaseURL(baseURL)
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
 	if cf == nil {
 		cf = httpcli.NewExternalHTTPClientFactory()
@@ -200,6 +201,31 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 	return nil
 }
 
+func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
+	update := &bitbucketserver.UpdatePullRequestInput{
+		PullRequestID: strconv.Itoa(pr.ID),
+		Title:         c.Title,
+		Description:   c.Body,
+		Version:       pr.Version,
+	}
+	update.ToRef.ID = c.BaseRef
+	update.ToRef.Repository.Slug = pr.ToRef.Repository.Slug
+	update.ToRef.Repository.Project.Key = pr.ToRef.Repository.Project.Key
+
+	updated, err := s.client.UpdatePullRequest(ctx, update)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = updated
+	return nil
+}
+
 // ExternalServices returns a singleton slice containing the external service.
 func (s BitbucketServerSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
@@ -211,7 +237,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 		// This should never happen
 		panic(errors.Errorf("malformed bitbucket config, invalid URL: %q, error: %s", s.config.Url, err))
 	}
-	host = NormalizeBaseURL(host)
+	host = extsvc.NormalizeBaseURL(host)
 
 	// Name
 	project := "UNKNOWN"

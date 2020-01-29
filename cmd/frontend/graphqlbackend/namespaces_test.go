@@ -23,7 +23,7 @@ func TestNamespace(t *testing.T) {
 		}
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
-				Schema: mustParseGraphQLSchema(t, nil),
+				Schema: mustParseGraphQLSchema(t),
 				Query: `
 				{
 					namespace(id: "VXNlcjoz") {
@@ -55,7 +55,7 @@ func TestNamespace(t *testing.T) {
 		}
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
-				Schema: mustParseGraphQLSchema(t, nil),
+				Schema: mustParseGraphQLSchema(t),
 				Query: `
 				{
 					namespace(id: "T3JnOjM=") {
@@ -80,7 +80,7 @@ func TestNamespace(t *testing.T) {
 		resetMocks()
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
-				Schema: mustParseGraphQLSchema(t, nil),
+				Schema: mustParseGraphQLSchema(t),
 				Query: `
 				{
 					namespace(id: "aW52YWxpZDoz") {

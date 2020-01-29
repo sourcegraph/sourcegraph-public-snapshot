@@ -575,12 +575,7 @@ export function createOrganization(
                 eventLogger.log('NewOrgFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('NewOrgCreated', {
-                organization: {
-                    org_id: data.createOrganization.id,
-                    org_name: data.createOrganization.name,
-                },
-            })
+            eventLogger.log('NewOrgCreated')
             return concat([data.createOrganization])
         })
     )
@@ -696,11 +691,7 @@ export function addExternalService(
                 eventLogger.log('AddExternalServiceFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('AddExternalServiceSucceeded', {
-                externalService: {
-                    kind: data.addExternalService.kind,
-                },
-            })
+            eventLogger.log('AddExternalServiceSucceeded')
             return data.addExternalService
         })
     )

@@ -17,7 +17,7 @@ interface SignUpPageProps {
 
 export class SignUpPage extends React.Component<SignUpPageProps> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SignUp', {}, false)
+        eventLogger.logViewEvent('SignUp', false)
     }
 
     public render(): JSX.Element | null {

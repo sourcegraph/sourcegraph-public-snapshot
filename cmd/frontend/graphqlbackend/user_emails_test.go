@@ -27,7 +27,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			name: "set an email to be verified",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t),
 					Query: `
 				mutation {
 					setUserEmailVerified(user: "VXNlcjox", email: "alice@example.com", verified: true) {
@@ -50,7 +50,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			name: "set an email to be unverified",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t),
 					Query: `
 				mutation {
 					setUserEmailVerified(user: "VXNlcjox", email: "alice@example.com", verified: false) {
