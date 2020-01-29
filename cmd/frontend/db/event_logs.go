@@ -207,11 +207,17 @@ type CountUniqueUsersOptions struct {
 	RegisteredOnly bool
 	// If true, only include code host integration users. Otherwise, include all users.
 	IntegrationOnly bool
-	// If set, only include users that logged an event with a given prefix.
+	// If set, adds additional restrictions on the event types.
+	EventFilters *EventFilterOptions
+}
+
+// EventFilterOptions provides options for filtering events.
+type EventFilterOptions struct {
+	// If set, only include events with a given prefix.
 	ByEventNamePrefix string
-	// If set, only include users that logged a given event.
+	// If set, only include events with the given name.
 	ByEventName string
-	// If not empty, only include users that logged any event that matches a list of given event names
+	// If not empty, only include events that matche a list of given event names
 	ByEventNames []string
 }
 
@@ -231,18 +237,20 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 		if opt.IntegrationOnly {
 			conds = append(conds, sqlf.Sprintf("source = %s", integrationSource))
 		}
-		if opt.ByEventNamePrefix != "" {
-			conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.ByEventNamePrefix+"%"))
-		}
-		if opt.ByEventName != "" {
-			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
-		}
-		if len(opt.ByEventNames) > 0 {
-			items := []*sqlf.Query{}
-			for _, v := range opt.ByEventNames {
-				items = append(items, sqlf.Sprintf("%s", v))
+		if opt.EventFilters != nil {
+			if opt.EventFilters.ByEventNamePrefix != "" {
+				conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.EventFilters.ByEventNamePrefix+"%"))
 			}
-			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
+			if opt.EventFilters.ByEventName != "" {
+				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
+			}
+			if len(opt.EventFilters.ByEventNames) > 0 {
+				items := []*sqlf.Query{}
+				for _, v := range opt.EventFilters.ByEventNames {
+					items = append(items, sqlf.Sprintf("%s", v))
+				}
+				conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
+			}
 		}
 	}
 
@@ -254,18 +262,8 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
-// CountEventsOptions provides options for counting events.
-type CountEventsOptions struct {
-	// If set, only include users that logged an event with a given prefix.
-	ByEventNamePrefix string
-	// If set, only include users that logged a given event.
-	ByEventName string
-	// If not empty, only include users that logged any event that matches a list of given event names
-	ByEventNames []string
-}
-
 // CountEventsPerPeriod provide a count of events in a given time span, broken up into periods of a given type.
-func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountEventsOptions) ([]UsageValue, error) {
+func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *EventFilterOptions) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
 		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
@@ -303,22 +301,12 @@ type PercentileValue struct {
 	Values []float64
 }
 
-// PercentilesOptions provides options for calculating percentiles over values of an field in the event's arguments.
-type PercentilesOptions struct {
-	// If set, only include values from events with a given prefix.
-	ByEventNamePrefix string
-	// If set, only include values from events that match the given event name.
-	ByEventName string
-	// If not empty, only include values from events that matches a list of given event names
-	ByEventNames []string
-}
-
 // PercentilesPerPeriod calculates the given percentiles over a field of the event's arguments in a given time span,
 // broken up into periods of a given type. Percentiles should be supplied as floats in the range `[0, 1)`, such that
 // `[.5, .9, .99]` will return the 50th, 90th, and 99th percentile values. Returns an array of length `periods`, with
 // one entry for each period in the time span. Each `PercentileValue` object in the result will contain exactly
 // `len(percentiles)` values.
-func (l *eventLogs) PercentilesPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, field string, percentiles []float64, opt *PercentilesOptions) ([]PercentileValue, error) {
+func (l *eventLogs) PercentilesPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, field string, percentiles []float64, opt *EventFilterOptions) ([]PercentileValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
 		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
