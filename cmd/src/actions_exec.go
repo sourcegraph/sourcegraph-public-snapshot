@@ -426,7 +426,7 @@ type ActionRepo struct {
 func actionRepos(ctx context.Context, verbose bool, scopeQuery string) ([]ActionRepo, error) {
 	query := `
 query ActionRepos($query: String!) {
-	search(query: $query, version: V1) {
+	search(query: $query, version: V2) {
 		results {
 			results {
 				__typename
