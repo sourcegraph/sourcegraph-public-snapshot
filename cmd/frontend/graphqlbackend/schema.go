@@ -1089,6 +1089,13 @@ input SurveySubmissionInput {
     better: String
 }
 
+# The state of the campaign
+enum CampaignState {
+    Any
+    Open
+    Closed
+}
+
 # A query.
 type Query {
     # The root of the query.
@@ -1100,6 +1107,7 @@ type Query {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        state: CampaignState = Any
     ): CampaignConnection!
 
     # Looks up a repository by either name or cloneURL.
