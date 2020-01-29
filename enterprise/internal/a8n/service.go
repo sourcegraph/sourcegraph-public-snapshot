@@ -296,7 +296,6 @@ func RunChangesetJob(
 	// branches and new changesets.
 	// We should probably persist the `headRefName` on `ChangesetJob` and keep
 	// it stable across retries and only set it the first time.
-	headRefName := fmt.Sprintf("sourcegraph/%s", c.Branch)
 
 	ref, err := gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
@@ -304,7 +303,7 @@ func RunChangesetJob(
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 		// will fail with "corrupt patch at line <N>" where N is the last line.
 		Patch:     campaignJob.Diff + "\n",
-		TargetRef: headRefName,
+		TargetRef: c.Branch,
 		UniqueRef: true,
 		CommitInfo: protocol.PatchCommitInfo{
 			Message:     c.Name,
@@ -751,12 +750,14 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	draft := changesetCreation.IsZero()
-	if args.Branch != nil && !draft {
-		return nil, nil, ErrPublishedCampaignBranchChange
-	} else if *args.Branch == "" {
-		return nil, nil, ErrCampaignBranchBlank
-	} else {
-		campaign.Branch = *args.Branch
+	if args.Branch != nil {
+		if !draft {
+			return nil, nil, ErrPublishedCampaignBranchChange
+		} else if *args.Branch == "" {
+			return nil, nil, ErrCampaignBranchBlank
+		} else {
+			campaign.Branch = *args.Branch
+		}
 	}
 
 	if draft {
