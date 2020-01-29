@@ -13,7 +13,7 @@ exports[`CloseDeleteCampaignPrompt renders 1`] = `
       </span>
     </summary>
     <div
-      className="c"
+      className="position-absolute campaign-prompt__details-menu"
     >
       <div
         className="card mt-1"
@@ -27,16 +27,13 @@ exports[`CloseDeleteCampaignPrompt renders 1`] = `
           <div
             className="form-group"
           >
-            <input
-              checked={true}
-              id="checkbox-campaign-prompt-Delete"
-              onChange={[Function]}
-              type="checkbox"
-            />
-             
-            <label
-              htmlFor="checkbox-campaign-prompt-Delete"
-            >
+            <label>
+              <input
+                checked={true}
+                onChange={[Function]}
+                type="checkbox"
+              />
+               
               Close all 
               2
                

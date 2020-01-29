@@ -13,8 +13,6 @@ interface Props {
     onButtonClick: () => void
     buttonClassName?: string
     buttonDisabled?: boolean
-
-    className?: string
 }
 
 /**
@@ -31,7 +29,6 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
     onButtonClick,
     buttonClassName = '',
     buttonDisabled,
-    className,
 }) => {
     const detailsMenuRef = React.createRef<HTMLDetailsElement>()
     // Global click event listener, used for detecting interaction with other elements. Closes the menu then.
@@ -52,18 +49,17 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
         <>
             <details className="campaign-prompt__details" ref={detailsMenuRef}>
                 <summary>{summary}</summary>
-                <div className={className}>
+                <div className="position-absolute campaign-prompt__details-menu">
                     <div className="card mt-1">
                         <div className="card-body">
                             {message}
                             <div className="form-group">
-                                <input
-                                    id={`checkbox-campaign-prompt-${buttonText}`}
-                                    type="checkbox"
-                                    checked={closeChangesets}
-                                    onChange={e => onCloseChangesetsToggle(e.target.checked)}
-                                />{' '}
-                                <label htmlFor={`checkbox-campaign-prompt-${buttonText}`}>
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={closeChangesets}
+                                        onChange={e => onCloseChangesetsToggle(e.target.checked)}
+                                    />{' '}
                                     Close all {changesetsCount} {pluralize('changeset', changesetsCount)} on code hosts
                                 </label>
                             </div>

@@ -414,7 +414,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                 onButtonClick={onClose}
                                                 buttonClassName="btn-secondary"
                                                 buttonDisabled={mode === 'deleting' || mode === 'closing'}
-                                                className="position-absolute campaign-details__details-menu"
                                             />
                                         )}
                                         <CloseDeleteCampaignPrompt
@@ -431,7 +430,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             onButtonClick={onDelete}
                                             buttonClassName="btn-danger"
                                             buttonDisabled={mode === 'deleting' || mode === 'closing'}
-                                            className="position-absolute campaign-details__details-menu"
                                         />
                                     </>
                                 )

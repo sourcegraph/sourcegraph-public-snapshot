@@ -21222,7 +21222,7 @@ Array [
             </span>
           </summary>
           <div
-            className="position-absolute campaign-details__details-menu"
+            className="position-absolute campaign-prompt__details-menu"
           >
             <div
               className="card mt-1"
@@ -21232,24 +21232,21 @@ Array [
               >
                 <p>
                   Close campaign 
-                  <b>
+                  <strong>
                     n
-                  </b>
+                  </strong>
                   ?
                 </p>
                 <div
                   className="form-group"
                 >
-                  <input
-                    checked={false}
-                    id="checkbox-campaign-prompt-Close"
-                    onChange={[Function]}
-                    type="checkbox"
-                  />
-                   
-                  <label
-                    htmlFor="checkbox-campaign-prompt-Close"
-                  >
+                  <label>
+                    <input
+                      checked={false}
+                      onChange={[Function]}
+                      type="checkbox"
+                    />
+                     
                     Close all 
                     2
                      
@@ -21280,7 +21277,7 @@ Array [
             </span>
           </summary>
           <div
-            className="position-absolute campaign-details__details-menu"
+            className="position-absolute campaign-prompt__details-menu"
           >
             <div
               className="card mt-1"
@@ -21298,16 +21295,13 @@ Array [
                 <div
                   className="form-group"
                 >
-                  <input
-                    checked={false}
-                    id="checkbox-campaign-prompt-Delete"
-                    onChange={[Function]}
-                    type="checkbox"
-                  />
-                   
-                  <label
-                    htmlFor="checkbox-campaign-prompt-Delete"
-                  >
+                  <label>
+                    <input
+                      checked={false}
+                      onChange={[Function]}
+                      type="checkbox"
+                    />
+                     
                     Close all 
                     2
                      
