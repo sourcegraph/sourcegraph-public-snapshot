@@ -162,7 +162,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             unblockHistoryRef.current()
             unblockHistoryRef.current = history.block('Do you want to discard this campaign?')
         }
-        return unblockHistoryRef.current
+        return () => unblockHistoryRef.current()
     }, [campaignID, history])
 
     const previewCampaignPlans = useMemo(() => new Subject<GQL.ID>(), [])
