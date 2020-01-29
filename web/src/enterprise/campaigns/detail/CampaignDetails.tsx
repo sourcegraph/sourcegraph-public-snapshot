@@ -404,7 +404,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                 }
                                                 message={
                                                     <p>
-                                                        Close campaign <b>{campaign.name}</b>?
+                                                        Close campaign <strong>{campaign.name}</strong>?
                                                     </p>
                                                 }
                                                 changesetsCount={campaign.changesets.totalCount}
