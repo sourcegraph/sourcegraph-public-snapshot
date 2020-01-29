@@ -92,7 +92,9 @@ var tlsExternal = conf.Cached(func() interface{} {
 		}
 		// We don't clean up the file since it has a process life time.
 		p, err := writeTempFile("gitserver*.crt", b.Bytes())
-		if err == nil {
+		if err != nil {
+			log15.Error("failed to create file holding tls.external.certificates for git", "error", err)
+		} else {
 			sslCAInfo = p
 		}
 	}
