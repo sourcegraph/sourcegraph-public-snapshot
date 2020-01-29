@@ -19,6 +19,7 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -354,7 +355,7 @@ func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 }
 
 type changesetLabelsConnectionResolver struct {
-	count int
+	labels github.LabelConnection
 }
 
 type changesetLabelResolver struct {
@@ -364,23 +365,30 @@ type changesetLabelResolver struct {
 }
 
 func (r changesetLabelsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
-	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, r.count)
-	for i := 0; i <= r.count; i++ {
+	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(r.labels.Nodes))
+	for _, label := range r.labels.Nodes {
 		resolvers = append(resolvers, &changesetLabelResolver{
-			text:        "Label",
-			color:       []string{"93ba13", "cccccc", "12ab41"}[i%3],
-			description: "Super awesome label",
+			text:        label.Name,
+			color:       label.Color,
+			description: label.Description,
 		})
 	}
 	return resolvers, nil
 }
 
 func (r changesetLabelsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(r.count), nil
+	return int32(len(r.labels.Nodes)), nil
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) (graphqlbackend.ChangesetLabelsConnectionResolver, error) {
-	return changesetLabelsConnectionResolver{count: 5}, nil
+	switch m := r.Metadata.(type) {
+	case *github.PullRequest:
+		return changesetLabelsConnectionResolver{labels: m.Labels}, nil
+	case *bitbucketserver.PullRequest:
+		return nil, errors.New("unknown changeset type")
+	default:
+		return nil, errors.New("unknown changeset type")
+	}
 }
 
 func (r *changesetLabelResolver) Text() string {
