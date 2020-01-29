@@ -368,7 +368,7 @@ func (r changesetLabelsConnectionResolver) Nodes(ctx context.Context) ([]graphql
 	for i := 0; i <= r.count; i++ {
 		resolvers = append(resolvers, &changesetLabelResolver{
 			text:        "Label",
-			color:       "93ba13",
+			color:       []string{"93ba13", "cccccc", "12ab41"}[i%3],
 			description: "Super awesome label",
 		})
 	}
@@ -387,10 +387,10 @@ func (r *changesetLabelResolver) Text() string {
 	return r.text
 }
 
-func (r *changesetLabelResolver) Color() string {
-	return r.color
+func (r *changesetLabelResolver) Color() *string {
+	return &r.color
 }
 
-func (r *changesetLabelResolver) Description() string {
-	return r.description
+func (r *changesetLabelResolver) Description() *string {
+	return &r.description
 }

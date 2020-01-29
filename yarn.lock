@@ -1789,7 +1789,8 @@
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.0.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^3.0.1":
   version "3.0.1"
@@ -5942,6 +5943,11 @@ collection-visit@^1.0.0:
   dependencies:
     map-visit "^1.0.0"
     object-visit "^1.0.0"
+
+color-brightness@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmjs.org/color-brightness/-/color-brightness-1.0.0.tgz#09e68f0d23a82f5231e814538d0eeb55029b766a"
+  integrity sha512-I9Yn1Gff/HW7LnYBtSmGDDM9jbyTYamf8KN/NXvFwNw7XL6yoQT0Fxs92EYNJACbnJthHIbRnNUVn45FhzNzow==
 
 color-convert@^1.9.0, color-convert@^1.9.1:
   version "1.9.3"
@@ -17758,7 +17764,8 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "23.0.1"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"

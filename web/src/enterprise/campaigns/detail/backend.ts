@@ -283,6 +283,14 @@ export const queryChangesets = (
                                 body
                                 state
                                 reviewState
+                                labels {
+                                    totalCount
+                                    nodes {
+                                        text
+                                        description
+                                        color
+                                    }
+                                }
                                 repository {
                                     name
                                     url
