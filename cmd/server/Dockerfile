@@ -26,7 +26,7 @@ COPY lsif/src /lsif/src
 RUN yarn --cwd /lsif
 RUN yarn --cwd /lsif run build
 
-# TODO: Make this image use our sourcegraph/alpine:3.9 base image (3.10?).
+# TODO: Make this image use our sourcegraph/alpine:3.10 base image
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
 
 ARG COMMIT_SHA="unknown"
