@@ -1,3 +1,5 @@
+@import './form/CloseDeleteCampaignPrompt';
+
 .campaign-details {
     &__property-label {
         // TODO: refactor to possibly css-grid
@@ -7,17 +9,6 @@
     }
     &__property-row {
         align-items: baseline;
-    }
-    &__details {
-        > summary {
-            list-style: none;
-        }
-        > summary::-webkit-details-marker {
-            display: none;
-        }
-        &[open] > summary > .btn {
-            @extend .active;
-        }
     }
     &__details-menu {
         z-index: 100;

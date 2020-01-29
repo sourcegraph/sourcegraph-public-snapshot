@@ -21212,7 +21212,7 @@ Array [
           Edit
         </button>
         <details
-          className="campaign-details__details"
+          className="campaign-prompt__details"
         >
           <summary>
             <span
@@ -21242,15 +21242,20 @@ Array [
                 >
                   <input
                     checked={false}
+                    id="checkbox-campaign-prompt-Close"
                     onChange={[Function]}
                     type="checkbox"
                   />
                    
-                  Close all 
-                  2
-                   
-                  changesets
-                   on code hosts
+                  <label
+                    htmlFor="checkbox-campaign-prompt-Close"
+                  >
+                    Close all 
+                    2
+                     
+                    changesets
+                     on code hosts
+                  </label>
                 </div>
                 <button
                   className="btn mr-1 btn-secondary"
@@ -21265,7 +21270,7 @@ Array [
           </div>
         </details>
         <details
-          className="campaign-details__details"
+          className="campaign-prompt__details"
         >
           <summary>
             <span
@@ -21295,15 +21300,20 @@ Array [
                 >
                   <input
                     checked={false}
+                    id="checkbox-campaign-prompt-Delete"
                     onChange={[Function]}
                     type="checkbox"
                   />
                    
-                  Close all 
-                  2
-                   
-                  changesets
-                   on code hosts
+                  <label
+                    htmlFor="checkbox-campaign-prompt-Delete"
+                  >
+                    Close all 
+                    2
+                     
+                    changesets
+                     on code hosts
+                  </label>
                 </div>
                 <button
                   className="btn mr-1 btn-danger"

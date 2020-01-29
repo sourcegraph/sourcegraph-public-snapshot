@@ -1,0 +1,13 @@
+.campaign-prompt {
+    &__details {
+        > summary {
+            list-style: none;
+        }
+        > summary::-webkit-details-marker {
+            display: none;
+        }
+        &[open] > summary > .btn {
+            @extend .active;
+        }
+    }
+}
