@@ -159,6 +159,10 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'go':
             return 'go'
 
+        // GraphQL
+        case 'graphql':
+            return 'graphql'
+
         // HAML
         case 'haml':
             return 'haml'
