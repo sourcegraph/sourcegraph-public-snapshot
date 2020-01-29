@@ -137,7 +137,7 @@ func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
 		cli = disabledClient{}
 	}
 	if cli == nil {
-		cli = http.DefaultClient
+		cli = httpcli.DefaultExternalClient
 	}
 
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {

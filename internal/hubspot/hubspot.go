@@ -9,11 +9,10 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/google/go-querystring/query"
-	"golang.org/x/net/context/ctxhttp"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 // Client is a HubSpot API client
@@ -33,6 +32,9 @@ func New(portalID, hapiKey string) *Client {
 // Send a POST request with form data to HubSpot APIs that accept
 // application/x-www-form-urlencoded data (e.g. the Forms API)
 func (c *Client) postForm(methodName string, baseURL *url.URL, suffix string, body interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
 	var data url.Values
 	switch body := body.(type) {
 	case map[string]string:
@@ -49,13 +51,7 @@ func (c *Client) postForm(methodName string, baseURL *url.URL, suffix string, bo
 	}
 
 	baseURL.Path = path.Join(baseURL.Path, suffix)
-	req, err := http.NewRequest("POST", baseURL.String(), strings.NewReader(data.Encode()))
-	if err != nil {
-		return wrapError(methodName, err)
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpcli.DefaultExternalClient.PostForm(ctx, baseURL.String(), data)
 	if err != nil {
 		return wrapError(methodName, err)
 	}
@@ -82,7 +78,7 @@ func (c *Client) postJSON(methodName string, baseURL *url.URL, reqPayload, respP
 		return wrapError(methodName, err)
 	}
 
-	resp, err := ctxhttp.Post(ctx, nil, baseURL.String(), "application/json", bytes.NewReader(data))
+	resp, err := httpcli.DefaultExternalClient.Post(ctx, baseURL.String(), "application/json", bytes.NewReader(data))
 	if err != nil {
 		return wrapError(methodName, err)
 	}
@@ -114,8 +110,9 @@ func (c *Client) get(methodName string, baseURL *url.URL, suffix string, params 
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
+	req = req.WithContext(ctx)
 
-	resp, err := ctxhttp.Do(ctx, nil, req)
+	resp, err := httpcli.DefaultExternalClient.Do(req)
 	if err != nil {
 		return wrapError(methodName, err)
 	}

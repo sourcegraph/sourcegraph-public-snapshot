@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -28,11 +29,8 @@ func TestCountGoImporters(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig) // reset
 
-	mockTransport := mockRoundTripper{
-		response: `{"results":[{"path":"w/x"},{"path":"y/z"}]}`,
-	}
-	countGoImportersHTTPClient = &http.Client{Transport: mockTransport}
-	defer func() { countGoImportersHTTPClient = nil }()
+	cleanup := mockCountGoImportersResponse(`{"results":[{"path":"w/x"},{"path":"y/z"}]}`)
+	defer cleanup()
 
 	Mocks.Repos.GetByName = func(_ context.Context, repoName api.RepoName) (*types.Repo, error) {
 		if repoName != wantRepoName {
@@ -73,16 +71,16 @@ func TestListGoPackagesInRepoImprecise(t *testing.T) {
 	})
 }
 
-type mockRoundTripper struct {
-	response string
-}
-
-func (t mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(bytes.NewBufferString(t.response)),
-		Header:     make(http.Header),
-	}, nil
+func mockCountGoImportersResponse(response string) (cleanup func()) {
+	orig := countGoImportersHTTPClient
+	countGoImportersHTTPClient.Doer = httpcli.DoerFunc(func(*http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewBufferString(response)),
+			Header:     make(http.Header),
+		}, nil
+	})
+	return func() { countGoImportersHTTPClient = orig }
 }
 
 func TestIsPossibleExternallyImportableGoPackageDir(t *testing.T) {

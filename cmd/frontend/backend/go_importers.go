@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"net/http"
 	"path"
 	"path/filepath"
 	"sort"
@@ -15,9 +14,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, error)
@@ -25,7 +24,7 @@ var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, erro
 var (
 	goImportersCountCache = rcache.NewWithTTL("go-importers-count", 14400) // 4 hours
 
-	countGoImportersHTTPClient *http.Client // mockable in tests
+	countGoImportersHTTPClient httpcli.Client = httpcli.DefaultExternalClient // mockable in tests
 )
 
 // CountGoImporters returns the number of Go importers for the repository's Go subpackages. This is
@@ -81,7 +80,7 @@ func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err er
 	// addressed in the future. See https://github.com/sourcegraph/sourcegraph/issues/2663.
 	for _, pkg := range goPackages {
 		// Assumes the import path is the same as the repo name - not always true!
-		response, err := ctxhttp.Get(ctx, countGoImportersHTTPClient, "https://api.godoc.org/importers/"+string(pkg))
+		response, err := countGoImportersHTTPClient.Get(ctx, "https://api.godoc.org/importers/"+string(pkg))
 		if err != nil {
 			return 0, err
 		}

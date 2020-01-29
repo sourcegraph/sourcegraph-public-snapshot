@@ -1,9 +1,13 @@
 package httpcli
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gregjones/httpcache"
@@ -115,6 +119,65 @@ func (f Factory) Client(base ...Opt) (*http.Client, error) {
 // will be wrapped by it before being returned from a call to Doer, but not Client.
 func NewFactory(stack Middleware, common ...Opt) *Factory {
 	return &Factory{stack: stack, common: common}
+}
+
+// Client is a wrapper around a Doer which provides convenience methods to
+// call Do. This is intended to make it easier to replace uses of
+// http.DefaultClient and ctxhttp package.
+type Client struct {
+	Doer
+}
+
+// Get issues a GET request via the Do function.
+func (c Client) Get(ctx context.Context, url string) (resp *http.Response, err error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return c.DoWithContext(ctx, req)
+}
+
+// Post issues a POST request via the Do function.
+func (c Client) Post(ctx context.Context, url string, bodyType string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", bodyType)
+	return c.DoWithContext(ctx, req)
+}
+
+// PostForm issues a POST request via the Do function.
+func (c Client) PostForm(ctx context.Context, url string, data url.Values) (*http.Response, error) {
+	return c.Post(ctx, url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+}
+
+// DoWithContext issues req with context ctx. It returns the context error in
+// case of the context expiring.
+func (c Client) DoWithContext(ctx context.Context, req *http.Request) (resp *http.Response, err error) {
+	resp, err = c.Do(req.WithContext(ctx))
+	// If we got an error, and the context has been canceled,
+	// the context's error is probably more useful.
+	if err != nil {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+		default:
+		}
+	}
+	return resp, err
+}
+
+// DefaultExternalClient is a global instance of the doer created by
+// NewExternalHTTPClientFactory.
+var DefaultExternalClient = newDefaultExternalClient()
+
+func newDefaultExternalClient() Client {
+	c, err := NewExternalHTTPClientFactory().Doer()
+	if err != nil {
+		panic("NewExternalHTTPClientFactory().Doer() should not error")
+	}
+	return Client{Doer: c}
 }
 
 //

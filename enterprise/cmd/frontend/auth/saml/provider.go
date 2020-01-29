@@ -22,8 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 const providerType = "saml"
@@ -265,7 +265,7 @@ func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byt
 		return []byte(c.identityProviderMetadata), nil
 	}
 
-	resp, err := ctxhttp.Get(ctx, nil, c.identityProviderMetadataURL.String())
+	resp, err := httpcli.DefaultExternalClient.Get(ctx, c.identityProviderMetadataURL.String())
 	if err != nil {
 		return nil, errors.WithMessage(err, "fetching SAML Identity Provider metadata")
 	}

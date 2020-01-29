@@ -14,8 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
 )
 
@@ -147,7 +147,8 @@ func revokeToken(ctx context.Context, p *provider, accessToken, tokenType string
 		return err
 	}
 	req.SetBasicAuth(p.config.ClientID, p.config.ClientSecret)
-	resp, err := ctxhttp.Do(ctx, nil, req)
+
+	resp, err := httpcli.DefaultExternalClient.DoWithContext(ctx, req)
 	if err != nil {
 		return err
 	}

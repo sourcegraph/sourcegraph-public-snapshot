@@ -15,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -24,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -169,7 +169,7 @@ func externalServiceKinds(ctx context.Context) ([]string, error) {
 // (returned by Last and IsPending).
 func check(ctx context.Context) (*Status, error) {
 	doCheck := func() (updateVersion string, err error) {
-		resp, err := ctxhttp.Get(ctx, nil, updateURL(ctx))
+		resp, err := httpcli.DefaultExternalClient.Get(ctx, updateURL(ctx))
 		if err != nil {
 			return "", err
 		}

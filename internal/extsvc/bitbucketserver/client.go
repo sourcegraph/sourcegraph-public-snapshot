@@ -75,12 +75,12 @@ type Client struct {
 }
 
 // NewClient returns a new Bitbucket Server API client at url. If a nil
-// httpClient is provided, http.DefaultClient will be used. To use API methods
-// which require authentication, set the Token or Username/Password fields of
-// the returned client.
+// httpClient is provided, httpcli.DefaultExternalClient will be used. To use
+// API methods which require authentication, set the Token or
+// Username/Password fields of the returned client.
 func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
 	if httpClient == nil {
-		httpClient = http.DefaultClient
+		httpClient = httpcli.DefaultExternalClient
 	}
 
 	httpClient = requestCounter.Doer(httpClient, categorize)

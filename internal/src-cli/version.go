@@ -1,14 +1,15 @@
 package srccli
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"sort"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/linkheader"
 )
 
@@ -90,7 +91,7 @@ func releaseVersions(url string) ([]*semver.Version, error) {
 // non-prerelease items with a valid semver tag and the url for the next page
 // of results (if one exists).
 func releaseVersionsPage(url string) ([]*semver.Version, string, error) {
-	resp, err := http.DefaultClient.Get(url)
+	resp, err := httpcli.DefaultExternalClient.Get(context.Background(), url)
 	if err != nil {
 		return nil, "", err
 	}

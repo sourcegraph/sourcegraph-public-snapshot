@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/pkg/errors"
 )
@@ -87,7 +88,7 @@ func Post(payload *Payload, webhookURL string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+	resp, err := httpcli.DefaultExternalClient.DoWithContext(ctx, req)
 	if err != nil {
 		return errors.Wrap(err, "slack: http request")
 	}
