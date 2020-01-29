@@ -55,7 +55,7 @@ export const changesetCheckStateIcons: Record<ChangesetCheckState, MdiReactIconC
 export const changesetCheckStateColors: Record<ChangesetCheckState, string> = {
     [ChangesetCheckState.PENDING]: 'text-warning',
     [ChangesetCheckState.PASSED]: 'text-success',
-    [ChangesetCheckState.FAILED]: 'text-error',
+    [ChangesetCheckState.FAILED]: 'text-danger',
 }
 
 export const changesetCheckStateTooltips: Record<ChangesetCheckState, string> = {

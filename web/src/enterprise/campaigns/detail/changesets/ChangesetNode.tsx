@@ -137,12 +137,14 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <DiffStat {...fileDiffs.diffStat} expandedCounts={true}></DiffStat>
                 </span>
             )}
-            {node.__typename === 'ExternalChangeset' && node.checkState && (
-                <ChangesetCheckStateIcon
-                    className={changesetCheckStateColors[node.checkState]}
-                    data-tooltip={changesetCheckStateTooltips[node.checkState]}
-                />
-            )}
+            <span className="ml-1 changeset-node__check-status d-flex justify-content-end">
+                {node.__typename === 'ExternalChangeset' && node.checkState && (
+                    <ChangesetCheckStateIcon
+                        className={changesetCheckStateColors[node.checkState]}
+                        data-tooltip={changesetCheckStateTooltips[node.checkState]}
+                    />
+                )}
+            </span>
             {enablePublishing && node.__typename === 'ChangesetPlan' && !node.publicationEnqueued && (
                 <>
                     {publishError && <ErrorIcon data-tooltip={publishError.message} className="ml-2" />}
