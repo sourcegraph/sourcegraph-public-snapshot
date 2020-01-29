@@ -38,7 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- New optional `apiURL` option for Bitbucket Cloud code host connection [#8082](https://github.com/sourcegraph/sourcegraph/pull/8082)
+- New optional `apiURL` configuration option for Bitbucket Cloud code host connection [#8082](https://github.com/sourcegraph/sourcegraph/pull/8082)
 
 ## 3.12.3
 
