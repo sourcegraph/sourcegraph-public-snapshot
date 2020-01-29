@@ -46,13 +46,13 @@ Short overview:
 
 Read on for the longer version.
 
-**Note about scalability**: the patches are generated on the machine on which the `src` CLI tool is being run. You can tune the number of parallel jobs with the `-j` parameter. If you still run into performance issues, feel free to use a bigger machine, possibly closer to your Sourcegraph instance so that downloading archives of repositories is faster.
+> **Note about scalability**: the patches are generated on the machine on which the `src` CLI tool is being run. That means archives of the repositories in a campaign have to be downloaded from your Sourcegraph instance to the local machine. We're working on remote execution of campaign actions. For now feel free to use a bigger machine, possibly closer to your Sourcegraph instance so that downloading archives of repositories is faster, and use the `-j` parameter to tune the number of parallel jobs being executed.
 
 #### Defining an action
 
 The first thing we need is a definition of an "action". An action is what produces a patch and describes what commands or Docker containers to run over which repositories.
 
-**Note**: At the moment only two `"type"`s of steps are supported: `"docker"` and `"command"`. See `src actions exec -help` for more information.
+> **Note**: At the moment only two `"type"`s of steps are supported: `"docker"` and `"command"`. See `src actions exec -help` for more information.
 
 Here is an example defintion of an action:
 
@@ -79,7 +79,7 @@ Here is an example defintion of an action:
 
 This action runs over every repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
 
-The first step creates an `INSTALL.md` file by running `sh` in each repository on the machine on which `src` is executed.
+The first step, a `"command"` step, creates an `INSTALL.md` file by running `sh` in a temporary copy of each repository. **This is executed on the machine on which `src` is being run.**
 
 The second step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
 
