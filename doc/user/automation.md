@@ -50,9 +50,11 @@ Read on for the longer version.
 
 #### Defining an action
 
-The first thing we need is a definition of an "action". An action is what produces a patch and describes what commands and Docker containers to run over which repositories.
+The first thing we need is a definition of an "action". An action is what produces a patch and describes what commands or Docker containers to run over which repositories.
 
-Example:
+**Note**: At the moment only two `"type"`s of steps are supported: `"docker"` and `"command"`. See `src actions exec -help` for more information.
+
+Here is an example defintion of an action:
 
 ```json
 {
