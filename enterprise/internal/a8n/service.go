@@ -158,6 +158,10 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 		return ErrCampaignNameBlank
 	}
 
+	if c.Branch == "" {
+		return ErrCampaignBranchBlank
+	}
+
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -292,15 +296,16 @@ func RunChangesetJob(
 	// branches and new changesets.
 	// We should probably persist the `headRefName` on `ChangesetJob` and keep
 	// it stable across retries and only set it the first time.
-	headRefName := fmt.Sprintf("sourcegraph/%s-%d", "campaign", c.CreatedAt.Unix())
+	headRefName := fmt.Sprintf("sourcegraph/%s", c.Branch)
 
-	_, err = gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	ref, err := gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
 		BaseCommit: campaignJob.Rev,
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 		// will fail with "corrupt patch at line <N>" where N is the last line.
 		Patch:     campaignJob.Diff + "\n",
 		TargetRef: headRefName,
+		UniqueRef: true,
 		CommitInfo: protocol.PatchCommitInfo{
 			Message:     c.Name,
 			AuthorName:  "Sourcegraph Bot",
@@ -377,7 +382,7 @@ func RunChangesetJob(
 		Title:   c.Name,
 		Body:    body,
 		BaseRef: baseRef,
-		HeadRef: git.EnsureRefPrefix(headRefName),
+		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,
 		Changeset: &a8n.Changeset{
 			RepoID:      int32(repo.ID),
@@ -679,12 +684,19 @@ type UpdateCampaignArgs struct {
 	Campaign    int64
 	Name        *string
 	Description *string
+	Branch      *string
 	Plan        *int64
 }
 
 // ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
+
+var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
+
+// ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
+// attempt to change branch in a published campaign.
+var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch cannot be changed")
 
 // UpdateCampaign updates the Campaign with the given arguments.
 func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *a8n.Campaign, detachedChangesets []*a8n.Changeset, err error) {
@@ -737,7 +749,17 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "getting latest changesetjob creation time")
 	}
-	if changesetCreation.IsZero() {
+
+	draft := changesetCreation.IsZero()
+	if args.Branch != nil && !draft {
+		return nil, nil, ErrPublishedCampaignBranchChange
+	} else if *args.Branch == "" {
+		return nil, nil, ErrCampaignBranchBlank
+	} else {
+		campaign.Branch = *args.Branch
+	}
+
+	if draft {
 		// If the campaign hasn't been published yet, we can simply update the
 		// attributes because no ChangesetJobs have been created yet.
 		// If not all ChangesetJobs have been created yet, that means the Campaign itself

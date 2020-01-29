@@ -1004,6 +1004,7 @@ var createCampaignQueryFmtstr = `
 INSERT INTO campaigns (
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1013,11 +1014,12 @@ INSERT INTO campaigns (
   campaign_plan_id,
   closed_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1046,6 +1048,7 @@ func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		createCampaignQueryFmtstr,
 		c.Name,
 		c.Description,
+		c.Branch,
 		c.AuthorID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
@@ -1104,6 +1107,7 @@ UPDATE campaigns
 SET (
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1117,6 +1121,7 @@ RETURNING
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1139,6 +1144,7 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		updateCampaignQueryFmtstr,
 		c.Name,
 		c.Description,
+		c.Branch,
 		c.AuthorID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
@@ -1232,6 +1238,7 @@ SELECT
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -2573,9 +2580,11 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&c.ID,
 		&c.Name,
 		&c.Description,
+		&c.Branch,
 		&c.AuthorID,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
+		&c.Draft,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},

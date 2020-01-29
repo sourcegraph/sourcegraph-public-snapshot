@@ -83,6 +83,9 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return out, err
 	}
 
+	if req.UniqueRef {
+	}
+
 	tmpGitPathEnv := "GIT_DIR=" + filepath.Join(tmpRepoDir, ".git")
 
 	tmpObjectsDir := filepath.Join(tmpRepoDir, ".git", "objects")

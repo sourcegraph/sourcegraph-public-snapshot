@@ -432,6 +432,9 @@ input CreateCampaignInput {
     # The description of the campaign as Markdown.
     description: String!
 
+    # The branch name
+    branch: String! 
+
     # An optional reference to a completed campaign plan that was previewed before this mutation.
     # If null, existing changesets can be added manually.
     # If set, no changesets can be added manually, they will be created by Sourcegraph
@@ -454,6 +457,9 @@ input UpdateCampaignInput {
 
     # The updated name of the campaign (if non-null).
     name: String
+
+    # The branch name
+    branch: String
 
     # The updated description of the campaign as Markdown (if non-null).
     description: String

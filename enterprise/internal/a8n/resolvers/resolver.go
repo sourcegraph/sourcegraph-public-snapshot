@@ -212,6 +212,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	campaign := &a8n.Campaign{
 		Name:        args.Input.Name,
 		Description: args.Input.Description,
+		Branch:      args.Input.Branch,
 		AuthorID:    user.ID,
 	}
 
