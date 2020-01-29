@@ -35,19 +35,11 @@ function inviteUserToOrganization(
         }
     ).pipe(
         map(({ data, errors }) => {
-            const eventData = {
-                organization: {
-                    invite: {
-                        username,
-                    },
-                    org_id: organization,
-                },
-            }
             if (!data || !data.inviteUserToOrganization || (errors && errors.length > 0)) {
-                eventLogger.log('InviteOrgMemberFailed', eventData)
+                eventLogger.log('InviteOrgMemberFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('OrgMemberInvited', eventData)
+            eventLogger.log('OrgMemberInvited')
             return data.inviteUserToOrganization
         })
     )
@@ -149,16 +141,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                 .pipe(
                     tap(e => e.preventDefault()),
                     withLatestFrom(orgChanges, this.usernameChanges),
-                    tap(([, orgId, username]) =>
-                        eventLogger.log('InviteOrgMemberClicked', {
-                            organization: {
-                                invite: {
-                                    username,
-                                },
-                                org_id: orgId,
-                            },
-                        })
-                    ),
+                    tap(() => eventLogger.log('InviteOrgMemberClicked')),
                     mergeMap(([, { orgID }, username]) =>
                         inviteUserToOrganization(username, orgID).pipe(
                             tap(() => this.props.onOrganizationUpdate()),

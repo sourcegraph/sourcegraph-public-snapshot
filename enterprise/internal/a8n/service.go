@@ -184,6 +184,10 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 var ErrNoCampaignJobs = errors.New("cannot create or update a Campaign without any changesets")
 
 func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *a8n.Campaign) error {
+	if c.CampaignPlanID == 0 {
+		return errors.New("cannot create changesets for campaign with no campaign plan")
+	}
+
 	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID:            c.CampaignPlanID,
 		Limit:                     -1,
@@ -401,12 +405,7 @@ func RunChangesetJob(
 		}
 
 		if outdated {
-			ucs, ok := src.(repos.UpdateChangesetSource)
-			if !ok {
-				return errors.Errorf("updating changesets on code host of repo %q is not implemented", repo.Name)
-			}
-
-			err := ucs.UpdateChangeset(ctx, &cs)
+			err := ccs.UpdateChangeset(ctx, &cs)
 			if err != nil {
 				return errors.Wrap(err, "updating changeset")
 			}
