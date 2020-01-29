@@ -2,14 +2,14 @@ package licensing
 
 import "strings"
 
+// License tags for different tiers and options.
 const (
-	// EnterpriseTag is the license tag for Enterprise.
-	EnterpriseTag = "basic"
-	// EnterpriseStarterTag is the license tag for Enterprise Starter.
-	// Deprecated: This exists for backwards compatibility, future licenses should use EnterprisePlusTags instead.
+	// Deprecated: This exists for backwards compatibility, future licenses should use EnterprisePlusTag instead.
 	EnterpriseStarterTag = "starter"
 	// EnterprisePlusTag is the license tag for Enterprise Plus.
 	EnterprisePlusTag = "plus"
+	// EliteTag is the license tag for Elite.
+	EliteTag = "elite"
 
 	// TrueUpUserCountTag is the license tag that indicates that the licensed user count can be
 	// exceeded and will be charged later.
@@ -17,15 +17,16 @@ const (
 )
 
 var (
-	// EnterpriseTags are the license tags for Enterprise.
-	EnterpriseTags = []string{EnterpriseTag}
+	// EnterpriseTags is the license tags for Enterprise.
+	// For historical reason, we have no license tags for the Enterprise tier.
+	EnterpriseTags []string
 	// EnterpriseStarterTags are the license tags for Enterprise Starter.
 	// Deprecated: This exists for backwards compatibility, future licenses should use EnterprisePlusTags instead.
 	EnterpriseStarterTags = []string{EnterpriseStarterTag}
 	// EnterprisePlusTags are the license tags for Enterprise Plus.
 	EnterprisePlusTags = []string{EnterprisePlusTag}
-	// EliteTags is the license tags for Elite (intentionally empty because it has no feature restrictions)
-	EliteTags = []string{}
+	// EliteTag are the license tags for Elite.
+	EliteTags = []string{EliteTag}
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
@@ -45,14 +46,14 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 	}
 
 	var name string
-	if hasTag(EnterpriseTag) {
-		name = "Enterprise"
+	if hasTag(EliteTag) {
+		name = "Elite"
 	} else if hasTag(EnterprisePlusTag) {
 		name = "Enterprise Plus"
 	} else if hasTag(EnterpriseStarterTag) {
 		name = "Enterprise Starter"
 	} else {
-		name = "Elite"
+		name = "Enterprise"
 	}
 
 	var misc []string

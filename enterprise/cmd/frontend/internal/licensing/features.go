@@ -49,19 +49,19 @@ func isFeatureEnabled(info license.Info, feature Feature) bool {
 	switch feature {
 	case FeatureCustomBranding:
 		// Custom branding only available in Enterprise Plus and Elite.
-		return !info.HasTag(EnterpriseTag) && !info.HasTag(EnterpriseStarterTag)
+		return info.HasTag(EnterprisePlusTag) || info.HasTag(EliteTag)
 	case FeatureACLs:
 		// ACLs only available in Enterprise Plus and Elite.
-		return !info.HasTag(EnterpriseTag) && !info.HasTag(EnterpriseStarterTag)
+		return info.HasTag(EnterprisePlusTag) || info.HasTag(EliteTag)
 	case FeatureRemoteExtensionsAllowDisallow:
 		// Explictly allowing/disallowing remote extensions by extension ID only available in Enterprise Plus and Elite.
-		return !info.HasTag(EnterpriseTag) && !info.HasTag(EnterpriseStarterTag)
+		return info.HasTag(EnterprisePlusTag) || info.HasTag(EliteTag)
 	case FeatureExtensionRegistry:
 		// Local extension registry only available in Elite.
-		return !info.HasTag(EnterpriseTag) && !info.HasTag(EnterpriseStarterTag) && !info.HasTag(EnterprisePlusTag)
+		return info.HasTag(EliteTag)
 	case FeatureAutomation:
 		// Automation only available in Elite.
-		return !info.HasTag(EnterpriseTag) && !info.HasTag(EnterpriseStarterTag) && !info.HasTag(EnterprisePlusTag)
+		return info.HasTag(EliteTag)
 	}
 	return false
 }
