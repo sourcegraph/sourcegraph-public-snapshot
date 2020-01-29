@@ -180,19 +180,20 @@ func writeTempFile(pattern string, data []byte) (path string, err error) {
 		return "", err
 	}
 
-	// Cleanup if we fail to write
 	defer func() {
+		if err1 := f.Close(); err == nil {
+			err = err1
+		}
+		// Cleanup if we fail to write
 		if err != nil {
+			path = ""
 			os.Remove(f.Name())
 		}
 	}()
 
 	n, err := f.Write(data)
 	if err == nil && n < len(data) {
-		err = io.ErrShortWrite
-	}
-	if err1 := f.Close(); err == nil {
-		err = err1
+		return "", io.ErrShortWrite
 	}
 
 	return f.Name(), err
