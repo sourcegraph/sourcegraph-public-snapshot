@@ -29,6 +29,7 @@ export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend gi
 # our enterprise build scripts.
 export server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
+cp -a ./lsif "$OUTPUT"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export bindir="$OUTPUT/usr/local/bin"
 mkdir -p "$bindir"
@@ -88,6 +89,11 @@ cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
 cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
 
 echo "--- docker build"
+echo "================================================"
+pwd
+echo "================================================"
+ls lsif
+echo "================================================"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
     --build-arg COMMIT_SHA \
