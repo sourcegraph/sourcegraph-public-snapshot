@@ -171,6 +171,20 @@ Object {
               >
                 Remove lodash
               </LinkOrSpan>
+              <span
+                className="ml-2"
+              >
+                <ChangesetLabel
+                  label={
+                    Object {
+                      "__typename": "ChangesetLabel",
+                      "color": "93ba13",
+                      "description": "Something is broken",
+                      "text": "bug",
+                    }
+                  }
+                />
+              </span>
             </React.Fragment>
           </h3>
           <Markdown

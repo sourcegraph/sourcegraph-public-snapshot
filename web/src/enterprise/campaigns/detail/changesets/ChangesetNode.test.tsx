@@ -87,6 +87,15 @@ describe('ChangesetNode', () => {
                                 nodes: [{ __typename: 'FileDiff' }],
                             },
                         },
+                        labels: {
+                            totalCount: 1,
+                            nodes: [{
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Something is broken',
+                                text: 'bug'
+                            }]
+                        },
                         repository: {
                             __typename: 'Repository',
                             name: 'sourcegraph',
