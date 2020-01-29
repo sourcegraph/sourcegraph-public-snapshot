@@ -315,6 +315,10 @@ func (l *eventLogs) PercentilesPerPeriod(
 	percentiles []float64,
 	opt *EventFilterOptions,
 ) ([]PercentileValue, error) {
+	if len(percentiles) == 0 {
+		return nil, fmt.Errorf("expected at least one percentile value in query")
+	}
+
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
 		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
