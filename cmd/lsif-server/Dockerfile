@@ -1,3 +1,13 @@
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS lsif-builder
+
+RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.16.3-r0
+RUN npm install -g yarn@1.17.3
+
+COPY lsif/package.json lsif/tsconfig.json lsif/yarn.lock /lsif/
+COPY lsif/src /lsif/src
+
+RUN yarn --cwd /lsif
+RUN yarn --cwd /lsif run build
 
 # TODO: Make this image use our sourcegraph/alpine:3.9 base image (3.10?).
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
@@ -18,8 +28,7 @@ ENV PGDATABASE=sg PGHOST=pgsql PGPORT=5432 PGSSLMODE=disable PGUSER=sg
 RUN apk update && apk add --no-cache \
     tini nodejs-current=12.4.0-r0
 
-# hadolint ignore=DL3022
-COPY --from=sourcegraph/lsif-server-builder:ci /lsif /lsif
+COPY --from=lsif-builder /lsif /lsif
 
 COPY . /
 
