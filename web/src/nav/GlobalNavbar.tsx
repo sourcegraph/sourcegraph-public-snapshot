@@ -82,22 +82,20 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        // Reads initial state from the props (i.e. URL parameters).
-        const query = parseSearchURLQuery(props.location.search || '')
-        if (query) {
-            if (props.interactiveSearchMode) {
-                const { navbarQuery } = convertPlainTextToInteractiveQuery(query)
-                props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
-            } else {
+        // In interactive search mode, the InteractiveModeInput component will handle updating the inputs.
+        if (!props.interactiveSearchMode) {
+            // Reads initial state from the props (i.e. URL parameters).
+            const query = parseSearchURLQuery(props.location.search || '')
+            if (query) {
                 props.onNavbarQueryChange({ query, cursorPosition: query.length })
+            } else {
+                // If we have no component state, then we may have gotten unmounted during a route change.
+                const query = props.location.state ? props.location.state.query : ''
+                props.onNavbarQueryChange({
+                    query,
+                    cursorPosition: query.length,
+                })
             }
-        } else {
-            // If we have no component state, then we may have gotten unmounted during a route change.
-            const query = props.location.state ? props.location.state.query : ''
-            props.onNavbarQueryChange({
-                query,
-                cursorPosition: query.length,
-            })
         }
     }
 
@@ -108,14 +106,8 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.location.search !== this.props.location.search) {
             const query = parseSearchURLQuery(this.props.location.search || '')
-            if (query) {
-                if (this.props.interactiveSearchMode) {
-                    const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(query)
-                    this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
-                    this.props.onFiltersInQueryChange(filtersInQuery)
-                } else {
-                    this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
-                }
+            if (query && !this.props.interactiveSearchMode) {
+                this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
             }
         }
     }

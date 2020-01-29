@@ -1,5 +1,4 @@
 import { convertPlainTextToInteractiveQuery } from './helpers'
-import { FiltersToTypeAndValue, FilterTypes } from '../../../../shared/src/search/interactive/util'
 
 describe('Search input helpers', () => {
     describe('convertPlainTextToInteractiveQuery', () => {
@@ -12,14 +11,14 @@ describe('Search input helpers', () => {
             expect(
                 newQuery.navbarQuery === 'foo' &&
                     newQuery.filtersInQuery ===
-                        ({
+                        {
                             case: {
                                 type: 'case' as const,
                                 value: 'yes',
                                 editable: false,
                                 negated: false,
                             },
-                        } as FiltersToTypeAndValue)
+                        }
             )
         })
         test('converts query with multiple filters', () => {
@@ -27,7 +26,7 @@ describe('Search input helpers', () => {
             expect(
                 newQuery.navbarQuery === 'foo' &&
                     newQuery.filtersInQuery ===
-                        ({
+                        {
                             case: {
                                 type: 'case' as const,
                                 value: 'yes',
@@ -40,7 +39,7 @@ describe('Search input helpers', () => {
                                 editable: false,
                                 negated: false,
                             },
-                        } as FiltersToTypeAndValue)
+                        }
             )
         })
     })

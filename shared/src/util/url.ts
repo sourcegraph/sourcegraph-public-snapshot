@@ -594,12 +594,10 @@ export function buildSearchURLQuery(
  */
 export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
     const fieldKeys = Object.keys(filtersInQuery)
-    const individualTokens: string[] = []
-    fieldKeys
+    return fieldKeys
         .filter(key => filtersInQuery[key].value.trim().length > 0)
-        .map(key => individualTokens.push(`${filtersInQuery[key].type}:${filtersInQuery[key].value}`))
-
-    return individualTokens.join(' ')
+        .map(key => `${filtersInQuery[key].negated ? '-' : ''}${filtersInQuery[key].type}:${filtersInQuery[key].value}`)
+        .join(' ')
 }
 
 function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {

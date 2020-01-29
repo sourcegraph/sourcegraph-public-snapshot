@@ -1,8 +1,21 @@
-import { FiltersToTypeAndValue, FilterTypes } from '../../../../shared/src/search/interactive/util'
+import {
+    FiltersToTypeAndValue,
+    FilterTypes,
+    isNegatedFilter,
+    resolveNegatedFilter,
+} from '../../../../shared/src/search/interactive/util'
 import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
 import { uniqueId } from 'lodash'
 import { isFiniteFilter } from './interactive/filters'
 
+/**
+ * Converts a plain text query into a an object containing the two components
+ * of an interactive mode query:
+ * - navbarQuery: any non-filter values in the query, which appears in the main query input
+ * - filtersInQuery: an object containing key-value pairs of filters and their values
+ *
+ * @param query a plain text query.
+ */
 export function convertPlainTextToInteractiveQuery(
     query: string
 ): { filtersInQuery: FiltersToTypeAndValue; navbarQuery: string } {
@@ -16,9 +29,10 @@ export function convertPlainTextToInteractiveQuery(
             if (member.token.type === 'filter' && member.token.filterValue) {
                 const filterType = member.token.filterType.token.value as FilterTypes
                 newFiltersInQuery[isFiniteFilter(filterType) ? filterType : uniqueId(filterType)] = {
-                    type: filterType,
+                    type: isNegatedFilter(filterType) ? resolveNegatedFilter(filterType) : filterType,
                     value: query.substring(member.token.filterValue.range.start, member.token.filterValue.range.end),
                     editable: false,
+                    negated: isNegatedFilter(filterType),
                 }
             } else if (member.token.type === 'literal' || member.token.type === 'quoted') {
                 newNavbarQuery = [newNavbarQuery, query.substring(member.range.start, member.range.end)]

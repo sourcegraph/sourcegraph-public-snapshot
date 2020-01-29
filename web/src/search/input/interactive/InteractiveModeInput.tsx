@@ -68,34 +68,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         const searchParams = new URLSearchParams(props.location.search)
         let filtersInQuery: FiltersToTypeAndValue = {}
 
-        const allFilters = [...filterTypeKeys, ...negatedFilters]
-        for (const filter of allFilters.filter(key => key !== FilterTypes.case)) {
-            const itemsOfType = searchParams.getAll(filter)
-            for (const item of itemsOfType) {
-                if (isNegatedFilter(filter)) {
-                    filtersInQuery[uniqueId(resolveNegatedFilter(filter))] = {
-                        type: resolveNegatedFilter(filter),
-                        value: item,
-                        editable: false,
-                        negated: true,
-                    }
-                } else {
-                    filtersInQuery[isFiniteFilter(filter) ? filter : uniqueId(filter)] = {
-                        type: filter,
-                        value: item,
-                        editable: false,
-                        negated: false,
-                    }
-                }
-            }
-        }
-
-        // This allows us to parse filters from the raw query in the `q=` parameter. This is useful
-        // when we are in interactive mode, but do not have a URL that is in the interactive mode format.
-        const onlyQueryParam = searchParams.get('q')
-        if (onlyQueryParam !== null && onlyQueryParam.length > 0) {
+        const query = searchParams.get('q')
+        if (query !== null && query.length > 0) {
             const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(
-                onlyQueryParam
+                query
             )
             filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
             this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
