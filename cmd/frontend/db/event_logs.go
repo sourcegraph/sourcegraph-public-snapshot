@@ -306,7 +306,15 @@ type PercentileValue struct {
 // `[.5, .9, .99]` will return the 50th, 90th, and 99th percentile values. Returns an array of length `periods`, with
 // one entry for each period in the time span. Each `PercentileValue` object in the result will contain exactly
 // `len(percentiles)` values.
-func (l *eventLogs) PercentilesPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, field string, percentiles []float64, opt *EventFilterOptions) ([]PercentileValue, error) {
+func (l *eventLogs) PercentilesPerPeriod(
+	ctx context.Context,
+	periodType PeriodType,
+	now time.Time,
+	periods int,
+	field string,
+	percentiles []float64,
+	opt *EventFilterOptions,
+) ([]PercentileValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
 		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
@@ -378,7 +386,16 @@ func (l *eventLogs) countPerPeriodBySQL(ctx context.Context, countExpr, interval
 	return counts, nil
 }
 
-func (l *eventLogs) calculatePercentilesPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, field string, percentiles []float64, conds []*sqlf.Query) ([]PercentileValue, error) {
+func (l *eventLogs) calculatePercentilesPerPeriodBySQL(
+	ctx context.Context,
+	interval *sqlf.Query,
+	period *sqlf.Query,
+	startDate time.Time,
+	endDate time.Time,
+	field string,
+	percentiles []float64,
+	conds []*sqlf.Query,
+) ([]PercentileValue, error) {
 	countByPeriodExprs := []*sqlf.Query{}
 	qExprs := []*sqlf.Query{}
 	for i, p := range percentiles {
