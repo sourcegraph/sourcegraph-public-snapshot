@@ -22,8 +22,8 @@ In order to use the Automation preview, a site-admin of your Sourcegraph instanc
 
 There are two types of Automation campaigns:
 
-- Manual campaigns to which you can manually add changesets (pull requests) and track their progress
-- Campaigns created from a set of patches
+- Manual campaigns to which you can manually add changesets (pull requests) and track their progress.
+- Campaigns created from a set of patches. With the `src` CLI tool you can not only create the campaign from an existing set of patches, but you can also _generate the patches_ for a number of repositories.
 
 ### Creating a manual campaign
 
@@ -34,7 +34,7 @@ There are two types of Automation campaigns:
 
 ### Creating a campaign from a set of patches
 
-**Required**: The [`src` CLI tool](https://github.com/sourcegraph/src-cli). 
+**Required**: The [`src` CLI tool](https://github.com/sourcegraph/src-cli). Make sure it is setup to point at your Sourcegraph instance by setting the `SRC_ENDPOINT` environment variable.
 
 Short overview:
 
@@ -97,9 +97,9 @@ $ src actions exec -f action.json
 
 This command is going to:
 
-1. Download or build the required Docker images.
-2. Download a copy of the repositories matched by the `"scopeQuery"` from the Sourcegraph instance.
-3. Execute the action in each repository in parallel (the maximum number of parallel jobs can be configured with `-j`, the default is number of cores on the machine)
+1. Download or build the required Docker images, if necessary.
+2. Download a ZIP archive of the repositories matched by the `"scopeQuery"` from the Sourcegraph instance to a local temporary directory in `/tmp`.
+3. Execute the action in each repository in parallel (the maximum number of parallel jobs can be configured with `-j`, the default is number of cores on the machine), with each step in an action being executed sequentially on the same copy of a repository. If the type of a step in an action is `"command"` the command will be executed in the temporary directory that contains the copy of the repository. If the type is `"docker"` then a container will be launched in which the repository is mounted under `/work`.
 4. Produce a diff for each repository between a fresh copy of the repository's contents and directory in which the action ran.
 
 The output can either be saved into a file by redirecting it:
