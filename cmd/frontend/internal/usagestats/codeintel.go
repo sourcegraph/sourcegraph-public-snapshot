@@ -69,12 +69,7 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 	if periods == 0 {
 		return []*types.CodeIntelUsagePeriod{}, nil
 	}
-
 	periods = periods - 1
-	startDate, err := startOfPeriod(periodType, periods)
-	if err != nil {
-		return nil, err
-	}
 
 	activityPeriods := []*types.CodeIntelUsagePeriod{}
 	for i := 0; i <= periods; i++ {
@@ -98,8 +93,10 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 	}
 
 	for eventName, getEventStatistic := range eventNames {
-		userCounts, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, startDate, periods, &db.CountUniqueUsersOptions{
-			ByEventName: &eventName,
+		userCounts, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
+			EventFilters: &db.EventFilterOptions{
+				ByEventName: eventName,
+			},
 		})
 		if err != nil {
 			return nil, err
@@ -110,8 +107,8 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 			getEventStatistic(activityPeriods[i]).UsersCount = int32(uc.Count)
 		}
 
-		eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, startDate, periods, &db.CountEventsOptions{
-			ByEventName: &eventName,
+		eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{
+			ByEventName: eventName,
 		})
 		if err != nil {
 			return nil, err
@@ -121,8 +118,8 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 			getEventStatistic(activityPeriods[i]).EventsCount = int32(uc.Count)
 		}
 
-		percentiles, err := db.EventLogs.PercentilesPerPeriod(ctx, periodType, startDate, periods, DurationField, DurationPercentiles, &db.PercentilesOptions{
-			ByEventName: &eventName,
+		percentiles, err := db.EventLogs.PercentilesPerPeriod(ctx, periodType, timeNow().UTC(), periods, DurationField, DurationPercentiles, &db.EventFilterOptions{
+			ByEventName: eventName,
 		})
 		if err != nil {
 			return nil, err
