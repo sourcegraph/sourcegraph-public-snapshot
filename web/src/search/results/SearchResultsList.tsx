@@ -305,7 +305,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     }
 
     public render(): React.ReactNode {
-        const parsedQuery = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
+        const parsedQuery = parseSearchURLQuery(this.props.location.search)
 
         return (
             <>

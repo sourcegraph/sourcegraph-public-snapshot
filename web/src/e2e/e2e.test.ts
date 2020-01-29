@@ -1625,7 +1625,7 @@ describe('e2e test suite', () => {
             // Search for repo:gorilla in the repo filter chip input
             await driver.page.keyboard.type('gorilla')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?repo=gorilla&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:gorilla&patternType=literal')
 
             // Edit the filter
             await driver.page.waitForSelector('.filter-input')
@@ -1635,7 +1635,7 @@ describe('e2e test suite', () => {
             // Press enter to lock in filter
             await driver.page.keyboard.press('Enter')
             // The main query input should be autofocused, so hit enter again to submit
-            await driver.assertWindowLocation('/search?repo=gorilla/mux&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:gorilla/mux&patternType=literal')
 
             // Add a file filter from search results page
             await driver.page.waitForSelector('.e2e-add-filter-button-file', { visible: true })
@@ -1644,10 +1644,10 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.type('README')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?repo=gorilla/mux&file=README&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:gorilla/mux+file:README&patternType=literal')
 
             // Delete filter
-            await driver.page.goto(sourcegraphBaseUrl + '/search?repo=gorilla/mux&q=&patternType=literal')
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:gorilla/mux&patternType=literal')
             await driver.page.waitForSelector('.e2e-filter-input__delete-button', { visible: true })
             await driver.page.click('.e2e-filter-input__delete-button')
             await driver.assertWindowLocation('/search?q=&patternType=literal')
@@ -1664,7 +1664,7 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.press('ArrowDown')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:%5Egithub%5C.com/gorilla/mux%24&patternType=literal')
 
             // Test cancelling editing an input with escape key
             await driver.page.click('.filter-input__button-text')
@@ -1672,14 +1672,14 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.type('/mux')
             await driver.page.keyboard.press('Escape')
             await driver.page.click('.e2e-search-button')
-            await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:%5Egithub%5C.com/gorilla/mux%24&patternType=literal')
 
             // Test cancelling editing an input by clicking outside close button
             await driver.page.click('.filter-input__button-text')
             await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('/mux')
             await driver.page.click('.e2e-search-button')
-            await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:%5Egithub%5C.com/gorilla/mux%24&patternType=literal')
         })
 
         test('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
@@ -1693,7 +1693,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?fork=no&q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+fork:no&patternType=literal')
             // Edit filter
             await driver.page.waitForSelector('.filter-input')
             await driver.page.waitForSelector('.e2e-filter-input__button-text-fork')
@@ -1701,7 +1701,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?fork=only&q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+fork:only&patternType=literal')
             // Edit filter by clicking dropdown menu
             await driver.page.waitForSelector('.e2e-filter-dropdown')
             await driver.page.click('.e2e-filter-dropdown')
@@ -1710,7 +1710,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?fork=no&q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+fork:no&patternType=literal')
         })
     })
 
