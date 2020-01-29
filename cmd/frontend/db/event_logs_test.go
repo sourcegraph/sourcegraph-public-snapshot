@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -67,26 +68,26 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	startDate, err := startOfPeriod(time.Now(), Daily, 2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	now := time.Now()
+	startDate, _ := calcStartDate(now, Daily, 2)
+	secondDay := startDate.Add(time.Hour * 24)
+	thirdDay := startDate.Add(time.Hour * 24 * 2)
 
 	events := []*Event{
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour)},
-		{Name: "foo", URL: "test", UserID: 2, Source: "WEB", Timestamp: startDate.Add(time.Hour * 2)},
-		{Name: "foo", URL: "test", UserID: 2, Source: "WEB", Timestamp: startDate.Add(time.Hour * 3)},
+		makeTestEvent(&Event{UserID: 1, Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: 1, Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: 2, Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: 2, Timestamp: startDate}),
 
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24)},
-		{Name: "foo", URL: "test", UserID: 2, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24).Add(time.Hour)},
-		{Name: "foo", URL: "test", UserID: 3, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24).Add(time.Hour * 2)},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24).Add(time.Hour * 3)},
+		makeTestEvent(&Event{UserID: 1, Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: 2, Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: 3, Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: 1, Timestamp: secondDay}),
 
-		{Name: "foo", URL: "test", UserID: 5, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2)},
-		{Name: "foo", URL: "test", UserID: 6, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2).Add(time.Hour)},
-		{Name: "foo", URL: "test", UserID: 7, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2).Add(time.Hour * 2)},
-		{Name: "foo", URL: "test", UserID: 8, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2).Add(time.Hour * 3)},
+		makeTestEvent(&Event{UserID: 5, Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: 6, Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: 7, Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: 8, Timestamp: thirdDay}),
 	}
 
 	for _, e := range events {
@@ -95,7 +96,7 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 		}
 	}
 
-	values, err := EventLogs.CountUniqueUsersPerPeriod(ctx, Daily, startDate, 2, nil)
+	values, err := EventLogs.CountUniqueUsersPerPeriod(ctx, Daily, now, 2, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,27 +113,27 @@ func TestEventLogs_CountEventsPerPeriod(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	startDate, err := startOfPeriod(time.Now(), Daily, 2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	now := time.Now()
+	startDate, _ := calcStartDate(now, Daily, 2)
+	secondDay := startDate.Add(time.Hour * 24)
+	thirdDay := startDate.Add(time.Hour * 24 * 2)
 
 	events := []*Event{
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour)},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 2)},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 3)},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 4)},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 5)},
+		makeTestEvent(&Event{Timestamp: startDate}),
+		makeTestEvent(&Event{Timestamp: startDate}),
+		makeTestEvent(&Event{Timestamp: startDate}),
+		makeTestEvent(&Event{Timestamp: startDate}),
+		makeTestEvent(&Event{Timestamp: startDate}),
+		makeTestEvent(&Event{Timestamp: startDate}),
 
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24)},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24).Add(time.Hour)},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24).Add(time.Hour * 2)},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24).Add(time.Hour * 3)},
+		makeTestEvent(&Event{Timestamp: secondDay}),
+		makeTestEvent(&Event{Timestamp: secondDay}),
+		makeTestEvent(&Event{Timestamp: secondDay}),
+		makeTestEvent(&Event{Timestamp: secondDay}),
 
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2)},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2).Add(time.Hour)},
-		{Name: "foo", URL: "test", UserID: 1, Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2).Add(time.Hour * 2)},
+		makeTestEvent(&Event{Timestamp: thirdDay}),
+		makeTestEvent(&Event{Timestamp: thirdDay}),
+		makeTestEvent(&Event{Timestamp: thirdDay}),
 	}
 
 	for _, e := range events {
@@ -141,7 +142,7 @@ func TestEventLogs_CountEventsPerPeriod(t *testing.T) {
 		}
 	}
 
-	values, err := EventLogs.CountEventsPerPeriod(ctx, Daily, startDate, 2, nil)
+	values, err := EventLogs.CountEventsPerPeriod(ctx, Daily, now, 2, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,29 +159,29 @@ func TestEventLogs_PercentilesPerPeriod(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	startDate, err := startOfPeriod(time.Now(), Daily, 2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	now := time.Now()
+	startDate, _ := calcStartDate(now, Daily, 2)
+	secondDay := startDate.Add(time.Hour * 24)
+	thirdDay := startDate.Add(time.Hour * 24 * 2)
 
 	events := []*Event{
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 10}`), Source: "WEB", Timestamp: startDate},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 20}`), Source: "WEB", Timestamp: startDate.Add(time.Hour)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 30}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 2)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 40}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 3)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 50}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 4)},
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 10}`), Timestamp: startDate}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 20}`), Timestamp: startDate}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 30}`), Timestamp: startDate}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 40}`), Timestamp: startDate}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 50}`), Timestamp: startDate}),
 
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 20}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 24)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 30}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 24).Add(time.Hour)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 40}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 24).Add(time.Hour * 2)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 50}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 24).Add(time.Hour * 3)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 60}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 24).Add(time.Hour * 4)},
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 20}`), Timestamp: secondDay}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 30}`), Timestamp: secondDay}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 40}`), Timestamp: secondDay}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 50}`), Timestamp: secondDay}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 60}`), Timestamp: secondDay}),
 
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 30}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 40}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2).Add(time.Hour)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 50}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2).Add(time.Hour * 2)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 60}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2).Add(time.Hour * 3)},
-		{Name: "foo", URL: "test", UserID: 1, Argument: json.RawMessage(`{"durationMs": 70}`), Source: "WEB", Timestamp: startDate.Add(time.Hour * 24 * 2).Add(time.Hour * 4)},
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 30}`), Timestamp: thirdDay}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 40}`), Timestamp: thirdDay}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 50}`), Timestamp: thirdDay}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 60}`), Timestamp: thirdDay}),
+		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 70}`), Timestamp: thirdDay}),
 	}
 
 	for _, e := range events {
@@ -189,7 +190,7 @@ func TestEventLogs_PercentilesPerPeriod(t *testing.T) {
 		}
 	}
 
-	values, err := EventLogs.PercentilesPerPeriod(ctx, Daily, startDate, 2, "durationMs", []float64{0.5, 0.8}, nil)
+	values, err := EventLogs.PercentilesPerPeriod(ctx, Daily, now, 2, "durationMs", []float64{0.5, 0.8}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,6 +198,19 @@ func TestEventLogs_PercentilesPerPeriod(t *testing.T) {
 	assertPercentileValue(t, values[0], startDate.Add(time.Hour*24*2), []float64{50, 62})
 	assertPercentileValue(t, values[1], startDate.Add(time.Hour*24), []float64{40, 52})
 	assertPercentileValue(t, values[2], startDate, []float64{30, 42})
+}
+
+// makeTestEvent sets the required (uninteresting) fields that are required on insertion
+// due to db constraints. This method will also add some sub-day jitter to the timestamp.
+func makeTestEvent(e *Event) *Event {
+	if e.UserID == 0 {
+		e.UserID = 1
+	}
+	e.Name = "foo"
+	e.URL = "test"
+	e.Source = "WEB"
+	e.Timestamp = e.Timestamp.Add(time.Minute * time.Duration(rand.Intn(60*12)))
+	return e
 }
 
 func assertUsageValue(t *testing.T, v UsageValue, start time.Time, count int) {
@@ -218,32 +232,4 @@ func assertPercentileValue(t *testing.T, v PercentileValue, start time.Time, val
 			t.Errorf("got Values[%d] %f, want %f", i, value, values[i])
 		}
 	}
-}
-
-//
-// Temporary
-
-func startOfPeriod(now time.Time, periodType PeriodType, periodsAgo int) (time.Time, error) {
-	switch periodType {
-	case Daily:
-		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo), nil
-	case Weekly:
-		return startOfWeek(now, periodsAgo), nil
-	case Monthly:
-		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -periodsAgo, 0), nil
-	}
-	return time.Time{}, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-}
-
-func startOfWeek(now time.Time, weeksAgo int) time.Time {
-	if weeksAgo > 0 {
-		return startOfWeek(now, 0).AddDate(0, 0, -7*weeksAgo)
-	}
-
-	// If weeksAgo == 0, start at timeNow(), and loop back by day until we hit a Sunday
-	date := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	for date.Weekday() != time.Sunday {
-		date = date.AddDate(0, 0, -1)
-	}
-	return date
 }

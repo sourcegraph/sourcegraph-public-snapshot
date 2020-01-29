@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -171,6 +172,20 @@ var periodByPeriodType = map[PeriodType]*sqlf.Query{
 	Monthly: sqlf.Sprintf("DATE_TRUNC('month', timestamp)"),
 }
 
+// calcStartDate calculates the the starting date of a number of periods given the period type.
+// from the current time supplied as `now`. Returns a second false value if the period type is illegal.
+func calcStartDate(now time.Time, periodType PeriodType, periodsAgo int) (time.Time, bool) {
+	switch periodType {
+	case Daily:
+		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo), true
+	case Weekly:
+		return timeutil.StartOfWeek(now, periodsAgo), true
+	case Monthly:
+		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -periodsAgo, 0), true
+	}
+	return time.Time{}, false
+}
+
 // calcEndDate calculates the the ending date of a number of periods given the period type.
 // Returns a second false value if the period type is illegal.
 func calcEndDate(startDate time.Time, periods int, periodType PeriodType) (time.Time, bool) {
@@ -202,7 +217,12 @@ type CountUniqueUsersOptions struct {
 
 // CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of a given type.
 // Returns an array array of length `periods`, with one entry for each period in the time span.
-func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
+func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
+	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.RegisteredOnly {
@@ -245,7 +265,12 @@ type CountEventsOptions struct {
 }
 
 // CountEventsPerPeriod provide a count of events in a given time span, broken up into periods of a given type.
-func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, opt *CountEventsOptions) ([]UsageValue, error) {
+func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountEventsOptions) ([]UsageValue, error) {
+	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.ByEventNamePrefix != "" {
@@ -293,7 +318,12 @@ type PercentilesOptions struct {
 // `[.5, .9, .99]` will return the 50th, 90th, and 99th percentile values. Returns an array of length `periods`, with
 // one entry for each period in the time span. Each `PercentileValue` object in the result will contain exactly
 // `len(percentiles)` values.
-func (l *eventLogs) PercentilesPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, field string, percentiles []float64, opt *PercentilesOptions) ([]PercentileValue, error) {
+func (l *eventLogs) PercentilesPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, field string, percentiles []float64, opt *PercentilesOptions) ([]PercentileValue, error) {
+	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.ByEventNamePrefix != "" {

@@ -4,11 +4,11 @@ package usagestats
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 const (
@@ -82,7 +82,7 @@ func ListRegisteredUsersToday(ctx context.Context) ([]int32, error) {
 
 // ListRegisteredUsersThisWeek returns a list of the registered users that were active this week.
 func ListRegisteredUsersThisWeek(ctx context.Context) ([]int32, error) {
-	start := startOfWeek(0)
+	start := timeutil.StartOfWeek(timeNow().UTC(), 0)
 	return db.EventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 7))
 }
 
@@ -141,42 +141,24 @@ func GetSiteUsageStatistics(ctx context.Context, opt *SiteUsageStatisticsOptions
 	}, nil
 }
 
-func startOfPeriod(periodType db.PeriodType, periodsAgo int) (time.Time, error) {
-	switch periodType {
-	case db.Daily:
-		now := timeNow().UTC()
-		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo), nil
-	case db.Weekly:
-		return startOfWeek(periodsAgo), nil
-	case db.Monthly:
-		now := timeNow().UTC()
-		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -periodsAgo, 0), nil
-	}
-	return time.Time{}, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-}
-
 // activeUsers returns counts of active users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
 func activeUsers(ctx context.Context, periodType db.PeriodType, periods int) ([]*types.SiteActivityPeriod, error) {
 	if periods == 0 {
 		return []*types.SiteActivityPeriod{}, nil
 	}
-
 	periods = periods - 1
-	startDate, err := startOfPeriod(periodType, periods)
+
+	uniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, nil)
 	if err != nil {
 		return nil, err
 	}
-	uniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, startDate, periods, nil)
-	if err != nil {
-		return nil, err
-	}
-	registeredUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, startDate, periods, &db.CountUniqueUsersOptions{
+	registeredUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
 		RegisteredOnly: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	integrationUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, startDate, periods, &db.CountUniqueUsersOptions{
+	integrationUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
 		IntegrationOnly: true,
 	})
 	if err != nil {
@@ -296,4 +278,15 @@ func stageUniqueUsers(startDate time.Time) (*types.Stages, error) {
 		Secure:    0,
 		Automate:  0,
 	}, nil
+}
+
+func minIntOrZero(a, b int) int {
+	min := b
+	if a < b {
+		min = a
+	}
+	if min < 0 {
+		return 0
+	}
+	return min
 }
