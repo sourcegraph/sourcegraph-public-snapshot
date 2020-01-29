@@ -16,7 +16,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 1. Run the Sourcegraph Docker image as a daemon:
 
    ```
-   docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.12.4
+   docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.12.3
    ```
 1. Navigate to the droplet's IP address to finish initializing Sourcegraph. If you have configured a
    DNS entry for the IP, configure `externalURL` to reflect that.
