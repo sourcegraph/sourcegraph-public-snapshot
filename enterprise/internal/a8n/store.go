@@ -1329,9 +1329,9 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 
 	switch opts.State {
 	case a8n.CampaignStateOpen:
-		preds = append(preds, sqlf.Sprintf("closed_at is null"))
+		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
 	case a8n.CampaignStateClosed:
-		preds = append(preds, sqlf.Sprintf("closed_at is not null"))
+		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
 	return sqlf.Sprintf(
