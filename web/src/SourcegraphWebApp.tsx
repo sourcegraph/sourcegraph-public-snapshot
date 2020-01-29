@@ -55,7 +55,6 @@ import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
-import { convertPlainTextToInteractiveQuery } from './search/input/helpers'
 import { generateFiltersQuery } from '../../shared/src/util/url'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {

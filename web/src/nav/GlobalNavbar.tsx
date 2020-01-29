@@ -26,7 +26,6 @@ import { InteractiveModeInput } from '../search/input/interactive/InteractiveMod
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
-import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
 
 interface Props
     extends SettingsCascadeProps,

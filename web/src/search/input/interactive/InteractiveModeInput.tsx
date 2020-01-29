@@ -17,14 +17,7 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { ThemePreferenceProps } from '../../../theme'
 import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
-import {
-    FiltersToTypeAndValue,
-    filterTypeKeys,
-    FilterTypes,
-    negatedFilters,
-    isNegatedFilter,
-    resolveNegatedFilter,
-} from '../../../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue, FilterTypes } from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
 import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
@@ -70,9 +63,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
         const query = searchParams.get('q')
         if (query !== null && query.length > 0) {
-            const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(
-                query
-            )
+            const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
             filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
             this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
         }
