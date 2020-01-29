@@ -68,7 +68,7 @@ func NewParser(ctagsCommand string) (Parser, error) {
 	// }
 
 	cmd := exec.Command(ctagsCommand, "--_interactive="+opt, "--fields=*",
-		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,GraphQL,haskell,Java,JavaScript,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Pascal,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,SystemVerilog,Tcl,typescript,tsx,Verilog,VHDL,Vim",
+		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,GraphQL,Groovy,haskell,Java,JavaScript,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Pascal,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,SystemVerilog,Tcl,typescript,tsx,Verilog,VHDL,Vim",
 		"--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass",
 	)
 	in, err := cmd.StdinPipe()
