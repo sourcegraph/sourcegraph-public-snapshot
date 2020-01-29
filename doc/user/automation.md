@@ -65,6 +65,10 @@ Here is an example defintion of an action:
       "args": ["sh", "-c", "echo '# Installation' > INSTALL.md"]
     },
     {
+      "type": "command",
+      "args": ["sed", "-i", "", "s/No install instructions/See INSTALL.md/", "README.md"]
+    },
+    {
       "type": "docker",
       "dockerfile": "FROM alpine:3 \n CMD find /work -iname '*.md' -type f | xargs -n 1 sed -i s/this/that/g"
     },
@@ -81,9 +85,11 @@ This action runs over every repository that has `go-` in its name and doesn't ha
 
 The first step, a `"command"` step, creates an `INSTALL.md` file in the root directory of each repository by running `sh` in a temporary copy of each repository. **This is executed on the machine on which `src` is being run.** Note that the first element in `"args"` is the command itself.
 
-The second step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
+The second step, again a `"command"` step, runs the `sed` command to replace text in the `README.md` file in the root of each repository (the `-i ''` argument is only necessary for BSD versions of `sed` that usually come with macOS). Please note that the executed command is simply `sed` which means its arguments are _not_ expanded, as they would be in a shell. To achieve that, execute the `sed` as part of a shell invocation (using `sh -c` and passing in a single argument, for example, like in the first step).
 
-The third step pulls the `golang:1.13-alpine` image from Docker hub, starts a container from it and runs `go fix /work/...` in it.
+The third step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
+
+The fourth step pulls the `golang:1.13-alpine` image from Docker hub, starts a container from it and runs `go fix /work/...` in it.
 
 As you can see from these examples, the "output" of an action is the modified, local copy of a repository.
 
