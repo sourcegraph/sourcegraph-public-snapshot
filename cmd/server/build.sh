@@ -76,13 +76,7 @@ build_symbols() {
 }
 export -f build_symbols
 
-build_lsif() {
-    echo "--- build lsif-server"
-    IMAGE=sourcegraph/lsif-server-builder:ci ./lsif/build.sh
-}
-export -f build_lsif
-
-parallel_run {} ::: build_lsif build_symbols build_go_packages
+parallel_run {} ::: build_symbols build_go_packages
 
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
