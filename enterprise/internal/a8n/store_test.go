@@ -174,22 +174,22 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 				filterTests := []struct {
 					name  string
-					state CampaignState
+					state a8n.CampaignState
 					want  []*a8n.Campaign
 				}{
 					{
 						name:  "Any",
-						state: CampaignStateAny,
+						state: a8n.CampaignStateAny,
 						want:  campaigns,
 					},
 					{
 						name:  "Closed",
-						state: CampaignStateClosed,
+						state: a8n.CampaignStateClosed,
 						want:  campaigns[1:],
 					},
 					{
 						name:  "Open",
-						state: CampaignStateOpen,
+						state: a8n.CampaignStateOpen,
 						want:  campaigns[0:1],
 					},
 				}

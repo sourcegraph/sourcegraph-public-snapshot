@@ -1262,21 +1262,13 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 	return sqlf.Sprintf(getCampaignsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-type CampaignState int
-
-const (
-	CampaignStateAny CampaignState = iota
-	CampaignStateOpen
-	CampaignStateClosed
-)
-
 // ListCampaignsOpts captures the query options needed for
 // listing campaigns.
 type ListCampaignsOpts struct {
 	ChangesetID int64
 	Cursor      int64
 	Limit       int
-	State       CampaignState
+	State       a8n.CampaignState
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -1336,9 +1328,9 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 
 	switch opts.State {
-	case CampaignStateOpen:
+	case a8n.CampaignStateOpen:
 		preds = append(preds, sqlf.Sprintf("closed_at is null"))
-	case CampaignStateClosed:
+	case a8n.CampaignStateClosed:
 		preds = append(preds, sqlf.Sprintf("closed_at is not null"))
 	}
 

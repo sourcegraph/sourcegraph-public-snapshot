@@ -357,17 +357,6 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func parseCampaignState(s string) ee.CampaignState {
-	switch s {
-	case "OPEN":
-		return ee.CampaignStateOpen
-	case "CLOSED":
-		return ee.CampaignStateClosed
-	default:
-		return ee.CampaignStateAny
-	}
-}
-
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
 	if err := allowReadAccess(ctx); err != nil {
@@ -377,12 +366,11 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	if args.First != nil {
 		limit = int(*args.First)
 	}
-	state := parseCampaignState(args.State)
 	return &campaignsConnectionResolver{
 		store: r.store,
 		opts: ee.ListCampaignsOpts{
 			Limit: limit,
-			State: state,
+			State: a8n.CampaignState(args.State),
 		},
 	}, nil
 }
