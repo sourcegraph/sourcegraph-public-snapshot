@@ -280,12 +280,12 @@ type PercentileValue struct {
 
 // PercentilesOptions provides options for calculating percentiles over values of an field in the event's arguments.
 type PercentilesOptions struct {
-	// If non-nil, only include values from events with a given prefix.
-	ByEventNamePrefix *string
-	// If non-nil, only include values from events that match the given event name.
-	ByEventName *string
-	// If non-nil, only include values from events that matches a list of given event names
-	ByEventNames *[]string
+	// If set, only include values from events with a given prefix.
+	ByEventNamePrefix string
+	// If set, only include values from events that match the given event name.
+	ByEventName string
+	// If not empty, only include values from events that matches a list of given event names
+	ByEventNames []string
 }
 
 // PercentilesPerPeriod calculates the given percentiles over a field of the event's arguments in a given time span,
@@ -296,15 +296,15 @@ type PercentilesOptions struct {
 func (l *eventLogs) PercentilesPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, field string, percentiles []float64, opt *PercentilesOptions) ([]PercentileValue, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		if opt.ByEventNamePrefix != nil {
-			conds = append(conds, sqlf.Sprintf("name LIKE %s", *opt.ByEventNamePrefix+"%"))
+		if opt.ByEventNamePrefix != "" {
+			conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.ByEventNamePrefix+"%"))
 		}
-		if opt.ByEventName != nil {
-			conds = append(conds, sqlf.Sprintf("name = %s", *opt.ByEventName))
+		if opt.ByEventName != "" {
+			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
 		}
-		if opt.ByEventNames != nil {
+		if len(opt.ByEventNames) > 0 {
 			items := []*sqlf.Query{}
-			for _, v := range *opt.ByEventNames {
+			for _, v := range opt.ByEventNames {
 				items = append(items, sqlf.Sprintf("%s", v))
 			}
 			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
