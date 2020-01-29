@@ -15,6 +15,17 @@ RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctag
     rm -rf /tmp/ctags-$CTAGS_VERSION && \
     apk --no-cache --purge del build-deps
 
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS lsif-builder
+
+RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.16.3-r0
+RUN npm install -g yarn@1.17.3
+
+COPY lsif/package.json lsif/tsconfig.json lsif/yarn.lock /lsif/
+COPY lsif/src /lsif/src
+
+RUN yarn --cwd /lsif
+RUN yarn --cwd /lsif run build
+
 # TODO: Make this image use our sourcegraph/alpine:3.9 base image (3.10?).
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
 
@@ -54,8 +65,7 @@ COPY --from=comby/comby:0.13.0@sha256:71e43cb2ff42079e7a56199d02e05a9052a00f95cf
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:2b5a3fb@sha256:ef5529cafdc68d5a21edea472ee8ad966878b173044aa5c3db93bc3d84765b1f /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
-# hadolint ignore=DL3022
-COPY --from=sourcegraph/lsif-server-builder:ci /lsif /lsif
+COPY --from=lsif-builder /lsif /lsif
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:10.0.6@sha256:f681ceb9400f0d546601cbf827ac9c3db16acd37e810da0860cf05d4f42305d1 /bin/prometheus /usr/local/bin
