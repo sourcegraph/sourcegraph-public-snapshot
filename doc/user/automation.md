@@ -79,11 +79,13 @@ Here is an example defintion of an action:
 
 This action runs over every repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
 
-The first step, a `"command"` step, creates an `INSTALL.md` file by running `sh` in a temporary copy of each repository. **This is executed on the machine on which `src` is being run.**
+The first step, a `"command"` step, creates an `INSTALL.md` file in the root directory of each repository by running `sh` in a temporary copy of each repository. **This is executed on the machine on which `src` is being run.** Note that the first element in `"args"` is the command itself.
 
 The second step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
 
 The third step pulls the `golang:1.13-alpine` image from Docker hub, starts a container from it and runs `go fix /work/...` in it.
+
+As you can see from these examples, the "output" of an action is the modified, local copy of a repository.
 
 Save that definition in a file called `action.json` (or any other name of your choosing).
 
@@ -99,7 +101,7 @@ This command is going to:
 
 1. Download or build the required Docker images, if necessary.
 2. Download a ZIP archive of the repositories matched by the `"scopeQuery"` from the Sourcegraph instance to a local temporary directory in `/tmp`.
-3. Execute the action in each repository in parallel (the maximum number of parallel jobs can be configured with `-j`, the default is number of cores on the machine), with each step in an action being executed sequentially on the same copy of a repository. If the type of a step in an action is `"command"` the command will be executed in the temporary directory that contains the copy of the repository. If the type is `"docker"` then a container will be launched in which the repository is mounted under `/work`.
+3. Execute the action in each repository in parallel (the maximum number of parallel jobs can be configured with `-j`, the default is number of cores on the machine), with each step in an action being executed sequentially on the same copy of a repository. If a step in an action is of type `"command"` the command will be executed in the temporary directory that contains the copy of the repository. If the type is `"docker"` then a container will be launched in which the repository is mounted under `/work`.
 4. Produce a diff for each repository between a fresh copy of the repository's contents and directory in which the action ran.
 
 The output can either be saved into a file by redirecting it:
