@@ -185,7 +185,7 @@ func check(ctx context.Context) (*Status, error) {
 		if err != nil {
 			return "", err
 		}
-    resp, err := httpcli.DefaultExternalClient.Post(ctx, updateURL(ctx), "application/json", body)
+		resp, err := httpcli.DefaultExternalClient.Post(ctx, updateURL(ctx), "application/json", body)
 		if err != nil {
 			return "", err
 		}
