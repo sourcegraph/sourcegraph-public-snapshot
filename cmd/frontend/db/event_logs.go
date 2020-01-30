@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -171,6 +172,20 @@ var periodByPeriodType = map[PeriodType]*sqlf.Query{
 	Monthly: sqlf.Sprintf("DATE_TRUNC('month', timestamp)"),
 }
 
+// calcStartDate calculates the the starting date of a number of periods given the period type.
+// from the current time supplied as `now`. Returns a second false value if the period type is illegal.
+func calcStartDate(now time.Time, periodType PeriodType, periodsAgo int) (time.Time, bool) {
+	switch periodType {
+	case Daily:
+		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo), true
+	case Weekly:
+		return timeutil.StartOfWeek(now, periodsAgo), true
+	case Monthly:
+		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -periodsAgo, 0), true
+	}
+	return time.Time{}, false
+}
+
 // calcEndDate calculates the the ending date of a number of periods given the period type.
 // Returns a second false value if the period type is illegal.
 func calcEndDate(startDate time.Time, periods int, periodType PeriodType) (time.Time, bool) {
@@ -192,17 +207,28 @@ type CountUniqueUsersOptions struct {
 	RegisteredOnly bool
 	// If true, only include code host integration users. Otherwise, include all users.
 	IntegrationOnly bool
-	// If set, only include users that logged an event with a given prefix.
+	// If set, adds additional restrictions on the event types.
+	EventFilters *EventFilterOptions
+}
+
+// EventFilterOptions provides options for filtering events.
+type EventFilterOptions struct {
+	// If set, only include events with a given prefix.
 	ByEventNamePrefix string
-	// If set, only include users that logged a given event.
+	// If set, only include events with the given name.
 	ByEventName string
-	// If not empty, only include users that logged any event that matches a list of given event names
+	// If not empty, only include events that matche a list of given event names
 	ByEventNames []string
 }
 
 // CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of a given type.
 // Returns an array array of length `periods`, with one entry for each period in the time span.
-func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
+func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
+	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.RegisteredOnly {
@@ -211,18 +237,20 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 		if opt.IntegrationOnly {
 			conds = append(conds, sqlf.Sprintf("source = %s", integrationSource))
 		}
-		if opt.ByEventNamePrefix != "" {
-			conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.ByEventNamePrefix+"%"))
-		}
-		if opt.ByEventName != "" {
-			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
-		}
-		if len(opt.ByEventNames) > 0 {
-			items := []*sqlf.Query{}
-			for _, v := range opt.ByEventNames {
-				items = append(items, sqlf.Sprintf("%s", v))
+		if opt.EventFilters != nil {
+			if opt.EventFilters.ByEventNamePrefix != "" {
+				conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.EventFilters.ByEventNamePrefix+"%"))
 			}
-			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
+			if opt.EventFilters.ByEventName != "" {
+				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
+			}
+			if len(opt.EventFilters.ByEventNames) > 0 {
+				items := []*sqlf.Query{}
+				for _, v := range opt.EventFilters.ByEventNames {
+					items = append(items, sqlf.Sprintf("%s", v))
+				}
+				conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
+			}
 		}
 	}
 
@@ -234,18 +262,13 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
-// CountEventsOptions provides options for counting events.
-type CountEventsOptions struct {
-	// If set, only include users that logged an event with a given prefix.
-	ByEventNamePrefix string
-	// If set, only include users that logged a given event.
-	ByEventName string
-	// If not empty, only include users that logged any event that matches a list of given event names
-	ByEventNames []string
-}
-
 // CountEventsPerPeriod provide a count of events in a given time span, broken up into periods of a given type.
-func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodType, startDate time.Time, periods int, opt *CountEventsOptions) ([]UsageValue, error) {
+func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *EventFilterOptions) ([]UsageValue, error) {
+	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.ByEventNamePrefix != "" {
@@ -269,6 +292,61 @@ func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodT
 	}
 
 	return l.countEventsPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
+}
+
+// PercentileValue is a slice of Nth percentile values calculated from a field of events
+// in a time period starting on a given date.
+type PercentileValue struct {
+	Start  time.Time
+	Values []float64
+}
+
+// PercentilesPerPeriod calculates the given percentiles over a field of the event's arguments in a given time span,
+// broken up into periods of a given type. Percentiles should be supplied as floats in the range `[0, 1)`, such that
+// `[.5, .9, .99]` will return the 50th, 90th, and 99th percentile values. Returns an array of length `periods`, with
+// one entry for each period in the time span. Each `PercentileValue` object in the result will contain exactly
+// `len(percentiles)` values.
+func (l *eventLogs) PercentilesPerPeriod(
+	ctx context.Context,
+	periodType PeriodType,
+	now time.Time,
+	periods int,
+	field string,
+	percentiles []float64,
+	opt *EventFilterOptions,
+) ([]PercentileValue, error) {
+	if len(percentiles) == 0 {
+		return nil, fmt.Errorf("expected at least one percentile value in query")
+	}
+
+	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opt != nil {
+		if opt.ByEventNamePrefix != "" {
+			conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.ByEventNamePrefix+"%"))
+		}
+		if opt.ByEventName != "" {
+			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
+		}
+		if len(opt.ByEventNames) > 0 {
+			items := []*sqlf.Query{}
+			for _, v := range opt.ByEventNames {
+				items = append(items, sqlf.Sprintf("%s", v))
+			}
+			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
+		}
+	}
+
+	endDate, ok := calcEndDate(startDate, periods, periodType)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	return l.calculatePercentilesPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, field, percentiles, conds)
 }
 
 func (l *eventLogs) countUniqueUsersPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
@@ -310,6 +388,69 @@ func (l *eventLogs) countPerPeriodBySQL(ctx context.Context, countExpr, interval
 		return nil, err
 	}
 	return counts, nil
+}
+
+func (l *eventLogs) calculatePercentilesPerPeriodBySQL(
+	ctx context.Context,
+	interval *sqlf.Query,
+	period *sqlf.Query,
+	startDate time.Time,
+	endDate time.Time,
+	field string,
+	percentiles []float64,
+	conds []*sqlf.Query,
+) ([]PercentileValue, error) {
+	countByPeriodExprs := []*sqlf.Query{}
+	qExprs := []*sqlf.Query{}
+	for i, p := range percentiles {
+		name := fmt.Sprintf("p%d\n", i)
+		// Note: we can't go directly from jsonb -> integer in postgres 9.6, so we
+		// have to first cast it to a text type, and then to an integer to support
+		// queries on older instances.
+		countByPeriodExprs = append(countByPeriodExprs, sqlf.Sprintf(
+			"percentile_cont(%d) WITHIN GROUP (ORDER BY (argument->%s)::text::integer) AS "+name,
+			p,
+			field,
+		))
+
+		qExprs = append(qExprs, sqlf.Sprintf("COALESCE("+name+", 0)"))
+	}
+
+	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp, (%s)::interval) AS period", startDate, endDate, interval)
+	countByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, %s
+		FROM event_logs
+		WHERE (%s)
+		GROUP BY period`, period, sqlf.Join(countByPeriodExprs, ", "), sqlf.Join(conds, ") AND ("))
+	q := sqlf.Sprintf(`WITH all_periods AS (%s), values_by_period AS (%s)
+		SELECT all_periods.period, %s
+		FROM all_periods
+		LEFT OUTER JOIN values_by_period ON all_periods.period = (values_by_period.period)::timestamp
+		ORDER BY period DESC`, allPeriods, countByPeriod, sqlf.Join(qExprs, ", "))
+	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	values := []PercentileValue{}
+	for rows.Next() {
+		var v PercentileValue
+		v.Values = make([]float64, len(percentiles))
+		dest := []interface{}{&v.Start}
+		for i := range v.Values {
+			dest = append(dest, &v.Values[i])
+		}
+		err := rows.Scan(dest...)
+		if err != nil {
+			return nil, err
+		}
+		v.Start = v.Start.UTC()
+		values = append(values, v)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return values, nil
 }
 
 // CountUniqueUsersAll provides a count of unique active users in a given time span.
