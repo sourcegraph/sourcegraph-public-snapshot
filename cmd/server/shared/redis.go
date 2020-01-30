@@ -35,11 +35,10 @@ func maybeRedisStoreProcFile() (string, error) {
 
 func maybeRedisCacheProcFile() (string, error) {
 	return maybeRedisProcFile(redisProcfileConfig{
-		envVar:  "REDIS_CACHE_ENDPOINT",
-		name:    "redis-cache",
-		port:    "6380",
-		tmpl:    redisCacheConfTmpl,
-		dataDir: "redis-cache",
+		envVar: "REDIS_CACHE_ENDPOINT",
+		name:   "redis-cache",
+		port:   "6380",
+		tmpl:   redisCacheConfTmpl,
 	})
 }
 
@@ -58,7 +57,9 @@ func maybeRedisProcFile(c redisProcfileConfig) (string, error) {
 		return "", err
 	}
 
-	redisFixAOF(os.Getenv("DATA_DIR"), c)
+	if c.dataDir != "" {
+		redisFixAOF(os.Getenv("DATA_DIR"), c)
+	}
 
 	SetDefaultEnv(c.envVar, "127.0.0.1:"+c.port)
 

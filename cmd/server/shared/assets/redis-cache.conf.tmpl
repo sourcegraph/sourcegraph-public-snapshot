@@ -7,10 +7,8 @@ protected-mode no
 maxmemory 1gb
 maxmemory-policy allkeys-lru
 
-# live commit log to disk, additionally snapshots every 10 minutes
-dir {{ .Dir }}
-appendonly yes
-save 600 1
+# redis-cache is ephemeral
+appendonly no
 
 # least verbose logging
 loglevel warning
