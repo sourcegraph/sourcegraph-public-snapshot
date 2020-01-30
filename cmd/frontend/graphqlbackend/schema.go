@@ -521,19 +521,6 @@ type BackgroundProcessStatus {
     errors: [String!]!
 }
 
-type ChangesetLabel {
-    text: String!
-    # leaving this optional for code-hosts that don't have coloring (TODO: do such exist?)
-    color: String
-    # github has optional descriptions for labels, do we want to support that either?
-    description: String
-}
-
-type ChangesetLabelConnection {
-    totalCount: Int!
-    nodes: [ChangesetLabel!]!
-}
-
 # A collection of changesets.
 type Campaign implements Node {
     # The unique ID for the campaign.
@@ -685,6 +672,19 @@ type ChangesetPlan {
     publicationEnqueued: Boolean!
 }
 
+type ChangesetLabel {
+    text: String!
+    # leaving this optional for code-hosts that don't have coloring (TODO: do such exist?)
+    color: String!
+    # github has optional descriptions for labels, do we want to support that either?
+    description: String!
+}
+
+type ChangesetLabelConnection {
+    totalCount: Int!
+    nodes: [ChangesetLabel!]!
+}
+
 # A changeset in a code host (e.g. a PR on Github)
 type ExternalChangeset implements Node {
     # The unique ID for the changeset.
@@ -719,7 +719,7 @@ type ExternalChangeset implements Node {
     state: ChangesetState!
 
     # The labels attached to the changeset
-    labels: LabelConnection!
+    labels: ChangesetLabelConnection!
 
     # The external URL of the changeset on the code host.
     externalURL: ExternalLink!

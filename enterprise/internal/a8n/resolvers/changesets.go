@@ -355,7 +355,7 @@ func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 }
 
 type changesetLabelsConnectionResolver struct {
-	labels github.LabelConnection
+	labels []github.Label
 }
 
 type changesetLabelResolver struct {
@@ -364,28 +364,29 @@ type changesetLabelResolver struct {
 	description string
 }
 
-func (r changesetLabelsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
-	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(r.labels.Nodes))
-	for _, label := range r.labels.Nodes {
+func (r changesetLabelsConnectionResolver) Nodes() []graphqlbackend.ChangesetLabelResolver {
+	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(r.labels))
+	for _, label := range r.labels {
 		resolvers = append(resolvers, &changesetLabelResolver{
 			text:        label.Name,
 			color:       label.Color,
 			description: label.Description,
 		})
 	}
-	return resolvers, nil
+	return resolvers
 }
 
-func (r changesetLabelsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(len(r.labels.Nodes)), nil
+func (r changesetLabelsConnectionResolver) TotalCount() int32 {
+	return int32(len(r.labels))
 }
 
-func (r *changesetResolver) Labels(ctx context.Context) (graphqlbackend.ChangesetLabelsConnectionResolver, error) {
+func (r *changesetResolver) Labels() (graphqlbackend.ChangesetLabelsConnectionResolver, error) {
 	switch m := r.Metadata.(type) {
 	case *github.PullRequest:
-		return changesetLabelsConnectionResolver{labels: m.Labels}, nil
+		return changesetLabelsConnectionResolver{labels: m.Labels.Nodes}, nil
 	case *bitbucketserver.PullRequest:
-		return nil, errors.New("unknown changeset type")
+		// bitbucket server does not support labels
+		return changesetLabelsConnectionResolver{labels: []github.Label{}}, nil
 	default:
 		return nil, errors.New("unknown changeset type")
 	}
@@ -395,10 +396,10 @@ func (r *changesetLabelResolver) Text() string {
 	return r.text
 }
 
-func (r *changesetLabelResolver) Color() *string {
-	return &r.color
+func (r *changesetLabelResolver) Color() string {
+	return r.color
 }
 
-func (r *changesetLabelResolver) Description() *string {
-	return &r.description
+func (r *changesetLabelResolver) Description() string {
+	return r.description
 }

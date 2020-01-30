@@ -5944,11 +5944,6 @@ collection-visit@^1.0.0:
     map-visit "^1.0.0"
     object-visit "^1.0.0"
 
-color-brightness@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.npmjs.org/color-brightness/-/color-brightness-1.0.0.tgz#09e68f0d23a82f5231e814538d0eeb55029b766a"
-  integrity sha512-I9Yn1Gff/HW7LnYBtSmGDDM9jbyTYamf8KN/NXvFwNw7XL6yoQT0Fxs92EYNJACbnJthHIbRnNUVn45FhzNzow==
-
 color-convert@^1.9.0, color-convert@^1.9.1:
   version "1.9.3"
   resolved "https://registry.npmjs.org/color-convert/-/color-convert-1.9.3.tgz#bb71850690e1f136567de629d2d5471deda4c1e8"

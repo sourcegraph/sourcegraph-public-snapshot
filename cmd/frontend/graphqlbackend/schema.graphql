@@ -682,9 +682,9 @@ type ChangesetPlan {
 type ChangesetLabel {
     text: String!
     # leaving this optional for code-hosts that don't have coloring (TODO: do such exist?)
-    color: String
+    color: String!
     # github has optional descriptions for labels, do we want to support that either?
-    description: String
+    description: String!
 }
 
 type ChangesetLabelConnection {

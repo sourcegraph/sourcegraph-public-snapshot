@@ -225,13 +225,13 @@ type ExternalChangesetsConnectionResolver interface {
 
 type ChangesetLabelResolver interface {
 	Text() string
-	Color() *string
-	Description() *string
+	Color() string
+	Description() string
 }
 
 type ChangesetLabelsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]ChangesetLabelResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
+	Nodes() []ChangesetLabelResolver
+	TotalCount() int32
 }
 
 type ExternalChangesetResolver interface {
@@ -250,7 +250,7 @@ type ExternalChangesetResolver interface {
 	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
 	Head(ctx context.Context) (*GitRefResolver, error)
 	Base(ctx context.Context) (*GitRefResolver, error)
-	Labels(ctx context.Context) (ChangesetLabelsConnectionResolver, error)
+	Labels() (ChangesetLabelsConnectionResolver, error)
 }
 
 type ChangesetPlansConnectionResolver interface {
