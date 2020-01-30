@@ -118,7 +118,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             {node.labels.length > 0 && (
                                 <span className="ml-2">
                                     {node.labels.map((label, i) => (
-                                        <ChangesetLabel label={label} key={i} />
+                                        <ChangesetLabel label={label} key={label.name} />
                                     ))}
                                 </span>
                             )}
