@@ -89,12 +89,14 @@ describe('ChangesetNode', () => {
                         },
                         labels: {
                             totalCount: 1,
-                            nodes: [{
-                                __typename: 'ChangesetLabel',
-                                color: '93ba13',
-                                description: 'Something is broken',
-                                text: 'bug'
-                            }]
+                            nodes: [
+                                {
+                                    __typename: 'ChangesetLabel',
+                                    color: '93ba13',
+                                    description: 'Something is broken',
+                                    text: 'bug',
+                                },
+                            ],
                         },
                         repository: {
                             __typename: 'Repository',
