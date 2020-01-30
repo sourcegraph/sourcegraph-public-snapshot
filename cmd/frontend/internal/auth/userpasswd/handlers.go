@@ -47,8 +47,8 @@ func HandleSiteInit(w http.ResponseWriter, r *http.Request) {
 	handleSignUp(w, r, true)
 }
 
-// checkEmailAbuse performs abuse checks to prevent email abuse, i.e. users using emails of other
-// people whom they want to annoy.
+// checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
+// of other people whom they want to annoy.
 func checkEmailAbuse(ctx context.Context, addr string) (abused bool, reason string, err error) {
 	email, err := db.UserEmails.GetLatestVerificationSentEmail(ctx, addr)
 	if err != nil {
