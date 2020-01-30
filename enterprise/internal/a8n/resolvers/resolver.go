@@ -363,9 +363,11 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 	var opts ee.ListCampaignsOpts
-	if args.State != nil {
-		opts.State = a8n.CampaignState(*args.State)
+	state, err := parseCampaignState(args.State)
+	if err != nil {
+		return nil, err
 	}
+	opts.State = state
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
@@ -615,4 +617,18 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func parseCampaignState(s *string) (a8n.CampaignState, error) {
+	if s == nil {
+		return a8n.CampaignStateAny, nil
+	}
+	switch *s {
+	case "OPEN":
+		return a8n.CampaignStateOpen, nil
+	case "CLOSED":
+		return a8n.CampaignStateClosed, nil
+	default:
+		return a8n.CampaignStateAny, fmt.Errorf("unknown state %q", *s)
+	}
 }

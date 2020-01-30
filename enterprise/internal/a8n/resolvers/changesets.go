@@ -152,9 +152,11 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 	opts := ee.ListCampaignsOpts{
 		ChangesetID: r.Changeset.ID,
 	}
-	if args.State != nil {
-		opts.State = a8n.CampaignState(*args.State)
+	state, err := parseCampaignState(args.State)
+	if err != nil {
+		return nil, err
 	}
+	opts.State = state
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
