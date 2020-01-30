@@ -681,7 +681,7 @@ type ChangesetPlan {
 
 type ChangesetLabel {
     text: String!
-    # Label color, defined in hex without the #. E.g., #(93ba13)
+    # Label color, defined in hex without the #. E.g., 93ba13
     color: String!
     # Descriptive text to support the understandability of the labels meaning
     description: String!
