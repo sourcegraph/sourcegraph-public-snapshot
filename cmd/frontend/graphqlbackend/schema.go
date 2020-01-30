@@ -3546,13 +3546,25 @@ type Site implements SettingsSubject {
     productSubscription: ProductSubscriptionStatus!
     # Usage statistics for this site.
     usageStatistics(
-        # Days of history.
+        # Days of history (based on current UTC time).
         days: Int
-        # Weeks of history.
+        # Weeks of history (based on current UTC time).
         weeks: Int
-        # Months of history.
+        # Months of history (based on current UTC time).
         months: Int
     ): SiteUsageStatistics!
+    # (experimental) The extended usage statistics API may change substantially in the near
+    # future as we continue to adjust it for our use cases. Changes will not be documented
+    # in the CHANGELOG during this time.
+    # Usage statistics of code intelligence features.
+    codeIntelUsageStatistics(
+        # Days of history (based on current UTC time).
+        days: Int
+        # Weeks of history (based on current UTC time).
+        weeks: Int
+        # Months of history (based on current UTC time).
+        months: Int
+    ): CodeIntelUsageStatistics!
 }
 
 # The configuration for a site.
@@ -3787,6 +3799,60 @@ type SiteUsageStages {
     secure: Int!
     # The number of users using automation stage features.
     automate: Int!
+}
+
+# A site's aggregate usage statistics of code intel features.
+#
+# This information is visible to all viewers.
+type CodeIntelUsageStatistics {
+    # Recent daily code intel usage statistics.
+    daily: [CodeIntelUsagePeriod!]!
+    # Recent weekly code intel usage statistics.
+    weekly: [CodeIntelUsagePeriod!]!
+    # Recent monthly code intel usage statistics.
+    monthly: [CodeIntelUsagePeriod!]!
+}
+
+# Usage statistics of code intel features in a given timespan.
+#
+# This information is visible to all viewers.
+type CodeIntelUsagePeriod {
+    # The time when this started.
+    startTime: DateTime!
+    # Recent hover statistics.
+    hover: CodeIntelEventCategoryStatistics!
+    # Recent definitions statistics.
+    definitions: CodeIntelEventCategoryStatistics!
+    # Recent references statistics.
+    references: CodeIntelEventCategoryStatistics!
+}
+
+# Statistics about aparticular family of code intel features in a given timestan.
+type CodeIntelEventCategoryStatistics {
+    # Recent precise event statistics.
+    precise: CodeIntelEventStatistics!
+    # Recent fuzzy event statistics.
+    fuzzy: CodeIntelEventStatistics!
+}
+
+# Statistics about a particular code intel feature in a given timespan.
+type CodeIntelEventStatistics {
+    # The number of unique users that performed this event in this timespan.
+    usersCount: Int!
+    # The total number of events in this timespan.
+    eventsCount: Int!
+    # Latency percentiles of all events in this timespan.
+    eventLatencies: CodeIntelEventLatencies!
+}
+
+# A collection of event latencies for a particular event in a given timespan.
+type CodeIntelEventLatencies {
+    # The 50th percentile latency in this timespan.
+    p50: Float!
+    # The 90th percentile latency in this timespan.
+    p90: Float!
+    # The 99th percentile latency in this timespan.
+    p99: Float!
 }
 
 # A deployment configuration.
