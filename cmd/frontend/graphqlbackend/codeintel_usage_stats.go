@@ -42,16 +42,16 @@ func (r *siteResolver) CodeIntelUsageStatistics(ctx context.Context, args *struc
 	return &codeIntelUsageStatisticsResolver{activity}, nil
 }
 
-func (s *codeIntelUsageStatisticsResolver) DailyActivities() []*codeIntelUsagePeriodResolver {
-	return s.activities(s.codeIntelUsageStatistics.DailyActivities)
+func (s *codeIntelUsageStatisticsResolver) Daily() []*codeIntelUsagePeriodResolver {
+	return s.activities(s.codeIntelUsageStatistics.Daily)
 }
 
-func (s *codeIntelUsageStatisticsResolver) WeeklyActivities() []*codeIntelUsagePeriodResolver {
-	return s.activities(s.codeIntelUsageStatistics.WeeklyActivities)
+func (s *codeIntelUsageStatisticsResolver) Weekly() []*codeIntelUsagePeriodResolver {
+	return s.activities(s.codeIntelUsageStatistics.Weekly)
 }
 
-func (s *codeIntelUsageStatisticsResolver) MonthlyActivities() []*codeIntelUsagePeriodResolver {
-	return s.activities(s.codeIntelUsageStatistics.MonthlyActivities)
+func (s *codeIntelUsageStatisticsResolver) Monthly() []*codeIntelUsagePeriodResolver {
+	return s.activities(s.codeIntelUsageStatistics.Monthly)
 }
 
 func (s *codeIntelUsageStatisticsResolver) activities(periods []*types.CodeIntelUsagePeriod) []*codeIntelUsagePeriodResolver {
@@ -70,28 +70,28 @@ func (s *codeIntelUsagePeriodResolver) StartTime() string {
 	return s.codeIntelUsagePeriod.StartTime.Format(time.RFC3339)
 }
 
-func (s *codeIntelUsagePeriodResolver) PreciseHoverStatistics() *codeIntelEventStatisticsResolver {
-	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.codeIntelUsagePeriod.PreciseHoverStatistics}
+func (s *codeIntelUsagePeriodResolver) HoverStatistics() *codeIntelEventCategoryStatisticsResolver {
+	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.HoverStatistics}
 }
 
-func (s *codeIntelUsagePeriodResolver) FuzzyHoverStatistics() *codeIntelEventStatisticsResolver {
-	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.codeIntelUsagePeriod.FuzzyHoverStatistics}
+func (s *codeIntelUsagePeriodResolver) DefinitionsStatistics() *codeIntelEventCategoryStatisticsResolver {
+	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.DefinitionsStatistics}
 }
 
-func (s *codeIntelUsagePeriodResolver) PreciseDefinitionsStatistics() *codeIntelEventStatisticsResolver {
-	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.codeIntelUsagePeriod.PreciseDefinitionsStatistics}
+func (s *codeIntelUsagePeriodResolver) ReferencesStatistics() *codeIntelEventCategoryStatisticsResolver {
+	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.ReferencesStatistics}
 }
 
-func (s *codeIntelUsagePeriodResolver) FuzzyDefinitionsStatistics() *codeIntelEventStatisticsResolver {
-	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.codeIntelUsagePeriod.FuzzyDefinitionsStatistics}
+type codeIntelEventCategoryStatisticsResolver struct {
+	CodeIntelEventCategoryStatistics *types.CodeIntelEventCategoryStatistics
 }
 
-func (s *codeIntelUsagePeriodResolver) PreciseReferencesStatistics() *codeIntelEventStatisticsResolver {
-	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.codeIntelUsagePeriod.PreciseReferencesStatistics}
+func (s *codeIntelEventCategoryStatisticsResolver) PreciseStatistics() *codeIntelEventStatisticsResolver {
+	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.PreciseStatistics}
 }
 
-func (s *codeIntelUsagePeriodResolver) FuzzyReferencesStatistics() *codeIntelEventStatisticsResolver {
-	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.codeIntelUsagePeriod.FuzzyReferencesStatistics}
+func (s *codeIntelEventCategoryStatisticsResolver) FuzzyStatistics() *codeIntelEventStatisticsResolver {
+	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.FuzzyStatistics}
 }
 
 type codeIntelEventStatisticsResolver struct {

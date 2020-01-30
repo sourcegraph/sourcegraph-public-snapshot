@@ -3806,11 +3806,11 @@ type SiteUsageStages {
 # This information is visible to all viewers.
 type CodeIntelUsageStatistics {
     # Recent daily code intel usage statistics.
-    dailyActivities: [CodeIntelUsagePeriod!]!
+    daily: [CodeIntelUsagePeriod!]!
     # Recent weekly code intel usage statistics.
-    weeklyActivities: [CodeIntelUsagePeriod!]!
+    weekly: [CodeIntelUsagePeriod!]!
     # Recent monthly code intel usage statistics.
-    monthlyActivities: [CodeIntelUsagePeriod!]!
+    monthly: [CodeIntelUsagePeriod!]!
 }
 
 # Usage statistics of code intel features in a given timespan.
@@ -3819,18 +3819,21 @@ type CodeIntelUsageStatistics {
 type CodeIntelUsagePeriod {
     # The time when this started.
     startTime: String!
-    # Recent precise hover statistics.
-    preciseHoverStatistics: CodeIntelEventStatistics!
-    # Recent fuzzy hover statistics.
-    fuzzyHoverStatistics: CodeIntelEventStatistics!
-    # Recent precise definitions statistics.
-    preciseDefinitionsStatistics: CodeIntelEventStatistics!
-    # Recent fuzzy definitions statistics.
-    fuzzyDefinitionsStatistics: CodeIntelEventStatistics!
-    # Recent precise references statistics.
-    preciseReferencesStatistics: CodeIntelEventStatistics!
-    # Recent fuzzy references statistics.
-    fuzzyReferencesStatistics: CodeIntelEventStatistics!
+    # Recent hover statistics.
+    hoverStatistics: CodeIntelEventCategoryStatistics!
+    # Recent definitions statistics.
+    definitionsStatistics: CodeIntelEventCategoryStatistics!
+    # Recent references statistics.
+    referencesStatistics: CodeIntelEventCategoryStatistics!
+}
+
+# Statistics about aparticular family of code intel features in a given timestan.
+type CodeIntelEventCategoryStatistics {
+    # Recent precise event statistics.
+    preciseStatistics: CodeIntelEventStatistics!
+
+    # Recent fuzzy event statistics.
+    fuzzyStatistics: CodeIntelEventStatistics!
 }
 
 # Statistics about a particular code intel feature in a given timespan.
