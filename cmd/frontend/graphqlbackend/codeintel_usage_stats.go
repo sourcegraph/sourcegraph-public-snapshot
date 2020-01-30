@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
@@ -66,19 +65,19 @@ type codeIntelUsagePeriodResolver struct {
 	codeIntelUsagePeriod *types.CodeIntelUsagePeriod
 }
 
-func (s *codeIntelUsagePeriodResolver) StartTime() string {
-	return s.codeIntelUsagePeriod.StartTime.Format(time.RFC3339)
+func (s *codeIntelUsagePeriodResolver) StartTime() DateTime {
+	return DateTime{s.codeIntelUsagePeriod.StartTime}
 }
 
-func (s *codeIntelUsagePeriodResolver) HoverStatistics() *codeIntelEventCategoryStatisticsResolver {
+func (s *codeIntelUsagePeriodResolver) Hover() *codeIntelEventCategoryStatisticsResolver {
 	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.HoverStatistics}
 }
 
-func (s *codeIntelUsagePeriodResolver) DefinitionsStatistics() *codeIntelEventCategoryStatisticsResolver {
+func (s *codeIntelUsagePeriodResolver) Definitions() *codeIntelEventCategoryStatisticsResolver {
 	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.DefinitionsStatistics}
 }
 
-func (s *codeIntelUsagePeriodResolver) ReferencesStatistics() *codeIntelEventCategoryStatisticsResolver {
+func (s *codeIntelUsagePeriodResolver) References() *codeIntelEventCategoryStatisticsResolver {
 	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.ReferencesStatistics}
 }
 
@@ -86,11 +85,11 @@ type codeIntelEventCategoryStatisticsResolver struct {
 	CodeIntelEventCategoryStatistics *types.CodeIntelEventCategoryStatistics
 }
 
-func (s *codeIntelEventCategoryStatisticsResolver) PreciseStatistics() *codeIntelEventStatisticsResolver {
+func (s *codeIntelEventCategoryStatisticsResolver) Precise() *codeIntelEventStatisticsResolver {
 	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.PreciseStatistics}
 }
 
-func (s *codeIntelEventCategoryStatisticsResolver) FuzzyStatistics() *codeIntelEventStatisticsResolver {
+func (s *codeIntelEventCategoryStatisticsResolver) Fuzzy() *codeIntelEventStatisticsResolver {
 	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.FuzzyStatistics}
 }
 

@@ -3825,22 +3825,21 @@ type CodeIntelUsageStatistics {
 # This information is visible to all viewers.
 type CodeIntelUsagePeriod {
     # The time when this started.
-    startTime: String!
+    startTime: DateTime!
     # Recent hover statistics.
-    hoverStatistics: CodeIntelEventCategoryStatistics!
+    hover: CodeIntelEventCategoryStatistics!
     # Recent definitions statistics.
-    definitionsStatistics: CodeIntelEventCategoryStatistics!
+    definitions: CodeIntelEventCategoryStatistics!
     # Recent references statistics.
-    referencesStatistics: CodeIntelEventCategoryStatistics!
+    references: CodeIntelEventCategoryStatistics!
 }
 
 # Statistics about aparticular family of code intel features in a given timestan.
 type CodeIntelEventCategoryStatistics {
     # Recent precise event statistics.
-    preciseStatistics: CodeIntelEventStatistics!
-
+    precise: CodeIntelEventStatistics!
     # Recent fuzzy event statistics.
-    fuzzyStatistics: CodeIntelEventStatistics!
+    fuzzy: CodeIntelEventStatistics!
 }
 
 # Statistics about a particular code intel feature in a given timespan.
