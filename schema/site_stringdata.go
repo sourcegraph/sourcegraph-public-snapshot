@@ -386,6 +386,22 @@ const SiteSchemaJSON = `{
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
+    "email.verification": {
+      "description": "Settings for user email verification",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "coolDown": {
+          "description": "The cool down duration (in seconds) before sending verification email to the same email address.",
+          "type": "integer",
+          "default": 30
+        }
+      },
+      "default": {
+        "coolDown": 30
+      },
+      "examples": [{ "coolDown": 30 }, { "coolDown": 120 }]
+    },
     "extensions": {
       "description": "Configures Sourcegraph extensions.",
       "type": "object",
