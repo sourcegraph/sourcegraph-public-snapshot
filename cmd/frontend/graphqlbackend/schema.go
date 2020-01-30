@@ -3553,6 +3553,9 @@ type Site implements SettingsSubject {
         # Months of history.
         months: Int
     ): SiteUsageStatistics!
+    # (experimental) The extended usage statistics API may change substantially in the near
+    # future as we continue to adjust it for our use cases. Changes will not be documented
+    # in the CHANGELOG during this time.
     # Usage statistics of code intelligence features.
     codeIntelUsageStatistics(
         # Days of history.
@@ -3798,55 +3801,55 @@ type SiteUsageStages {
     automate: Int!
 }
 
-# CodeIntelUsageStatistics describes a site's aggregate usage statistics of code intel features.
+# A site's aggregate usage statistics of code intel features.
 #
 # This information is visible to all viewers.
 type CodeIntelUsageStatistics {
-    # Recent daily usage statistics.
+    # Recent daily code intel usage statistics.
     dailyActivities: [CodeIntelUsagePeriod!]!
-    # Recent weekly usage statistics.
+    # Recent weekly code intel usage statistics.
     weeklyActivities: [CodeIntelUsagePeriod!]!
-    # Recent monthly usage statistics.
+    # Recent monthly code intel usage statistics.
     monthlyActivities: [CodeIntelUsagePeriod!]!
 }
 
-# CodeIntelUsagePeriod describes usage statistics of code intel features in a given timespan.
+# Usage statistics of code intel features in a given timespan.
 #
 # This information is visible to all viewers.
 type CodeIntelUsagePeriod {
     # The time when this started.
     startTime: String!
-    # TODO - document
+    # Recent precise hover statistics.
     preciseHoverStatistics: CodeIntelEventStatistics!
-    # TODO - document
+    # Recent fuzzy hover statistics.
     fuzzyHoverStatistics: CodeIntelEventStatistics!
-    # TODO - document
+    # Recent precise definitions statistics.
     preciseDefinitionsStatistics: CodeIntelEventStatistics!
-    # TODO - document
+    # Recent fuzzy definitions statistics.
     fuzzyDefinitionsStatistics: CodeIntelEventStatistics!
-    # TODO - document
+    # Recent precise references statistics.
     preciseReferencesStatistics: CodeIntelEventStatistics!
-    # TODO - document
+    # Recent fuzzy references statistics.
     fuzzyReferencesStatistics: CodeIntelEventStatistics!
 }
 
-# TODO - document
+# Statistics about a particular code intel feature in a given timespan.
 type CodeIntelEventStatistics {
-    # TODO - document
+    # The number of unique users that performed this event in this timespan.
     usersCount: Int!
-    # TODO - document
+    # The total number of events in this timespan.
     eventsCount: Int!
-    # TODO - document
+    # Latency percentiles of all events in this timespan.
     eventLatencies: CodeIntelEventLatencies!
 }
 
-# TODO - document
+# A collection of event latencies for a particular event in a given timespan.
 type CodeIntelEventLatencies {
-    # TODO - document
+    # The 50th percentile latency in this timespan.
     p50: Float!
-    # TODO - document
+    # The 90th percentile latency in this timespan.
     p90: Float!
-    # TODO - document
+    # The 99th percentile latency in this timespan.
     p99: Float!
 }
 
