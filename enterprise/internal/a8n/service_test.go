@@ -382,6 +382,10 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 		// Repositories for which we had CampaignJobs attached to the old CampaignPlan
 		oldCampaignJobs repoNames
 
+		// Repositories for which the ChangesetJob/Changeset have been
+		// individually published while Campaign was in draft mode
+		individuallyPublished repoNames
+
 		updatePlan, updateName, updateDescription bool
 		newCampaignJobs                           []newCampaignJobSpec
 
@@ -439,7 +443,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			wantModified: repoNames{"repo-0"},
 		},
 		{
-			name:            "1 unmodified, 1 modified, 1 new changeset",
+			name:            "1 detached, 1 unmodified, 1 modified, 1 new changeset",
 			updatePlan:      true,
 			oldCampaignJobs: repoNames{"repo-0", "repo-1", "repo-2"},
 			newCampaignJobs: []newCampaignJobSpec{
@@ -462,6 +466,48 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				{repo: "repo-1", modifiedDiff: true},
 				{repo: "repo-3"},
 			},
+		},
+		{
+			name:                  "draft campaign, 1 published unmodified, 1 modified, 1 detached, 1 new changeset",
+			campaignIsDraft:       true,
+			updatePlan:            true,
+			oldCampaignJobs:       repoNames{"repo-0", "repo-1", "repo-2"},
+			individuallyPublished: repoNames{"repo-0"},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0"},
+				{repo: "repo-1", modifiedDiff: true},
+				{repo: "repo-3"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+		},
+		{
+			name:                  "draft campaign, 1 published unmodified, 1 published modified, 1 detached, 1 new changeset",
+			campaignIsDraft:       true,
+			updatePlan:            true,
+			oldCampaignJobs:       repoNames{"repo-0", "repo-1", "repo-2"},
+			individuallyPublished: repoNames{"repo-0", "repo-1"},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0"},
+				{repo: "repo-1", modifiedDiff: true},
+				{repo: "repo-3"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantModified:   repoNames{"repo-1"},
+		},
+		{
+			name:                  "draft campaign, 1 published unmodified, 1 published modified, 1 published detached, 1 new changeset",
+			campaignIsDraft:       true,
+			updatePlan:            true,
+			oldCampaignJobs:       repoNames{"repo-0", "repo-1", "repo-2"},
+			individuallyPublished: repoNames{"repo-0", "repo-1", "repo-2"},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0"},
+				{repo: "repo-1", modifiedDiff: true},
+				{repo: "repo-3"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantModified:   repoNames{"repo-1"},
+			wantDetached:   repoNames{"repo-2"},
 		},
 	}
 
@@ -514,6 +560,28 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			if !tt.campaignIsDraft && !tt.campaignIsManual {
 				// Create Changesets and update ChangesetJobs to look like they ran
 				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID)
+			}
+
+			if tt.campaignIsDraft && len(tt.individuallyPublished) != 0 {
+				toPublish := make(map[int64]*a8n.CampaignJob)
+				for _, name := range tt.individuallyPublished {
+					repo, ok := reposByName[name]
+					if !ok {
+						t.Errorf("unrecognized repo name: %s", name)
+					}
+					for _, j := range oldCampaignJobs {
+						if j.RepoID == int32(repo.ID) {
+							toPublish[j.ID] = j
+
+							err = svc.CreateChangesetJobForCampaignJob(ctx, j.ID)
+							if err != nil {
+								t.Fatalf("Failed to individually created ChangesetJob: %s", err)
+							}
+						}
+					}
+				}
+
+				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, toPublish)
 			}
 
 			oldTime := now
@@ -591,21 +659,25 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			// When a campaign is created as a draft, we don't create
 			// ChangesetJobs, which means we can return here after checking
 			// that we haven't created ChangesetJobs
-			if tt.campaignIsDraft {
-				if len(newChangesetJobs) != 0 {
-					t.Fatalf("changesetJobs created even though campaign is draft. have=%d", len(newChangesetJobs))
+			if tt.campaignIsDraft && len(tt.individuallyPublished) == 0 {
+				if have, want := len(newChangesetJobs), len(tt.individuallyPublished); have != want {
+					t.Fatalf("changesetJobs created even though campaign is draft. have=%d, want=%d", have, want)
 				}
 				return
 			}
 
 			var wantChangesetJobLen int
 			if tt.updatePlan {
-				wantChangesetJobLen = len(newCampaignJobs)
+				if len(tt.individuallyPublished) != 0 {
+					wantChangesetJobLen = len(tt.individuallyPublished)
+				} else {
+					wantChangesetJobLen = len(newCampaignJobs)
+				}
 			} else {
 				wantChangesetJobLen = len(oldCampaignJobs)
 			}
 			if len(newChangesetJobs) != wantChangesetJobLen {
-				t.Fatalf("wrong number of new ChangesetJobs. want=%d, have=%d", len(newCampaignJobs), wantChangesetJobLen)
+				t.Fatalf("wrong number of new ChangesetJobs. want=%d, have=%d", wantChangesetJobLen, len(newChangesetJobs))
 			}
 
 			newChangesetJobsByRepo := map[string]*a8n.ChangesetJob{}
