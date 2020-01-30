@@ -1,14 +1,15 @@
 package gosrc
 
 import (
+	"context"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"runtime"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
@@ -29,13 +30,13 @@ type Directory struct {
 
 var errNoMatch = errors.New("no match")
 
-func ResolveImportPath(client *http.Client, importPath string) (*Directory, error) {
+func ResolveImportPath(ctx context.Context, client httpcli.Doer, importPath string) (*Directory, error) {
 	if d, err := resolveStaticImportPath(importPath); err == nil {
 		return d, nil
 	} else if err != errNoMatch {
 		return nil, err
 	}
-	return resolveDynamicImportPath(client, importPath)
+	return resolveDynamicImportPath(ctx, client, importPath)
 }
 
 func resolveStaticImportPath(importPath string) (*Directory, error) {
@@ -80,15 +81,15 @@ func resolveStaticImportPath(importPath string) (*Directory, error) {
 // popular gopkg.in
 var gopkgSrcTemplate = lazyregexp.New(`https://(github.com/[^/]*/[^/]*)/tree/([^/]*)\{/dir\}`)
 
-func resolveDynamicImportPath(client *http.Client, importPath string) (*Directory, error) {
-	metaProto, im, sm, err := fetchMeta(client, importPath)
+func resolveDynamicImportPath(ctx context.Context, client httpcli.Doer, importPath string) (*Directory, error) {
+	metaProto, im, sm, err := fetchMeta(ctx, client, importPath)
 	if err != nil {
 		return nil, err
 	}
 
 	if im.prefix != importPath {
 		var imRoot *importMeta
-		metaProto, imRoot, _, err = fetchMeta(client, im.prefix)
+		metaProto, imRoot, _, err = fetchMeta(ctx, client, im.prefix)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +156,9 @@ type sourceMeta struct {
 	fileTemplate string
 }
 
-func fetchMeta(client *http.Client, importPath string) (scheme string, im *importMeta, sm *sourceMeta, err error) {
+func fetchMeta(ctx context.Context, client httpcli.Doer, importPath string) (scheme string, im *importMeta, sm *sourceMeta, err error) {
+	c := httpcli.Client{Doer: client}
+
 	uri := importPath
 	if !strings.Contains(uri, "/") {
 		// Add slash for root of domain.
@@ -164,13 +167,13 @@ func fetchMeta(client *http.Client, importPath string) (scheme string, im *impor
 	uri = uri + "?go-get=1"
 
 	scheme = "https"
-	resp, err := client.Get(scheme + "://" + uri)
+	resp, err := c.Get(ctx, scheme+"://"+uri)
 	if err != nil || resp.StatusCode != 200 {
 		if err == nil {
 			resp.Body.Close()
 		}
 		scheme = "http"
-		resp, err = client.Get(scheme + "://" + uri)
+		resp, err = c.Get(ctx, scheme+"://"+uri)
 		if err != nil {
 			return scheme, nil, nil, err
 		}

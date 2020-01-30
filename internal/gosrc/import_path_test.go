@@ -7,6 +7,7 @@
 package gosrc
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -196,7 +197,7 @@ func TestResolveImportPath(t *testing.T) {
 	client := &http.Client{Transport: testTransport(pages)}
 
 	for _, tt := range tests {
-		dir, err := ResolveImportPath(client, tt.importPath)
+		dir, err := ResolveImportPath(context.Background(), client, tt.importPath)
 
 		if tt.dir == nil {
 			if err == nil {

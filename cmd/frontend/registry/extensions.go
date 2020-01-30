@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/httputil"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/registry"
 )
@@ -27,9 +27,9 @@ func init() {
 	const sleepIfUncached = false
 	if env.InsecureDev && sleepIfUncached {
 		// Also simulate latency in dev mode. See docs for sleepIfUncachedTransport for more information.
-		registry.HTTPClient = &http.Client{Transport: sleepIfUncachedTransport{httputil.CachingClient.Transport}}
+		registry.HTTPClient = sleepIfUncachedMiddleware{Doer: httpcli.DefaultExternalClient}
 	} else {
-		registry.HTTPClient = httputil.CachingClient
+		registry.HTTPClient = httpcli.DefaultExternalClient
 	}
 }
 
@@ -223,17 +223,17 @@ func listRemoteRegistryExtensions(ctx context.Context, query string) ([]*registr
 	return xs, nil
 }
 
-// sleepIfUncachedTransport is used to simulate latency in local dev mode.
+// sleepIfUncachedMiddleware is used to simulate latency in local dev mode.
 //
 // This helps us feel the UX of not being in Northern California latency-wise and ensure that
 // Sourcegraph's communication with the remote extension registry (usually Sourcegraph.com) does not
 // block unrelated workflows.
-type sleepIfUncachedTransport struct {
-	http.RoundTripper
+type sleepIfUncachedMiddleware struct {
+	httpcli.Doer
 }
 
-func (t sleepIfUncachedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	resp, err := t.RoundTripper.RoundTrip(req)
+func (t sleepIfUncachedMiddleware) Do(req *http.Request) (*http.Response, error) {
+	resp, err := t.Doer.Do(req)
 	if err != nil || resp.Header.Get(httpcache.XFromCache) == "" {
 		n := rand.Intn(750)
 		time.Sleep(time.Duration(750+n) * time.Millisecond)

@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/httputil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 // A Doer captures the Do method of an http.Client. It faciliates decorating
@@ -74,7 +74,7 @@ func NewExternalHTTPClientFactory() *Factory {
 		// not a generic http.RoundTripper.
 		ExternalTransportOpt,
 		TracedTransportOpt,
-		NewCachedTransportOpt(httputil.Cache, true),
+		cachedTransportOpt,
 	)
 }
 
@@ -279,22 +279,25 @@ func NewCertPoolOpt(certs ...string) Opt {
 	}
 }
 
-// NewCachedTransportOpt returns an Opt that wraps the existing http.Transport
-// of an http.Client with caching using the given Cache.
-func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
-	return func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
-		}
+// cache is a HTTP cache backed by Redis. The TTL of a week is a
+// balance between caching values for a useful amount of time versus
+// growing the cache too large.
+var cache = rcache.NewWithTTL("http", 604800)
 
-		cli.Transport = &httpcache.Transport{
-			Transport:           cli.Transport,
-			Cache:               c,
-			MarkCachedResponses: markCachedResponses,
-		}
-
-		return nil
+// cachedTransportOpt wraps the existing http.Transport of an http.Client with
+// a redis backed cache.
+func cachedTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
 	}
+
+	cli.Transport = &httpcache.Transport{
+		Transport:           cli.Transport,
+		Cache:               cache,
+		MarkCachedResponses: true,
+	}
+
+	return nil
 }
 
 // TracedTransportOpt wraps an existing http.Transport of an http.Client with
