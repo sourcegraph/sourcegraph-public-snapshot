@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -40,13 +41,20 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 	verified, err := db.UserEmails.Verify(ctx, usr.ID, email, verifyCode)
 	if err != nil {
-		log15.Error("Failed to verify user email.", "userID", usr.ID, "email", email, "error", err)
-		http.Error(w, "Unexpected error when verifying user.", http.StatusInternalServerError)
+		httpLogAndError(w, "Could not verify user email", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
 		return
 	}
 	if !verified {
 		http.Error(w, "Could not verify user email. Email verification code did not match.", http.StatusUnauthorized)
 		return
+	}
+
+	if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
+		UserID: usr.ID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	}); err != nil {
+		log15.Error("Failed to grant user pending permissions", "userID", usr.ID, "error", err)
 	}
 
 	http.Redirect(w, r, "/user/settings/emails", http.StatusFound)

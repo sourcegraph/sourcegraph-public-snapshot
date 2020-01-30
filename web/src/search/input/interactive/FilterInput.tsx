@@ -22,7 +22,6 @@ import { fetchSuggestions } from '../../backend'
 import { ComponentSuggestions, noSuggestions, typingDebounceTime } from '../QueryInput'
 import { isDefined } from '../../../../../shared/src/util/types'
 import Downshift from 'downshift'
-import { generateFiltersQuery } from '../helpers'
 import {
     QueryState,
     formatInteractiveQueryForFuzzySearch,
@@ -42,6 +41,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CheckButton } from './CheckButton'
 import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypesToProseNames } from './filters'
 import classNames from 'classnames'
+import { generateFiltersQuery } from '../../../../../shared/src/util/url'
 
 interface Props {
     /**

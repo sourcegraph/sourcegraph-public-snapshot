@@ -26,12 +26,6 @@ exports[`CampaignNode renders a campaign node 1`] = `
             Upgrade lodash to v4
           </a>
         </h3>
-        <span
-          className="badge badge-light ml-2"
-          data-tooltip="Manual"
-        >
-          manual
-        </span>
         <small
           className="ml-2 text-muted"
           data-tooltip="2019-12-04T23:15:01Z"

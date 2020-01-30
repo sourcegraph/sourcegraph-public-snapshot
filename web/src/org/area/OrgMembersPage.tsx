@@ -146,7 +146,7 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('OrgMembers', { organization: { org_name: this.props.org.name } })
+        eventLogger.logViewEvent('OrgMembers')
 
         this.subscriptions.add(
             this.componentUpdates

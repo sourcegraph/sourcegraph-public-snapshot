@@ -4,10 +4,17 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
+
+func bitmap(ids ...uint32) *roaring.Bitmap {
+	bm := roaring.NewBitmap()
+	bm.AddMany(ids)
+	return bm
+}
 
 func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 	tests := []struct {

@@ -3,10 +3,10 @@ package db
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -137,17 +137,39 @@ func TestUserEmails_ListByUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userEmails, err := UserEmails.ListByUser(ctx, user.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	normalizeUserEmails(userEmails)
-	if want := []*UserEmail{
-		{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c")},
-		{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
-	}; !reflect.DeepEqual(userEmails, want) {
-		t.Errorf("got  %s\n\nwant %s", toJSON(userEmails), toJSON(want))
-	}
+	t.Run("list all emails", func(t *testing.T) {
+		userEmails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+			UserID: user.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		normalizeUserEmails(userEmails)
+		want := []*UserEmail{
+			{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c")},
+			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
+		}
+		if diff := cmp.Diff(want, userEmails); diff != "" {
+			t.Fatalf("userEmails: %s", diff)
+		}
+	})
+
+	t.Run("list only verified emails", func(t *testing.T) {
+		userEmails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+			UserID:       user.ID,
+			OnlyVerified: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		normalizeUserEmails(userEmails)
+		want := []*UserEmail{
+			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
+		}
+		if diff := cmp.Diff(want, userEmails); diff != "" {
+			t.Fatalf("userEmails: %s", diff)
+		}
+	})
 }
 
 func normalizeUserEmails(userEmails []*UserEmail) {
@@ -187,7 +209,9 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	} else if want := false; verified != want {
 		t.Fatalf("got verified %v, want %v", verified, want)
 	}
-	if emails, err := UserEmails.ListByUser(ctx, user.ID); err != nil {
+	if emails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: user.ID,
+	}); err != nil {
 		t.Fatal(err)
 	} else if want := 2; len(emails) != want {
 		t.Errorf("got %d emails, want %d", len(emails), want)
@@ -199,7 +223,9 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	if err := UserEmails.Add(ctx, 12345 /* bad user ID */, "foo@example.com", nil); err == nil {
 		t.Fatal("got err == nil for Add on bad user ID")
 	}
-	if emails, err := UserEmails.ListByUser(ctx, user.ID); err != nil {
+	if emails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: user.ID,
+	}); err != nil {
 		t.Fatal(err)
 	} else if want := 2; len(emails) != want {
 		t.Errorf("got %d emails, want %d", len(emails), want)
@@ -209,7 +235,9 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	if err := UserEmails.Remove(ctx, user.ID, emailB); err != nil {
 		t.Fatal(err)
 	}
-	if emails, err := UserEmails.ListByUser(ctx, user.ID); err != nil {
+	if emails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: user.ID,
+	}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; len(emails) != want {
 		t.Errorf("got %d emails (after removing), want %d", len(emails), want)
@@ -271,7 +299,9 @@ func TestUserEmails_SetVerified(t *testing.T) {
 }
 
 func isUserEmailVerified(ctx context.Context, userID int32, email string) (bool, error) {
-	userEmails, err := UserEmails.ListByUser(ctx, userID)
+	userEmails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: userID,
+	})
 	if err != nil {
 		return false, err
 	}
@@ -323,69 +353,5 @@ func TestUserEmails_GetVerifiedEmails(t *testing.T) {
 	}
 	if emails[0].Email != "alice@example.com" {
 		t.Errorf("got %s, but want %q", emails[0].Email, "alice@example.com")
-	}
-}
-
-func TestUserEmails_VerifyAndGrantPendingPermissions(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-
-	opts := NewUser{
-		Email:                 "foo@bar.com",
-		Username:              "foo",
-		DisplayName:           "foo",
-		Password:              "right-password",
-		EmailVerificationCode: "email-code",
-	}
-	user, err := Users.Create(ctx, opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Must mock after call of Users.Create because that method has a call to the Authz.GrantPendingPermissions as well.
-	Authz = &mockAuthzStore{}
-	defer func() {
-		Authz = &authzStore{}
-	}()
-
-	tests := []struct {
-		name         string
-		code         string
-		isValid      bool
-		expectCalled bool
-	}{
-		{
-			name:         "not called when fail to verify the email",
-			code:         "wrong_email-code",
-			isValid:      false,
-			expectCalled: false,
-		},
-		{
-			name:         "called when successfully verified the email",
-			code:         "email-code",
-			isValid:      true,
-			expectCalled: true,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			calledGrantPendingPermissions := false
-			Mocks.Authz.GrantPendingPermissions = func(_ context.Context, _ *GrantPendingPermissionsArgs) error {
-				calledGrantPendingPermissions = true
-				return nil
-			}
-
-			isValid, err := UserEmails.Verify(ctx, user.ID, opts.Email, test.code)
-			if err != nil {
-				t.Fatal(err)
-			} else if test.isValid != isValid {
-				t.Fatalf("isValid: want %v but got %v", test.isValid, isValid)
-			} else if test.expectCalled != calledGrantPendingPermissions {
-				t.Fatalf("calledGrantPendingPermissions: want %v but got %v", test.expectCalled, calledGrantPendingPermissions)
-			}
-		})
 	}
 }

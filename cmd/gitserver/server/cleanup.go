@@ -33,7 +33,7 @@ const (
 	repoTTL = time.Hour * 24 * 45
 	// repoTTLGC is how often we should reclone a repository once it is
 	// reporting git gc issues.
-	repoTTLGC = time.Hour * 24
+	repoTTLGC = time.Hour * 24 * 2
 )
 
 var reposRemoved = prometheus.NewCounter(prometheus.CounterOpts{
@@ -107,6 +107,14 @@ func (s *Server) cleanupRepos() {
 		// name is the relative path to ReposDir, but without the .git suffix.
 		repo := s.name(dir)
 		log15.Info("recloning expired repo", "repo", repo, "cloned", recloneTime, "reason", reason)
+
+		// update the reclone time so that we don't constantly reclone if
+		// cloning fails. For example if a repo fails to clone due to being
+		// large, we will constantly be doing a clone which uses up lots of
+		// resources.
+		if err := setRecloneTime(dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
+			log15.Warn("setting backed off reclone time failed", "repo", repo, "cloned", recloneTime, "reason", reason, "error", err)
+		}
 
 		remoteURL, err := repoRemoteURL(ctx, dir)
 		if err != nil {
@@ -587,6 +595,16 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 	return dir, nil
 }
 
+// setRecloneTime sets the time a repository is cloned.
+func setRecloneTime(dir GitDir, now time.Time) error {
+	cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
+	cmd.Dir = string(dir)
+	if _, err := cmd.Output(); err != nil {
+		return errors.Wrap(wrapCmdError(cmd, err), "failed to update recloneTimestamp")
+	}
+	return nil
+}
+
 // getRecloneTime returns an approximate time a repository is cloned. If the
 // value is not stored in the repository, the reclone time for the repository
 // is set to now.
@@ -596,12 +614,7 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	// different ways a clone can appear in gitserver.
 	update := func() (time.Time, error) {
 		now := time.Now()
-		cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(time.Now().Unix(), 10))
-		cmd.Dir = string(dir)
-		if _, err := cmd.Output(); err != nil {
-			return now, errors.Wrap(wrapCmdError(cmd, err), "failed to update recloneTimestamp")
-		}
-		return now, nil
+		return now, setRecloneTime(dir, now)
 	}
 
 	cmd := exec.Command("git", "config", "--get", "sourcegraph.recloneTimestamp")

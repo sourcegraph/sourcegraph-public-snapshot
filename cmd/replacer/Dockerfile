@@ -1,4 +1,4 @@
-FROM sourcegraph/alpine:3.9@sha256:e9264d4748e16de961a2b973cc12259dee1d33473633beccb1dfb8a0e62c6459
+FROM sourcegraph/alpine:3.10@sha256:4d05cd5669726fc38823e92320659a6d1ef7879e62268adec5df658a0bacf65c
 
 # hadolint ignore=DL3018
 RUN apk --no-cache add pcre
@@ -18,6 +18,7 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 ENV CACHE_DIR=/mnt/cache/replacer
+RUN mkdir -p ${CACHE_DIR} && chown -R sourcegraph:sourcegraph ${CACHE_DIR}
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/replacer"]
 COPY replacer /usr/local/bin/

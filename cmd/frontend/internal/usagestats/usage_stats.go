@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 var (
@@ -73,7 +74,7 @@ func ListRegisteredUsersToday(ctx context.Context) ([]int32, error) {
 
 // ListRegisteredUsersThisWeek returns a list of the registered users that were active this week.
 func ListRegisteredUsersThisWeek(ctx context.Context) ([]int32, error) {
-	start := startOfWeek(0)
+	start := timeutil.StartOfWeek(timeNow().UTC(), 0)
 	return db.EventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 7))
 }
 
@@ -138,22 +139,17 @@ func activeUsers(ctx context.Context, periodType db.PeriodType, periods int) ([]
 		return []*types.SiteActivityPeriod{}, nil
 	}
 
-	periods = periods - 1
-	startDate, err := startOfPeriod(periodType, periods)
+	uniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, nil)
 	if err != nil {
 		return nil, err
 	}
-	uniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, startDate, periods, nil)
-	if err != nil {
-		return nil, err
-	}
-	registeredUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, startDate, periods, &db.CountUniqueUsersOptions{
+	registeredUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
 		RegisteredOnly: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	integrationUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, startDate, periods, &db.CountUniqueUsersOptions{
+	integrationUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
 		IntegrationOnly: true,
 	})
 	if err != nil {
@@ -273,4 +269,15 @@ func stageUniqueUsers(startDate time.Time) (*types.Stages, error) {
 		Secure:    0,
 		Automate:  0,
 	}, nil
+}
+
+func minIntOrZero(a, b int) int {
+	min := b
+	if a < b {
+		min = a
+	}
+	if min < 0 {
+		return 0
+	}
+	return min
 }

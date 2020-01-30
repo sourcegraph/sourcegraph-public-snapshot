@@ -1,34 +1,78 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`AddChangesetForm renders the form 1`] = `
-<form
-  className="form-inline "
-  onInvalid={[Function]}
-  onSubmit={[Function]}
->
-  <input
-    className="form-control mr-1"
-    onChange={[Function]}
-    placeholder="Repository name"
-    required={true}
-    size={35}
-    type="text"
-    value=""
-  />
-  <input
-    className="form-control mr-1"
-    onChange={[Function]}
-    placeholder="Changeset number"
-    required={true}
-    size={16}
-    type="text"
-    value=""
-  />
-  <button
-    className="btn btn-primary mr-1"
-    type="submit"
+Array [
+  <h3>
+    Track changeset
+  </h3>,
+  <form
+    className=" "
+    onInvalid={[Function]}
+    onSubmit={[Function]}
   >
-    Add changeset
-  </button>
-</form>
+    <div
+      className="d-flex"
+    >
+      <div
+        className="form-group mr-3 mb-0"
+      >
+        <label
+          htmlFor="changeset-repo"
+        >
+          Repository name
+        </label>
+        <input
+          className="form-control mr-1"
+          id="changeset-repo"
+          onChange={[Function]}
+          placeholder="Repository name"
+          required={true}
+          size={35}
+          type="text"
+          value=""
+        />
+        <p
+          className="form-text text-muted"
+        >
+          Find the Sourcegraph repository name in the URL (e.g., 
+          http:
+          //
+          localhost
+          /
+          <strong>
+            &lt;REPOSITORY_NAME&gt;
+          </strong>
+          )
+        </p>
+      </div>
+      <div
+        className="form-group mr-3 mb-0"
+      >
+        <label
+          htmlFor="changeset-number"
+        >
+          Changeset number
+        </label>
+        <input
+          className="form-control mr-1"
+          id="changeset-number"
+          min={1}
+          onChange={[Function]}
+          placeholder="Changeset number"
+          required={true}
+          size={16}
+          step={1}
+          type="number"
+          value=""
+        />
+      </div>
+    </div>
+    <button
+      className="btn btn-primary mr-1"
+      type="submit"
+    >
+      Add changeset
+    </button>
+  </form>,
+]
 `;

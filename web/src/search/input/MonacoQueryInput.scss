@@ -1,19 +1,15 @@
 .monaco-query-input-container {
     position: relative;
     border: 1px solid $input-border-color;
-    box-sizing: border-box;
+    // Match padding from the regular query input.
+    padding-left: 0.75rem;
+    background-color: #0e121b;
+    display: flex;
+    align-items: center;
     &:focus-within {
         border: 1px solid $input-focus-border-color;
         box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
     }
-
-    &__toggles {
-        position: absolute;
-        right: 0.25rem;
-        top: 0.25rem;
-        display: flex;
-    }
-
     .monaco-editor {
         // stylelint-disable-next-line selector-class-pattern
         .decorationsOverviewRuler {
@@ -31,9 +27,25 @@
             width: 100% !important;
         }
         .monaco-editor-hover-content {
+            padding: 0.25rem;
             .status-bar {
                 display: none;
             }
         }
+        // Override our :focus-visible style, which gets applied to the textarea
+        // Monaco uses for accessibility, and displays a tiny box shadow above the cursor otherwise.
+        .inputarea.focus-visible {
+            box-shadow: none;
+        }
+    }
+
+    &__regexp-toggle {
+        padding-right: 0.25rem;
+    }
+}
+
+.theme-light {
+    .monaco-query-input-container {
+        background-color: #ffffff;
     }
 }
