@@ -46,7 +46,11 @@ export function getPageInfo(): GitLabInfo {
     let pageKind: GitLabPageKind
     if (window.location.pathname.includes(`${owner}/${projectName}/commit`)) {
         pageKind = GitLabPageKind.Commit
-    } else if (window.location.pathname.includes(`${owner}/${projectName}/merge_requests`)) {
+    } else if (
+        window.location.pathname.includes(`${owner}/${projectName}/merge_requests`) ||
+        // https://github.com/sourcegraph/sourcegraph/issues/8134
+        window.location.pathname.includes(`${owner}/${projectName}/-/merge_requests`)
+    ) {
         pageKind = GitLabPageKind.MergeRequest
     } else if (window.location.pathname.includes(`${owner}/${projectName}/blob`)) {
         pageKind = GitLabPageKind.File
