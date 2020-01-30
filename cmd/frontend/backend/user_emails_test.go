@@ -28,6 +28,7 @@ func Test_checkEmailAbuse(t *testing.T) {
 	defer envvar.MockSourcegraphDotComMode(false)
 
 	now := time.Now()
+	yesterday := now.AddDate(0, 0, -1)
 	farFuture := now.AddDate(100, 0, 0)
 
 	tests := []struct {
@@ -107,8 +108,9 @@ func Test_checkEmailAbuse(t *testing.T) {
 			name: "no abuse",
 			mockEmails: []*db.UserEmail{
 				{
-					Email:      "alice@example.com",
-					VerifiedAt: &now,
+					Email:                  "alice@example.com",
+					VerifiedAt:             &now,
+					LastVerificationSentAt: &yesterday,
 				},
 			},
 			hasQuote:  true,
