@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -62,8 +61,7 @@ func checkEmailAbuse(ctx context.Context, addr string) (abused bool, reason stri
 	// NOTE: We could check if email is already used here but that complicates the logic
 	// and the reused problem should be better handled in the user creation.
 
-	// Check cool down
-	if email.LastVerificationSentAt.Add(conf.EmailVerificationCoolDown()).After(time.Now()) {
+	if email.NeedsVerificationCoolDown() {
 		return true, "too frequent attempt since last verification email sent", nil
 	}
 

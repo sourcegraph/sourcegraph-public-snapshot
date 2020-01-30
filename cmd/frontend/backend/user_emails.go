@@ -41,12 +41,20 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 				return err
 			}
 
+			var latestVerificationEmail *db.UserEmail
 			var verifiedCount, unverifiedCount int
 			for _, email := range emails {
 				if email.VerifiedAt == nil {
 					unverifiedCount++
 				} else {
 					verifiedCount++
+				}
+
+				if email.LastVerificationSentAt != nil {
+					isLater := latestVerificationEmail == nil || email.LastVerificationSentAt.After(*latestVerificationEmail.LastVerificationSentAt)
+					if isLater {
+						latestVerificationEmail = email
+					}
 				}
 			}
 
@@ -67,6 +75,11 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 			const maxUnverified = 3
 			if unverifiedCount >= maxUnverified {
 				return errors.New("refusing to add email address because the user has too many existing unverified email addresses")
+			}
+
+			// Abuse prevention check 3: Forbid user from sending verification emails too frequently.
+			if latestVerificationEmail != nil && latestVerificationEmail.NeedsVerificationCoolDown() {
+				return errors.New("refusing to add email address because the user is adding new email addresses too frequently")
 			}
 		}
 		if envvar.SourcegraphDotComMode() {
