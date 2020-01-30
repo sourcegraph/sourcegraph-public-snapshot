@@ -81,12 +81,12 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 	}
 
 	eventStatisticByName := map[string]func(p *usagePeriod) *eventStatistics{
-		"codeintel.hover.precise":       func(p *usagePeriod) *eventStatistics { return p.Hover.Precise },
-		"codeintel.hover.fuzzy":         func(p *usagePeriod) *eventStatistics { return p.Hover.Fuzzy },
-		"codeintel.definitions.precise": func(p *usagePeriod) *eventStatistics { return p.Definitions.Precise },
-		"codeintel.definitions.fuzzy":   func(p *usagePeriod) *eventStatistics { return p.Definitions.Fuzzy },
-		"codeintel.references.precise":  func(p *usagePeriod) *eventStatistics { return p.References.Precise },
-		"codeintel.references.fuzzy":    func(p *usagePeriod) *eventStatistics { return p.References.Fuzzy },
+		"codeintel.preciseHoverResults":       func(p *usagePeriod) *eventStatistics { return p.Hover.Precise },
+		"codeintel.fuzzyHoverResults":         func(p *usagePeriod) *eventStatistics { return p.Hover.Fuzzy },
+		"codeintel.preciseDefinitionsResults": func(p *usagePeriod) *eventStatistics { return p.Definitions.Precise },
+		"codeintel.fuzzyDefinitionsResults":   func(p *usagePeriod) *eventStatistics { return p.Definitions.Fuzzy },
+		"codeintel.preciseReferencesResults":  func(p *usagePeriod) *eventStatistics { return p.References.Precise },
+		"codeintel.fuzzyReferencesResults":    func(p *usagePeriod) *eventStatistics { return p.References.Fuzzy },
 	}
 
 	for eventName, getEventStatistic := range eventStatisticByName {
