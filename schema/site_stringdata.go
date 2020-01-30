@@ -134,6 +134,12 @@ const SiteSchemaJSON = `{
       "default": false,
       "group": "Security"
     },
+    "disableDiagnosticTelemetry": {
+      "description": "Disable aggregated event counts and latencies from being sent back via pings.",
+      "type": "boolean",
+      "default": false,
+      "group": "Misc."
+    },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",

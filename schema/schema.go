@@ -870,6 +870,8 @@ type SiteConfiguration struct {
 	DisableAutoGitUpdates bool `json:"disableAutoGitUpdates,omitempty"`
 	// DisableBuiltInSearches description: Whether built-in searches should be hidden on the Searches page.
 	DisableBuiltInSearches bool `json:"disableBuiltInSearches,omitempty"`
+	// DisableDiagnosticTelemetry description: Disable aggregated event counts and latencies from being sent back via pings.
+	DisableDiagnosticTelemetry bool `json:"disableDiagnosticTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
 	// Discussions description: Configures Sourcegraph code discussions.

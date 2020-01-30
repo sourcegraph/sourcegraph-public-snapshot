@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - experimentalFeatures.splitSearchModes was removed as a site configuration option. It should be set in global/org/user settings.
 - Sourcegraph now waits for `90s` instead of `5s` for Redis to be available before quitting. This duration is configurable with the new `SRC_REDIS_WAIT_FOR` environment variable.
+- Code intelligence usage statistics will be sent back via pings by default. Aggregated event counts and latencies can be disabled via the site admin flag disableDiagnosticTelemetry.
 
 ### Fixed
 
