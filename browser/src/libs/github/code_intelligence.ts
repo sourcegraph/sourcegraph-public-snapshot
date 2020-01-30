@@ -27,6 +27,7 @@ import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './
 import { commentTextFieldResolver } from './text_fields'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -304,6 +305,13 @@ export const githubCodeHost: CodeHost = {
     },
     check: checkIsGitHub,
     getCommandPaletteMount,
+    notificationClassNames: {
+        [NotificationType.Log]: 'flash',
+        [NotificationType.Success]: 'flash flash-success',
+        [NotificationType.Info]: 'flash',
+        [NotificationType.Warning]: 'flash flash-warn',
+        [NotificationType.Error]: 'flash flash-error',
+    },
     commandPaletteClassProps: {
         buttonClassName: 'Header-link',
         popoverClassName: 'Box',
