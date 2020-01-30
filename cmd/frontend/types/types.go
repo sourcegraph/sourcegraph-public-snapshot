@@ -144,19 +144,21 @@ type Stages struct {
 }
 
 type CodeIntelUsageStatistics struct {
-	DailyActivities   []*CodeIntelUsagePeriod
-	WeeklyActivities  []*CodeIntelUsagePeriod
-	MonthlyActivities []*CodeIntelUsagePeriod
+	Daily   []*CodeIntelUsagePeriod
+	Weekly  []*CodeIntelUsagePeriod
+	Monthly []*CodeIntelUsagePeriod
 }
 
 type CodeIntelUsagePeriod struct {
-	StartTime                    time.Time
-	PreciseHoverStatistics       *CodeIntelEventStatistics
-	FuzzyHoverStatistics         *CodeIntelEventStatistics
-	PreciseDefinitionsStatistics *CodeIntelEventStatistics
-	FuzzyDefinitionsStatistics   *CodeIntelEventStatistics
-	PreciseReferencesStatistics  *CodeIntelEventStatistics
-	FuzzyReferencesStatistics    *CodeIntelEventStatistics
+	StartTime   time.Time
+	Hover       *CodeIntelEventCategoryStatistics
+	Definitions *CodeIntelEventCategoryStatistics
+	References  *CodeIntelEventCategoryStatistics
+}
+
+type CodeIntelEventCategoryStatistics struct {
+	Precise *CodeIntelEventStatistics
+	Fuzzy   *CodeIntelEventStatistics
 }
 
 type CodeIntelEventStatistics struct {

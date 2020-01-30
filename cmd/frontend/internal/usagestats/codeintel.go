@@ -16,9 +16,10 @@ type CodeIntelUsageStatisticsOptions struct {
 }
 
 type (
-	usagePeriod     = types.CodeIntelUsagePeriod
-	eventStatistics = types.CodeIntelEventStatistics
-	eventLatencies  = types.CodeIntelEventLatencies
+	usagePeriod             = types.CodeIntelUsagePeriod
+	eventCategoryStatistics = types.CodeIntelEventCategoryStatistics
+	eventStatistics         = types.CodeIntelEventStatistics
+	eventLatencies          = types.CodeIntelEventLatencies
 )
 
 var (
@@ -46,22 +47,22 @@ func GetCodeIntelUsageStatistics(ctx context.Context, opt *CodeIntelUsageStatist
 		}
 	}
 
-	dailyActivities, err := codeIntelActivity(ctx, db.Daily, dayPeriods)
+	daily, err := codeIntelActivity(ctx, db.Daily, dayPeriods)
 	if err != nil {
 		return nil, err
 	}
-	weeklyActivities, err := codeIntelActivity(ctx, db.Weekly, weekPeriods)
+	weekly, err := codeIntelActivity(ctx, db.Weekly, weekPeriods)
 	if err != nil {
 		return nil, err
 	}
-	monthlyActivities, err := codeIntelActivity(ctx, db.Monthly, monthPeriods)
+	monthly, err := codeIntelActivity(ctx, db.Monthly, monthPeriods)
 	if err != nil {
 		return nil, err
 	}
 	return &types.CodeIntelUsageStatistics{
-		DailyActivities:   dailyActivities,
-		WeeklyActivities:  weeklyActivities,
-		MonthlyActivities: monthlyActivities,
+		Daily:   daily,
+		Weekly:  weekly,
+		Monthly: monthly,
 	}, nil
 }
 
@@ -73,22 +74,19 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 	activityPeriods := []*types.CodeIntelUsagePeriod{}
 	for i := 0; i <= periods; i++ {
 		activityPeriods = append(activityPeriods, &usagePeriod{
-			PreciseHoverStatistics:       &eventStatistics{EventLatencies: &eventLatencies{}},
-			FuzzyHoverStatistics:         &eventStatistics{EventLatencies: &eventLatencies{}},
-			PreciseDefinitionsStatistics: &eventStatistics{EventLatencies: &eventLatencies{}},
-			FuzzyDefinitionsStatistics:   &eventStatistics{EventLatencies: &eventLatencies{}},
-			PreciseReferencesStatistics:  &eventStatistics{EventLatencies: &eventLatencies{}},
-			FuzzyReferencesStatistics:    &eventStatistics{EventLatencies: &eventLatencies{}},
+			Hover:       newEventCategory(),
+			Definitions: newEventCategory(),
+			References:  newEventCategory(),
 		})
 	}
 
 	eventStatisticByName := map[string]func(p *usagePeriod) *eventStatistics{
-		"codeintel.hover.precise":       func(p *usagePeriod) *eventStatistics { return p.PreciseHoverStatistics },
-		"codeintel.hover.fuzzy":         func(p *usagePeriod) *eventStatistics { return p.FuzzyHoverStatistics },
-		"codeintel.definitions.precise": func(p *usagePeriod) *eventStatistics { return p.PreciseDefinitionsStatistics },
-		"codeintel.definitions.fuzzy":   func(p *usagePeriod) *eventStatistics { return p.FuzzyDefinitionsStatistics },
-		"codeintel.references.precise":  func(p *usagePeriod) *eventStatistics { return p.PreciseReferencesStatistics },
-		"codeintel.references.fuzzy":    func(p *usagePeriod) *eventStatistics { return p.FuzzyReferencesStatistics },
+		"codeintel.hover.precise":       func(p *usagePeriod) *eventStatistics { return p.Hover.Precise },
+		"codeintel.hover.fuzzy":         func(p *usagePeriod) *eventStatistics { return p.Hover.Fuzzy },
+		"codeintel.definitions.precise": func(p *usagePeriod) *eventStatistics { return p.Definitions.Precise },
+		"codeintel.definitions.fuzzy":   func(p *usagePeriod) *eventStatistics { return p.Definitions.Fuzzy },
+		"codeintel.references.precise":  func(p *usagePeriod) *eventStatistics { return p.References.Precise },
+		"codeintel.references.fuzzy":    func(p *usagePeriod) *eventStatistics { return p.References.Fuzzy },
 	}
 
 	for eventName, getEventStatistic := range eventStatisticByName {
@@ -132,4 +130,11 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 	}
 
 	return activityPeriods, nil
+}
+
+func newEventCategory() *eventCategoryStatistics {
+	return &eventCategoryStatistics{
+		Precise: &eventStatistics{EventLatencies: &eventLatencies{}},
+		Fuzzy:   &eventStatistics{EventLatencies: &eventLatencies{}},
+	}
 }

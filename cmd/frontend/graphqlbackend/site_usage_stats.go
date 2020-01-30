@@ -38,33 +38,23 @@ type siteUsageStatisticsResolver struct {
 }
 
 func (s *siteUsageStatisticsResolver) DAUs() []*siteUsagePeriodResolver {
-	daus := make([]*siteUsagePeriodResolver, 0, len(s.siteUsageStatistics.DAUs))
-	for _, d := range s.siteUsageStatistics.DAUs {
-		daus = append(daus, &siteUsagePeriodResolver{
-			siteUsagePeriod: d,
-		})
-	}
-	return daus
+	return s.activities(s.siteUsageStatistics.DAUs)
 }
 
 func (s *siteUsageStatisticsResolver) WAUs() []*siteUsagePeriodResolver {
-	waus := make([]*siteUsagePeriodResolver, 0, len(s.siteUsageStatistics.WAUs))
-	for _, w := range s.siteUsageStatistics.WAUs {
-		waus = append(waus, &siteUsagePeriodResolver{
-			siteUsagePeriod: w,
-		})
-	}
-	return waus
+	return s.activities(s.siteUsageStatistics.WAUs)
 }
 
 func (s *siteUsageStatisticsResolver) MAUs() []*siteUsagePeriodResolver {
-	maus := make([]*siteUsagePeriodResolver, 0, len(s.siteUsageStatistics.MAUs))
-	for _, m := range s.siteUsageStatistics.MAUs {
-		maus = append(maus, &siteUsagePeriodResolver{
-			siteUsagePeriod: m,
-		})
+	return s.activities(s.siteUsageStatistics.MAUs)
+}
+
+func (s *siteUsageStatisticsResolver) activities(periods []*types.SiteActivityPeriod) []*siteUsagePeriodResolver {
+	resolvers := make([]*siteUsagePeriodResolver, 0, len(periods))
+	for _, p := range periods {
+		resolvers = append(resolvers, &siteUsagePeriodResolver{siteUsagePeriod: p})
 	}
-	return maus
+	return resolvers
 }
 
 type siteUsagePeriodResolver struct {
