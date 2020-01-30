@@ -69,7 +69,6 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 	if periods == 0 {
 		return []*types.CodeIntelUsagePeriod{}, nil
 	}
-	periods = periods - 1
 
 	activityPeriods := []*types.CodeIntelUsagePeriod{}
 	for i := 0; i <= periods; i++ {
@@ -83,7 +82,7 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 		})
 	}
 
-	eventNames := map[string]func(p *usagePeriod) *eventStatistics{
+	eventStatisticByName := map[string]func(p *usagePeriod) *eventStatistics{
 		"codeintel.hover.precise":       func(p *usagePeriod) *eventStatistics { return p.PreciseHoverStatistics },
 		"codeintel.hover.fuzzy":         func(p *usagePeriod) *eventStatistics { return p.FuzzyHoverStatistics },
 		"codeintel.definitions.precise": func(p *usagePeriod) *eventStatistics { return p.PreciseDefinitionsStatistics },
@@ -92,7 +91,7 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 		"codeintel.references.fuzzy":    func(p *usagePeriod) *eventStatistics { return p.FuzzyReferencesStatistics },
 	}
 
-	for eventName, getEventStatistic := range eventNames {
+	for eventName, getEventStatistic := range eventStatisticByName {
 		userCounts, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
 			EventFilters: &db.EventFilterOptions{
 				ByEventName: eventName,
