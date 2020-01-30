@@ -114,6 +114,8 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 		// Send email verification email.
 		if err := SendUserEmailVerificationEmail(ctx, email, *code); err != nil {
 			return errors.Wrap(err, "SendUserEmailVerificationEmail")
+		} else if err = db.UserEmails.SetLastVerificationSentAt(ctx, userID, email); err != nil {
+			return errors.Wrap(err, "SetLastVerificationSentAt")
 		}
 	}
 

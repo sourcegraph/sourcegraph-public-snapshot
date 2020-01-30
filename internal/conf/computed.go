@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -131,6 +132,16 @@ func CanSendEmail() bool {
 // CanReadEmail tells if an IMAP server is configured and reading email is possible.
 func CanReadEmail() bool {
 	return Get().EmailImap != nil
+}
+
+// EmailVerificationCoolDown returns the cool down duration for sending verification email
+// to the same email address.
+func EmailVerificationCoolDown() time.Duration {
+	emailVerify := Get().EmailVerification
+	if emailVerify == nil || emailVerify.CoolDown < 0 {
+		return 30 * time.Second
+	}
+	return time.Duration(emailVerify.CoolDown) * time.Second
 }
 
 // Deploy type constants. Any changes here should be reflected in the DeployType type declared in web/src/globals.d.ts:
