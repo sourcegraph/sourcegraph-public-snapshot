@@ -18,6 +18,8 @@ export function isTextFilter(filter: FilterTypes): boolean {
         'timeout',
         'before',
         'after',
+        'message',
+        'author',
         '-repo',
         '-repohasfile',
         '-file',
@@ -92,5 +94,7 @@ export const FilterTypesToProseNames: Record<FilterTypes, string> = {
     case: 'Case sensitive',
     after: 'Committed after',
     before: 'Committed before',
+    message: 'Commit message contains',
+    author: 'Commit author',
     type: 'Type',
 }
