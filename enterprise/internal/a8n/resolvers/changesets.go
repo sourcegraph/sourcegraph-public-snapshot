@@ -8,6 +8,8 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -19,7 +21,6 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -229,6 +230,18 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 	}, nil
 }
 
+func (r *changesetResolver) Labels() (graphqlbackend.ChangesetLabelsConnectionResolver, error) {
+	switch m := r.Metadata.(type) {
+	case *github.PullRequest:
+		return changesetLabelsConnectionResolver{labels: m.Labels.Nodes}, nil
+	case *bitbucketserver.PullRequest:
+		// bitbucket server does not support labels
+		return changesetLabelsConnectionResolver{labels: []github.Label{}}, nil
+	default:
+		return nil, errors.New("unknown changeset type")
+	}
+}
+
 func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
 	s, err := r.Changeset.State()
 	if err != nil {
@@ -359,18 +372,14 @@ type changesetLabelsConnectionResolver struct {
 }
 
 type changesetLabelResolver struct {
-	text        string
-	color       string
-	description string
+	github.Label
 }
 
 func (r changesetLabelsConnectionResolver) Nodes() []graphqlbackend.ChangesetLabelResolver {
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(r.labels))
 	for _, label := range r.labels {
 		resolvers = append(resolvers, &changesetLabelResolver{
-			text:        label.Name,
-			color:       label.Color,
-			description: label.Description,
+			Label: label,
 		})
 	}
 	return resolvers
@@ -380,26 +389,14 @@ func (r changesetLabelsConnectionResolver) TotalCount() int32 {
 	return int32(len(r.labels))
 }
 
-func (r *changesetResolver) Labels() (graphqlbackend.ChangesetLabelsConnectionResolver, error) {
-	switch m := r.Metadata.(type) {
-	case *github.PullRequest:
-		return changesetLabelsConnectionResolver{labels: m.Labels.Nodes}, nil
-	case *bitbucketserver.PullRequest:
-		// bitbucket server does not support labels
-		return changesetLabelsConnectionResolver{labels: []github.Label{}}, nil
-	default:
-		return nil, errors.New("unknown changeset type")
-	}
-}
-
 func (r *changesetLabelResolver) Text() string {
-	return r.text
+	return r.Label.Name
 }
 
 func (r *changesetLabelResolver) Color() string {
-	return r.color
+	return r.Label.Color
 }
 
 func (r *changesetLabelResolver) Description() string {
-	return r.description
+	return r.Label.Description
 }
