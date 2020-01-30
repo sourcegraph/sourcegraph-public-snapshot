@@ -680,11 +680,6 @@ type ChangesetLabel {
     description: String!
 }
 
-type ChangesetLabelConnection {
-    totalCount: Int!
-    nodes: [ChangesetLabel!]!
-}
-
 # A changeset in a code host (e.g. a PR on Github)
 type ExternalChangeset implements Node {
     # The unique ID for the changeset.
@@ -719,7 +714,7 @@ type ExternalChangeset implements Node {
     state: ChangesetState!
 
     # The labels attached to the changeset on the code host.
-    labels: ChangesetLabelConnection!
+    labels: [ChangesetLabel!]!
 
     # The external URL of the changeset on the code host.
     externalURL: ExternalLink!
