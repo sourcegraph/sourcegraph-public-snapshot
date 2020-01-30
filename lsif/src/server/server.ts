@@ -5,6 +5,8 @@ import * as path from 'path'
 import * as settings from './settings'
 import express from 'express'
 import promClient from 'prom-client'
+import { createClient } from 'redis'
+import { promisify } from 'util'
 import { Backend } from './backend/backend'
 import { createLogger } from '../shared/logging'
 import { createLsifRouter } from './routes/lsif'
@@ -59,8 +61,8 @@ async function main(logger: Logger): Promise<void> {
     const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
     // Temporary migration
-    // TODO - remove after 3.15
-    await migrateFilenames()
+    await migrateFilenames() // TODO - remove after 3.15
+    await clearOldRedisData(logger) // TODO - remove after 3.15
 
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
@@ -118,6 +120,29 @@ async function migrateFilenames(): Promise<void> {
 
     // Create an empty done file to record that all files have been renamed.
     await fs.close(await fs.open(doneFile, 'w'))
+}
+
+/**
+ * Remove all old LSIF data from redis.
+ */
+async function clearOldRedisData(logger: Logger): Promise<void> {
+    const script = `
+        local keys = redis.call('keys', 'bull:*')
+        for i, key in ipairs(keys) do
+            redis.call('del', key)
+        end
+    `
+
+    const url = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_ENDPOINT || 'redis-store:6379'
+    const urlWithProtocol = url.includes('//') ? url : `redis://${url}`
+
+    try {
+        const client = createClient(urlWithProtocol)
+        const evalAsync: (script: string, numArgs: number) => Promise<void> = promisify(client.eval).bind(client)
+        await evalAsync(script, 0)
+    } catch (err) {
+        logger.warning('Failed to clean old LSIF data from redis-store', { error: err })
+    }
 }
 
 // Initialize logger
