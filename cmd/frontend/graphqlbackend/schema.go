@@ -718,7 +718,7 @@ type ExternalChangeset implements Node {
     # The state of the changeset
     state: ChangesetState!
 
-    # The labels attached to the changeset
+    # The labels attached to the changeset on the code host.
     labels: ChangesetLabelConnection!
 
     # The external URL of the changeset on the code host.
