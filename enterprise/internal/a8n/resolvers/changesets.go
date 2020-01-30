@@ -151,7 +151,9 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	opts := ee.ListCampaignsOpts{
 		ChangesetID: r.Changeset.ID,
-		State:       a8n.CampaignState(args.State),
+	}
+	if args.State != nil {
+		opts.State = a8n.CampaignState(*args.State)
 	}
 	if args.First != nil {
 		opts.Limit = int(*args.First)

@@ -685,7 +685,7 @@ type ExternalChangeset implements Node {
     repository: Repository!
 
     # The campaigns that have this changeset in them.
-    campaigns(first: Int, state: CampaignState = Any): CampaignConnection!
+    campaigns(first: Int, state: CampaignState): CampaignConnection!
 
     # The events belonging to this changeset.
     events(first: Int): ChangesetEventConnection!
@@ -1091,9 +1091,8 @@ input SurveySubmissionInput {
 
 # The state of the campaign
 enum CampaignState {
-    Any
-    Open
-    Closed
+    OPEN
+    CLOSED
 }
 
 # A query.
@@ -1107,7 +1106,7 @@ type Query {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
-        state: CampaignState = Any
+        state: CampaignState
     ): CampaignConnection!
 
     # Looks up a repository by either name or cloneURL.

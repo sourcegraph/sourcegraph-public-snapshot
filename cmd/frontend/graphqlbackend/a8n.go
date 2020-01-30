@@ -50,7 +50,7 @@ type CampaignPlanPatch struct {
 
 type ListCampaignArgs struct {
 	First *int32
-	State string
+	State *string
 }
 
 type DeleteCampaignArgs struct {
