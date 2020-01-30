@@ -91,7 +91,7 @@ func marshalCodeIntelUsageJSON() (*json.RawMessage, error) {
 		WeekPeriods:           &weeks,
 		MonthPeriods:          &months,
 		IncludeEventCounts:    false,
-		IncludeEventLatencies: false,
+		IncludeEventLatencies: true,
 	})
 	if err != nil {
 		return nil, err
