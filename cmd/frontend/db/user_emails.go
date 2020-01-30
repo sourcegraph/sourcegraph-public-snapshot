@@ -182,6 +182,10 @@ func (*userEmails) SetLastVerificationSentAt(ctx context.Context, userID int32, 
 // GetLatestVerificationSentEmail returns the email with the lastest time of "last_verification_sent_at" column,
 // it excludes rows with "last_verification_sent_at IS NULL".
 func (*userEmails) GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error) {
+	if Mocks.UserEmails.GetLatestVerificationSentEmail != nil {
+		return Mocks.UserEmails.GetLatestVerificationSentEmail(ctx, email)
+	}
+
 	emails, err := (&userEmails{}).getBySQL(ctx, "WHERE email=$1 AND last_verification_sent_at IS NOT NULL ORDER BY last_verification_sent_at DESC LIMIT 1", email)
 	if err != nil {
 		return nil, err
