@@ -70,15 +70,15 @@ func (s *codeIntelUsagePeriodResolver) StartTime() DateTime {
 }
 
 func (s *codeIntelUsagePeriodResolver) Hover() *codeIntelEventCategoryStatisticsResolver {
-	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.HoverStatistics}
+	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.Hover}
 }
 
 func (s *codeIntelUsagePeriodResolver) Definitions() *codeIntelEventCategoryStatisticsResolver {
-	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.DefinitionsStatistics}
+	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.Definitions}
 }
 
 func (s *codeIntelUsagePeriodResolver) References() *codeIntelEventCategoryStatisticsResolver {
-	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.ReferencesStatistics}
+	return &codeIntelEventCategoryStatisticsResolver{CodeIntelEventCategoryStatistics: s.codeIntelUsagePeriod.References}
 }
 
 type codeIntelEventCategoryStatisticsResolver struct {
@@ -86,11 +86,11 @@ type codeIntelEventCategoryStatisticsResolver struct {
 }
 
 func (s *codeIntelEventCategoryStatisticsResolver) Precise() *codeIntelEventStatisticsResolver {
-	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.PreciseStatistics}
+	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.Precise}
 }
 
 func (s *codeIntelEventCategoryStatisticsResolver) Fuzzy() *codeIntelEventStatisticsResolver {
-	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.FuzzyStatistics}
+	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.Fuzzy}
 }
 
 type codeIntelEventStatisticsResolver struct {

@@ -150,15 +150,15 @@ type CodeIntelUsageStatistics struct {
 }
 
 type CodeIntelUsagePeriod struct {
-	StartTime             time.Time
-	HoverStatistics       *CodeIntelEventCategoryStatistics
-	DefinitionsStatistics *CodeIntelEventCategoryStatistics
-	ReferencesStatistics  *CodeIntelEventCategoryStatistics
+	StartTime   time.Time
+	Hover       *CodeIntelEventCategoryStatistics
+	Definitions *CodeIntelEventCategoryStatistics
+	References  *CodeIntelEventCategoryStatistics
 }
 
 type CodeIntelEventCategoryStatistics struct {
-	PreciseStatistics *CodeIntelEventStatistics
-	FuzzyStatistics   *CodeIntelEventStatistics
+	Precise *CodeIntelEventStatistics
+	Fuzzy   *CodeIntelEventStatistics
 }
 
 type CodeIntelEventStatistics struct {
