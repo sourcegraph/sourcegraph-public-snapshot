@@ -21,7 +21,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
 
         {props.authenticatedUser.siteAdmin && (
             <div className="text-right mb-1">
-                <Link to="/campaigns/new" className="btn btn-primary">
+                <Link to="/campaigns/create" className="btn btn-primary">
                     <AddIcon className="icon-inline" /> New campaign
                 </Link>
             </div>

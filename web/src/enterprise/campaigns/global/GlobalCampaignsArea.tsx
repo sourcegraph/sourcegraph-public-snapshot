@@ -5,6 +5,8 @@ import { CampaignDetails } from '../detail/CampaignDetails'
 import { IUser } from '../../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { CreateCampaign } from './create/CreateCampaign'
+import { AutomatedCampaignInfo } from './create/AutomatedCampaignInfo'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: IUser
@@ -21,6 +23,16 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
             <Route
                 render={props => <GlobalCampaignListPage {...outerProps} {...props} />}
                 path={match.url}
+                exact={true}
+            />
+            <Route
+                path={`${match.url}/create`}
+                render={props => <CreateCampaign {...outerProps} {...props} />}
+                exact={true}
+            />
+            <Route
+                path={`${match.url}/automated`}
+                render={props => <AutomatedCampaignInfo {...outerProps} {...props} />}
                 exact={true}
             />
             <Route

@@ -472,7 +472,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     )}
                 </div>
                 {mode === 'editing' && (
-                    <p className="ml-1 mb-0">
+                    <p className="ml-1">
                         <small>
                             <a rel="noopener noreferrer" target="_blank" href="/help/user/markdown">
                                 Markdown supported
