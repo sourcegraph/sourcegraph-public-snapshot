@@ -11,14 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-const (
-	defaultDays   = 14
-	defaultWeeks  = 10
-	defaultMonths = 3
-
-	maxStorageDays = 93
-)
-
 var (
 	timeNow = time.Now
 )
@@ -146,7 +138,6 @@ func activeUsers(ctx context.Context, periodType db.PeriodType, periods int) ([]
 	if periods == 0 {
 		return []*types.SiteActivityPeriod{}, nil
 	}
-	periods = periods - 1
 
 	uniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, nil)
 	if err != nil {
