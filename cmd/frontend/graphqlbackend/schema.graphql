@@ -681,9 +681,9 @@ type ChangesetPlan {
 
 type ChangesetLabel {
     text: String!
-    # leaving this optional for code-hosts that don't have coloring (TODO: do such exist?)
+    # Label color, defined in hex without the #. E.g., #(93ba13)
     color: String!
-    # github has optional descriptions for labels, do we want to support that either?
+    # Descriptive text to support the understandability of the labels meaning
     description: String!
 }
 
