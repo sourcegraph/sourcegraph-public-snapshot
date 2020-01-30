@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { buildSearchURLQuery } from '../../../shared/src/util/url'
+import { buildSearchURLQuery, generateFiltersQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
@@ -113,7 +113,7 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
     if (!match) {
         return searchType ? `${query} type:${searchType}` : query
     }
-
+    console.log('match[0]', match[0])
     if (match[0] === `type:${searchType}`) {
         /** Query already contains correct search type */
         return query
