@@ -44,7 +44,10 @@ func LogEvent(ctx context.Context, args Event) error {
 		return nil
 	}
 	if envvar.SourcegraphDotComMode() {
-		return publishSourcegraphDotComEvent(args)
+		err := publishSourcegraphDotComEvent(args)
+		if err != nil {
+			return err
+		}
 	}
 	return logLocalEvent(ctx, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument)
 }

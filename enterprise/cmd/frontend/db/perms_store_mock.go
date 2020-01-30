@@ -7,7 +7,10 @@ import (
 )
 
 type MockPerms struct {
-	Transact                func(ctx context.Context) (*PermsStore, error)
-	LoadUserPermissions     func(ctx context.Context, p *iauthz.UserPermissions) error
-	GrantPendingPermissions func(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) error
+	LoadRepoPermissions        func(ctx context.Context, p *iauthz.RepoPermissions) error
+	LoadUserPermissions        func(ctx context.Context, p *iauthz.UserPermissions) error
+	LoadUserPendingPermissions func(ctx context.Context, p *iauthz.UserPendingPermissions) error
+	SetRepoPermissions         func(ctx context.Context, p *iauthz.RepoPermissions) error
+	SetRepoPendingPermissions  func(ctx context.Context, bindIDs []string, p *iauthz.RepoPermissions) error
+	ListPendingUsers           func(ctx context.Context) ([]string, error)
 }

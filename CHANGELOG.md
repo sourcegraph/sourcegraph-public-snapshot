@@ -14,21 +14,39 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Experimental: the search query input now provides syntax highlighting, hover tooltips, and diagnostics on filters in search queries. Requires the global settings value `{ "experimentalFeatures": { "smartSearchField": true } }`.
-- Added a setting `search.hideSuggestions`, which when set to `false`, will hide search suggestions in the search bar.
+- Added a setting `search.hideSuggestions`, which when set to `true`, will hide search suggestions in the search bar.
+- An experimental tool [src-expose](https://docs.sourcegraph.com/admin/external_service/other#experimental-src-expose) to import code from any code host.
+- Experimental: Added new field `certificates` as in `{ "experimentalFeatures" { "tls.external": { "certificates": ["<CERT>"] } } }`. This allows you to add certificates to trust when communicating with a code host (via API or git+http). We expect this to be useful for adding internal certificate authorities/self-signed certificates. [#71](https://github.com/sourcegraph/sourcegraph/issues/71)
 
 ### Changed
 
 - experimentalFeatures.splitSearchModes was removed as a site configuration option. It should be set in global/org/user settings.
+- Sourcegraph now waits for `90s` instead of `5s` for Redis to be available before quitting. This duration is configurable with the new `SRC_REDIS_WAIT_FOR` environment variable.
 
 ### Fixed
 
 - After adding/removing a gitserver replica the admin interface will correctly report that repositories that need to move replicas as cloning. [#7970](https://github.com/sourcegraph/sourcegraph/issues/7970)
 - Show download button for images. [#7924](https://github.com/sourcegraph/sourcegraph/issues/7924)
+- gitserver backoffs trying to re-clone repositories if they fail to clone. In the case of large monorepos that failed this lead to gitserver constantly cloning them and using many resources. [#7804](https://github.com/sourcegraph/sourcegraph/issues/7804)
+- **Monitoring:** Fixed an issue with the **Frontend** -> **Search responses by status** panel which caused search response types to not be aggregated as expected. [#7627](https://github.com/sourcegraph/sourcegraph/issues/7627)
+- **Monitoring:** Fixed an issue with the **Replacer**, **Repo Updater**, and **Searcher** dashboards would incorrectly report on a metric from the unrelated query-runner service. [#7531](https://github.com/sourcegraph/sourcegraph/issues/7531)
 
 ### Removed
 
 - All repository fields related to `enabled` and `disabled` have been removed from the GraphQL API. These fields have been deprecated since 3.4. [#3971](https://github.com/sourcegraph/sourcegraph/pull/3971)
 - The deprecated extension API `Hover.__backcompatContents` was removed.
+
+## 3.12.5
+
+### Fixed
+
+- Fixed an internal race condition in our Docker build process. The previous patch version 3.12.4 contained an lsif-server version that was newer than expected. The affected artifacts have since been removed from the Docker registry.
+
+## 3.12.4
+
+### Added
+
+- New optional `apiURL` configuration option for Bitbucket Cloud code host connection [#8082](https://github.com/sourcegraph/sourcegraph/pull/8082)
 
 ## 3.12.3
 
@@ -70,7 +88,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Hover tooltips and _Find Reference_ results now display a badge to indicate when a result is search-based. These indicators can be disabled by adding `{ "experimentalFeatures": { "showBadgeAttachments": false } }` in global settings.
 - Automation campaigns can now be created as drafts, which can be shared and updated without creating changesets (pull requests) on code hosts. When ready, a draft can then be published, either completely or changeset by changeset, to create changesets on the code host. [#7659](https://github.com/sourcegraph/sourcegraph/pull/7659)
 - Experimental: feature flag `BitbucketServerFastPerm` can be enabled to speed up fetching ACL data from Bitbucket Server instances. This requires [Bitbucket Server Sourcegraph plugin](https://github.com/sourcegraph/bitbucket-server-plugin) to be installed.
-- Experimental: A site configuration field `{ "experimentalFeatures" { "tls.external": true } }` which allows you to configure SSL/TLS settings for Sourcegraph contacting your code hosts. Currently just supports turning off TLS/SSL verification. [#71](https://github.com/sourcegraph/sourcegraph/issues/71)
+- Experimental: A site configuration field `{ "experimentalFeatures" { "tls.external": { "insecureSkipVerify": true } } }` which allows you to configure SSL/TLS settings for Sourcegraph contacting your code hosts. Currently just supports turning off TLS/SSL verification. [#71](https://github.com/sourcegraph/sourcegraph/issues/71)
 - Experimental: To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Requires the site configuration value `{ "experimentalFeatures": { "searchMultipleRevisionsPerRepository": true } }`. Previously this was only supported for diff and commit searches.
 - Experimental: interactive search mode, which helps users construct queries using UI elements. Requires the site configuration value `{ "experimentalFeatures": { "splitSearchModes": true } }`. The existing plain text search format is still available via the dropdown menu on the left of the search bar.
 - A case sensitivity toggle now appears in the search bar.

@@ -1791,10 +1791,10 @@
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
   version "2.0.0"
 
-"@sourcegraph/prettierrc@^3.0.1":
-  version "3.0.1"
-  resolved "https://registry.npmjs.org/@sourcegraph/prettierrc/-/prettierrc-3.0.1.tgz#e1db0046dca3c5e770d0f2ac68bbd794fee37138"
-  integrity sha512-Xyfsk2zLbtJXjgzPC5Q91AdoZ9YECB7Z5pyUCoYb36zqClBRkN2F/VoT+04pLqBf9xsr9uKfJoaf/WGGngLlVg==
+"@sourcegraph/prettierrc@^3.0.1", "@sourcegraph/prettierrc@^3.0.2":
+  version "3.0.2"
+  resolved "https://registry.npmjs.org/@sourcegraph/prettierrc/-/prettierrc-3.0.2.tgz#a8fb80ed5712a59cd60eb62f0969090ebc386a80"
+  integrity sha512-HCEKIIgOLap22yvnMcr+v6X/1LK6LuVd5MhGLxjYsb7irI2KNEQpalR5SKjsfYPawzVcgCPu1QsD0Oy4iGdPuA==
 
 "@sourcegraph/react-loading-spinner@0.0.7":
   version "0.0.7"
@@ -17758,7 +17758,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "23.0.1"
+  version "23.1.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"

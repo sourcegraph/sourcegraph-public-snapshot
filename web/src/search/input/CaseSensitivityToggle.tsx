@@ -65,7 +65,7 @@ export class CaseSensitivityToggle extends React.Component<Props> {
 
     private toggle = (): void => {
         const isSearchHomepage =
-            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search, true)
+            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search)
 
         const shouldSubmitSearchOnHomepage =
             this.props.navbarSearchQuery !== '' || (this.props.filtersInQuery && !isEmpty(this.props.filtersInQuery))

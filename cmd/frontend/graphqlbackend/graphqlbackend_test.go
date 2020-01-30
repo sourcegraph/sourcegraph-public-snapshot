@@ -20,7 +20,7 @@ func TestRepository(t *testing.T) {
 	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: mustParseGraphQLSchema(t, nil),
+			Schema: mustParseGraphQLSchema(t),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {

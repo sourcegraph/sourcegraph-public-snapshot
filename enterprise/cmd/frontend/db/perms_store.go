@@ -80,6 +80,10 @@ AND provider = %s
 // LoadRepoPermissions loads stored repository permissions into p. An ErrPermsNotFound is
 // returned when there are no valid permissions available.
 func (s *PermsStore) LoadRepoPermissions(ctx context.Context, p *iauthz.RepoPermissions) (err error) {
+	if Mocks.Perms.LoadRepoPermissions != nil {
+		return Mocks.Perms.LoadRepoPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -134,6 +138,10 @@ AND provider = %s
 //  ---------+------------+--------------+-------------+------------
 //         1 |       read | bitmap{1, 2} | sourcegraph | <DateTime>
 func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *iauthz.RepoPermissions) (err error) {
+	if Mocks.Perms.SetRepoPermissions != nil {
+		return Mocks.Perms.SetRepoPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "SetRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -297,6 +305,10 @@ DO UPDATE SET
 // LoadUserPendingPermissions returns pending permissions found by given parameters.
 // An ErrPermsNotFound is returned when there are no pending permissions available.
 func (s *PermsStore) LoadUserPendingPermissions(ctx context.Context, p *iauthz.UserPendingPermissions) (err error) {
+	if Mocks.Perms.LoadUserPendingPermissions != nil {
+		return Mocks.Perms.LoadUserPendingPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -350,6 +362,10 @@ AND object_type = %s
 //  ---------+------------+--------------+------------
 //         1 |       read | bitmap{1, 2} | <DateTime>
 func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, bindIDs []string, p *iauthz.RepoPermissions) (err error) {
+	if Mocks.Perms.SetRepoPendingPermissions != nil {
+		return Mocks.Perms.SetRepoPendingPermissions(ctx, bindIDs, p)
+	}
+
 	ctx, save := s.observe(ctx, "SetRepoPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.String("bindIDs", strings.Join(bindIDs, ",")))...) }()
 
@@ -686,23 +702,28 @@ DO UPDATE SET
 	), nil
 }
 
-// GrantPendingPermissions grants the user has given ID with pending permissions found in p.
-// It "merges" rows in pending permissions tables to effective permissions tables, i.e. permissions
-// are unioned not replaced.
-// This method starts its own transaction if the caller hasn't started one already.
+// GrantPendingPermissions is used to grant pending permissions when the associated bind ID becomes effective
+// for a given user, e.g. username as bind ID when a user is created, email as bind ID when the email
+// address is verified. Because there could be multiple bind IDs that are associated with a single user
+// (i.e. multiple email addresses), it merges data from "repo_pending_permissions" and "user_pending_permissions"
+// tables to "repo_permissions" and "user_permissions" tables for the user, i.e. permissions are unioned
+// not replaced, which is one of the main differences from SetRepoPermissions/SetRepoPendingPermissions.
+// Another main difference is that multiple calls to this method are not idempotent as it conceptually
+// does nothing when there is no data in the pending permissions tables for the user.
+//
+// This method starts its own transaction for update consistency if the caller hasn't started one already.
+//
+// 🚨 SECURITY: This method takes arbitrary string as a valid bind ID and does not interpret the meaning
+// of the value it represents. Therefore, it is caller's responsibility to ensure the legitimate relation
+// between the given user ID and the bind ID found in p.
 func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, p *iauthz.UserPendingPermissions) (err error) {
-	if Mocks.Perms.GrantPendingPermissions != nil {
-		return Mocks.Perms.GrantPendingPermissions(ctx, userID, p)
-	}
-
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
-	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
+	defer func() { save(&err, append(p.TracingFields(), otlog.Int32("userID", userID))...) }()
 
 	var txs *PermsStore
 	if s.inTx() {
 		txs = s
 	} else {
-		// Open a transaction for update consistency.
 		txs, err = s.Transact(ctx)
 		if err != nil {
 			return err
@@ -916,6 +937,10 @@ AND object_type = %s
 
 // ListPendingUsers returns a list of bind IDs who have pending permissions.
 func (s *PermsStore) ListPendingUsers(ctx context.Context) (bindIDs []string, err error) {
+	if Mocks.Perms.ListPendingUsers != nil {
+		return Mocks.Perms.ListPendingUsers(ctx)
+	}
+
 	ctx, save := s.observe(ctx, "ListPendingUsers", "")
 	defer save(&err)
 
@@ -953,6 +978,41 @@ func (s *PermsStore) ListPendingUsers(ctx context.Context) (bindIDs []string, er
 	}
 
 	return bindIDs, nil
+}
+
+// DeleteAllUserPermissions deletes all rows with given user ID from the "user_permissions" table,
+// which effectively removes access to all repositories for the user.
+func (s *PermsStore) DeleteAllUserPermissions(ctx context.Context, userID int32) (err error) {
+	ctx, save := s.observe(ctx, "DeleteAllUserPermissions", "")
+	defer func() { save(&err, otlog.Int32("userID", userID)) }()
+
+	// NOTE: Practically, we don't need to clean up "repo_permissions" table because the value of "id" column
+	// that is associated with this user will be invalidated automatically by deleting this row.
+	if err = s.execute(ctx, sqlf.Sprintf(`DELETE FROM user_permissions WHERE user_id = %s`, userID)); err != nil {
+		return errors.Wrap(err, "execute delete user permissions query")
+	}
+
+	return nil
+}
+
+// DeleteAllUserPendingPermissions deletes all rows with given bind IDs from the "user_pending_permissions" table.
+// It accepts list of bind IDs because a user has multiple bind IDs, e.g. username and email addresses.
+func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, bindIDs []string) (err error) {
+	ctx, save := s.observe(ctx, "DeleteAllUserPendingPermissions", "")
+	defer func() { save(&err, otlog.String("bindIDs", strings.Join(bindIDs, ","))) }()
+
+	// NOTE: Practically, we don't need to clean up "repo_pending_permissions" table because the value of "id" column
+	// that is associated with this user will be invalidated automatically by deleting this row.
+	items := make([]*sqlf.Query, len(bindIDs))
+	for i := range bindIDs {
+		items[i] = sqlf.Sprintf("%s", bindIDs[i])
+	}
+	q := sqlf.Sprintf(`DELETE FROM user_pending_permissions WHERE bind_id IN (%s)`, sqlf.Join(items, ","))
+	if err = s.execute(ctx, q); err != nil {
+		return errors.Wrap(err, "execute delete user pending permissions query")
+	}
+
+	return nil
 }
 
 func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query) (err error) {
@@ -1088,10 +1148,6 @@ func (s *PermsStore) tx(ctx context.Context) (*sql.Tx, error) {
 
 // Transact begins a new transaction and make a new PermsStore over it.
 func (s *PermsStore) Transact(ctx context.Context) (*PermsStore, error) {
-	if Mocks.Perms.Transact != nil {
-		return Mocks.Perms.Transact(ctx)
-	}
-
 	tx, err := s.tx(ctx)
 	if err != nil {
 		return nil, err
