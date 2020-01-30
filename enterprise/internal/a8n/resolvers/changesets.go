@@ -8,8 +8,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -231,21 +229,15 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 }
 
 func (r *changesetResolver) Labels() ([]graphqlbackend.ChangesetLabelResolver, error) {
-	switch m := r.Metadata.(type) {
-	case *github.PullRequest:
-		resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(m.Labels.Nodes))
-		for _, label := range m.Labels.Nodes {
-			resolvers = append(resolvers, &changesetLabelResolver{
-				Label: label,
-			})
-		}
-		return resolvers, nil
-	case *bitbucketserver.PullRequest:
-		// bitbucket server does not support labels
-		return []graphqlbackend.ChangesetLabelResolver{}, nil
-	default:
-		return nil, errors.New("unknown changeset type")
+	labels, err := r.Changeset.Labels()
+	if err != nil {
+		return nil, err
 	}
+	resolvers := make([]graphqlbackend.ChangesetLabelResolver, len(labels))
+	for i := range labels {
+		resolvers[i] = &changesetLabelResolver{label: labels[i]}
+	}
+	return resolvers, nil
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
@@ -374,17 +366,17 @@ func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 }
 
 type changesetLabelResolver struct {
-	github.Label
+	label a8n.ChangesetLabel
 }
 
 func (r *changesetLabelResolver) Text() string {
-	return r.Label.Name
+	return r.label.Name
 }
 
 func (r *changesetLabelResolver) Color() string {
-	return r.Label.Color
+	return r.label.Color
 }
 
 func (r *changesetLabelResolver) Description() string {
-	return r.Label.Description
+	return r.label.Description
 }
