@@ -21,7 +21,10 @@ func (r *siteResolver) CodeIntelUsageStatistics(ctx context.Context, args *struc
 	if envvar.SourcegraphDotComMode() {
 		return nil, errors.New("code intel usage statistics are not available on sourcegraph.com")
 	}
-	opt := &usagestats.CodeIntelUsageStatisticsOptions{}
+	opt := &usagestats.CodeIntelUsageStatisticsOptions{
+		IncludeEventCounts:    true,
+		IncludeEventLatencies: true,
+	}
 	if args.Days != nil {
 		d := int(*args.Days)
 		opt.DayPeriods = &d
@@ -102,10 +105,12 @@ func (s *codeIntelEventStatisticsResolver) UsersCount() int32 {
 }
 
 func (s *codeIntelEventStatisticsResolver) EventsCount() int32 {
-	return s.codeIntelEventStatistics.EventsCount
+	// Always present when IncludeEventCounts=true
+	return *s.codeIntelEventStatistics.EventsCount
 }
 
 func (s *codeIntelEventStatisticsResolver) EventLatencies() *codeIntelEventLatenciesResolver {
+	// Always present when IncludeEventLatencies=true
 	return &codeIntelEventLatenciesResolver{codeIntelEventLatencies: s.codeIntelEventStatistics.EventLatencies}
 }
 
