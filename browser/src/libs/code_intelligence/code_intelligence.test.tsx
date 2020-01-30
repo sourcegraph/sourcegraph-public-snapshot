@@ -26,8 +26,17 @@ import {
 import { toCodeViewResolver } from './code_views'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 
 const RENDER = jest.fn()
+
+const notificationClassNames = {
+    [NotificationType.Log]: 'log',
+    [NotificationType.Success]: 'success',
+    [NotificationType.Info]: 'info',
+    [NotificationType.Warning]: 'warning',
+    [NotificationType.Error]: 'error',
+}
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.mock.calls.find(call => call[1] === mount)
@@ -105,6 +114,7 @@ describe('code_intelligence', () => {
                         name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [],
+                        notificationClassNames,
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: false,
@@ -133,6 +143,7 @@ describe('code_intelligence', () => {
                         check: () => true,
                         getCommandPaletteMount: () => commandPaletteMount,
                         codeViewResolvers: [],
+                        notificationClassNames,
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: false,
@@ -156,6 +167,7 @@ describe('code_intelligence', () => {
                         name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [],
+                        notificationClassNames,
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
@@ -189,6 +201,7 @@ describe('code_intelligence', () => {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom: {
@@ -266,6 +279,7 @@ describe('code_intelligence', () => {
                             type: 'github',
                             name: 'GitHub',
                             check: () => true,
+                            notificationClassNames,
                             codeViewResolvers: [
                                 toCodeViewResolver('#code', {
                                     dom: {
@@ -380,6 +394,7 @@ describe('code_intelligence', () => {
                             type: 'github',
                             name: 'GitHub',
                             check: () => true,
+                            notificationClassNames,
                             codeViewResolvers: [
                                 toCodeViewResolver('#code', {
                                     dom,
@@ -522,6 +537,7 @@ describe('code_intelligence', () => {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('.code', {
                                 dom: {
@@ -608,6 +624,7 @@ describe('code_intelligence', () => {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom,
@@ -656,6 +673,7 @@ describe('code_intelligence', () => {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         nativeTooltipResolvers: [{ selector: '.native', resolveView: element => ({ element }) }],
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
@@ -717,6 +735,7 @@ describe('code_intelligence', () => {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         nativeTooltipResolvers: [{ selector: '.native', resolveView: element => ({ element }) }],
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
@@ -772,6 +791,7 @@ describe('code_intelligence', () => {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom: {

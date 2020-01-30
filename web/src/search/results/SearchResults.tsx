@@ -114,7 +114,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 .pipe(
                     startWith(this.props),
                     map(props => ({
-                        query: parseSearchURLQuery(props.location.search, props.interactiveSearchMode),
+                        query: parseSearchURLQuery(props.location.search),
                         patternType: parseSearchURLPatternType(props.location.search),
                         caseSensitive: searchURLIsCaseSensitive(props.location.search),
                     })),
@@ -232,7 +232,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     public render(): JSX.Element | null {
-        const query = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
+        const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
         const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
 

@@ -27,10 +27,10 @@ function buildLibsqlite3Pcre() {
         echo "Missing sqlite dependencies."
         case "$OSTYPE" in
             darwin*)
-                echo "Install them by running `brew install pkg-config sqlite pcre FiloSottile/musl-cross/musl-cross`"
+                echo "Install them by running 'brew install pkg-config sqlite pcre FiloSottile/musl-cross/musl-cross'"
                 ;;
             linux*)
-                echo "Install them by running `apt-get install libpcre3-dev libsqlite3-dev pkg-config musl-tools`"
+                echo "Install them by running 'apt-get install libpcre3-dev libsqlite3-dev pkg-config musl-tools'"
                 ;;
             *)
                 echo "See the local development documentation: https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/local_development.md#step-2-install-dependencies"
@@ -88,14 +88,14 @@ function buildExecutable() {
             darwin*)
                 muslGcc="x86_64-linux-musl-gcc"
                 if ! command -v "$muslGcc" >/dev/null 2>&1; then
-                    echo "Couldn't find musl C compiler $muslGcc. Run `brew install FiloSottile/musl-cross/musl-cross`."
+                    echo "Couldn't find musl C compiler $muslGcc. Run 'brew install FiloSottile/musl-cross/musl-cross'."
                     exit 1
                 fi
                 ;;
             linux*)
                 muslGcc="musl-gcc"
                 if ! command -v "$muslGcc" >/dev/null 2>&1; then
-                    echo "Couldn't find musl C compiler $muslGcc. Install the musl-tools package (e.g. on Ubuntu, run `apt-get install musl-tools`)."
+                    echo "Couldn't find musl C compiler $muslGcc. Install the musl-tools package (e.g. on Ubuntu, run 'apt-get install musl-tools')."
                     exit 1
                 fi
                 ;;

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -55,6 +56,11 @@ func run(token, org, milestone, labels string) (err error) {
 		return err
 	}
 
+	fmt.Print(generate(issues, milestone))
+	return nil
+}
+
+func generate(issues []*Issue, milestone string) string {
 	var (
 		assignees []string
 		workloads = map[string]float64{}
@@ -82,20 +88,25 @@ func run(token, org, milestone, labels string) (err error) {
 		}
 
 		items[assignee] = append(items[assignee], item)
-		workloads[assignee] += days(estimate)
+
+		// Exclude work that is no longer planned
+		if issue.Milestone == milestone {
+			workloads[assignee] += days(estimate)
+		}
 	}
 
 	sort.Strings(assignees)
 
+	var w strings.Builder
 	for _, assignee := range assignees {
-		fmt.Printf("\n%s: __%.2fd__\n\n", assignee, workloads[assignee])
+		fmt.Fprintf(&w, "\n%s: __%.2fd__\n\n", assignee, workloads[assignee])
 
 		for _, item := range items[assignee] {
-			fmt.Print(item)
+			fmt.Fprint(&w, item)
 		}
 	}
 
-	return nil
+	return w.String()
 }
 
 func title(issue *Issue, milestone string) string {
@@ -256,6 +267,8 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 		"demilestonedQuery":  githubv4.String(listIssuesSearchQuery(org, milestone, labels, true)),
 	}
 
+	var emptyIssue issue
+
 	for {
 		err := cli.Query(ctx, &q, variables)
 		if err != nil {
@@ -265,6 +278,11 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 		nodes := append(q.Milestoned.Nodes, q.Demilestoned.Nodes...)
 
 		for _, n := range nodes {
+			// GitHub's GraphQL API sometimes sends empty issue nodes.
+			if reflect.DeepEqual(n.issue, emptyIssue) {
+				continue
+			}
+
 			i := n.issue
 
 			issue := &Issue{

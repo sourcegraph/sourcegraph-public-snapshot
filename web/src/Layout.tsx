@@ -117,9 +117,7 @@ export interface LayoutProps
 }
 
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
-    const isSearchHomepage =
-        props.location.pathname === '/search' &&
-        !parseSearchURLQuery(props.location.search, props.interactiveSearchMode)
+    const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
