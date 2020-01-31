@@ -47,6 +47,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignPlanID: 42 + int64(i),
 						ClosedAt:       now,
 					}
+					if i == 0 {
+						// Don't close the first one
+						c.ClosedAt = time.Time{}
+					}
 
 					if i%2 == 0 {
 						c.NamespaceOrgID = 23
@@ -166,6 +170,40 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 						cursor = next
 					}
+				}
+
+				filterTests := []struct {
+					name  string
+					state a8n.CampaignState
+					want  []*a8n.Campaign
+				}{
+					{
+						name:  "Any",
+						state: a8n.CampaignStateAny,
+						want:  campaigns,
+					},
+					{
+						name:  "Closed",
+						state: a8n.CampaignStateClosed,
+						want:  campaigns[1:],
+					},
+					{
+						name:  "Open",
+						state: a8n.CampaignStateOpen,
+						want:  campaigns[0:1],
+					},
+				}
+
+				for _, tc := range filterTests {
+					t.Run("ListCampaigns State "+tc.name, func(t *testing.T) {
+						have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{State: tc.state})
+						if err != nil {
+							t.Fatal(err)
+						}
+						if diff := cmp.Diff(have, tc.want); diff != "" {
+							t.Fatal(diff)
+						}
+					})
 				}
 			})
 

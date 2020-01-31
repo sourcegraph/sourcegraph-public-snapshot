@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -89,19 +91,52 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	}
 }
 
-func TestUsers_LimitPasswordLength(t *testing.T) {
+func TestUsers_Create_checkPasswordLength(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	longPassword := strings.Repeat("x", maxPasswordRunes+1)
-	expectedErr := "Passwords may not be more than 256 characters."
+	minPasswordRunes := 12
+	cfg := conf.Get()
+	cfg.AuthMinPasswordLength = minPasswordRunes
+	conf.Mock(cfg)
+	defer func() {
+		cfg.AuthMinPasswordLength = 0
+		conf.Mock(cfg)
+	}()
 
-	_, err := Users.Create(ctx, NewUser{Username: "test", Password: longPassword})
-	if pm := errcode.PresentationMessage(err); pm != expectedErr {
-		t.Fatalf("expected error %q; got %q", expectedErr, pm)
+	expErr := fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes)
+	tests := []struct {
+		name     string
+		password string
+		expErr   string
+	}{
+		{
+			name:     "exceeds maximum",
+			password: strings.Repeat("x", maxPasswordRunes+1),
+			expErr:   expErr,
+		},
+		{
+			name:     "below minimum",
+			password: strings.Repeat("x", minPasswordRunes-1),
+			expErr:   expErr,
+		},
+
+		{
+			name:     "no problem",
+			password: strings.Repeat("x", minPasswordRunes),
+			expErr:   "",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := Users.Create(ctx, NewUser{Username: "test", Password: test.password})
+			if pm := errcode.PresentationMessage(err); pm != test.expErr {
+				t.Fatalf("err: want %q but got %q", test.expErr, pm)
+			}
+		})
 	}
 }
 

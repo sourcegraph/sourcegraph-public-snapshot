@@ -14,6 +14,10 @@ export enum SuggestionTypes {
     timeout = 'timeout',
     dir = 'dir',
     symbol = 'symbol',
+    before = 'before',
+    after = 'after',
+    author = 'author',
+    message = 'message',
 }
 
 export const suggestionTypeKeys: SuggestionTypes[] = Object.keys(SuggestionTypes) as SuggestionTypes[]

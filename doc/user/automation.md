@@ -18,6 +18,14 @@ In order to use the Automation preview, a site-admin of your Sourcegraph instanc
 }
 ```
 
+Without any further configuration Automation is **only be accessible to site-admins.** If you want to grant read-only access to non-site-admins, use the following site configuration setting:
+
+```json
+{
+  "automation.readAccess.enabled": true
+}
+```
+
 ## Usage
 
 There are two types of Automation campaigns:

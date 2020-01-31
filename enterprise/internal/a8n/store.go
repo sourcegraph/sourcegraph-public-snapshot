@@ -1170,6 +1170,7 @@ DELETE FROM campaigns WHERE id = %s
 // counting campaigns.
 type CountCampaignsOpts struct {
 	ChangesetID int64
+	State       a8n.CampaignState
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -1192,6 +1193,13 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ChangesetID != 0 {
 		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
+	}
+
+	switch opts.State {
+	case a8n.CampaignStateOpen:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
+	case a8n.CampaignStateClosed:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
 	if len(preds) == 0 {
@@ -1268,6 +1276,7 @@ type ListCampaignsOpts struct {
 	ChangesetID int64
 	Cursor      int64
 	Limit       int
+	State       a8n.CampaignState
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -1324,6 +1333,13 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 
 	if opts.ChangesetID != 0 {
 		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
+	}
+
+	switch opts.State {
+	case a8n.CampaignStateOpen:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
+	case a8n.CampaignStateClosed:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
 	return sqlf.Sprintf(

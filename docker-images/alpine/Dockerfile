@@ -26,4 +26,4 @@ RUN apk add --no-cache bind-tools
 
 # Install other packages that are desirable in ALL Sourcegraph Docker images.
 # hadolint ignore=DL3018
-RUN apk add --no-cache ca-certificates mailcap tini
+RUN apk add --no-cache ca-certificates mailcap tini curl

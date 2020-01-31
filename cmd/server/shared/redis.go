@@ -3,6 +3,7 @@ package shared
 import (
 	"bytes"
 	"errors"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -35,11 +36,10 @@ func maybeRedisStoreProcFile() (string, error) {
 
 func maybeRedisCacheProcFile() (string, error) {
 	return maybeRedisProcFile(redisProcfileConfig{
-		envVar:  "REDIS_CACHE_ENDPOINT",
-		name:    "redis-cache",
-		port:    "6380",
-		tmpl:    redisCacheConfTmpl,
-		dataDir: "redis-cache",
+		envVar: "REDIS_CACHE_ENDPOINT",
+		name:   "redis-cache",
+		port:   "6380",
+		tmpl:   redisCacheConfTmpl,
 	})
 }
 
@@ -58,7 +58,9 @@ func maybeRedisProcFile(c redisProcfileConfig) (string, error) {
 		return "", err
 	}
 
-	redisFixAOF(os.Getenv("DATA_DIR"), c)
+	if c.dataDir != "" {
+		redisFixAOF(os.Getenv("DATA_DIR"), c)
+	}
 
 	SetDefaultEnv(c.envVar, "127.0.0.1:"+c.port)
 
@@ -67,39 +69,25 @@ func maybeRedisProcFile(c redisProcfileConfig) (string, error) {
 
 func tryCreateRedisConf(c redisProcfileConfig) (string, error) {
 	dataDir := filepath.Join(os.Getenv("DATA_DIR"), c.dataDir)
-	err := os.MkdirAll(dataDir, os.FileMode(0755))
-	if err != nil {
-		return "", err
-	}
 
-	// Create a redis.conf if it doesn't exist
-	path := filepath.Join(os.Getenv("CONFIG_DIR"), c.name+".conf")
-
-	_, err = os.Stat(path)
-	if err == nil {
-		return path, nil
-	}
-
-	if !os.IsNotExist(err) {
-		return "", err
-	}
-
-	f, err := os.Create(path)
-	if err != nil {
-		return "", err
-	}
-
-	err = c.tmpl.Execute(f, struct{ Dir, Port string }{
+	var b bytes.Buffer
+	err := c.tmpl.Execute(&b, struct{ Dir, Port string }{
 		Dir:  dataDir,
 		Port: c.port,
 	})
-	f.Close()
+
 	if err != nil {
-		os.Remove(path)
 		return "", err
 	}
 
-	return path, nil
+	err = os.MkdirAll(dataDir, os.FileMode(0755))
+	if err != nil {
+		return "", err
+	}
+
+	// Always replace redis.conf
+	path := filepath.Join(os.Getenv("CONFIG_DIR"), c.name+".conf")
+	return path, ioutil.WriteFile(path, b.Bytes(), 0644)
 }
 
 func redisProcFileEntry(name, conf string) string {

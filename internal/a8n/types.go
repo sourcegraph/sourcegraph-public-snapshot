@@ -146,6 +146,15 @@ type ChangesetLabel struct {
 	Description string
 }
 
+// CampaignState defines the possible states of a Campaign
+type CampaignState string
+
+const (
+	CampaignStateAny    CampaignState = "ANY"
+	CampaignStateOpen   CampaignState = "OPEN"
+	CampaignStateClosed CampaignState = "CLOSED"
+)
+
 // BackgroundProcessStatus defines the status of a background process.
 type BackgroundProcessStatus struct {
 	Canceled      bool

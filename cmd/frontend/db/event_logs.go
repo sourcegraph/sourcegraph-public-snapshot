@@ -173,8 +173,11 @@ var periodByPeriodType = map[PeriodType]*sqlf.Query{
 }
 
 // calcStartDate calculates the the starting date of a number of periods given the period type.
-// from the current time supplied as `now`. Returns a second false value if the period type is illegal.
-func calcStartDate(now time.Time, periodType PeriodType, periodsAgo int) (time.Time, bool) {
+// from the current time supplied as `now`. Returns a second false value if the period type is
+// illegal.
+func calcStartDate(now time.Time, periodType PeriodType, periods int) (time.Time, bool) {
+	periodsAgo := periods - 1
+
 	switch periodType {
 	case Daily:
 		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo), true
@@ -188,14 +191,16 @@ func calcStartDate(now time.Time, periodType PeriodType, periodsAgo int) (time.T
 
 // calcEndDate calculates the the ending date of a number of periods given the period type.
 // Returns a second false value if the period type is illegal.
-func calcEndDate(startDate time.Time, periods int, periodType PeriodType) (time.Time, bool) {
+func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.Time, bool) {
+	periodsAgo := periods - 1
+
 	switch periodType {
 	case Daily:
-		return startDate.AddDate(0, 0, periods), true
+		return startDate.AddDate(0, 0, periodsAgo), true
 	case Weekly:
-		return startDate.AddDate(0, 0, 7*periods), true
+		return startDate.AddDate(0, 0, 7*periodsAgo), true
 	case Monthly:
-		return startDate.AddDate(0, periods, 0), true
+		return startDate.AddDate(0, periodsAgo, 0), true
 	}
 
 	return time.Time{}, false
@@ -221,10 +226,16 @@ type EventFilterOptions struct {
 	ByEventNames []string
 }
 
-// CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of a given type.
-// Returns an array array of length `periods`, with one entry for each period in the time span.
+// CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
+// a given type. The value of `now` should be the current time in UTC. Returns an array array of length `periods`,
+// with one entry for each period in the time span.
 func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	endDate, ok := calcEndDate(startDate, periodType, periods)
 	if !ok {
 		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
@@ -254,17 +265,18 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 		}
 	}
 
-	endDate, ok := calcEndDate(startDate, periods, periodType)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
 	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
 // CountEventsPerPeriod provide a count of events in a given time span, broken up into periods of a given type.
+// The value of `now` should be the current time in UTC.
 func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *EventFilterOptions) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	endDate, ok := calcEndDate(startDate, periodType, periods)
 	if !ok {
 		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
@@ -286,11 +298,6 @@ func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodT
 		}
 	}
 
-	endDate, ok := calcEndDate(startDate, periods, periodType)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
 	return l.countEventsPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
@@ -302,10 +309,10 @@ type PercentileValue struct {
 }
 
 // PercentilesPerPeriod calculates the given percentiles over a field of the event's arguments in a given time span,
-// broken up into periods of a given type. Percentiles should be supplied as floats in the range `[0, 1)`, such that
-// `[.5, .9, .99]` will return the 50th, 90th, and 99th percentile values. Returns an array of length `periods`, with
-// one entry for each period in the time span. Each `PercentileValue` object in the result will contain exactly
-// `len(percentiles)` values.
+// broken up into periods of a given type. The value of `now` should be the current time in UTC. Percentiles should
+// be supplied as floats in the range `[0, 1)`, such that `[.5, .9, .99]` will return the 50th, 90th, and 99th
+// percentile values. Returns an array of length `periods`, with one entry for each period in the time span. Each
+// `PercentileValue` object in the result will contain exactly `len(percentiles)` values.
 func (l *eventLogs) PercentilesPerPeriod(
 	ctx context.Context,
 	periodType PeriodType,
@@ -324,6 +331,11 @@ func (l *eventLogs) PercentilesPerPeriod(
 		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
 
+	endDate, ok := calcEndDate(startDate, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.ByEventNamePrefix != "" {
@@ -339,11 +351,6 @@ func (l *eventLogs) PercentilesPerPeriod(
 			}
 			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
 		}
-	}
-
-	endDate, ok := calcEndDate(startDate, periods, periodType)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
 
 	return l.calculatePercentilesPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, field, percentiles, conds)
