@@ -82,6 +82,11 @@
         &:not(:last-child) {
             margin-right: 0.25rem;
         }
+
+        &--disabled {
+            opacity: 50%;
+            cursor: not-allowed;
+        }
     }
 
     &__toggle-icon {
