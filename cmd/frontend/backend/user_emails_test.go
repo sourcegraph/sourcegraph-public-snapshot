@@ -46,7 +46,7 @@ func Test_checkEmailAbuse(t *testing.T) {
 			},
 			hasQuote:  false,
 			expAbused: true,
-			expReason: "the user does not have a verified email address",
+			expReason: "do not have a verified email address",
 			expErr:    nil,
 		},
 		{
@@ -68,7 +68,7 @@ func Test_checkEmailAbuse(t *testing.T) {
 			},
 			hasQuote:  false,
 			expAbused: true,
-			expReason: "the user has too many existing unverified email addresses",
+			expReason: "have too many existing unverified email addresses",
 			expErr:    nil,
 		},
 		{
@@ -81,7 +81,7 @@ func Test_checkEmailAbuse(t *testing.T) {
 			},
 			hasQuote:  false,
 			expAbused: true,
-			expReason: "the user has exceeded email address quota (contact support to increase the quota)",
+			expReason: "have exceeded email address quota (contact support to increase the quota)",
 			expErr:    nil,
 		},
 
