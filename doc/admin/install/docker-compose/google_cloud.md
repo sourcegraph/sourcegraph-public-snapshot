@@ -17,35 +17,55 @@ This tutorial shows you how to deploy Sourcegraph to a single node running on Go
 
   ```bash
   #!/usr/bin/env bash
-  
-  # Install docker
+
+  set -euxo pipefail
+
+  DOCKER_COMPOSE_VERSION='1.25.3'
+  SOURCEGRAPH_VERSION='v3.12.5'
+  DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
+
+  # Install Docker
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   sudo apt-get update
   apt-cache policy docker-ce
   apt-get install -y docker-ce docker-ce-cli containerd.io
 
-  # Install docker-compose
-  curl -L "https://github.com/docker/compose/releases/download/1.25.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  # Install Docker Compose
+  curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   chmod +x /usr/local/bin/docker-compose
-  curl -L https://raw.githubusercontent.com/docker/compose/1.25.3/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
+  curl -L https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
 
   # Install git
   sudo apt-get update
   sudo apt-get install -y git
 
-  # Clone docker-compose definition
-  git clone https://github.com/sourcegraph/deploy-sourcegraph-docker.git /root/deploy-sourcegraph-docker
-  cd /root/deploy-sourcegraph-docker/docker-compose
-  git checkout "v3.12.3"
+  # Clone Docker Compose definition
+  git clone https://github.com/sourcegraph/deploy-sourcegraph-docker.git ${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}
+  cd ${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}/docker-compose
+  git checkout ${SOURCEGRAPH_VERSION}
 
-  # Run Sourcegraph. Restart the containers upon reboots.
+  # Run Sourcegraph. Restart the containers upon reboot.
   docker-compose up -d
   ```
 
 - Create your VM, then navigate to its public IP address.
 
 - If you have configured a DNS entry for the IP, configure `externalURL` to reflect that.
+
+- You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and viewing the logs:
+
+  - Following the status of the startup script that you provided earlier:
+    
+    ```bash
+    tail -f /var/log/cloud-init-output.log
+    ```
+
+  - (Once the user data script completes) monitoring the health of the `sourcegraph-frontend` container:
+
+     ```bash
+     docker ps --filter="name=sourcegraph-frontend-0"
+     ```
 
 ---
 

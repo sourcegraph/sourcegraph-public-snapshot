@@ -1,9 +1,11 @@
-# Install Sourcegraph with Docker on AWS
+# Install Sourcegraph with Docker Compose on AWS
 
-This tutorial shows you how to deploy Sourcegraph to a single EC2 instance on AWS.
+This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on AWS.
 
-* If you're just starting out, we recommend [running Sourcegraph locally](index.md). It takes only a few minutes and lets you try out all of the features.
-* If you need scalability and high-availability beyond what a docker-compose deployment can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), instead.
+When running Sourcegraph in production, deploying Sourcegraph via [Docker Compose](https://docs.docker.com/compose/) is the default installation method that we recommend. However:
+
+* If you're just starting out, we recommend [running Sourcegraph locally](../docker/index.md). It takes only a few minutes and lets you try out all of the features.
+* If you need scalability and high-availability beyond what a single-node [Docker Compose](https://docs.docker.com/compose/) can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), instead.
 
 ---
 
@@ -21,10 +23,6 @@ This tutorial shows you how to deploy Sourcegraph to a single EC2 instance on AW
    repo_upgrade: all
 
    runcmd:
-   # Create the directory structure for Sourcegraph data
-   - mkdir -p /home/ec2-user/.sourcegraph/config
-   - mkdir -p /home/ec2-user/.sourcegraph/data
-
    # Install, configure, and enable Docker
    - yum update -y
    - amazon-linux-extras install docker
@@ -33,33 +31,37 @@ This tutorial shows you how to deploy Sourcegraph to a single EC2 instance on AW
    - sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
    - usermod -a -G docker ec2-user
 
-   # Install docker-compose
+   # Install Docker Compose
    - curl -L "https://github.com/docker/compose/releases/download/1.25.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
    - chmod +x /usr/local/bin/docker-compose
    - curl -L https://raw.githubusercontent.com/docker/compose/1.25.3/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
    
-   # Install git, clone docker-compose definition
+   # Install git, clone Docker Compose definition
    - yum install git -y
    - git clone https://github.com/sourcegraph/deploy-sourcegraph-docker.git /home/ec2-user/deploy-sourcegraph-docker
    - cd /home/ec2-user/deploy-sourcegraph-docker/docker-compose
-   - git checkout "v3.12.3"
+   - git checkout "v3.12.5"
 
-   # Run Sourcegraph. Restart the containers upon reboots.
+   # Run Sourcegraph. Restart the containers upon reboot.
    - docker-compose up -d
    ```
 
 - Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
   - Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
   - Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration))
-- Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the EC2 instance and viewing the logs:
+- Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) 1. You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and viewing the logs:
 
+  - Following the status of the user data script that you provided earlier:
+    
+    ```bash
+    tail -f /var/log/cloud-init-output.log
+    ```
+
+  - (Once the user data script completes) monitoring the health of the `sourcegraph-frontend` container:
+
+     ```bash
+     docker ps --filter="name=sourcegraph-frontend-0"
      ```
-     docker-compose logs sourcegraph-frontend-0
-     ```
-- If you have configured a domain name to point to the IP, configure `externalURL` to reflect that.
-
-
-  <!-- - mention you might have to wait a bit for the Docker container to fully spin up (include instructions for checking logs for health) -->
 
 ---
 
