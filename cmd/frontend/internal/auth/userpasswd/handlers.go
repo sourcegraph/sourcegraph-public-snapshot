@@ -81,6 +81,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		Username:             creds.Username,
 		Password:             creds.Password,
 		FailIfNotInitialUser: failIfNewUserIsNotInitialSiteAdmin,
+		EnforePasswordLength: true,
 	}
 	if failIfNewUserIsNotInitialSiteAdmin {
 		// The email of the initial site admin is considered to be verified.

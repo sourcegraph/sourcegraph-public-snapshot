@@ -28,10 +28,11 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 
 	// The new user will be created with a verified email address.
 	user, err := db.Users.Create(ctx, db.NewUser{
-		Username:        args.Username,
-		Email:           email,
-		EmailIsVerified: true,
-		Password:        backend.MakeRandomHardToGuessPassword(),
+		Username:             args.Username,
+		Email:                email,
+		EmailIsVerified:      true,
+		Password:             backend.MakeRandomHardToGuessPassword(),
+		EnforePasswordLength: true,
 	})
 	if err != nil {
 		return nil, err
