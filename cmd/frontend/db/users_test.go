@@ -140,9 +140,9 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := Users.Create(ctx, NewUser{
-				Username:             test.username,
-				Password:             test.password,
-				EnforePasswordLength: test.enforce,
+				Username:              test.username,
+				Password:              test.password,
+				EnforcePasswordLength: test.enforce,
 			})
 			if pm := errcode.PresentationMessage(err); pm != test.expErr {
 				t.Fatalf("err: want %q but got %q", test.expErr, pm)

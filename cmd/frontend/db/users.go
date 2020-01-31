@@ -103,9 +103,9 @@ type NewUser struct {
 	// (2) any other user account already exists.
 	FailIfNotInitialUser bool `json:"-"` // forbid this field being set by JSON, just in case
 
-	// EnforePasswordLength is whether should enforce minimum and maximum password length requirement.
+	// EnforcePasswordLength is whether should enforce minimum and maximum password length requirement.
 	// Users created by non-builtin auth providers do not have a password thus no need to check.
-	EnforePasswordLength bool `json:"-"` // forbid this field being set by JSON, just in case
+	EnforcePasswordLength bool `json:"-"` // forbid this field being set by JSON, just in case
 }
 
 // Create creates a new user in the database.
@@ -170,7 +170,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		return Mocks.Users.Create(ctx, info)
 	}
 
-	if info.EnforePasswordLength {
+	if info.EnforcePasswordLength {
 		if err := checkPasswordLength(info.Password); err != nil {
 			return nil, err
 		}
