@@ -25,8 +25,8 @@ Also change the follow which are not versioned alongside Sourcegraph currently:
 
 | Container         | New image                                       |
 |-------------------|-------------------------------------------------|
-| zoekt-indexserver | sourcegraph/zoekt-indexserver:0.0.20200124185115-83b89a5@sha256:efd1fb37fc62bfab963f12e95f69778b0e2e6a253caed5be9025840072ea85b5 |
-| zoekt-webserver   | sourcegraph/zoekt-webserver:0.0.20200124185328-83b89a5@sha256:cde27ee7db0fe6c293a8c9df47b529fb01b5a898e6cbeea4c18d80fe218563db |
+| zoekt-indexserver | index.docker.io/sourcegraph/zoekt-indexserver:0.0.20200124185115-83b89a5@sha256:efd1fb37fc62bfab963f12e95f69778b0e2e6a253caed5be9025840072ea85b5 |
+| zoekt-webserver   | index.docker.io/sourcegraph/zoekt-webserver:0.0.20200124185328-83b89a5@sha256:cde27ee7db0fe6c293a8c9df47b529fb01b5a898e6cbeea4c18d80fe218563db |
 
 # v3.12.1 → v3.12.2 changes
 
