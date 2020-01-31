@@ -221,7 +221,7 @@
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^6.2.2",
     "@sourcegraph/comlink": "^3.1.1-fork.3",
-    "@sourcegraph/extension-api-classes": "^1.0.2",
+    "@sourcegraph/extension-api-classes": "^1.0.3",
     "@sourcegraph/extension-api-types": "link:packages/@sourcegraph/extension-api-types",
     "@sourcegraph/react-loading-spinner": "0.0.7",
     "@sqs/jsonc-parser": "^1.0.3",
