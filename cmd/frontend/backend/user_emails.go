@@ -95,7 +95,7 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 		if err != nil {
 			return err
 		} else if abused {
-			return fmt.Errorf("refusing to add email address because you %s", reason)
+			return fmt.Errorf("refusing to add email address because %s", reason)
 		}
 	}
 
