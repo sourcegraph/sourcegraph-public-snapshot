@@ -5,7 +5,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 
@@ -112,4 +114,47 @@ func setenv(t *testing.T, keyval string) func() {
 
 func boolPtr(b bool) *bool {
 	return &b
+}
+
+func TestEmailVerificationCoolDown(t *testing.T) {
+	const defaultVal = 30 * time.Second
+	tests := []struct {
+		name   string
+		schema *schema.EmailVerification
+		expVal time.Duration
+	}{
+		{
+			name:   "not configured",
+			schema: nil,
+			expVal: defaultVal,
+		},
+		{
+			name:   "empty string",
+			schema: &schema.EmailVerification{},
+			expVal: defaultVal,
+		},
+		{
+			name: "valid duration",
+			schema: &schema.EmailVerification{
+				CoolDown: "1m",
+			},
+			expVal: time.Minute,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cfg := Get()
+			cfg.EmailVerification = test.schema
+			Mock(cfg)
+			defer func() {
+				cfg.EmailVerification = nil
+				Mock(cfg)
+			}()
+
+			dur := EmailVerificationCoolDown()
+			if diff := cmp.Diff(test.expVal, dur); diff != "" {
+				t.Fatalf("dur: %v", diff)
+			}
+		})
+	}
 }
