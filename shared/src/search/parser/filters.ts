@@ -75,7 +75,7 @@ export const FILTERS: readonly FilterDefinition[] = [
     {
         aliases: ['type'],
         description: 'Limit results to the specified type.',
-        discreteValues: ['code', 'diff', 'commit', 'symbol'],
+        discreteValues: ['code', 'diff', 'commit', 'symbol', 'repo', 'path'],
     },
     {
         aliases: ['case'],
@@ -114,6 +114,18 @@ export const FILTERS: readonly FilterDefinition[] = [
         aliases: ['patterntype'],
         discreteValues: ['regexp', 'literal', 'structural'],
         description: 'The pattern type (regexp, literal, structural) in use',
+    },
+    {
+        aliases: ['author'],
+        description: 'The author of a commit',
+    },
+    {
+        aliases: ['after'],
+        description: 'Commits made after a certain date',
+    },
+    {
+        aliases: ['before'],
+        description: 'Commits made before a certain date',
     },
 ]
 

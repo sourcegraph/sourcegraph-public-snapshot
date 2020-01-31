@@ -3,7 +3,7 @@ import * as H from 'history'
 import { SearchType } from './SearchResults'
 import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
 import { PatternTypeProps, CaseSensitivityProps } from '..'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
@@ -31,8 +31,9 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     patternType,
     caseSensitive,
 }) => {
-    const q = toggleSearchType(query, type)
-    const builtURLQuery = buildSearchURLQuery(q, patternType, caseSensitive, filtersInQuery)
+    const fullQuery = [query, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
+    const q = toggleSearchType(fullQuery, type)
+    const builtURLQuery = buildSearchURLQuery(q, patternType, caseSensitive)
 
     const isActiveFunc = constant(location.search === `?${builtURLQuery}`)
     return (
