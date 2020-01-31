@@ -48,6 +48,11 @@ type CampaignPlanPatch struct {
 	Patch        string
 }
 
+type ListCampaignArgs struct {
+	First *int32
+	State *string
+}
+
 type DeleteCampaignArgs struct {
 	Campaign        graphql.ID
 	CloseChangesets bool
@@ -81,7 +86,7 @@ type A8NResolver interface {
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
 	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
 	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
-	Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error)
+	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
 	RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error)
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
@@ -165,7 +170,7 @@ func (r *schemaResolver) PublishChangeset(ctx context.Context, args *PublishChan
 	return EnterpriseResolvers.a8nResolver.PublishChangeset(ctx, args)
 }
 
-func (r *schemaResolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error) {
+func (r *schemaResolver) Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error) {
 	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
@@ -234,7 +239,7 @@ type ExternalChangesetResolver interface {
 	ExternalURL() (*externallink.Resolver, error)
 	ReviewState(context.Context) (a8n.ChangesetReviewState, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
-	Campaigns(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (CampaignsConnectionResolver, error)
+	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
 	Head(ctx context.Context) (*GitRefResolver, error)

@@ -148,15 +148,21 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 	return r.computeRepo(ctx)
 }
 
-func (r *changesetResolver) Campaigns(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
-}) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+	opts := ee.ListCampaignsOpts{
+		ChangesetID: r.Changeset.ID,
+	}
+	state, err := parseCampaignState(args.State)
+	if err != nil {
+		return nil, err
+	}
+	opts.State = state
+	if args.First != nil {
+		opts.Limit = int(*args.First)
+	}
 	return &campaignsConnectionResolver{
 		store: r.store,
-		opts: ee.ListCampaignsOpts{
-			ChangesetID: r.Changeset.ID,
-			Limit:       int(args.ConnectionArgs.GetFirst()),
-		},
+		opts:  opts,
 	}, nil
 }
 
