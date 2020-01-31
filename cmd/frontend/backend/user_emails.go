@@ -34,20 +34,12 @@ func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason str
 			return false, "", err
 		}
 
-		var latestVerificationEmail *db.UserEmail
 		var verifiedCount, unverifiedCount int
 		for _, email := range emails {
 			if email.VerifiedAt == nil {
 				unverifiedCount++
 			} else {
 				verifiedCount++
-			}
-
-			if email.LastVerificationSentAt != nil {
-				isLater := latestVerificationEmail == nil || email.LastVerificationSentAt.After(*latestVerificationEmail.LastVerificationSentAt)
-				if isLater {
-					latestVerificationEmail = email
-				}
 			}
 		}
 
@@ -69,14 +61,9 @@ func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason str
 		if unverifiedCount >= maxUnverified {
 			return true, "the user has too many existing unverified email addresses", nil
 		}
-
-		// Abuse prevention check 3: Forbid user from sending verification emails too frequently.
-		if latestVerificationEmail != nil && latestVerificationEmail.NeedsVerificationCoolDown() {
-			return true, "the user is adding new email addresses too frequently", nil
-		}
 	}
 	if envvar.SourcegraphDotComMode() {
-		// Abuse prevention check 4: Set a quota on Sourcegraph.com users to prevent abuse.
+		// Abuse prevention check 3: Set a quota on Sourcegraph.com users to prevent abuse.
 		//
 		// There is no quota for on-prem instances because we assume they can trust their users
 		// to not abuse adding emails.
