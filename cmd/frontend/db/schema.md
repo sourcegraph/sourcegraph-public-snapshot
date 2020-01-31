@@ -145,6 +145,7 @@ Foreign-key constraints:
  campaign_id     | bigint                   | not null
  campaign_job_id | bigint                   | not null
  changeset_id    | bigint                   | 
+ branch          | string                   |
  error           | text                     | 
  created_at      | timestamp with time zone | not null default now()
  updated_at      | timestamp with time zone | not null default now()

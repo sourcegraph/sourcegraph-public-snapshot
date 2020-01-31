@@ -205,6 +205,8 @@ type ChangesetJob struct {
 	// Only set once the ChangesetJob has successfully finished.
 	ChangesetID int64
 
+	Branch string
+
 	Error string
 
 	StartedAt  time.Time

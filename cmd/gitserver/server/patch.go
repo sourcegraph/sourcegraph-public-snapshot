@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -57,6 +58,17 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		ref = ensureRefPrefix(ref)
 	}
 
+	var (
+		remoteURL string
+		err       error
+	)
+	remoteURL, err = repoRemoteURL(ctx, GitDir(repoGitDir))
+	if err != nil {
+		log15.Error("Failed to get remote URL", "ref", ref, "err", err)
+		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
+		return http.StatusInternalServerError, resp
+	}
+
 	// Ensure tmp directory exists
 	tmpRepoDir, err := s.tempDir("patch-repo-")
 	if err != nil {
@@ -84,6 +96,23 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if req.UniqueRef {
+		branches, err := repoRemoteBranches(ctx, remoteURL, ref)
+		if err != nil {
+			log15.Error("Failed to get remote branches", "ref", ref, "err", err)
+			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteBranches"))
+			return http.StatusInternalServerError, resp
+		}
+
+		retry := 1
+		tmp := ref
+		for {
+			if _, ok := branches[tmp]; !ok {
+				break
+			}
+			tmp = ref + strconv.Itoa(retry)
+			retry++
+		}
+		ref = tmp
 	}
 
 	tmpGitPathEnv := "GIT_DIR=" + filepath.Join(tmpRepoDir, ".git")
@@ -201,13 +230,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if req.Push {
-		remoteURL, err := repoRemoteURL(ctx, GitDir(repoGitDir))
-		if err != nil {
-			log15.Error("Failed to get remote URL", "ref", ref, "commit", cmtHash, "err", err)
-			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
-			return http.StatusInternalServerError, resp
-		}
-
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL, fmt.Sprintf("%s:%s", cmtHash, ref))
 		cmd.Dir = repoGitDir
 

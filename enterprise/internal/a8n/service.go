@@ -304,7 +304,7 @@ func RunChangesetJob(
 		// will fail with "corrupt patch at line <N>" where N is the last line.
 		Patch:     campaignJob.Diff + "\n",
 		TargetRef: c.Branch,
-		UniqueRef: true,
+		UniqueRef: job.Branch == "",
 		CommitInfo: protocol.PatchCommitInfo{
 			Message:     c.Name,
 			AuthorName:  "Sourcegraph Bot",
@@ -326,6 +326,8 @@ func RunChangesetJob(
 		}
 		return err
 	}
+
+	job.Branch = ref
 
 	var externalService *repos.ExternalService
 	{

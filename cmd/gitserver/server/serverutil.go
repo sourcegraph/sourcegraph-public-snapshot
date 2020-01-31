@@ -199,6 +199,33 @@ var repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
 	return remoteURLs[0], nil
 }
 
+// repoRemoteBranches returns a map containing branch + commit pairs from the
+// remote Git repository starting with the specified prefix.
+var repoRemoteBranches = func(ctx context.Context, url, prefix string) (map[string]string, error) {
+	cmd := exec.Command("git", "ls-remote", "--heads", url, "'"+prefix+"*'")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_, err := runCommand(ctx, cmd)
+	if err != nil {
+		stderr := stderr.Bytes()
+		if len(stderr) > 200 {
+			stderr = stderr[:200]
+		}
+		return nil, fmt.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
+	}
+
+	branches := make(map[string]string)
+	for _, line := range strings.Split(stdout.String(), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			return nil, fmt.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
+		}
+		branches[strings.TrimPrefix(fields[1], "refs/heads/")] = fields[0]
+	}
+	return branches, nil
+}
+
 // writeCounter wraps an io.Writer and keeps track of bytes written.
 type writeCounter struct {
 	w io.Writer
