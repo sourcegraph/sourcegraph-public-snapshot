@@ -381,22 +381,6 @@
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
-    "email.verification": {
-      "description": "Settings for user email verification",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "coolDown": {
-          "description": "The cool down duration (in seconds) before sending verification email to the same email address.",
-          "type": "string",
-          "default": "30s"
-        }
-      },
-      "default": {
-        "coolDown": "30s"
-      },
-      "examples": [{ "coolDown": "30s" }, { "coolDown": "1m" }]
-    },
     "extensions": {
       "description": "Configures Sourcegraph extensions.",
       "type": "object",

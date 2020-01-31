@@ -291,12 +291,6 @@ type Discussions struct {
 	// AbuseProtection description: Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).
 	AbuseProtection bool `json:"abuseProtection,omitempty"`
 }
-
-// EmailVerification description: Settings for user email verification
-type EmailVerification struct {
-	// CoolDown description: The cool down duration (in seconds) before sending verification email to the same email address.
-	CoolDown string `json:"coolDown,omitempty"`
-}
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
 	Id string `json:"id,omitempty"`
@@ -890,8 +884,6 @@ type SiteConfiguration struct {
 	EmailImap *IMAPServerConfig `json:"email.imap,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
-	// EmailVerification description: Settings for user email verification
-	EmailVerification *EmailVerification `json:"email.verification,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.

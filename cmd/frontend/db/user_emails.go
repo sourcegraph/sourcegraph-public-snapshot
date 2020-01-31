@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 )
@@ -26,8 +25,9 @@ type UserEmail struct {
 
 // NeedsVerificationCoolDown returns true if the verification cooled down time is behind current time.
 func (email *UserEmail) NeedsVerificationCoolDown() bool {
+	const defaultDur = 30 * time.Second
 	return email.LastVerificationSentAt != nil &&
-		time.Now().UTC().Before(email.LastVerificationSentAt.Add(conf.EmailVerificationCoolDown()))
+		time.Now().UTC().Before(email.LastVerificationSentAt.Add(defaultDur))
 }
 
 // userEmailNotFoundError is the error that is returned when a user email is not found.
