@@ -118,7 +118,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/search/scope/:id',
-        render: lazyComponent(() => import('./search/input/ScopePage'), 'ScopePage'),
+        render: lazyComponent(() => import('./search/ScopePage'), 'ScopePage'),
         exact: true,
     },
     {
