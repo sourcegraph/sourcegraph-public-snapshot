@@ -23,11 +23,13 @@ import (
 var _ authz.Provider = (*OAuthAuthzProvider)(nil)
 
 type OAuthAuthzProvider struct {
-	clientProvider *gitlab.ClientProvider
-	clientURL      *url.URL
-	codeHost       *extsvc.CodeHost
-	cache          cache
-	cacheTTL       time.Duration
+	clientProvider    *gitlab.ClientProvider
+	clientURL         *url.URL
+	codeHost          *extsvc.CodeHost
+	cache             cache
+	cacheTTL          time.Duration
+	minBatchThreshold int
+	maxBatchRequests  int
 }
 
 type OAuthAuthzProviderOp struct {
@@ -40,15 +42,28 @@ type OAuthAuthzProviderOp struct {
 	// MockCache, if non-nil, replaces the default Redis-based cache with the supplied cache mock.
 	// Should only be used in tests.
 	MockCache cache
+
+	// MinBatchThreshold is the number of repositories at which we start trying to batch fetch
+	// GitLab project visibility. This should be in the neighborhood of maxBatchRequests, because
+	// batch-fetching means we fetch *all* projects visible to the given user (not just the ones
+	// requested in RepoPerms)
+	MinBatchThreshold int
+
+	// MaxBatchRequests is the maximum number of batch requests we make for GitLab project
+	// visibility. We limit this in case the user has access to many more projects than are being
+	// requested in RepoPerms.
+	MaxBatchRequests int
 }
 
 func newOAuthProvider(op OAuthAuthzProviderOp) *OAuthAuthzProvider {
 	p := &OAuthAuthzProvider{
-		clientProvider: gitlab.NewClientProvider(op.BaseURL, nil),
-		clientURL:      op.BaseURL,
-		codeHost:       extsvc.NewCodeHost(op.BaseURL, gitlab.ServiceType),
-		cache:          op.MockCache,
-		cacheTTL:       op.CacheTTL,
+		clientProvider:    gitlab.NewClientProvider(op.BaseURL, nil),
+		clientURL:         op.BaseURL,
+		codeHost:          extsvc.NewCodeHost(op.BaseURL, gitlab.ServiceType),
+		cache:             op.MockCache,
+		cacheTTL:          op.CacheTTL,
+		minBatchThreshold: op.MinBatchThreshold,
+		maxBatchRequests:  op.MaxBatchRequests,
 	}
 	if p.cache == nil {
 		p.cache = rcache.NewWithTTL(fmt.Sprintf("gitlabAuthz:%s", op.BaseURL.String()), int(math.Ceil(op.CacheTTL.Seconds())))
@@ -71,19 +86,6 @@ func (p *OAuthAuthzProvider) ServiceType() string {
 func (p *OAuthAuthzProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
 	return nil, nil
 }
-
-var (
-	// minBatchThreshold is the number of repositories at which we start trying to batch fetch
-	// GitLab project visibility. This should be in the neighborhood of maxBatchRequests, because
-	// batch-fetching means we fetch *all* projects visible to the given user (not just the ones
-	// requested in RepoPerms)
-	minBatchThreshold = 200
-
-	// maxBatchRequests is the maximum number of batch requests we make for GitLab project
-	// visibility. We limit this in case the user has access to many more projects than are being
-	// requested in RepoPerms.
-	maxBatchRequests = 300
-)
 
 func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) (
 	[]authz.RepoPerms, error,
@@ -136,9 +138,9 @@ func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Exte
 
 	// Best-effort fetch visibility in batch if we have more than X remaining repositories to check
 	// and user is authenticated.  (This is an optimization.)
-	if len(remaining) > minBatchThreshold && oauthToken != "" {
+	if len(remaining) >= p.minBatchThreshold && oauthToken != "" {
 		nextRemaining := make([]*types.Repo, 0, len(remaining))
-		visibility, err := p.fetchProjVisBatch(ctx, oauthToken, remaining, fetchProjVisBatchOp{maxRequests: maxBatchRequests})
+		visibility, err := p.fetchProjVisBatch(ctx, oauthToken, remaining, fetchProjVisBatchOp{maxRequests: p.maxBatchRequests})
 		if err != nil {
 			log15.Error("Error encountered fetching project visibility from GitLab", "err", err)
 		}

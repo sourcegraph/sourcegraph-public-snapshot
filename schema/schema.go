@@ -632,7 +632,11 @@ type Notice struct {
 	Message string `json:"message"`
 }
 type OAuthIdentity struct {
-	Type string `json:"type"`
+	// MaxBatchRequests description: The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.
+	MaxBatchRequests int `json:"maxBatchRequests,omitempty"`
+	// MinBatchingThreshold description: The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.
+	MinBatchingThreshold int    `json:"minBatchingThreshold,omitempty"`
+	Type                 string `json:"type"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
