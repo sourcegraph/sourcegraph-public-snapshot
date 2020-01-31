@@ -4,7 +4,7 @@ This document describes the exact changes needed to update a [pure-Docker Source
 
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
 
-# v3.12.2 → v3.12.5 changes
+## v3.12.2 → v3.12.5 changes
 
 ### Confirm file permissions
 
@@ -38,7 +38,7 @@ Also change the follow which are not versioned alongside Sourcegraph currently:
 | zoekt-indexserver | index.docker.io/sourcegraph/zoekt-indexserver:0.0.20200124185115-83b89a5@sha256:efd1fb37fc62bfab963f12e95f69778b0e2e6a253caed5be9025840072ea85b5 |
 | zoekt-webserver   | index.docker.io/sourcegraph/zoekt-webserver:0.0.20200124185328-83b89a5@sha256:cde27ee7db0fe6c293a8c9df47b529fb01b5a898e6cbeea4c18d80fe218563db |
 
-# v3.12.1 → v3.12.2 changes
+## v3.12.1 → v3.12.2 changes
 
 ### Update image tags
 
@@ -63,7 +63,7 @@ Also change the follow which are not versioned alongside Sourcegraph currently:
 |-------------------|-------------------------------------------------|
 | prometheus        | index.docker.io/sourcegraph/prometheus:10.0.7@sha256:22d54f27c7df8733a06c7ae8c2e851b61b1ed42f1f5621d493ef58ebd8d815e0 |
 
-# v3.10.4 → v3.12.1 changes
+## v3.10.4 → v3.12.1 changes
 
 ### Management console removal
 
@@ -107,7 +107,7 @@ Also change the follow which are not versioned alongside Sourcegraph currently:
 | redis-cache (no change if using external Redis) | index.docker.io/sourcegraph/redis-cache:19-04-16_6891de82@sha256:4cbfac8af0abb673899250d4fd859cc477d6426de519e9deb71e454e18322499 |
 | redis-store (no change if using external Redis) | index.docker.io/sourcegraph/redis-store:19-04-16_6891de821@sha256:56426d601ce1f6d63088fea1cefa61f69a2e809c7d90fc1d157cca63cf81b277 |
 
-# v3.10.4 → v3.12.5 changes
+## v3.10.4 → v3.12.5 changes
 
 ### Confirm file permissions
 
