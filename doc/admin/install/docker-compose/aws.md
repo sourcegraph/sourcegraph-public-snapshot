@@ -49,7 +49,7 @@ When running Sourcegraph in production, deploying Sourcegraph via [Docker Compos
 - Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
   - Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
   - Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration))
-- Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) 1. You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and viewing the logs:
+- Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and viewing the logs:
 
   - Following the status of the user data script that you provided earlier:
     
