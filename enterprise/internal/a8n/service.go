@@ -748,7 +748,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, errors.Wrap(err, "getting latest changesetjob creation time")
 	}
 	allChangesetJobsCreated := !changesetCreation.IsZero()
-	if !allChangesetJobsCreated && status.CompletedCount() == 0 {
+	if !allChangesetJobsCreated && status.Total == 0 {
 		// If the campaign hasn't been published yet and no Changesets have
 		// been individually published (through the `PublishChangeset`
 		// mutation), we can simply update the attributes on the Campaign
@@ -766,7 +766,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	// If we have non-zero number of ChangesetJobs, but the Campaign has not
 	// been fully published yet, we have individually published Changesets we
 	// need to update.
-	partialUpdate := !allChangesetJobsCreated && status.CompletedCount() != 0
+	partialUpdate := !allChangesetJobsCreated && status.Total != 0
 
 	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPlanID, updateAttributes)
 	if err != nil {
