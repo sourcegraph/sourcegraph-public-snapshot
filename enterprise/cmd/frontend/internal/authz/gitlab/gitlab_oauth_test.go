@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
+// >>> NEXT: run this test with minBatchThreshold set to 200 and 1
+
 func Test_GitLab_RepoPerms(t *testing.T) {
 	type call struct {
 		description string
