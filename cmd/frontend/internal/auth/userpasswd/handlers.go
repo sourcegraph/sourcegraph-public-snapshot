@@ -126,7 +126,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 			return
 		} else if abused {
 			log15.Error("Possible email address abuse prevented", "email", creds.Email, "reason", reason)
-			http.Error(w, "Email address is possibly being abused, please try again later or use a different email address.", http.StatusBadRequest)
+			http.Error(w, "Email address is possibly being abused, please try again later or use a different email address.", http.StatusTooManyRequests)
 			return
 		}
 	}
