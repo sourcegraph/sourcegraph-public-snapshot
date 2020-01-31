@@ -295,7 +295,7 @@ type Discussions struct {
 // EmailVerification description: Settings for user email verification
 type EmailVerification struct {
 	// CoolDown description: The cool down duration (in seconds) before sending verification email to the same email address.
-	CoolDown int `json:"coolDown,omitempty"`
+	CoolDown string `json:"coolDown,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.

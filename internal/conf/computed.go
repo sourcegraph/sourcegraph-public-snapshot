@@ -134,14 +134,19 @@ func CanReadEmail() bool {
 	return Get().EmailImap != nil
 }
 
-// EmailVerificationCoolDown returns the cool down duration for sending verification email
-// to the same email address.
+// EmailVerificationCoolDown returns the cool down duration for sending verification emails.
 func EmailVerificationCoolDown() time.Duration {
+	const defaultVal = 30 * time.Second
 	emailVerify := Get().EmailVerification
-	if emailVerify == nil || emailVerify.CoolDown < 0 {
-		return 30 * time.Second
+	if emailVerify == nil {
+		return defaultVal
 	}
-	return time.Duration(emailVerify.CoolDown) * time.Second
+
+	dur, err := time.ParseDuration(emailVerify.CoolDown)
+	if err != nil {
+		return defaultVal
+	}
+	return dur
 }
 
 // Deploy type constants. Any changes here should be reflected in the DeployType type declared in web/src/globals.d.ts:

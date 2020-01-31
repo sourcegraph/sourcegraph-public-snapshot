@@ -393,14 +393,14 @@ const SiteSchemaJSON = `{
       "properties": {
         "coolDown": {
           "description": "The cool down duration (in seconds) before sending verification email to the same email address.",
-          "type": "integer",
-          "default": 30
+          "type": "string",
+          "default": "30s"
         }
       },
       "default": {
-        "coolDown": 30
+        "coolDown": "30s"
       },
-      "examples": [{ "coolDown": 30 }, { "coolDown": 120 }]
+      "examples": [{ "coolDown": "30s" }, { "coolDown": "1m" }]
     },
     "extensions": {
       "description": "Configures Sourcegraph extensions.",
