@@ -186,7 +186,12 @@ func (*userEmails) GetLatestVerificationSentEmail(ctx context.Context, email str
 		return Mocks.UserEmails.GetLatestVerificationSentEmail(ctx, email)
 	}
 
-	emails, err := (&userEmails{}).getBySQL(ctx, "WHERE email=$1 AND last_verification_sent_at IS NOT NULL ORDER BY last_verification_sent_at DESC LIMIT 1", email)
+	q := sqlf.Sprintf(`
+WHERE email=%s AND last_verification_sent_at IS NOT NULL
+ORDER BY last_verification_sent_at DESC
+LIMIT 1
+`, email)
+	emails, err := (&userEmails{}).getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	} else if len(emails) < 1 {
