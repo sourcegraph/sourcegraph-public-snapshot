@@ -62,14 +62,17 @@ func ConnectToDB(dataSource string) error {
 	registerPrometheusCollector(Global, "_app")
 	configureConnectionPool(Global)
 
-	m, err := dbutil.NewMigrate(Global, dataSource)
+	return nil
+}
+
+func MigrateDB(db *sql.DB, dataSource string) error {
+	m, err := dbutil.NewMigrate(db, dataSource)
 	if err != nil {
 		return err
 	}
 	if err := dbutil.DoMigrate(m); err != nil {
 		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
-
 	return nil
 }
 

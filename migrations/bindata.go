@@ -66,6 +66,8 @@
 // 1528395648_add_external_branch_to_changesets.up.sql (444B)
 // 1528395649_add_campaign_branch.down.sql (126B)
 // 1528395649_add_campaign_branch.up.sql (820B)
+// 1528395650_add_versions_table.down.sql (48B)
+// 1528395650_add_versions_table.up.sql (159B)
 
 package migrations
 
@@ -1454,6 +1456,46 @@ func _1528395649_add_campaign_branchUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395650_add_versions_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4b\x2d\x2a\xce\xcc\xcf\x2b\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xae\xf3\xa9\xdf\x30\x00\x00\x00")
+
+func _1528395650_add_versions_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395650_add_versions_tableDownSql,
+		"1528395650_add_versions_table.down.sql",
+	)
+}
+
+func _1528395650_add_versions_tableDownSql() (*asset, error) {
+	bytes, err := _1528395650_add_versions_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395650_add_versions_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x36, 0xe3, 0xb5, 0x83, 0xfe, 0xb7, 0xc2, 0x6f, 0x54, 0x5f, 0x4b, 0xd1, 0x76, 0x8d, 0x32, 0xd0, 0xdd, 0x29, 0x23, 0x5b, 0x1a, 0xbc, 0xcd, 0xc1, 0x90, 0xe6, 0x28, 0x3c, 0x23, 0x57, 0x22, 0x33}}
+	return a, nil
+}
+
+var __1528395650_add_versions_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x3c\xce\xbd\xaa\x83\x40\x10\xc5\xf1\x7e\x9f\xe2\x94\x0a\xf7\x0d\xac\xd6\x9b\x31\x2c\x59\x35\xe8\x08\xb1\x0a\x12\xa7\xb0\xf0\x03\x77\x62\x42\x9e\x3e\x48\x48\xea\xff\x8f\xc3\x49\xe9\xe8\x8a\xc4\x98\xff\x8a\x2c\x13\xd8\xa6\x9e\xe0\x32\x14\x25\x83\x2e\xae\xe6\x1a\x9b\xac\x61\x98\xa7\x80\xc8\x00\x41\xd6\x6d\xb8\x09\x54\x9e\x8a\x73\xe5\x72\x5b\xb5\x38\x51\xfb\x67\xf0\x85\x9f\xb6\x0f\x14\x8d\xf7\x7b\xb8\x2f\x7d\xa7\xd2\x5f\x3b\x85\x0e\xa3\x04\xed\xc6\x45\x5f\x3f\x82\x03\x65\xb6\xf1\x8c\x69\x7e\x44\xb1\x89\xf7\x3b\x65\x9e\x3b\x4e\xcc\x3b\x00\x00\xff\xff\x19\x44\x08\xa5\x9f\x00\x00\x00")
+
+func _1528395650_add_versions_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395650_add_versions_tableUpSql,
+		"1528395650_add_versions_table.up.sql",
+	)
+}
+
+func _1528395650_add_versions_tableUpSql() (*asset, error) {
+	bytes, err := _1528395650_add_versions_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395650_add_versions_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x24, 0x25, 0x9a, 0x4d, 0x70, 0x32, 0xbc, 0x62, 0x2e, 0xf, 0x17, 0x2d, 0x23, 0x9c, 0xac, 0x8a, 0xc5, 0x68, 0xf2, 0x12, 0xc2, 0x7e, 0xeb, 0x17, 0x86, 0xaf, 0xfe, 0xb5, 0xc0, 0xfc, 0x37, 0x49}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1611,6 +1653,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395648_add_external_branch_to_changesets.up.sql":              _1528395648_add_external_branch_to_changesetsUpSql,
 	"1528395649_add_campaign_branch.down.sql":                          _1528395649_add_campaign_branchDownSql,
 	"1528395649_add_campaign_branch.up.sql":                            _1528395649_add_campaign_branchUpSql,
+	"1528395650_add_versions_table.down.sql":                           _1528395650_add_versions_tableDownSql,
+	"1528395650_add_versions_table.up.sql":                             _1528395650_add_versions_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1720,6 +1764,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395648_add_external_branch_to_changesets.up.sql":              {_1528395648_add_external_branch_to_changesetsUpSql, map[string]*bintree{}},
 	"1528395649_add_campaign_branch.down.sql":                          {_1528395649_add_campaign_branchDownSql, map[string]*bintree{}},
 	"1528395649_add_campaign_branch.up.sql":                            {_1528395649_add_campaign_branchUpSql, map[string]*bintree{}},
+	"1528395650_add_versions_table.down.sql":                           {_1528395650_add_versions_tableDownSql, map[string]*bintree{}},
+	"1528395650_add_versions_table.up.sql":                             {_1528395650_add_versions_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
