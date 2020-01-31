@@ -108,31 +108,46 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 		expErr   string
 	}{
 		{
-			name:     "exceeds maximum",
+			name:     "below minimum",
 			username: "user1",
-			password: strings.Repeat("x", maxPasswordRunes+1),
+			password: strings.Repeat("x", minPasswordRunes-1),
 			enforce:  true,
 			expErr:   expErr,
 		},
 		{
-			name:     "below minimum",
+			name:     "exceeds maximum",
 			username: "user2",
-			password: strings.Repeat("x", minPasswordRunes-1),
+			password: strings.Repeat("x", maxPasswordRunes+1),
 			enforce:  true,
 			expErr:   expErr,
 		},
 
 		{
-			name:     "no problem",
+			name:     "no problem at exact minimum",
 			username: "user3",
 			password: strings.Repeat("x", minPasswordRunes),
 			enforce:  true,
 			expErr:   "",
 		},
 		{
-			name:     "does not enforce",
+			name:     "no problem at exact maximum",
 			username: "user4",
-			password: strings.Repeat("x", minPasswordRunes),
+			password: strings.Repeat("x", maxPasswordRunes),
+			enforce:  true,
+			expErr:   "",
+		},
+
+		{
+			name:     "does not enforce and below minimum",
+			username: "user5",
+			password: strings.Repeat("x", minPasswordRunes-1),
+			enforce:  false,
+			expErr:   "",
+		},
+		{
+			name:     "does not enforce and exceeds maximum",
+			username: "user6",
+			password: strings.Repeat("x", maxPasswordRunes+1),
 			enforce:  false,
 			expErr:   "",
 		},
