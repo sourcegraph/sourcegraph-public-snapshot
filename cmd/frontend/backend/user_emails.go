@@ -52,14 +52,14 @@ func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason str
 		// TODO(sqs): prevent users from deleting their last email, when we have the true notion
 		// of a "primary" email address.)
 		if verifiedCount == 0 && len(emails) != 0 {
-			return true, "the user does not have a verified email address", nil
+			return true, "do not have a verified email address", nil
 		}
 
 		// Abuse prevention check 2: Forbid user from having many unverified emails to prevent attackers from using this to
 		// send spam or a high volume of annoying emails.
 		const maxUnverified = 3
 		if unverifiedCount >= maxUnverified {
-			return true, "the user has too many existing unverified email addresses", nil
+			return true, "have too many existing unverified email addresses", nil
 		}
 	}
 	if envvar.SourcegraphDotComMode() {
@@ -74,7 +74,7 @@ func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason str
 		if ok, err := db.Users.CheckAndDecrementInviteQuota(ctx, userID); err != nil {
 			return false, "", err
 		} else if !ok {
-			return true, "the user has exceeded email address quota (contact support to increase the quota)", nil
+			return true, "have exceeded email address quota (contact support to increase the quota)", nil
 		}
 	}
 	return false, "", nil
@@ -95,7 +95,7 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 		if err != nil {
 			return err
 		} else if abused {
-			return fmt.Errorf("refusing to add email address because %s", reason)
+			return fmt.Errorf("refusing to add email address because you %s", reason)
 		}
 	}
 
