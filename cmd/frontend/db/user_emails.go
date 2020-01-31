@@ -27,7 +27,7 @@ type UserEmail struct {
 // NeedsVerificationCoolDown returns true if the verification cooled down time is behind current time.
 func (email *UserEmail) NeedsVerificationCoolDown() bool {
 	return email.LastVerificationSentAt != nil &&
-		email.LastVerificationSentAt.Add(conf.EmailVerificationCoolDown()).After(time.Now())
+		time.Now().Before(email.LastVerificationSentAt.Add(conf.EmailVerificationCoolDown()))
 }
 
 // userEmailNotFoundError is the error that is returned when a user email is not found.
