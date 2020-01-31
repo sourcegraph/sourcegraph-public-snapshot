@@ -6,6 +6,16 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 # v3.12.2 → v3.12.5 changes
 
+### Confirm file permissions
+
+Confirm that the `replacer-disk` has the correct file permissions:
+
+```
+sudo chown 100:101 ~/sourcegraph-docker/replacer-disk
+```
+
+### Update image tags
+
 Change 3.12.2 → 3.12.5 for the following containers:
 
 | Container         | New image                                       |
@@ -98,6 +108,14 @@ Also change the follow which are not versioned alongside Sourcegraph currently:
 | redis-store (no change if using external Redis) | index.docker.io/sourcegraph/redis-store:19-04-16_6891de821@sha256:56426d601ce1f6d63088fea1cefa61f69a2e809c7d90fc1d157cca63cf81b277 |
 
 # v3.10.4 → v3.12.5 changes
+
+### Confirm file permissions
+
+Confirm that the `replacer-disk` has the correct file permissions:
+
+```
+sudo chown 100:101 ~/sourcegraph-docker/replacer-disk
+```
 
 ### Management console removal
 
