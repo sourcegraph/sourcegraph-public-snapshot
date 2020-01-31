@@ -27,7 +27,7 @@ type UserEmail struct {
 // NeedsVerificationCoolDown returns true if the verification cooled down time is behind current time.
 func (email *UserEmail) NeedsVerificationCoolDown() bool {
 	return email.LastVerificationSentAt != nil &&
-		time.Now().Before(email.LastVerificationSentAt.Add(conf.EmailVerificationCoolDown()))
+		time.Now().UTC().Before(email.LastVerificationSentAt.Add(conf.EmailVerificationCoolDown()))
 }
 
 // userEmailNotFoundError is the error that is returned when a user email is not found.
@@ -165,7 +165,7 @@ func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, 
 
 // SetLastVerificationSentAt sets the "last_verification_sent_at" column to now() for given email of the user.
 func (*userEmails) SetLastVerificationSentAt(ctx context.Context, userID int32, email string) error {
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET last_verification_sent_at=now() WHERE user_id=$1 AND email=$2", userID, email)
+	res, err := dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET last_verification_sent_at=$1 WHERE user_id=$2 AND email=$3", time.Now().UTC(), userID, email)
 	if err != nil {
 		return err
 	}
