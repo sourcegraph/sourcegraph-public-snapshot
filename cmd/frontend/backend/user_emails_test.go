@@ -74,7 +74,7 @@ func Test_checkEmailAbuse(t *testing.T) {
 			expErr:    nil,
 		},
 		{
-			name: "reached maximum number of unverified email addresses",
+			name: "email verification hasn't cooled down",
 			mockEmails: []*db.UserEmail{
 				{
 					Email:      "alice@example.com",
