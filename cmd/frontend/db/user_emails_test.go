@@ -19,22 +19,22 @@ func TestUserEmail_NeedsVerificationCoolDown(t *testing.T) {
 
 	tests := []struct {
 		name                   string
-		LastVerificationSentAt *time.Time
+		lastVerificationSentAt *time.Time
 		needsCoolDown          bool
 	}{
 		{
 			name:                   "nil",
-			LastVerificationSentAt: nil,
+			lastVerificationSentAt: nil,
 			needsCoolDown:          false,
 		},
 		{
 			name:                   "needs cool down",
-			LastVerificationSentAt: timePtr(time.Now().Add(time.Minute)),
+			lastVerificationSentAt: timePtr(time.Now().Add(time.Minute)),
 			needsCoolDown:          true,
 		},
 		{
 			name:                   "does not need cool down",
-			LastVerificationSentAt: timePtr(time.Now().Add(-1 * time.Minute)),
+			lastVerificationSentAt: timePtr(time.Now().Add(-1 * time.Minute)),
 			needsCoolDown:          false,
 		},
 	}
@@ -42,7 +42,7 @@ func TestUserEmail_NeedsVerificationCoolDown(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			email := &UserEmail{
-				LastVerificationSentAt: test.LastVerificationSentAt,
+				LastVerificationSentAt: test.lastVerificationSentAt,
 			}
 			needsCoolDown := email.NeedsVerificationCoolDown()
 			if test.needsCoolDown != needsCoolDown {
@@ -380,7 +380,7 @@ func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
 	} else if len(emails) != 1 {
 		t.Fatalf("want 1 email but got %d emails: %v", len(emails), emails)
 	} else if emails[0].LastVerificationSentAt != nil {
-		t.Fatalf("LastVerificationSentAt: want nil but got %v", emails[0].LastVerificationSentAt)
+		t.Fatalf("lastVerificationSentAt: want nil but got %v", emails[0].LastVerificationSentAt)
 	}
 
 	if err = UserEmails.SetLastVerificationSentAt(ctx, user.ID, addr); err != nil {
@@ -396,7 +396,7 @@ func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
 	} else if len(emails) != 1 {
 		t.Fatalf("want 1 email but got %d emails: %v", len(emails), emails)
 	} else if emails[0].LastVerificationSentAt == nil {
-		t.Fatalf("LastVerificationSentAt: want non-nil but got nil")
+		t.Fatalf("lastVerificationSentAt: want non-nil but got nil")
 	}
 }
 
