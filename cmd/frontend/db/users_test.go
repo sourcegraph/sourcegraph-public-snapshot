@@ -102,32 +102,47 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 	expErr := fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes)
 	tests := []struct {
 		name     string
+		username string
 		password string
+		enforce  bool
 		expErr   string
 	}{
 		{
 			name:     "exceeds maximum",
+			username: "user1",
 			password: strings.Repeat("x", maxPasswordRunes+1),
+			enforce:  true,
 			expErr:   expErr,
 		},
 		{
 			name:     "below minimum",
+			username: "user2",
 			password: strings.Repeat("x", minPasswordRunes-1),
+			enforce:  true,
 			expErr:   expErr,
 		},
 
 		{
 			name:     "no problem",
+			username: "user3",
 			password: strings.Repeat("x", minPasswordRunes),
+			enforce:  true,
+			expErr:   "",
+		},
+		{
+			name:     "does not enforce",
+			username: "user4",
+			password: strings.Repeat("x", minPasswordRunes),
+			enforce:  false,
 			expErr:   "",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := Users.Create(ctx, NewUser{
-				Username:             "test",
+				Username:             test.username,
 				Password:             test.password,
-				EnforePasswordLength: true,
+				EnforePasswordLength: test.enforce,
 			})
 			if pm := errcode.PresentationMessage(err); pm != test.expErr {
 				t.Fatalf("err: want %q but got %q", test.expErr, pm)
