@@ -150,9 +150,10 @@ const maxPasswordRunes = 256
 
 // checkPasswordLength returns an error if the password is too long.
 func checkPasswordLength(pw string) error {
-	minPasswordRunes := conf.Get().AuthMinPasswordRunes
-	if utf8.RuneCountInString(pw) < minPasswordRunes ||
-		utf8.RuneCountInString(pw) > maxPasswordRunes {
+	pwLen := utf8.RuneCountInString(pw)
+	minPasswordRunes := conf.Get().AuthMinPasswordLength
+	if pwLen < minPasswordRunes ||
+		pwLen > maxPasswordRunes {
 		return errcode.NewPresentationError(fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
 	}
 	return nil

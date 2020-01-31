@@ -565,7 +565,7 @@ const SiteSchemaJSON = `{
       "default": false,
       "group": "Authentication"
     },
-    "auth.minPasswordRunes": {
+    "auth.minPasswordLength": {
       "description": "The minimum number of UTF-8 runes that a password must contain.",
       "type": "integer",
       "default": 12,

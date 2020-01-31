@@ -100,10 +100,10 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 
 	minPasswordRunes := 12
 	cfg := conf.Get()
-	cfg.AuthMinPasswordRunes = minPasswordRunes
+	cfg.AuthMinPasswordLength = minPasswordRunes
 	conf.Mock(cfg)
 	defer func() {
-		cfg.AuthMinPasswordRunes = 0
+		cfg.AuthMinPasswordLength = 0
 		conf.Mock(cfg)
 	}()
 
