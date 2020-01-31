@@ -418,7 +418,7 @@ func StructuralPatToRegexpQuery(pattern string) (zoektquery.Q, error) {
 	if len(pieces) == 0 {
 		return &zoektquery.Const{Value: true}, nil
 	}
-	rs := "(" + strings.Join(pieces, ").*?(") + ")"
+	rs := "(" + strings.Join(pieces, ")(.|\\s)*?(") + ")"
 	re, _ := syntax.Parse(rs, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 	children = append(children, &zoektquery.Regexp{
 		Regexp:        re,

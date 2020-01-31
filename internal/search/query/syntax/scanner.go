@@ -128,15 +128,24 @@ func scanText(s *scanner) stateFn {
 	// Characters that may come before a ':' (TokenColon) in a TokenLiteral.
 	preColonChars := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+	escaped := false
 	for {
 		if s.eof() {
 			break
 		}
 		r := s.next()
-		if unicode.IsSpace(r) {
-			s.backup()
-			break
+		if !escaped {
+			if r == '\\' {
+				escaped = true
+				continue
+			}
+
+			if unicode.IsSpace(r) {
+				s.backup()
+				break
+			}
 		}
+		escaped = false
 		if r == ':' {
 			// Start of value.
 			s.backup()
@@ -169,15 +178,24 @@ func scanValue(s *scanner) stateFn {
 }
 
 func scanLiteral(s *scanner) stateFn {
+	escaped := false
 	for {
 		if s.eof() {
 			break
 		}
 		r := s.next()
-		if unicode.IsSpace(r) {
-			s.backup()
-			break
+		if !escaped {
+			if r == '\\' {
+				escaped = true
+				continue
+			}
+
+			if unicode.IsSpace(r) {
+				s.backup()
+				break
+			}
 		}
+		escaped = false
 	}
 
 	s.emit(TokenLiteral)
