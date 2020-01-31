@@ -4,11 +4,35 @@ This document describes the exact changes needed to update a [pure-Docker Source
 
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
 
+# v3.12.2 → v3.12.5 changes
+
+Change 3.12.2 → 3.12.5 for the following containers:
+
+| Container         | New image                                       |
+|-------------------|-------------------------------------------------|
+| frontend          | index.docker.io/sourcegraph/frontend:3.12.5     |
+| frontend-internal | index.docker.io/sourcegraph/frontend:3.12.5     |
+| github-proxy      | index.docker.io/sourcegraph/github-proxy:3.12.5 |
+| gitserver         | index.docker.io/sourcegraph/gitserver:3.12.5    |
+| lsif-server       | index.docker.io/sourcegraph/lsif-server:3.12.5  |
+| query-runner      | index.docker.io/sourcegraph/query-runner:3.12.5 |
+| replacer          | index.docker.io/sourcegraph/replacer:3.12.5     |
+| repo-updater      | index.docker.io/sourcegraph/repo-updater:3.12.5 |
+| searcher          | index.docker.io/sourcegraph/searcher:3.12.5     |
+| symbols           | index.docker.io/sourcegraph/symbols:3.12.5      |
+
+Also change the follow which are not versioned alongside Sourcegraph currently:
+
+| Container         | New image                                       |
+|-------------------|-------------------------------------------------|
+| zoekt-indexserver | sourcegraph/zoekt-indexserver:0.0.20200124185115-83b89a5@sha256:efd1fb37fc62bfab963f12e95f69778b0e2e6a253caed5be9025840072ea85b5 |
+| zoekt-webserver   | sourcegraph/zoekt-webserver:0.0.20200124185328-83b89a5@sha256:cde27ee7db0fe6c293a8c9df47b529fb01b5a898e6cbeea4c18d80fe218563db |
+
 # v3.12.1 → v3.12.2 changes
 
 ### Update image tags
 
-Change 3.12.1 → v3.12.2:
+Change 3.12.1 → v3.12.2 for the following containers:
 
 | Container         | New image                                       |
 |-------------------|-------------------------------------------------|
@@ -45,7 +69,7 @@ If you are making use of `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE` environmen
 
 ### Update image tags
 
-Change 3.10.4 → v3.12.1:
+Change 3.10.4 → v3.12.1 for the following containers:
 
 | Container         | New image                                       |
 |-------------------|-------------------------------------------------|
