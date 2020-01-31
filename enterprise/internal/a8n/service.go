@@ -319,6 +319,7 @@ func RunChangesetJob(
 		GitApplyArgs: []string{"-p0", "--unidiff-zero"},
 		Push:         true,
 	})
+	job.Branch = ref
 
 	if err != nil {
 		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
@@ -326,8 +327,6 @@ func RunChangesetJob(
 		}
 		return err
 	}
-
-	job.Branch = ref
 
 	var externalService *repos.ExternalService
 	{

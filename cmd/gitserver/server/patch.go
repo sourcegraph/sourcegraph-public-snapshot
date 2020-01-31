@@ -109,7 +109,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			if _, ok := branches[tmp]; !ok {
 				break
 			}
-			tmp = ref + strconv.Itoa(retry)
+			tmp = ref + "-" + strconv.Itoa(retry)
 			retry++
 		}
 		ref = tmp
@@ -239,6 +239,8 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		}
 	}
 
+	resp.Rev = "refs/" + strings.TrimPrefix(ref, "refs/")
+
 	cmd = exec.CommandContext(ctx, "git", "update-ref", "--", ref, cmtHash)
 	cmd.Dir = repoGitDir
 
@@ -246,8 +248,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		log15.Error("Failed to create ref for commit.", "ref", ref, "commit", cmtHash, "output", string(out))
 		return http.StatusInternalServerError, resp
 	}
-
-	resp.Rev = "refs/" + strings.TrimPrefix(ref, "refs/")
 
 	return http.StatusOK, resp
 }
