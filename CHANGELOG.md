@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - experimentalFeatures.splitSearchModes was removed as a site configuration option. It should be set in global/org/user settings.
 - Sourcegraph now waits for `90s` instead of `5s` for Redis to be available before quitting. This duration is configurable with the new `SRC_REDIS_WAIT_FOR` environment variable.
+- The Sourcegraph Docker image optimized its use of Redis to make start-up significantly faster in certain scenarios (e.g when container restarts were frequent). ([#3300](https://github.com/sourcegraph/sourcegraph/issues/3300), [#2904](https://github.com/sourcegraph/sourcegraph/issues/2904))
 
 ### Fixed
 
