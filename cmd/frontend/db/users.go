@@ -550,6 +550,10 @@ func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) 
 // invited too many users, or some other error occurred). If the user has
 // quota remaining, their quota is decremented and ok is true.
 func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) (ok bool, err error) {
+	if Mocks.Users.CheckAndDecrementInviteQuota != nil {
+		return Mocks.Users.CheckAndDecrementInviteQuota(ctx, userID)
+	}
+
 	var quotaRemaining int32
 	sqlQuery := `
 	UPDATE users SET invite_quota=(invite_quota - 1)
