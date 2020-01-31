@@ -836,6 +836,8 @@ type SiteConfiguration struct {
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
 	AuthEnableUsernameChanges bool `json:"auth.enableUsernameChanges,omitempty"`
+	// AuthMinPasswordLength description: The minimum number of Unicode code points that a password must contain.
+	AuthMinPasswordLength int `json:"auth.minPasswordLength,omitempty"`
 	// AuthProviders description: The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).
 	AuthProviders []AuthProviders `json:"auth.providers,omitempty"`
 	// AuthPublic description: WARNING: This option has been removed as of 3.8.
