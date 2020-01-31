@@ -66,6 +66,18 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "debug.log": {
+          "description": "Turns on debug logging for specific debugging scenarios.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extsvc.gitlab": {
+              "description": "Log GitLab API requests.",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "automation": {
           "description": "Enables the experimental code automation features.",
           "type": "string",

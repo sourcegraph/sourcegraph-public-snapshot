@@ -15,13 +15,37 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
-var requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
+var (
+	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
+
+	// Whether debug nlogging is turned on
+	trace bool
+)
+
+func init() {
+	go func() {
+		conf.Watch(func() {
+			exp := conf.Get().ExperimentalFeatures
+			if exp == nil {
+				trace = false
+				return
+			}
+			if debugLog := exp.DebugLog; debugLog == nil || !debugLog.ExtsvcGitlab {
+				trace = false
+				return
+			}
+			trace = true
+		})
+	}()
+}
 
 // ClientProvider creates GitLab API clients. Each client has separate authentication creds and a
 // separate cache, but they share an underlying HTTP client and rate limiter. Callers who want a simple
@@ -198,9 +222,16 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	resp, err = c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
+		if trace {
+			log15.Info("TRACE: GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
+		}
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if trace {
+		log15.Info("TRACE: GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
+	}
+
 	c.RateLimit.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
