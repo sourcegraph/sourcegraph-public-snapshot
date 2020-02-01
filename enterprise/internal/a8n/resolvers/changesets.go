@@ -383,6 +383,6 @@ func (r *changesetLabelResolver) Color() string {
 	return r.label.Color
 }
 
-func (r *changesetLabelResolver) Description() string {
+func (r *changesetLabelResolver) Description() *string {
 	return r.label.Description
 }

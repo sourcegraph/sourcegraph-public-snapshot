@@ -231,7 +231,7 @@ type ExternalChangesetsConnectionResolver interface {
 type ChangesetLabelResolver interface {
 	Text() string
 	Color() string
-	Description() string
+	Description() *string
 }
 
 type ExternalChangesetResolver interface {

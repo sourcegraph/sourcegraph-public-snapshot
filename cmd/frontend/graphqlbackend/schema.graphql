@@ -683,8 +683,8 @@ type ChangesetLabel {
     text: String!
     # Label color, defined in hex without the #. E.g., 93ba13
     color: String!
-    # Descriptive text to support the understandability of the labels meaning
-    description: String!
+    # Optional descriptive text to support the understandability of the labels meaning
+    description: String
 }
 
 # A changeset in a code host (e.g. a PR on Github)
