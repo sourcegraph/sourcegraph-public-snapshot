@@ -27,24 +27,33 @@ var (
 	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
 
 	// Whether debug nlogging is turned on
-	trace bool
+	traceEnabled   bool
+	traceEnabledMu sync.RWMutex
 )
 
 func init() {
 	go func() {
 		conf.Watch(func() {
 			exp := conf.Get().ExperimentalFeatures
+			traceEnabledMu.Lock()
+			defer traceEnabledMu.Unlock()
 			if exp == nil {
-				trace = false
+				traceEnabled = false
 				return
 			}
 			if debugLog := exp.DebugLog; debugLog == nil || !debugLog.ExtsvcGitlab {
-				trace = false
+				traceEnabled = false
 				return
 			}
-			trace = true
+			traceEnabled = true
 		})
 	}()
+}
+
+func trace(msg string, ctx ...interface{}) {
+	traceEnabledMu.RLock()
+	defer traceEnabledMu.RUnlock()
+	log15.Info(fmt.Sprintf("TRACE %s", msg), ctx...)
 }
 
 // ClientProvider creates GitLab API clients. Each client has separate authentication creds and a
@@ -222,15 +231,11 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	resp, err = c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
-		if trace {
-			log15.Info("TRACE: GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-		}
+		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if trace {
-		log15.Info("TRACE: GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
-	}
+	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
 	c.RateLimit.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
