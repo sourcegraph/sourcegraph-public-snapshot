@@ -384,5 +384,5 @@ func (r *changesetLabelResolver) Color() string {
 }
 
 func (r *changesetLabelResolver) Description() *string {
-	return r.label.Description
+	return &r.label.Description
 }

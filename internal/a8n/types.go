@@ -143,7 +143,7 @@ func (s ChangesetState) Valid() bool {
 type ChangesetLabel struct {
 	Name        string
 	Color       string
-	Description *string
+	Description string
 }
 
 // CampaignState defines the possible states of a Campaign
@@ -401,7 +401,7 @@ func (c *Changeset) Labels() ([]ChangesetLabel, error) {
 			labels[i] = ChangesetLabel{
 				Name:        label.Name,
 				Color:       label.Color,
-				Description: &label.Description,
+				Description: label.Description,
 			}
 		}
 		return labels, nil
