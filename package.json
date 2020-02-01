@@ -240,7 +240,7 @@
     "got": "^9.6.0",
     "graphiql": "^0.13.2",
     "he": "^1.2.0",
-    "highlight.js": "^9.17.1",
+    "highlight.js": "^9.18.0",
     "is-absolute-url": "^3.0.3",
     "lodash": "^4.17.15",
     "marked": "^0.8.0",
