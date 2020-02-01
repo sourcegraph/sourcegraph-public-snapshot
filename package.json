@@ -155,7 +155,7 @@
     "chokidar-cli": "^2.1.0",
     "chrome-webstore-upload-cli": "^1.2.0",
     "command-exists": "^1.2.8",
-    "cross-env": "^6.0.3",
+    "cross-env": "^7.0.0",
     "css-loader": "^3.4.2",
     "eslint": "^6.8.0",
     "execa": "^4.0.0",
