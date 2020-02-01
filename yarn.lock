@@ -15532,10 +15532,10 @@ punycode@^2.1.0, punycode@^2.1.1:
   resolved "https://registry.npmjs.org/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
 
-puppeteer-firefox@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.npmjs.org/puppeteer-firefox/-/puppeteer-firefox-0.5.0.tgz#5800e48cbbe135adae5fbf3032114064a612d87a"
-  integrity sha512-80wl29/Lb0URQ1f77yVXfq+cxCW30Q+1GbpRb32HbzTR9/amOn6D5G99xo8OsDJ6kIfuLyYTLj6HZgwMuDPBBQ==
+puppeteer-firefox@^0.5.1:
+  version "0.5.1"
+  resolved "https://registry.npmjs.org/puppeteer-firefox/-/puppeteer-firefox-0.5.1.tgz#ceaf2058adbaa1f83443041fed6efef7162df75f"
+  integrity sha512-3BIgcBPoSzlmmzG0+xGRlYjq8ow0H9Avi6pHHfdYqaQOtUjdxqHfnGmKuHjdO4QdzCipvh68n8Pk9OZWl19f3g==
   dependencies:
     debug "^4.1.0"
     extract-zip "^1.6.6"
