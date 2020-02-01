@@ -8,8 +8,9 @@ interactions:
       review on PullRequestReview {\n\tdatabaseId\n\tauthor { ...actor }\n\tauthorAssociation\n\tbody\n\tstate\n\turl\n\tcreatedAt\n\tupdatedAt\n\tcommit
       { ...commit }\n\tincludesCreatedEdit\n}\nfragment pr on PullRequest {\n\tid,
       title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid,
-      headRefName, baseRefName\n\tauthor { ...actor }\n\tparticipants(first: 100)
-      { nodes { ...actor } }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
+      headRefName, baseRefName\n\tlabels(first:100) { nodes { color description name
+      } }\n\tauthor { ...actor }\n\tparticipants(first: 100) { nodes { ...actor }
+      }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
       {\n\tnodes {\n\t\t__typename\n\t\t... on AssignedEvent {\n\t\tactor { ...actor
       }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ClosedEvent {\n\t\tactor
       { ...actor }\n\t\tcreatedAt\n\t\turl\n\t\t}\n\t\t... on IssueComment {\n\t\tdatabaseId\n\t\tauthor
@@ -24,8 +25,10 @@ interactions:
       on ReopenedEvent {\n\t\tactor { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on
       ReviewDismissedEvent {\n\t\tactor { ...actor }\n\t\treview { ...review }\n\t\tdismissalMessage\n\t\tcreatedAt\n\t\t}\n\t\t...
       on ReviewRequestRemovedEvent {\n\t\tactor { ...actor }\n\t\trequestedReviewer
-      { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
-      { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
+      { ...actor }\n\t\trequestedTeam: requestedReviewer {\n\t\t\t... on Team { name
+      url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent
+      {\n\t\tactor { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\trequestedTeam:
+      requestedReviewer {\n\t\t\t... on Team { name url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t...
       on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nmutation\tCreatePullRequest($input:CreatePullRequestInput!)
       {\n  createPullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"repositoryId":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","baseRefName":"master","headRefName":"always-open-pr","title":"This
       is a test PR","body":"This is the description of the test PR"}}}'
@@ -36,7 +39,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":130,"column":3}],"message":"A
+    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":137,"column":3}],"message":"A
       pull request already exists for sourcegraph:always-open-pr."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -52,7 +55,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 06 Dec 2019 11:02:54 GMT
+      - Thu, 30 Jan 2020 13:52:23 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -72,9 +75,9 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - FF61:3D532:14C44099:18BA54D3:5DEA355D
+      - D69A:12588:412E427:4E2F2C2:5E32DF96
       X-Oauth-Scopes:
-      - repo
+      - read:org, repo
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -87,8 +90,9 @@ interactions:
       review on PullRequestReview {\n\tdatabaseId\n\tauthor { ...actor }\n\tauthorAssociation\n\tbody\n\tstate\n\turl\n\tcreatedAt\n\tupdatedAt\n\tcommit
       { ...commit }\n\tincludesCreatedEdit\n}\nfragment pr on PullRequest {\n\tid,
       title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid,
-      headRefName, baseRefName\n\tauthor { ...actor }\n\tparticipants(first: 100)
-      { nodes { ...actor } }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
+      headRefName, baseRefName\n\tlabels(first:100) { nodes { color description name
+      } }\n\tauthor { ...actor }\n\tparticipants(first: 100) { nodes { ...actor }
+      }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
       {\n\tnodes {\n\t\t__typename\n\t\t... on AssignedEvent {\n\t\tactor { ...actor
       }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ClosedEvent {\n\t\tactor
       { ...actor }\n\t\tcreatedAt\n\t\turl\n\t\t}\n\t\t... on IssueComment {\n\t\tdatabaseId\n\t\tauthor
@@ -103,8 +107,10 @@ interactions:
       on ReopenedEvent {\n\t\tactor { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on
       ReviewDismissedEvent {\n\t\tactor { ...actor }\n\t\treview { ...review }\n\t\tdismissalMessage\n\t\tcreatedAt\n\t\t}\n\t\t...
       on ReviewRequestRemovedEvent {\n\t\tactor { ...actor }\n\t\trequestedReviewer
-      { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
-      { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
+      { ...actor }\n\t\trequestedTeam: requestedReviewer {\n\t\t\t... on Team { name
+      url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent
+      {\n\t\tactor { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\trequestedTeam:
+      requestedReviewer {\n\t\t\t... on Team { name url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t...
       on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nquery
       {\nrepository(owner: \"sourcegraph\", name: \"automation-testing\") {\npullRequests(baseRefName:
       \"master\", headRefName: \"always-open-pr\", first: 1, states: OPEN) { \nnodes{
@@ -118,7 +124,7 @@ interactions:
   response:
     body: '{"data":{"repository":{"pullRequests":{"nodes":[{"id":"MDExOlB1bGxSZXF1ZXN0MzM5NzUyNDQy","title":"This
       is a test PR that is always open (keep it open!)","body":"Feel free to ignore
-      this. This is a test PR that is always open.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/1","number":1,"createdAt":"2019-11-12T06:40:21Z","updatedAt":"2019-12-05T07:09:31Z","headRefOid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"always-open-pr","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"timelineItems":{"nodes":[{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:16Z","url":"https://github.com/sourcegraph/automation-testing/pull/1#event-2855920542"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-05T07:09:21Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"This
+      this. This is a test PR that is always open.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/1","number":1,"createdAt":"2019-11-12T06:40:21Z","updatedAt":"2019-12-05T07:09:31Z","headRefOid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"always-open-pr","baseRefName":"master","labels":{"nodes":[]},"author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"timelineItems":{"nodes":[{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:16Z","url":"https://github.com/sourcegraph/automation-testing/pull/1#event-2855920542"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-05T07:09:21Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"This
       is a test PR that is always open","currentTitle":"This is a test PR that is
       always open (keep it open!)","createdAt":"2019-12-05T07:09:31Z"}]}}]}}}}'
     headers:
@@ -135,7 +141,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 06 Dec 2019 11:02:55 GMT
+      - Thu, 30 Jan 2020 13:52:23 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -155,9 +161,9 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - FF61:3D532:14C4419D:18BA5582:5DEA355E
+      - D69A:12588:412E552:4E2F3A8:5E32DF97
       X-Oauth-Scopes:
-      - repo
+      - read:org, repo
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK

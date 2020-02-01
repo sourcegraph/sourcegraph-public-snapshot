@@ -139,6 +139,13 @@ func (s ChangesetState) Valid() bool {
 	}
 }
 
+// ChangesetLabel represents a label applied to a changeset
+type ChangesetLabel struct {
+	Name        string
+	Color       string
+	Description string
+}
+
 // CampaignState defines the possible states of a Campaign
 type CampaignState string
 
@@ -383,6 +390,27 @@ func (c *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 	}
 
 	return SelectReviewState(states), nil
+}
+
+// Labels returns the lables associated with this changeset
+func (c *Changeset) Labels() ([]ChangesetLabel, error) {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		labels := make([]ChangesetLabel, len(m.Labels.Nodes))
+		for i, label := range m.Labels.Nodes {
+			labels[i] = ChangesetLabel{
+				Name:        label.Name,
+				Color:       label.Color,
+				Description: label.Description,
+			}
+		}
+		return labels, nil
+	case *bitbucketserver.PullRequest:
+		// bitbucket server does not support labels
+		return []ChangesetLabel{}, nil
+	default:
+		return nil, errors.New("unknown changeset type")
+	}
 }
 
 // Events returns the list of ChangesetEvents from the Changeset's metadata.

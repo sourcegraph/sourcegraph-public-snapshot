@@ -672,6 +672,16 @@ type ChangesetPlan {
     publicationEnqueued: Boolean!
 }
 
+# A label attached to a changeset on a codehost, mirrored
+type ChangesetLabel {
+    # The labels text
+    text: String!
+    # Label color, defined in hex without the #. E.g., 93ba13
+    color: String!
+    # Optional descriptive text to support the understandability of the labels meaning
+    description: String
+}
+
 # A changeset in a code host (e.g. a PR on Github)
 type ExternalChangeset implements Node {
     # The unique ID for the changeset.
@@ -704,6 +714,9 @@ type ExternalChangeset implements Node {
 
     # The state of the changeset
     state: ChangesetState!
+
+    # The labels attached to the changeset on the code host.
+    labels: [ChangesetLabel!]!
 
     # The external URL of the changeset on the code host.
     externalURL: ExternalLink!

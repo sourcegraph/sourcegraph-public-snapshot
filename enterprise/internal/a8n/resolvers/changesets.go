@@ -234,6 +234,18 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 	}, nil
 }
 
+func (r *changesetResolver) Labels() ([]graphqlbackend.ChangesetLabelResolver, error) {
+	labels, err := r.Changeset.Labels()
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.ChangesetLabelResolver, len(labels))
+	for i := range labels {
+		resolvers[i] = &changesetLabelResolver{label: labels[i]}
+	}
+	return resolvers, nil
+}
+
 func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
 	s, err := r.Changeset.State()
 	if err != nil {
@@ -357,4 +369,20 @@ func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 			Fork:        r.Fork,
 		},
 	})
+}
+
+type changesetLabelResolver struct {
+	label a8n.ChangesetLabel
+}
+
+func (r *changesetLabelResolver) Text() string {
+	return r.label.Name
+}
+
+func (r *changesetLabelResolver) Color() string {
+	return r.label.Color
+}
+
+func (r *changesetLabelResolver) Description() *string {
+	return &r.label.Description
 }

@@ -8,8 +8,9 @@ interactions:
       review on PullRequestReview {\n\tdatabaseId\n\tauthor { ...actor }\n\tauthorAssociation\n\tbody\n\tstate\n\turl\n\tcreatedAt\n\tupdatedAt\n\tcommit
       { ...commit }\n\tincludesCreatedEdit\n}\nfragment pr on PullRequest {\n\tid,
       title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid,
-      headRefName, baseRefName\n\tauthor { ...actor }\n\tparticipants(first: 100)
-      { nodes { ...actor } }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
+      headRefName, baseRefName\n\tlabels(first:100) { nodes { color description name
+      } }\n\tauthor { ...actor }\n\tparticipants(first: 100) { nodes { ...actor }
+      }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
       {\n\tnodes {\n\t\t__typename\n\t\t... on AssignedEvent {\n\t\tactor { ...actor
       }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ClosedEvent {\n\t\tactor
       { ...actor }\n\t\tcreatedAt\n\t\turl\n\t\t}\n\t\t... on IssueComment {\n\t\tdatabaseId\n\t\tauthor
@@ -24,8 +25,10 @@ interactions:
       on ReopenedEvent {\n\t\tactor { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on
       ReviewDismissedEvent {\n\t\tactor { ...actor }\n\t\treview { ...review }\n\t\tdismissalMessage\n\t\tcreatedAt\n\t\t}\n\t\t...
       on ReviewRequestRemovedEvent {\n\t\tactor { ...actor }\n\t\trequestedReviewer
-      { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
-      { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
+      { ...actor }\n\t\trequestedTeam: requestedReviewer {\n\t\t\t... on Team { name
+      url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent
+      {\n\t\tactor { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\trequestedTeam:
+      requestedReviewer {\n\t\t\t... on Team { name url avatarUrl }\n\t\t}\n\t\tcreatedAt\n\t\t}\n\t\t...
       on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nmutation\tUpdatePullRequest($input:UpdatePullRequestInput!)
       {\n  updatePullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"pullRequestId":"MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0","baseRefName":"master","title":"This
       is a new title","body":"This is a new body"}}}'
@@ -37,7 +40,7 @@ interactions:
     method: POST
   response:
     body: '{"data":{"updatePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0","title":"This
-      is a new title","body":"This is a new body","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/91","number":91,"createdAt":"2020-01-08T15:59:11Z","updatedAt":"2020-01-08T16:24:44Z","headRefOid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-1578499147","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"timelineItems":{"nodes":[{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"boring
+      is a new title","body":"This is a new body","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/91","number":91,"createdAt":"2020-01-08T15:59:11Z","updatedAt":"2020-01-30T12:07:13Z","headRefOid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-1578499147","baseRefName":"master","labels":{"nodes":[]},"author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"timelineItems":{"nodes":[{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"boring
       title","currentTitle":"AMAZING NAME!","createdAt":"2020-01-08T16:00:35Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"AMAZING
       NAME!","currentTitle":"This is a new title","createdAt":"2020-01-08T16:24:43Z"}]}}}}}'
     headers:
@@ -54,7 +57,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 08 Jan 2020 16:24:44 GMT
+      - Thu, 30 Jan 2020 12:07:13 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -74,9 +77,9 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - C9C2:22974:136A27C:178E699:5E16024B
+      - D169:4604:FA44B9:12AF1D9:5E32C6EF
       X-Oauth-Scopes:
-      - public_repo
+      - read:org, repo
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK

@@ -28,6 +28,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Subject } from 'rxjs'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import { asError } from '../../../../../../shared/src/util/errors'
+import { ChangesetLabel } from './ChangesetLabel'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
@@ -114,6 +115,13 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             >
                                 {node.title}
                             </LinkOrSpan>
+                            {node.labels.length > 0 && (
+                                <span className="ml-2">
+                                    {node.labels.map(label => (
+                                        <ChangesetLabel label={label} key={label.text} />
+                                    ))}
+                                </span>
+                            )}
                         </>
                     )}
                 </h3>

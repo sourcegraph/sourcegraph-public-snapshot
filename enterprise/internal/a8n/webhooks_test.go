@@ -158,7 +158,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			{
 				ID:          7,
 				ChangesetID: changesets[0].ID,
-				Kind:        "github:commented",
+				Kind:        a8n.ChangesetEventKindGitHubCommented,
 				Key:         "540540777",
 				CreatedAt:   now,
 				UpdatedAt:   now,
