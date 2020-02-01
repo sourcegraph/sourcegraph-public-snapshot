@@ -137,7 +137,17 @@ func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Exte
 	}
 
 	// Best-effort fetch visibility in batch if we have more than X remaining repositories to check
-	// and user is authenticated.  (This is an optimization.)
+	// and user is authenticated.
+	//
+	// This is an optimization. If we have too many repositories (GitLab calls them "projects") to
+	// fetch from the GitLab API, we try to batch-fetch all projects whose visibility is `internal`
+	// or `public` (because we can batch-fetch 100 repositories at a time this way). This is not
+	// guaranteed to be strictly better than fetching them individually, because if we batch-fest,
+	// we must batch-fest *all* repositories, not just the ones in `repos`.
+	//
+	// We cannot determine the permissions of projects with visibility `private` this way, because a
+	// project may be visible to a GitLab user, but its contents inaccessible (which means we have
+	// to issue individual API requests to request repository contents to verify permissions).
 	if len(remaining) >= p.minBatchThreshold && oauthToken != "" {
 		nextRemaining := make([]*types.Repo, 0, len(remaining))
 		visibility, err := p.fetchProjVisBatch(ctx, oauthToken, remaining, fetchProjVisBatchOp{maxRequests: p.maxBatchRequests})
