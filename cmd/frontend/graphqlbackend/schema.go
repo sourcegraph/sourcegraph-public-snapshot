@@ -672,7 +672,9 @@ type ChangesetPlan {
     publicationEnqueued: Boolean!
 }
 
+# A label attached to a changeset on a codehost, mirrored
 type ChangesetLabel {
+    # The labels text
     text: String!
     # Label color, defined in hex without the #. E.g., 93ba13
     color: String!
