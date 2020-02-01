@@ -217,7 +217,7 @@
   },
   "dependencies": {
     "@hot-loader/react-dom": "^16.11.0",
-    "@sentry/browser": "^5.11.0",
+    "@sentry/browser": "^5.11.2",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^6.2.2",
     "@sourcegraph/comlink": "^3.1.1-fork.3",
