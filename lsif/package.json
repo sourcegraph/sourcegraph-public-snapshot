@@ -67,7 +67,7 @@
     "eslint-plugin-import": "^2.20.0",
     "jest": "^24.9.0",
     "nock": "^11.7.1",
-    "sinon": "^8.1.0",
+    "sinon": "^8.1.1",
     "source-map-support": "^0.5.16",
     "tsc-watch": "^4.1.0",
     "tslint": "^5.20.1",
