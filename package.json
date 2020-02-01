@@ -244,7 +244,7 @@
     "is-absolute-url": "^3.0.3",
     "lodash": "^4.17.15",
     "marked": "^0.8.0",
-    "mdi-react": "^6.5.0",
+    "mdi-react": "^6.6.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.18.1",
     "open-color": "^1.7.0",
