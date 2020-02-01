@@ -47,6 +47,27 @@ func HandleSiteInit(w http.ResponseWriter, r *http.Request) {
 	handleSignUp(w, r, true)
 }
 
+// checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
+// of other people whom they want to annoy.
+func checkEmailAbuse(ctx context.Context, addr string) (abused bool, reason string, err error) {
+	email, err := db.UserEmails.GetLatestVerificationSentEmail(ctx, addr)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return false, "", nil
+		}
+		return false, "", err
+	}
+
+	// NOTE: We could check if email is already used here but that complicates the logic
+	// and the reused problem should be better handled in the user creation.
+
+	if email.NeedsVerificationCoolDown() {
+		return true, "too frequent attempt since last verification email sent", nil
+	}
+
+	return false, "", nil
+}
+
 // doServeSignUp is called to create a new user account. It is called for the normal user signup process (where a
 // non-admin user is created) and for the site initialization process (where the initial site admin user account is
 // created).
@@ -94,6 +115,22 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		}
 		newUserData.EmailVerificationCode = code
 	}
+
+	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
+	// following abuse prevention checks.
+	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
+		abused, reason, err := checkEmailAbuse(r.Context(), creds.Email)
+		if err != nil {
+			log15.Error("Error checking email abuse", "email", creds.Email, "error", err)
+			http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
+			return
+		} else if abused {
+			log15.Error("Possible email address abuse prevented", "email", creds.Email, "reason", reason)
+			http.Error(w, "Email address is possibly being abused, please try again later or use a different email address.", http.StatusTooManyRequests)
+			return
+		}
+	}
+
 	usr, err := db.Users.Create(r.Context(), newUserData)
 	if err != nil {
 		var (
@@ -129,15 +166,16 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		log15.Error("Failed to grant user pending permissions", "userID", usr.ID, "error", err)
 	}
 
-	actor := &actor.Actor{UID: usr.ID}
-
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
 		if err := backend.SendUserEmailVerificationEmail(r.Context(), creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
+		} else if err = db.UserEmails.SetLastVerificationSentAt(r.Context(), usr.ID, creds.Email); err != nil {
+			log15.Error("failed to set email last verification sent at (user's email is verified)", "email", creds.Email, "err", err)
 		}
 	}
 
 	// Write the session cookie
+	actor := &actor.Actor{UID: usr.ID}
 	if err := session.SetActor(w, r, actor, 0); err != nil {
 		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 	}

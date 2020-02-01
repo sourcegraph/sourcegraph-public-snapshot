@@ -103,6 +103,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The search query builder now lives on its own page at `/search/query-builder`. The home search page has a link to it.
 - User passwords when using builtin auth are limited to 256 characters. Existing passwords longer than 256 characters will continue to work.
 - GraphQL API: Campaign.changesetCreationStatus has been renamed to Campaign.status to be aligned with CampaignPlan. [#7654](https://github.com/sourcegraph/sourcegraph/pull/7654)
+- When using GitHub as an authentication provider, `read:org` scope is now required. This is used to support the new `allowOrgs` site config setting in the GitHub `auth.providers` configuration, which enables site admins to restrict GitHub logins to members of a specific GitHub organization. This for example allows having a Sourcegraph instance with GitHub sign in configured be exposed to the public internet without allowing everyone with a GitHub account access to your Sourcegraph instance.
 
 ### Fixed
 

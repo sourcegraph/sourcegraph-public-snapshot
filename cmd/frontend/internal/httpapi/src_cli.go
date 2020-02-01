@@ -35,6 +35,8 @@ func srcCliDownloadServe(w http.ResponseWriter, r *http.Request) error {
 
 	u, err := url.Parse(srcCliDownloadsURL)
 	if err != nil {
+		log15.Error("Illegal base src-cli download URL", "url", srcCliDownloadsURL, "err", err)
+		http.Error(w, "", http.StatusInternalServerError)
 		return nil
 	}
 	u.Path = path.Join(u.Path, srcCliVersion(), filename)
