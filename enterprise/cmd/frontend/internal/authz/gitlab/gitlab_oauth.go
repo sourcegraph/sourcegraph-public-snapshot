@@ -268,7 +268,7 @@ const (
 
 // batchProjVisSize is the number of projects to request visibility for in each batch request issued
 // by fetchProjVisBatch
-var batchProjVisSize = 100
+const batchProjVisSize = 100
 
 // fetchProjVisBatch returns the list of repositories best-effort sorted into groups. The visiblity
 // results are valid even if err is non-nil.

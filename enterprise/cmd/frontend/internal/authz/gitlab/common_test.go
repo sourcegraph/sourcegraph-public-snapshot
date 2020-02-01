@@ -114,17 +114,45 @@ func newMockGitLab(op mockGitLabOp) mockGitLab {
 		}
 	}
 	return mockGitLab{
-		t:              op.t,
-		projs:          projs,
-		users:          op.users,
-		privateGuest:   privateGuest,
-		privateRepo:    privateRepo,
-		oauthToks:      op.oauthToks,
-		sudoTok:        op.sudoTok,
-		madeGetProject: map[string]map[gitlab.GetProjectOp]int{},
-		madeListTree:   map[string]map[gitlab.ListTreeOp]int{},
-		madeUsers:      map[string]map[string]int{},
+		t:                op.t,
+		projs:            projs,
+		users:            op.users,
+		privateGuest:     privateGuest,
+		privateRepo:      privateRepo,
+		oauthToks:        op.oauthToks,
+		sudoTok:          op.sudoTok,
+		madeGetProject:   map[string]map[gitlab.GetProjectOp]int{},
+		madeListProjects: map[string]map[string]int{},
+		madeListTree:     map[string]map[gitlab.ListTreeOp]int{},
+		madeUsers:        map[string]map[string]int{},
 	}
+}
+
+func (m *mockGitLab) GetProject(c *gitlab.Client, ctx context.Context, op gitlab.GetProjectOp) (*gitlab.Project, error) {
+	if _, ok := m.madeGetProject[c.OAuthToken]; !ok {
+		m.madeGetProject[c.OAuthToken] = map[gitlab.GetProjectOp]int{}
+	}
+	m.madeGetProject[c.OAuthToken][op]++
+
+	proj, ok := m.projs[op.ID]
+	if !ok {
+		return nil, gitlab.ErrNotFound
+	}
+	if proj.Visibility == gitlab.Public {
+		return proj, nil
+	}
+	if proj.Visibility == gitlab.Internal && m.isClientAuthenticated(c) {
+		return proj, nil
+	}
+
+	acctID := m.getAcctID(c)
+	for _, accessibleProjID := range append(m.privateGuest[acctID], m.privateRepo[acctID]...) {
+		if accessibleProjID == op.ID {
+			return proj, nil
+		}
+	}
+
+	return nil, gitlab.ErrNotFound
 }
 
 func (m *mockGitLab) ListProjects(c *gitlab.Client, ctx context.Context, urlStr string) (projs []*gitlab.Project, nextPageURL *string, err error) {
@@ -180,34 +208,6 @@ func (m *mockGitLab) ListProjects(c *gitlab.Client, ctx context.Context, urlStr 
 	}
 	return projs[(page-1)*perPage:], nil, nil
 }
-
-func (m *mockGitLab) GetProject(c *gitlab.Client, ctx context.Context, op gitlab.GetProjectOp) (*gitlab.Project, error) {
-	if _, ok := m.madeGetProject[c.OAuthToken]; !ok {
-		m.madeGetProject[c.OAuthToken] = map[gitlab.GetProjectOp]int{}
-	}
-	m.madeGetProject[c.OAuthToken][op]++
-
-	proj, ok := m.projs[op.ID]
-	if !ok {
-		return nil, gitlab.ErrNotFound
-	}
-	if proj.Visibility == gitlab.Public {
-		return proj, nil
-	}
-	if proj.Visibility == gitlab.Internal && m.isClientAuthenticated(c) {
-		return proj, nil
-	}
-
-	acctID := m.getAcctID(c)
-	for _, accessibleProjID := range append(m.privateGuest[acctID], m.privateRepo[acctID]...) {
-		if accessibleProjID == op.ID {
-			return proj, nil
-		}
-	}
-
-	return nil, gitlab.ErrNotFound
-}
-
 func (m *mockGitLab) ListTree(c *gitlab.Client, ctx context.Context, op gitlab.ListTreeOp) ([]*gitlab.Tree, error) {
 	if _, ok := m.madeListTree[c.OAuthToken]; !ok {
 		m.madeListTree[c.OAuthToken] = map[gitlab.ListTreeOp]int{}
