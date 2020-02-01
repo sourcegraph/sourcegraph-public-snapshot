@@ -192,7 +192,7 @@
     "react-docgen-typescript-webpack-plugin": "^1.1.0",
     "react-hot-loader": "^4.12.19",
     "react-test-renderer": "^16.12.0",
-    "sass-loader": "^8.0.0",
+    "sass-loader": "^8.0.2",
     "shelljs": "^0.8.3",
     "signale": "^1.4.0",
     "simmerjs": "^0.5.6",
