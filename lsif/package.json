@@ -55,7 +55,7 @@
     "@types/logform": "1.2.0",
     "@types/mz": "2.7.0",
     "@types/on-finished": "2.3.1",
-    "@types/redis": "^2.8.14",
+    "@types/redis": "2.8.14",
     "@types/relateurl": "0.2.28",
     "@types/rmfr": "2.0.0",
     "@types/sinon": "7.5.1",

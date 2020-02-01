@@ -2530,7 +2530,7 @@
   resolved "https://registry.npmjs.org/@types/events/-/events-1.2.0.tgz#81a6731ce4df43619e5c8c945383b3e62a89ea86"
   integrity sha512-KEIlhXnIutzKwRbQkGWb/I4HFqBuUykAdHgDED6xqwXJfONCjF5VoE0cXEiurh3XauygxzeDzgtXUqvLkxFzzA==
 
-"@types/expect@^24.3.0":
+"@types/expect@24.3.0":
   version "24.3.0"
   resolved "https://registry.npmjs.org/@types/expect/-/expect-24.3.0.tgz#d7cab8b3c10c2d92a0cbb31981feceb81d3486f1"
   integrity sha512-aq5Z+YFBz5o2b6Sp1jigx5nsmoZMK5Ceurjwy6PZmRv7dEi1jLtkARfvB1ME+OXJUG+7TZUDcv3WoCr/aor6dQ==
@@ -2762,7 +2762,7 @@
   dependencies:
     "@types/node" "*"
 
-"@types/mocha@^5.2.7":
+"@types/mocha@5.2.7":
   version "5.2.7"
   resolved "https://registry.npmjs.org/@types/mocha/-/mocha-5.2.7.tgz#315d570ccb56c53452ff8638738df60726d5b6ea"
   integrity sha512-NYrtPht0wGzhwe9+/idPaBB+TqkY9AhTvOLMkThm0IoEfLaiVQZwBwyJ5puCkO3AUCWrmcoePjp2mbFocKy4SQ==
@@ -2921,7 +2921,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-textarea-autosize@^4.3.3", "@types/react-textarea-autosize@^4.3.5":
+"@types/react-textarea-autosize@4.3.5", "@types/react-textarea-autosize@^4.3.3":
   version "4.3.5"
   resolved "https://registry.npmjs.org/@types/react-textarea-autosize/-/react-textarea-autosize-4.3.5.tgz#6c4d2753fa1864c98c0b2b517f67bb1f6e4c46de"
   integrity sha512-PiDL83kPMTolyZAWW3lyzO6ktooTb9tFTntVy7CA83/qFLWKLJ5bLeRboy6J6j3b1e8h2Eec6gBTEOOJRjV14A==
@@ -2958,7 +2958,7 @@
     "@types/react" "*"
     "@types/recharts-scale" "*"
 
-"@types/resize-observer-browser@^0.1.3":
+"@types/resize-observer-browser@0.1.3":
   version "0.1.3"
   resolved "https://registry.npmjs.org/@types/resize-observer-browser/-/resize-observer-browser-0.1.3.tgz#5cca2445e6fc34a380760bd6ef8c492863469c47"
   integrity sha512-3tGjLIDH8L57fWOfC7NVn/BbGQD7pXwbkk2+8Z4hK/S7kOIv1MUN4nkKjfx0qg4ctkukjzp3Bgr/Z+Hq5ZQZTQ==
