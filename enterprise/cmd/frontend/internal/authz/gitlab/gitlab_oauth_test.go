@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -199,8 +200,8 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 						}
 						sort.Sort(authz.RepoPermsSort(perms))
 						sort.Sort(authz.RepoPermsSort(c.expPerms))
-						if !reflect.DeepEqual(perms, c.expPerms) {
-							t.Errorf("expected %s, but got %s", asJSON(t, c.expPerms), asJSON(t, perms))
+						if diff := cmp.Diff(perms, c.expPerms); diff != "" {
+							t.Errorf("perms != c.expPerms:\n%s", diff)
 						}
 					}
 				}
@@ -376,6 +377,7 @@ func Test_GitLab_RepoPerms_batchVisibility(t *testing.T) {
 	}
 
 	{
+		// Test case 1: batching threshold hit, { MinBatchThreshold: 1, MaxBatchRequests: 300 }
 		gitlabMock := newMockGitLab(gitlabMockOp)
 		gitlab.MockGetProject = gitlabMock.GetProject
 		gitlab.MockListProjects = gitlabMock.ListProjects
@@ -410,14 +412,14 @@ func Test_GitLab_RepoPerms_batchVisibility(t *testing.T) {
 		}
 		sort.Sort(authz.RepoPermsSort(perms))
 		sort.Sort(authz.RepoPermsSort(expPerms))
-		if !reflect.DeepEqual(perms, expPerms) {
-			t.Errorf("expected %s, but got %s", asJSON(t, expPerms), asJSON(t, perms))
+		if diff := cmp.Diff(expPerms, perms); diff != "" {
+			t.Errorf("expPerms != perms:\n%s", diff)
 		}
-		if !reflect.DeepEqual(expMadeGetProject, gitlabMock.madeGetProject) {
-			t.Errorf("expected madeGetProject calls to be %v, but got %v", expMadeGetProject, gitlabMock.madeGetProject)
+		if diff := cmp.Diff(expMadeGetProject, gitlabMock.madeGetProject); diff != "" {
+			t.Errorf("expMadeGetProject != gitlabMock.madeGetProject:\n%s", diff)
 		}
-		if !reflect.DeepEqual(expMadeListProjects, gitlabMock.madeListProjects) {
-			t.Errorf("expected madeListProjects calls to be %v, but got %v", expMadeListProjects, gitlabMock.madeListProjects)
+		if diff := cmp.Diff(expMadeListProjects, gitlabMock.madeListProjects); diff != "" {
+			t.Errorf("expMadeListProjects != gitlabMock.madeListProjects:\n%s", diff)
 		}
 
 		gitlab.MockGetProject = nil
@@ -426,6 +428,7 @@ func Test_GitLab_RepoPerms_batchVisibility(t *testing.T) {
 	}
 
 	{
+		// Test case 2: batching threshold NOT hit { MinBatchThreshold: 200, MaxBatchRequests: 300 }
 		gitlabMock := newMockGitLab(gitlabMockOp)
 		gitlab.MockGetProject = gitlabMock.GetProject
 		gitlab.MockListProjects = gitlabMock.ListProjects
@@ -460,14 +463,14 @@ func Test_GitLab_RepoPerms_batchVisibility(t *testing.T) {
 		}
 		sort.Sort(authz.RepoPermsSort(perms))
 		sort.Sort(authz.RepoPermsSort(expPerms))
-		if !reflect.DeepEqual(perms, expPerms) {
-			t.Errorf("expected %s, but got %s", asJSON(t, expPerms), asJSON(t, perms))
+		if diff := cmp.Diff(perms, expPerms); diff != "" {
+			t.Errorf("perms != expPerms:\n%s", diff)
 		}
-		if !reflect.DeepEqual(expMadeGetProject, gitlabMock.madeGetProject) {
-			t.Errorf("expected madeGetProject calls to be %v, but got %v", expMadeGetProject, gitlabMock.madeGetProject)
+		if diff := cmp.Diff(expMadeGetProject, gitlabMock.madeGetProject); diff != "" {
+			t.Errorf("expMadeGetProject != gitlabMock.madeGetProject:\n%s", diff)
 		}
-		if !reflect.DeepEqual(expMadeListProjects, gitlabMock.madeListProjects) {
-			t.Errorf("expected madeListProjects calls to be %v, but got %v", expMadeListProjects, gitlabMock.madeListProjects)
+		if diff := cmp.Diff(expMadeListProjects, gitlabMock.madeListProjects); diff != "" {
+			t.Errorf("expMadeListProjects != gitlabMock.madeListProjects:\n%s", diff)
 		}
 
 		gitlab.MockGetProject = nil
