@@ -179,6 +179,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 				for _, batchingThreshold := range [][2]int{
 					{0, 0},     // should NOT trigger batch-fetching visibility
 					{1, 300},   // should trigger batch-fetching visibility
+					{1, 1},     // should trigger batch-fetching visibility, but hit maximum
 					{200, 300}, // should NOT trigger batch-fetching visibility
 				} {
 					t.Logf("Call %q, batchingThreshold %d", c.description, batchingThreshold)
