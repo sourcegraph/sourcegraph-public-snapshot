@@ -155,13 +155,13 @@ func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Exte
 	// to issue individual API requests to request repository contents to verify permissions).
 	if len(remaining) >= p.minBatchThreshold && oauthToken != "" {
 		nextRemaining := make(map[int]*types.Repo, len(remaining))
-		visibility, err := p.fetchProjVisBatch(ctx, oauthToken, remaining, fetchProjVisBatchOp{maxRequests: p.maxBatchRequests})
+		visibility, err := p.fetchProjVisBatch(ctx, oauthToken, remaining, fetchProjectVisibilityBatchOp{maxRequests: p.maxBatchRequests})
 		if err != nil {
 			log15.Error("Error encountered fetching project visibility from GitLab", "err", err)
 		}
 		for projID, repo := range remaining {
 			vis, ok := visibility[projID]
-			if !(ok && (vis == VisPublic || vis == VisInternal)) {
+			if !(ok && (vis == visibilityPublic || vis == visibilityInternal)) {
 				nextRemaining[projID] = repo
 				continue
 			}
@@ -259,18 +259,18 @@ func (p *OAuthAuthzProvider) fetchProjVis(ctx context.Context, oauthToken string
 	return true, proj.Visibility, true, nil
 }
 
-type fetchProjVisBatchOp struct {
+type fetchProjectVisibilityBatchOp struct {
 	// maxRequests is the maximum number of requests to issue before returning
 	maxRequests int
 }
 
-type VisLevel int
+type visibilityLevel int
 
 const (
-	VisUnknown = iota
-	VisPrivate
-	VisInternal
-	VisPublic
+	visibilityUnknown = iota
+	visibilityPrivate
+	visibilityInternal
+	visibilityPublic
 )
 
 // batchProjVisSize is the number of projects to request visibility for in each batch request issued
@@ -279,12 +279,12 @@ const batchProjVisSize = 100
 
 // fetchProjVisBatch returns the list of repositories best-effort sorted into groups. The visiblity
 // results are valid even if err is non-nil.
-func (p *OAuthAuthzProvider) fetchProjVisBatch(ctx context.Context, oauthToken string, reposByProjID map[int]*types.Repo, op fetchProjVisBatchOp) (
-	projIDVisibility map[int]VisLevel, err error,
+func (p *OAuthAuthzProvider) fetchProjVisBatch(ctx context.Context, oauthToken string, reposByProjID map[int]*types.Repo, op fetchProjectVisibilityBatchOp) (
+	projIDVisibility map[int]visibilityLevel, err error,
 ) {
-	projIDVisibility = make(map[int]VisLevel, len(reposByProjID))
+	projIDVisibility = make(map[int]visibilityLevel, len(reposByProjID))
 	for projID := range reposByProjID {
-		projIDVisibility[projID] = VisUnknown
+		projIDVisibility[projID] = visibilityUnknown
 	}
 
 	matchCount := 0
@@ -307,16 +307,16 @@ func (p *OAuthAuthzProvider) fetchProjVisBatch(ctx context.Context, oauthToken s
 			if !ok {
 				continue
 			}
-			if projVis != VisUnknown {
+			if projVis != visibilityUnknown {
 				continue
 			}
 			switch proj.Visibility {
 			case gitlab.Public:
-				projIDVisibility[proj.ID] = VisPublic
+				projIDVisibility[proj.ID] = visibilityPublic
 			case gitlab.Internal:
-				projIDVisibility[proj.ID] = VisInternal
+				projIDVisibility[proj.ID] = visibilityInternal
 			case gitlab.Private:
-				projIDVisibility[proj.ID] = VisPrivate
+				projIDVisibility[proj.ID] = visibilityPrivate
 			}
 			matchCount++
 		}
