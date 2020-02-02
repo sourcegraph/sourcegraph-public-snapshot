@@ -95,16 +95,21 @@ func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Exte
 		accountID = account.AccountID
 	}
 
-	remaining := make([]*types.Repo, 0, len(repos))
-	perms := make([]authz.RepoPerms, 0, len(repos))
-
-	// Populate perms using cached repository visibility information.
+	reposByProjID := make(map[int]*types.Repo, len(repos))
 	for _, repo := range repos {
 		projID, err := strconv.Atoi(repo.ExternalRepo.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "GitLab repo external ID did not parse to int")
 		}
+		reposByProjID[projID] = repo
+	}
 
+	// remaining tracks which repositories permissions remain to be computed for, keyed by project ID
+	remaining := make(map[int]*types.Repo, len(repos))
+	perms := make([]authz.RepoPerms, 0, len(repos))
+
+	// Populate perms using cached repository visibility information.
+	for projID, repo := range reposByProjID {
 		if vis, exists := cacheGetRepoVisibility(p.cache, projID, p.cacheTTL); exists {
 			if v := vis.Visibility; v == gitlab.Public || (v == gitlab.Internal && accountID != "") {
 				perms = append(perms, authz.RepoPerms{Repo: repo, Perms: authz.Read})
@@ -124,7 +129,7 @@ func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Exte
 			}
 		}
 
-		remaining = append(remaining, repo)
+		remaining[projID] = repo
 	}
 
 	var oauthToken string
@@ -149,19 +154,15 @@ func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Exte
 	// project may be visible to a GitLab user, but its contents inaccessible (which means we have
 	// to issue individual API requests to request repository contents to verify permissions).
 	if len(remaining) >= p.minBatchThreshold && oauthToken != "" {
-		nextRemaining := make([]*types.Repo, 0, len(remaining))
+		nextRemaining := make(map[int]*types.Repo, len(remaining))
 		visibility, err := p.fetchProjVisBatch(ctx, oauthToken, remaining, fetchProjVisBatchOp{maxRequests: p.maxBatchRequests})
 		if err != nil {
 			log15.Error("Error encountered fetching project visibility from GitLab", "err", err)
 		}
-		for _, repo := range remaining {
-			projID, err := strconv.Atoi(repo.ExternalRepo.ID)
-			if err != nil {
-				return nil, errors.Wrap(err, "Repo from GitLab external ID did not parse to int")
-			}
+		for projID, repo := range remaining {
 			vis, ok := visibility[projID]
 			if !(ok && (vis == VisPublic || vis == VisInternal)) {
-				nextRemaining = append(nextRemaining, repo)
+				nextRemaining[projID] = repo
 				continue
 			}
 
@@ -172,13 +173,9 @@ func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Exte
 	}
 
 	// Fetch individually
-	for _, repo := range remaining {
+	for projID, repo := range remaining {
 		// Populate perms for the remaining repos (`remaining`) by fetching directly from the GitLab
 		// API (and update the user repo-visibility and user-can-access-repo permissions, as well)
-		projID, err := strconv.Atoi(repo.ExternalRepo.ID)
-		if err != nil {
-			return nil, errors.Wrap(err, "GitLab repo external ID did not parse to int")
-		}
 
 		isAccessible, vis, isContentAccessible, err := p.fetchProjVis(ctx, oauthToken, projID)
 		if err != nil {
@@ -282,22 +279,18 @@ const batchProjVisSize = 100
 
 // fetchProjVisBatch returns the list of repositories best-effort sorted into groups. The visiblity
 // results are valid even if err is non-nil.
-func (p *OAuthAuthzProvider) fetchProjVisBatch(ctx context.Context, oauthToken string, repos []*types.Repo, op fetchProjVisBatchOp) (
+func (p *OAuthAuthzProvider) fetchProjVisBatch(ctx context.Context, oauthToken string, reposByProjID map[int]*types.Repo, op fetchProjVisBatchOp) (
 	projIDVisibility map[int]VisLevel, err error,
 ) {
-	projIDVisibility = make(map[int]VisLevel)
-	for _, repo := range repos {
-		projID, err := strconv.Atoi(repo.ExternalRepo.ID)
-		if err != nil {
-			return projIDVisibility, err
-		}
+	projIDVisibility = make(map[int]VisLevel, len(reposByProjID))
+	for projID := range reposByProjID {
 		projIDVisibility[projID] = VisUnknown
 	}
 
 	matchCount := 0
 	projPageURL := fmt.Sprintf("projects?per_page=%d", batchProjVisSize)
 	for i := 0; i < op.maxRequests; i++ {
-		if matchCount >= len(repos) {
+		if matchCount >= len(reposByProjID) {
 			break
 		}
 		projs, next, err := p.clientProvider.GetOAuthClient(oauthToken).ListProjects(ctx, projPageURL)
