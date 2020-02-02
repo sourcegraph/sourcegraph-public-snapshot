@@ -102,8 +102,10 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthAuthzProviderOp{
-						BaseURL:  mustURLParse(t, "https://gitlab.mine"),
-						CacheTTL: 48 * time.Hour,
+						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
+						CacheTTL:          48 * time.Hour,
+						MinBatchThreshold: 200,
+						MaxBatchRequests:  300,
 					},
 				},
 			),
@@ -203,14 +205,18 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthAuthzProviderOp{
-						BaseURL:  mustURLParse(t, "https://gitlab.mine"),
-						CacheTTL: 3 * time.Hour,
+						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
+						CacheTTL:          3 * time.Hour,
+						MinBatchThreshold: 200,
+						MaxBatchRequests:  300,
 					},
 				},
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthAuthzProviderOp{
-						BaseURL:  mustURLParse(t, "https://gitlab.com"),
-						CacheTTL: 3 * time.Hour,
+						BaseURL:           mustURLParse(t, "https://gitlab.com"),
+						CacheTTL:          3 * time.Hour,
+						MinBatchThreshold: 200,
+						MaxBatchRequests:  300,
 					},
 				},
 			),
