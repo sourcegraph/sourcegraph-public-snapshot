@@ -11,6 +11,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -26,34 +27,31 @@ import (
 var (
 	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
 
-	// Whether debug nlogging is turned on
-	traceEnabled   bool
-	traceEnabledMu sync.RWMutex
+	// Whether debug logging is turned on
+	traceEnabled int32 = 0
 )
 
 func init() {
 	go func() {
 		conf.Watch(func() {
 			exp := conf.Get().ExperimentalFeatures
-			traceEnabledMu.Lock()
-			defer traceEnabledMu.Unlock()
 			if exp == nil {
-				traceEnabled = false
+				atomic.StoreInt32(&traceEnabled, 0)
 				return
 			}
 			if debugLog := exp.DebugLog; debugLog == nil || !debugLog.ExtsvcGitlab {
-				traceEnabled = false
+				atomic.StoreInt32(&traceEnabled, 0)
 				return
 			}
-			traceEnabled = true
+			atomic.StoreInt32(&traceEnabled, 1)
 		})
 	}()
 }
 
 func trace(msg string, ctx ...interface{}) {
-	traceEnabledMu.RLock()
-	defer traceEnabledMu.RUnlock()
-	log15.Info(fmt.Sprintf("TRACE %s", msg), ctx...)
+	if atomic.LoadInt32(&traceEnabled) == 1 {
+		log15.Info(fmt.Sprintf("TRACE %s", msg), ctx...)
+	}
 }
 
 // ClientProvider creates GitLab API clients. Each client has separate authentication creds and a
