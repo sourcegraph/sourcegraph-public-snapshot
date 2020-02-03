@@ -3,11 +3,13 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
@@ -33,6 +35,14 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
+		UserID: user.ID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	}); err != nil {
+		log15.Error("Failed to grant user pending permissions", "userID", user.ID, "error", err)
 	}
 	return &createUserResult{user: user}, nil
 }

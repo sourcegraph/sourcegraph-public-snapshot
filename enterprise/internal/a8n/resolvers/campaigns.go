@@ -41,7 +41,7 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID}
+	opts := ee.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID, State: r.opts.State}
 	count, err := r.store.CountCampaigns(ctx, opts)
 	return int32(count), err
 }
@@ -95,6 +95,14 @@ func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserReso
 	return graphqlbackend.UserByIDInt32(ctx, r.AuthorID)
 }
 
+func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+	currentUser, err := backend.CurrentUser(ctx)
+	if err != nil {
+		return false, err
+	}
+	return currentUser.SiteAdmin, nil
+}
+
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {
 	return path.Join("/campaigns", string(r.ID())), nil
 }
@@ -125,6 +133,10 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 }
 
 func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	if r.Campaign.CampaignPlanID == 0 {
+		return &graphqlbackend.DateTime{Time: r.Campaign.CreatedAt}, nil
+	}
+
 	createdAt, err := r.store.GetLatestChangesetJobCreatedAt(ctx, r.Campaign.ID)
 	if err != nil {
 		return nil, err
@@ -171,8 +183,8 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
-	// 🚨 SECURITY: Only site admins may access the counts for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
+	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 

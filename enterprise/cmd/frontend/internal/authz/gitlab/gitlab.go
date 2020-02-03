@@ -78,9 +78,19 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 			return nil, fmt.Errorf("Did not find authentication provider matching %q. Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %s.", instanceURL, instanceURL)
 		}
 
+		minBatchThreshold := 200
+		if idp.Oauth.MinBatchingThreshold > 0 {
+			minBatchThreshold = idp.Oauth.MinBatchingThreshold
+		}
+		maxBatchRequests := 300
+		if idp.Oauth.MaxBatchRequests > 0 {
+			maxBatchRequests = idp.Oauth.MaxBatchRequests
+		}
 		return NewOAuthProvider(OAuthAuthzProviderOp{
-			BaseURL:  glURL,
-			CacheTTL: ttl,
+			BaseURL:           glURL,
+			CacheTTL:          ttl,
+			MinBatchThreshold: minBatchThreshold,
+			MaxBatchRequests:  maxBatchRequests,
 		}), nil
 	case idp.Username != nil:
 		return NewSudoProvider(SudoProviderOp{

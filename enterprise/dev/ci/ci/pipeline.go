@@ -17,19 +17,24 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Common build env
-	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
-		bk.Env("GO111MODULE", "on"),
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Env("FORCE_COLOR", "3"),
-		bk.Env("ENTERPRISE", "1"),
-		bk.Env("COMMIT_SHA", c.commit),
-		bk.Env("DATE", c.now.Format(time.RFC3339)),
+	env := map[string]string{
+		"GO111MODULE":                      "on",
+		"PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
+		"FORCE_COLOR":                      "3",
+		"ENTERPRISE":                       "1",
+		"COMMIT_SHA":                       c.commit,
+		"DATE":                             c.now.Format(time.RFC3339),
+		"VERSION":                          c.version,
 		// For Bundlesize
-		bk.Env("CI_REPO_OWNER", "sourcegraph"),
-		bk.Env("CI_REPO_NAME", "sourcegraph"),
-		bk.Env("CI_COMMIT_SHA", os.Getenv("BUILDKITE_COMMIT")),
-		bk.Env("CI_COMMIT_MESSAGE", os.Getenv("BUILDKITE_MESSAGE")),
-	)
+		"CI_REPO_OWNER":     "sourcegraph",
+		"CI_REPO_NAME":      "sourcegraph",
+		"CI_COMMIT_SHA":     os.Getenv("BUILDKITE_COMMIT"),
+		"CI_COMMIT_MESSAGE": os.Getenv("BUILDKITE_MESSAGE"),
+	}
+
+	for k, v := range env {
+		bk.OnEveryStepOpts = append(bk.OnEveryStepOpts, bk.Env(k, v))
+	}
 
 	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
 	var pipelineOperations []func(*bk.Pipeline)
@@ -83,7 +88,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		//
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
-			triggerE2E(c),
+			triggerE2E(c, env),
 			addLint,    // ~5m
 			addWebApp,  // ~3m
 			addGoTests, // ~2m

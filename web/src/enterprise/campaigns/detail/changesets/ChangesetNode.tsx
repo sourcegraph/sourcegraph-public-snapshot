@@ -28,6 +28,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Subject } from 'rxjs'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import { asError } from '../../../../../../shared/src/util/errors'
+import { ChangesetLabel } from './ChangesetLabel'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
@@ -91,7 +92,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     />
                 </div>
             )}
-            <div className="campaign-node__content flex-fill">
+            <div className="changeset-node__content flex-fill">
                 <h3 className="m-0">
                     <Link to={node.repository.url} className="text-muted" target="_blank" rel="noopener noreferrer">
                         {node.repository.name}
@@ -114,6 +115,13 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             >
                                 {node.title}
                             </LinkOrSpan>
+                            {node.labels.length > 0 && (
+                                <span className="ml-2">
+                                    {node.labels.map(label => (
+                                        <ChangesetLabel label={label} key={label.text} />
+                                    ))}
+                                </span>
+                            )}
                         </>
                     )}
                 </h3>
@@ -148,7 +156,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         <li className="list-group-item e2e-changeset-node">
             {fileDiffNodes ? (
                 <Collapsible
-                    titleClassName="campaign-node__content flex-fill"
+                    titleClassName="changeset-node__content flex-fill"
                     title={changesetNodeRow}
                     wholeTitleClickable={false}
                 >
@@ -165,7 +173,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     ))}
                 </Collapsible>
             ) : (
-                <div className="campaign-node__content flex-fill">{changesetNodeRow}</div>
+                <div className="changeset-node__content changeset-node__content--no-collapse flex-fill">
+                    {changesetNodeRow}
+                </div>
             )}
         </li>
     )

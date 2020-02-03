@@ -30,6 +30,7 @@ import { CodeHost } from './code_intelligence'
 import { DOMFunctions } from './code_views'
 import { ISettingsCascade } from '../../../../shared/src/graphql/schema'
 import { IS_LIGHT_THEME } from './consts'
+import { NotificationClassNameProps } from '../../../../shared/src/notifications/NotificationItem'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
@@ -60,9 +61,8 @@ export const renderCommandPalette = ({
     ...props
 }: TelemetryProps &
     InjectProps &
-    Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'>) => (
-    mount: HTMLElement
-): void => {
+    Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'> &
+    NotificationClassNameProps) => (mount: HTMLElement): void => {
     render(
         <ShortcutProvider>
             <CommandListPopoverButton
@@ -73,7 +73,10 @@ export const renderCommandPalette = ({
                 extensionsController={extensionsController}
                 location={history.location}
             />
-            <Notifications extensionsController={extensionsController} />
+            <Notifications
+                extensionsController={extensionsController}
+                notificationClassNames={props.notificationClassNames}
+            />
         </ShortcutProvider>,
         mount
     )

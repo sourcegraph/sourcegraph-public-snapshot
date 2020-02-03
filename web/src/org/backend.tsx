@@ -33,12 +33,7 @@ export function createOrganization(args: {
                 eventLogger.log('NewOrgFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('NewOrgCreated', {
-                organization: {
-                    org_id: data.createOrganization.id,
-                    org_name: data.createOrganization.name,
-                },
-            })
+            eventLogger.log('NewOrgCreated')
             return concat(refreshAuthenticatedUser(), [data.createOrganization])
         })
     )
@@ -65,20 +60,12 @@ export function removeUserFromOrganization(args: {
         `,
         args
     ).pipe(
-        mergeMap(({ data, errors }) => {
-            const eventData = {
-                organization: {
-                    remove: {
-                        user_id: args.user,
-                    },
-                    org_id: args.organization,
-                },
-            }
+        mergeMap(({ errors }) => {
             if (errors && errors.length > 0) {
-                eventLogger.log('RemoveOrgMemberFailed', eventData)
+                eventLogger.log('RemoveOrgMemberFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('OrgMemberRemoved', eventData)
+            eventLogger.log('OrgMemberRemoved')
             // Reload user data
             return concat(refreshAuthenticatedUser(), [undefined])
         })
@@ -107,19 +94,11 @@ export function updateOrganization(id: GQL.ID, displayName: string): Observable<
         }
     ).pipe(
         map(({ data, errors }) => {
-            const eventData = {
-                organization: {
-                    update: {
-                        display_name: displayName,
-                    },
-                    org_id: id,
-                },
-            }
             if (!data || (errors && errors.length > 0)) {
-                eventLogger.log('UpdateOrgSettingsFailed', eventData)
+                eventLogger.log('UpdateOrgSettingsFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('OrgSettingsUpdated', eventData)
+            eventLogger.log('OrgSettingsUpdated')
             return
         })
     )

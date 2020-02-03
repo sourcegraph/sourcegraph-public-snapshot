@@ -259,7 +259,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "increase(src_frontend_internal_request_duration_seconds_count{job=\"query-runner\",code!~\"2..\"}[5m]) / 5",
+          "expr": "increase(src_frontend_internal_request_duration_seconds_count{job=\"replacer\",code!~\"2..\"}[5m]) / 5",
           "legendFormat": "{{instance}} -> {{category}}",
           "refId": "A"
         }

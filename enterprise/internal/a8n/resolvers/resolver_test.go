@@ -777,13 +777,13 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	changesets := []*a8n.Changeset{
 		{
-			RepoID:              int32(githubRepo.ID),
+			RepoID:              githubRepo.ID,
 			ExternalID:          "5834",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			CampaignIDs:         []int64{campaign.ID},
 		},
 		{
-			RepoID:              int32(githubRepo.ID),
+			RepoID:              githubRepo.ID,
 			ExternalID:          "5849",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			CampaignIDs:         []int64{campaign.ID},
@@ -949,11 +949,9 @@ type Status struct {
 }
 
 type CampaignPlan struct {
-	ID           string
-	CampaignType string `json:"type"`
-	Arguments    string
-	Status       Status
-	Changesets   struct {
+	ID         string
+	Status     Status
+	Changesets struct {
 		Nodes []ChangesetPlan
 	}
 	PreviewURL string
@@ -1047,8 +1045,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
         createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "master", patch: %q}]) {
           ... on CampaignPlan {
             id
-            type
-            arguments
             status {
               completedCount
               pendingCount
@@ -1102,13 +1098,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testDiff, 1))
 
 		result := response.CreateCampaignPlanFromPatches
-		if have, want := result.CampaignType, "patch"; have != want {
-			t.Fatalf("have CampaignType %q, want %q", have, want)
-		}
-
-		if have, want := result.Arguments, ""; have != want {
-			t.Fatalf("have Arguments %q, want %q", have, want)
-		}
 
 		wantStatus := Status{
 			State:          "COMPLETED",
@@ -1194,8 +1183,8 @@ func TestCampaignPlanResolver(t *testing.T) {
 
 	user := createTestUser(ctx, t)
 	plan := &a8n.CampaignPlan{
-		CampaignType: "COMBY",
-		Arguments:    `{"scopeQuery": "file:README.md"}`,
+		CampaignType: "patch",
+		Arguments:    "{}",
 		UserID:       user.ID,
 	}
 	err := store.CreateCampaignPlan(ctx, plan)
@@ -1209,7 +1198,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 			CampaignPlanID: plan.ID,
 			StartedAt:      now,
 			FinishedAt:     now,
-			RepoID:         int32(repo.ID),
+			RepoID:         repo.ID,
 			Rev:            testingRev,
 			BaseRef:        "master",
 			Diff:           testDiff,
@@ -1239,8 +1228,6 @@ func TestCampaignPlanResolver(t *testing.T) {
         node(id: %q) {
           ... on CampaignPlan {
             id
-            type
-            arguments
             status {
               completedCount
               pendingCount
@@ -1291,14 +1278,6 @@ func TestCampaignPlanResolver(t *testing.T) {
         }
       }
 	`, marshalCampaignPlanID(plan.ID), len(jobs)))
-
-	if have, want := response.Node.CampaignType, plan.CampaignType; have != want {
-		t.Fatalf("have CampaignType %q, want %q", have, want)
-	}
-
-	if have, want := response.Node.Arguments, plan.Arguments; have != want {
-		t.Fatalf("have Arguments %q, want %q", have, want)
-	}
 
 	wantStatus := Status{
 		State:          "COMPLETED",

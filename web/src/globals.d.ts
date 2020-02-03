@@ -75,10 +75,10 @@ interface SourcegraphContext
     /**
      * A subset of the site configuration. Not all fields are set.
      */
-    site: {
-        'auth.public': boolean
-        'update.channel': string
-    }
+    site: Pick<
+        import('./schema/site.schema').SiteConfiguration,
+        'auth.public' | 'update.channel' | 'automation.readAccess.enabled'
+    >
 
     /** Whether access tokens are enabled. */
     accessTokensAllow: 'all-users-create' | 'site-admin-create' | 'none'

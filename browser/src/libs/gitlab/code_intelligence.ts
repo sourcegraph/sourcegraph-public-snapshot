@@ -9,6 +9,7 @@ import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './f
 import { getPageInfo, GitLabPageKind } from './scrape'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { subTypeOf } from '../../../../shared/src/util/types'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 
 const toolbarButtonProps = {
     className: 'btn btn-default btn-sm',
@@ -123,6 +124,14 @@ const codeViewResolver: ViewResolver<CodeView> = {
     resolveView,
 }
 
+const notificationClassNames = {
+    [NotificationType.Log]: 'alert alert-secondary',
+    [NotificationType.Success]: 'alert alert-success',
+    [NotificationType.Info]: 'alert alert-info',
+    [NotificationType.Warning]: 'alert alert-warning',
+    [NotificationType.Error]: 'alert alert-danger',
+}
+
 export const gitlabCodeHost = subTypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
@@ -150,6 +159,7 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         }
         return url.href
     },
+    notificationClassNames,
     commandPaletteClassProps: {
         popoverClassName: 'dropdown-menu command-list-popover--gitlab',
         formClassName: 'dropdown-input',
@@ -168,8 +178,8 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         actionItemClassName: 'btn btn-secondary action-item--gitlab',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
-        infoAlertClassName: 'alert alert-info',
-        errorAlertClassName: 'alert alert-danger',
+        infoAlertClassName: notificationClassNames[NotificationType.Info],
+        errorAlertClassName: notificationClassNames[NotificationType.Error],
     },
     codeViewsRequireTokenization: true,
 })

@@ -8,6 +8,9 @@
   "BaseRefOid": "97f8a75319760990c187710c50a957358f663366",
   "HeadRefName": "sourcegraph/campaign-38",
   "BaseRefName": "master",
+  "Labels": {
+   "Nodes": []
+  },
   "Number": 44,
   "Author": {
    "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",

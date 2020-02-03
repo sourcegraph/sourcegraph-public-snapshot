@@ -1479,33 +1479,23 @@ describe('e2e test suite', () => {
         after(async () => {
             await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
         })
-        async function createCampaignPreview({
-            specification,
+        async function testCampaignPreview({
+            previewURL,
             diffCount,
             changesetCount,
             snapshotName,
-            campaignType,
         }: {
-            specification: string
+            previewURL: string
             diffCount: number
             changesetCount: number
             snapshotName: string
-            campaignType: string
         }): Promise<void> {
-            await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
+            await driver.page.goto(previewURL.replace('127.0.0.1', 'localhost'))
             await driver.page.waitForSelector('.e2e-campaign-form')
 
             // fill campaign preview form
             await driver.page.type('.e2e-campaign-title', 'E2E campaign')
-            await driver.page.select('.e2e-campaign-type', campaignType)
-            await driver.page.waitForSelector('.e2e-campaign-arguments .monaco-editor')
-            await driver.replaceText({
-                selector: '.e2e-campaign-arguments .monaco-editor',
-                newText: specification,
-                selectMethod: 'keyboard',
-            })
 
-            await driver.page.click('.e2e-preview-campaign')
             // first wait for loader to appear
             try {
                 await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 500 })
@@ -1542,42 +1532,26 @@ describe('e2e test suite', () => {
             expect(generatedChangesetCount).toEqual(changesetCount)
             await percySnapshot(driver.page, snapshotName + ' changesets tab')
         }
-        test('Create campaign preview for comby campaign type', async () => {
-            await createCampaignPreview({
-                specification: JSON.stringify({
-                    matchTemplate: 'file',
-                    rewriteTemplate: 'files',
-                    scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
-                }),
-                diffCount: 3,
-                changesetCount: 1,
-                snapshotName: 'Campaign preview page for comby',
-                campaignType: 'comby',
-            })
-        })
-        test('Create campaign preview for regexp campaign type', async () => {
-            await createCampaignPreview({
-                specification: JSON.stringify({
-                    regexpMatch: 'this is file ([0-9]+)',
-                    textReplace: 'file $1 this is',
-                    scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
-                }),
-                diffCount: 3,
-                changesetCount: 1,
-                snapshotName: 'Campaign preview page for regexp',
-                campaignType: 'regexSearchReplace',
-            })
-        })
-        test('Create campaign preview for credentials campaign type', async () => {
-            await createCampaignPreview({
-                specification: JSON.stringify({
-                    matchers: [{ type: 'npm' }],
-                    scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
-                }),
+        test('View campaign preview for plan', async () => {
+            const repo = await driver.getRepository('github.com/sourcegraph-testing/automation-e2e-test')
+            const { previewURL } = await driver.createCampaignPlanFromPatches([
+                {
+                    repository: repo.id,
+                    baseRevision: 'master',
+                    patch: `diff --unified file1.txt file1.txt
+--- file1.txt 2020-01-01 01:02:03 -0700
++++ file1.txt 2020-01-01 03:04:05 -0700
+@@ -1 +1,2 @@
+ this is file 1
++hello
+`,
+                },
+            ])
+            await testCampaignPreview({
+                previewURL,
                 diffCount: 1,
                 changesetCount: 1,
-                snapshotName: 'Campaign preview page for credentials',
-                campaignType: 'credentials',
+                snapshotName: 'Campaign preview page',
             })
         })
     })
@@ -1651,7 +1625,7 @@ describe('e2e test suite', () => {
             // Search for repo:gorilla in the repo filter chip input
             await driver.page.keyboard.type('gorilla')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?repo=gorilla&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:gorilla&patternType=literal')
 
             // Edit the filter
             await driver.page.waitForSelector('.filter-input')
@@ -1661,7 +1635,7 @@ describe('e2e test suite', () => {
             // Press enter to lock in filter
             await driver.page.keyboard.press('Enter')
             // The main query input should be autofocused, so hit enter again to submit
-            await driver.assertWindowLocation('/search?repo=gorilla/mux&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:gorilla/mux&patternType=literal')
 
             // Add a file filter from search results page
             await driver.page.waitForSelector('.e2e-add-filter-button-file', { visible: true })
@@ -1670,10 +1644,10 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.type('README')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?repo=gorilla/mux&file=README&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:gorilla/mux+file:README&patternType=literal')
 
             // Delete filter
-            await driver.page.goto(sourcegraphBaseUrl + '/search?repo=gorilla/mux&q=&patternType=literal')
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:gorilla/mux&patternType=literal')
             await driver.page.waitForSelector('.e2e-filter-input__delete-button', { visible: true })
             await driver.page.click('.e2e-filter-input__delete-button')
             await driver.assertWindowLocation('/search?q=&patternType=literal')
@@ -1690,7 +1664,7 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.press('ArrowDown')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:%5Egithub%5C.com/gorilla/mux%24&patternType=literal')
 
             // Test cancelling editing an input with escape key
             await driver.page.click('.filter-input__button-text')
@@ -1698,14 +1672,14 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.type('/mux')
             await driver.page.keyboard.press('Escape')
             await driver.page.click('.e2e-search-button')
-            await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:%5Egithub%5C.com/gorilla/mux%24&patternType=literal')
 
             // Test cancelling editing an input by clicking outside close button
             await driver.page.click('.filter-input__button-text')
             await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('/mux')
             await driver.page.click('.e2e-search-button')
-            await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:%5Egithub%5C.com/gorilla/mux%24&patternType=literal')
         })
 
         test('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
@@ -1719,7 +1693,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?fork=no&q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+fork:no&patternType=literal')
             // Edit filter
             await driver.page.waitForSelector('.filter-input')
             await driver.page.waitForSelector('.e2e-filter-input__button-text-fork')
@@ -1727,7 +1701,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?fork=only&q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+fork:only&patternType=literal')
             // Edit filter by clicking dropdown menu
             await driver.page.waitForSelector('.e2e-filter-dropdown')
             await driver.page.click('.e2e-filter-dropdown')
@@ -1736,7 +1710,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?fork=no&q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+fork:no&patternType=literal')
         })
     })
 

@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -109,11 +110,11 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 // given *a8n.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
 func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8n.Changeset) ([]*SourceChangesets, error) {
-	var repoIDs []uint32
-	repoSet := map[uint32]*repos.Repo{}
+	var repoIDs []api.RepoID
+	repoSet := map[api.RepoID]*repos.Repo{}
 
 	for _, c := range cs {
-		id := uint32(c.RepoID)
+		id := c.RepoID
 		if _, ok := repoSet[id]; !ok {
 			repoSet[id] = nil
 			repoIDs = append(repoIDs, id)
@@ -130,7 +131,7 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8
 	}
 
 	for _, c := range cs {
-		repo := repoSet[uint32(c.RepoID)]
+		repo := repoSet[c.RepoID]
 		if repo == nil {
 			log15.Warn("changeset not synced, repo not in database", "changeset_id", c.ID, "repo_id", c.RepoID)
 		}
@@ -141,7 +142,7 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8
 		return nil, err
 	}
 
-	byRepo := make(map[uint32]int64, len(rs))
+	byRepo := make(map[api.RepoID]int64, len(rs))
 	for _, r := range rs {
 		eids := r.ExternalServiceIDs()
 		for _, id := range eids {
@@ -168,7 +169,7 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8
 	}
 
 	for _, c := range cs {
-		repoID := uint32(c.RepoID)
+		repoID := c.RepoID
 		s := bySource[byRepo[repoID]]
 		if s == nil {
 			continue

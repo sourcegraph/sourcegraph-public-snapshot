@@ -3,7 +3,7 @@ import { DismissibleAlert } from '../components/DismissibleAlert'
 import { eventLogger } from '../tracking/eventLogger'
 
 const onClickInstall = (): void => {
-    eventLogger.log('InstallSourcegraphServerCTAClicked', { location_on_page: 'banner' })
+    eventLogger.log('InstallSourcegraphServerCTAClicked')
 }
 
 export const ServerBanner: React.FunctionComponent = () => (

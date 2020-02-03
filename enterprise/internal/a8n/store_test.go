@@ -47,6 +47,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignPlanID: 42 + int64(i),
 						ClosedAt:       now,
 					}
+					if i == 0 {
+						// Don't close the first one
+						c.ClosedAt = time.Time{}
+					}
 
 					if i%2 == 0 {
 						c.NamespaceOrgID = 23
@@ -166,6 +170,40 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 						cursor = next
 					}
+				}
+
+				filterTests := []struct {
+					name  string
+					state a8n.CampaignState
+					want  []*a8n.Campaign
+				}{
+					{
+						name:  "Any",
+						state: a8n.CampaignStateAny,
+						want:  campaigns,
+					},
+					{
+						name:  "Closed",
+						state: a8n.CampaignStateClosed,
+						want:  campaigns[1:],
+					},
+					{
+						name:  "Open",
+						state: a8n.CampaignStateOpen,
+						want:  campaigns[0:1],
+					},
+				}
+
+				for _, tc := range filterTests {
+					t.Run("ListCampaigns State "+tc.name, func(t *testing.T) {
+						have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{State: tc.state})
+						if err != nil {
+							t.Fatal(err)
+						}
+						if diff := cmp.Diff(have, tc.want); diff != "" {
+							t.Fatal(diff)
+						}
+					})
 				}
 			})
 
@@ -925,8 +963,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(campaignPlans); i++ {
 					c := &a8n.CampaignPlan{
-						CampaignType: "COMBY",
-						Arguments:    `{"scopeQuery": "file:README.md"}`,
+						CampaignType: "patch",
+						Arguments:    `{}`,
 						CanceledAt:   now,
 					}
 
@@ -1665,7 +1703,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 			for _, tc := range tests {
 				plan := &a8n.CampaignPlan{
-					CampaignType: "comby",
+					CampaignType: "patch",
 					CanceledAt:   tc.planCanceledAt,
 				}
 				err := s.CreateCampaignPlan(ctx, plan)
@@ -1675,7 +1713,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 				for i, j := range tc.jobs {
 					j.CampaignPlanID = plan.ID
-					j.RepoID = int32(i)
+					j.RepoID = api.RepoID(i)
 					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
 					j.BaseRef = "master"
 
@@ -1752,7 +1790,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 
 			for _, tc := range tests {
-				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{"foobar":"barfoo"}`}
+				plan := &a8n.CampaignPlan{CampaignType: "patch", Arguments: `{}`}
 
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
@@ -1775,7 +1813,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for i, j := range tc.jobs {
 					j.StartedAt = now.Add(-2 * time.Hour)
 					j.CampaignPlanID = plan.ID
-					j.RepoID = int32(i)
+					j.RepoID = api.RepoID(i)
 					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
 					j.BaseRef = "master"
 
@@ -2366,7 +2404,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				campaignJob := &a8n.CampaignJob{
 					CampaignPlanID: plan.ID,
 					BaseRef:        "x",
-					RepoID:         int32(123),
+					RepoID:         api.RepoID(123),
 				}
 				err = s.CreateCampaignJob(ctx, campaignJob)
 				if err != nil {
@@ -2419,7 +2457,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				campaignJob = &a8n.CampaignJob{
 					CampaignPlanID: plan.ID,
 					BaseRef:        "x",
-					RepoID:         int32(123),
+					RepoID:         api.RepoID(123),
 				}
 				err = s.CreateCampaignJob(ctx, campaignJob)
 				if err != nil {
@@ -2522,7 +2560,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			job := &a8n.CampaignJob{
 				ID:             0,
 				CampaignPlanID: plan.ID,
-				RepoID:         int32(repo.ID),
+				RepoID:         repo.ID,
 				Rev:            "",
 				BaseRef:        "abc",
 				Diff:           "",
@@ -2563,7 +2601,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			err = s.CreateCampaignJob(context.Background(), &a8n.CampaignJob{
 				ID:             0,
 				CampaignPlanID: plan.ID,
-				RepoID:         int32(repo.ID),
+				RepoID:         repo.ID,
 				Rev:            "",
 				BaseRef:        "abc",
 				Diff:           "",

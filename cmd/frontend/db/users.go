@@ -11,7 +11,6 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -103,6 +102,10 @@ type NewUser struct {
 	// user if at least one of the following is true: (1) the site has already been initialized or
 	// (2) any other user account already exists.
 	FailIfNotInitialUser bool `json:"-"` // forbid this field being set by JSON, just in case
+
+	// EnforcePasswordLength is whether should enforce minimum and maximum password length requirement.
+	// Users created by non-builtin auth providers do not have a password thus no need to check.
+	EnforcePasswordLength bool `json:"-"` // forbid this field being set by JSON, just in case
 }
 
 // Create creates a new user in the database.
@@ -123,6 +126,10 @@ type NewUser struct {
 // order to avoid a race condition where multiple initial site admins could be created or zero site
 // admins could be created.
 func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
+	if Mocks.Users.Create != nil {
+		return Mocks.Users.Create(ctx, info)
+	}
+
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -147,8 +154,11 @@ const maxPasswordRunes = 256
 
 // checkPasswordLength returns an error if the password is too long.
 func checkPasswordLength(pw string) error {
-	if utf8.RuneCountInString(pw) > maxPasswordRunes {
-		return errcode.NewPresentationError(fmt.Sprintf("Passwords may not be more than %d characters.", maxPasswordRunes))
+	pwLen := utf8.RuneCountInString(pw)
+	minPasswordRunes := conf.AuthMinPasswordLength()
+	if pwLen < minPasswordRunes ||
+		pwLen > maxPasswordRunes {
+		return errcode.NewPresentationError(fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
 	}
 	return nil
 }
@@ -160,8 +170,10 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		return Mocks.Users.Create(ctx, info)
 	}
 
-	if err := checkPasswordLength(info.Password); err != nil {
-		return nil, err
+	if info.EnforcePasswordLength {
+		if err := checkPasswordLength(info.Password); err != nil {
+			return nil, err
+		}
 	}
 
 	if info.Email != "" && info.EmailVerificationCode == "" && !info.EmailIsVerified {
@@ -271,20 +283,6 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		}
 	}
 
-	var verifiedEmail string
-	if info.Email != "" && info.EmailIsVerified {
-		verifiedEmail = info.Email
-	}
-	if err = Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
-		UserID:        id,
-		Username:      info.Username,
-		VerifiedEmail: verifiedEmail,
-		Perm:          authz.Read,
-		Type:          authz.PermRepos,
-	}); err != nil {
-		return nil, err
-	}
-
 	return &types.User{
 		ID:          id,
 		Username:    info.Username,
@@ -387,6 +385,10 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 }
 
 func (u *users) Delete(ctx context.Context, id int32) error {
+	if Mocks.Users.Delete != nil {
+		return Mocks.Users.Delete(ctx, id)
+	}
+
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
@@ -451,6 +453,10 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 }
 
 func (u *users) HardDelete(ctx context.Context, id int32) error {
+	if Mocks.Users.HardDelete != nil {
+		return Mocks.Users.HardDelete(ctx, id)
+	}
+
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
@@ -550,6 +556,10 @@ func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) 
 // invited too many users, or some other error occurred). If the user has
 // quota remaining, their quota is decremented and ok is true.
 func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) (ok bool, err error) {
+	if Mocks.Users.CheckAndDecrementInviteQuota != nil {
+		return Mocks.Users.CheckAndDecrementInviteQuota(ctx, userID)
+	}
+
 	var quotaRemaining int32
 	sqlQuery := `
 	UPDATE users SET invite_quota=(invite_quota - 1)

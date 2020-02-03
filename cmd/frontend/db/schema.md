@@ -324,7 +324,7 @@ Referenced by:
  user_id           | integer                  | not null
  anonymous_user_id | text                     | not null
  source            | text                     | not null
- argument          | text                     | not null
+ argument          | jsonb                    | not null
  version           | text                     | not null
  timestamp         | timestamp with time zone | not null
 Indexes:
@@ -847,13 +847,14 @@ Foreign-key constraints:
 
 # Table "public.user_emails"
 ```
-      Column       |           Type           |       Modifiers        
--------------------+--------------------------+------------------------
- user_id           | integer                  | not null
- email             | citext                   | not null
- created_at        | timestamp with time zone | not null default now()
- verification_code | text                     | 
- verified_at       | timestamp with time zone | 
+          Column           |           Type           |       Modifiers        
+---------------------------+--------------------------+------------------------
+ user_id                   | integer                  | not null
+ email                     | citext                   | not null
+ created_at                | timestamp with time zone | not null default now()
+ verification_code         | text                     | 
+ verified_at               | timestamp with time zone | 
+ last_verification_sent_at | timestamp with time zone | 
 Indexes:
     "user_emails_no_duplicates_per_user" UNIQUE CONSTRAINT, btree (user_id, email)
     "user_emails_unique_verified_email" EXCLUDE USING btree (email WITH =) WHERE (verified_at IS NOT NULL)
