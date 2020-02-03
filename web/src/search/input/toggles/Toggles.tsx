@@ -31,6 +31,9 @@ interface SubmitSearchArgs {
     filtersQuery?: FiltersToTypeAndValue
 }
 
+/**
+ * The toggles displayed in the query input.
+ */
 export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesProps) => {
     const submitOnToggle = (args: SubmitSearchArgs): void => {
         const searchQueryNotEmpty =
@@ -123,7 +126,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 {...props}
                 title="Case sensitivity"
                 isActive={props.caseSensitive}
-                onToggle={ToggleCaseSensitivity}
+                onToggle={toggleCaseSensitivity}
                 icon={FormatLetterCaseIcon}
                 className="e2e-case-sensitivity-toggle"
                 activeClassName="e2e-case-sensitivity-toggle--active"
@@ -134,7 +137,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 {...props}
                 title="Regular expression"
                 isActive={props.patternType === SearchPatternType.regexp}
-                onToggle={ToggleRegexp}
+                onToggle={toggleRegexp}
                 icon={RegexIcon}
                 className="e2e-regexp-toggle"
                 activeClassName="e2e-regexp-toggle--active"
@@ -147,7 +150,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 className="e2e-structural-search-toggle"
                 activeClassName="e2e-structural-search-toggle--active"
                 isActive={props.patternType === SearchPatternType.structural}
-                onToggle={ToggleStructuralSearch}
+                onToggle={toggleStructuralSearch}
                 icon={CodeBracketsIcon}
             />
         </div>

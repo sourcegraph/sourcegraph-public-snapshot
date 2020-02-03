@@ -29,6 +29,9 @@ export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
     activeClassName?: string
 }
 
+/**
+ * A toggle displayed in the QueryInput.
+ */
 export class Toggle extends React.Component<ToggleProps> {
     private subscriptions = new Subscription()
     private toggleCheckbox = React.createRef<HTMLDivElement>()
