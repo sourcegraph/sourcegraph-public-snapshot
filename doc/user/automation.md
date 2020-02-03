@@ -270,9 +270,9 @@ Now we can execute the action and turn it into a campaign:
 
 ## Example: Use ESLint to automatically migrate to a new TypeScript version
 
-In this campaign we're going to convert all the TypeScript code we have in our Sourcegraph to make use of new TypeScript features by first converting the code and then updating the TypeScript dependency.
+Our goal for this campaign is to convert all TypeScript code synced to our Sourcegraph instance to make use of new TypeScript features. To do this we convert the code, then update the TypeScript version.
 
-To convert the code we install and run ESLint over it and use its [`--fix` option](https://eslint.org/docs/user-guide/command-line-interface#fix) to automatically fix the problems it detects when we give it a set of TypeScript rules. After that we update the TypeScript version.
+To convert the code we install and run ESLint with the desired `typescript-eslint` rules, using the [`--fix` flag](https://eslint.org/docs/user-guide/command-line-interface#fix) to automatically fix problems. We then update the TypeScript version using [`yarn upgrade`](https://legacy.yarnpkg.com/en/docs/cli/upgrade/).
 
 The first thing we need is a Docker container in which we can freely install and run ESLint. Here is the `Dockerfile`:
 
@@ -316,7 +316,7 @@ When turned into an image and run as a container, the instructions in this Docke
 1. Restore the original `package.json` from its backup location
 1. Run `yarn upgrade` to update the `typescript` version
 
-Before we can run it as an action we need to turn it into a Docker image. To do that, run the following command in the directory where you saved the `Dockerfile`:
+Before we can run it as an action we need to turn it into a Docker image, by running the following command in the directory where the `Dockerfile` was saved:
 
 ```sh
 docker build -t eslint-fix-action .
@@ -341,7 +341,7 @@ Once that is done we're ready to define our action:
 }
 ```
 
-With the `"scopeQuery"` we make sure that we only run the action over repositories that have a `yarn.lock` and a `tsconfig.json` file. That should give us only the TypeScript projects in which we can use `yarn` to install and add dependencies. Feel free to narrow it down further by using more filters, such as `repo:my-project-name` to only run over repositories that have `my-project-name` in their name.
+The `"scopeQuery"` ensures that the action will only be run over repositories containing both a `yarn.lock` and a `tsconfig.json` file. This narrows the scope down to only the TypeScript projects in which we can use `yarn` to install dependencies. Feel free to narrow it down further by using more filters, such as `repo:my-project-name` to only run over repositories that have `my-project-name` in their name.
 
 The action only has a single step to execute in each repository: it runs the Docker container we just built (called `eslint-fix-action`) and uses a temporary directory that will automatically be created on the machine on which `src` is executed as a cache under `/cache` inside the container.
 
@@ -361,7 +361,7 @@ src actions scope-query -timeout 15m -f eslint-fix-typescript.action.json | src 
 
 > **Note**: we're giving the action a generous timeout of 15 minutes per repository, since it needs to download and install all dependencies. With a still-empty caching directory that might take a few minutes.
 
-You should now see that the Docker container we built is being executed in a local, temporary copy of each repository and once it's done the diff it generated will be turned into a campaign plan you can preview on our Sourcegraph instance.
+You should now see that the Docker container we built is being executed in a local, temporary copy of each repository. After executing, the diff it generated will be turned into a campaign plan you can preview on our Sourcegraph instance.
 
 ## Note for Automation developers
 
