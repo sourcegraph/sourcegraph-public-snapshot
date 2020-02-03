@@ -479,7 +479,6 @@ type CampaignPlan implements Node {
     # The proposed patches ("plans") for the changesets that will be created by the campaign.
     changesets(first: Int): ChangesetPlanConnection!
 
-    # DEPRECATED: This field will be removed in 3.15. Please use changesetPlans instead.
     # The proposed patches ("plans") for the changesets that will be created by the campaign.
     changesetPlans(first: Int): ChangesetPlanConnection!
 
