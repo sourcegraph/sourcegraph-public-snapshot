@@ -741,14 +741,13 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, ErrUpdateProcessingCampaign
 	}
 
-	// GetLatestChangesetJobCreatedAt returns a zero time.Time if not all
-	// ChangesetJobs have been created yet.
-	changesetCreation, err := tx.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
+	published, err := campaignPublished(ctx, tx, campaign.ID)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "getting latest changesetjob creation time")
+		return nil, nil, err
 	}
-	allChangesetJobsCreated := !changesetCreation.IsZero()
-	if !allChangesetJobsCreated && status.Total == 0 {
+	partiallyPublished := !published && status.Total != 0
+
+	if !published && !partiallyPublished {
 		// If the campaign hasn't been published yet and no Changesets have
 		// been individually published (through the `PublishChangeset`
 		// mutation), we can simply update the attributes on the Campaign
@@ -756,17 +755,12 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
 	}
 
-	// If we do have ChangesetJobs/Changesets, here's a fast path: if we don't
-	// update the CampaignPlan, we don't need to rewire ChangesetJobs, but only
-	// update name/description if they changed.
+	// If we do have to update ChangesetJobs/Changesets, here's a fast path: if
+	// we don't update the CampaignPlan, we don't need to rewire ChangesetJobs,
+	// but only update name/description if they changed.
 	if !updatePlanID && updateAttributes {
 		return campaign, nil, tx.ResetChangesetJobs(ctx, campaign.ID)
 	}
-
-	// If we have non-zero number of ChangesetJobs, but the Campaign has not
-	// been fully published yet, we have individually published Changesets we
-	// need to update.
-	partialUpdate := !allChangesetJobsCreated && status.Total != 0
 
 	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPlanID, updateAttributes)
 	if err != nil {
@@ -780,10 +774,10 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		}
 	}
 
-	// When we're only updating the Changesets that have already been
-	// published, we don't want to create new ChangesetJobs, since they would
-	// be processed and publish the other Changesets.
-	if !partialUpdate {
+	// When we're doing a partial update and only update the Changesets that
+	// have already been published, we don't want to create new ChangesetJobs,
+	// since they would be processed and publish the other Changesets.
+	if !partiallyPublished {
 		for _, c := range diff.Create {
 			err := tx.CreateChangesetJob(ctx, c)
 			if err != nil {
@@ -822,6 +816,18 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	return campaign, changesets, tx.UpdateCampaign(ctx, campaign)
+}
+
+// campaignPublished returns true if all ChangesetJobs have been created yet
+// (they might still be processing).
+func campaignPublished(ctx context.Context, store *Store, campaign int64) (bool, error) {
+	changesetCreation, err := store.GetLatestChangesetJobCreatedAt(ctx, campaign)
+	if err != nil {
+		return false, errors.Wrap(err, "getting latest changesetjob creation time")
+	}
+	// GetLatestChangesetJobCreatedAt returns a zero time.Time if not all
+	// ChangesetJobs have been created yet.
+	return !changesetCreation.IsZero(), nil
 }
 
 type campaignUpdateDiff struct {
