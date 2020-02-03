@@ -53,7 +53,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         }
     }
 
-    const ToggleCaseSensitivity = (): void => {
+    const toggleCaseSensitivity = (): void => {
         if (props.patternType === SearchPatternType.structural) {
             return
         }
