@@ -10,9 +10,11 @@ import (
 // CodeIntelUsageStatisticsOptions contains options for the number of daily, weekly, and monthly
 // periods in which to calculate the number of events and latency percentiles.
 type CodeIntelUsageStatisticsOptions struct {
-	DayPeriods   *int
-	WeekPeriods  *int
-	MonthPeriods *int
+	DayPeriods            *int
+	WeekPeriods           *int
+	MonthPeriods          *int
+	IncludeEventCounts    bool
+	IncludeEventLatencies bool
 }
 
 type (
@@ -47,15 +49,15 @@ func GetCodeIntelUsageStatistics(ctx context.Context, opt *CodeIntelUsageStatist
 		}
 	}
 
-	daily, err := codeIntelActivity(ctx, db.Daily, dayPeriods)
+	daily, err := codeIntelActivity(ctx, db.Daily, dayPeriods, opt.IncludeEventCounts, opt.IncludeEventLatencies)
 	if err != nil {
 		return nil, err
 	}
-	weekly, err := codeIntelActivity(ctx, db.Weekly, weekPeriods)
+	weekly, err := codeIntelActivity(ctx, db.Weekly, weekPeriods, opt.IncludeEventCounts, opt.IncludeEventLatencies)
 	if err != nil {
 		return nil, err
 	}
-	monthly, err := codeIntelActivity(ctx, db.Monthly, monthPeriods)
+	monthly, err := codeIntelActivity(ctx, db.Monthly, monthPeriods, opt.IncludeEventCounts, opt.IncludeEventLatencies)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +68,7 @@ func GetCodeIntelUsageStatistics(ctx context.Context, opt *CodeIntelUsageStatist
 	}, nil
 }
 
-func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods int) ([]*types.CodeIntelUsagePeriod, error) {
+func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods int, includeEventCounts, includeEventLatencies bool) ([]*types.CodeIntelUsagePeriod, error) {
 	if periods == 0 {
 		return []*types.CodeIntelUsagePeriod{}, nil
 	}
@@ -104,28 +106,33 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 			getEventStatistic(activityPeriods[i]).UsersCount = int32(uc.Count)
 		}
 
-		eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{
-			ByEventName: eventName,
-		})
-		if err != nil {
-			return nil, err
+		if includeEventCounts {
+			eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{
+				ByEventName: eventName,
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			for i, uc := range eventCounts {
+				count := int32(uc.Count)
+				getEventStatistic(activityPeriods[i]).EventsCount = &count
+			}
 		}
 
-		for i, uc := range eventCounts {
-			getEventStatistic(activityPeriods[i]).EventsCount = int32(uc.Count)
-		}
+		if includeEventLatencies {
+			percentiles, err := db.EventLogs.PercentilesPerPeriod(ctx, periodType, timeNow().UTC(), periods, DurationField, DurationPercentiles, &db.EventFilterOptions{
+				ByEventName: eventName,
+			})
+			if err != nil {
+				return nil, err
+			}
 
-		percentiles, err := db.EventLogs.PercentilesPerPeriod(ctx, periodType, timeNow().UTC(), periods, DurationField, DurationPercentiles, &db.EventFilterOptions{
-			ByEventName: eventName,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		for i, p := range percentiles {
-			getEventStatistic(activityPeriods[i]).EventLatencies.P50 = p.Values[0]
-			getEventStatistic(activityPeriods[i]).EventLatencies.P90 = p.Values[1]
-			getEventStatistic(activityPeriods[i]).EventLatencies.P99 = p.Values[2]
+			for i, p := range percentiles {
+				getEventStatistic(activityPeriods[i]).EventLatencies.P50 = p.Values[0]
+				getEventStatistic(activityPeriods[i]).EventLatencies.P90 = p.Values[1]
+				getEventStatistic(activityPeriods[i]).EventLatencies.P99 = p.Values[2]
+			}
 		}
 	}
 
