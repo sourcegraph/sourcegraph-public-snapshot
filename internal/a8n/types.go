@@ -61,7 +61,7 @@ type CampaignJob struct {
 	ID             int64
 	CampaignPlanID int64
 
-	RepoID  int32
+	RepoID  api.RepoID
 	Rev     api.CommitID
 	BaseRef string
 
@@ -244,7 +244,7 @@ func (c *ChangesetJob) SuccessfullyCompleted() bool {
 // Campaigns.
 type Changeset struct {
 	ID                  int64
-	RepoID              int32
+	RepoID              api.RepoID
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	Metadata            interface{}

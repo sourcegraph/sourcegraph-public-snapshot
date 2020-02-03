@@ -110,7 +110,7 @@ type updateScheduler struct {
 // given GitHubConnection.
 type configuredRepo2 struct {
 	URL  string
-	ID   uint32
+	ID   api.RepoID
 	Name api.RepoName
 }
 
@@ -127,11 +127,11 @@ func NewUpdateScheduler() *updateScheduler {
 	return &updateScheduler{
 		sourceRepos: make(map[string]sourceRepoMap),
 		updateQueue: &updateQueue{
-			index:         make(map[uint32]*repoUpdate),
+			index:         make(map[api.RepoID]*repoUpdate),
 			notifyEnqueue: make(chan struct{}, notifyChanBuffer),
 		},
 		schedule: &schedule{
-			index:  make(map[uint32]*scheduledRepoUpdate),
+			index:  make(map[api.RepoID]*scheduledRepoUpdate),
 			wakeup: make(chan struct{}, notifyChanBuffer),
 		},
 	}
@@ -322,7 +322,7 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
-func (s *updateScheduler) UpdateOnce(id uint32, name api.RepoName, url string) {
+func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName, url string) {
 	repo := &configuredRepo2{
 		ID:   id,
 		Name: name,
@@ -396,7 +396,7 @@ func (s *updateScheduler) DebugDump() interface{} {
 }
 
 // ScheduleInfo returns the current schedule info for a repo.
-func (s *updateScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
+func (s *updateScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult {
 	var result protocol.RepoUpdateSchedulerInfoResult
 
 	s.schedule.mu.Lock()
@@ -429,7 +429,7 @@ type updateQueue struct {
 	mu sync.Mutex
 
 	heap  []*repoUpdate
-	index map[uint32]*repoUpdate
+	index map[api.RepoID]*repoUpdate
 
 	seq uint64
 
@@ -460,7 +460,7 @@ func (q *updateQueue) reset() {
 	defer q.mu.Unlock()
 
 	q.heap = q.heap[:0]
-	q.index = map[uint32]*repoUpdate{}
+	q.index = map[api.RepoID]*repoUpdate{}
 	q.seq = 0
 	q.notifyEnqueue = make(chan struct{}, notifyChanBuffer)
 }
@@ -601,7 +601,7 @@ type schedule struct {
 	mu sync.Mutex
 
 	heap  []*scheduledRepoUpdate // min heap of scheduledRepoUpdates based on their due time.
-	index map[uint32]*scheduledRepoUpdate
+	index map[api.RepoID]*scheduledRepoUpdate
 
 	// timer sends a value on the wakeup channel when it is time
 	timer  *time.Timer
@@ -709,7 +709,7 @@ func (s *schedule) reset() {
 	defer s.mu.Unlock()
 
 	s.heap = s.heap[:0]
-	s.index = map[uint32]*scheduledRepoUpdate{}
+	s.index = map[api.RepoID]*scheduledRepoUpdate{}
 	s.wakeup = make(chan struct{}, notifyChanBuffer)
 	if s.timer != nil {
 		s.timer.Stop()

@@ -104,7 +104,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 
 		changesets := []*a8n.Changeset{
 			{
-				RepoID:              int32(githubRepo.ID),
+				RepoID:              githubRepo.ID,
 				ExternalID:          "16",
 				ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 				CampaignIDs:         []int64{campaign.ID},

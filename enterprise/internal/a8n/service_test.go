@@ -97,7 +97,7 @@ func TestService(t *testing.T) {
 		for i, patch := range patches {
 			wantJobs[i] = &a8n.CampaignJob{
 				CampaignPlanID: plan.ID,
-				RepoID:         int32(patch.Repo),
+				RepoID:         patch.Repo,
 				BaseRef:        patch.BaseRevision,
 				Rev:            commit,
 				Diff:           patch.Patch,
@@ -366,7 +366,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reposByID := make(map[uint32]*repos.Repo, len(rs))
+	reposByID := make(map[api.RepoID]*repos.Repo, len(rs))
 	reposByName := make(map[string]*repos.Repo, len(rs))
 	for _, r := range rs {
 		reposByID[r.ID] = r
@@ -570,7 +570,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 						t.Errorf("unrecognized repo name: %s", name)
 					}
 					for _, j := range oldCampaignJobs {
-						if j.RepoID == int32(repo.ID) {
+						if j.RepoID == repo.ID {
 							toPublish[j.ID] = j
 
 							err = svc.CreateChangesetJobForCampaignJob(ctx, j.ID)
@@ -686,7 +686,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				if !ok {
 					t.Fatalf("ChangesetJob has invalid CampaignJobID: %+v", c)
 				}
-				r, ok := reposByID[uint32(campaignJob.RepoID)]
+				r, ok := reposByID[campaignJob.RepoID]
 				if !ok {
 					t.Fatalf("ChangesetJob has invalid RepoID: %v", c)
 				}
@@ -762,7 +762,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				}
 
 				for _, c := range oldChangesets {
-					if c.RepoID == int32(r.ID) {
+					if c.RepoID == r.ID {
 						wantIDs = append(wantIDs, c.ID)
 					}
 				}
@@ -884,10 +884,10 @@ func createTestUser(ctx context.Context, t *testing.T) *types.User {
 	return user
 }
 
-func testCampaignJob(plan int64, repo uint32, t time.Time) *a8n.CampaignJob {
+func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *a8n.CampaignJob {
 	return &a8n.CampaignJob{
 		CampaignPlanID: plan,
-		RepoID:         int32(repo),
+		RepoID:         api.RepoID(repo),
 		Rev:            "deadbeef",
 		BaseRef:        "refs/heads/master",
 		Diff:           "cool diff",
@@ -906,7 +906,7 @@ func testCampaign(user int32, plan int64) *a8n.Campaign {
 	}
 }
 
-func testChangeset(repoID int32, campaign int64, changesetJob int64) *a8n.Changeset {
+func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64) *a8n.Changeset {
 	return &a8n.Changeset{
 		RepoID:              repoID,
 		CampaignIDs:         []int64{campaign},

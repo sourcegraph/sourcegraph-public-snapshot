@@ -13,7 +13,7 @@ type RepoUpdateSchedulerInfoArgs struct {
 	// XXX(tsenart): Depreacted. Remove after lookup by ID is rolled out.
 	RepoName api.RepoName
 	// The ID of the repo to lookup the schedule for.
-	ID uint32
+	ID api.RepoID
 }
 
 type RepoUpdateSchedulerInfoResult struct {
@@ -38,7 +38,7 @@ type RepoQueueState struct {
 // associated with a repository.
 type RepoExternalServicesRequest struct {
 	// ID of the repository being queried.
-	ID uint32
+	ID api.RepoID
 }
 
 // RepoExternalServicesResponse is returned in response to an
@@ -51,7 +51,7 @@ type RepoExternalServicesResponse struct {
 // being mirrored from any external service of its kind.
 type ExcludeRepoRequest struct {
 	// ID of the repository to be excluded.
-	ID uint32
+	ID api.RepoID
 }
 
 // ExcludeRepoResponse is returned in response to an ExcludeRepoRequest.
@@ -152,7 +152,7 @@ func (a *RepoUpdateRequest) String() string {
 // RepoUpdateResponse is a response type to a RepoUpdateRequest.
 type RepoUpdateResponse struct {
 	// ID of the repo that got an update request.
-	ID uint32 `json:"id"`
+	ID api.RepoID `json:"id"`
 	// Name of the repo that got an update request.
 	Name string `json:"name"`
 	// URL of the repo that got an update request.

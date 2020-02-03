@@ -1713,7 +1713,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 				for i, j := range tc.jobs {
 					j.CampaignPlanID = plan.ID
-					j.RepoID = int32(i)
+					j.RepoID = api.RepoID(i)
 					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
 					j.BaseRef = "master"
 
@@ -1813,7 +1813,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for i, j := range tc.jobs {
 					j.StartedAt = now.Add(-2 * time.Hour)
 					j.CampaignPlanID = plan.ID
-					j.RepoID = int32(i)
+					j.RepoID = api.RepoID(i)
 					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
 					j.BaseRef = "master"
 
@@ -2404,7 +2404,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				campaignJob := &a8n.CampaignJob{
 					CampaignPlanID: plan.ID,
 					BaseRef:        "x",
-					RepoID:         int32(123),
+					RepoID:         api.RepoID(123),
 				}
 				err = s.CreateCampaignJob(ctx, campaignJob)
 				if err != nil {
@@ -2457,7 +2457,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				campaignJob = &a8n.CampaignJob{
 					CampaignPlanID: plan.ID,
 					BaseRef:        "x",
-					RepoID:         int32(123),
+					RepoID:         api.RepoID(123),
 				}
 				err = s.CreateCampaignJob(ctx, campaignJob)
 				if err != nil {
@@ -2560,7 +2560,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			job := &a8n.CampaignJob{
 				ID:             0,
 				CampaignPlanID: plan.ID,
-				RepoID:         int32(repo.ID),
+				RepoID:         repo.ID,
 				Rev:            "",
 				BaseRef:        "abc",
 				Diff:           "",
@@ -2601,7 +2601,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			err = s.CreateCampaignJob(context.Background(), &a8n.CampaignJob{
 				ID:             0,
 				CampaignPlanID: plan.ID,
-				RepoID:         int32(repo.ID),
+				RepoID:         repo.ID,
 				Rev:            "",
 				BaseRef:        "abc",
 				Diff:           "",

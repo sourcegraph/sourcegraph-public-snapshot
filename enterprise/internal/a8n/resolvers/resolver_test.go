@@ -777,13 +777,13 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	changesets := []*a8n.Changeset{
 		{
-			RepoID:              int32(githubRepo.ID),
+			RepoID:              githubRepo.ID,
 			ExternalID:          "5834",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			CampaignIDs:         []int64{campaign.ID},
 		},
 		{
-			RepoID:              int32(githubRepo.ID),
+			RepoID:              githubRepo.ID,
 			ExternalID:          "5849",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			CampaignIDs:         []int64{campaign.ID},
@@ -1198,7 +1198,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 			CampaignPlanID: plan.ID,
 			StartedAt:      now,
 			FinishedAt:     now,
-			RepoID:         int32(repo.ID),
+			RepoID:         repo.ID,
 			Rev:            testingRev,
 			BaseRef:        "master",
 			Diff:           testDiff,
