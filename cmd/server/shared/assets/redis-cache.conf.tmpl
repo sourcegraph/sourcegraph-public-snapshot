@@ -7,11 +7,9 @@ protected-mode no
 maxmemory 1gb
 maxmemory-policy allkeys-lru
 
-# live commit log to disk, additionally snapshot every 5 minutes
+# snapshots on disk every minute
 dir {{ .Dir }}
-appendonly yes
-aof-use-rdb-preamble yes
-save 300 1
+save 60 1
 
 # least verbose logging
 loglevel warning

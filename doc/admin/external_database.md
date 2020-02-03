@@ -28,7 +28,9 @@ Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc).
 
 > NOTE: On Mac/Windows, if trying to connect to a PostgreSQL server on the same host machine, remember that Sourcegraph is running inside a Docker container inside of the Docker virtual machine. You may need to specify your actual machine IP address and not `localhost` or `127.0.0.1` as that refers to the Docker VM itself.
 
-## Using your own Redis 5.x server
+## Using your own Redis server
+
+**Version requirements**: We support any version *starting from 5.0*.
 
 Generally, there is no reason to do this as Sourcegraph only stores ephemeral cache and session data in Redis. However, if you want to use an external Redis server with Sourcegraph, you can do the following:
 
