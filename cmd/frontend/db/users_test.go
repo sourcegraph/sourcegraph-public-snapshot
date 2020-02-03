@@ -98,41 +98,67 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	minPasswordRunes := 12
-	cfg := conf.Get()
-	cfg.AuthMinPasswordLength = minPasswordRunes
-	conf.Mock(cfg)
-	defer func() {
-		cfg.AuthMinPasswordLength = 0
-		conf.Mock(cfg)
-	}()
-
+	minPasswordRunes := conf.AuthMinPasswordLength()
 	expErr := fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes)
 	tests := []struct {
 		name     string
+		username string
 		password string
+		enforce  bool
 		expErr   string
 	}{
 		{
-			name:     "exceeds maximum",
-			password: strings.Repeat("x", maxPasswordRunes+1),
+			name:     "below minimum",
+			username: "user1",
+			password: strings.Repeat("x", minPasswordRunes-1),
+			enforce:  true,
 			expErr:   expErr,
 		},
 		{
-			name:     "below minimum",
-			password: strings.Repeat("x", minPasswordRunes-1),
+			name:     "exceeds maximum",
+			username: "user2",
+			password: strings.Repeat("x", maxPasswordRunes+1),
+			enforce:  true,
 			expErr:   expErr,
 		},
 
 		{
-			name:     "no problem",
+			name:     "no problem at exact minimum",
+			username: "user3",
 			password: strings.Repeat("x", minPasswordRunes),
+			enforce:  true,
+			expErr:   "",
+		},
+		{
+			name:     "no problem at exact maximum",
+			username: "user4",
+			password: strings.Repeat("x", maxPasswordRunes),
+			enforce:  true,
+			expErr:   "",
+		},
+
+		{
+			name:     "does not enforce and below minimum",
+			username: "user5",
+			password: strings.Repeat("x", minPasswordRunes-1),
+			enforce:  false,
+			expErr:   "",
+		},
+		{
+			name:     "does not enforce and exceeds maximum",
+			username: "user6",
+			password: strings.Repeat("x", maxPasswordRunes+1),
+			enforce:  false,
 			expErr:   "",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := Users.Create(ctx, NewUser{Username: "test", Password: test.password})
+			_, err := Users.Create(ctx, NewUser{
+				Username:              test.username,
+				Password:              test.password,
+				EnforcePasswordLength: test.enforce,
+			})
 			if pm := errcode.PresentationMessage(err); pm != test.expErr {
 				t.Fatalf("err: want %q but got %q", test.expErr, pm)
 			}
