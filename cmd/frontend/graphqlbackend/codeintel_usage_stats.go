@@ -100,12 +100,12 @@ func (s *codeIntelEventStatisticsResolver) UsersCount() int32 {
 }
 
 func (s *codeIntelEventStatisticsResolver) EventsCount() int32 {
-	// Always present when IncludeEventCounts=true
+	// Dereference is safe: we queried with IncludeEventCounts=true so this field is guaranteed to be populated.
 	return *s.codeIntelEventStatistics.EventsCount
 }
 
 func (s *codeIntelEventStatisticsResolver) EventLatencies() *codeIntelEventLatenciesResolver {
-	// Always present when IncludeEventLatencies=true
+	// Dereference is safe: we queried with IncludeEventLatencies=true so this field is guaranteed to be populated.
 	return &codeIntelEventLatenciesResolver{codeIntelEventLatencies: s.codeIntelEventStatistics.EventLatencies}
 }
 
