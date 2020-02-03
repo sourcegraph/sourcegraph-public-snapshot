@@ -41,7 +41,7 @@ describe('CampaignDetails', () => {
                     of({
                         __typename: 'CampaignPlan' as const,
                         id: 'c',
-                        changesets: { nodes: [] as GQL.IChangesetPlan[], totalCount: 2 },
+                        changesetPlans: { nodes: [] as GQL.IChangesetPlan[], totalCount: 2 },
                         status: {
                             completedCount: 3,
                             pendingCount: 3,

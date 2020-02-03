@@ -310,7 +310,10 @@ type CampaignPlanResolver interface {
 
 	Status(ctx context.Context) (BackgroundProcessStatus, error)
 
+	// DEPRECATED: Remove in 3.15 in favor of ChangesetPlans.
 	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
+
+	ChangesetPlans(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
 
 	PreviewURL() string
 }

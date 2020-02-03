@@ -61,7 +61,7 @@ interface Campaign
 }
 
 interface CampaignPlan extends Pick<GQL.ICampaignPlan, '__typename' | 'id'> {
-    changesets: Pick<GQL.ICampaignPlan['changesets'], 'nodes' | 'totalCount'>
+    changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes' | 'totalCount'>
     status: Pick<GQL.ICampaignPlan['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
 }
 
@@ -182,7 +182,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     switchMap(plan => _fetchCampaignPlanById(plan)),
                     tap(campaign => {
                         setCampaign(campaign)
-                        if (campaign && campaign.changesets.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
+                        if (campaign && campaign.changesetPlans.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
                             changesetUpdates.next()
                         }
                     })
@@ -495,7 +495,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={mode !== 'editing' || campaign?.changesets.totalCount === 0}
+                            disabled={mode !== 'editing' || campaign?.changesetPlans.totalCount === 0}
                         >
                             Create
                         </button>
@@ -527,8 +527,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )}
 
-                    {campaign.changesets.totalCount +
-                        (campaign.__typename === 'Campaign' ? campaign.changesetPlans.totalCount : 0) >
+                    {campaign.changesetPlans.totalCount +
+                        (campaign.__typename === 'Campaign' ? campaign.changesets.totalCount : 0) >
                     0 ? (
                         <CampaignTabs
                             campaign={campaign}
