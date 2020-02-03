@@ -90,7 +90,7 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (*json.RawMessage, err
 		DayPeriods:            &days,
 		WeekPeriods:           &weeks,
 		MonthPeriods:          &months,
-		IncludeEventCounts:    !conf.Get().DisableDiagnosticTelemetry,
+		IncludeEventCounts:    !conf.Get().DisableEventCountTelemetry,
 		IncludeEventLatencies: true,
 	})
 	if err != nil {

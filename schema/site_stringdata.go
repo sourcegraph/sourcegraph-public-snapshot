@@ -146,8 +146,8 @@ const SiteSchemaJSON = `{
       "default": false,
       "group": "Security"
     },
-    "disableDiagnosticTelemetry": {
-      "description": "Disable aggregated event counts and latencies from being sent back via pings.",
+    "disableEventCountTelemetry": {
+      "description": "Disable aggregated event counts from being sent back via pings.",
       "type": "boolean",
       "default": false,
       "group": "Misc."
