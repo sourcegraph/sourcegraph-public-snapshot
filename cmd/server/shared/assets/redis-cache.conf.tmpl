@@ -7,8 +7,10 @@ protected-mode no
 maxmemory 1gb
 maxmemory-policy allkeys-lru
 
-# redis-cache is ephemeral
+# snapshots on disk every minute
+dir {{ .Dir }}
 appendonly no
+save 60 1
 
 # least verbose logging
 loglevel warning
