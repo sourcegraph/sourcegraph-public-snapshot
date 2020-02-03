@@ -27,7 +27,7 @@
     "on-finished": "^2.3.0",
     "opentracing": "^0.14.4",
     "p-retry": "^4.2.0",
-    "pg": "^7.17.0",
+    "pg": "^7.18.1",
     "prom-client": "^11.5.3",
     "redis": "^2.8.0",
     "relateurl": "^0.2.7",
