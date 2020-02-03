@@ -148,10 +148,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("getAndMarshalCodeIntelUsageJSON failed", "error", err)
 	}
-	codeIntelUsage, err := marshalCodeIntelUsageJSON()
-	if err != nil {
-		logFunc("marshalCodeIntelUsageJSON failed", "error", err)
-	}
 	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
