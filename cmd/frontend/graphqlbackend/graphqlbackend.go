@@ -102,13 +102,17 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 }
 
 func NewSchema(a8n A8NResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
-	EnterpriseResolvers.a8nResolver = a8n
+	if a8n == nil {
+		a8n = defaultA8NResolver{}
+	}
 	EnterpriseResolvers.codeIntelResolver = codeIntel
 	EnterpriseResolvers.authzResolver = authz
 
 	return graphql.ParseSchema(
 		Schema,
-		&schemaResolver{},
+		&schemaResolver{
+			A8NResolver: a8n,
+		},
 		graphql.Tracer(prometheusTracer{}),
 	)
 }
@@ -241,12 +245,13 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
-type schemaResolver struct{}
+type schemaResolver struct {
+	A8NResolver
+}
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	a8nResolver       A8NResolver
 	codeIntelResolver CodeIntelResolver
 	authzResolver     AuthzResolver
 }{}
@@ -269,25 +274,13 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
 	case "Campaign":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.CampaignByID(ctx, id)
+		return r.CampaignByID(ctx, id)
 	case "CampaignPlan":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.CampaignPlanByID(ctx, id)
+		return r.CampaignPlanByID(ctx, id)
 	case "ExternalChangeset":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.ChangesetByID(ctx, id)
+		return r.ChangesetByID(ctx, id)
 	case "ChangesetPlan":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.ChangesetPlanByID(ctx, id)
+		return r.ChangesetPlanByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
