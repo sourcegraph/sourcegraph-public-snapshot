@@ -102,17 +102,23 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 }
 
 func NewSchema(a8n A8NResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
-	if a8n == nil {
-		a8n = defaultA8NResolver{}
+	resolver := &schemaResolver{}
+	if a8n != nil {
+		EnterpriseResolvers.a8nResolver = a8n
+		resolver.A8NResolver = a8n
 	}
-	EnterpriseResolvers.codeIntelResolver = codeIntel
-	EnterpriseResolvers.authzResolver = authz
+	if codeIntel != nil {
+		EnterpriseResolvers.codeIntelResolver = codeIntel
+		resolver.CodeIntelResolver = codeIntel
+	}
+	if authz != nil {
+		EnterpriseResolvers.authzResolver = authz
+		resolver.AuthzResolver = authz
+	}
 
 	return graphql.ParseSchema(
 		Schema,
-		&schemaResolver{
-			A8NResolver: a8n,
-		},
+		resolver,
 		graphql.Tracer(prometheusTracer{}),
 	)
 }
@@ -247,6 +253,8 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 // to a field of EnterpriseResolvers.
 type schemaResolver struct {
 	A8NResolver
+	AuthzResolver
+	CodeIntelResolver
 }
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
@@ -254,7 +262,12 @@ type schemaResolver struct {
 var EnterpriseResolvers = struct {
 	codeIntelResolver CodeIntelResolver
 	authzResolver     AuthzResolver
-}{}
+	a8nResolver       A8NResolver
+}{
+	codeIntelResolver: defaultCodeIntelResolver{},
+	authzResolver:     defaultAuthzResolver{},
+	a8nResolver:       defaultA8NResolver{},
+}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
@@ -318,9 +331,6 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	case "Site":
 		return siteByGQLID(ctx, id)
 	case "LSIFUpload":
-		if EnterpriseResolvers.codeIntelResolver == nil {
-			return nil, codeIntelOnlyInEnterprise
-		}
 		return EnterpriseResolvers.codeIntelResolver.LSIFUploadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
