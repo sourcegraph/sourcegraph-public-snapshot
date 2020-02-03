@@ -9,6 +9,7 @@ maxmemory-policy allkeys-lru
 
 # snapshots on disk every minute
 dir {{ .Dir }}
+appendonly no
 save 60 1
 
 # least verbose logging
