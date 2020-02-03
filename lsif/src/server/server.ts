@@ -127,8 +127,11 @@ async function migrateFilenames(): Promise<void> {
  */
 async function clearOldRedisData(logger: Logger): Promise<void> {
     const script = `
-        local keys = redis.call('keys', 'bull:*')
-        for i, key in ipairs(keys) do
+        for i, key in ipairs(redis.call('keys', 'lsif:*')) do
+            redis.call('del', key)
+        end
+
+        for i, key in ipairs(redis.call('keys', 'bull:*')) do
             redis.call('del', key)
         end
     `

@@ -5,7 +5,7 @@ env:
   FORCE_COLOR: "3"
   GO111MODULE: "on"
   IMAGE: us.gcr.io/sourcegraph-dev/server:$TAG
-  TEST_USER_PASSWORD: "test"
+  TEST_USER_PASSWORD: "SuperSecurePassword"
 
 steps:
 - command:

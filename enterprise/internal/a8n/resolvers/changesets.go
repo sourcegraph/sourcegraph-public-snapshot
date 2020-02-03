@@ -148,15 +148,21 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 	return r.computeRepo(ctx)
 }
 
-func (r *changesetResolver) Campaigns(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
-}) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+	opts := ee.ListCampaignsOpts{
+		ChangesetID: r.Changeset.ID,
+	}
+	state, err := parseCampaignState(args.State)
+	if err != nil {
+		return nil, err
+	}
+	opts.State = state
+	if args.First != nil {
+		opts.Limit = int(*args.First)
+	}
 	return &campaignsConnectionResolver{
 		store: r.store,
-		opts: ee.ListCampaignsOpts{
-			ChangesetID: r.Changeset.ID,
-			Limit:       int(args.ConnectionArgs.GetFirst()),
-		},
+		opts:  opts,
 	}, nil
 }
 
@@ -226,6 +232,18 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 			Limit:        int(args.ConnectionArgs.GetFirst()),
 		},
 	}, nil
+}
+
+func (r *changesetResolver) Labels() ([]graphqlbackend.ChangesetLabelResolver, error) {
+	labels, err := r.Changeset.Labels()
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.ChangesetLabelResolver, len(labels))
+	for i := range labels {
+		resolvers[i] = &changesetLabelResolver{label: labels[i]}
+	}
+	return resolvers, nil
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
@@ -351,4 +369,20 @@ func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 			Fork:        r.Fork,
 		},
 	})
+}
+
+type changesetLabelResolver struct {
+	label a8n.ChangesetLabel
+}
+
+func (r *changesetLabelResolver) Text() string {
+	return r.label.Name
+}
+
+func (r *changesetLabelResolver) Color() string {
+	return r.label.Color
+}
+
+func (r *changesetLabelResolver) Description() *string {
+	return &r.label.Description
 }

@@ -164,7 +164,7 @@ The `src campaigns create` command will create a campaign on the Sourcegraph ins
 
 Check progress by opening the campaign on your Sourcegraph instance.
 
-## Example: Campaign to add a GitHub action to upload LSIF data to Sourcegraph
+## Example: Add a GitHub action to upload LSIF data to Sourcegraph
 
 Our goal for this campaign is to add a GitHub Action that generates and uploads LSIF data to Sourcegraph by adding a `.github/workflows/lsif.yml` file to each repository that doesn't have it yet.
 
@@ -230,11 +230,11 @@ Now we're ready to run the campaign:
 1. Run the action and create a campaign plan: `src actions exec -f action.json | src campaign plan create-from-patches`
 1. Follow the printed instructions to create and run the campaign on Sourcegraph
 
-## Example: Campaign to refactor Go code with Comby
+## Example: Refactor Go code with Comby
 
 Our goal for this campaign is to simplify Go code by using [Comby](https://comby.dev/) to rewrite calls to `fmt.Sprintf("%d", arg)` with `strconv.Itoa(:[v])`. The semantics are the same, but one more cleanly expresses the intention behind the code.
 
-> Note: Learn more about Comby and what it's capable of at [comby.dev](https://comby.dev/)
+> **Note**: Learn more about Comby and what it's capable of at [comby.dev](https://comby.dev/)
 
 To do that we use two Docker containers. One container launches Comby to rewrite the the code in Go files and the other runs [goimports](https://godoc.org/golang.org/x/tools/cmd/goimports) to update the `import` statements in the updated Go code so that `strconv` is correctly important and, possibly, `fmt` is removed.
 
@@ -258,7 +258,7 @@ Here is the `action.json` file that defines this as an action:
 }
 ```
 
-Note that the `"scopeQuery"` makes sure that the repositories over which we run the action all contain Go code in which we have a call to `fmt.Sprintf`. That narrows the list of repositories down considerably, even though we still need to search through the whole repository with Comby. (We're aware that this is a limitation and are working on improving the workflows involving exact search results.)
+Please note that the `"scopeQuery"` makes sure that the repositories over which we run the action all contain Go code in which we have a call to `fmt.Sprintf`. That narrows the list of repositories down considerably, even though we still need to search through the whole repository with Comby. (We're aware that this is a limitation and are working on improving the workflows involving exact search results.)
 
 Save the defintion in a file, for example `go-comby.action.json`.
 
@@ -267,6 +267,101 @@ Now we can execute the action and turn it into a campaign:
 1. Make sure that the `"scopeQuery"` returns the repositories we want to run over: `src actions scope-query -f go-comby.action.json`
 1. Execute the action and create a campaign plan: `src actions exec -f action.json | src campaign plan create-from-patches`
 1. Follow the printed instructions to create and run the campaign on Sourcegraph
+
+## Example: Use ESLint to automatically migrate to a new TypeScript version
+
+Our goal for this campaign is to convert all TypeScript code synced to our Sourcegraph instance to make use of new TypeScript features. To do this we convert the code, then update the TypeScript version.
+
+To convert the code we install and run ESLint with the desired `typescript-eslint` rules, using the [`--fix` flag](https://eslint.org/docs/user-guide/command-line-interface#fix) to automatically fix problems. We then update the TypeScript version using [`yarn upgrade`](https://legacy.yarnpkg.com/en/docs/cli/upgrade/).
+
+The first thing we need is a Docker container in which we can freely install and run ESLint. Here is the `Dockerfile`:
+
+```
+FROM node:12-alpine3.10
+VOLUME /cache
+ENV YARN_CACHE_FOLDER=/cache/yarn
+ENV npm_config_cache=/cache/npm
+CMD package_json_bkup=$(mktemp) && \
+	cp package.json $package_json_bkup && \
+	yarn -s --non-interactive --pure-lockfile --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --no-progress && \
+	yarn add --ignore-workspace-root-test --non-interactive --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --pure-lockfile -D @typescript-eslint/parser @typescript-eslint/eslint-plugin --no-progress eslint && \
+	node_modules/.bin/eslint \
+	--fix \
+	--plugin @typescript-eslint \
+	--parser @typescript-eslint/parser \
+	--parser-options '{"ecmaVersion": 8, "sourceType": "module", "project": "tsconfig.json"}' \
+	--rule '@typescript-eslint/prefer-optional-chain: 2' \
+	--rule '@typescript-eslint/no-unnecessary-type-assertion: 2' \
+	--rule '@typescript-eslint/no-unnecessary-type-arguments: 2' \
+	--rule '@typescript-eslint/no-unnecessary-condition: 2' \
+	--rule '@typescript-eslint/no-unnecessary-type-arguments: 2' \
+	--rule '@typescript-eslint/prefer-includes: 2' \
+	--rule '@typescript-eslint/prefer-readonly: 2' \
+	--rule '@typescript-eslint/prefer-string-starts-ends-with: 2' \
+	--rule '@typescript-eslint/prefer-nullish-coalescing: 2' \
+	--rule '@typescript-eslint/no-non-null-assertion: 2' \
+	'**/*.ts'; \
+	mv $package_json_bkup package.json; \
+	rm -rf node_modules; \
+	yarn upgrade --latest --ignore-workspace-root-test --non-interactive --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --no-progress typescript && \
+	rm -rf node_modules
+```
+
+When turned into an image and run as a container, the instructions in this Dockerfile will do the following:
+
+1. Setup a reusable cache directory so that subsequent executions of the image over the same repository are faster. That's what the `VOLUME` and the two `ENV` lines accomplish.
+1. Copy the current `package.json` to a backup location so that we can install ESLint without changes to the original `package.json`
+1. Install all dependencies & add `eslint` with the `typescript-eslint` plugin
+1. Run `eslint --fix` with a set of TypeScript rules to detect and fix problems over all `*.ts` files
+1. Restore the original `package.json` from its backup location
+1. Run `yarn upgrade` to update the `typescript` version
+
+Before we can run it as an action we need to turn it into a Docker image, by running the following command in the directory where the `Dockerfile` was saved:
+
+```sh
+docker build -t eslint-fix-action .
+```
+
+That builds a Docker image and names it `eslint-fix-action`.
+
+Once that is done we're ready to define our action:
+
+```json
+{
+  "scopeQuery": "repohasfile:yarn\\.lock repohasfile:tsconfig\\.json",
+  "steps": [
+    {
+      "type": "docker",
+      "image": "eslint-fix-action",
+      "cacheDirs": [
+        "/cache"
+      ]
+    }
+  ]
+}
+```
+
+The `"scopeQuery"` ensures that the action will only be run over repositories containing both a `yarn.lock` and a `tsconfig.json` file. This narrows the scope down to only the TypeScript projects in which we can use `yarn` to install dependencies. Feel free to narrow it down further by using more filters, such as `repo:my-project-name` to only run over repositories that have `my-project-name` in their name.
+
+The action only has a single step to execute in each repository: it runs the Docker container we just built (called `eslint-fix-action`) and uses a temporary directory that will automatically be created on the machine on which `src` is executed as a cache under `/cache` inside the container.
+
+Save that definition in a file called `eslint-fix-typescript.action.json` and we're ready to execute it.
+
+First we make sure that we match all the repositories we want:
+
+```sh
+src actions scope-query -f eslint-fix-typescript.action.json
+```
+
+If that list looks good, we're ready to execute the action:
+
+```sh
+src actions scope-query -timeout 15m -f eslint-fix-typescript.action.json | src campaign plan create-from-patches
+```
+
+> **Note**: we're giving the action a generous timeout of 15 minutes per repository, since it needs to download and install all dependencies. With a still-empty caching directory that might take a few minutes.
+
+You should now see that the Docker container we built is being executed in a local, temporary copy of each repository. After executing, the diff it generated will be turned into a campaign plan you can preview on our Sourcegraph instance.
 
 ## Note for Automation developers
 

@@ -475,8 +475,13 @@ type CampaignPlan implements Node {
     # The progress status of generating changesets.
     status: BackgroundProcessStatus!
 
-    # The changesets that will be created by the campaign.
+    # DEPRECATED
+    # The proposed patches ("plans") for the changesets that will be created by the campaign.
     changesets(first: Int): ChangesetPlanConnection!
+        @deprecated(reason: "This field will be removed in 3.15. Please use changesetPlans instead.")
+
+    # The proposed patches ("plans") for the changesets that will be created by the campaign.
+    changesetPlans(first: Int): ChangesetPlanConnection!
 
     # The URL where the plan can be previewed and a campaign can be created from it.
     previewURL: String!
@@ -672,6 +677,16 @@ type ChangesetPlan {
     publicationEnqueued: Boolean!
 }
 
+# A label attached to a changeset on a codehost, mirrored
+type ChangesetLabel {
+    # The labels text
+    text: String!
+    # Label color, defined in hex without the #. E.g., 93ba13
+    color: String!
+    # Optional descriptive text to support the understandability of the labels meaning
+    description: String
+}
+
 # A changeset in a code host (e.g. a PR on Github)
 type ExternalChangeset implements Node {
     # The unique ID for the changeset.
@@ -685,7 +700,7 @@ type ExternalChangeset implements Node {
     repository: Repository!
 
     # The campaigns that have this changeset in them.
-    campaigns(first: Int): CampaignConnection!
+    campaigns(first: Int, state: CampaignState): CampaignConnection!
 
     # The events belonging to this changeset.
     events(first: Int): ChangesetEventConnection!
@@ -704,6 +719,9 @@ type ExternalChangeset implements Node {
 
     # The state of the changeset
     state: ChangesetState!
+
+    # The labels attached to the changeset on the code host.
+    labels: [ChangesetLabel!]!
 
     # The external URL of the changeset on the code host.
     externalURL: ExternalLink!
@@ -1089,6 +1107,12 @@ input SurveySubmissionInput {
     better: String
 }
 
+# The state of the campaign
+enum CampaignState {
+    OPEN
+    CLOSED
+}
+
 # A query.
 type Query {
     # The root of the query.
@@ -1100,6 +1124,7 @@ type Query {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        state: CampaignState
     ): CampaignConnection!
 
     # Looks up a repository by either name or cloneURL.

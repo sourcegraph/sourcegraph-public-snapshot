@@ -30,6 +30,8 @@ Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc).
 
 ## Using your own Redis server
 
+**Version requirements**: We support any version *starting from 5.0*.
+
 Generally, there is no reason to do this as Sourcegraph only stores ephemeral cache and session data in Redis. However, if you want to use an external Redis server with Sourcegraph, you can do the following:
 
 Add the `REDIS_ENDPOINT` environment variable to your `docker run` command and Sourcegraph will use that Redis server instead of its built-in one. The string must either have the format `$HOST:PORT`

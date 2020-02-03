@@ -284,6 +284,12 @@ type CloneURLToRepositoryName struct {
 	To string `json:"to"`
 }
 
+// DebugLog description: Turns on debug logging for specific debugging scenarios.
+type DebugLog struct {
+	// ExtsvcGitlab description: Log GitLab API requests.
+	ExtsvcGitlab bool `json:"extsvc.gitlab,omitempty"`
+}
+
 // Discussions description: Configures Sourcegraph code discussions.
 type Discussions struct {
 	// AbuseEmails description: Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.
@@ -338,6 +344,8 @@ type ExperimentalFeatures struct {
 	Automation string `json:"automation,omitempty"`
 	// BitbucketServerFastPerm description: Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. This requires the installation of the Bitbucket Server Sourcegraph plugin. Warning: there may be performance degradation under significant load.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
+	// DebugLog description: Turns on debug logging for specific debugging scenarios.
+	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// Discussions description: Enables the code discussions experiment.
 	Discussions string `json:"discussions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
@@ -624,7 +632,11 @@ type Notice struct {
 	Message string `json:"message"`
 }
 type OAuthIdentity struct {
-	Type string `json:"type"`
+	// MaxBatchRequests description: The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.
+	MaxBatchRequests int `json:"maxBatchRequests,omitempty"`
+	// MinBatchingThreshold description: The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.
+	MinBatchingThreshold int    `json:"minBatchingThreshold,omitempty"`
+	Type                 string `json:"type"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.

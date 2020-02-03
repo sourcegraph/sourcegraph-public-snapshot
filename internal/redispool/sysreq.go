@@ -20,14 +20,36 @@ func init() {
 
 func redisCheck(name, addr string, timeout time.Duration, pool *redis.Pool) sysreq.CheckFunc {
 	return func(ctx context.Context) (problem, fix string, err error) {
+		check := func() (err error) {
+			// Instead of just a PING, we also use this hook point to force a rewrite of
+			// the AOF file on startup of the frontend as a way to ensure it doesn't
+			// grow out of bounds which slows down future startups.
+			// See https://github.com/sourcegraph/sourcegraph/issues/3300 for more context
+
+			c := pool.Get()
+			defer func() { _ = c.Close() }()
+
+			if err = c.Send("PING"); err != nil {
+				return err
+			}
+
+			if err = c.Send("BGREWRITEAOF"); err != nil {
+				return err
+			}
+
+			if err = c.Flush(); err != nil {
+				return err
+			}
+
+			// We ignore the response from BGREWRITEAOF, as this is best effort.
+			_, err = c.Receive()
+			return err
+		}
+
 		deadline := time.Now().Add(timeout)
 
 		for time.Now().Before(deadline) {
-			c := pool.Get()
-			_, err = c.Do("PING")
-			c.Close()
-
-			if err == nil {
+			if err := check(); err == nil {
 				// Success
 				return "", "", nil
 			}
