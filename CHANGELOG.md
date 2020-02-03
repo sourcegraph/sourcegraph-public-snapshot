@@ -26,7 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The Sourcegraph Docker image optimized its use of Redis to make start-up significantly faster in certain scenarios (e.g when container restarts were frequent). ([#3300](https://github.com/sourcegraph/sourcegraph/issues/3300), [#2904](https://github.com/sourcegraph/sourcegraph/issues/2904))
 - Upgrading Sourcegraph is officially supported for one minor version increment (e.g., 3.12 -> 3.13). Previously, upgrades from 2 minor versions previous were supported. Please reach out to support@sourcegraph.com if you would like assistance upgrading from a much older version of Sourcegraph.
 - The GraphQL mutation `previewCampaignPlan` has been renamed to `createCampaignPlan`. This mutation is part of Automation, which is still in beta and behind a feature flag and thus subject to possible breaking changes while we still work on it.
-- The GraphQL field `CampaignPlan.changesets` has been renamed to `CampaignPlan.changesetPlans` to make it more consistent with the `Campaign.changesetPlans` field.
+- The GraphQL field `CampaignPlan.changesets` has been deprecated and will be removed in 3.15. A new field called `CampaignPlan.changesetPlans` has been introduced to make the naming more consistent with the `Campaign.changesetPlans` field. Please use that instead. [#7966](https://github.com/sourcegraph/sourcegraph/pull/7966)
 
 ### Fixed
 
