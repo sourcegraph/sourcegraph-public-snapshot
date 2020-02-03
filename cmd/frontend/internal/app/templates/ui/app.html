@@ -45,25 +45,4 @@
 	{{.Injected.BodyBottom}}
 </body>
 
-{{ if .Context.SourcegraphDotComMode }}
-<style ignore-csp>
-	/* Support webkit inset devices */
-	@supports (padding: max(0px)) {
-
-		.global-navbar,
-		.main-page .row,
-		.search-row {
-			padding-left: max(12px, env(safe-area-inset-left));
-			padding-right: max(12px, env(safe-area-inset-right));
-		}
-
-		.modal-open .row .row {
-			padding-left: 0;
-			padding-right: 0;
-		}
-
-	}
-</style>
-{{ end }}
-
 </html>
