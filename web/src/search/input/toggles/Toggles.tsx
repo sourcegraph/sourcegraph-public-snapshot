@@ -93,7 +93,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         })
     }
 
-    const ToggleStructuralSearch = (): void => {
+    const toggleStructuralSearch = (): void => {
         const cascadePatternTypeValue =
             props.settingsCascade.final &&
             !isErrorLike(props.settingsCascade.final) &&
