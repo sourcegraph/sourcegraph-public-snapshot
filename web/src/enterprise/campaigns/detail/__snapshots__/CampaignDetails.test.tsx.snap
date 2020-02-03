@@ -160,7 +160,7 @@ Array [
     campaign={
       Object {
         "__typename": "CampaignPlan",
-        "changesets": Object {
+        "changesetPlans": Object {
           "nodes": Array [],
           "totalCount": 2,
         },

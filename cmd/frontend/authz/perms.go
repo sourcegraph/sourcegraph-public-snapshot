@@ -58,3 +58,18 @@ const (
 	ProviderBitbucketServer ProviderType = bitbucketserver.ServiceType
 	ProviderSourcegraph     ProviderType = "sourcegraph"
 )
+
+// RepoPermsSort sorts a slice of RepoPerms to guarantee a stable ordering.
+type RepoPermsSort []RepoPerms
+
+func (s RepoPermsSort) Len() int      { return len(s) }
+func (s RepoPermsSort) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s RepoPermsSort) Less(i, j int) bool {
+	if s[i].Repo.ID != s[j].Repo.ID {
+		return s[i].Repo.ID < s[j].Repo.ID
+	}
+	if s[i].Repo.ExternalRepo.ID != s[j].Repo.ExternalRepo.ID {
+		return s[i].Repo.ExternalRepo.ID < s[j].Repo.ExternalRepo.ID
+	}
+	return s[i].Repo.Name < s[j].Repo.Name
+}

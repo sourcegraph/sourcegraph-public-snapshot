@@ -69,7 +69,9 @@ func dialRedis(rawEndpoint string) (redis.Conn, error) {
 }
 
 // Cache is a redis configured for caching. You usually want to use this. Only
-// store data that can be recomputed here.
+// store data that can be recomputed here. Although this data is treated as ephemeral,
+// Sourcegraph depends on it to operate performantly, so we persist in Redis to avoid cold starts,
+// rather than having it in-memory only.
 //
 // In Kubernetes the service is called redis-cache.
 var Cache = &redis.Pool{

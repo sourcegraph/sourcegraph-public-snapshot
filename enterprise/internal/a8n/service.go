@@ -81,15 +81,15 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 	}
 	// Look up all repositories
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	repoIDs := make([]uint32, len(patches))
+	repoIDs := make([]api.RepoID, len(patches))
 	for i, patch := range patches {
-		repoIDs[i] = uint32(patch.Repo)
+		repoIDs[i] = api.RepoID(patch.Repo)
 	}
 	allRepos, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
-	reposByID := make(map[uint32]*repos.Repo, len(patches))
+	reposByID := make(map[api.RepoID]*repos.Repo, len(patches))
 	for _, repo := range allRepos {
 		reposByID[repo.ID] = repo
 	}
@@ -112,7 +112,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 	}
 
 	for _, patch := range patches {
-		repo := reposByID[uint32(patch.Repo)]
+		repo := reposByID[patch.Repo]
 		if repo == nil {
 			return nil, fmt.Errorf("repository ID %d not found", patch.Repo)
 		}
@@ -127,7 +127,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 
 		job := &a8n.CampaignJob{
 			CampaignPlanID: plan.ID,
-			RepoID:         int32(patch.Repo),
+			RepoID:         patch.Repo,
 			BaseRef:        patch.BaseRevision,
 			Rev:            commit,
 			Diff:           patch.Patch,
@@ -279,7 +279,7 @@ func RunChangesetJob(
 	}
 
 	reposStore := repos.NewDBStore(store.DB(), sql.TxOptions{})
-	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []uint32{uint32(campaignJob.RepoID)}})
+	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{api.RepoID(campaignJob.RepoID)}})
 	if err != nil {
 		return err
 	}
@@ -380,7 +380,7 @@ func RunChangesetJob(
 		HeadRef: git.EnsureRefPrefix(headRefName),
 		Repo:    repo,
 		Changeset: &a8n.Changeset{
-			RepoID:      int32(repo.ID),
+			RepoID:      repo.ID,
 			CampaignIDs: []int64{job.CampaignID},
 		},
 	}
@@ -733,19 +733,6 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return campaign, nil, nil
 	}
 
-	changesetCreation, err := tx.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "getting latest changesetjob creation time")
-	}
-	if changesetCreation.IsZero() {
-		// If the campaign hasn't been published yet, we can simply update the
-		// attributes because no ChangesetJobs have been created yet.
-		// If not all ChangesetJobs have been created yet, that means the Campaign itself
-		// hasn't been published yet, but only individual changesets. In that case, we don't
-		// support update yet. See: https://github.com/sourcegraph/sourcegraph/issues/7915
-		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
-	}
-
 	status, err := tx.GetCampaignStatus(ctx, campaign.ID)
 	if err != nil {
 		return nil, nil, err
@@ -754,8 +741,23 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, ErrUpdateProcessingCampaign
 	}
 
-	// Fast path: if we don't update the CampaignPlan, we don't need to rewire
-	// ChangesetJobs, but only update name/description if they changed.
+	published, err := campaignPublished(ctx, tx, campaign.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	partiallyPublished := !published && status.Total != 0
+
+	if !published && !partiallyPublished {
+		// If the campaign hasn't been published yet and no Changesets have
+		// been individually published (through the `PublishChangeset`
+		// mutation), we can simply update the attributes on the Campaign
+		// because no ChangesetJobs have been created yet that need updating.
+		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
+	}
+
+	// If we do have to update ChangesetJobs/Changesets, here's a fast path: if
+	// we don't update the CampaignPlan, we don't need to rewire ChangesetJobs,
+	// but only update name/description if they changed.
 	if !updatePlanID && updateAttributes {
 		return campaign, nil, tx.ResetChangesetJobs(ctx, campaign.ID)
 	}
@@ -772,10 +774,15 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		}
 	}
 
-	for _, c := range diff.Create {
-		err := tx.CreateChangesetJob(ctx, c)
-		if err != nil {
-			return nil, nil, err
+	// When we're doing a partial update and only update the Changesets that
+	// have already been published, we don't want to create new ChangesetJobs,
+	// since they would be processed and publish the other Changesets.
+	if !partiallyPublished {
+		for _, c := range diff.Create {
+			err := tx.CreateChangesetJob(ctx, c)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 	}
 
@@ -809,6 +816,18 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	return campaign, changesets, tx.UpdateCampaign(ctx, campaign)
+}
+
+// campaignPublished returns true if all ChangesetJobs have been created yet
+// (they might still be processing).
+func campaignPublished(ctx context.Context, store *Store, campaign int64) (bool, error) {
+	changesetCreation, err := store.GetLatestChangesetJobCreatedAt(ctx, campaign)
+	if err != nil {
+		return false, errors.Wrap(err, "getting latest changesetjob creation time")
+	}
+	// GetLatestChangesetJobCreatedAt returns a zero time.Time if not all
+	// ChangesetJobs have been created yet.
+	return !changesetCreation.IsZero(), nil
 }
 
 type campaignUpdateDiff struct {
@@ -970,8 +989,8 @@ func isOutdated(c *repos.Changeset) (bool, error) {
 	return false, nil
 }
 
-func mergeByRepoID(chs []*a8n.ChangesetJob, cas []*a8n.CampaignJob) (map[int32]*repoJobs, error) {
-	jobs := make(map[int32]*repoJobs, len(chs))
+func mergeByRepoID(chs []*a8n.ChangesetJob, cas []*a8n.CampaignJob) (map[api.RepoID]*repoJobs, error) {
+	jobs := make(map[api.RepoID]*repoJobs, len(chs))
 
 	byID := make(map[int64]*a8n.CampaignJob, len(cas))
 	for _, j := range cas {

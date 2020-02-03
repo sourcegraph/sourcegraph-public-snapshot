@@ -186,7 +186,7 @@ func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 }
 
-func triggerE2E(c Config) func(*bk.Pipeline) {
+func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// hardFail if we publish docker images
 	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
@@ -194,11 +194,10 @@ func triggerE2E(c Config) func(*bk.Pipeline) {
 		"BUILDKITE_PULL_REQUEST",
 		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
 		"BUILDKITE_PULL_REQUEST_REPO",
-
-		"COMMIT_SHA",
-		"DATE",
 	)
-	env["VERSION"] = c.version
+	env["COMMIT_SHA"] = commonEnv["COMMIT_SHA"]
+	env["DATE"] = commonEnv["DATE"]
+	env["VERSION"] = commonEnv["VERSION"]
 	env["TAG"] = candiateImageTag(c)
 
 	return func(pipeline *bk.Pipeline) {
