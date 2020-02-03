@@ -400,7 +400,24 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         {!campaign.closedAt && (
                                             <details className="campaign-details__details">
                                                 <summary>
-                                                    <span className="btn btn-secondary mr-1 dropdown-toggle">
+                                                    <span
+                                                        className={classNames(
+                                                            'btn btn-secondary mr-1 dropdown-toggle',
+                                                            campaign.status.state ===
+                                                                GQL.BackgroundProcessState.PROCESSING && 'disabled'
+                                                        )}
+                                                        onClick={event =>
+                                                            campaign.status.state ===
+                                                                GQL.BackgroundProcessState.PROCESSING &&
+                                                            event.preventDefault()
+                                                        }
+                                                        data-tooltip={
+                                                            campaign.status.state ===
+                                                            GQL.BackgroundProcessState.PROCESSING
+                                                                ? 'Cannot close while campaign is being created'
+                                                                : undefined
+                                                        }
+                                                    >
                                                         Close
                                                     </span>
                                                 </summary>
@@ -416,14 +433,36 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                     buttonText="Close"
                                                     onButtonClick={onClose}
                                                     buttonClassName="btn-secondary"
-                                                    buttonDisabled={mode === 'deleting' || mode === 'closing'}
+                                                    buttonDisabled={
+                                                        mode === 'deleting' ||
+                                                        mode === 'closing' ||
+                                                        campaign.status.state === GQL.BackgroundProcessState.PROCESSING
+                                                    }
                                                     className="position-absolute campaign-details__details-menu"
                                                 />
                                             </details>
                                         )}
                                         <details className="campaign-details__details">
                                             <summary>
-                                                <span className="btn btn-danger dropdown-toggle">Delete</span>
+                                                <span
+                                                    className={classNames(
+                                                        'btn btn-danger dropdown-toggle',
+                                                        campaign.status.state ===
+                                                            GQL.BackgroundProcessState.PROCESSING && 'disabled'
+                                                    )}
+                                                    onClick={event =>
+                                                        campaign.status.state ===
+                                                            GQL.BackgroundProcessState.PROCESSING &&
+                                                        event.preventDefault()
+                                                    }
+                                                    data-tooltip={
+                                                        campaign.status.state === GQL.BackgroundProcessState.PROCESSING
+                                                            ? 'Cannot delete while campaign is being created'
+                                                            : undefined
+                                                    }
+                                                >
+                                                    Delete
+                                                </span>
                                             </summary>
                                             <CloseDeleteCampaignPrompt
                                                 message={
@@ -437,7 +476,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                 buttonText="Delete"
                                                 onButtonClick={onDelete}
                                                 buttonClassName="btn-danger"
-                                                buttonDisabled={mode === 'deleting' || mode === 'closing'}
+                                                buttonDisabled={
+                                                    mode === 'deleting' ||
+                                                    mode === 'closing' ||
+                                                    campaign.status.state === GQL.BackgroundProcessState.PROCESSING
+                                                }
                                                 className="position-absolute campaign-details__details-menu"
                                             />
                                         </details>
