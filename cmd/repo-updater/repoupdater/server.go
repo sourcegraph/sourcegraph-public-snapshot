@@ -37,8 +37,8 @@ type Server struct {
 		GetRepo(ctx context.Context, projectWithNamespace string) (*repos.Repo, error)
 	}
 	Scheduler interface {
-		UpdateOnce(id uint32, name api.RepoName, url string)
-		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
+		UpdateOnce(id api.RepoID, name api.RepoName, url string)
+		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	GitserverClient interface {
 		ListCloned(context.Context) ([]string, error)
@@ -71,7 +71,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs: []uint32{req.ID},
+		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -114,7 +114,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs: []uint32{req.ID},
+		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)

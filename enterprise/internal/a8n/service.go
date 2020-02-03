@@ -81,15 +81,15 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 	}
 	// Look up all repositories
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	repoIDs := make([]uint32, len(patches))
+	repoIDs := make([]api.RepoID, len(patches))
 	for i, patch := range patches {
-		repoIDs[i] = uint32(patch.Repo)
+		repoIDs[i] = api.RepoID(patch.Repo)
 	}
 	allRepos, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
-	reposByID := make(map[uint32]*repos.Repo, len(patches))
+	reposByID := make(map[api.RepoID]*repos.Repo, len(patches))
 	for _, repo := range allRepos {
 		reposByID[repo.ID] = repo
 	}
@@ -112,7 +112,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 	}
 
 	for _, patch := range patches {
-		repo := reposByID[uint32(patch.Repo)]
+		repo := reposByID[patch.Repo]
 		if repo == nil {
 			return nil, fmt.Errorf("repository ID %d not found", patch.Repo)
 		}
@@ -127,7 +127,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 
 		job := &a8n.CampaignJob{
 			CampaignPlanID: plan.ID,
-			RepoID:         int32(patch.Repo),
+			RepoID:         patch.Repo,
 			BaseRef:        patch.BaseRevision,
 			Rev:            commit,
 			Diff:           patch.Patch,
@@ -279,7 +279,7 @@ func RunChangesetJob(
 	}
 
 	reposStore := repos.NewDBStore(store.DB(), sql.TxOptions{})
-	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []uint32{uint32(campaignJob.RepoID)}})
+	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{api.RepoID(campaignJob.RepoID)}})
 	if err != nil {
 		return err
 	}
@@ -380,7 +380,7 @@ func RunChangesetJob(
 		HeadRef: git.EnsureRefPrefix(headRefName),
 		Repo:    repo,
 		Changeset: &a8n.Changeset{
-			RepoID:      int32(repo.ID),
+			RepoID:      repo.ID,
 			CampaignIDs: []int64{job.CampaignID},
 		},
 	}
@@ -989,8 +989,8 @@ func isOutdated(c *repos.Changeset) (bool, error) {
 	return false, nil
 }
 
-func mergeByRepoID(chs []*a8n.ChangesetJob, cas []*a8n.CampaignJob) (map[int32]*repoJobs, error) {
-	jobs := make(map[int32]*repoJobs, len(chs))
+func mergeByRepoID(chs []*a8n.ChangesetJob, cas []*a8n.CampaignJob) (map[api.RepoID]*repoJobs, error) {
+	jobs := make(map[api.RepoID]*repoJobs, len(chs))
 
 	byID := make(map[int64]*a8n.CampaignJob, len(cas))
 	for _, j := range cas {

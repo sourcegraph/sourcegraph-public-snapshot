@@ -30,7 +30,7 @@ type changesetsConnectionResolver struct {
 	// cache results because they are used by multiple fields
 	once       sync.Once
 	changesets []*a8n.Changeset
-	reposByID  map[int32]*repos.Repo
+	reposByID  map[api.RepoID]*repos.Repo
 	next       int64
 	err        error
 }
@@ -72,7 +72,7 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Changeset, map[int32]*repos.Repo, int64, error) {
+func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Changeset, map[api.RepoID]*repos.Repo, int64, error) {
 	r.once.Do(func() {
 		r.changesets, r.next, r.err = r.store.ListChangesets(ctx, r.opts)
 		if r.err != nil {
@@ -80,9 +80,9 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Chan
 		}
 
 		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
-		repoIDs := make([]uint32, len(r.changesets))
+		repoIDs := make([]api.RepoID, len(r.changesets))
 		for i, c := range r.changesets {
-			repoIDs[i] = uint32(c.RepoID)
+			repoIDs[i] = c.RepoID
 		}
 
 		rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
@@ -91,9 +91,9 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Chan
 			return
 		}
 
-		r.reposByID = make(map[int32]*repos.Repo, len(rs))
+		r.reposByID = make(map[api.RepoID]*repos.Repo, len(rs))
 		for _, repo := range rs {
-			r.reposByID[int32(repo.ID)] = repo
+			r.reposByID[api.RepoID(repo.ID)] = repo
 		}
 	})
 
@@ -127,7 +127,7 @@ func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.Re
 		if r.preloadedRepo != nil {
 			r.repo = newRepositoryResolver(r.preloadedRepo)
 		} else {
-			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.RepoID))
+			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, r.RepoID)
 			if r.err != nil {
 				return
 			}
@@ -359,7 +359,7 @@ func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.R
 
 func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 	return graphqlbackend.NewRepositoryResolver(&types.Repo{
-		ID:           api.RepoID(r.ID),
+		ID:           r.ID,
 		ExternalRepo: r.ExternalRepo,
 		Name:         api.RepoName(r.Name),
 		RepoFields: &types.RepoFields{
