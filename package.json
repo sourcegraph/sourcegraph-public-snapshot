@@ -181,7 +181,7 @@
     "mz": "^2.7.0",
     "node-fetch": "^2.6.0",
     "node-sass": "^4.13.1",
-    "open": "^7.0.0",
+    "open": "^7.0.2",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "p-retry": "^4.2.0",
     "postcss-focus-visible": "^4.0.0",
