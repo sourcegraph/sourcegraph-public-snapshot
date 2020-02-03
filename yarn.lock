@@ -9684,10 +9684,10 @@ graphql-schema-linter@^0.2.4:
     glob "^7.1.2"
     graphql "^14.0.0"
 
-"graphql@>= 0.10 <15", graphql@^14.0.0, graphql@^14.4.2:
-  version "14.4.2"
-  resolved "https://registry.npmjs.org/graphql/-/graphql-14.4.2.tgz#553a7d546d524663eda49ed6df77577be3203ae3"
-  integrity sha512-6uQadiRgnpnSS56hdZUSvFrVcQ6OF9y6wkxJfKquFtHlnl7+KSuWwSJsdwiK1vybm1HgcdbpGkCpvhvsVQ0UZQ==
+"graphql@>= 0.10 <15", graphql@^14.0.0, graphql@^14.6.0:
+  version "14.6.0"
+  resolved "https://registry.npmjs.org/graphql/-/graphql-14.6.0.tgz#57822297111e874ea12f5cd4419616930cd83e49"
+  integrity sha512-VKzfvHEKybTKjQVpTFrA5yUq2S9ihcZvfJAtsDBBCuV6wauPu1xl/f9ehgVf0FcEJJs4vz6ysb/ZMkGigQZseg==
   dependencies:
     iterall "^1.2.2"
 
