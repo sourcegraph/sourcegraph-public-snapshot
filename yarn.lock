@@ -1589,10 +1589,10 @@
     retry-axios "^1.0.1"
     winston "^2.0.0"
 
-"@percy/puppeteer@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.npmjs.org/@percy/puppeteer/-/puppeteer-1.0.8.tgz#9ce4359f885e446bea12bfaa99e746ff38755b03"
-  integrity sha512-YTR5scNNANchsP4iUurXYHVaBg3XPJBMmnfgHwJD9/SnSMjPvSEr7uN4cPGKH78rWibl/js8FFggedkK5+7fQA==
+"@percy/puppeteer@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/@percy/puppeteer/-/puppeteer-1.1.0.tgz#3b055cd4931865f131b3b525be5971ec4a7c8012"
+  integrity sha512-ndQDSC4UYE0WrK+6e14xpuz4FktSG2FwiQJ7n68QVm4TcgetdeXkgcAn1xtwvDbLpEcMyzcQEPBJMOMNf7Nfdg==
   dependencies:
     "@percy/agent" "~0"
 
@@ -1810,8 +1810,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.1", "@sourcegraph/prettierrc@^3.0.2":
   version "3.0.2"
@@ -17901,8 +17900,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "23.1.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
