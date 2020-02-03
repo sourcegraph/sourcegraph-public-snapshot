@@ -66,9 +66,9 @@ var baseURL = &url.URL{
 	Path:   "/.api/updates",
 }
 
-func marshalSiteActivityJSON() (*json.RawMessage, error) {
+func getAndMarshalSiteActivityJSON(ctx context.Context) (*json.RawMessage, error) {
 	days, weeks, months := 2, 1, 1
-	siteActivity, err := usagestats.GetSiteUsageStatistics(context.Background(), &usagestats.SiteUsageStatisticsOptions{
+	siteActivity, err := usagestats.GetSiteUsageStatistics(ctx, &usagestats.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
@@ -84,9 +84,9 @@ func marshalSiteActivityJSON() (*json.RawMessage, error) {
 	return &message, nil
 }
 
-func marshalCodeIntelUsageJSON() (*json.RawMessage, error) {
+func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (*json.RawMessage, error) {
 	days, weeks, months := 2, 1, 1
-	codeIntelUsage, err := usagestats.GetCodeIntelUsageStatistics(context.Background(), &usagestats.CodeIntelUsageStatisticsOptions{
+	codeIntelUsage, err := usagestats.GetCodeIntelUsageStatistics(ctx, &usagestats.CodeIntelUsageStatisticsOptions{
 		DayPeriods:            &days,
 		WeekPeriods:           &weeks,
 		MonthPeriods:          &months,
@@ -140,13 +140,13 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
 	}
-	act, err := marshalSiteActivityJSON()
+	act, err := getAndMarshalSiteActivityJSON(ctx)
 	if err != nil {
-		logFunc("marshalSiteActivityJSON failed", "error", err)
+		logFunc("getAndMarshalSiteActivityJSON failed", "error", err)
 	}
-	codeIntelUsage, err := marshalCodeIntelUsageJSON()
+	codeIntelUsage, err := getAndMarshalCodeIntelUsageJSON(ctx)
 	if err != nil {
-		logFunc("marshalCodeIntelUsageJSON failed", "error", err)
+		logFunc("getAndMarshalCodeIntelUsageJSON failed", "error", err)
 	}
 	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
