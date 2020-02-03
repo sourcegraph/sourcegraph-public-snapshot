@@ -64,7 +64,7 @@
     "@types/yallist": "3.0.1",
     "babel-jest": "^24.9.0",
     "copyfiles": "^2.1.1",
-    "eslint-plugin-import": "^2.20.0",
+    "eslint-plugin-import": "^2.20.1",
     "jest": "^24.9.0",
     "nock": "^11.7.1",
     "sinon": "^8.1.1",
