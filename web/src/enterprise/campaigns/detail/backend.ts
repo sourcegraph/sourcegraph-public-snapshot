@@ -425,7 +425,7 @@ export const queryChangesetPlans = (
             if (node.__typename !== 'CampaignPlan') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return node.changesets
+            return node.changesetPlans
         })
     )
 

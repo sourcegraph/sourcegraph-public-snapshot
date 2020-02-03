@@ -477,7 +477,8 @@ type CampaignPlan implements Node {
 
     # DEPRECATED
     # The proposed patches ("plans") for the changesets that will be created by the campaign.
-    changesets(first: Int): ChangesetPlanConnection! @deprecated(reason: "This field will be removed in 3.15. Please use changesetPlans instead.")
+    changesets(first: Int): ChangesetPlanConnection!
+        @deprecated(reason: "This field will be removed in 3.15. Please use changesetPlans instead.")
 
     # The proposed patches ("plans") for the changesets that will be created by the campaign.
     changesetPlans(first: Int): ChangesetPlanConnection!
