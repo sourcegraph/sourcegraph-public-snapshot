@@ -456,42 +456,40 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		tr.Finish()
 	}()
 
-	tx, err := s.store.Transact(ctx)
+	transaction := func() (err error) {
+		tx, err := s.store.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer tx.Done(&err)
+
+		processing, err := campaignIsProcessing(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if processing {
+			err = ErrDeleteProcessingCampaign
+			return err
+		}
+
+		campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
+		if err != nil {
+			return errors.Wrap(err, "getting campaign")
+		}
+
+		if !campaign.ClosedAt.IsZero() {
+			return nil
+		}
+
+		campaign.ClosedAt = time.Now().UTC()
+
+		return tx.UpdateCampaign(ctx, campaign)
+	}
+
+	err = transaction()
 	if err != nil {
 		return nil, err
 	}
-
-	processing, err := campaignIsProcessing(ctx, tx, id)
-	if err != nil {
-		tx.Done(&err)
-		return nil, err
-	}
-	if processing {
-		err = ErrDeleteProcessingCampaign
-		tx.Done(&err)
-		return nil, err
-	}
-
-	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
-	if err != nil {
-		err = errors.Wrap(err, "getting campaign")
-		tx.Done(&err)
-		return nil, err
-	}
-
-	if !campaign.ClosedAt.IsZero() {
-		tx.Done()
-		return campaign, nil
-	}
-
-	campaign.ClosedAt = time.Now().UTC()
-
-	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
-		tx.Done(&err)
-		return nil, err
-	}
-
-	tx.Done()
 
 	if closeChangesets {
 		go func() {
@@ -557,56 +555,52 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 		tr.Finish()
 	}()
 
-	tx, err := s.store.Transact(ctx)
+	transaction := func() (cs []*a8n.Changeset, err error) {
+		tx, err := s.store.Transact(ctx)
+		if err != nil {
+			return nil, err
+		}
+		defer tx.Done(&err)
+
+		processing, err := campaignIsProcessing(ctx, tx, id)
+		if err != nil {
+			return nil, err
+		}
+		if processing {
+			return nil, ErrDeleteProcessingCampaign
+		}
+
+		// If we don't have to close the changesets, we can simply delete the
+		// Campaign and return. The triggers in the database will remove the
+		// campaign's ID from the changesets' CampaignIDs.
+		if !closeChangesets {
+			return nil, tx.DeleteCampaign(ctx, id)
+		}
+
+		// First load the Changesets with the given campaignID, before deleting
+		// the campaign would remove the association.
+		cs, _, err = s.store.ListChangesets(ctx, ListChangesetsOpts{
+			CampaignID: id,
+			Limit:      -1,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// Remove the association manually, since we'll update the Changesets in
+		// the database, after closing them and we can't update them with an
+		// invalid CampaignID.
+		for _, c := range cs {
+			c.RemoveCampaignID(id)
+		}
+
+		return cs, s.store.DeleteCampaign(ctx, id)
+	}
+
+	cs, err := transaction()
 	if err != nil {
 		return err
 	}
-
-	processing, err := campaignIsProcessing(ctx, tx, id)
-	if err != nil {
-		tx.Done(&err)
-		return err
-	}
-	if processing {
-		err = ErrDeleteProcessingCampaign
-		tx.Done(&err)
-		return err
-	}
-
-	// If we don't have to close the changesets, we can simply delete the
-	// Campaign and return. The triggers in the database will remove the
-	// campaign's ID from the changesets' CampaignIDs.
-	if !closeChangesets {
-		err = tx.DeleteCampaign(ctx, id)
-		tx.Done(&err)
-		return err
-	}
-
-	// First load the Changesets with the given campaignID, before deleting
-	// the campaign would remove the association.
-	cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
-		CampaignID: id,
-		Limit:      -1,
-	})
-	if err != nil {
-		tx.Done(&err)
-		return err
-	}
-
-	// Remove the association manually, since we'll update the Changesets in
-	// the database, after closing them and we can't update them with an
-	// invalid CampaignID.
-	for _, c := range cs {
-		c.RemoveCampaignID(id)
-	}
-
-	err = s.store.DeleteCampaign(ctx, id)
-	if err != nil {
-		tx.Done(&err)
-		return err
-	}
-
-	tx.Done()
 
 	go func() {
 		ctx := trace.ContextWithTrace(context.Background(), tr)
