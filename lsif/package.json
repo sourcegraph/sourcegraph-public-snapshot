@@ -63,7 +63,7 @@
     "@types/uuid": "3.4.6",
     "@types/yallist": "3.0.1",
     "babel-jest": "^24.9.0",
-    "copyfiles": "^2.1.1",
+    "copyfiles": "^2.2.0",
     "eslint-plugin-import": "^2.20.1",
     "jest": "^24.9.0",
     "nock": "^11.7.2",
