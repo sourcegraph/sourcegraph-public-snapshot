@@ -331,7 +331,7 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	case "Site":
 		return siteByGQLID(ctx, id)
 	case "LSIFUpload":
-		return EnterpriseResolvers.codeIntelResolver.LSIFUploadByID(ctx, id)
+		return r.LSIFUploadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}
