@@ -5,7 +5,7 @@ protected-mode no
 
 # limit memory usage, return error when hitting limit
 maxmemory 1gb
-maxmemory-policy allkeys-lru
+maxmemory-policy noeviction
 
 # live commit log to disk, additionally snapshot every 5 minutes
 dir {{ .Dir }}
