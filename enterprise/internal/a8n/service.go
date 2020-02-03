@@ -784,7 +784,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	if err != nil {
 		return nil, nil, err
 	}
-	if !status.Finished() && !status.Canceled {
+	if status.Processing() {
 		return nil, nil, ErrUpdateProcessingCampaign
 	}
 
@@ -1060,5 +1060,5 @@ func campaignIsProcessing(ctx context.Context, store *Store, campaign int64) (bo
 	if err != nil {
 		return false, err
 	}
-	return !status.Finished() && !status.Canceled, nil
+	return status.Processing(), nil
 }
