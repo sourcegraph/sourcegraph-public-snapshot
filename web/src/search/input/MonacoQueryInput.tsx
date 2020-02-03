@@ -11,6 +11,7 @@ import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery'>,
