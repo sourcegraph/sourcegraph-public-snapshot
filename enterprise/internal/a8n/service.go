@@ -442,6 +442,11 @@ func RunChangesetJob(
 	return
 }
 
+// ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
+// been published at the time of closing but its ChangesetJobs have not
+// finished execution.
+var ErrCloseProcessingCampaign = errors.New("cannot delete a Campaign while changesets are being created on codehosts")
+
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
 func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *a8n.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
@@ -456,22 +461,37 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		return nil, err
 	}
 
-	defer tx.Done(&err)
+	processing, err := campaignIsProcessing(ctx, tx, id)
+	if err != nil {
+		tx.Done(&err)
+		return nil, err
+	}
+	if processing {
+		err = ErrDeleteProcessingCampaign
+		tx.Done(&err)
+		return nil, err
+	}
 
 	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
 	if err != nil {
-		return nil, errors.Wrap(err, "getting campaign")
+		err = errors.Wrap(err, "getting campaign")
+		tx.Done(&err)
+		return nil, err
 	}
 
 	if !campaign.ClosedAt.IsZero() {
+		tx.Done()
 		return campaign, nil
 	}
 
 	campaign.ClosedAt = time.Now().UTC()
 
 	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+		tx.Done(&err)
 		return nil, err
 	}
+
+	tx.Done()
 
 	if closeChangesets {
 		go func() {
@@ -521,6 +541,11 @@ func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.
 	return campaign, s.createChangesetJobsWithStore(ctx, tx, campaign)
 }
 
+// ErrDeleteProcessingCampaign is returned by DeleteCampaign if the Campaign
+// has been published at the time of deletion but its ChangesetJobs have not
+// finished execution.
+var ErrDeleteProcessingCampaign = errors.New("cannot delete a Campaign while changesets are being created on codehosts")
+
 // DeleteCampaign deletes the Campaign with the given ID if it hasn't been
 // deleted yet. If closeChangesets is true, the changesets associated with the
 // Campaign will be closed on the codehosts.
@@ -532,11 +557,29 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 		tr.Finish()
 	}()
 
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+
+	processing, err := campaignIsProcessing(ctx, tx, id)
+	if err != nil {
+		tx.Done(&err)
+		return err
+	}
+	if processing {
+		err = ErrDeleteProcessingCampaign
+		tx.Done(&err)
+		return err
+	}
+
 	// If we don't have to close the changesets, we can simply delete the
 	// Campaign and return. The triggers in the database will remove the
 	// campaign's ID from the changesets' CampaignIDs.
 	if !closeChangesets {
-		return s.store.DeleteCampaign(ctx, id)
+		err = tx.DeleteCampaign(ctx, id)
+		tx.Done(&err)
+		return err
 	}
 
 	// First load the Changesets with the given campaignID, before deleting
@@ -546,6 +589,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 		Limit:      -1,
 	})
 	if err != nil {
+		tx.Done(&err)
 		return err
 	}
 
@@ -558,8 +602,11 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 
 	err = s.store.DeleteCampaign(ctx, id)
 	if err != nil {
+		tx.Done(&err)
 		return err
 	}
+
+	tx.Done()
 
 	go func() {
 		ctx := trace.ContextWithTrace(context.Background(), tr)
@@ -987,4 +1034,12 @@ func mergeByRepoID(chs []*a8n.ChangesetJob, cas []*a8n.CampaignJob) (map[int32]*
 	}
 
 	return jobs, nil
+}
+
+func campaignIsProcessing(ctx context.Context, store *Store, campaign int64) (bool, error) {
+	status, err := store.GetCampaignStatus(ctx, campaign)
+	if err != nil {
+		return false, err
+	}
+	return !status.Finished() && !status.Canceled, nil
 }
