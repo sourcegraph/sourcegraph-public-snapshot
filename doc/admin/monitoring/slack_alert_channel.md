@@ -33,9 +33,7 @@ the web hook.
 > earlier). Set the environment variable `GF_SERVER_ROOT_URL` to your Sourcegraph instance external URL followed
 > by the path `/-/debug/grafana`.
 
-# Other alert channel types
+## Other alert channel types
 
 Other alert channel types are configured in a way similar to the Slack alert channel type described above. Choose the
-appropriate channel type and provide the necessary information for that type. 
- 
-    
+appropriate channel type and provide the necessary information for that type.

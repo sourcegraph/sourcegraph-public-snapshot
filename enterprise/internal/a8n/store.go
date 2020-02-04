@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -386,7 +387,7 @@ func (s *Store) createChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, error) {
 	type record struct {
 		ID                  int64           `json:"id"`
-		RepoID              int32           `json:"repo_id"`
+		RepoID              api.RepoID      `json:"repo_id"`
 		CreatedAt           time.Time       `json:"created_at"`
 		UpdatedAt           time.Time       `json:"updated_at"`
 		Metadata            json.RawMessage `json:"metadata"`
@@ -1170,6 +1171,7 @@ DELETE FROM campaigns WHERE id = %s
 // counting campaigns.
 type CountCampaignsOpts struct {
 	ChangesetID int64
+	State       a8n.CampaignState
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -1192,6 +1194,13 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ChangesetID != 0 {
 		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
+	}
+
+	switch opts.State {
+	case a8n.CampaignStateOpen:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
+	case a8n.CampaignStateClosed:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
 	if len(preds) == 0 {
@@ -1268,6 +1277,7 @@ type ListCampaignsOpts struct {
 	ChangesetID int64
 	Cursor      int64
 	Limit       int
+	State       a8n.CampaignState
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -1324,6 +1334,13 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 
 	if opts.ChangesetID != 0 {
 		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
+	}
+
+	switch opts.State {
+	case a8n.CampaignStateOpen:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
+	case a8n.CampaignStateClosed:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
 	return sqlf.Sprintf(

@@ -51,6 +51,7 @@ function runTest() {
     (
         set -ex
         git checkout "$OLD"
+        asdf install # in case the go version has changed in between these two commits
         set +ex
 
         NOW_LATEST_SCHEMA=$(getLatestMigrationVersion)
@@ -87,6 +88,7 @@ EXIT_CODE="$?"
 
 set -x
 git checkout "$HEAD"
+asdf install # in case the go version has changed in between these two commits
 set +x
 echo "Restored HEAD commit: $HEAD: $(git rev-parse HEAD)"
 

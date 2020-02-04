@@ -502,7 +502,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		repoID uint32
+		repoID api.RepoID
 		svcs   []api.ExternalService
 		err    string
 	}{{
@@ -1136,8 +1136,8 @@ func (s *fakeRepoSource) GetRepo(context.Context, string) (*repos.Repo, error) {
 
 type fakeScheduler struct{}
 
-func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
-func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
+func (s *fakeScheduler) UpdateOnce(_ api.RepoID, _ api.RepoName, _ string) {}
+func (s *fakeScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult {
 	return &protocol.RepoUpdateSchedulerInfoResult{}
 }
 

@@ -66,9 +66,9 @@ var baseURL = &url.URL{
 	Path:   "/.api/updates",
 }
 
-func marshalSiteActivityJSON() (*json.RawMessage, error) {
+func getAndMarshalSiteActivityJSON(ctx context.Context) (*json.RawMessage, error) {
 	days, weeks, months := 2, 1, 1
-	siteActivity, err := usagestats.GetSiteUsageStatistics(context.Background(), &usagestats.SiteUsageStatisticsOptions{
+	siteActivity, err := usagestats.GetSiteUsageStatistics(ctx, &usagestats.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
@@ -77,6 +77,26 @@ func marshalSiteActivityJSON() (*json.RawMessage, error) {
 		return nil, err
 	}
 	contents, err := json.Marshal(siteActivity)
+	if err != nil {
+		return nil, err
+	}
+	message := json.RawMessage(contents)
+	return &message, nil
+}
+
+func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (*json.RawMessage, error) {
+	days, weeks, months := 2, 1, 1
+	codeIntelUsage, err := usagestats.GetCodeIntelUsageStatistics(ctx, &usagestats.CodeIntelUsageStatisticsOptions{
+		DayPeriods:            &days,
+		WeekPeriods:           &weeks,
+		MonthPeriods:          &months,
+		IncludeEventCounts:    false,
+		IncludeEventLatencies: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(codeIntelUsage)
 	if err != nil {
 		return nil, err
 	}
@@ -120,9 +140,13 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
 	}
-	act, err := marshalSiteActivityJSON()
+	act, err := getAndMarshalSiteActivityJSON(ctx)
 	if err != nil {
-		logFunc("marshalSiteActivityJSON failed", "error", err)
+		logFunc("getAndMarshalSiteActivityJSON failed", "error", err)
+	}
+	codeIntelUsage, err := getAndMarshalCodeIntelUsageJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalCodeIntelUsageJSON failed", "error", err)
 	}
 	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
@@ -143,6 +167,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		HasExtURL:            conf.UsingExternalURL(),
 		UniqueUsers:          int32(count),
 		Activity:             act,
+		CodeIntelUsage:       codeIntelUsage,
 		InitialAdminEmail:    initAdminEmail,
 		TotalUsers:           int32(totalUsers),
 		HasRepos:             hasRepos,

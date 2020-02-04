@@ -61,6 +61,18 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "debug.log": {
+          "description": "Turns on debug logging for specific debugging scenarios.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extsvc.gitlab": {
+              "description": "Log GitLab API requests.",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "automation": {
           "description": "Enables the experimental code automation features.",
           "type": "string",
@@ -557,7 +569,14 @@
     "auth.enableUsernameChanges": {
       "description": "Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "group": "Authentication"
+    },
+    "auth.minPasswordLength": {
+      "description": "The minimum number of Unicode code points that a password must contain.",
+      "type": "integer",
+      "default": 12,
+      "group": "Authentication"
     },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",

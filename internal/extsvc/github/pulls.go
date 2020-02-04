@@ -72,6 +72,16 @@ type StatusContext struct {
 	Creator     Actor
 }
 
+type Label struct {
+	Color       string
+	Description string
+	Name        string
+}
+
+type LabelConnection struct {
+	Nodes []Label
+}
+
 // PullRequest is a GitHub pull request.
 type PullRequest struct {
 	RepoWithOwner string `json:"-"`
@@ -84,6 +94,7 @@ type PullRequest struct {
 	BaseRefOid    string
 	HeadRefName   string
 	BaseRefName   string
+	Labels        LabelConnection
 	Number        int64
 	Author        Actor
 	Participants  []Actor
@@ -618,6 +629,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	pr := results.Repository.PullRequests.Nodes[0].PullRequest
 	pr.Participants = results.Repository.PullRequests.Nodes[0].Participants.Nodes
 	pr.TimelineItems = results.Repository.PullRequests.Nodes[0].TimelineItems.Nodes
+	pr.Labels = results.Repository.PullRequests.Nodes[0].Labels
 
 	return &pr, nil
 }
@@ -646,6 +658,7 @@ fragment review on PullRequestReview {
 fragment pr on PullRequest {
 	id, title, body, state, url, number, createdAt, updatedAt
 	headRefOid, baseRefOid, headRefName, baseRefName
+	labels(first:100) { nodes { color description name } }
 	author { ...actor }
 	participants(first: 100) { nodes { ...actor } }
 	timelineItems(

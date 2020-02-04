@@ -43,6 +43,8 @@ func unmarshalCampaignJobID(id graphql.ID) (cid int64, err error) {
 	return
 }
 
+var _ graphqlbackend.CampaignPlanResolver = &campaignPlanResolver{}
+
 type campaignPlanResolver struct {
 	store        *ee.Store
 	campaignPlan *a8n.CampaignPlan
@@ -56,7 +58,14 @@ func (r *campaignPlanResolver) Status(ctx context.Context) (graphqlbackend.Backg
 	return r.store.GetCampaignPlanStatus(ctx, r.campaignPlan.ID)
 }
 
+// DEPRECATED: Remove in 3.15 in favor of ChangesetPlans.
 func (r *campaignPlanResolver) Changesets(
+	ctx context.Context,
+	args *graphqlutil.ConnectionArgs,
+) graphqlbackend.ChangesetPlansConnectionResolver {
+	return r.ChangesetPlans(ctx, args)
+}
+func (r *campaignPlanResolver) ChangesetPlans(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {
@@ -86,7 +95,7 @@ type campaignJobsConnectionResolver struct {
 	// cache results because they are used by multiple fields
 	once                         sync.Once
 	jobs                         []*a8n.CampaignJob
-	reposByID                    map[int32]*repos.Repo
+	reposByID                    map[api.RepoID]*repos.Repo
 	changesetJobsByCampaignJobID map[int64]*a8n.ChangesetJob
 	next                         int64
 	err                          error
@@ -124,7 +133,7 @@ func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlba
 	return resolvers, nil
 }
 
-func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.CampaignJob, map[int32]*repos.Repo, map[int64]*a8n.ChangesetJob, int64, error) {
+func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.CampaignJob, map[api.RepoID]*repos.Repo, map[int64]*a8n.ChangesetJob, int64, error) {
 	r.once.Do(func() {
 		r.jobs, r.next, r.err = r.store.ListCampaignJobs(ctx, r.opts)
 		if r.err != nil {
@@ -132,9 +141,9 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.Ca
 		}
 
 		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
-		repoIDs := make([]uint32, len(r.jobs))
+		repoIDs := make([]api.RepoID, len(r.jobs))
 		for i, j := range r.jobs {
-			repoIDs[i] = uint32(j.RepoID)
+			repoIDs[i] = j.RepoID
 		}
 
 		rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
@@ -143,9 +152,9 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.Ca
 			return
 		}
 
-		r.reposByID = make(map[int32]*repos.Repo, len(rs))
+		r.reposByID = make(map[api.RepoID]*repos.Repo, len(rs))
 		for _, repo := range rs {
-			r.reposByID[int32(repo.ID)] = repo
+			r.reposByID[repo.ID] = repo
 		}
 
 		cs, _, err := r.store.ListChangesetJobs(ctx, ee.ListChangesetJobsOpts{
@@ -207,7 +216,7 @@ func (r *campaignJobResolver) computeRepoCommit(ctx context.Context) (*graphqlba
 		if r.preloadedRepo != nil {
 			r.repo = newRepositoryResolver(r.preloadedRepo)
 		} else {
-			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.job.RepoID))
+			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, r.job.RepoID)
 			if r.err != nil {
 				return
 			}

@@ -531,7 +531,7 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 // Repo represents a source code repository stored in Sourcegraph.
 type Repo struct {
 	// The internal Sourcegraph repo ID.
-	ID uint32
+	ID api.RepoID
 	// Name is the name for this repository (e.g., "github.com/user/repo"). It
 	// is the same as URI, unless the user configures a non-default
 	// repositoryPathPattern.
@@ -757,8 +757,8 @@ func pick(a *Repo, b *Repo) (keep, discard *Repo) {
 type Repos []*Repo
 
 // IDs returns the list of ids from all Repos.
-func (rs Repos) IDs() []uint32 {
-	ids := make([]uint32, len(rs))
+func (rs Repos) IDs() []api.RepoID {
+	ids := make([]api.RepoID, len(rs))
 	for i := range rs {
 		ids[i] = rs[i].ID
 	}

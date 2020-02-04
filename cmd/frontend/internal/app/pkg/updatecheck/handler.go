@@ -28,12 +28,12 @@ var (
 	// non-cluster installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.12.3")
+	latestReleaseDockerServerImageBuild = newBuild("3.12.5")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.12.3")
+	latestReleaseKubernetesBuild = newBuild("3.12.5")
 )
 
 func getLatestRelease(deployType string) build {
@@ -160,6 +160,7 @@ type pingRequest struct {
 	HasExtURL            bool             `json:"hasExtURL"`
 	UniqueUsers          int32            `json:"u"`
 	Activity             *json.RawMessage `json:"act"`
+	CodeIntelUsage       *json.RawMessage `json:"codeIntelUsage"`
 	InitialAdminEmail    string           `json:"initAdmin"`
 	TotalUsers           int32            `json:"totalUsers"`
 	HasRepos             bool             `json:"repos"`
@@ -243,6 +244,7 @@ type pingPayload struct {
 	HasUpdate            string           `json:"has_update"`
 	UniqueUsersToday     string           `json:"unique_users_today"`
 	SiteActivity         *json.RawMessage `json:"site_activity"`
+	CodeIntelUsage       *json.RawMessage `json:"code_intel_usage"`
 	InstallerEmail       string           `json:"installer_email"`
 	AuthProviders        string           `json:"auth_providers"`
 	ExtServices          string           `json:"ext_services"`
@@ -272,6 +274,7 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 		HasUpdate:            strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:     strconv.FormatInt(int64(pr.UniqueUsers), 10),
 		SiteActivity:         pr.Activity,
+		CodeIntelUsage:       pr.CodeIntelUsage,
 		InstallerEmail:       pr.InitialAdminEmail,
 		AuthProviders:        strings.Join(pr.AuthProviders, ","),
 		ExtServices:          strings.Join(pr.ExternalServices, ","),
