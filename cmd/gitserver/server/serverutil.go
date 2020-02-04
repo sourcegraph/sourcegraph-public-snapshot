@@ -202,7 +202,7 @@ var repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
 // repoRemoteBranches returns a map containing branch + commit pairs from the
 // remote Git repository starting with the specified prefix.
 var repoRemoteBranches = func(ctx context.Context, url, prefix string) (map[string]string, error) {
-	cmd := exec.Command("git", "ls-remote", "--heads", url, "'"+prefix+"*'")
+	cmd := exec.Command("git", "ls-remote", "--heads", url, prefix+"*")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
