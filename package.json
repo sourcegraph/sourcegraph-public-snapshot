@@ -138,7 +138,7 @@
     "@types/storybook__react": "4.0.2",
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "3.4.7",
-    "@types/webpack": "4.41.3",
+    "@types/webpack": "4.41.5",
     "@types/webpack-dev-server": "3.10.0",
     "@types/whatwg-url": "6.4.0",
     "abort-controller": "^3.0.0",
