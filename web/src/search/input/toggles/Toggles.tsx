@@ -36,8 +36,7 @@ interface SubmitSearchArgs {
  */
 export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesProps) => {
     const structuralSearchDisabled =
-        window.context.experimentalFeatures &&
-        window.context.experimentalFeatures?.structuralSearch === 'disabled'
+        window.context.experimentalFeatures && window.context.experimentalFeatures?.structuralSearch === 'disabled'
 
     const submitOnToggle = (args: SubmitSearchArgs): void => {
         const searchQueryNotEmpty =
