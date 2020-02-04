@@ -18,7 +18,7 @@ ALTER TABLE campaigns ALTER branch SET NOT NULL;
 -- Add and populate branch column to the changeset jobs tables.
 -- The branch name is inherited from the campaign if the changeset
 -- job is finished running.
-ALTER TABLE changeset_jobs ADD COLUMN branch text;
+ALTER TABLE changeset_jobs ADD COLUMN IF NOT EXISTS branch text;
 UPDATE changeset_jobs AS csj 
     SET branch=c.branch
 FROM campaigns c
