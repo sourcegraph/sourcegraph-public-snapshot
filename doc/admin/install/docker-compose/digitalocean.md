@@ -1,4 +1,4 @@
-# Install Sourcegraph with Docker Compose on DigitalOcean
+# Install Sourcegraph with Docker Compose on Digital Ocean
 
 This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://docs.docker.com/compose/) to a single Droplet running on DigitalOcean.
 
