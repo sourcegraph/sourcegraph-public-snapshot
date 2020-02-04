@@ -83,7 +83,6 @@ Referenced by:
  id                | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
  name              | text                     | not null
  description       | text                     | 
- branch            | text                     | not null
  author_id         | integer                  | not null
  namespace_user_id | integer                  | 
  namespace_org_id  | integer                  | 
@@ -92,6 +91,7 @@ Referenced by:
  changeset_ids     | jsonb                    | not null default '{}'::jsonb
  campaign_plan_id  | integer                  | 
  closed_at         | timestamp with time zone | 
+ branch            | text                     | not null
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
     "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
@@ -145,12 +145,12 @@ Foreign-key constraints:
  campaign_id     | bigint                   | not null
  campaign_job_id | bigint                   | not null
  changeset_id    | bigint                   | 
- branch          | string                   |
  error           | text                     | 
  created_at      | timestamp with time zone | not null default now()
  updated_at      | timestamp with time zone | not null default now()
  started_at      | timestamp with time zone | 
  finished_at     | timestamp with time zone | 
+ branch          | text                     | 
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, campaign_job_id)
