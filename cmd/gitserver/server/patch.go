@@ -96,17 +96,17 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if req.UniqueRef {
-		branches, err := repoRemoteBranches(ctx, remoteURL, ref)
+		refs, err := repoRemoteRefs(ctx, remoteURL, ref)
 		if err != nil {
-			log15.Error("Failed to get remote branches", "ref", ref, "err", err)
-			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteBranches"))
+			log15.Error("Failed to get remote refs", "ref", ref, "err", err)
+			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
 			return http.StatusInternalServerError, resp
 		}
 
 		retry := 1
 		tmp := ref
 		for {
-			if _, ok := branches[tmp]; !ok {
+			if _, ok := refs[tmp]; !ok {
 				break
 			}
 			tmp = ref + "-" + strconv.Itoa(retry)

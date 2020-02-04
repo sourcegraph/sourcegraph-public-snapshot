@@ -465,7 +465,7 @@ input UpdateCampaignInput {
     # The updated name of the campaign (if non-null).
     name: String
 
-    # The branch name
+    # The branch name. This is only allowed if the campaign has not yet been published.
     branch: String
 
     # The updated description of the campaign as Markdown (if non-null).

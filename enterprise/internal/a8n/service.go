@@ -297,6 +297,14 @@ func RunChangesetJob(
 	// We should probably persist the `headRefName` on `ChangesetJob` and keep
 	// it stable across retries and only set it the first time.
 
+	ensureUniqueRef := true
+	if job.Branch == "" {
+		// If job.Branch is set that means this method is has already been
+		// executed for the given job. In that case, we want to use job.Branch
+		// as the ref, since we created it, and not fallback to another ref.
+		ensureUniqueRef = false
+	}
+
 	ref, err := gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
 		BaseCommit: campaignJob.Rev,
@@ -304,7 +312,7 @@ func RunChangesetJob(
 		// will fail with "corrupt patch at line <N>" where N is the last line.
 		Patch:     campaignJob.Diff + "\n",
 		TargetRef: c.Branch,
-		UniqueRef: job.Branch == "",
+		UniqueRef: ensureUniqueRef,
 		CommitInfo: protocol.PatchCommitInfo{
 			Message:     c.Name,
 			AuthorName:  "Sourcegraph Bot",
@@ -692,6 +700,8 @@ type UpdateCampaignArgs struct {
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
+// ErrCampaignBranchBlank is returned by CreateCampaign if the specified Campaign
+// branch is blank.
 var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 
 // ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
