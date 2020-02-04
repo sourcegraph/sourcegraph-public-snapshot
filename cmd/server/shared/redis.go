@@ -36,10 +36,11 @@ func maybeRedisStoreProcFile() (string, error) {
 
 func maybeRedisCacheProcFile() (string, error) {
 	return maybeRedisProcFile(redisProcfileConfig{
-		envVar: "REDIS_CACHE_ENDPOINT",
-		name:   "redis-cache",
-		port:   "6380",
-		tmpl:   redisCacheConfTmpl,
+		envVar:  "REDIS_CACHE_ENDPOINT",
+		name:    "redis-cache",
+		port:    "6380",
+		tmpl:    redisCacheConfTmpl,
+		dataDir: "redis-cache",
 	})
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -386,7 +387,7 @@ func (s *Store) createChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, error) {
 	type record struct {
 		ID                  int64           `json:"id"`
-		RepoID              int32           `json:"repo_id"`
+		RepoID              api.RepoID      `json:"repo_id"`
 		CreatedAt           time.Time       `json:"created_at"`
 		UpdatedAt           time.Time       `json:"updated_at"`
 		Metadata            json.RawMessage `json:"metadata"`

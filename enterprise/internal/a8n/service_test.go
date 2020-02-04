@@ -97,7 +97,7 @@ func TestService(t *testing.T) {
 		for i, patch := range patches {
 			wantJobs[i] = &a8n.CampaignJob{
 				CampaignPlanID: plan.ID,
-				RepoID:         int32(patch.Repo),
+				RepoID:         patch.Repo,
 				BaseRef:        patch.BaseRevision,
 				Rev:            commit,
 				Diff:           patch.Patch,
@@ -366,7 +366,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reposByID := make(map[uint32]*repos.Repo, len(rs))
+	reposByID := make(map[api.RepoID]*repos.Repo, len(rs))
 	reposByName := make(map[string]*repos.Repo, len(rs))
 	for _, r := range rs {
 		reposByID[r.ID] = r
@@ -381,6 +381,10 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 		// Repositories for which we had CampaignJobs attached to the old CampaignPlan
 		oldCampaignJobs repoNames
+
+		// Repositories for which the ChangesetJob/Changeset have been
+		// individually published while Campaign was in draft mode
+		individuallyPublished repoNames
 
 		updatePlan, updateName, updateDescription bool
 		newCampaignJobs                           []newCampaignJobSpec
@@ -439,7 +443,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			wantModified: repoNames{"repo-0"},
 		},
 		{
-			name:            "1 unmodified, 1 modified, 1 new changeset",
+			name:            "1 detached, 1 unmodified, 1 modified, 1 new changeset",
 			updatePlan:      true,
 			oldCampaignJobs: repoNames{"repo-0", "repo-1", "repo-2"},
 			newCampaignJobs: []newCampaignJobSpec{
@@ -462,6 +466,48 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				{repo: "repo-1", modifiedDiff: true},
 				{repo: "repo-3"},
 			},
+		},
+		{
+			name:                  "draft campaign, 1 published unmodified, 1 modified, 1 detached, 1 new changeset",
+			campaignIsDraft:       true,
+			updatePlan:            true,
+			oldCampaignJobs:       repoNames{"repo-0", "repo-1", "repo-2"},
+			individuallyPublished: repoNames{"repo-0"},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0"},
+				{repo: "repo-1", modifiedDiff: true},
+				{repo: "repo-3"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+		},
+		{
+			name:                  "draft campaign, 1 published unmodified, 1 published modified, 1 detached, 1 new changeset",
+			campaignIsDraft:       true,
+			updatePlan:            true,
+			oldCampaignJobs:       repoNames{"repo-0", "repo-1", "repo-2"},
+			individuallyPublished: repoNames{"repo-0", "repo-1"},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0"},
+				{repo: "repo-1", modifiedDiff: true},
+				{repo: "repo-3"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantModified:   repoNames{"repo-1"},
+		},
+		{
+			name:                  "draft campaign, 1 published unmodified, 1 published modified, 1 published detached, 1 new changeset",
+			campaignIsDraft:       true,
+			updatePlan:            true,
+			oldCampaignJobs:       repoNames{"repo-0", "repo-1", "repo-2"},
+			individuallyPublished: repoNames{"repo-0", "repo-1", "repo-2"},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0"},
+				{repo: "repo-1", modifiedDiff: true},
+				{repo: "repo-3"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantModified:   repoNames{"repo-1"},
+			wantDetached:   repoNames{"repo-2"},
 		},
 	}
 
@@ -514,6 +560,28 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			if !tt.campaignIsDraft && !tt.campaignIsManual {
 				// Create Changesets and update ChangesetJobs to look like they ran
 				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID)
+			}
+
+			if tt.campaignIsDraft && len(tt.individuallyPublished) != 0 {
+				toPublish := make(map[int64]*a8n.CampaignJob)
+				for _, name := range tt.individuallyPublished {
+					repo, ok := reposByName[name]
+					if !ok {
+						t.Errorf("unrecognized repo name: %s", name)
+					}
+					for _, j := range oldCampaignJobs {
+						if j.RepoID == repo.ID {
+							toPublish[j.ID] = j
+
+							err = svc.CreateChangesetJobForCampaignJob(ctx, j.ID)
+							if err != nil {
+								t.Fatalf("Failed to individually created ChangesetJob: %s", err)
+							}
+						}
+					}
+				}
+
+				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, toPublish)
 			}
 
 			oldTime := now
@@ -591,21 +659,25 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			// When a campaign is created as a draft, we don't create
 			// ChangesetJobs, which means we can return here after checking
 			// that we haven't created ChangesetJobs
-			if tt.campaignIsDraft {
-				if len(newChangesetJobs) != 0 {
-					t.Fatalf("changesetJobs created even though campaign is draft. have=%d", len(newChangesetJobs))
+			if tt.campaignIsDraft && len(tt.individuallyPublished) == 0 {
+				if have, want := len(newChangesetJobs), len(tt.individuallyPublished); have != want {
+					t.Fatalf("changesetJobs created even though campaign is draft. have=%d, want=%d", have, want)
 				}
 				return
 			}
 
 			var wantChangesetJobLen int
 			if tt.updatePlan {
-				wantChangesetJobLen = len(newCampaignJobs)
+				if len(tt.individuallyPublished) != 0 {
+					wantChangesetJobLen = len(tt.individuallyPublished)
+				} else {
+					wantChangesetJobLen = len(newCampaignJobs)
+				}
 			} else {
 				wantChangesetJobLen = len(oldCampaignJobs)
 			}
 			if len(newChangesetJobs) != wantChangesetJobLen {
-				t.Fatalf("wrong number of new ChangesetJobs. want=%d, have=%d", len(newCampaignJobs), wantChangesetJobLen)
+				t.Fatalf("wrong number of new ChangesetJobs. want=%d, have=%d", wantChangesetJobLen, len(newChangesetJobs))
 			}
 
 			newChangesetJobsByRepo := map[string]*a8n.ChangesetJob{}
@@ -614,7 +686,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				if !ok {
 					t.Fatalf("ChangesetJob has invalid CampaignJobID: %+v", c)
 				}
-				r, ok := reposByID[uint32(campaignJob.RepoID)]
+				r, ok := reposByID[campaignJob.RepoID]
 				if !ok {
 					t.Fatalf("ChangesetJob has invalid RepoID: %v", c)
 				}
@@ -690,7 +762,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				}
 
 				for _, c := range oldChangesets {
-					if c.RepoID == int32(r.ID) {
+					if c.RepoID == r.ID {
 						wantIDs = append(wantIDs, c.ID)
 					}
 				}
@@ -812,10 +884,10 @@ func createTestUser(ctx context.Context, t *testing.T) *types.User {
 	return user
 }
 
-func testCampaignJob(plan int64, repo uint32, t time.Time) *a8n.CampaignJob {
+func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *a8n.CampaignJob {
 	return &a8n.CampaignJob{
 		CampaignPlanID: plan,
-		RepoID:         int32(repo),
+		RepoID:         api.RepoID(repo),
 		Rev:            "deadbeef",
 		BaseRef:        "refs/heads/master",
 		Diff:           "cool diff",
@@ -834,7 +906,7 @@ func testCampaign(user int32, plan int64) *a8n.Campaign {
 	}
 }
 
-func testChangeset(repoID int32, campaign int64, changesetJob int64) *a8n.Changeset {
+func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64) *a8n.Changeset {
 	return &a8n.Changeset{
 		RepoID:              repoID,
 		CampaignIDs:         []int64{campaign},

@@ -102,6 +102,10 @@ type NewUser struct {
 	// user if at least one of the following is true: (1) the site has already been initialized or
 	// (2) any other user account already exists.
 	FailIfNotInitialUser bool `json:"-"` // forbid this field being set by JSON, just in case
+
+	// EnforcePasswordLength is whether should enforce minimum and maximum password length requirement.
+	// Users created by non-builtin auth providers do not have a password thus no need to check.
+	EnforcePasswordLength bool `json:"-"` // forbid this field being set by JSON, just in case
 }
 
 // Create creates a new user in the database.
@@ -151,7 +155,7 @@ const maxPasswordRunes = 256
 // checkPasswordLength returns an error if the password is too long.
 func checkPasswordLength(pw string) error {
 	pwLen := utf8.RuneCountInString(pw)
-	minPasswordRunes := conf.Get().AuthMinPasswordLength
+	minPasswordRunes := conf.AuthMinPasswordLength()
 	if pwLen < minPasswordRunes ||
 		pwLen > maxPasswordRunes {
 		return errcode.NewPresentationError(fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
@@ -166,8 +170,10 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		return Mocks.Users.Create(ctx, info)
 	}
 
-	if err := checkPasswordLength(info.Password); err != nil {
-		return nil, err
+	if info.EnforcePasswordLength {
+		if err := checkPasswordLength(info.Password); err != nil {
+			return nil, err
+		}
 	}
 
 	if info.Email != "" && info.EmailVerificationCode == "" && !info.EmailIsVerified {

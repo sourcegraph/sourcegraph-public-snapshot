@@ -112,7 +112,7 @@ const campaignPlanFragment = gql`
             state
             errors
         }
-        changesets {
+        changesetPlans {
             totalCount
             nodes {
                 id
@@ -378,7 +378,7 @@ export const queryChangesetPlans = (
                 node(id: $campaignPlan) {
                     __typename
                     ... on CampaignPlan {
-                        changesets(first: $first) {
+                        changesetPlans(first: $first) {
                             totalCount
                             nodes {
                                 __typename
@@ -425,7 +425,7 @@ export const queryChangesetPlans = (
             if (node.__typename !== 'CampaignPlan') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return node.changesets
+            return node.changesetPlans
         })
     )
 

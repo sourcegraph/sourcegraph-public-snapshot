@@ -475,8 +475,13 @@ type CampaignPlan implements Node {
     # The progress status of generating changesets.
     status: BackgroundProcessStatus!
 
-    # The changesets that will be created by the campaign.
+    # DEPRECATED
+    # The proposed patches ("plans") for the changesets that will be created by the campaign.
     changesets(first: Int): ChangesetPlanConnection!
+        @deprecated(reason: "This field will be removed in 3.15. Please use changesetPlans instead.")
+
+    # The proposed patches ("plans") for the changesets that will be created by the campaign.
+    changesetPlans(first: Int): ChangesetPlanConnection!
 
     # The URL where the plan can be previewed and a campaign can be created from it.
     previewURL: String!

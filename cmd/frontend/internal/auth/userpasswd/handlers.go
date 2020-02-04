@@ -98,10 +98,11 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	// of doServeSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
 	// case the only signup allowed is that of the initial site admin).
 	newUserData := db.NewUser{
-		Email:                creds.Email,
-		Username:             creds.Username,
-		Password:             creds.Password,
-		FailIfNotInitialUser: failIfNewUserIsNotInitialSiteAdmin,
+		Email:                 creds.Email,
+		Username:              creds.Username,
+		Password:              creds.Password,
+		FailIfNotInitialUser:  failIfNewUserIsNotInitialSiteAdmin,
+		EnforcePasswordLength: true,
 	}
 	if failIfNewUserIsNotInitialSiteAdmin {
 		// The email of the initial site admin is considered to be verified.

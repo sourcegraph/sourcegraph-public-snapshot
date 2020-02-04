@@ -301,3 +301,13 @@ func ExperimentalFeatures() schema.ExperimentalFeatures {
 	}
 	return *val
 }
+
+// AuthMinPasswordLength returns the value of minimum password length requirement.
+// If not set, it returns the default value 12.
+func AuthMinPasswordLength() int {
+	val := Get().AuthMinPasswordLength
+	if val <= 0 {
+		return 12
+	}
+	return val
+}

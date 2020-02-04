@@ -383,8 +383,8 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		return nil, err
 	}
 
-	var repoIDs []uint32
-	repoSet := map[uint32]*repos.Repo{}
+	var repoIDs []api.RepoID
+	repoSet := map[api.RepoID]*repos.Repo{}
 	cs := make([]*a8n.Changeset, 0, len(args.Input))
 
 	for _, c := range args.Input {
@@ -393,14 +393,13 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 			return nil, err
 		}
 
-		id := uint32(repoID)
-		if _, ok := repoSet[id]; !ok {
-			repoSet[id] = nil
-			repoIDs = append(repoIDs, id)
+		if _, ok := repoSet[repoID]; !ok {
+			repoSet[repoID] = nil
+			repoIDs = append(repoIDs, repoID)
 		}
 
 		cs = append(cs, &a8n.Changeset{
-			RepoID:     int32(id),
+			RepoID:     repoID,
 			ExternalID: c.ExternalID,
 		})
 	}
@@ -439,7 +438,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	for _, c := range cs {
-		c.ExternalServiceType = repoSet[uint32(c.RepoID)].ExternalRepo.ServiceType
+		c.ExternalServiceType = repoSet[c.RepoID].ExternalRepo.ServiceType
 	}
 
 	err = tx.CreateChangesets(ctx, cs...)
@@ -464,7 +463,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		csr[i] = &changesetResolver{
 			store:         r.store,
 			Changeset:     cs[i],
-			preloadedRepo: repoSet[uint32(cs[i].RepoID)],
+			preloadedRepo: repoSet[cs[i].RepoID],
 		}
 	}
 
