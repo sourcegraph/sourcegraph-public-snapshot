@@ -53,7 +53,7 @@ Click the <img src=../img/brackets.png> toggle to activate [structural search](s
 
 | Search pattern syntax | Description | Example |
 | --- | --- | --- |
-| `New(:[args])` | Match the string `New` followed by _balanced parentheses_ containing zero or more characters, including newlines. Matching is _case-sensitive_. Make the search [language-aware](structural#current-functionality-and-restrictions) by adding a `lang:` [keyword](#keywords-all-searches). | [`New(:[args]) lang:go`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28:%5Bargs%5D%29+lang:go&patternType=structural) |
+| `New(:[args])` | Match the string `New` followed by _balanced parentheses_ containing zero or more characters, including newlines. Matching is _case-sensitive_. Make the search [language-aware](structural.md#current-functionality-and-restrictions) by adding a `lang:` [keyword](#keywords-all-searches). | [`New(:[args]) lang:go`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28:%5Bargs%5D%29+lang:go&patternType=structural) |
 | `"New(:[args])"` or `'New(:[args])'`  | Quoting the search pattern has the same meaning as `New(:[args])`, but avoids syntax errors that may conflict with [keyword syntax](#keywords-all-searches). Special characters like `"` and `\` may be escaped. | [`"New(:[args])" lang:go`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%22New%28:%5Bargs%5D%29%22+lang:go&patternType=structural) | 
 
 Note: It is not possible to perform case-insensitive matching with structural search. 
