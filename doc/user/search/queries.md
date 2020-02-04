@@ -25,7 +25,7 @@ This page describes search pattern syntax and keywords available for code search
 
 This section documents the available search pattern syntax and interpretation in Sourcegraph. As of version 3.9.0 search patterns are assumed [literal](#literal-search-default) by default. To activate [regexp search](#regexp-search), click the <img src=../img/regex.png> toggle or add the `patterntype:regexp` keyword to the query. Site admins and users can change their instance and personal default behavior by changing the `search.defaultPatternType` setting to "literal" or "regexp". 
 
-Unless stated otherwise, Sourcegraph by default tries to match search patterns in file contents, filenames, or repository names, and will favor displaying file content matches if they exist. For example, a pattern like `file.go` _may_ match a file or contents of a file, and we display results accordingly. This behavior can be changed with [keywords](#keywords-all-searches). A search pattern is _required_ to match file content. A search pattern is _optional_ and may be omitted when searching for [commits](#keywords-diff-and-commit-searches-only), [filenames](#filename-search), or [repository names](#repository-name-search).
+A search pattern is _required_ to match file content. A search pattern is _optional_ and may be omitted when searching for [commits](#keywords-diff-and-commit-searches-only), [filenames](#filename-search), or [repository names](#repository-name-search).
 
 ### Literal search (Default)
 
