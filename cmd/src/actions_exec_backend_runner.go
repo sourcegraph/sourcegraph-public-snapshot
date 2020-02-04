@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -280,7 +281,10 @@ func diffSupportsFlag(ctx context.Context, flag string) (bool, error) {
 	if err != nil && cmd.ProcessState.ExitCode() != 2 {
 		return false, errors.Wrapf(err, "Checking whether diff supports %q failed", flag)
 	}
-	return !strings.Contains(string(out), "unrecognized option `"+flag), nil
+
+	pattern := fmt.Sprintf("unrecognized\\soption\\s[`']%s", flag)
+	matched, err := regexp.MatchString(pattern, string(out))
+	return !matched, err
 }
 
 // We use an explicit prefix for our temp directories, because otherwise Go
