@@ -1,11 +1,21 @@
 # Search query syntax
 
 <style>
+tr td:nth-child(1) {
+  min-width:175px;
+}
+
 tr td:nth-child(3) {
   min-width: 250px;
 }
 tr td:nth-child(3) code {
   word-break: break-all;
+}
+
+img {
+  border: 1px solid !important;
+  border-radius: 2px;
+  width: 18px;
 }
 </style>
 
@@ -13,43 +23,40 @@ This page describes search pattern syntax and keywords available for code search
 
 ## Search pattern syntax
 
-This section documents the available search pattern syntax and interpretation in Sourcegraph. As of version 3.9.0 search patterns are assumed [literal](#literal-search-default) by default. To activate [regexp search](#regexp-search), click the <img width=20 src=../img/regex.png> toggle or add the `patterntype:regexp` keyword to the query. Site admins and users can change their instance and personal default behavior by changing the `search.defaultPatternType` setting to "literal" or "regexp". 
+This section documents the available search pattern syntax and interpretation in Sourcegraph. As of version 3.9.0 search patterns are assumed [literal](#literal-search-default) by default. To activate [regexp search](#regexp-search), click the <img src=../img/regex.png> toggle or add the `patterntype:regexp` keyword to the query. Site admins and users can change their instance and personal default behavior by changing the `search.defaultPatternType` setting to "literal" or "regexp". 
 
-Unless stated otherwise, Sourcegraph by default tries to match search patterns in file contents, file paths, or repository names, and will favor displaying file content matches if they exist. For example, a pattern like `file.go` _may_ match a file or contents of a file, and we display results accordingly. This behavior can be changed with [keywords](#keywords-all-searches). A search pattern is _required_ to match file content. A search pattern is _optional_ and may be omitted when searching for [commits](#keywords-diff-and-commit-searches-only), [filenames](#filename-search), or [repository names](#repository-name-search).
+Unless stated otherwise, Sourcegraph by default tries to match search patterns in file contents, filenames, or repository names, and will favor displaying file content matches if they exist. For example, a pattern like `file.go` _may_ match a file or contents of a file, and we display results accordingly. This behavior can be changed with [keywords](#keywords-all-searches). A search pattern is _required_ to match file content. A search pattern is _optional_ and may be omitted when searching for [commits](#keywords-diff-and-commit-searches-only), [filenames](#filename-search), or [repository names](#repository-name-search).
 
 ### Literal search (Default)
 
-Literal search interprets search patterns literally to simplify searching words or punctuation. Here is a list of valid syntax and behavior:
+Literal search interprets search patterns literally to simplify searching for words or punctuation. 
 
-| Search~pattern syntax | Description | Example |
+| Search pattern syntax | Description | Example |
 | --- | --- | --- |
-| `foo bar` | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`. Matching is case-_insensitive_ (toggle the <img width=20 src=../img/case.png> button to change). | [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal) |
-| `foo  bar` | Match the string `foo  bar` (two spaces). Matching is whitespace _sensitive_ between non-whitespace strings. | [`foo  bar`](https://sourcegraph.com/search?q=foo++bar&patternType=literal) |
-| `foo()` | Match the string `foo()`. The parentheses are matched literally. | [`foo()`](https://sourcegraph.com/search?q=foo%28%29&patternType=literal)
+| `foo bar` | Match the string `foo bar`. Whitespace Matching is ordered: match `foo` followed by `bar`. Matching is case-_insensitive_ (toggle the <img src=../img/case.png> button to change). | [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal) |
 | `"foo bar"` | Match the string `"foo bar"`. The quotes are matched literally. | [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=literal) |
 
 ### Regexp search 
 
-Click the <img width=20 src=../img/regex.png> toggle to interpret search patterns as regexps. [RE2 syntax](https://golang.org/s/re2syntax) is supported. In general, special characters may be escaped with `\`. Here is a list of valid syntax and behavior:
+Click the <img src=../img/regex.png> toggle to interpret search patterns as regexps. [RE2 syntax](https://golang.org/s/re2syntax) is supported. In general, special characters may be escaped with `\`. Here is a list of valid syntax and behavior:
 
-| Search~pattern syntax | Description | Example |
+| Search pattern syntax | Description | Example |
 | --- | --- | --- |
-| `foo bar` | Search for the regexp `foo(.*?)bar`. Spaces between non-whitespace strings is converted to `.*?` to create a fuzzy search. Matching is case _insensitive_ (toggle the <img width=20 src=../img/case.png> button to change). | [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=regexp) |
-| `foo\ bar` | Search for the regexp `foo bar`. The `\` escapes the space and treats the space as part of the pattern. | [`foo\ bar`](https://sourcegraph.com/search?q=foo%5C+bar&patternType=regexp) |
-| `/foo bar/` | Search for the regexp `foo bar`. This pattern is interpreted the same as `foo\ bar`. The difference is that the delimiter syntax `/ ... /` allows to enclose a regexp so that special characters (like space) do not need to be escaped. | [`/foo bar/`](https://sourcegraph.com/search?q=/foo+bar/&patternType=regexp) |
+| `foo bar` | Search for the regexp `foo(.*?)bar`. Spaces between non-whitespace strings is converted to `.*?` to create a fuzzy search. Matching is case _insensitive_ (toggle the <img src=../img/case.png> button to change). | [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=regexp) |
+| `foo\ bar` or<br/>`/foo bar/` | Search for the regexp `foo bar`. The `\` escapes the space and treats the space as part of the pattern. Alternatively, use the delimiter syntax `/ ... /` to avoid the need for escaping spaces. | [`foo\ bar`](https://sourcegraph.com/search?q=foo%5C+bar&patternType=regexp) or<br/>[`/foo bar/`](https://sourcegraph.com/search?q=/foo+bar/&patternType=regexp)  |
 | `foo\nbar` | Perform a multiline regexp search. `\n` is interpreted as a newline. | [`foo\nbar`](https://sourcegraph.com/search?q=foo%5Cnbar&patternType=regexp) |
-| `"foo bar"` or `'foo bar'` | Match the string `foo bar`. Quoting strings while regexp is active means patterns are interpreted [literally](#literal-search-default), except that special characters like `"` and `\` may be escaped, and whitespace escape sequences like `\n` are interpreted normally. | [`"foo bar"`](https://sourcegraph.com/search?q=%27foo+bar%27&patternType=regexp) |
+| `"foo bar"` or<br/>`'foo bar'` | Match the string _literal_ `foo bar`. Quoting strings when regexp is active means patterns are interpreted [literally](#literal-search-default), except that special characters like `"` and `\` may be escaped, and whitespace escape sequences like `\n` are interpreted normally. | [`"foo bar"`](https://sourcegraph.com/search?q=%27foo+bar%27&patternType=regexp) |
 
 ### Structural search
 
-Click the <img width=20 src=../img/brackets.png> toggle to activate [structural search](structural.md). Structural search is a way to match more complex syntactic structures in code, and thus only applies to matching file contents. See the dedicated [usage documentation](structural.md) for more details. Here is a  brief overview of valid syntax:
+Click the <img src=../img/brackets.png> toggle to activate [structural search](structural.md). Structural search is a way to match more complex syntactic structures in code, and thus only applies to matching file contents. See the dedicated [usage documentation](structural.md) for more details. Here is a  brief overview of valid syntax:
 
-| Search~pattern~syntax | Description | Example |
+| Search pattern syntax | Description | Example |
 | --- | --- | --- |
 | `New(:[args])` | Match the string `New` followed by _balanced parentheses_ containing zero or more characters, including newlines. Matching is _case-sensitive_. Make the search [language-aware](structural#current-functionality-and-restrictions) by adding a `lang:` [keyword](#keywords-all-searches). | [`New(:[args]) lang:go`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28:%5Bargs%5D%29+lang:go&patternType=structural) |
-| `'New(:[args])'` | Quoting the search pattern has the same meaning, but avoids syntax errors that may conflict with [keyword syntax](#keywords-all-searches). Special characters like `"` and `\` may be escaped. | [`'New(:[args])' lang:go`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++%27New%28:%5Bargs%5D%29%27+lang:go&patternType=structural) | 
+| `"New(:[args])"` or `'New(:[args])'`  | Quoting the search pattern has the same meaning as `New(:[args])`, but avoids syntax errors that may conflict with [keyword syntax](#keywords-all-searches). Special characters like `"` and `\` may be escaped. | [`"New(:[args])" lang:go`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%22New%28:%5Bargs%5D%29%22+lang:go&patternType=structural) | 
 
-Note: It is not possible to perform case-insensitive matching. 
+Note: It is not possible to perform case-insensitive matching with structural search. 
 
 ## Keywords (all searches)
 
