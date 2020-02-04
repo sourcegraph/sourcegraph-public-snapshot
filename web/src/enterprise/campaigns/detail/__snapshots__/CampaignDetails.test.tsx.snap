@@ -21216,7 +21216,9 @@ Array [
         >
           <summary>
             <span
-              className="btn btn-secondary mr-1 dropdown-toggle"
+              className="btn btn-secondary mr-1 dropdown-toggle disabled"
+              data-tooltip="Cannot close while campaign is being created"
+              onClick={[Function]}
             >
               Close
             </span>
@@ -21256,7 +21258,7 @@ Array [
                 </div>
                 <button
                   className="btn mr-1 btn-secondary"
-                  disabled={false}
+                  disabled={true}
                   onClick={[Function]}
                   type="button"
                 >
@@ -21271,7 +21273,9 @@ Array [
         >
           <summary>
             <span
-              className="btn btn-danger dropdown-toggle"
+              className="btn btn-danger dropdown-toggle disabled"
+              data-tooltip="Cannot delete while campaign is being created"
+              onClick={[Function]}
             >
               Delete
             </span>
@@ -21311,7 +21315,7 @@ Array [
                 </div>
                 <button
                   className="btn mr-1 btn-danger"
-                  disabled={false}
+                  disabled={true}
                   onClick={[Function]}
                   type="button"
                 >

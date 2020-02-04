@@ -18,6 +18,31 @@ type CodeIntelResolver interface {
 	LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error)
 }
 
+var codeIntelOnlyInEnterprise = errors.New("lsif uploads and queries are only available in enterprise")
+
+type defaultCodeIntelResolver struct{}
+
+func (defaultCodeIntelResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*EmptyResponse, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (r *schemaResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	// We need to override the embedded method here as it takes slightly different arguments
+	return r.CodeIntelResolver.DeleteLSIFUpload(ctx, args.ID)
+}
+
 type LSIFUploadsQueryArgs struct {
 	graphqlutil.ConnectionArgs
 	Query           *string
@@ -88,13 +113,4 @@ type LocationConnectionResolver interface {
 type HoverResolver interface {
 	Markdown() MarkdownResolver
 	Range() RangeResolver
-}
-
-var codeIntelOnlyInEnterprise = errors.New("lsif uploads and queries are only available in enterprise")
-
-func (r *schemaResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
-	return EnterpriseResolvers.codeIntelResolver.DeleteLSIFUpload(ctx, args.ID)
 }

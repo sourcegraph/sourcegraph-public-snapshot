@@ -102,13 +102,26 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 }
 
 func NewSchema(a8n A8NResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
-	EnterpriseResolvers.a8nResolver = a8n
-	EnterpriseResolvers.codeIntelResolver = codeIntel
-	EnterpriseResolvers.authzResolver = authz
+	resolver := &schemaResolver{
+		A8NResolver:       defaultA8NResolver{},
+		AuthzResolver:     defaultAuthzResolver{},
+		CodeIntelResolver: defaultCodeIntelResolver{},
+	}
+	if a8n != nil {
+		resolver.A8NResolver = a8n
+	}
+	if codeIntel != nil {
+		EnterpriseResolvers.codeIntelResolver = codeIntel
+		resolver.CodeIntelResolver = codeIntel
+	}
+	if authz != nil {
+		EnterpriseResolvers.authzResolver = authz
+		resolver.AuthzResolver = authz
+	}
 
 	return graphql.ParseSchema(
 		Schema,
-		&schemaResolver{},
+		resolver,
 		graphql.Tracer(prometheusTracer{}),
 	)
 }
@@ -241,15 +254,21 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
-type schemaResolver struct{}
+type schemaResolver struct {
+	A8NResolver
+	AuthzResolver
+	CodeIntelResolver
+}
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	a8nResolver       A8NResolver
 	codeIntelResolver CodeIntelResolver
 	authzResolver     AuthzResolver
-}{}
+}{
+	codeIntelResolver: defaultCodeIntelResolver{},
+	authzResolver:     defaultAuthzResolver{},
+}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
@@ -269,25 +288,13 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
 	case "Campaign":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.CampaignByID(ctx, id)
+		return r.CampaignByID(ctx, id)
 	case "CampaignPlan":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.CampaignPlanByID(ctx, id)
+		return r.CampaignPlanByID(ctx, id)
 	case "ExternalChangeset":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.ChangesetByID(ctx, id)
+		return r.ChangesetByID(ctx, id)
 	case "ChangesetPlan":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.ChangesetPlanByID(ctx, id)
+		return r.ChangesetPlanByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
@@ -325,10 +332,7 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	case "Site":
 		return siteByGQLID(ctx, id)
 	case "LSIFUpload":
-		if EnterpriseResolvers.codeIntelResolver == nil {
-			return nil, codeIntelOnlyInEnterprise
-		}
-		return EnterpriseResolvers.codeIntelResolver.LSIFUploadByID(ctx, id)
+		return r.LSIFUploadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

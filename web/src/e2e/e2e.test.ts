@@ -1731,4 +1731,30 @@ describe('e2e test suite', () => {
             await driver.assertWindowLocation('/search?q=test&patternType=literal')
         })
     })
+
+    describe('Structural search toggle', () => {
+        test('Clicking toggle turns on structural search', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
+            await driver.page.waitForSelector('.e2e-structural-search-toggle')
+            await driver.page.type('.e2e-query-input', 'test')
+            await driver.page.click('.e2e-structural-search-toggle')
+            await driver.assertWindowLocation('/search?q=test&patternType=structural')
+        })
+
+        test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
+            await driver.page.waitForSelector('.e2e-structural-search-toggle')
+            await driver.page.click('.e2e-structural-search-toggle')
+            await driver.assertWindowLocation('/search?q=test&patternType=structural')
+        })
+
+        test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
+            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
+            await driver.page.waitForSelector('.e2e-structural-search-toggle')
+            await driver.page.click('.e2e-structural-search-toggle')
+            await driver.assertWindowLocation('/search?q=test&patternType=literal')
+        })
+    })
 })
