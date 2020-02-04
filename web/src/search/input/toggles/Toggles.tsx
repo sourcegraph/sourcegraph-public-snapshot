@@ -35,6 +35,10 @@ interface SubmitSearchArgs {
  * The toggles displayed in the query input.
  */
 export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesProps) => {
+    const structuralSearchDisabled =
+        window.context.experimentalFeatures &&
+        window.context.experimentalFeatures?.structuralSearch === 'disabled'
+
     const submitOnToggle = (args: SubmitSearchArgs): void => {
         const searchQueryNotEmpty =
             props.navbarSearchQuery !== '' || (props.filtersInQuery && !isEmpty(props.filtersInQuery))
@@ -144,15 +148,17 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 disabledCondition={props.patternType === SearchPatternType.structural}
                 disabledMessage="Structural search uses Comby syntax"
             />
-            <QueryInputToggle
-                {...props}
-                title="Structural search"
-                className="e2e-structural-search-toggle"
-                activeClassName="e2e-structural-search-toggle--active"
-                isActive={props.patternType === SearchPatternType.structural}
-                onToggle={toggleStructuralSearch}
-                icon={CodeBracketsIcon}
-            />
+            {!structuralSearchDisabled && (
+                <QueryInputToggle
+                    {...props}
+                    title="Structural search"
+                    className="e2e-structural-search-toggle"
+                    activeClassName="e2e-structural-search-toggle--active"
+                    isActive={props.patternType === SearchPatternType.structural}
+                    onToggle={toggleStructuralSearch}
+                    icon={CodeBracketsIcon}
+                />
+            )}
         </div>
     )
 }
