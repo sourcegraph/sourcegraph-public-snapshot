@@ -1,17 +1,14 @@
 {
-  "ID": "MDExOlB1bGxSZXF1ZXN0MzY5MDMyNzkw",
+  "ID": "MDExOlB1bGxSZXF1ZXN0MzY5NTAxNTc1",
   "Title": "This is a test PR, feel free to ignore",
   "Body": "I'm opening this PR to test something. Please ignore.",
   "State": "OPEN",
-  "URL": "https://github.com/sourcegraph/automation-testing/pull/132",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/134",
   "HeadRefOid": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
   "BaseRefOid": "3b79a5d479d2af9cfe91e0aad4e9dddca7278150",
   "HeadRefName": "test-pr-3",
   "BaseRefName": "master",
-  "Labels": {
-   "Nodes": []
-  },
-  "Number": 132,
+  "Number": 134,
   "Author": {
    "AvatarURL": "https://avatars3.githubusercontent.com/u/25610?v=4",
    "Login": "ryanslade",
@@ -30,6 +27,6 @@
    }
   ],
   "TimelineItems": [],
-  "CreatedAt": "2020-01-30T11:53:48Z",
-  "UpdatedAt": "2020-01-30T11:53:48Z"
+  "CreatedAt": "2020-01-31T10:00:44Z",
+  "UpdatedAt": "2020-01-31T10:00:44Z"
  }

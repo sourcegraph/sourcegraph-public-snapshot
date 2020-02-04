@@ -9,9 +9,6 @@
    "BaseRefOid": "f7097fe19816d0a9d637dc759722f6f43fd057ea",
    "HeadRefName": "disable-extension-native-integratin",
    "BaseRefName": "master",
-   "Labels": {
-    "Nodes": []
-   },
    "Number": 5550,
    "Author": {
     "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
@@ -218,9 +215,6 @@
    "BaseRefOid": "461ce5917a4adb92c741ca39e3dcc543727ec6d1",
    "HeadRefName": "stat-headers",
    "BaseRefName": "master",
-   "Labels": {
-    "Nodes": []
-   },
    "Number": 50,
    "Author": {
     "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
@@ -320,15 +314,6 @@
    "BaseRefOid": "cec6864065fbe12890b3778af1f76c03b03c801a",
    "HeadRefName": "a8n/changeset-events",
    "BaseRefName": "master",
-   "Labels": {
-    "Nodes": [
-     {
-      "Color": "ef820a",
-      "Description": "",
-      "Name": "automation"
-     }
-    ]
-   },
    "Number": 5834,
    "Author": {
     "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
@@ -583,6 +568,23 @@
        "URL": "https://github.com/orgs/sourcegraph/teams/automation"
       },
       "CreatedAt": "2019-10-07T07:59:23Z"
+     }
+    },
+    {
+     "Type": "LabeledEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "Login": "mrnugget",
+       "URL": "https://github.com/mrnugget"
+      },
+      "Label": {
+       "Color": "ef820a",
+       "Description": "",
+       "Name": "automation"
+      },
+      "CreatedAt": "2019-10-07T12:28:25Z",
+      "Removed": false
      }
     },
     {
