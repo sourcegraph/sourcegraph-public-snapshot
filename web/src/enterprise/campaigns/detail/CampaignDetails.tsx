@@ -466,7 +466,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             buttonText="Delete"
                                             onButtonClick={onDelete}
                                             buttonClassName="btn-danger"
-                                            buttonDisabled={mode === 'deleting' || mode === 'closing'}
+                                            buttonDisabled={
+                                                mode === 'deleting' ||
+                                                mode === 'closing' ||
+                                                campaign.status.state === GQL.BackgroundProcessState.PROCESSING
+                                            }
                                         />
                                     </>
                                 )
