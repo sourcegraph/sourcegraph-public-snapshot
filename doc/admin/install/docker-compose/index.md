@@ -1,13 +1,15 @@
 # Install Sourcegraph with Docker Compose
 
-| Deployment Type                               | Suggested for                                       | Setup time | Multi-machine? | Auto healing? | Monitoring? |
-|-----------------------------------------------|-----------------------------------------------------|------------|----------------|---------------|-------------|
-| [Single-container server](../docker/index.md) | Local testing                                       | 60 seconds | Impossible     | No            | No          |
-| [Docker-compose](index.md)                    | Small & medium production deployments               | 5 minutes  | Possible       | No            | Yes         |
-| [Kubernetes](../cluster.md)                   | Medium & large highly-available cluster deployments | 30 minutes | Easily         | Yes           | Yes         |
+| Deployment Type                                          | Suggested for                                       | Setup time | Multi-machine? | Auto healing? | Monitoring? |
+|----------------------------------------------------------|-----------------------------------------------------|------------|----------------|---------------|-------------|
+| [Single-container server](../../install/docker/index.md) | Local testing                                       | 60 seconds | Impossible     | No            | No          |
+| [Docker-compose](../../install/docker-compose/index.md)  | Small & medium production deployments               | 5 minutes  | Possible       | No            | Yes         |
+| [Kubernetes](../../install/cluster.md)                   | Medium & large highly-available cluster deployments | 30 minutes | Easily         | Yes           | Yes         |
 
 * If you're just starting out, we recommend [running Sourcegraph locally](../docker/index.md). It takes only a few minutes and lets you try out all of the features.
 * If you need scalability and high-availability beyond what a single-node [Docker Compose](https://docs.docker.com/compose/) can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), instead.
+
+---
 
 It takes less than 5 minutes to run and install Sourcegraph using Docker Compose:
 
@@ -24,16 +26,15 @@ For next steps and further configuration options, visit the [site administration
 
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
-## 
+## Storage
 
-
-By default, Sourcegraph's Docker Compse definition uses [Docker volumes]
+The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount). 
 
 ## Cloud installation guides
 
 Cloud specific Sourcegraph installation guides for AWS, Google Cloud and Digital Ocean.
 
-- [Install Sourcegraph with Docker Compose on AWS](../../install/docker-dcompose/aws.md)
+- [Install Sourcegraph with Docker Compose on AWS](../../install/docker-compose/aws.md)
 - [Install Sourcegraph with Docker Compose on Google Cloud](../../install/docker-compose/google_cloud.md)
 - [Install Sourcegraph with Docker Compose on DigitalOcean](../../install/docker-compose/digitalocean.md)
 
