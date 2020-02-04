@@ -8,7 +8,7 @@ import { SettingsCascadeProps } from '../../../../../shared/src/settings/setting
 import { SearchPatternType } from '../../../../../shared/src/graphql/schema'
 import { isEmpty } from 'lodash'
 import { submitSearch } from '../../helpers'
-import { Toggle } from './Toggle'
+import { QueryInputToggle } from './QueryInputToggle'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
@@ -122,7 +122,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
 
     return (
         <div className="query-input2__toggle-container">
-            <Toggle
+            <QueryInputToggle
                 {...props}
                 title="Case sensitivity"
                 isActive={props.caseSensitive}
@@ -133,7 +133,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 disabledCondition={props.patternType === SearchPatternType.structural}
                 disabledMessage="Structural search is always case sensitive"
             />
-            <Toggle
+            <QueryInputToggle
                 {...props}
                 title="Regular expression"
                 isActive={props.patternType === SearchPatternType.regexp}
@@ -144,7 +144,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 disabledCondition={props.patternType === SearchPatternType.structural}
                 disabledMessage="Structural search uses Comby syntax"
             />
-            <Toggle
+            <QueryInputToggle
                 {...props}
                 title="Structural search"
                 className="e2e-structural-search-toggle"

@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators'
 import { PatternTypeProps, CaseSensitivityProps } from '../..'
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 import classNames from 'classnames'
+import { Key } from 'ts-key-enum'
 
 export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
     history: H.History
@@ -32,7 +33,7 @@ export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
 /**
  * A toggle displayed in the QueryInput.
  */
-export class Toggle extends React.Component<ToggleProps> {
+export class QueryInputToggle extends React.Component<ToggleProps> {
     private subscriptions = new Subscription()
     private toggleCheckbox = React.createRef<HTMLDivElement>()
 
@@ -43,7 +44,7 @@ export class Toggle extends React.Component<ToggleProps> {
                     filter(
                         event =>
                             document.activeElement === this.toggleCheckbox.current &&
-                            (event.keyCode === 13 || event.keyCode === 32)
+                            (event.key === Key.Enter || event.key === ' ')
                     )
                 )
                 .subscribe(event => {
@@ -70,7 +71,7 @@ export class Toggle extends React.Component<ToggleProps> {
                 className={classNames(
                     'btn btn-icon icon-inline query-input2__toggle e2e-regexp-toggle',
                     this.props.className,
-                    { 'query-input2__toggle--disabled': this.props.disabledCondition }
+                    { disabled: this.props.disabledCondition }
                 )}
                 role="checkbox"
                 aria-disabled={this.props.disabledCondition}
