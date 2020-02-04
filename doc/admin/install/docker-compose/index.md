@@ -9,7 +9,7 @@
 * If you're just starting out, we recommend [running Sourcegraph locally](../docker/index.md). It takes only a few minutes and lets you try out all of the features.
 * If you need scalability and high-availability beyond what a single-node [Docker Compose](https://docs.docker.com/compose/) can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), instead.
 
-It takes less than 5 minutes to run and install Sourcegraph using Docker Ccompose:
+It takes less than 5 minutes to run and install Sourcegraph using Docker Compose:
 
 ```bash
 git clone git@github.com:sourcegraph/deploy-sourcegraph-docker.git
