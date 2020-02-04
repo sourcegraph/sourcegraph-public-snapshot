@@ -201,6 +201,9 @@ var repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
 
 // repoRemoteRefs returns a map containing ref + commit pairs from the
 // remote Git repository starting with the specified prefix.
+//
+// The ref prefix `ref/<ref type>/` is stripped away from the returned
+// refs.
 var repoRemoteRefs = func(ctx context.Context, url, prefix string) (map[string]string, error) {
 	// The expected output of this git command is a list of:
 	// <commit hash> <ref name>
