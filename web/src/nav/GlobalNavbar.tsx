@@ -117,7 +117,6 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                 } else {
                     this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
                 }
-
             }
         }
     }
