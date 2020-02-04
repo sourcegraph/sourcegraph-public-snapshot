@@ -11,11 +11,11 @@ When running Sourcegraph in production, deploying Sourcegraph via [Docker Compos
 
 ## Deploy to EC2
 
-- Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
-- Select the Amazon Linux 2 AMI (HVM), SSD Volume Type.
-- Select an appropriate instance size (we recommend `t2.2xlarge` or larger, depending on team size and number of repositories/languages enabled), then **Next: Configure Instance Details**
-- Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
-- Add the following user data (as text) in the **Advanced Details** section:
+1. Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
+1. Select the **Amazon Linux 2 AMI (HVM), SSD Volume Type**.
+1. Select an appropriate instance size (we recommend `t2.2xlarge` or larger, depending on team size and number of repositories/languages enabled), then **Next: Configure Instance Details**
+1. Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
+1. Add the following user data (as text) in the **Advanced Details** section:
 
    ```yaml
    #cloud-config
@@ -46,22 +46,30 @@ When running Sourcegraph in production, deploying Sourcegraph via [Docker Compos
    - docker-compose up -d
    ```
 
-- Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
-  - Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
-  - Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration))
-- Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and viewing the logs:
+1. Select **Next: Add Storage**
+1. Select the following settings for the Root volume:
 
-  - Following the status of the user data script that you provided earlier:
-    
-    ```bash
-    tail -f /var/log/cloud-init-output.log
-    ```
+    * **Size (GiB)**: `200` GB minimum *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid [resizing your boot disk](https://cloud.google.com/compute/docs/disks/add-persistent-disk#resize_pd) later on.)*
+    * **Volume Type**: General Purpose SSD (gp2)
 
-  - (Once the user data script completes) monitoring the health of the `sourcegraph-frontend` container:
+1. Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
 
-     ```bash
-     docker ps --filter="name=sourcegraph-frontend-0"
-     ```
+    * Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
+    * Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration))
+
+1. Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and viewing the logs:
+
+    * Following the status of the user data script that you provided earlier:
+
+      ```bash
+      tail -f /var/log/cloud-init-output.log
+      ```
+
+    * (Once the user data script completes) monitoring the health of the `sourcegraph-frontend` container:
+
+      ```bash
+      docker ps --filter="name=sourcegraph-frontend-0"
+      ```
 
 ---
 
@@ -75,6 +83,16 @@ git pull
 git checkout vX.Y.Z
 docker-compose up -d
 ```
+
+---
+
+## Storage and Backups
+
+The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount). There are a few different back ways to backup this data:
+
+* (**default, recommended**) The most straightfoward method backup to backup this data is to [snapshot the entire disk that the EC2 instance is using](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
+
+* Using an external Postgres instance (see below) lets a service such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) take care of backing up all of Sourcegraph's user data for you. If the EC2 instance running Sourcegraph ever dies or is destroyed, creating a fresh instance that's connected to that external Postgres will leave Sourcegraph in the same state that it was before.
 
 ---
 
