@@ -78,10 +78,6 @@ type Label struct {
 	Name        string
 }
 
-type LabelConnection struct {
-	Nodes []Label
-}
-
 // PullRequest is a GitHub pull request.
 type PullRequest struct {
 	RepoWithOwner string `json:"-"`
@@ -94,7 +90,6 @@ type PullRequest struct {
 	BaseRefOid    string
 	HeadRefName   string
 	BaseRefName   string
-	Labels        LabelConnection
 	Number        int64
 	Author        Actor
 	Participants  []Actor
@@ -300,6 +295,19 @@ func (e UnassignedEvent) Key() string {
 	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CreatedAt.UnixNano())
 }
 
+// LabelEvent represents a label being added or removed from a pull request
+type LabelEvent struct {
+	Actor     Actor
+	Label     Label
+	CreatedAt time.Time
+	// Will be true if we had an "unlabeled" event
+	Removed bool
+}
+
+func (e LabelEvent) Key() string {
+	return fmt.Sprintf("%s:%s:%v:%d", e.Actor.Login, e.Label.Name, e.Removed, e.CreatedAt.UnixNano())
+}
+
 // TimelineItem is a union type of all supported pull request timeline items.
 type TimelineItem struct {
 	Type string
@@ -349,12 +357,16 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 		i.Item = new(ReviewRequestedEvent)
 	case "UnassignedEvent":
 		i.Item = new(UnassignedEvent)
+	case "LabeledEvent":
+		i.Item = new(LabelEvent)
+	case "UnlabeledEvent":
+		i.Item = &LabelEvent{Removed: true}
 	default:
 		return errors.Errorf("unknown timeline item type %q", i.Type)
 	}
 
 	if len(v.Item) > 0 {
-		data = []byte(v.Item)
+		data = v.Item
 	}
 
 	return json.Unmarshal(data, i.Item)
@@ -629,144 +641,234 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	pr := results.Repository.PullRequests.Nodes[0].PullRequest
 	pr.Participants = results.Repository.PullRequests.Nodes[0].Participants.Nodes
 	pr.TimelineItems = results.Repository.PullRequests.Nodes[0].TimelineItems.Nodes
-	pr.Labels = results.Repository.PullRequests.Nodes[0].Labels
 
 	return &pr, nil
 }
 
 const pullRequestFragments = `
-fragment actor on Actor { avatarUrl, login, url }
+fragment actor on Actor {
+  avatarUrl
+  login
+  url
+}
+
+fragment label on Label {
+  name
+  color
+  description
+}
+
 fragment commit on Commit {
-	oid, message, messageHeadline, committedDate, pushedDate, url
-	committer {
-	avatarUrl, email, name
-	user { ...actor }
-	}
+  oid
+  message
+  messageHeadline
+  committedDate
+  pushedDate
+  url
+  committer {
+    avatarUrl
+    email
+    name
+    user {
+      ...actor
+    }
+  }
 }
+
 fragment review on PullRequestReview {
-	databaseId
-	author { ...actor }
-	authorAssociation
-	body
-	state
-	url
-	createdAt
-	updatedAt
-	commit { ...commit }
-	includesCreatedEdit
+  databaseId
+  author {
+    ...actor
+  }
+  authorAssociation
+  body
+  state
+  url
+  createdAt
+  updatedAt
+  commit {
+    ...commit
+  }
+  includesCreatedEdit
 }
+
 fragment pr on PullRequest {
-	id, title, body, state, url, number, createdAt, updatedAt
-	headRefOid, baseRefOid, headRefName, baseRefName
-	labels(first:100) { nodes { color description name } }
-	author { ...actor }
-	participants(first: 100) { nodes { ...actor } }
-	timelineItems(
-	first: 250
-	itemTypes: [
-		ASSIGNED_EVENT
-		CLOSED_EVENT
-		ISSUE_COMMENT
-		RENAMED_TITLE_EVENT
-		MERGED_EVENT
-		PULL_REQUEST_REVIEW
-		PULL_REQUEST_REVIEW_THREAD
-		REOPENED_EVENT
-		REVIEW_DISMISSED_EVENT
-		REVIEW_REQUEST_REMOVED_EVENT
-		REVIEW_REQUESTED_EVENT
-		UNASSIGNED_EVENT
-	]
-	) {
-	nodes {
-		__typename
-		... on AssignedEvent {
-		actor { ...actor }
-		assignee { ...actor }
-		createdAt
-		}
-		... on ClosedEvent {
-		actor { ...actor }
-		createdAt
-		url
-		}
-		... on IssueComment {
-		databaseId
-		author { ...actor }
-		authorAssociation
-		body
-		createdAt
-		editor { ...actor }
-		url
-		updatedAt
-		includesCreatedEdit
-		publishedAt
-		}
-		... on RenamedTitleEvent {
-		actor { ...actor }
-		previousTitle
-		currentTitle
-		createdAt
-		}
-		... on MergedEvent {
-		actor { ...actor }
-		mergeRefName
-		url
-		commit { ...commit }
-		createdAt
-		}
-		... on PullRequestReview {
-		...review
-		}
-		... on PullRequestReviewThread {
-		comments(last: 100) {
-			nodes {
-			databaseId
-			author { ...actor }
-			authorAssociation
-			editor { ...actor }
-			commit { ...commit }
-			body
-			state
-			url
-			createdAt
-			updatedAt
-			includesCreatedEdit
-			}
-		}
-		}
-		... on ReopenedEvent {
-		actor { ...actor }
-		createdAt
-		}
-		... on ReviewDismissedEvent {
-		actor { ...actor }
-		review { ...review }
-		dismissalMessage
-		createdAt
-		}
-		... on ReviewRequestRemovedEvent {
-		actor { ...actor }
-		requestedReviewer { ...actor }
-		requestedTeam: requestedReviewer {
-			... on Team { name url avatarUrl }
-		}
-		createdAt
-		}
-		... on ReviewRequestedEvent {
-		actor { ...actor }
-		requestedReviewer { ...actor }
-		requestedTeam: requestedReviewer {
-			... on Team { name url avatarUrl }
-		}
-		createdAt
-		}
-		... on UnassignedEvent {
-		actor { ...actor }
-		assignee { ...actor }
-		createdAt
-		}
-	}
-	}
+  id
+  title
+  body
+  state
+  url
+  number
+  createdAt
+  updatedAt
+  headRefOid
+  baseRefOid
+  headRefName
+  baseRefName
+  author {
+    ...actor
+  }
+  participants(first: 100) {
+    nodes {
+      ...actor
+    }
+  }
+  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT]) {
+    nodes {
+      __typename
+      ... on AssignedEvent {
+        actor {
+          ...actor
+        }
+        assignee {
+          ...actor
+        }
+        createdAt
+      }
+      ... on ClosedEvent {
+        actor {
+          ...actor
+        }
+        createdAt
+        url
+      }
+      ... on IssueComment {
+        databaseId
+        author {
+          ...actor
+        }
+        authorAssociation
+        body
+        createdAt
+        editor {
+          ...actor
+        }
+        url
+        updatedAt
+        includesCreatedEdit
+        publishedAt
+      }
+      ... on RenamedTitleEvent {
+        actor {
+          ...actor
+        }
+        previousTitle
+        currentTitle
+        createdAt
+      }
+      ... on MergedEvent {
+        actor {
+          ...actor
+        }
+        mergeRefName
+        url
+        commit {
+          ...commit
+        }
+        createdAt
+      }
+      ... on PullRequestReview {
+        ...review
+      }
+      ... on PullRequestReviewThread {
+        comments(last: 100) {
+          nodes {
+            databaseId
+            author {
+              ...actor
+            }
+            authorAssociation
+            editor {
+              ...actor
+            }
+            commit {
+              ...commit
+            }
+            body
+            state
+            url
+            createdAt
+            updatedAt
+            includesCreatedEdit
+          }
+        }
+      }
+      ... on ReopenedEvent {
+        actor {
+          ...actor
+        }
+        createdAt
+      }
+      ... on ReviewDismissedEvent {
+        actor {
+          ...actor
+        }
+        review {
+          ...review
+        }
+        dismissalMessage
+        createdAt
+      }
+      ... on ReviewRequestRemovedEvent {
+        actor {
+          ...actor
+        }
+        requestedReviewer {
+          ...actor
+        }
+        requestedTeam: requestedReviewer {
+          ... on Team {
+            name
+            url
+            avatarUrl
+          }
+        }
+        createdAt
+      }
+      ... on ReviewRequestedEvent {
+        actor {
+          ...actor
+        }
+        requestedReviewer {
+          ...actor
+        }
+        requestedTeam: requestedReviewer {
+          ... on Team {
+            name
+            url
+            avatarUrl
+          }
+        }
+        createdAt
+      }
+      ... on UnassignedEvent {
+        actor {
+          ...actor
+        }
+        assignee {
+          ...actor
+        }
+        createdAt
+      }
+      ... on LabeledEvent {
+        actor {
+          ...actor
+        }
+        label {
+          ...label
+        }
+        createdAt
+      }
+      ... on UnlabeledEvent {
+        actor {
+          ...actor
+        }
+        label {
+          ...label
+        }
+        createdAt
+      }
+    }
+  }
 }
 `

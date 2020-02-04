@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - An experimental tool [src-expose](https://docs.sourcegraph.com/admin/external_service/other#experimental-src-expose) to import code from any code host.
 - Experimental: Added new field `certificates` as in `{ "experimentalFeatures" { "tls.external": { "certificates": ["<CERT>"] } } }`. This allows you to add certificates to trust when communicating with a code host (via API or git+http). We expect this to be useful for adding internal certificate authorities/self-signed certificates. [#71](https://github.com/sourcegraph/sourcegraph/issues/71)
 - Added a setting `auth.minPasswordLength`, which when set, causes a minimum password length to be enforced when users sign up or change passwords. [#7521](https://github.com/sourcegraph/sourcegraph/issues/7521)
+- GitHub labels associated with automation campaigns are now displayed. [#8115](https://github.com/sourcegraph/sourcegraph/pull/8115)
 
 ### Changed
 

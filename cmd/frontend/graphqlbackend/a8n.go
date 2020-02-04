@@ -232,7 +232,7 @@ type ExternalChangesetResolver interface {
 	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
 	Head(ctx context.Context) (*GitRefResolver, error)
 	Base(ctx context.Context) (*GitRefResolver, error)
-	Labels() ([]ChangesetLabelResolver, error)
+	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 }
 
 type ChangesetPlansConnectionResolver interface {

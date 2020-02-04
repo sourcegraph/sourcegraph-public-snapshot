@@ -1,6 +1,7 @@
 package a8n
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -395,27 +396,6 @@ func (c *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 	return SelectReviewState(states), nil
 }
 
-// Labels returns the lables associated with this changeset
-func (c *Changeset) Labels() ([]ChangesetLabel, error) {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		labels := make([]ChangesetLabel, len(m.Labels.Nodes))
-		for i, label := range m.Labels.Nodes {
-			labels[i] = ChangesetLabel{
-				Name:        label.Name,
-				Color:       label.Color,
-				Description: label.Description,
-			}
-		}
-		return labels, nil
-	case *bitbucketserver.PullRequest:
-		// bitbucket server does not support labels
-		return []ChangesetLabel{}, nil
-	default:
-		return nil, errors.New("unknown changeset type")
-	}
-}
-
 // Events returns the list of ChangesetEvents from the Changeset's metadata.
 func (c *Changeset) Events() (events []*ChangesetEvent) {
 	switch m := c.Metadata.(type) {
@@ -581,6 +561,36 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 	return SelectReviewState(states), nil
 }
 
+// Labels returns the set of current labels based on the sequence of events
+func (ce *ChangesetEvents) Labels() []ChangesetLabel {
+	// Copy slice so that we don't mutate ce
+	sorted := make(ChangesetEvents, len(*ce))
+	copy(sorted, *ce)
+	sort.Sort(sorted)
+
+	// Iterate through all label events to get the current set
+	set := make(map[string]*github.LabelEvent)
+	for _, event := range sorted {
+		switch e := event.Metadata.(type) {
+		case *github.LabelEvent:
+			if e.Removed {
+				delete(set, e.Label.Name)
+			} else {
+				set[e.Label.Name] = e
+			}
+		}
+	}
+	labels := make([]ChangesetLabel, 0, len(set))
+	for _, label := range set {
+		labels = append(labels, ChangesetLabel{
+			Name:        label.Label.Name,
+			Color:       label.Label.Color,
+			Description: label.Label.Description,
+		})
+	}
+	return labels
+}
+
 // Actor returns the actor of the ChangesetEvent.
 func (e *ChangesetEvent) Actor() string {
 	var a string
@@ -609,6 +619,8 @@ func (e *ChangesetEvent) Actor() string {
 	case *github.ReviewRequestedEvent:
 		a = e.Actor.Login
 	case *github.UnassignedEvent:
+		a = e.Actor.Login
+	case *github.LabelEvent:
 		a = e.Actor.Login
 	}
 
@@ -671,6 +683,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = e.CreatedAt
 	case *github.UnassignedEvent:
 		t = e.CreatedAt
+	case *github.LabelEvent:
+		t = e.CreatedAt
 	case *bitbucketserver.Activity:
 		t = unixMilliToTime(int64(e.CreatedDate))
 	}
@@ -685,6 +699,21 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 	}
 
 	switch e := e.Metadata.(type) {
+	case *github.LabelEvent:
+		o := o.Metadata.(*github.LabelEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+		if e.Label == (github.Label{}) {
+			e.Label = o.Label
+		}
+
 	case *github.AssignedEvent:
 		o := o.Metadata.(*github.AssignedEvent)
 
@@ -1030,6 +1059,11 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitHubReviewRequested
 	case *github.UnassignedEvent:
 		return ChangesetEventKindGitHubUnassigned
+	case *github.LabelEvent:
+		if e.Removed {
+			return ChangesetEventKindGitHubUnlabeled
+		}
+		return ChangesetEventKindGitHubLabeled
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
 	default:
@@ -1069,6 +1103,10 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 			return new(github.ReviewRequestedEvent), nil
 		case ChangesetEventKindGitHubUnassigned:
 			return new(github.UnassignedEvent), nil
+		case ChangesetEventKindGitHubLabeled:
+			return new(github.LabelEvent), nil
+		case ChangesetEventKindGitHubUnlabeled:
+			return &github.LabelEvent{Removed: true}, nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
@@ -1093,6 +1131,8 @@ const (
 	ChangesetEventKindGitHubReviewRequested      ChangesetEventKind = "github:review_requested"
 	ChangesetEventKindGitHubReviewCommented      ChangesetEventKind = "github:review_commented"
 	ChangesetEventKindGitHubUnassigned           ChangesetEventKind = "github:unassigned"
+	ChangesetEventKindGitHubLabeled              ChangesetEventKind = "github:labeled"
+	ChangesetEventKindGitHubUnlabeled            ChangesetEventKind = "github:unlabeled"
 
 	ChangesetEventKindBitbucketServerApproved   ChangesetEventKind = "bitbucketserver:approved"
 	ChangesetEventKindBitbucketServerUnapproved ChangesetEventKind = "bitbucketserver:unapproved"
