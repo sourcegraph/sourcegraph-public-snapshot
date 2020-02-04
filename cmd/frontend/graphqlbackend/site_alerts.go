@@ -67,6 +67,12 @@ func init() {
 		}
 		return problems
 	})
+	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
+		if globals.ExternalURL().Scheme == "http" {
+			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/nginx)"))
+		}
+		return problems
+	})
 
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
