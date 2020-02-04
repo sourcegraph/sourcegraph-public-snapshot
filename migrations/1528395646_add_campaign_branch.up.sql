@@ -11,7 +11,8 @@ ALTER TABLE campaigns ADD COLUMN branch text;
 UPDATE 
     campaigns 
 SET 
-    branch=concat('sourcegraph/campaign-', date_part('epoch', created_at)::int);
+    branch=concat('sourcegraph/campaign-', date_part('epoch', created_at)::int)
+ WHERE branch != '';
 ALTER TABLE campaigns ALTER branch SET NOT NULL;
 
 -- Add and populate branch column to the changeset jobs tables.
