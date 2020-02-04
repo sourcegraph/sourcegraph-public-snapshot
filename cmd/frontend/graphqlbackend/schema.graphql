@@ -1903,13 +1903,13 @@ type Repository implements Node & GenericSearchResultInterface {
     ): UserConnection!
 }
 
-# A redirect URL.
+# A reference to another Sourcegraph instance.
 type Redirect {
-    # The URL of the redirect.
+    # The URL of the other Sourcegraph instance.
     url: String!
 }
 
-# A repository or a link to another Sourcegraph instance location where this repository is located.
+# A repository or a link to another Sourcegraph instance location where this repository may be located.
 union RepositoryRedirect = Repository | Redirect
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
