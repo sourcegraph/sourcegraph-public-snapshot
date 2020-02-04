@@ -54,9 +54,8 @@ export const fetchRepository = memoizeObservable(
                 }
                 if (data.repositoryRedirect.__typename === 'Redirect') {
                     throw new RepoSeeOtherError(data.repositoryRedirect.url)
-                } else {
-                    return data.repositoryRedirect
                 }
+                return data.repositoryRedirect
             })
         ),
     makeRepoURI
@@ -117,7 +116,10 @@ export const resolveRev = memoizeObservable(
                     throw new RepoSeeOtherError(data.repositoryRedirect.url)
                 }
                 if (data.repositoryRedirect.mirrorInfo.cloneInProgress) {
-                    throw new CloneInProgressError(ctx.repoName, data.repositoryRedirect.mirrorInfo.cloneProgress || undefined)
+                    throw new CloneInProgressError(
+                        ctx.repoName,
+                        data.repositoryRedirect.mirrorInfo.cloneProgress || undefined
+                    )
                 }
                 if (!data.repositoryRedirect.mirrorInfo.cloned) {
                     throw new CloneInProgressError(ctx.repoName, 'queued for cloning')
