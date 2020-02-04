@@ -27,9 +27,10 @@ type RepositoryResolver struct {
 	hydration sync.Once
 	err       error
 
-	repo    *types.Repo
-	icon    string
-	matches []*searchResultMatchResolver
+	repo        *types.Repo
+	redirectURL *string
+	icon        string
+	matches     []*searchResultMatchResolver
 }
 
 func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
@@ -93,6 +94,11 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 	}
 
 	return r.repo.Description, nil
+}
+
+// Deprecated: Use repositoryRedirect query instead.
+func (r *RepositoryResolver) RedirectURL() *string {
+	return r.redirectURL
 }
 
 func (r *RepositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {

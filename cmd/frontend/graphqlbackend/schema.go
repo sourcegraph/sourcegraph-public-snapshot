@@ -1127,7 +1127,7 @@ type Query {
         # Query the repository by name, for example "github.com/gorilla/mux".
         name: String
         # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
-        # by checking if there exists a code host configuration that matches the clone URL.
+        # by checking for a code host configuration that matches the clone URL.
         # Will not actually check the code host to see if the repository actually exists.
         cloneURL: String
         # An alias for name. DEPRECATED: use name instead.
@@ -1139,7 +1139,7 @@ type Query {
         # Query the repository by name, for example "github.com/gorilla/mux".
         name: String
         # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
-        # by checking if there exists a code host configuration that matches the clone URL.
+        # by checking for a code host configuration that matches the clone URL.
         # Will not actually check the code host to see if the repository actually exists.
         cloneURL: String
     ): RepositoryRedirect
@@ -1843,6 +1843,8 @@ type Repository implements Node & GenericSearchResultInterface {
         # Returns the first n contributors from the list.
         first: Int
     ): RepositoryContributorConnection!
+    # Link to another Sourcegraph instance location where this repository is located.
+    redirectURL: String @deprecated(reason: "use repositoryRedirect query instead")
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
     # Base64 data uri to an icon.
