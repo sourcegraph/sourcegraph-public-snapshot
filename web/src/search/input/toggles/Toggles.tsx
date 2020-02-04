@@ -38,7 +38,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     const structuralSearchDisabled =
         window.context &&
         window.context.experimentalFeatures &&
-        window.context.experimentalFeatures?.structuralSearch === 'disabled'
+        window.context.experimentalFeatures.structuralSearch === 'disabled'
 
     const submitOnToggle = (args: SubmitSearchArgs): void => {
         const searchQueryNotEmpty =
