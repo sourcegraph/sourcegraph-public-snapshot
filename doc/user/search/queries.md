@@ -23,11 +23,9 @@ This page describes search pattern syntax and keywords available for code search
 
 ## Search pattern syntax
 
-This section documents the available search pattern syntax and interpretation in Sourcegraph. As of version 3.9.0 search patterns are assumed [literal](#literal-search-default) by default. To activate [regexp search](#regexp-search), click the <img src=../img/regex.png> toggle or add the `patterntype:regexp` keyword to the query. Site admins and users can change their instance and personal default behavior by changing the `search.defaultPatternType` setting to "literal" or "regexp". 
+This section documents the available search pattern syntax and interpretation in Sourcegraph. A search pattern is _required_ to match file content. A search pattern is _optional_ and may be omitted when searching for [commits](#keywords-diff-and-commit-searches-only), [filenames](#filename-search), or [repository names](#repository-name-search).
 
-A search pattern is _required_ to match file content. A search pattern is _optional_ and may be omitted when searching for [commits](#keywords-diff-and-commit-searches-only), [filenames](#filename-search), or [repository names](#repository-name-search).
-
-### Literal search (Default)
+### Literal search (default)
 
 Literal search interprets search patterns literally to simplify searching for words or punctuation. 
 
@@ -35,6 +33,9 @@ Literal search interprets search patterns literally to simplify searching for wo
 | --- | --- | 
 | [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal) | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`. Matching is case-_insensitive_ (toggle the <img src=../img/case.png> button to change). | |
 | [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=literal) | Match the string `"foo bar"`. The quotes are matched literally. |
+
+
+As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. To change the default search, site admins and users can change their instance and personal default by setting `search.defaultPatternType` to `"literal"` or `"regexp"`. 
 
 ### Regexp search 
 
