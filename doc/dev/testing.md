@@ -205,7 +205,7 @@ include:
 
 ### Manually trigger a CI build on Buildkite
 
-When a pull request is coming from a non-Sourcegrapher, it won't trigger a CI build on Buildkite automatically.
+When a pull request is coming from a non-Sourcegrapher, it won't trigger a CI build on Buildkite automatically because we want to review the code before it runs on our CI infrastructure. Please review the PR to ensure it doesn't make any malicious changes to our build scripts.
 
 Here are the steps to manually trigger a build from the web (i.e. https://buildkite.com):
 
