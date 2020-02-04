@@ -110,28 +110,28 @@ export const resolveRev = memoizeObservable(
                 if (!data) {
                     throw createAggregateError(errors)
                 }
+                if (!data.repositoryRedirect) {
+                    throw new RepoNotFoundError(ctx.repoName)
+                }
                 if (data.repositoryRedirect?.__typename === 'Redirect') {
                     throw new RepoSeeOtherError(data.repositoryRedirect.url)
                 }
-                if (!data.repository) {
-                    throw new RepoNotFoundError(ctx.repoName)
+                if (data.repositoryRedirect.mirrorInfo.cloneInProgress) {
+                    throw new CloneInProgressError(ctx.repoName, data.repositoryRedirect.mirrorInfo.cloneProgress || undefined)
                 }
-                if (data.repository.mirrorInfo.cloneInProgress) {
-                    throw new CloneInProgressError(ctx.repoName, data.repository.mirrorInfo.cloneProgress || undefined)
-                }
-                if (!data.repository.mirrorInfo.cloned) {
+                if (!data.repositoryRedirect.mirrorInfo.cloned) {
                     throw new CloneInProgressError(ctx.repoName, 'queued for cloning')
                 }
-                if (!data.repository.commit) {
+                if (!data.repositoryRedirect.commit) {
                     throw new RevNotFoundError(ctx.rev)
                 }
-                if (!data.repository.defaultBranch || !data.repository.commit.tree) {
+                if (!data.repositoryRedirect.defaultBranch || !data.repositoryRedirect.commit.tree) {
                     throw new RevNotFoundError('HEAD')
                 }
                 return {
-                    commitID: data.repository.commit.oid,
-                    defaultBranch: data.repository.defaultBranch.abbrevName,
-                    rootTreeURL: data.repository.commit.tree.url,
+                    commitID: data.repositoryRedirect.commit.oid,
+                    defaultBranch: data.repositoryRedirect.defaultBranch.abbrevName,
+                    rootTreeURL: data.repositoryRedirect.commit.tree.url,
                 }
             })
         ),
