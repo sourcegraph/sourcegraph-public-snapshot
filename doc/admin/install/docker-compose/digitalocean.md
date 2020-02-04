@@ -11,10 +11,14 @@ When running Sourcegraph in production, deploying Sourcegraph via [Docker Compos
 
 ## Run Sourcegraph on a Digital Ocean Droplet
 
-1. [Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new). Set the
-   operating system to be Ubuntu 18.04. For droplet size, we recommend at least 8 CPU and 32 GB RAM ,
-   but you may need more depending on team size and number of repositories. We recommend you set up
-   SSH access (Authentication > SSH keys) for convenient access to the droplet.
+1. [Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new). 
+
+    * Set the operating system to be **Ubuntu 18.04**. 
+    * For droplet size: we recommend at least `8` CPU and `32` GB RAM , but you may need more depending on team size and number of repositories.
+    * For disk size: we recommend a droplet with > 200 GB SSD at minimum. *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid needing to select a droplet with a larger root disk later on.)*
+    * (**optional, recommended**) Set up SSH access (Authentication > SSH keys) for convenient access to the droplet.
+    * (**optional, recommended**) Check the "Enable backups" checkbox to enable weekly backups of all your data.
+
 1. In the "Select additional options" section of the Droplet creation page, select the "User Data" and "Monitoring" boxes,
    and paste the following script in the "`Enter user data here...`" text box:
 
@@ -54,17 +58,17 @@ When running Sourcegraph in production, deploying Sourcegraph via [Docker Compos
 
 1. You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the Droplet and viewing the logs:
 
-  - Following the status of the user data script that you provided earlier:
-    
-    ```bash
-    tail -f /var/log/cloud-init-output.log
-    ```
+      * Following the status of the user data script that you provided earlier:
 
-  - (Once the user data script completes) monitoring the health of the `sourcegraph-frontend` container:
+          ```bash
+          tail -f /var/log/cloud-init-output.log
+          ```
 
-     ```bash
-     docker ps --filter="name=sourcegraph-frontend-0"
-     ```
+      * (Once the user data script completes) monitoring the health of the `sourcegraph-frontend` container:
+
+        ```bash
+        docker ps --filter="name=sourcegraph-frontend-0"
+        ```
 
 1. Navigate to the droplet's IP address to finish initializing Sourcegraph. If you have configured a
    DNS entry for the IP, configure `externalURL` to reflect that.
@@ -89,3 +93,17 @@ git pull
 git checkout vX.Y.Z
 docker-compose up -d
 ```
+
+## Storage and Backups
+
+The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount). There are a few different back ways to backup this data:
+
+* (**default, recommended**) The most straightfoward method to backup this data is to [backup the entire root disk that the droplet instance is using on an automatic, scheduled basis](https://www.digitalocean.com/docs/images/backups/).
+
+* Using an external Postgres instance (see below) lets a service such as [Digital Ocean's Managed Database for Postgres](https://www.digitalocean.com/products/managed-databases-postgresql/) take care of backing up all of Sourcegraph's user data for you. If the droplet running Sourcegraph ever dies or is destroyed, creating a fresh droplet that's connected to that external Postgres will leave Sourcegraph in the same state that it was before.
+
+## Using an external database for persistence
+
+The Docker Compose configuration has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the containers, you can [use external databases](../../external_database.md) for persistence, such as [Digital Ocean Managed Databases](https://www.digitalocean.com/products/managed-databases/) for [Postgres](https://www.digitalocean.com/products/managed-databases-postgresql/) and [Redis](https://www.digitalocean.com/products/managed-databases-redis/).
+
+> NOTE: Use of external databases requires [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).
