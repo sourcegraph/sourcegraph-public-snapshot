@@ -49,13 +49,14 @@ export const fetchRepository = memoizeObservable(
                 if (!data) {
                     throw createAggregateError(errors)
                 }
-                if (data.repositoryRedirect?.__typename === 'Redirect') {
-                    throw new RepoSeeOtherError(data.repositoryRedirect.url)
-                }
-                if (!data.repository) {
+                if (!data.repositoryRedirect) {
                     throw new RepoNotFoundError(args.repoName)
                 }
-                return data.repository
+                if (data.repositoryRedirect.__typename === 'Redirect') {
+                    throw new RepoSeeOtherError(data.repositoryRedirect.url)
+                } else {
+                    return data.repositoryRedirect
+                }
             })
         ),
     makeRepoURI
