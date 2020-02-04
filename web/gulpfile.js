@@ -15,6 +15,38 @@ const WEBPACK_STATS_OPTIONS = {
   colors: true,
 }
 
+const WEBPACK_STATS_OPTIONS = {
+  all: false,
+  timings: true,
+  errors: true,
+  warnings: true,
+  colors: true,
+}
+
+const WEBPACK_STATS_OPTIONS = {
+  all: false,
+  timings: true,
+  errors: true,
+  warnings: true,
+  colors: true,
+}
+
+const WEBPACK_STATS_OPTIONS = {
+  all: false,
+  timings: true,
+  errors: true,
+  warnings: true,
+  colors: true,
+}
+
+const WEBPACK_STATS_OPTIONS = {
+  all: false,
+  timings: true,
+  errors: true,
+  warnings: true,
+  colors: true,
+}
+
 /**
  * @param {import('webpack').Stats} stats
  */
