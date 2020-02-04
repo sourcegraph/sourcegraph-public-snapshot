@@ -172,6 +172,9 @@ func (b BackgroundProcessStatus) Errors() []string              { return b.Proce
 func (b BackgroundProcessStatus) Finished() bool {
 	return b.ProcessState != BackgroundProcessStateProcessing
 }
+func (b BackgroundProcessStatus) Processing() bool {
+	return b.ProcessState == BackgroundProcessStateProcessing
+}
 
 // BackgroundProcessState defines the possible states of a background process.
 type BackgroundProcessState string
