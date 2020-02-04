@@ -96,8 +96,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
 
-    const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
-
     // For errors during fetching
     const triggerError = useError()
 
@@ -290,7 +288,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setAlertError(undefined)
     }
 
-    const onClose = async (): Promise<void> => {
+    const onClose = async (closeChangesets: boolean): Promise<void> => {
         if (!confirm('Are you sure you want to close the campaign?')) {
             return
         }
@@ -305,7 +303,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onDelete = async (): Promise<void> => {
+    const onDelete = async (closeChangesets: boolean): Promise<void> => {
         if (!confirm('Are you sure you want to delete the campaign?')) {
             return
         }
@@ -408,8 +406,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                     </p>
                                                 }
                                                 changesetsCount={campaign.changesets.totalCount}
-                                                closeChangesets={closeChangesets}
-                                                onCloseChangesetsToggle={setCloseChangesets}
                                                 buttonText="Close"
                                                 onButtonClick={onClose}
                                                 buttonClassName="btn-secondary"
@@ -424,8 +420,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                 </p>
                                             }
                                             changesetsCount={campaign.changesets.totalCount}
-                                            closeChangesets={closeChangesets}
-                                            onCloseChangesetsToggle={setCloseChangesets}
                                             buttonText="Delete"
                                             onButtonClick={onDelete}
                                             buttonClassName="btn-danger"

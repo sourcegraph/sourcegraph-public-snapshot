@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { pluralize } from '../../../../../../shared/src/util/strings'
 
 interface Props {
@@ -6,11 +6,9 @@ interface Props {
     message: React.ReactFragment
 
     changesetsCount: number
-    closeChangesets: boolean
-    onCloseChangesetsToggle: (newValue: boolean) => void
 
     buttonText: string
-    onButtonClick: () => void
+    onButtonClick: (closeChangesets: boolean) => void
     buttonClassName?: string
     buttonDisabled?: boolean
 }
@@ -23,8 +21,6 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
     summary,
     message,
     changesetsCount,
-    closeChangesets,
-    onCloseChangesetsToggle,
     buttonText,
     onButtonClick,
     buttonClassName = '',
@@ -45,6 +41,8 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
         document.addEventListener('click', listener)
         return () => document.removeEventListener('click', listener)
     }, [detailsMenuRef])
+    const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
+    const onClick = useCallback(() => onButtonClick(closeChangesets), [onButtonClick, closeChangesets])
     return (
         <>
             <details className="campaign-prompt__details" ref={detailsMenuRef}>
@@ -58,7 +56,7 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
                                     <input
                                         type="checkbox"
                                         checked={closeChangesets}
-                                        onChange={e => onCloseChangesetsToggle(e.target.checked)}
+                                        onChange={e => setCloseChangesets(e.target.checked)}
                                     />{' '}
                                     Close all {changesetsCount} {pluralize('changeset', changesetsCount)} on code hosts
                                 </label>
@@ -67,7 +65,7 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
                                 type="button"
                                 disabled={buttonDisabled}
                                 className={`btn mr-1 ${buttonClassName}`}
-                                onClick={onButtonClick}
+                                onClick={onClick}
                             >
                                 {buttonText}
                             </button>

@@ -29,7 +29,7 @@ exports[`CloseDeleteCampaignPrompt renders 1`] = `
           >
             <label>
               <input
-                checked={true}
+                checked={false}
                 onChange={[Function]}
                 type="checkbox"
               />
