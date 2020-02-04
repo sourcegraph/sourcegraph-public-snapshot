@@ -45,7 +45,7 @@ func maybeRedisCacheProcFile() (string, error) {
 }
 
 func maybeRedisProcFile(c redisProcfileConfig) (string, error) {
-	// Redis is already configured. See envvars used in pkg/redispool.
+	// Redis is already configured. See envvars used in internal/redispool.
 	if os.Getenv("REDIS_ENDPOINT") != "" {
 		return "", nil
 	}
