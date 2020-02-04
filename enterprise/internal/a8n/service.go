@@ -327,6 +327,9 @@ func RunChangesetJob(
 		GitApplyArgs: []string{"-p0", "--unidiff-zero"},
 		Push:         true,
 	})
+	if job.Branch != "" && job.Branch != ref {
+	  return nil, fmt.Errorf("ref %q doesn't match ChangesetJob's branch %q", ref, job.Branch)
+	}
 	job.Branch = ref
 
 	if err != nil {
