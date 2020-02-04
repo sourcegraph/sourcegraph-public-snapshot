@@ -339,6 +339,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
 }) (*RepositoryResolver, error) {
+	// Deprecated query by "URI"
 	if args.URI != nil && args.Name == nil {
 		args.Name = args.URI
 	}
@@ -365,7 +366,10 @@ type repositoryRedirect struct {
 	redirect *RedirectResolver
 }
 
-func (r *repositoryRedirect) ToRepository() (*RepositoryResolver, bool) { return r.repo, r.repo != nil }
+func (r *repositoryRedirect) ToRepository() (*RepositoryResolver, bool) {
+	return r.repo, r.repo != nil
+}
+
 func (r *repositoryRedirect) ToRedirect() (*RedirectResolver, bool) {
 	return r.redirect, r.redirect != nil
 }

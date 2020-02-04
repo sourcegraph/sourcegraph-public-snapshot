@@ -21,20 +21,24 @@ export const fetchRepository = memoizeObservable(
     (args: { repoName: string }): Observable<GQL.IRepository> =>
         queryGraphQL(
             gql`
-                query Repository($repoName: String!) {
-                    repository(name: $repoName) {
-                        id
-                        name
-                        url
-                        externalURLs {
+                query RepositoryRedirect($repoName: String!) {
+                    repositoryRedirect(name: $repoName) {
+                        ... on Repository {
+                            id
+                            name
                             url
-                            serviceType
+                            externalURLs {
+                                url
+                                serviceType
+                            }
+                            description
+                            viewerCanAdminister
+                            defaultBranch {
+                                displayName
+                            }
                         }
-                        description
-                        viewerCanAdminister
-                        redirectURL
-                        defaultBranch {
-                            displayName
+                        ... on Redirect {
+                            url
                         }
                     }
                 }
@@ -45,8 +49,8 @@ export const fetchRepository = memoizeObservable(
                 if (!data) {
                     throw createAggregateError(errors)
                 }
-                if (data.repository && data.repository.redirectURL) {
-                    throw new RepoSeeOtherError(data.repository.redirectURL)
+                if (data.redirect) {
+                    throw new RepoSeeOtherError(data.redirect.url)
                 }
                 if (!data.repository) {
                     throw new RepoNotFoundError(args.repoName)
@@ -76,22 +80,26 @@ export const resolveRev = memoizeObservable(
         queryGraphQL(
             gql`
                 query ResolveRev($repoName: String!, $rev: String!) {
-                    repository(name: $repoName) {
-                        mirrorInfo {
-                            cloneInProgress
-                            cloneProgress
-                            cloned
-                        }
-                        commit(rev: $rev) {
-                            oid
-                            tree(path: "") {
-                                url
+                    repositoryRedirect(name: $repoName) {
+                        ... on Repository {
+                            mirrorInfo {
+                                cloneInProgress
+                                cloneProgress
+                                cloned
+                            }
+                            commit(rev: $rev) {
+                                oid
+                                tree(path: "") {
+                                    url
+                                }
+                            }
+                            defaultBranch {
+                                abbrevName
                             }
                         }
-                        defaultBranch {
-                            abbrevName
+                        ... on Redirect {
+                            url
                         }
-                        redirectURL
                     }
                 }
             `,
@@ -101,8 +109,8 @@ export const resolveRev = memoizeObservable(
                 if (!data) {
                     throw createAggregateError(errors)
                 }
-                if (data.repository && data.repository.redirectURL) {
-                    throw new RepoSeeOtherError(data.repository.redirectURL)
+                if (data.redirect) {
+                    throw new RepoSeeOtherError(data.redirect.url)
                 }
                 if (!data.repository) {
                     throw new RepoNotFoundError(ctx.repoName)
