@@ -278,9 +278,6 @@ The first thing we need is a Docker container in which we can freely install and
 
 ```
 FROM node:12-alpine3.10
-VOLUME /cache
-ENV YARN_CACHE_FOLDER=/cache/yarn
-ENV npm_config_cache=/cache/npm
 CMD package_json_bkup=$(mktemp) && \
 	cp package.json $package_json_bkup && \
 	yarn -s --non-interactive --pure-lockfile --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --no-progress && \
@@ -309,7 +306,6 @@ CMD package_json_bkup=$(mktemp) && \
 
 When turned into an image and run as a container, the instructions in this Dockerfile will do the following:
 
-1. Setup a reusable cache directory so that subsequent executions of the image over the same repository are faster. That's what the `VOLUME` and the two `ENV` lines accomplish.
 1. Copy the current `package.json` to a backup location so that we can install ESLint without changes to the original `package.json`
 1. Install all dependencies & add `eslint` with the `typescript-eslint` plugin
 1. Run `eslint --fix` with a set of TypeScript rules to detect and fix problems over all `*.ts` files
@@ -332,10 +328,7 @@ Once that is done we're ready to define our action:
   "steps": [
     {
       "type": "docker",
-      "image": "eslint-fix-action",
-      "cacheDirs": [
-        "/cache"
-      ]
+      "image": "eslint-fix-action"
     }
   ]
 }
@@ -343,7 +336,7 @@ Once that is done we're ready to define our action:
 
 The `"scopeQuery"` ensures that the action will only be run over repositories containing both a `yarn.lock` and a `tsconfig.json` file. This narrows the scope down to only the TypeScript projects in which we can use `yarn` to install dependencies. Feel free to narrow it down further by using more filters, such as `repo:my-project-name` to only run over repositories that have `my-project-name` in their name.
 
-The action only has a single step to execute in each repository: it runs the Docker container we just built (called `eslint-fix-action`) and uses a temporary directory that will automatically be created on the machine on which `src` is executed as a cache under `/cache` inside the container.
+The action only has a single step to execute in each repository: it runs the Docker container we just built (called `eslint-fix-action`) on the machine on which `src` is executed.
 
 Save that definition in a file called `eslint-fix-typescript.action.json` and we're ready to execute it.
 
@@ -362,6 +355,53 @@ src actions scope-query -timeout 15m -f eslint-fix-typescript.action.json | src 
 > **Note**: we're giving the action a generous timeout of 15 minutes per repository, since it needs to download and install all dependencies. With a still-empty caching directory that might take a few minutes.
 
 You should now see that the Docker container we built is being executed in a local, temporary copy of each repository. After executing, the diff it generated will be turned into a campaign plan you can preview on our Sourcegraph instance.
+
+## Caching dependencies across multiple steps using `cacheDirs`
+
+If you find yourself writing an action definition that relies on a project's dependencies to be installed for every step it can be helpful to cache these dependencies in a directory outside of the repository.
+
+For `"docker"` steps you can use the `cacheDirs` attribute:
+
+```json
+{
+  "scopeQuery": "repohasfile:package.json",
+  "steps": [
+    {
+      "type": "docker",
+      "image": "yarn-install-dependencies",
+      "cacheDirs": [ "/cache" ]
+    },
+    {
+      "type": "docker",
+      "image": "eslint-fix-action",
+      "cacheDirs": [ "/cache" ]
+    },
+    {
+      "type": "docker",
+      "image": "upgrade-typescript",
+      "cacheDirs": [ "/cache" ]
+    }
+  ]
+}
+```
+
+This defines three separate steps that all use the same `"cacheDirs"`. The specified directory `"/cache"` will be created on the machine on which `src` is executing in a temporary location and mounted in each of the three containers under `/cache`.
+
+As an example, here is the first part of `Dockerfile` that makes use of this `/cache` directory when installing dependencies with `yarn`:
+
+```
+FROM node:12-alpine3.10
+VOLUME /cache
+ENV YARN_CACHE_FOLDER=/cache/yarn
+ENV NPM_CONFIG_CACHE=/cache/npm
+CMD yarn -s --non-interactive --pure-lockfile --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --no-progress
+
+# [...]
+```
+
+This uses `/cache` as the `YARN_CACHE_FOLDER` and `NPM_CONFIG_CACHE` folder. It installs the dependencies with `yarn`, thus populating the `/cache` folder.
+
+Subsequent action steps that use this preamble in their `Dockerfile` will run faster because they can leverage the cache folder.
 
 ## Note for Automation developers
 
