@@ -7,7 +7,7 @@ BEGIN;
 --
 -- This pattern is based from the default branch name 
 -- in previous versions.
-ALTER TABLE campaigns ADD COLUMN branch text;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS branch text;
 UPDATE 
     campaigns 
 SET 
