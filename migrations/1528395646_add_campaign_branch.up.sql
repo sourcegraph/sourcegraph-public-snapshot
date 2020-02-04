@@ -22,6 +22,7 @@ ALTER TABLE changeset_jobs ADD COLUMN branch text;
 UPDATE changeset_jobs AS csj 
     SET branch=c.branch
 FROM campaigns c
-WHERE csj.campaign_id = c.id AND csj.finished_at IS NOT NULL;
+WHERE csj.campaign_id = c.id AND csj.finished_at IS NOT NULL
+AND csj.branch != '';
 
 COMMIT;
