@@ -2,9 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
@@ -18,10 +16,10 @@ func (r *siteResolver) CodeIntelUsageStatistics(ctx context.Context, args *struc
 	Weeks  *int32
 	Months *int32
 }) (*codeIntelUsageStatisticsResolver, error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("code intel usage statistics are not available on sourcegraph.com")
+	opt := &usagestats.CodeIntelUsageStatisticsOptions{
+		IncludeEventCounts:    true,
+		IncludeEventLatencies: true,
 	}
-	opt := &usagestats.CodeIntelUsageStatisticsOptions{}
 	if args.Days != nil {
 		d := int(*args.Days)
 		opt.DayPeriods = &d
@@ -102,10 +100,12 @@ func (s *codeIntelEventStatisticsResolver) UsersCount() int32 {
 }
 
 func (s *codeIntelEventStatisticsResolver) EventsCount() int32 {
-	return s.codeIntelEventStatistics.EventsCount
+	// Dereference is safe: we queried with IncludeEventCounts=true so this field is guaranteed to be populated.
+	return *s.codeIntelEventStatistics.EventsCount
 }
 
 func (s *codeIntelEventStatisticsResolver) EventLatencies() *codeIntelEventLatenciesResolver {
+	// Dereference is safe: we queried with IncludeEventLatencies=true so this field is guaranteed to be populated.
 	return &codeIntelEventLatenciesResolver{codeIntelEventLatencies: s.codeIntelEventStatistics.EventLatencies}
 }
 

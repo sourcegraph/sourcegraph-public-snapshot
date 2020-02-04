@@ -163,7 +163,7 @@ type CodeIntelEventCategoryStatistics struct {
 
 type CodeIntelEventStatistics struct {
 	UsersCount     int32
-	EventsCount    int32
+	EventsCount    *int32
 	EventLatencies *CodeIntelEventLatencies
 }
 

@@ -63,6 +63,9 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                         Aggregate counts of current users by product feature (site management, code search and
                         navigation, code review, saved searches, diff searches)
                     </li>
+                    <li>
+                        Aggregate daily, weekly, and monthly latencies (in ms) of certain events (e.g., hover tooltips)
+                    </li>
                 </ul>
                 {!pingsEnabled ? (
                     <p>Pings are disabled.</p>
