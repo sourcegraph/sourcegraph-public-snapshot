@@ -96,8 +96,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
 
-    const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
-
     // For errors during fetching
     const triggerError = useError()
 
@@ -292,7 +290,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setAlertError(undefined)
     }
 
-    const onClose = async (): Promise<void> => {
+    const onClose = async (closeChangesets: boolean): Promise<void> => {
         if (!confirm('Are you sure you want to close the campaign?')) {
             return
         }
@@ -307,7 +305,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onDelete = async (): Promise<void> => {
+    const onDelete = async (closeChangesets: boolean): Promise<void> => {
         if (!confirm('Are you sure you want to delete the campaign?')) {
             return
         }
@@ -398,8 +396,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             Edit
                                         </button>
                                         {!campaign.closedAt && (
-                                            <details className="campaign-details__details">
-                                                <summary>
+                                            <CloseDeleteCampaignPrompt
+                                                summary={
                                                     <span
                                                         className={classNames(
                                                             'btn btn-secondary mr-1 dropdown-toggle',
@@ -420,30 +418,25 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                     >
                                                         Close
                                                     </span>
-                                                </summary>
-                                                <CloseDeleteCampaignPrompt
-                                                    message={
-                                                        <p>
-                                                            Close campaign <b>{campaign.name}</b>?
-                                                        </p>
-                                                    }
-                                                    changesetsCount={campaign.changesets.totalCount}
-                                                    closeChangesets={closeChangesets}
-                                                    onCloseChangesetsToggle={setCloseChangesets}
-                                                    buttonText="Close"
-                                                    onButtonClick={onClose}
-                                                    buttonClassName="btn-secondary"
-                                                    buttonDisabled={
-                                                        mode === 'deleting' ||
-                                                        mode === 'closing' ||
-                                                        campaign.status.state === GQL.BackgroundProcessState.PROCESSING
-                                                    }
-                                                    className="position-absolute campaign-details__details-menu"
-                                                />
-                                            </details>
+                                                }
+                                                message={
+                                                    <p>
+                                                        Close campaign <strong>{campaign.name}</strong>?
+                                                    </p>
+                                                }
+                                                changesetsCount={campaign.changesets.totalCount}
+                                                buttonText="Close"
+                                                onButtonClick={onClose}
+                                                buttonClassName="btn-secondary"
+                                                buttonDisabled={
+                                                    mode === 'deleting' ||
+                                                    mode === 'closing' ||
+                                                    campaign.status.state === GQL.BackgroundProcessState.PROCESSING
+                                                }
+                                            />
                                         )}
-                                        <details className="campaign-details__details">
-                                            <summary>
+                                        <CloseDeleteCampaignPrompt
+                                            summary={
                                                 <span
                                                     className={classNames(
                                                         'btn btn-danger dropdown-toggle',
@@ -463,27 +456,22 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                 >
                                                     Delete
                                                 </span>
-                                            </summary>
-                                            <CloseDeleteCampaignPrompt
-                                                message={
-                                                    <p>
-                                                        Delete campaign <strong>{campaign.name}</strong>?
-                                                    </p>
-                                                }
-                                                changesetsCount={campaign.changesets.totalCount}
-                                                closeChangesets={closeChangesets}
-                                                onCloseChangesetsToggle={setCloseChangesets}
-                                                buttonText="Delete"
-                                                onButtonClick={onDelete}
-                                                buttonClassName="btn-danger"
-                                                buttonDisabled={
-                                                    mode === 'deleting' ||
-                                                    mode === 'closing' ||
-                                                    campaign.status.state === GQL.BackgroundProcessState.PROCESSING
-                                                }
-                                                className="position-absolute campaign-details__details-menu"
-                                            />
-                                        </details>
+                                            }
+                                            message={
+                                                <p>
+                                                    Delete campaign <strong>{campaign.name}</strong>?
+                                                </p>
+                                            }
+                                            changesetsCount={campaign.changesets.totalCount}
+                                            buttonText="Delete"
+                                            onButtonClick={onDelete}
+                                            buttonClassName="btn-danger"
+                                            buttonDisabled={
+                                                mode === 'deleting' ||
+                                                mode === 'closing' ||
+                                                campaign.status.state === GQL.BackgroundProcessState.PROCESSING
+                                            }
+                                        />
                                     </>
                                 )
                             ))}

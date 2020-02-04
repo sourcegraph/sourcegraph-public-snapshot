@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -344,11 +343,47 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
 }) (*RepositoryResolver, error) {
+	// Deprecated query by "URI"
+	if args.URI != nil && args.Name == nil {
+		args.Name = args.URI
+	}
+	resolver, err := r.RepositoryRedirect(ctx, &struct {
+		Name     *string
+		CloneURL *string
+	}{args.Name, args.CloneURL})
+	if err != nil {
+		return nil, err
+	}
+	return resolver.repo, nil
+}
+
+type RedirectResolver struct {
+	url string
+}
+
+func (r *RedirectResolver) URL() string {
+	return r.url
+}
+
+type repositoryRedirect struct {
+	repo     *RepositoryResolver
+	redirect *RedirectResolver
+}
+
+func (r *repositoryRedirect) ToRepository() (*RepositoryResolver, bool) {
+	return r.repo, r.repo != nil
+}
+
+func (r *repositoryRedirect) ToRedirect() (*RedirectResolver, bool) {
+	return r.redirect, r.redirect != nil
+}
+
+func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
+	Name     *string
+	CloneURL *string
+}) (*repositoryRedirect, error) {
 	var name api.RepoName
-	if args.URI != nil {
-		// Deprecated query by "URI"
-		name = api.RepoName(*args.URI)
-	} else if args.Name != nil {
+	if args.Name != nil {
 		// Query by name
 		name = api.RepoName(*args.Name)
 	} else if args.CloneURL != nil {
@@ -363,20 +398,20 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 			return nil, nil
 		}
 	} else {
-		return nil, errors.New("Neither name nor cloneURL given")
+		return nil, errors.New("neither name nor cloneURL given")
 	}
 
 	repo, err := backend.Repos.GetByName(ctx, name)
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
-			return &RepositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
+			return &repositoryRedirect{redirect: &RedirectResolver{url: err.RedirectURL}}, nil
 		}
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &RepositoryResolver{repo: repo}, nil
+	return &repositoryRedirect{repo: &RepositoryResolver{repo: repo}}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

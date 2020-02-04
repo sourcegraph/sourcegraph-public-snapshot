@@ -96,6 +96,7 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 	return r.repo.Description, nil
 }
 
+// Deprecated: Use repositoryRedirect query instead.
 func (r *RepositoryResolver) RedirectURL() *string {
 	return r.redirectURL
 }
