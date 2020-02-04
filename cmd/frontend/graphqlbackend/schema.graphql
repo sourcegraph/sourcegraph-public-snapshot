@@ -1139,12 +1139,24 @@ type Query {
         # Query the repository by name, for example "github.com/gorilla/mux".
         name: String
         # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
-        # by checking if there exists a code host configuration that matches the clone URL.
+        # by checking for a code host configuration that matches the clone URL.
         # Will not actually check the code host to see if the repository actually exists.
         cloneURL: String
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
+    # Looks up a repository by either name or cloneURL. When the repository does not exist on the server
+    # and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
+    # an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
+    # null.
+    repositoryRedirect(
+        # Query the repository by name, for example "github.com/gorilla/mux".
+        name: String
+        # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
+        # by checking for a code host configuration that matches the clone URL.
+        # Will not actually check the code host to see if the repository actually exists.
+        cloneURL: String
+    ): RepositoryRedirect
     # Lists all external services.
     externalServices(
         # Returns the first n external services from the list.
@@ -1846,7 +1858,7 @@ type Repository implements Node & GenericSearchResultInterface {
         first: Int
     ): RepositoryContributorConnection!
     # Link to another Sourcegraph instance location where this repository is located.
-    redirectURL: String
+    redirectURL: String @deprecated(reason: "use repositoryRedirect query instead")
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
     # Base64 data uri to an icon.
@@ -1897,6 +1909,15 @@ type Repository implements Node & GenericSearchResultInterface {
         after: String
     ): UserConnection!
 }
+
+# A reference to another Sourcegraph instance.
+type Redirect {
+    # The URL of the other Sourcegraph instance.
+    url: String!
+}
+
+# A repository or a link to another Sourcegraph instance location where this repository may be located.
+union RepositoryRedirect = Repository | Redirect
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
 type ExternalLink {
