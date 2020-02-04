@@ -60,6 +60,8 @@
 // 1528395645_event_logs_json_arguments.up.sql (135B)
 // 1528395646_add_last_verification_sent_at_to_user_emails.down.sql (90B)
 // 1528395646_add_last_verification_sent_at_to_user_emails.up.sql (104B)
+// 1528395647_remove_label_events_from_changeset_events.down.sql (39B)
+// 1528395647_remove_label_events_from_changeset_events.up.sql (106B)
 
 package migrations
 
@@ -1328,6 +1330,46 @@ func _1528395646_add_last_verification_sent_at_to_user_emailsUpSql() (*asset, er
 	return a, nil
 }
 
+var __1528395647_remove_label_events_from_changeset_eventsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\xf0\xcb\x2f\xc9\xc8\xcc\x4b\x57\x28\xc9\x57\x48\xc9\x57\xc8\x48\x2d\x4a\xe5\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x57\x94\x36\x41\x27\x00\x00\x00")
+
+func _1528395647_remove_label_events_from_changeset_eventsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395647_remove_label_events_from_changeset_eventsDownSql,
+		"1528395647_remove_label_events_from_changeset_events.down.sql",
+	)
+}
+
+func _1528395647_remove_label_events_from_changeset_eventsDownSql() (*asset, error) {
+	bytes, err := _1528395647_remove_label_events_from_changeset_eventsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395647_remove_label_events_from_changeset_events.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4b, 0xad, 0xb, 0x13, 0xcb, 0xfa, 0xd2, 0x1, 0xe3, 0x96, 0xa5, 0xaf, 0x4a, 0x78, 0xe3, 0x80, 0xcf, 0x17, 0xd0, 0x7a, 0x9b, 0xf9, 0x2b, 0x23, 0x6a, 0x4, 0x11, 0xe, 0x53, 0x22, 0xb8, 0x2c}}
+	return a, nil
+}
+
+var __1528395647_remove_label_events_from_changeset_eventsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x71\xf5\x71\x0d\x71\x55\x70\x0b\xf2\xf7\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\x4f\x2d\x4b\xcd\x2b\x29\xe6\x0a\xf7\x70\x0d\x72\x55\xc8\xce\xcc\x4b\x51\xb0\x55\x50\x4f\xcf\x2c\xc9\x28\x4d\xb2\xca\x49\x4c\x4a\xcd\x49\x4d\x51\x57\xf0\x0f\x42\x97\x2a\xcd\x83\x49\x5a\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x9a\x86\x1f\x3e\x6a\x00\x00\x00")
+
+func _1528395647_remove_label_events_from_changeset_eventsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395647_remove_label_events_from_changeset_eventsUpSql,
+		"1528395647_remove_label_events_from_changeset_events.up.sql",
+	)
+}
+
+func _1528395647_remove_label_events_from_changeset_eventsUpSql() (*asset, error) {
+	bytes, err := _1528395647_remove_label_events_from_changeset_eventsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395647_remove_label_events_from_changeset_events.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x15, 0x77, 0xad, 0x19, 0xa, 0x80, 0xbd, 0xb8, 0xbd, 0x8f, 0x65, 0xda, 0xdc, 0x91, 0xe4, 0x3d, 0xd1, 0x2b, 0x8e, 0x41, 0x89, 0xcf, 0x6d, 0xe0, 0x12, 0x39, 0xea, 0x9d, 0x58, 0x69, 0x2f, 0xd9}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1479,6 +1521,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395645_event_logs_json_arguments.up.sql":                      _1528395645_event_logs_json_argumentsUpSql,
 	"1528395646_add_last_verification_sent_at_to_user_emails.down.sql": _1528395646_add_last_verification_sent_at_to_user_emailsDownSql,
 	"1528395646_add_last_verification_sent_at_to_user_emails.up.sql":   _1528395646_add_last_verification_sent_at_to_user_emailsUpSql,
+	"1528395647_remove_label_events_from_changeset_events.down.sql":    _1528395647_remove_label_events_from_changeset_eventsDownSql,
+	"1528395647_remove_label_events_from_changeset_events.up.sql":      _1528395647_remove_label_events_from_changeset_eventsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1582,6 +1626,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395645_event_logs_json_arguments.up.sql":                      {_1528395645_event_logs_json_argumentsUpSql, map[string]*bintree{}},
 	"1528395646_add_last_verification_sent_at_to_user_emails.down.sql": {_1528395646_add_last_verification_sent_at_to_user_emailsDownSql, map[string]*bintree{}},
 	"1528395646_add_last_verification_sent_at_to_user_emails.up.sql":   {_1528395646_add_last_verification_sent_at_to_user_emailsUpSql, map[string]*bintree{}},
+	"1528395647_remove_label_events_from_changeset_events.down.sql":    {_1528395647_remove_label_events_from_changeset_eventsDownSql, map[string]*bintree{}},
+	"1528395647_remove_label_events_from_changeset_events.up.sql":      {_1528395647_remove_label_events_from_changeset_eventsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
