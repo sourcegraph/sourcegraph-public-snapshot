@@ -21212,7 +21212,7 @@ Array [
           Edit
         </button>
         <details
-          className="campaign-details__details"
+          className="campaign-prompt__details"
         >
           <summary>
             <span
@@ -21224,7 +21224,7 @@ Array [
             </span>
           </summary>
           <div
-            className="position-absolute campaign-details__details-menu"
+            className="position-absolute campaign-prompt__details-menu"
           >
             <div
               className="card mt-1"
@@ -21234,25 +21234,27 @@ Array [
               >
                 <p>
                   Close campaign 
-                  <b>
+                  <strong>
                     n
-                  </b>
+                  </strong>
                   ?
                 </p>
                 <div
                   className="form-group"
                 >
-                  <input
-                    checked={false}
-                    onChange={[Function]}
-                    type="checkbox"
-                  />
-                   
-                  Close all 
-                  2
-                   
-                  changesets
-                   on code hosts
+                  <label>
+                    <input
+                      checked={false}
+                      onChange={[Function]}
+                      type="checkbox"
+                    />
+                     
+                    Close all 
+                    2
+                     
+                    changesets
+                     on code hosts
+                  </label>
                 </div>
                 <button
                   className="btn mr-1 btn-secondary"
@@ -21267,7 +21269,7 @@ Array [
           </div>
         </details>
         <details
-          className="campaign-details__details"
+          className="campaign-prompt__details"
         >
           <summary>
             <span
@@ -21279,7 +21281,7 @@ Array [
             </span>
           </summary>
           <div
-            className="position-absolute campaign-details__details-menu"
+            className="position-absolute campaign-prompt__details-menu"
           >
             <div
               className="card mt-1"
@@ -21297,17 +21299,19 @@ Array [
                 <div
                   className="form-group"
                 >
-                  <input
-                    checked={false}
-                    onChange={[Function]}
-                    type="checkbox"
-                  />
-                   
-                  Close all 
-                  2
-                   
-                  changesets
-                   on code hosts
+                  <label>
+                    <input
+                      checked={false}
+                      onChange={[Function]}
+                      type="checkbox"
+                    />
+                     
+                    Close all 
+                    2
+                     
+                    changesets
+                     on code hosts
+                  </label>
                 </div>
                 <button
                   className="btn mr-1 btn-danger"
