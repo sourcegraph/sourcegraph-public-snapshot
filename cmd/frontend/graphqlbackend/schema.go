@@ -1133,8 +1133,10 @@ type Query {
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
-    # Looks up a repository by either name or cloneURL. If the repository does not exist on the server,
-    # it returns a Redirect to an external Sourcegraph URL that may have this repository instead.
+    # Looks up a repository by either name or cloneURL. When the repository does not exist on the server
+    # and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
+    # an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
+    # null.
     repositoryRedirect(
         # Query the repository by name, for example "github.com/gorilla/mux".
         name: String
@@ -1896,13 +1898,13 @@ type Repository implements Node & GenericSearchResultInterface {
     ): UserConnection!
 }
 
-# A redirect URL.
+# A reference to another Sourcegraph instance.
 type Redirect {
-    # The URL of the redirect.
+    # The URL of the other Sourcegraph instance.
     url: String!
 }
 
-# A repository or a link to another Sourcegraph instance location where this repository is located.
+# A repository or a link to another Sourcegraph instance location where this repository may be located.
 union RepositoryRedirect = Repository | Redirect
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
