@@ -49,8 +49,8 @@ export const fetchRepository = memoizeObservable(
                 if (!data) {
                     throw createAggregateError(errors)
                 }
-                if (data.redirect) {
-                    throw new RepoSeeOtherError(data.redirect.url)
+                if (data.repositoryRedirect?.__typename === 'Redirect') {
+                    throw new RepoSeeOtherError(data.repositoryRedirect.url)
                 }
                 if (!data.repository) {
                     throw new RepoNotFoundError(args.repoName)
@@ -109,8 +109,8 @@ export const resolveRev = memoizeObservable(
                 if (!data) {
                     throw createAggregateError(errors)
                 }
-                if (data.redirect) {
-                    throw new RepoSeeOtherError(data.redirect.url)
+                if (data.repositoryRedirect?.__typename === 'Redirect') {
+                    throw new RepoSeeOtherError(data.repositoryRedirect.url)
                 }
                 if (!data.repository) {
                     throw new RepoNotFoundError(ctx.repoName)
