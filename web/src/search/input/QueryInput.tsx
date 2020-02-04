@@ -18,7 +18,6 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { Suggestion, SuggestionItem, createSuggestion, fuzzySearchFilters } from './Suggestion'
-import { RegexpToggle } from './RegexpToggle'
 import { PatternTypeProps, CaseSensitivityProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions } from '../searchFilterSuggestions'
@@ -37,8 +36,8 @@ import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
-import { CaseSensitivityToggle } from './CaseSensitivityToggle'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { Toggles } from './toggles/Toggles'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -443,18 +442,11 @@ export class QueryInput extends React.Component<Props, State> {
                                         )}
                                     </ul>
                                 )}
-                                <div className="query-input2__toggle-container">
-                                    <CaseSensitivityToggle
-                                        {...this.props}
-                                        navbarSearchQuery={this.props.value.query}
-                                        filtersInQuery={this.props.filterQuery}
-                                    />
-                                    <RegexpToggle
-                                        {...this.props}
-                                        navbarSearchQuery={this.props.value.query}
-                                        filtersInQuery={this.props.filterQuery}
-                                    />
-                                </div>
+                                <Toggles
+                                    {...this.props}
+                                    navbarSearchQuery={this.props.value.query}
+                                    filtersInQuery={this.props.filterQuery}
+                                />
                             </div>
                         </div>
                     )

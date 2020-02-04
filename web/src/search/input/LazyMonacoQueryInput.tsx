@@ -1,8 +1,7 @@
 import React, { Suspense } from 'react'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 import { lazyComponent } from '../../util/lazyComponent'
-import { CaseSensitivityToggle } from './CaseSensitivityToggle'
-import { RegexpToggle } from './RegexpToggle'
+import { Toggles } from './toggles/Toggles'
 
 const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'MonacoQueryInput')
 
@@ -34,8 +33,7 @@ const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
                 spellCheck={false}
             />
             <div className="query-input2__toggle-container">
-                <CaseSensitivityToggle {...props} navbarSearchQuery={queryState.query}></CaseSensitivityToggle>
-                <RegexpToggle {...props} navbarSearchQuery={queryState.query}></RegexpToggle>
+                <Toggles {...props} navbarSearchQuery={queryState.query} />
             </div>
         </div>
     )
