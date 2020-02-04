@@ -23,6 +23,7 @@ export const fetchRepository = memoizeObservable(
             gql`
                 query RepositoryRedirect($repoName: String!) {
                     repositoryRedirect(name: $repoName) {
+                        __typename
                         ... on Repository {
                             id
                             name
@@ -81,6 +82,7 @@ export const resolveRev = memoizeObservable(
             gql`
                 query ResolveRev($repoName: String!, $rev: String!) {
                     repositoryRedirect(name: $repoName) {
+                        __typename
                         ... on Repository {
                             mirrorInfo {
                                 cloneInProgress
@@ -112,7 +114,7 @@ export const resolveRev = memoizeObservable(
                 if (!data.repositoryRedirect) {
                     throw new RepoNotFoundError(ctx.repoName)
                 }
-                if (data.repositoryRedirect?.__typename === 'Redirect') {
+                if (data.repositoryRedirect.__typename === 'Redirect') {
                     throw new RepoSeeOtherError(data.repositoryRedirect.url)
                 }
                 if (data.repositoryRedirect.mirrorInfo.cloneInProgress) {
