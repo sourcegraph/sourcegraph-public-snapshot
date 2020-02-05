@@ -261,7 +261,7 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			language := extensionToLanguageLookup(fileMatchPath)
 			if language != "" {
 				if strings.Contains(language, " ") {
-					language = fmt.Sprintf(`"%s"`, language)
+					language = strconv.Quote(language)
 				}
 				value := fmt.Sprintf(`lang:%s`, language)
 				add(value, value, lineMatchCount, limitHit, "lang")
