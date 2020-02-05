@@ -26,6 +26,7 @@ import { InteractiveModeInput } from '../search/input/interactive/InteractiveMod
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
+import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
 
 interface Props
     extends SettingsCascadeProps,
@@ -105,8 +106,17 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.location.search !== this.props.location.search) {
             const query = parseSearchURLQuery(this.props.location.search || '')
-            if (query && !this.props.interactiveSearchMode) {
-                this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
+            if (query) {
+                if (this.props.interactiveSearchMode) {
+                    let filtersInQuery: FiltersToTypeAndValue = {}
+                    const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
+                    filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
+                    this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+
+                    this.props.onFiltersInQueryChange(filtersInQuery)
+                } else {
+                    this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
+                }
             }
         }
     }

@@ -1682,6 +1682,31 @@ describe('e2e test suite', () => {
             await driver.assertWindowLocation('/search?q=repo:%5Egithub%5C.com/gorilla/mux%24&patternType=literal')
         })
 
+        test('Interactive search mode updates query when on searching from directory page', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2')
+            await driver.page.waitForSelector('.tree-page__section-search .e2e-query-input')
+            await driver.page.click('.tree-page__section-search .e2e-query-input')
+            await driver.page.type('.tree-page__section-search .e2e-query-input', 'test')
+            await driver.page.click('.tree-page__section-search .e2e-search-button')
+            await driver.assertWindowLocation(
+                '/search?q=repo:%5Egithub%5C.com/sourcegraph/jsonrpc2%24+test&patternType=literal'
+            )
+            await driver.page.waitForSelector('.e2e-query-input')
+            const queryInputValue = () =>
+                driver.page.evaluate(() => {
+                    const input = document.querySelector<HTMLInputElement>('.e2e-query-input')
+                    return input ? input.value : null
+                })
+            assert.strictEqual(await queryInputValue(), 'test')
+            await driver.page.waitForSelector('.filter-input')
+            const filterInputValue = () =>
+                driver.page.evaluate(() => {
+                    const filterInput = document.querySelector<HTMLButtonElement>('.filter-input__button-text')
+                    return filterInput ? filterInput.textContent : null
+                })
+            assert.strictEqual(await filterInputValue(), 'repo:^github\\.com/sourcegraph/jsonrpc2$')
+        })
+
         test('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
