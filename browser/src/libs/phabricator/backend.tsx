@@ -371,7 +371,7 @@ function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
         return null
     }
     // Use the external URI if there is one, otherwise use the first enabled URI.
-    const { rawURI } = enabledURIs.find(({ isExternalURI }) => isExternalURI) || enabledURIs[0]
+    const { rawURI } = enabledURIs.find(({ isExternalURI }) => isExternalURI) ?? enabledURIs[0]
     const rawRepoName = normalizeRepoName(rawURI)
     return { callsign: repo.fields.callsign, rawRepoName }
 }
