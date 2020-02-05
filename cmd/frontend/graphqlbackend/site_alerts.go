@@ -64,11 +64,7 @@ func init() {
 	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
 		if c.ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
-		}
-		return problems
-	})
-	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
-		if globals.ExternalURL().Scheme == "http" {
+		} else if conf.DeployType() != conf.DeployDev && strings.HasPrefix(c.ExternalURL, "http://") {
 			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/nginx)"))
 		}
 		return problems
