@@ -158,10 +158,6 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 		return ErrCampaignNameBlank
 	}
 
-	if c.Branch == "" {
-		return ErrCampaignBranchBlank
-	}
-
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -173,6 +169,10 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 
 	if err := tx.CreateCampaign(ctx, c); err != nil {
 		return err
+	}
+
+	if c.CampaignPlanID != 0 && c.Branch == "" {
+		return ErrCampaignBranchBlank
 	}
 
 	if c.CampaignPlanID == 0 || draft {
@@ -214,6 +214,8 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 		}
 		err = store.CreateChangesetJob(ctx, changesetJob)
 		if err != nil {
+			fmt.Println("Error")
+			fmt.Println(err)
 			return err
 		}
 	}
@@ -328,7 +330,7 @@ func RunChangesetJob(
 		Push:         true,
 	})
 	if job.Branch != "" && job.Branch != ref {
-	  return nil, fmt.Errorf("ref %q doesn't match ChangesetJob's branch %q", ref, job.Branch)
+		return fmt.Errorf("ref %q doesn't match ChangesetJob's branch %q", ref, job.Branch)
 	}
 	job.Branch = ref
 
@@ -703,8 +705,8 @@ type UpdateCampaignArgs struct {
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
-// ErrCampaignBranchBlank is returned by CreateCampaign if the specified Campaign
-// branch is blank.
+// ErrCampaignBranchBlank is returned by CreateCampaign if the specified Campaign's
+// branch is blank. This is only enforced for published campaigns with plans.
 var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 
 // ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
@@ -764,7 +766,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	draft := changesetCreation.IsZero()
-	if args.Branch != nil {
+	if campaign.CampaignPlanID != 0 && args.Branch != nil {
 		if !draft {
 			return nil, nil, ErrPublishedCampaignBranchChange
 		} else if *args.Branch == "" {
@@ -805,14 +807,14 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	for _, c := range diff.Update {
 		err := tx.UpdateChangesetJob(ctx, c)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, errors.Wrap(err, "updating changeset job")
 		}
 	}
 
 	for _, c := range diff.Create {
 		err := tx.CreateChangesetJob(ctx, c)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, errors.Wrap(err, "creating changeset job")
 		}
 	}
 
@@ -842,7 +844,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	if err = tx.UpdateChangesets(ctx, changesets...); err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "updating changesets")
 	}
 
 	return campaign, changesets, tx.UpdateCampaign(ctx, campaign)

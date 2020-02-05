@@ -24,7 +24,7 @@ type CreateCampaignArgs struct {
 		Namespace   graphql.ID
 		Name        string
 		Description string
-		Branch      string
+		Branch      *string
 		Plan        *graphql.ID
 		Draft       *bool
 	}

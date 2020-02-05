@@ -12,10 +12,9 @@ UPDATE
     campaigns 
 SET 
     branch=concat('sourcegraph/campaign-', date_part('epoch', created_at)::int)
- WHERE branch != '';
-ALTER TABLE campaigns ALTER branch SET NOT NULL;
+WHERE branch != '';
 
--- Add and populate branch column to the changeset jobs tables.
+-- Add and populate branch column to the changeset jobs table.
 -- The branch name is inherited from the campaign if the changeset
 -- job is finished running.
 ALTER TABLE changeset_jobs ADD COLUMN IF NOT EXISTS branch text;

@@ -1,6 +1,6 @@
 BEGIN;
 
-ALTER TABLE campaigns DROP COLUMN IF EXISTS branch
+ALTER TABLE campaigns DROP COLUMN IF EXISTS branch;
 ALTER TABLE changeset_jobs DROP COLUMN IF EXISTS branch;
 
 COMMIT;

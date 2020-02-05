@@ -440,7 +440,7 @@ input CreateCampaignInput {
     description: String!
 
     # The branch name
-    branch: String! 
+    branch: String
 
     # An optional reference to a completed campaign plan that was previewed before this mutation.
     # If null, existing changesets can be added manually.

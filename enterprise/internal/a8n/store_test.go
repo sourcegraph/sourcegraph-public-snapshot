@@ -42,6 +42,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c := &a8n.Campaign{
 						Name:           fmt.Sprintf("Upgrade ES-Lint %d", i),
 						Description:    "All the Javascripts are belong to us",
+						Branch:         "upgrade-es-lint",
 						AuthorID:       23,
 						ChangesetIDs:   []int64{int64(i) + 1},
 						CampaignPlanID: 42 + int64(i),
@@ -2358,7 +2359,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				campaign := testCampaign(123, plan.ID)
+				campaign := testCampaign(123, plan.ID, "test-branch")
 				err = s.CreateCampaign(ctx, campaign)
 				if err != nil {
 					t.Fatal(err)

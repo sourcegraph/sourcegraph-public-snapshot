@@ -119,7 +119,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(user.ID, plan.ID)
+		campaign := testCampaign(user.ID, plan.ID, "test-branch")
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
 
 		// Without CampaignJobs it should fail
@@ -176,7 +176,7 @@ func TestService(t *testing.T) {
 			}
 		}
 
-		campaign := testCampaign(user.ID, plan.ID)
+		campaign := testCampaign(user.ID, plan.ID, "test-branch")
 
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
 		err = svc.CreateCampaign(ctx, campaign, true)
@@ -214,7 +214,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(user.ID, plan.ID)
+		campaign := testCampaign(user.ID, plan.ID, "test-branch")
 		err = store.CreateCampaign(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
@@ -287,7 +287,7 @@ func TestService(t *testing.T) {
 				}
 
 				svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
-				campaign := testCampaign(user.ID, plan.ID)
+				campaign := testCampaign(user.ID, plan.ID, "test-branch")
 
 				err = svc.CreateCampaign(ctx, campaign, tc.draft)
 				if err != nil {
@@ -583,7 +583,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			)
 
 			if tt.manualCampaign {
-				campaign = testCampaign(user.ID, 0)
+				campaign = testCampaign(user.ID, 0, "")
 			} else {
 				plan := &a8n.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
 				err = store.CreateCampaignPlan(ctx, plan)
@@ -600,7 +600,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 					}
 					oldCampaignJobsByID[j.ID] = j
 				}
-				campaign = testCampaign(user.ID, plan.ID)
+				campaign = testCampaign(user.ID, plan.ID, "test-branch")
 			}
 
 			err = svc.CreateCampaign(ctx, campaign, tt.draft)
@@ -864,13 +864,14 @@ func testCampaignJob(plan int64, repo uint32, t time.Time) *a8n.CampaignJob {
 	}
 }
 
-func testCampaign(user int32, plan int64) *a8n.Campaign {
+func testCampaign(user int32, plan int64, branch string) *a8n.Campaign {
 	return &a8n.Campaign{
 		Name:            "Testing Campaign",
 		Description:     "Testing Campaign",
 		AuthorID:        user,
 		NamespaceUserID: user,
 		CampaignPlanID:  plan,
+		Branch:          branch,
 	}
 }
 

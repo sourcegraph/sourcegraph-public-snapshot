@@ -1115,7 +1115,7 @@ SET (
   changeset_ids,
   campaign_plan_id,
   closed_at
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1305,6 +1305,7 @@ SELECT
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -2105,7 +2106,7 @@ INSERT INTO changeset_jobs (
   created_at,
   updated_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_id,
@@ -2167,7 +2168,7 @@ SET (
   started_at,
   finished_at,
   updated_at
-) = (%s, %s, %s, %s, %s, %s, %s)
+) = (%s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -2386,6 +2387,7 @@ SELECT
   changeset_jobs.campaign_id,
   changeset_jobs.campaign_job_id,
   changeset_jobs.changeset_id,
+  changeset_jobs.branch,
   changeset_jobs.error,
   changeset_jobs.started_at,
   changeset_jobs.finished_at,

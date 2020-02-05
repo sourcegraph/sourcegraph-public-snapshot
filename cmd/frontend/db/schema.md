@@ -91,7 +91,7 @@ Referenced by:
  changeset_ids     | jsonb                    | not null default '{}'::jsonb
  campaign_plan_id  | integer                  | 
  closed_at         | timestamp with time zone | 
- branch            | text                     | not null
+ branch            | text                     | 
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
     "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
