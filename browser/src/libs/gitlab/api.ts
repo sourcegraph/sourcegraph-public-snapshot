@@ -98,7 +98,7 @@ export const getMergeRequestDetailsFromAPI = memoizeObservable(
             getBaseCommitIDFromDiffID({ owner, projectName, mergeRequestID, diffID })
         ).pipe(
             switchMap(([{ diff_refs, source_project_id }, baseCommitIDFromDiffID]) =>
-                getRepoNameFromProjecID(source_project_id).pipe(
+                getRepoNameFromProjectID(source_project_id).pipe(
                     map(
                         (baseRawRepoName): Omit<FileInfo, 'filePath' | 'baseFilePath'> => ({
                             baseCommitID: baseCommitIDFromDiffID || diff_refs.base_sha,
