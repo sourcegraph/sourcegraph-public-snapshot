@@ -299,7 +299,7 @@ func RunChangesetJob(
 
 	ensureUniqueRef := true
 	if job.Branch != "" {
-		// If job.Branch is set that means this method is has already been
+		// If job.Branch is set that means this method has already been
 		// executed for the given job. In that case, we want to use job.Branch
 		// as the ref, since we created it, and not fallback to another ref.
 		ensureUniqueRef = false
