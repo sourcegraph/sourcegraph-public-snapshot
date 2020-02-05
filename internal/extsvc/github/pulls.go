@@ -58,6 +58,7 @@ type Commit struct {
 
 // A Status represents a Commit status.
 type Status struct {
+	State    string
 	Contexts []Context
 }
 
@@ -93,6 +94,7 @@ type PullRequest struct {
 	Participants  []Actor
 	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
+	Commits       struct{ Nodes []PullRequestCommit }
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }

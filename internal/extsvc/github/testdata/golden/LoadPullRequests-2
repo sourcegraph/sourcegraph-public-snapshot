@@ -97,6 +97,7 @@
        "MessageHeadline": "Fix disableExtension flag for native integrations",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
        "Status": {
+        "State": "SUCCESS",
         "Contexts": null
        },
        "Committer": {
@@ -136,6 +137,7 @@
        "MessageHeadline": "Fix disableExtension flag for native integrations",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
        "Status": {
+        "State": "SUCCESS",
         "Contexts": null
        },
        "Committer": {
@@ -163,6 +165,7 @@
        "MessageHeadline": "Fix disableExtension flag for native integrations",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/21d1cd99699e36ab5e2b9be1cc663691d47193ef",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -189,6 +192,7 @@
        "MessageHeadline": "No need to explicitly remove the subscription",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
        "Status": {
+        "State": "SUCCESS",
         "Contexts": null
        },
        "Committer": {
@@ -240,6 +244,7 @@
        "MessageHeadline": "Fix disableExtension flag for native integrations (#5550)",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/f66b0addcbeb51d29350f3abc2af7ffb238af48a",
        "Status": {
+        "State": "SUCCESS",
         "Contexts": null
        },
        "Committer": {
@@ -266,6 +271,34 @@
      }
     }
    ],
+   "Commits": {
+    "Nodes": [
+     {
+      "Commit": {
+       "OID": "30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
+       "Message": "No need to explicitly remove the subscription",
+       "MessageHeadline": "No need to explicitly remove the subscription",
+       "URL": "https://github.com/sourcegraph/sourcegraph/commit/30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
+       "Status": {
+        "State": "SUCCESS",
+        "Contexts": null
+       },
+       "Committer": {
+        "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+        "Email": "loic@sourcegraph.com",
+        "Name": "Loïc Guychard",
+        "User": {
+         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+         "Login": "lguychard",
+         "URL": "https://github.com/lguychard"
+        }
+       },
+       "CommittedDate": "2019-09-13T09:13:12Z",
+       "PushedDate": "2019-09-13T09:13:20Z"
+      }
+     }
+    ]
+   },
    "CreatedAt": "2019-09-12T10:06:09Z",
    "UpdatedAt": "2019-09-13T09:44:39Z"
   },
@@ -403,6 +436,7 @@
        "MessageHeadline": "a8n: Fix CreateChangesetEvent query",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/0830ebfae3fa8f6405d30c1d0bb6dbdfba514e3f",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -517,6 +551,7 @@
        "MessageHeadline": "migrations: Create changeset_events table",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/841fb15a8edeef3b4894e52fc8e07e597889fd45",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -543,6 +578,7 @@
        "MessageHeadline": "a8n: Introduce CreateChangesetEvents in Store",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/70f88ad3e92fa14707eaa9c5c597e4256a6d1c68",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -569,6 +605,7 @@
        "MessageHeadline": "a8n: Fix CreateChangesetEvent query",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/71993940833d0d14b02a4fe90bfbb4fdd1601d31",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -595,6 +632,7 @@
        "MessageHeadline": "WIP: Split GitHub timeline items into ChangesetEvents",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/13057d82a110b44aba4ce1796a91bc51cc52fc85",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -621,6 +659,7 @@
        "MessageHeadline": "WIP",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/729d8df692d0fa981207a656bdc36ecbcd6969ab",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -647,6 +686,7 @@
        "MessageHeadline": "Fix tests",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/dcdecd1f3e16b197d3ebbec9f8dbcb33fb582b99",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -693,6 +733,7 @@
        "MessageHeadline": "Merge remote-tracking branch 'origin/master' into a8n/changeset-events",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/30a5f5e3d9cbc35d634ff051d550054f99b6fbb1",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -739,6 +780,7 @@
        "MessageHeadline": "a8n: UpsertChangesetEvents in Store",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/233b4a6d0a201c9d739c77587f91dc1e9432882f",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -765,6 +807,7 @@
        "MessageHeadline": "WIP",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/dc19de9ee127a3f299b2865029815a29674166e0",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -791,6 +834,7 @@
        "MessageHeadline": "Manually go generate code for a8n.Store to list changeset events",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/145a6540a49f1053b4e421801101e425b1eeae1f",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -817,6 +861,7 @@
        "MessageHeadline": "Recreate db/schema.md",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/5c46ac67d1327418ca2d0714078b5a33ebb18827",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -843,6 +888,7 @@
        "MessageHeadline": "a8n: Add CountChangesetEvents to Store",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/e78e5adabe6233d20b49a3f62aeee79639924911",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -869,6 +915,7 @@
        "MessageHeadline": "a8n: Add minimal ChangesetEvent to GraphQL API",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/ea79747711c7f513e2e0713f9d70ad912253b3a9",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -895,6 +942,7 @@
        "MessageHeadline": "a8n: Query ChangesetEvents in GraphQL test",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/112254ea81448199d549f057495c779e75a7d923",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -939,6 +987,7 @@
        "MessageHeadline": "Undo previous change to GitHubSource tests",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -965,6 +1014,7 @@
        "MessageHeadline": "a8n: Simplify test",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0af06004d731758a2536eff67864881f065a4c9",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -991,6 +1041,7 @@
        "MessageHeadline": "fixup! Fix indentation",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/6a641d57ec46818664e3434fd37bc3e1373ac45f",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1029,6 +1080,7 @@
        "MessageHeadline": "Undo previous change to GitHubSource tests",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1068,6 +1120,7 @@
        "MessageHeadline": "Undo previous change to GitHubSource tests",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1095,6 +1148,7 @@
        "MessageHeadline": "Update enterprise/pkg/a8n/store.go",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/a66ffd259cf340088918663ad670f973d53b51af",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1116,6 +1170,7 @@
        "MessageHeadline": "Update enterprise/pkg/a8n/store.go",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/39d32f6a3c3d467fd7bf3f8c729b63b362966682",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1137,6 +1192,7 @@
        "MessageHeadline": "fixup! Fix indentation",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1188,6 +1244,7 @@
        "MessageHeadline": "fixup! Fix indentation",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1227,6 +1284,7 @@
        "MessageHeadline": "fixup! Fix indentation",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1254,6 +1312,7 @@
        "MessageHeadline": "fixup! Remove unused method",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/9780015346b79568f04925a03f6ec6cdbc0ae9be",
        "Status": {
+        "State": "SUCCESS",
         "Contexts": null
        },
        "Committer": {
@@ -1305,6 +1364,7 @@
        "MessageHeadline": "a8n: Persist GitHub ChangesetEvents to database (#5834)",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/705c515f173ec33bf343d5b3ea8e9cd24c10abf7",
        "Status": {
+        "State": "SUCCESS",
         "Contexts": null
        },
        "Committer": {
@@ -1384,6 +1444,34 @@
      }
     }
    ],
+   "Commits": {
+    "Nodes": [
+     {
+      "Commit": {
+       "OID": "9780015346b79568f04925a03f6ec6cdbc0ae9be",
+       "Message": "fixup! Remove unused method",
+       "MessageHeadline": "fixup! Remove unused method",
+       "URL": "https://github.com/sourcegraph/sourcegraph/commit/9780015346b79568f04925a03f6ec6cdbc0ae9be",
+       "Status": {
+        "State": "SUCCESS",
+        "Contexts": null
+       },
+       "Committer": {
+        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+        "Email": "mrnugget@gmail.com",
+        "Name": "Thorsten Ball",
+        "User": {
+         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+         "Login": "mrnugget",
+         "URL": "https://github.com/mrnugget"
+        }
+       },
+       "CommittedDate": "2019-10-07T12:50:59Z",
+       "PushedDate": "2019-10-07T12:51:18Z"
+      }
+     }
+    ]
+   },
    "CreatedAt": "2019-10-02T14:49:31Z",
    "UpdatedAt": "2019-10-08T09:52:20Z"
   },
@@ -1428,6 +1516,7 @@
        "MessageHeadline": "-- added uniqueness-option",
        "URL": "https://github.com/tsenart/vegeta/commit/39241a13a52fe1a15fbeb723bdf212689fa5d7d4",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -1454,6 +1543,7 @@
        "MessageHeadline": "added headers-option to report",
        "URL": "https://github.com/tsenart/vegeta/commit/95f1eb69cc7a0729b1f8b555443b4d4ab0cb42c9",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -1480,6 +1570,7 @@
        "MessageHeadline": "updated readme",
        "URL": "https://github.com/tsenart/vegeta/commit/dc9f13131bbf79c58b067094f71020a6254ba548",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -1564,6 +1655,34 @@
      }
     }
    ],
+   "Commits": {
+    "Nodes": [
+     {
+      "Commit": {
+       "OID": "dc9f13131bbf79c58b067094f71020a6254ba548",
+       "Message": "updated readme",
+       "MessageHeadline": "updated readme",
+       "URL": "https://github.com/tsenart/vegeta/commit/dc9f13131bbf79c58b067094f71020a6254ba548",
+       "Status": {
+        "State": "",
+        "Contexts": null
+       },
+       "Committer": {
+        "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
+        "Email": "hpbuniat@gmail.com",
+        "Name": "Hans-Peter Buniat",
+        "User": {
+         "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
+         "Login": "hpbuniat",
+         "URL": "https://github.com/hpbuniat"
+        }
+       },
+       "CommittedDate": "2014-03-03T18:06:25Z",
+       "PushedDate": "2014-03-03T18:06:36Z"
+      }
+     }
+    ]
+   },
    "CreatedAt": "2014-03-03T18:08:45Z",
    "UpdatedAt": "2014-03-06T11:11:42Z"
   },
@@ -1623,6 +1742,7 @@
        "MessageHeadline": "Update internal telemetry endpoint and remove external one",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/5484042261ec75ab82d146c81d65638ceb67b415",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -1649,6 +1769,7 @@
        "MessageHeadline": "Fix broken telemetry handler",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/2eca7037782a7aa6a39637999f9ebf58d6761e17",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1675,6 +1796,7 @@
        "MessageHeadline": "Migrations: add indexes to event_logs table and remove default from e…",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/19b2d4a5ff5fc52a5dc0b6f7019d6193485466f6",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -1701,6 +1823,7 @@
        "MessageHeadline": "Add new usagestats package that relies on the new Postgres event_logs…",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/47067726a3f787068b42c05b1e4780690fec971a",
        "Status": {
+        "State": "",
         "Contexts": null
        },
        "Committer": {
@@ -1847,6 +1970,7 @@
        "MessageHeadline": "Comments on event_logs.go style",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/cd15ee5b96b69aef230d2da11e53efcb5afeea87",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1873,6 +1997,7 @@
        "MessageHeadline": "dev/generate",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/f61aa961987181d2c3c50bf5b699f883b7133808",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1911,6 +2036,7 @@
        "MessageHeadline": "dev/generate",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/f61aa961987181d2c3c50bf5b699f883b7133808",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -1950,6 +2076,7 @@
        "MessageHeadline": "dev/generate",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/f61aa961987181d2c3c50bf5b699f883b7133808",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -2015,6 +2142,7 @@
        "MessageHeadline": "Comments",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/253af383900a79c30e08fa1c62bfb954ef6baa45",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -2091,6 +2219,7 @@
        "MessageHeadline": "Comments",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/253af383900a79c30e08fa1c62bfb954ef6baa45",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -2118,6 +2247,7 @@
        "MessageHeadline": "Merge branch 'master' into stats3",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/8796dfb1396847cde8ca63042ef17b14bd397281",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -2316,6 +2446,7 @@
        "MessageHeadline": "Merge branch 'master' into stats3",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/8796dfb1396847cde8ca63042ef17b14bd397281",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -2343,6 +2474,7 @@
        "MessageHeadline": "Add comment from feedback.",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/ee4cd13d6234069ed0e3067271debf61e8a5ce31",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -2369,6 +2501,7 @@
        "MessageHeadline": "Remove unused import.",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/08e5969da9915db9ba2ac06b4c4af0ec97036d71",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -2395,6 +2528,7 @@
        "MessageHeadline": "Fix lint.",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/4ee2fda299e4ee72a3903a8f6556b16354eebde6",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -2421,6 +2555,7 @@
        "MessageHeadline": "Merge branch 'master' into stats3",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/33156a2c540db7a0f70f433ab9f0e5fec0ecc79a",
        "Status": {
+        "State": "FAILURE",
         "Contexts": null
        },
        "Committer": {
@@ -2454,6 +2589,7 @@
        "MessageHeadline": "Replace redis-based usage stats with postgres-based stats (#7352)",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/727dcb2f6ad74f67294c4c07930e172eb2493c02",
        "Status": {
+        "State": "SUCCESS",
         "Contexts": null
        },
        "Committer": {
@@ -2480,6 +2616,34 @@
      }
     }
    ],
+   "Commits": {
+    "Nodes": [
+     {
+      "Commit": {
+       "OID": "33156a2c540db7a0f70f433ab9f0e5fec0ecc79a",
+       "Message": "Merge branch 'master' into stats3",
+       "MessageHeadline": "Merge branch 'master' into stats3",
+       "URL": "https://github.com/sourcegraph/sourcegraph/commit/33156a2c540db7a0f70f433ab9f0e5fec0ecc79a",
+       "Status": {
+        "State": "FAILURE",
+        "Contexts": null
+       },
+       "Committer": {
+        "AvatarURL": "https://avatars3.githubusercontent.com/u/103087?v=4",
+        "Email": "eric@eric-fritz.com",
+        "Name": "Eric Fritz",
+        "User": {
+         "AvatarURL": "https://avatars3.githubusercontent.com/u/103087?v=4",
+         "Login": "efritz",
+         "URL": "https://github.com/efritz"
+        }
+       },
+       "CommittedDate": "2020-01-23T16:41:38Z",
+       "PushedDate": "2020-01-23T16:41:50Z"
+      }
+     }
+    ]
+   },
    "CreatedAt": "2019-12-22T21:53:47Z",
    "UpdatedAt": "2020-01-30T14:48:59Z"
   }
