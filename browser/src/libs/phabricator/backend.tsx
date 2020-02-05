@@ -362,10 +362,10 @@ async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabr
 function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
     const enabledURIs = repo.attachments.uris.uris
         // Filter out disabled URIs
-        .filter(({fields}) => !fields.uri.disabled)
+        .filter(({ fields }) => !fields.uri.disabled)
         .map(({ fields }) => ({
             isExternalURI: !fields.uri.normalized.replace('\\', '').startsWith(window.location.host + '/'),
-            rawURI: fields.uri.raw
+            rawURI: fields.uri.raw,
         }))
     if (enabledURIs.length === 0) {
         return null
