@@ -749,7 +749,7 @@ var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 
 // ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
-// attempt to change branch in a published campaign with a plan.
+// attempt to change the branch of a published campaign with a plan (or a campaign with individually published changesets).
 var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch cannot be changed")
 
 // UpdateCampaign updates the Campaign with the given arguments.
