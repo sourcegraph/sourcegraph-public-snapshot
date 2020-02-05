@@ -1,16 +1,17 @@
-import { Observable, of, throwError } from 'rxjs'
+import { Observable, of, throwError, from } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { FileInfo } from '../code_intelligence'
 
-import { getBaseCommitIDForCommit, getBaseCommitIDForMergeRequest } from './api'
+import { getBaseCommitIDForCommit, getMergeRequestDetailsFromAPI } from './api'
 import {
     getCommitIDFromPermalink,
     getCommitPageInfo,
-    getDiffPageInfo,
     getFilePageInfo,
     getFilePathsFromCodeView,
-    getHeadCommitIDFromCodeView,
+    getPageInfo,
+    getMergeRequestID,
+    getDiffID,
 } from './scrape'
 
 /**
@@ -44,27 +45,13 @@ export const resolveFileInfo = (): Observable<FileInfo> => {
  * Gets `FileInfo` for a diff file.
  */
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
-    of(undefined).pipe(
-        map(getDiffPageInfo),
-        // Resolve base commit ID.
-        switchMap(({ owner, projectName, mergeRequestID, diffID, baseCommitID, rawRepoName, baseRawRepoName }) => {
-            const gettingBaseCommitID = baseCommitID
-                ? // Commit was found in URL.
-                  of(baseCommitID)
-                : // Commit needs to be fetched from the API.
-                  getBaseCommitIDForMergeRequest({ owner, projectName, mergeRequestID, diffID })
-
-            return gettingBaseCommitID.pipe(map(baseCommitID => ({ baseCommitID, rawRepoName, baseRawRepoName })))
-        }),
-        map(
-            ({ baseCommitID, rawRepoName, baseRawRepoName }): FileInfo => {
-                // Head commit is found in the "View file @ ..." button in the code view.
-                const commitID = getHeadCommitIDFromCodeView(codeView)
-                const { filePath, baseFilePath } = getFilePathsFromCodeView(codeView)
-                return { baseCommitID, baseFilePath, commitID, filePath, rawRepoName, baseRawRepoName }
-            }
-        )
-    )
+    from(
+        getMergeRequestDetailsFromAPI({
+            ...getPageInfo(),
+            mergeRequestID: getMergeRequestID(),
+            diffID: getDiffID(),
+        })
+    ).pipe(map((info): FileInfo => ({ ...info, ...getFilePathsFromCodeView(codeView) })))
 
 /**
  * Resolves file information for commit pages.
