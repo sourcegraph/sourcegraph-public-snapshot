@@ -3,14 +3,15 @@ version: 1
 interactions:
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
-      label on Label {\n  name\n  color\n  description\n}\n\nfragment commit on Commit
-      {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
       {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
       review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
-      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  timelineItems(first:
-      250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT,
+      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      100) {\n    nodes{\n      ...label\n    }\n  }\n  timelineItems(first: 250,
+      itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT,
       MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT,
       REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT,
       UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT]) {\n    nodes {\n      __typename\n      ...
@@ -50,9 +51,15 @@ interactions:
     method: POST
   response:
     body: '{"data":{"updatePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0","title":"This
-      is a new title","body":"This is a new body","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/91","number":91,"createdAt":"2020-01-08T15:59:11Z","updatedAt":"2020-01-31T10:04:25Z","headRefOid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-1578499147","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"timelineItems":{"nodes":[{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"boring
+      is a new title","body":"This is a new body","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/91","number":91,"createdAt":"2020-01-08T15:59:11Z","updatedAt":"2020-02-05T08:08:22Z","headRefOid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-1578499147","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[{"name":"enhancement","color":"a2eeef","description":"New
+      feature or request","id":"MDU6TGFiZWwxNjcxNTU2OTI5"},{"name":"good first issue","color":"7057ff","description":"Good
+      for newcomers","id":"MDU6TGFiZWwxNjcxNTU2OTMw"},{"name":"help wanted","color":"008672","description":"Extra
+      attention is needed","id":"MDU6TGFiZWwxNjcxNTU2OTMx"}]},"timelineItems":{"nodes":[{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"boring
       title","currentTitle":"AMAZING NAME!","createdAt":"2020-01-08T16:00:35Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"AMAZING
-      NAME!","currentTitle":"This is a new title","createdAt":"2020-01-08T16:24:43Z"}]}}}}}'
+      NAME!","currentTitle":"This is a new title","createdAt":"2020-01-08T16:24:43Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"label":{"name":"enhancement","color":"a2eeef","description":"New
+      feature or request","id":"MDU6TGFiZWwxNjcxNTU2OTI5"},"createdAt":"2020-02-01T22:33:58Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"label":{"name":"good
+      first issue","color":"7057ff","description":"Good for newcomers","id":"MDU6TGFiZWwxNjcxNTU2OTMw"},"createdAt":"2020-02-01T22:33:58Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"label":{"name":"help
+      wanted","color":"008672","description":"Extra attention is needed","id":"MDU6TGFiZWwxNjcxNTU2OTMx"},"createdAt":"2020-02-01T22:33:58Z"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -67,7 +74,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 31 Jan 2020 10:04:26 GMT
+      - Wed, 05 Feb 2020 08:08:22 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -87,7 +94,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - C9B8:437FE:4A1B0F7:58D37AD:5E33FBA8
+      - FDD2:14CE2:5FC0BC:705D78:5E3A77F4
       X-Oauth-Scopes:
       - read:org, repo
       X-Xss-Protection:

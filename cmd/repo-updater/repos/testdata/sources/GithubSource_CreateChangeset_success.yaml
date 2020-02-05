@@ -3,14 +3,15 @@ version: 1
 interactions:
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
-      label on Label {\n  name\n  color\n  description\n}\n\nfragment commit on Commit
-      {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
       {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
       review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
-      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  timelineItems(first:
-      250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT,
+      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      100) {\n    nodes{\n      ...label\n    }\n  }\n  timelineItems(first: 250,
+      itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT,
       MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT,
       REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT,
       UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT]) {\n    nodes {\n      __typename\n      ...
@@ -49,8 +50,8 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzY5NTAzODU2","title":"This
-      is a test PR","body":"This is the description of the test PR","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/135","number":135,"createdAt":"2020-01-31T10:06:19Z","updatedAt":"2020-01-31T10:06:19Z","headRefOid":"05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","baseRefOid":"3b79a5d479d2af9cfe91e0aad4e9dddca7278150","headRefName":"test-pr-6","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"timelineItems":{"nodes":[]}}}}}'
+    body: '{"data":{"createPullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzcxMjM2NTg5","title":"This
+      is a test PR","body":"This is the description of the test PR","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/141","number":141,"createdAt":"2020-02-05T08:11:03Z","updatedAt":"2020-02-05T08:11:03Z","headRefOid":"05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","baseRefOid":"3b79a5d479d2af9cfe91e0aad4e9dddca7278150","headRefName":"test-pr-6","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"labels":{"nodes":[]},"timelineItems":{"nodes":[]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -65,7 +66,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 31 Jan 2020 10:06:20 GMT
+      - Wed, 05 Feb 2020 08:11:03 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -85,7 +86,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - C9F6:12588:60AB87C:73C9728:5E33FC1A
+      - FED5:14CEF:3757C8E:41B20B8:5E3A7895
       X-Oauth-Scopes:
       - read:org, repo
       X-Xss-Protection:

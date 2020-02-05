@@ -349,3 +349,114 @@ func TestChangesetEventsReviewState(t *testing.T) {
 		}
 	}
 }
+
+func TestChangesetEventsLabels(t *testing.T) {
+	now := time.Now()
+	labelEvent := func(name string, kind ChangesetEventKind, when time.Time) *ChangesetEvent {
+		removed := kind == ChangesetEventKindGitHubUnlabeled
+		return &ChangesetEvent{
+			Kind:      kind,
+			UpdatedAt: when,
+			Metadata: &github.LabelEvent{
+				Actor: github.Actor{},
+				Label: github.Label{
+					Name: name,
+				},
+				CreatedAt: when,
+				Removed:   removed,
+			},
+		}
+	}
+
+	tests := []struct {
+		name    string
+		current []ChangesetLabel
+		since   time.Time
+		events  ChangesetEvents
+		want    []ChangesetLabel
+	}{
+		{
+			name:    "zero values",
+			current: []ChangesetLabel{},
+			since:   time.Time{},
+			events:  ChangesetEvents{},
+			want:    []ChangesetLabel{},
+		},
+		{
+			name: "no events",
+			current: []ChangesetLabel{
+				{
+					Name: "label1",
+				},
+			},
+			since:  time.Time{},
+			events: ChangesetEvents{},
+			want: []ChangesetLabel{
+				{
+					Name: "label1",
+				},
+			},
+		},
+		{
+			name: "remove event",
+			current: []ChangesetLabel{
+				{
+					Name: "label1",
+				},
+			},
+			since: time.Time{},
+			events: ChangesetEvents{
+				labelEvent("label1", ChangesetEventKindGitHubUnlabeled, now),
+			},
+			want: []ChangesetLabel{},
+		},
+		{
+			name: "add event",
+			current: []ChangesetLabel{
+				{
+					Name: "label1",
+				},
+			},
+			since: time.Time{},
+			events: ChangesetEvents{
+				labelEvent("label2", ChangesetEventKindGitHubLabeled, now),
+			},
+			want: []ChangesetLabel{
+				{
+					Name: "label1",
+				},
+				{
+					Name: "label2",
+				},
+			},
+		},
+		{
+			name: "old add event",
+			current: []ChangesetLabel{
+				{
+					Name: "label1",
+				},
+			},
+			since: now.Add(5 * time.Minute),
+			events: ChangesetEvents{
+				labelEvent("label2", ChangesetEventKindGitHubLabeled, now),
+			},
+			want: []ChangesetLabel{
+				{
+					Name: "label1",
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			have := tc.events.Labels(tc.current, tc.since)
+			want := tc.want
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+
+}
