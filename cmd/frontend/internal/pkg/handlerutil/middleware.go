@@ -26,6 +26,7 @@ func CSRFMiddleware(next http.Handler, isSecure func() bool) http.Handler {
 			csrf.CookieName("sg_csrf_token"),
 			csrf.Path("/"),
 			csrf.Secure(secure),
+			csrf.SameSite(csrf.SameSiteStrictMode),
 		)(next)}
 	}
 

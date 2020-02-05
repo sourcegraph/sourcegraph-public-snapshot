@@ -103,6 +103,7 @@ func NewRedisStore(secureCookie func() bool) sessions.Store {
 	rstore.Options.Path = "/"
 	rstore.Options.Secure = secureCookie()
 	rstore.Options.HttpOnly = true
+	rstore.Options.SameSite = http.SameSiteStrictMode
 
 	return &sessionsStore{
 		Store:  rstore,
