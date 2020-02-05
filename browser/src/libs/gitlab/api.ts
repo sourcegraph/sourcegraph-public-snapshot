@@ -76,7 +76,7 @@ const getBaseCommitIDFromDiffID = memoizeObservable(
                   map(({ base_commit_sha }) => base_commit_sha)
               )
             : of(undefined),
-    params => JSON.stringify(params)
+    ({ owner, projectName, mergeRequestID, diffID }) => `${owner}${projectName}${mergeRequestID}${diffID}`
 )
 
 /**
@@ -110,7 +110,8 @@ export const getMergeRequestDetailsFromAPI = memoizeObservable(
                 )
             )
         ),
-    params => JSON.stringify(params)
+    ({ owner, projectName, mergeRequestID, rawRepoName, diffID }) =>
+        `${owner}${projectName}${mergeRequestID}${rawRepoName}${diffID}`
 )
 
 interface CommitResponse {
