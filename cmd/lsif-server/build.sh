@@ -16,11 +16,9 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
+cp -a ./lsif "$OUTPUT"
 export bindir="$OUTPUT/usr/local/bin"
 mkdir -p "$bindir"
-
-echo "--- build lsif-server"
-IMAGE=sourcegraph/lsif-server-builder:ci ./lsif/build.sh
 
 echo "--- go build"
 go build \

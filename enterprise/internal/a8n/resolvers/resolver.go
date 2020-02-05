@@ -361,16 +361,23 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
+	var opts ee.ListCampaignsOpts
+	state, err := parseCampaignState(args.State)
+	if err != nil {
+		return nil, err
+	}
+	opts.State = state
+	if args.First != nil {
+		opts.Limit = int(*args.First)
+	}
 	return &campaignsConnectionResolver{
 		store: r.store,
-		opts: ee.ListCampaignsOpts{
-			Limit: int(args.GetFirst()),
-		},
+		opts:  opts,
 	}, nil
 }
 
@@ -380,8 +387,8 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		return nil, err
 	}
 
-	var repoIDs []uint32
-	repoSet := map[uint32]*repos.Repo{}
+	var repoIDs []api.RepoID
+	repoSet := map[api.RepoID]*repos.Repo{}
 	cs := make([]*a8n.Changeset, 0, len(args.Input))
 
 	for _, c := range args.Input {
@@ -390,14 +397,13 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 			return nil, err
 		}
 
-		id := uint32(repoID)
-		if _, ok := repoSet[id]; !ok {
-			repoSet[id] = nil
-			repoIDs = append(repoIDs, id)
+		if _, ok := repoSet[repoID]; !ok {
+			repoSet[repoID] = nil
+			repoIDs = append(repoIDs, repoID)
 		}
 
 		cs = append(cs, &a8n.Changeset{
-			RepoID:     int32(id),
+			RepoID:     repoID,
 			ExternalID: c.ExternalID,
 		})
 	}
@@ -436,7 +442,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	for _, c := range cs {
-		c.ExternalServiceType = repoSet[uint32(c.RepoID)].ExternalRepo.ServiceType
+		c.ExternalServiceType = repoSet[c.RepoID].ExternalRepo.ServiceType
 	}
 
 	err = tx.CreateChangesets(ctx, cs...)
@@ -461,7 +467,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		csr[i] = &changesetResolver{
 			store:         r.store,
 			Changeset:     cs[i],
-			preloadedRepo: repoSet[uint32(cs[i].RepoID)],
+			preloadedRepo: repoSet[cs[i].RepoID],
 		}
 	}
 
@@ -614,4 +620,18 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func parseCampaignState(s *string) (a8n.CampaignState, error) {
+	if s == nil {
+		return a8n.CampaignStateAny, nil
+	}
+	switch *s {
+	case "OPEN":
+		return a8n.CampaignStateOpen, nil
+	case "CLOSED":
+		return a8n.CampaignStateClosed, nil
+	default:
+		return a8n.CampaignStateAny, fmt.Errorf("unknown state %q", *s)
+	}
 }

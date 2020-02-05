@@ -36,7 +36,6 @@ func (h Webhook) upsertChangesetEvent(
 	if tx, err = h.Store.Transact(ctx); err != nil {
 		return err
 	}
-
 	defer tx.Done(&err)
 
 	cs, err := tx.GetChangeset(ctx, GetChangesetOpts{
@@ -192,6 +191,8 @@ func (h *GitHubWebhook) convertEvent(theirs interface{}) (pr int64, ours interfa
 			ours = h.closedEvent(e)
 		case "reopened":
 			ours = h.reopenedEvent(e)
+		case "labeled", "unlabeled":
+			ours = h.labeledEvent(e)
 		}
 
 	case *gh.PullRequestReviewEvent:
@@ -234,6 +235,23 @@ func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment
 	}
 
 	return &comment
+}
+
+func (*GitHubWebhook) labeledEvent(e *gh.PullRequestEvent) *github.LabelEvent {
+	return &github.LabelEvent{
+		Actor: github.Actor{
+			AvatarURL: e.GetSender().GetAvatarURL(),
+			Login:     e.GetSender().GetLogin(),
+			URL:       e.GetSender().GetURL(),
+		},
+		Label: github.Label{
+			Color:       e.Label.GetColor(),
+			Description: e.Label.GetDescription(),
+			Name:        e.Label.GetName(),
+		},
+		CreatedAt: e.GetPullRequest().GetUpdatedAt(),
+		Removed:   e.GetAction() == "unlabeled",
+	}
 }
 
 func (*GitHubWebhook) assignedEvent(e *gh.PullRequestEvent) *github.AssignedEvent {

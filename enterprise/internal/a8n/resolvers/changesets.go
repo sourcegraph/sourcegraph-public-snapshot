@@ -30,7 +30,7 @@ type changesetsConnectionResolver struct {
 	// cache results because they are used by multiple fields
 	once       sync.Once
 	changesets []*a8n.Changeset
-	reposByID  map[int32]*repos.Repo
+	reposByID  map[api.RepoID]*repos.Repo
 	next       int64
 	err        error
 }
@@ -72,7 +72,7 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Changeset, map[int32]*repos.Repo, int64, error) {
+func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Changeset, map[api.RepoID]*repos.Repo, int64, error) {
 	r.once.Do(func() {
 		r.changesets, r.next, r.err = r.store.ListChangesets(ctx, r.opts)
 		if r.err != nil {
@@ -80,9 +80,9 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Chan
 		}
 
 		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
-		repoIDs := make([]uint32, len(r.changesets))
+		repoIDs := make([]api.RepoID, len(r.changesets))
 		for i, c := range r.changesets {
-			repoIDs[i] = uint32(c.RepoID)
+			repoIDs[i] = c.RepoID
 		}
 
 		rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
@@ -91,9 +91,9 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Chan
 			return
 		}
 
-		r.reposByID = make(map[int32]*repos.Repo, len(rs))
+		r.reposByID = make(map[api.RepoID]*repos.Repo, len(rs))
 		for _, repo := range rs {
-			r.reposByID[int32(repo.ID)] = repo
+			r.reposByID[api.RepoID(repo.ID)] = repo
 		}
 	})
 
@@ -106,9 +106,14 @@ type changesetResolver struct {
 	preloadedRepo *repos.Repo
 
 	// cache repo because it's called more than once
-	once sync.Once
-	repo *graphqlbackend.RepositoryResolver
-	err  error
+	repoOnce sync.Once
+	repo     *graphqlbackend.RepositoryResolver
+	repoErr  error
+
+	// cache changeset events as they are used more than once
+	eventsOnce  sync.Once
+	events      []*a8n.ChangesetEvent
+	eventsError error
 }
 
 const changesetIDKind = "ExternalChangeset"
@@ -123,17 +128,17 @@ func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
 }
 
 func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	r.once.Do(func() {
+	r.repoOnce.Do(func() {
 		if r.preloadedRepo != nil {
 			r.repo = newRepositoryResolver(r.preloadedRepo)
 		} else {
-			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.RepoID))
-			if r.err != nil {
+			r.repo, r.repoErr = graphqlbackend.RepositoryByIDInt32(ctx, r.RepoID)
+			if r.repoErr != nil {
 				return
 			}
 		}
 	})
-	return r.repo, r.err
+	return r.repo, r.repoErr
 }
 
 func (r *changesetResolver) ID() graphql.ID {
@@ -148,15 +153,21 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 	return r.computeRepo(ctx)
 }
 
-func (r *changesetResolver) Campaigns(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
-}) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+	opts := ee.ListCampaignsOpts{
+		ChangesetID: r.Changeset.ID,
+	}
+	state, err := parseCampaignState(args.State)
+	if err != nil {
+		return nil, err
+	}
+	opts.State = state
+	if args.First != nil {
+		opts.Limit = int(*args.First)
+	}
 	return &campaignsConnectionResolver{
 		store: r.store,
-		opts: ee.ListCampaignsOpts{
-			ChangesetID: r.Changeset.ID,
-			Limit:       int(args.ConnectionArgs.GetFirst()),
-		},
+		opts:  opts,
 	}, nil
 }
 
@@ -188,6 +199,19 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }
 
+func (r *changesetResolver) computeEvents(ctx context.Context) ([]*a8n.ChangesetEvent, error) {
+	r.eventsOnce.Do(func() {
+		opts := ee.ListChangesetEventsOpts{
+			ChangesetIDs: []int64{r.Changeset.ID},
+			Limit:        -1,
+		}
+		es, _, err := r.store.ListChangesetEvents(ctx, opts)
+		r.events = es
+		r.eventsError = err
+	})
+	return r.events, r.eventsError
+}
+
 func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetReviewState, error) {
 	// ChangesetEvents are currently only implemented for GitHub. For other
 	// codehosts we compute the ReviewState from the Metadata field of a
@@ -196,11 +220,7 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 		return r.Changeset.ReviewState()
 	}
 
-	opts := ee.ListChangesetEventsOpts{
-		ChangesetIDs: []int64{r.Changeset.ID},
-		Limit:        -1,
-	}
-	es, _, err := r.store.ListChangesetEvents(ctx, opts)
+	es, err := r.computeEvents(ctx)
 	if err != nil {
 		return a8n.ChangesetReviewStatePending, err
 	}
@@ -215,9 +235,29 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 	return events.ReviewState()
 }
 
+func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
+	// Only GitHub supports labels on pull requests so don't make a DB call unless we need to
+	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
+		return []graphqlbackend.ChangesetLabelResolver{}, nil
+	}
+	es, err := r.computeEvents(ctx)
+	if err != nil {
+		return nil, err
+	}
+	events := a8n.ChangesetEvents(es)
+	labels := events.Labels()
+	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
+	for _, l := range labels {
+		resolvers = append(resolvers, &changesetLabelResolver{label: l})
+	}
+	return resolvers, nil
+}
+
 func (r *changesetResolver) Events(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (graphqlbackend.ChangesetEventsConnectionResolver, error) {
+	// TODO: We already need to fetch all events for ReviewState and Labels
+	// perhaps we can use the cached data here
 	return &changesetEventsConnectionResolver{
 		store:     r.store,
 		changeset: r.Changeset,
@@ -341,7 +381,7 @@ func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.R
 
 func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 	return graphqlbackend.NewRepositoryResolver(&types.Repo{
-		ID:           api.RepoID(r.ID),
+		ID:           r.ID,
 		ExternalRepo: r.ExternalRepo,
 		Name:         api.RepoName(r.Name),
 		RepoFields: &types.RepoFields{
@@ -351,4 +391,20 @@ func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 			Fork:        r.Fork,
 		},
 	})
+}
+
+type changesetLabelResolver struct {
+	label a8n.ChangesetLabel
+}
+
+func (r *changesetLabelResolver) Text() string {
+	return r.label.Name
+}
+
+func (r *changesetLabelResolver) Color() string {
+	return r.label.Color
+}
+
+func (r *changesetLabelResolver) Description() *string {
+	return &r.label.Description
 }

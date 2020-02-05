@@ -74,9 +74,9 @@ type FakeStore struct {
 	ListAllRepoNamesError       error // error to be returned in ListAllRepoNames
 
 	svcIDSeq  int64
-	repoIDSeq uint32
+	repoIDSeq api.RepoID
 	svcByID   map[int64]*ExternalService
-	repoByID  map[uint32]*Repo
+	repoByID  map[api.RepoID]*Repo
 	parent    *FakeStore
 }
 
@@ -91,7 +91,7 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		svcByID[id] = svc.Clone()
 	}
 
-	repoByID := make(map[uint32]*Repo, len(s.repoByID))
+	repoByID := make(map[api.RepoID]*Repo, len(s.repoByID))
 	for _, r := range s.repoByID {
 		clone := r.Clone()
 		repoByID[r.ID] = clone
@@ -224,7 +224,7 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		names[strings.ToLower(name)] = true
 	}
 
-	ids := make(map[uint32]bool, len(args.IDs))
+	ids := make(map[api.RepoID]bool, len(args.IDs))
 	for _, id := range args.IDs {
 		ids[id] = true
 	}
@@ -319,7 +319,7 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	}
 
 	if s.repoByID == nil {
-		s.repoByID = make(map[uint32]*Repo, len(upserts))
+		s.repoByID = make(map[api.RepoID]*Repo, len(upserts))
 	}
 
 	var updates, inserts []*Repo
@@ -461,7 +461,7 @@ var Opt = struct {
 	ExternalServiceID         func(int64) func(*ExternalService)
 	ExternalServiceModifiedAt func(time.Time) func(*ExternalService)
 	ExternalServiceDeletedAt  func(time.Time) func(*ExternalService)
-	RepoID                    func(uint32) func(*Repo)
+	RepoID                    func(api.RepoID) func(*Repo)
 	RepoName                  func(string) func(*Repo)
 	RepoCreatedAt             func(time.Time) func(*Repo)
 	RepoModifiedAt            func(time.Time) func(*Repo)
@@ -487,7 +487,7 @@ var Opt = struct {
 			e.DeletedAt = ts
 		}
 	},
-	RepoID: func(n uint32) func(*Repo) {
+	RepoID: func(n api.RepoID) func(*Repo) {
 		return func(r *Repo) {
 			r.ID = n
 		}

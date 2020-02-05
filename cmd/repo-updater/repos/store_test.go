@@ -736,7 +736,7 @@ func hasNoID(r *repos.Repo) bool {
 	return r.ID == 0
 }
 
-func hasID(ids ...uint32) func(r *repos.Repo) bool {
+func hasID(ids ...api.RepoID) func(r *repos.Repo) bool {
 	return func(r *repos.Repo) bool {
 		for _, id := range ids {
 			if r.ID == id {
@@ -946,7 +946,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		stored: repositories,
 		args: func(stored repos.Repos) repos.StoreListReposArgs {
 			return repos.StoreListReposArgs{
-				IDs: []uint32{stored[0].ID, stored[1].ID},
+				IDs: []api.RepoID{stored[0].ID, stored[1].ID},
 			}
 		},
 		repos: repos.Assert.ReposEqual(repositories[:2].Clone()...),

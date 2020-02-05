@@ -1,6 +1,7 @@
 package a8n
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -61,7 +62,7 @@ type CampaignJob struct {
 	ID             int64
 	CampaignPlanID int64
 
-	RepoID  int32
+	RepoID  api.RepoID
 	Rev     api.CommitID
 	BaseRef string
 
@@ -140,6 +141,22 @@ func (s ChangesetState) Valid() bool {
 	}
 }
 
+// ChangesetLabel represents a label applied to a changeset
+type ChangesetLabel struct {
+	Name        string
+	Color       string
+	Description string
+}
+
+// CampaignState defines the possible states of a Campaign
+type CampaignState string
+
+const (
+	CampaignStateAny    CampaignState = "ANY"
+	CampaignStateOpen   CampaignState = "OPEN"
+	CampaignStateClosed CampaignState = "CLOSED"
+)
+
 // BackgroundProcessStatus defines the status of a background process.
 type BackgroundProcessStatus struct {
 	Canceled      bool
@@ -156,6 +173,9 @@ func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.Proce
 func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
 func (b BackgroundProcessStatus) Finished() bool {
 	return b.ProcessState != BackgroundProcessStateProcessing
+}
+func (b BackgroundProcessStatus) Processing() bool {
+	return b.ProcessState == BackgroundProcessStateProcessing
 }
 
 // BackgroundProcessState defines the possible states of a background process.
@@ -231,7 +251,7 @@ func (c *ChangesetJob) SuccessfullyCompleted() bool {
 // Campaigns.
 type Changeset struct {
 	ID                  int64
-	RepoID              int32
+	RepoID              api.RepoID
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	Metadata            interface{}
@@ -544,6 +564,36 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 	return SelectReviewState(states), nil
 }
 
+// Labels returns the set of current labels based on the sequence of events
+func (ce *ChangesetEvents) Labels() []ChangesetLabel {
+	// Copy slice so that we don't mutate ce
+	sorted := make(ChangesetEvents, len(*ce))
+	copy(sorted, *ce)
+	sort.Sort(sorted)
+
+	// Iterate through all label events to get the current set
+	set := make(map[string]*github.LabelEvent)
+	for _, event := range sorted {
+		switch e := event.Metadata.(type) {
+		case *github.LabelEvent:
+			if e.Removed {
+				delete(set, e.Label.Name)
+			} else {
+				set[e.Label.Name] = e
+			}
+		}
+	}
+	labels := make([]ChangesetLabel, 0, len(set))
+	for _, label := range set {
+		labels = append(labels, ChangesetLabel{
+			Name:        label.Label.Name,
+			Color:       label.Label.Color,
+			Description: label.Label.Description,
+		})
+	}
+	return labels
+}
+
 // Actor returns the actor of the ChangesetEvent.
 func (e *ChangesetEvent) Actor() string {
 	var a string
@@ -572,6 +622,8 @@ func (e *ChangesetEvent) Actor() string {
 	case *github.ReviewRequestedEvent:
 		a = e.Actor.Login
 	case *github.UnassignedEvent:
+		a = e.Actor.Login
+	case *github.LabelEvent:
 		a = e.Actor.Login
 	}
 
@@ -634,6 +686,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = e.CreatedAt
 	case *github.UnassignedEvent:
 		t = e.CreatedAt
+	case *github.LabelEvent:
+		t = e.CreatedAt
 	case *bitbucketserver.Activity:
 		t = unixMilliToTime(int64(e.CreatedDate))
 	}
@@ -648,6 +702,21 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 	}
 
 	switch e := e.Metadata.(type) {
+	case *github.LabelEvent:
+		o := o.Metadata.(*github.LabelEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+		if e.Label == (github.Label{}) {
+			e.Label = o.Label
+		}
+
 	case *github.AssignedEvent:
 		o := o.Metadata.(*github.AssignedEvent)
 
@@ -993,6 +1062,11 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitHubReviewRequested
 	case *github.UnassignedEvent:
 		return ChangesetEventKindGitHubUnassigned
+	case *github.LabelEvent:
+		if e.Removed {
+			return ChangesetEventKindGitHubUnlabeled
+		}
+		return ChangesetEventKindGitHubLabeled
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
 	default:
@@ -1032,6 +1106,10 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 			return new(github.ReviewRequestedEvent), nil
 		case ChangesetEventKindGitHubUnassigned:
 			return new(github.UnassignedEvent), nil
+		case ChangesetEventKindGitHubLabeled:
+			return new(github.LabelEvent), nil
+		case ChangesetEventKindGitHubUnlabeled:
+			return &github.LabelEvent{Removed: true}, nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
@@ -1056,6 +1134,8 @@ const (
 	ChangesetEventKindGitHubReviewRequested      ChangesetEventKind = "github:review_requested"
 	ChangesetEventKindGitHubReviewCommented      ChangesetEventKind = "github:review_commented"
 	ChangesetEventKindGitHubUnassigned           ChangesetEventKind = "github:unassigned"
+	ChangesetEventKindGitHubLabeled              ChangesetEventKind = "github:labeled"
+	ChangesetEventKindGitHubUnlabeled            ChangesetEventKind = "github:unlabeled"
 
 	ChangesetEventKindBitbucketServerApproved   ChangesetEventKind = "bitbucketserver:approved"
 	ChangesetEventKindBitbucketServerUnapproved ChangesetEventKind = "bitbucketserver:unapproved"

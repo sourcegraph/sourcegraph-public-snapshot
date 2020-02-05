@@ -571,6 +571,23 @@
      }
     },
     {
+     "Type": "LabeledEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "Login": "mrnugget",
+       "URL": "https://github.com/mrnugget"
+      },
+      "Label": {
+       "Color": "ef820a",
+       "Description": "",
+       "Name": "automation"
+      },
+      "CreatedAt": "2019-10-07T12:28:25Z",
+      "Removed": false
+     }
+    },
+    {
      "Type": "PullRequestReview",
      "Item": {
       "DatabaseID": 298093884,

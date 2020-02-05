@@ -61,7 +61,7 @@ interface Campaign
 }
 
 interface CampaignPlan extends Pick<GQL.ICampaignPlan, '__typename' | 'id'> {
-    changesets: Pick<GQL.ICampaignPlan['changesets'], 'nodes' | 'totalCount'>
+    changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes' | 'totalCount'>
     status: Pick<GQL.ICampaignPlan['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
 }
 
@@ -95,8 +95,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
-
-    const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
 
     // For errors during fetching
     const triggerError = useError()
@@ -162,7 +160,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             unblockHistoryRef.current()
             unblockHistoryRef.current = history.block('Do you want to discard this campaign?')
         }
-        return unblockHistoryRef.current
+        // Note: the current() method gets dynamically reassigned,
+        // therefor we can't return it directly.
+        return () => unblockHistoryRef.current()
     }, [campaignID, history])
 
     const previewCampaignPlans = useMemo(() => new Subject<GQL.ID>(), [])
@@ -180,7 +180,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     switchMap(plan => _fetchCampaignPlanById(plan)),
                     tap(campaign => {
                         setCampaign(campaign)
-                        if (campaign && campaign.changesets.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
+                        if (campaign && campaign.changesetPlans.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
                             changesetUpdates.next()
                         }
                     })
@@ -290,7 +290,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setAlertError(undefined)
     }
 
-    const onClose = async (): Promise<void> => {
+    const onClose = async (closeChangesets: boolean): Promise<void> => {
         if (!confirm('Are you sure you want to close the campaign?')) {
             return
         }
@@ -305,7 +305,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onDelete = async (): Promise<void> => {
+    const onDelete = async (closeChangesets: boolean): Promise<void> => {
         if (!confirm('Are you sure you want to delete the campaign?')) {
             return
         }
@@ -396,49 +396,82 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             Edit
                                         </button>
                                         {!campaign.closedAt && (
-                                            <details className="campaign-details__details">
-                                                <summary>
-                                                    <span className="btn btn-secondary mr-1 dropdown-toggle">
+                                            <CloseDeleteCampaignPrompt
+                                                summary={
+                                                    <span
+                                                        className={classNames(
+                                                            'btn btn-secondary mr-1 dropdown-toggle',
+                                                            campaign.status.state ===
+                                                                GQL.BackgroundProcessState.PROCESSING && 'disabled'
+                                                        )}
+                                                        onClick={event =>
+                                                            campaign.status.state ===
+                                                                GQL.BackgroundProcessState.PROCESSING &&
+                                                            event.preventDefault()
+                                                        }
+                                                        data-tooltip={
+                                                            campaign.status.state ===
+                                                            GQL.BackgroundProcessState.PROCESSING
+                                                                ? 'Cannot close while campaign is being created'
+                                                                : undefined
+                                                        }
+                                                    >
                                                         Close
                                                     </span>
-                                                </summary>
-                                                <CloseDeleteCampaignPrompt
-                                                    message={
-                                                        <p>
-                                                            Close campaign <b>{campaign.name}</b>?
-                                                        </p>
-                                                    }
-                                                    changesetsCount={campaign.changesets.totalCount}
-                                                    closeChangesets={closeChangesets}
-                                                    onCloseChangesetsToggle={setCloseChangesets}
-                                                    buttonText="Close"
-                                                    onButtonClick={onClose}
-                                                    buttonClassName="btn-secondary"
-                                                    buttonDisabled={mode === 'deleting' || mode === 'closing'}
-                                                    className="position-absolute campaign-details__details-menu"
-                                                />
-                                            </details>
-                                        )}
-                                        <details className="campaign-details__details">
-                                            <summary>
-                                                <span className="btn btn-danger dropdown-toggle">Delete</span>
-                                            </summary>
-                                            <CloseDeleteCampaignPrompt
+                                                }
                                                 message={
                                                     <p>
-                                                        Delete campaign <strong>{campaign.name}</strong>?
+                                                        Close campaign <strong>{campaign.name}</strong>?
                                                     </p>
                                                 }
                                                 changesetsCount={campaign.changesets.totalCount}
-                                                closeChangesets={closeChangesets}
-                                                onCloseChangesetsToggle={setCloseChangesets}
-                                                buttonText="Delete"
-                                                onButtonClick={onDelete}
-                                                buttonClassName="btn-danger"
-                                                buttonDisabled={mode === 'deleting' || mode === 'closing'}
-                                                className="position-absolute campaign-details__details-menu"
+                                                buttonText="Close"
+                                                onButtonClick={onClose}
+                                                buttonClassName="btn-secondary"
+                                                buttonDisabled={
+                                                    mode === 'deleting' ||
+                                                    mode === 'closing' ||
+                                                    campaign.status.state === GQL.BackgroundProcessState.PROCESSING
+                                                }
                                             />
-                                        </details>
+                                        )}
+                                        <CloseDeleteCampaignPrompt
+                                            summary={
+                                                <span
+                                                    className={classNames(
+                                                        'btn btn-danger dropdown-toggle',
+                                                        campaign.status.state ===
+                                                            GQL.BackgroundProcessState.PROCESSING && 'disabled'
+                                                    )}
+                                                    onClick={event =>
+                                                        campaign.status.state ===
+                                                            GQL.BackgroundProcessState.PROCESSING &&
+                                                        event.preventDefault()
+                                                    }
+                                                    data-tooltip={
+                                                        campaign.status.state === GQL.BackgroundProcessState.PROCESSING
+                                                            ? 'Cannot delete while campaign is being created'
+                                                            : undefined
+                                                    }
+                                                >
+                                                    Delete
+                                                </span>
+                                            }
+                                            message={
+                                                <p>
+                                                    Delete campaign <strong>{campaign.name}</strong>?
+                                                </p>
+                                            }
+                                            changesetsCount={campaign.changesets.totalCount}
+                                            buttonText="Delete"
+                                            onButtonClick={onDelete}
+                                            buttonClassName="btn-danger"
+                                            buttonDisabled={
+                                                mode === 'deleting' ||
+                                                mode === 'closing' ||
+                                                campaign.status.state === GQL.BackgroundProcessState.PROCESSING
+                                            }
+                                        />
                                     </>
                                 )
                             ))}
@@ -493,7 +526,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={mode !== 'editing' || campaign?.changesets.totalCount === 0}
+                            disabled={mode !== 'editing' || campaign?.changesetPlans.totalCount === 0}
                         >
                             Create
                         </button>
@@ -525,8 +558,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )}
 
-                    {campaign.changesets.totalCount +
-                        (campaign.__typename === 'Campaign' ? campaign.changesetPlans.totalCount : 0) >
+                    {campaign.changesetPlans.totalCount +
+                        (campaign.__typename === 'Campaign' ? campaign.changesets.totalCount : 0) >
                     0 ? (
                         <CampaignTabs
                             campaign={campaign}
