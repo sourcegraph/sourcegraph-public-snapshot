@@ -44,7 +44,7 @@ const get = <T>(url: string): Observable<T> =>
         switchMap(response => response.json())
     )
 
-const getRepoNameFromProjecID = memoizeObservable(
+const getRepoNameFromProjectID = memoizeObservable(
     (projectId: string): Observable<string> =>
         get<{ web_url: string }>(`${window.location.origin}/api/v4/projects/${projectId}`).pipe(
             map(({ web_url }) => {
