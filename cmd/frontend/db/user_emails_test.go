@@ -12,6 +12,46 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
+func TestUserEmail_NeedsVerificationCoolDown(t *testing.T) {
+	timePtr := func(t time.Time) *time.Time {
+		return &t
+	}
+
+	tests := []struct {
+		name                   string
+		lastVerificationSentAt *time.Time
+		needsCoolDown          bool
+	}{
+		{
+			name:                   "nil",
+			lastVerificationSentAt: nil,
+			needsCoolDown:          false,
+		},
+		{
+			name:                   "needs cool down",
+			lastVerificationSentAt: timePtr(time.Now().Add(time.Minute)),
+			needsCoolDown:          true,
+		},
+		{
+			name:                   "does not need cool down",
+			lastVerificationSentAt: timePtr(time.Now().Add(-1 * time.Minute)),
+			needsCoolDown:          false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			email := &UserEmail{
+				LastVerificationSentAt: test.lastVerificationSentAt,
+			}
+			needsCoolDown := email.NeedsVerificationCoolDown()
+			if test.needsCoolDown != needsCoolDown {
+				t.Fatalf("needsCoolDown: want %v but got %v", test.needsCoolDown, needsCoolDown)
+			}
+		})
+	}
+}
+
 func TestUserEmails_Get(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -311,6 +351,111 @@ func isUserEmailVerified(ctx context.Context, userID int32, email string) (bool,
 		}
 	}
 	return false, fmt.Errorf("email not found: %s", email)
+}
+
+func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	const addr = "alice@example.com"
+	user, err := Users.Create(ctx, NewUser{
+		Email:                 addr,
+		Username:              "alice",
+		Password:              "pw",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify "last_verification_sent_at" column is NULL
+	emails, err := UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: user.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	} else if len(emails) != 1 {
+		t.Fatalf("want 1 email but got %d emails: %v", len(emails), emails)
+	} else if emails[0].LastVerificationSentAt != nil {
+		t.Fatalf("lastVerificationSentAt: want nil but got %v", emails[0].LastVerificationSentAt)
+	}
+
+	if err = UserEmails.SetLastVerificationSentAt(ctx, user.ID, addr); err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify "last_verification_sent_at" column is not NULL
+	emails, err = UserEmails.ListByUser(ctx, UserEmailsListOptions{
+		UserID: user.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	} else if len(emails) != 1 {
+		t.Fatalf("want 1 email but got %d emails: %v", len(emails), emails)
+	} else if emails[0].LastVerificationSentAt == nil {
+		t.Fatalf("lastVerificationSentAt: want non-nil but got nil")
+	}
+}
+
+func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	const addr = "alice@example.com"
+	user, err := Users.Create(ctx, NewUser{
+		Email:                 addr,
+		Username:              "alice",
+		Password:              "pw",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Should return "not found" because "last_verification_sent_at" column is NULL
+	_, err = UserEmails.GetLatestVerificationSentEmail(ctx, addr)
+	if err == nil || !errcode.IsNotFound(err) {
+		t.Fatalf("err: want a not found error but got %v", err)
+	} else if err = UserEmails.SetLastVerificationSentAt(ctx, user.ID, addr); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should return an email because "last_verification_sent_at" column is not NULL
+	email, err := UserEmails.GetLatestVerificationSentEmail(ctx, addr)
+	if err != nil {
+		t.Fatal(err)
+	} else if email.Email != addr {
+		t.Fatalf("Email: want %s but got %q", addr, email.Email)
+	}
+
+	// Create another user with same email address and set "last_verification_sent_at" column
+	user2, err := Users.Create(ctx, NewUser{
+		Email:                 addr,
+		Username:              "bob",
+		Password:              "pw",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	} else if err = UserEmails.SetLastVerificationSentAt(ctx, user2.ID, addr); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should return the email for the second user
+	email, err = UserEmails.GetLatestVerificationSentEmail(ctx, addr)
+	if err != nil {
+		t.Fatal(err)
+	} else if email.Email != addr {
+		t.Fatalf("Email: want %s but got %q", addr, email.Email)
+	} else if email.UserID != user2.ID {
+		t.Fatalf("UserID: want %d but got %d", user2.ID, email.UserID)
+	}
 }
 
 func strptr(s string) *string {

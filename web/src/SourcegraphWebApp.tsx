@@ -56,6 +56,7 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
 import { generateFiltersQuery } from '../../shared/src/util/url'
+import { NotificationType } from '../../shared/src/api/client/services/notifications'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -137,6 +138,14 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether to display the MonacoQueryInput search field.
      */
     smartSearchField: boolean
+}
+
+const notificationClassNames = {
+    [NotificationType.Log]: 'alert alert-secondary',
+    [NotificationType.Success]: 'alert alert-success',
+    [NotificationType.Info]: 'alert alert-info',
+    [NotificationType.Warning]: 'alert alert-warning',
+    [NotificationType.Error]: 'alert alert-error',
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -397,7 +406,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         {/* eslint-enable react/jsx-no-bind */}
                     </BrowserRouter>
                     <Tooltip key={1} />
-                    <Notifications key={2} extensionsController={this.extensionsController} />
+                    <Notifications
+                        key={2}
+                        extensionsController={this.extensionsController}
+                        notificationClassNames={notificationClassNames}
+                    />
                 </ShortcutProvider>
             </ErrorBoundary>
         )

@@ -29,6 +29,7 @@ export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend gi
 # our enterprise build scripts.
 export server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
+cp -a ./lsif "$OUTPUT"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export bindir="$OUTPUT/usr/local/bin"
 mkdir -p "$bindir"
@@ -46,7 +47,7 @@ go_build() {
 }
 export -f go_build
 
-echo "--- build go, symbols, and lsif concurrently"
+echo "--- build go and symbols concurrently"
 
 build_go_packages(){
    echo "--- go build"
@@ -76,13 +77,7 @@ build_symbols() {
 }
 export -f build_symbols
 
-build_lsif() {
-    echo "--- build lsif-server"
-    IMAGE=sourcegraph/lsif-server-builder:ci ./lsif/build.sh
-}
-export -f build_lsif
-
-parallel_run {} ::: build_lsif build_symbols build_go_packages
+parallel_run {} ::: build_go_packages build_symbols
 
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"

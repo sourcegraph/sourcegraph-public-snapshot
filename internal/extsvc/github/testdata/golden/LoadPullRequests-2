@@ -32,6 +32,9 @@
      "URL": "https://github.com/felixfbecker"
     }
    ],
+   "Labels": {
+    "Nodes": []
+   },
    "TimelineItems": [
     {
      "Type": "ReviewRequestedEvent",
@@ -94,20 +97,7 @@
        "MessageHeadline": "Fix disableExtension flag for native integrations",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjM0NDM2OTIz",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #42686 passed (15 minutes, 37 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjM0NDM1OTA5",
-          "Context": "percy/Sourcegraph",
-          "Description": "Visual review automatically approved, no visual changes found.",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
@@ -146,20 +136,7 @@
        "MessageHeadline": "Fix disableExtension flag for native integrations",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjM0NDM2OTIz",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #42686 passed (15 minutes, 37 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjM0NDM1OTA5",
-          "Context": "percy/Sourcegraph",
-          "Description": "Visual review automatically approved, no visual changes found.",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
@@ -212,20 +189,7 @@
        "MessageHeadline": "No need to explicitly remove the subscription",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDU0MzIx",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #42783 passed (15 minutes, 53 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDUzMTQ0",
-          "Context": "percy/Sourcegraph",
-          "Description": "Visual review automatically approved, no visual changes found.",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
@@ -276,20 +240,7 @@
        "MessageHeadline": "Fix disableExtension flag for native integrations (#5550)",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/f66b0addcbeb51d29350f3abc2af7ffb238af48a",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MjA4MTI5",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #42786 passed (19 minutes, 43 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MTQ4NzE3",
-          "Context": "percy/Sourcegraph",
-          "Description": "Visual review automatically approved, no visual changes found.",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/19864447?v=4",
@@ -346,6 +297,16 @@
      "URL": "https://github.com/mrnugget"
     }
    ],
+   "Labels": {
+    "Nodes": [
+     {
+      "ID": "MDU6TGFiZWwxNTMyNTU0NDkz",
+      "Color": "ef820a",
+      "Description": "",
+      "Name": "automation"
+     }
+    ]
+   },
    "TimelineItems": [
     {
      "Type": "RenamedTitleEvent",
@@ -442,14 +403,7 @@
        "MessageHeadline": "a8n: Fix CreateChangesetEvent query",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/0830ebfae3fa8f6405d30c1d0bb6dbdfba514e3f",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3Nzg3NTEyNzA5",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44047 failed (7 minutes, 54 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
@@ -615,14 +569,7 @@
        "MessageHeadline": "a8n: Fix CreateChangesetEvent query",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/71993940833d0d14b02a4fe90bfbb4fdd1601d31",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODA1NDM1MTU2",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44262 failed (7 minutes)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
@@ -648,14 +595,7 @@
        "MessageHeadline": "WIP: Split GitHub timeline items into ChangesetEvents",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/13057d82a110b44aba4ce1796a91bc51cc52fc85",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODA2NjYwNDM0",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44274 failed (8 minutes, 24 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -681,14 +621,7 @@
        "MessageHeadline": "WIP",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/729d8df692d0fa981207a656bdc36ecbcd6969ab",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODA4MDcyNzI0",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44283 failed (6 minutes, 33 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
@@ -714,14 +647,7 @@
        "MessageHeadline": "Fix tests",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/dcdecd1f3e16b197d3ebbec9f8dbcb33fb582b99",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODA4MTg0NjI1",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44284 failed (7 minutes, 45 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
@@ -767,14 +693,7 @@
        "MessageHeadline": "Merge remote-tracking branch 'origin/master' into a8n/changeset-events",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/30a5f5e3d9cbc35d634ff051d550054f99b6fbb1",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE3NzE3Njkx",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44405 failed (8 minutes, 28 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
@@ -820,14 +739,7 @@
        "MessageHeadline": "a8n: UpsertChangesetEvents in Store",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/233b4a6d0a201c9d739c77587f91dc1e9432882f",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE3NzcyMjIy",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44406 failed (7 minutes, 57 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
@@ -853,14 +765,7 @@
        "MessageHeadline": "WIP",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/dc19de9ee127a3f299b2865029815a29674166e0",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE4MDA3Mzg5",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44407 failed (7 minutes, 45 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
@@ -886,14 +791,7 @@
        "MessageHeadline": "Manually go generate code for a8n.Store to list changeset events",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/145a6540a49f1053b4e421801101e425b1eeae1f",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE4MjEzMDc2",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44416 failed (8 minutes, 17 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -971,14 +869,7 @@
        "MessageHeadline": "a8n: Add minimal ChangesetEvent to GraphQL API",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/ea79747711c7f513e2e0713f9d70ad912253b3a9",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NDIwMTk5",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44434 failed (9 minutes, 18 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1004,14 +895,7 @@
        "MessageHeadline": "a8n: Query ChangesetEvents in GraphQL test",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/112254ea81448199d549f057495c779e75a7d923",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NTkzNjE1",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44440 canceled by Thorsten Ball",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1029,6 +913,24 @@
      }
     },
     {
+     "Type": "LabeledEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "Login": "mrnugget",
+       "URL": "https://github.com/mrnugget"
+      },
+      "Label": {
+       "ID": "MDU6TGFiZWwxNTMyNTU0NDkz",
+       "Color": "ef820a",
+       "Description": "",
+       "Name": "automation"
+      },
+      "CreatedAt": "2019-10-07T12:28:25Z",
+      "Removed": false
+     }
+    },
+    {
      "Type": "PullRequestCommit",
      "Item": {
       "Commit": {
@@ -1037,14 +939,7 @@
        "MessageHeadline": "Undo previous change to GitHubSource tests",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjE1MDYx",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44441 canceled by Thorsten Ball",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1070,14 +965,7 @@
        "MessageHeadline": "a8n: Simplify test",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0af06004d731758a2536eff67864881f065a4c9",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjMxMDM0",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44442 canceled by Thorsten Ball",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1103,14 +991,7 @@
        "MessageHeadline": "fixup! Fix indentation",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/6a641d57ec46818664e3434fd37bc3e1373ac45f",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjM5MTQ5",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44443 canceled by Thorsten Ball",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1148,14 +1029,7 @@
        "MessageHeadline": "Undo previous change to GitHubSource tests",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjE1MDYx",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44441 canceled by Thorsten Ball",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1194,14 +1068,7 @@
        "MessageHeadline": "Undo previous change to GitHubSource tests",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjE1MDYx",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44441 canceled by Thorsten Ball",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1228,14 +1095,7 @@
        "MessageHeadline": "Update enterprise/pkg/a8n/store.go",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/a66ffd259cf340088918663ad670f973d53b51af",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjQwMTk4",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44444 canceled by Thorsten Ball",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/19864447?v=4",
@@ -1256,14 +1116,7 @@
        "MessageHeadline": "Update enterprise/pkg/a8n/store.go",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/39d32f6a3c3d467fd7bf3f8c729b63b362966682",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjU1NDY2",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44445 canceled by Thorsten Ball",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/19864447?v=4",
@@ -1284,14 +1137,7 @@
        "MessageHeadline": "fixup! Fix indentation",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NzE4NjQ4",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44446 failed (8 minutes, 13 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1342,14 +1188,7 @@
        "MessageHeadline": "fixup! Fix indentation",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NzE4NjQ4",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44446 failed (8 minutes, 13 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1388,14 +1227,7 @@
        "MessageHeadline": "fixup! Fix indentation",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NzE4NjQ4",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44446 failed (8 minutes, 13 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1422,20 +1254,7 @@
        "MessageHeadline": "fixup! Remove unused method",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/9780015346b79568f04925a03f6ec6cdbc0ae9be",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5ODMyMTUz",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44448 passed (10 minutes, 17 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5ODMwMjA2",
-          "Context": "percy/Sourcegraph",
-          "Description": "Visual review automatically approved, no visual changes found.",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1486,26 +1305,7 @@
        "MessageHeadline": "a8n: Persist GitHub ChangesetEvents to database (#5834)",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/705c515f173ec33bf343d5b3ea8e9cd24c10abf7",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODIwMzkxMjk0",
-          "Context": "buildkite/lsif",
-          "Description": "Build #406 passed (1 minute, 49 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODIwMTA0MDc5",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #44449 passed (18 minutes, 36 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODIwMDM3ODg2",
-          "Context": "percy/Sourcegraph",
-          "Description": "Visual review automatically approved, no visual changes found.",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
@@ -1615,6 +1415,9 @@
      "URL": "https://github.com/tsenart"
     }
    ],
+   "Labels": {
+    "Nodes": []
+   },
    "TimelineItems": [
     {
      "Type": "PullRequestCommit",
@@ -1807,6 +1610,9 @@
      "URL": "https://github.com/unknwon"
     }
    ],
+   "Labels": {
+    "Nodes": []
+   },
    "TimelineItems": [
     {
      "Type": "PullRequestCommit",
@@ -1843,20 +1649,7 @@
        "MessageHeadline": "Fix broken telemetry handler",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/2eca7037782a7aa6a39637999f9ebf58d6761e17",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NDMxOTQyMTcz",
-          "Context": "buildkite/sourcegraph-e2e",
-          "Description": "Build #1731 failed (6 minutes, 37 seconds)",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NDMxOTM2MDk3",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #51877 passed (3 minutes, 19 seconds)",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
@@ -2054,20 +1847,7 @@
        "MessageHeadline": "Comments on event_logs.go style",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/cd15ee5b96b69aef230d2da11e53efcb5afeea87",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NDMyMTgxMzc0",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #51883 failed (3 minutes, 11 seconds)",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NDMyMTg2Mjcx",
-          "Context": "buildkite/sourcegraph-e2e",
-          "Description": "Build #1737 failed (6 minutes, 33 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
@@ -2093,20 +1873,7 @@
        "MessageHeadline": "dev/generate",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/f61aa961987181d2c3c50bf5b699f883b7133808",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NDMyMTk1NTg2",
-          "Context": "buildkite/sourcegraph-e2e",
-          "Description": "Build #1739 failed (5 minutes, 13 seconds)",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NDMyMTkyMDE1",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #51885 passed (3 minutes, 31 seconds)",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
@@ -2144,20 +1911,7 @@
        "MessageHeadline": "dev/generate",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/f61aa961987181d2c3c50bf5b699f883b7133808",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NDMyMTk1NTg2",
-          "Context": "buildkite/sourcegraph-e2e",
-          "Description": "Build #1739 failed (5 minutes, 13 seconds)",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NDMyMTkyMDE1",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #51885 passed (3 minutes, 31 seconds)",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
@@ -2196,20 +1950,7 @@
        "MessageHeadline": "dev/generate",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/f61aa961987181d2c3c50bf5b699f883b7133808",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NDMyMTk1NTg2",
-          "Context": "buildkite/sourcegraph-e2e",
-          "Description": "Build #1739 failed (5 minutes, 13 seconds)",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NDMyMTkyMDE1",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #51885 passed (3 minutes, 31 seconds)",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
@@ -2274,38 +2015,7 @@
        "MessageHeadline": "Comments",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/253af383900a79c30e08fa1c62bfb954ef6baa45",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjI5Mzc3NTA4",
-          "Context": "percy/Sourcegraph",
-          "Description": "6 visual changes need review",
-          "State": "ERROR"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjI5NDEwNTE0",
-          "Context": "codecov/patch",
-          "Description": "24.00% of diff hit (target 39.70%)",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjI5Mzc0NDM4",
-          "Context": "buildkite/e2e",
-          "Description": "Build #4146 passed (9 minutes, 51 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjI5MzE1Mjk5",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #54389 passed (3 minutes, 35 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjI5NDEwMzEw",
-          "Context": "codecov/project",
-          "Description": "39.62% (target 0.00%)",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
@@ -2381,38 +2091,7 @@
        "MessageHeadline": "Comments",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/253af383900a79c30e08fa1c62bfb954ef6baa45",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjI5Mzc3NTA4",
-          "Context": "percy/Sourcegraph",
-          "Description": "6 visual changes need review",
-          "State": "ERROR"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjI5NDEwNTE0",
-          "Context": "codecov/patch",
-          "Description": "24.00% of diff hit (target 39.70%)",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjI5Mzc0NDM4",
-          "Context": "buildkite/e2e",
-          "Description": "Build #4146 passed (9 minutes, 51 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjI5MzE1Mjk5",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #54389 passed (3 minutes, 35 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjI5NDEwMzEw",
-          "Context": "codecov/project",
-          "Description": "39.62% (target 0.00%)",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars0.githubusercontent.com/u/5589410?v=4",
@@ -2439,20 +2118,7 @@
        "MessageHeadline": "Merge branch 'master' into stats3",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/8796dfb1396847cde8ca63042ef17b14bd397281",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM1OTMxMjg5",
-          "Context": "buildkite/e2e",
-          "Description": "Build #4221 canceled",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM1OTI5OTE3",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #54495 canceled",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/103087?v=4",
@@ -2650,20 +2316,7 @@
        "MessageHeadline": "Merge branch 'master' into stats3",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/8796dfb1396847cde8ca63042ef17b14bd397281",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM1OTMxMjg5",
-          "Context": "buildkite/e2e",
-          "Description": "Build #4221 canceled",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM1OTI5OTE3",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #54495 canceled",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/103087?v=4",
@@ -2690,20 +2343,7 @@
        "MessageHeadline": "Add comment from feedback.",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/ee4cd13d6234069ed0e3067271debf61e8a5ce31",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM1OTk4MTE4",
-          "Context": "buildkite/e2e",
-          "Description": "Build #4222 failed (5 minutes, 52 seconds)",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2MTk2Mjc1",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #54496 failed (5 minutes, 5 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/103087?v=4",
@@ -2729,20 +2369,7 @@
        "MessageHeadline": "Remove unused import.",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/08e5969da9915db9ba2ac06b4c4af0ec97036d71",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2MzkyMTA2",
-          "Context": "buildkite/e2e",
-          "Description": "Build #4229 canceled",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2MzU3MTYx",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #54503 failed (3 minutes, 30 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/103087?v=4",
@@ -2768,20 +2395,7 @@
        "MessageHeadline": "Fix lint.",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/4ee2fda299e4ee72a3903a8f6556b16354eebde6",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2NDgwOTU4",
-          "Context": "buildkite/e2e",
-          "Description": "Build #4232 canceled",
-          "State": "FAILURE"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2NDQzODI0",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #54506 failed (4 minutes, 36 seconds)",
-          "State": "FAILURE"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/103087?v=4",
@@ -2807,26 +2421,7 @@
        "MessageHeadline": "Merge branch 'master' into stats3",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/33156a2c540db7a0f70f433ab9f0e5fec0ecc79a",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2NTkyMTEx",
-          "Context": "percy/Sourcegraph",
-          "Description": "1 visual change needs review",
-          "State": "ERROR"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2NTg5OTY1",
-          "Context": "buildkite/e2e",
-          "Description": "Build #4233 passed (9 minutes, 26 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2NTQyNjM0",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #54507 passed (5 minutes, 33 seconds)",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/103087?v=4",
@@ -2859,26 +2454,7 @@
        "MessageHeadline": "Replace redis-based usage stats with postgres-based stats (#7352)",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/727dcb2f6ad74f67294c4c07930e172eb2493c02",
        "Status": {
-        "Contexts": [
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2NzM4NjUz",
-          "Context": "buildkite/e2e",
-          "Description": "Build #4234 passed (8 minutes, 27 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2NzY5NjMw",
-          "Context": "buildkite/sourcegraph",
-          "Description": "Build #54508 passed (11 minutes, 20 seconds)",
-          "State": "SUCCESS"
-         },
-         {
-          "ID": "MDEzOlN0YXR1c0NvbnRleHQ4NjM2NzM5OTUy",
-          "Context": "percy/Sourcegraph",
-          "Description": "Automatically approved visual changes on master.",
-          "State": "SUCCESS"
-         }
-        ]
+        "Contexts": null
        },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/19864447?v=4",
@@ -2905,6 +2481,6 @@
     }
    ],
    "CreatedAt": "2019-12-22T21:53:47Z",
-   "UpdatedAt": "2020-01-23T16:55:38Z"
+   "UpdatedAt": "2020-01-30T14:48:59Z"
   }
  ]

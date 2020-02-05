@@ -2,6 +2,7 @@ package a8n
 
 import (
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -62,7 +63,7 @@ type CampaignJob struct {
 	ID             int64
 	CampaignPlanID int64
 
-	RepoID  int32
+	RepoID  api.RepoID
 	Rev     api.CommitID
 	BaseRef string
 
@@ -140,6 +141,22 @@ func (s ChangesetState) Valid() bool {
 	}
 }
 
+// ChangesetLabel represents a label applied to a changeset
+type ChangesetLabel struct {
+	Name        string
+	Color       string
+	Description string
+}
+
+// CampaignState defines the possible states of a Campaign
+type CampaignState string
+
+const (
+	CampaignStateAny    CampaignState = "ANY"
+	CampaignStateOpen   CampaignState = "OPEN"
+	CampaignStateClosed CampaignState = "CLOSED"
+)
+
 // BackgroundProcessStatus defines the status of a background process.
 type BackgroundProcessStatus struct {
 	Canceled      bool
@@ -156,6 +173,9 @@ func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.Proce
 func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
 func (b BackgroundProcessStatus) Finished() bool {
 	return b.ProcessState != BackgroundProcessStateProcessing
+}
+func (b BackgroundProcessStatus) Processing() bool {
+	return b.ProcessState == BackgroundProcessStateProcessing
 }
 
 // BackgroundProcessState defines the possible states of a background process.
@@ -238,7 +258,7 @@ func (c *ChangesetJob) SuccessfullyCompleted() bool {
 // Campaigns.
 type Changeset struct {
 	ID                  int64
-	RepoID              int32
+	RepoID              api.RepoID
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	Metadata            interface{}
@@ -479,6 +499,23 @@ func (c *Changeset) BaseRef() (string, error) {
 	}
 }
 
+func (c *Changeset) Labels() []ChangesetLabel {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		labels := make([]ChangesetLabel, len(m.Labels.Nodes))
+		for i, l := range m.Labels.Nodes {
+			labels[i] = ChangesetLabel{
+				Name:        l.Name,
+				Color:       l.Color,
+				Description: l.Description,
+			}
+		}
+		return labels
+	default:
+		return []ChangesetLabel{}
+	}
+}
+
 // SelectReviewState computes the single review state for a given set of
 // ChangesetReviewStates. Since a pull request, for example, can have multiple
 // reviews with different states, we need a function to determine what the
@@ -597,6 +634,49 @@ func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
 	return &state, nil
 }
 
+// UpdateLabelsSince returns the set of current labels based the starting set of labels and looking at events
+// that have occurred after "since".
+func (ce *ChangesetEvents) UpdateLabelsSince(cs *Changeset) []ChangesetLabel {
+	var current []ChangesetLabel
+	var since time.Time
+	if cs != nil {
+		current = cs.Labels()
+		since = cs.UpdatedAt
+	}
+	// Copy slice so that we don't mutate ce
+	sorted := make(ChangesetEvents, len(*ce))
+	copy(sorted, *ce)
+	sort.Sort(sorted)
+
+	// Iterate through all label events to get the current set
+	set := make(map[string]ChangesetLabel)
+	for _, l := range current {
+		set[l.Name] = l
+	}
+	for _, event := range sorted {
+		switch e := event.Metadata.(type) {
+		case *github.LabelEvent:
+			if e.CreatedAt.Before(since) {
+				continue
+			}
+			if e.Removed {
+				delete(set, e.Label.Name)
+				continue
+			}
+			set[e.Label.Name] = ChangesetLabel{
+				Name:        e.Label.Name,
+				Color:       e.Label.Color,
+				Description: e.Label.Description,
+			}
+		}
+	}
+	labels := make([]ChangesetLabel, 0, len(set))
+	for _, label := range set {
+		labels = append(labels, label)
+	}
+	return labels
+}
+
 // Actor returns the actor of the ChangesetEvent.
 func (e *ChangesetEvent) Actor() string {
 	var a string
@@ -625,6 +705,8 @@ func (e *ChangesetEvent) Actor() string {
 	case *github.ReviewRequestedEvent:
 		a = e.Actor.Login
 	case *github.UnassignedEvent:
+		a = e.Actor.Login
+	case *github.LabelEvent:
 		a = e.Actor.Login
 	}
 
@@ -687,6 +769,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = e.CreatedAt
 	case *github.UnassignedEvent:
 		t = e.CreatedAt
+	case *github.LabelEvent:
+		t = e.CreatedAt
 	case *bitbucketserver.Activity:
 		t = unixMilliToTime(int64(e.CreatedDate))
 	}
@@ -701,6 +785,21 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 	}
 
 	switch e := e.Metadata.(type) {
+	case *github.LabelEvent:
+		o := o.Metadata.(*github.LabelEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+		if e.Label == (github.Label{}) {
+			e.Label = o.Label
+		}
+
 	case *github.AssignedEvent:
 		o := o.Metadata.(*github.AssignedEvent)
 
@@ -1048,6 +1147,11 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitHubUnassigned
 	case *github.PullRequestCommit:
 		return ChangesetEventKindGitHubCommit
+	case *github.LabelEvent:
+		if e.Removed {
+			return ChangesetEventKindGitHubUnlabeled
+		}
+		return ChangesetEventKindGitHubLabeled
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
 	default:
@@ -1089,6 +1193,10 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 			return new(github.UnassignedEvent), nil
 		case ChangesetEventKindGitHubCommit:
 			return new(github.PullRequestCommit), nil
+		case ChangesetEventKindGitHubLabeled:
+			return new(github.LabelEvent), nil
+		case ChangesetEventKindGitHubUnlabeled:
+			return &github.LabelEvent{Removed: true}, nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
@@ -1114,6 +1222,8 @@ const (
 	ChangesetEventKindGitHubReviewCommented      ChangesetEventKind = "github:review_commented"
 	ChangesetEventKindGitHubUnassigned           ChangesetEventKind = "github:unassigned"
 	ChangesetEventKindGitHubCommit               ChangesetEventKind = "github:commit"
+	ChangesetEventKindGitHubLabeled              ChangesetEventKind = "github:labeled"
+	ChangesetEventKindGitHubUnlabeled            ChangesetEventKind = "github:unlabeled"
 
 	ChangesetEventKindBitbucketServerApproved   ChangesetEventKind = "bitbucketserver:approved"
 	ChangesetEventKindBitbucketServerUnapproved ChangesetEventKind = "bitbucketserver:unapproved"

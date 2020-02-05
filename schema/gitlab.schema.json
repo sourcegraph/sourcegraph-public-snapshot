@@ -169,6 +169,16 @@
         "type": {
           "type": "string",
           "const": "oauth"
+        },
+        "minBatchingThreshold": {
+          "description": "The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.",
+          "type": "integer",
+          "default": 200
+        },
+        "maxBatchRequests": {
+          "description": "The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.",
+          "type": "integer",
+          "default": 300
         }
       }
     },

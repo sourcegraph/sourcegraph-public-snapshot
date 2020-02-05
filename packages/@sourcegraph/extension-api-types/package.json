@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/extension-api-types",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Types for working with the Sourcegraph extension API. Extensions should use the 'sourcegraph' package, not this package. This package is only for client applications that embed Sourcegraph extensions and need to communicate with them.",
   "author": "Sourcegraph",
   "bugs": {

@@ -69,6 +69,13 @@ type Context struct {
 	State       string
 }
 
+type Label struct {
+	ID          string
+	Color       string
+	Description string
+	Name        string
+}
+
 // PullRequest is a GitHub pull request.
 type PullRequest struct {
 	RepoWithOwner string `json:"-"`
@@ -84,6 +91,7 @@ type PullRequest struct {
 	Number        int64
 	Author        Actor
 	Participants  []Actor
+	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
@@ -294,6 +302,23 @@ func (e UnassignedEvent) Key() string {
 	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CreatedAt.UnixNano())
 }
 
+// LabelEvent represents a label being added or removed from a pull request
+type LabelEvent struct {
+	Actor     Actor
+	Label     Label
+	CreatedAt time.Time
+	// Will be true if we had an "unlabeled" event
+	Removed bool
+}
+
+func (e LabelEvent) Key() string {
+	action := "add"
+	if e.Removed {
+		action = "delete"
+	}
+	return fmt.Sprintf("%s:%s:%d", e.Label.ID, action, e.CreatedAt.UnixNano())
+}
+
 // TimelineItem is a union type of all supported pull request timeline items.
 type TimelineItem struct {
 	Type string
@@ -345,6 +370,10 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 		i.Item = new(ReviewRequestedEvent)
 	case "UnassignedEvent":
 		i.Item = new(UnassignedEvent)
+	case "LabeledEvent":
+		i.Item = new(LabelEvent)
+	case "UnlabeledEvent":
+		i.Item = &LabelEvent{Removed: true}
 	default:
 		return errors.Errorf("unknown timeline item type %q", i.Type)
 	}
@@ -638,6 +667,13 @@ fragment actor on Actor {
   url
 }
 
+fragment label on Label {
+  name
+  color
+  description
+  id
+}
+
 fragment commit on Commit {
   oid
   message
@@ -645,6 +681,9 @@ fragment commit on Commit {
   committedDate
   pushedDate
   url
+  status {
+    state
+  }
   committer {
     avatarUrl
     email
@@ -653,13 +692,11 @@ fragment commit on Commit {
       ...actor
     }
   }
-  status {
-    contexts {
-      context
-      id
-      description
-      state
-    }
+}
+
+fragment prCommit on PullRequestCommit {
+  commit {
+    ...commit
   }
 }
 
@@ -701,14 +738,19 @@ fragment pr on PullRequest {
       ...actor
     }
   }
-  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, PULL_REQUEST_COMMIT]) {
+  labels(first: 100) {
+    nodes {
+      ...label
+    }
+  }
+  commits(last: 1) {
+    nodes {
+      ...prCommit
+    }
+  }
+  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT]) {
     nodes {
       __typename
-      ... on PullRequestCommit {
-        commit {
-          ...commit
-        }
-      }
       ... on AssignedEvent {
         actor {
           ...actor
@@ -842,6 +884,27 @@ fragment pr on PullRequest {
           ...actor
         }
         createdAt
+      }
+      ... on LabeledEvent {
+        actor {
+          ...actor
+        }
+        label {
+          ...label
+        }
+        createdAt
+      }
+      ... on UnlabeledEvent {
+        actor {
+          ...actor
+        }
+        label {
+          ...label
+        }
+        createdAt
+      }
+      ... on PullRequestCommit{
+        ...prCommit
       }
     }
   }

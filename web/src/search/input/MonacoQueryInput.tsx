@@ -7,16 +7,17 @@ import { getProviders } from '../../../../shared/src/search/parser/providers'
 import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
 import { fetchSuggestions } from '../backend'
 import { toArray, map, distinctUntilChanged, publishReplay, refCount } from 'rxjs/operators'
-import { RegexpToggle, RegexpToggleProps } from './RegexpToggle'
-import { CaseSensitivityToggle } from './CaseSensitivityToggle'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { CaseSensitivityProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps } from '..'
+import { Toggles, TogglesProps } from './toggles/Toggles'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 export interface MonacoQueryInputProps
-    extends Omit<RegexpToggleProps, 'navbarSearchQuery'>,
+    extends Omit<TogglesProps, 'navbarSearchQuery'>,
         ThemeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        PatternTypeProps {
     location: H.Location
     history: H.History
     queryState: QueryState
@@ -44,6 +45,7 @@ const toUnsubscribable = (disposable: Monaco.IDisposable): Unsubscribable => ({
 function addSouregraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
+    patternTypes: Observable<SearchPatternType>,
     themeChanges: Observable<Theme>
 ): Subscription {
     const subscriptions = new Subscription()
@@ -106,7 +108,9 @@ function addSouregraphSearchCodeIntelligence(
     )
 
     // Register providers
-    const providers = getProviders(searchQueries, (query: string) => fetchSuggestions(query).pipe(toArray()))
+    const providers = getProviders(searchQueries, patternTypes, (query: string) =>
+        fetchSuggestions(query).pipe(toArray())
+    )
     subscriptions.add(toUnsubscribable(monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens)))
     subscriptions.add(toUnsubscribable(monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover)))
     subscriptions.add(
@@ -138,6 +142,12 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     )
     private themeChanges = this.componentUpdates.pipe(
         map(({ isLightTheme }): Theme => (isLightTheme ? 'sourcegraph-light' : 'sourcegraph-dark')),
+        distinctUntilChanged(),
+        publishReplay(1),
+        refCount()
+    )
+    private patternTypes = this.componentUpdates.pipe(
+        map(({ patternType }) => patternType),
         distinctUntilChanged(),
         publishReplay(1),
         refCount()
@@ -201,15 +211,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                         border={false}
                     ></MonacoEditor>
                 </div>
-                <CaseSensitivityToggle
-                    {...this.props}
-                    navbarSearchQuery={this.props.queryState.query}
-                ></CaseSensitivityToggle>
-                <RegexpToggle
-                    {...this.props}
-                    navbarSearchQuery={this.props.queryState.query}
-                    className="monaco-query-input-container__regexp-toggle"
-                ></RegexpToggle>
+                <Toggles {...this.props} navbarSearchQuery={this.props.queryState.query} />
             </div>
         )
     }
@@ -229,7 +231,9 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private editorWillMount = (monaco: typeof Monaco): void => {
         // Register themes and code intelligence providers.
-        this.subscriptions.add(addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.themeChanges))
+        this.subscriptions.add(
+            addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, this.themeChanges)
+        )
     }
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {

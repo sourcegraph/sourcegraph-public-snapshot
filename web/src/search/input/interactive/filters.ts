@@ -4,7 +4,7 @@ import { assign } from 'lodash/fp'
 import { FilterTypes } from '../../../../../shared/src/search/interactive/util'
 
 /** FilterTypes which have a finite number of valid options. */
-export type FiniteFilterTypes = FilterTypes.archived | FilterTypes.fork
+export type FiniteFilterTypes = FilterTypes.archived | FilterTypes.fork | FilterTypes.type
 
 export function isTextFilter(filter: FilterTypes): boolean {
     const validTextFilters = [
@@ -16,6 +16,10 @@ export function isTextFilter(filter: FilterTypes): boolean {
         'lang',
         'count',
         'timeout',
+        'before',
+        'after',
+        'message',
+        'author',
         '-repo',
         '-repohasfile',
         '-file',
@@ -48,10 +52,25 @@ export const finiteFilters: Record<
             })
         ),
     },
+    type: {
+        default: 'code',
+        values: [
+            { value: 'code' },
+            { value: 'commit' },
+            { value: 'diff' },
+            { value: 'repo' },
+            { value: 'path' },
+            { value: 'symbols' },
+        ].map(
+            assign({
+                type: SuggestionTypes.type,
+            })
+        ),
+    },
 }
 
 export const isFiniteFilter = (filter: FilterTypes): filter is FiniteFilterTypes =>
-    ['archived', 'fork'].includes(filter)
+    ['archived', 'fork', 'type'].includes(filter)
 
 /**
  * Some filter types should have their suggestions searched without influence
@@ -73,4 +92,9 @@ export const FilterTypesToProseNames: Record<FilterTypes, string> = {
     fork: 'Forks',
     archived: 'Archived repos',
     case: 'Case sensitive',
+    after: 'Committed after',
+    before: 'Committed before',
+    message: 'Commit message contains',
+    author: 'Commit author',
+    type: 'Type',
 }

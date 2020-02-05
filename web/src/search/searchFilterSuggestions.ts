@@ -78,6 +78,18 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 value: 'timeout:',
                 description: '"string specifying time duration" (duration before timeout)',
             },
+            {
+                value: 'after:',
+                description: '"string specifying time frame" (time frame to match commits after)',
+            },
+            {
+                value: 'before:',
+                description: '"string specifying time frame" (time frame to match commits before)',
+            },
+            {
+                value: 'message:',
+                description: 'commit message contents',
+            },
         ].map(
             assign({
                 type: SuggestionTypes.filters,
@@ -157,6 +169,22 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
             assign({
                 type: SuggestionTypes.timeout,
             })
+        ),
+    },
+    author: {
+        values: [],
+    },
+    message: {
+        values: [],
+    },
+    before: {
+        values: [{ value: '"1 week ago"' }, { value: '"1 day ago"' }, { value: '"last thursday"' }].map(
+            assign({ type: SuggestionTypes.before })
+        ),
+    },
+    after: {
+        values: [{ value: '"1 week ago"' }, { value: '"1 day ago"' }, { value: '"last thursday"' }].map(
+            assign({ type: SuggestionTypes.after })
         ),
     },
 }
