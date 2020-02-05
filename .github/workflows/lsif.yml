@@ -36,67 +36,36 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           file: internal/dump.lsif
 
-  lsif-enterprise:
+  lsif-enterprise-cmd:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
         uses: sourcegraph/lsif-go-action@master
         with:
-          project_root: enterprise/
-          file: enterprise/dump.lsif
+          project_root: enterprise/cmd
+          file: enterprise/cmd/dump.lsif
           verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         continue-on-error: true
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          file: enterprise/dump.lsif
+          file: enterprise/cmd/dump.lsif
 
-  lsif-web:
+  lsif-enterprise-internal:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-node-action@master
+        uses: sourcegraph/lsif-go-action@master
         with:
-          project_root: web/
-          file: web/dump.lsif
+          project_root: enterprise/internal
+          file: enterprise/internal/dump.lsif
+          verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         continue-on-error: true
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          file: web/dump.lsif
-
-  lsif-shared:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: Generate LSIF data
-        uses: sourcegraph/lsif-node-action@master
-        with:
-          project_root: shared/
-          file: shared/dump.lsif
-      - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        continue-on-error: true
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          file: shared/dump.lsif
-
-  lsif-lsif:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: Generate LSIF data
-        uses: sourcegraph/lsif-node-action@master
-        with:
-          project_root: lsif/
-          file: lsif/dump.lsif
-      - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        continue-on-error: true
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          file: lsif/dump.lsif
+          file: enterprise/internal/dump.lsif
