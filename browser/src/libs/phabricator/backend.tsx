@@ -367,7 +367,7 @@ function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
             isExternalURI: !fields.uri.normalized.replace('\\', '').startsWith(window.location.host + '/'),
             rawURI: fields.uri.raw
         }))
-    if (!enabledURIs.length) {
+    if (enabledURIs.length === 0) {
         return null
     }
     // Use the external URI if there is one, otherwise use the first enabled URI.
