@@ -179,7 +179,7 @@ describe('Phabricator file info', () => {
     })
 
     describe('resolveDiffusionFileInfo()', () => {
-        test('Diffusion - single file code view', async () => {
+        test('Resolves file info for a Diffusion code view', async () => {
             expect(
                 await resolveFileInfoFromFixture(
                     {
@@ -196,7 +196,7 @@ describe('Phabricator file info', () => {
             })
         })
 
-        test('Diffusion - single file code view - ignores disabled URIs', async () => {
+        test('Ignores disabled URIs', async () => {
             expect(
                 await resolveFileInfoFromFixture(
                     {
@@ -249,7 +249,7 @@ describe('Phabricator file info', () => {
             })
         })
 
-        test('Diffusion - single file code view - hosted on phabricator instance', async () => {
+        test('Repository hosted on phabricator instance', async () => {
             expect(
                 await resolveFileInfoFromFixture(
                     {
