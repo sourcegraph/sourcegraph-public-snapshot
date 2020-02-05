@@ -15,7 +15,7 @@ export enum GitLabPageKind {
 /**
  * General information that can be found on any GitLab page that we care about. (i.e. has code)
  */
-interface GitLabInfo extends RawRepoSpec {
+export interface GitLabInfo extends RawRepoSpec {
     pageKind: GitLabPageKind
 
     owner: string
@@ -89,58 +89,25 @@ export function getFilePageInfo(): GitLabFileInfo {
     }
 }
 
-const createErrorBuilder = (message: string) => (kind: string) => new Error(`${message} (${kind})`)
-
 /**
- * Information specific to diff pages.
+ * Finds the merge request ID from the URL.
  */
-export interface GitLabDiffInfo extends RawRepoSpec, Pick<GitLabInfo, 'owner' | 'projectName'> {
-    mergeRequestID: string
-
-    diffID?: string
-    baseCommitID?: string
-    baseRawRepoName: string
-}
-
-/**
- * Scrapes the DOM for the repo name and revision information.
- */
-export function getDiffPageInfo(): GitLabDiffInfo {
-    const { rawRepoName, owner, projectName } = getPageInfo()
-
-    const query = new URLSearchParams(window.location.search)
-
+export const getMergeRequestID = (): string => {
     const matches = window.location.pathname.match(/merge_requests\/(.*?)\/diffs/)
     if (!matches) {
         throw new Error('Unable to determine merge request ID')
     }
-
-    const sourceRepoLink = document.querySelector<HTMLLinkElement>('.js-source-branch a:first-child')
-    if (!sourceRepoLink) {
-        throw new Error('Could not find merge request source repo link')
-    }
-    const [baseRepoOwner, baseRepoProjectName] = new URL(sourceRepoLink.href).pathname.split('/').slice(1)
-    if (!baseRepoOwner) {
-        throw new Error('Could not determine MR baseRawRepoName: no baseRepoOwner')
-    }
-    if (!baseRepoProjectName) {
-        throw new Error('Could not determine MR baseRawRepoName: no baseRepoProjectName')
-    }
-    const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
-    const baseRawRepoName = `${hostname}/${owner}/${projectName}`
-
-    return {
-        baseRawRepoName,
-        rawRepoName,
-        owner,
-        projectName,
-        mergeRequestID: matches[1],
-        diffID: query.get('diff_id') || undefined,
-        baseCommitID: query.get('start_sha') || undefined,
-    }
+    return matches[1]
 }
 
-const buildFileError = createErrorBuilder('Unable to file information')
+/**
+ * Finds the diff ID, if any, from the URL.
+ * The diff ID represents a specific revision in a merge request.
+ */
+export const getDiffID = (): string | undefined => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('diff_id') ?? undefined
+}
 
 /**
  * Finds the file paths from the code view. If the name has changed, it'll return the base and head file paths.
@@ -148,13 +115,13 @@ const buildFileError = createErrorBuilder('Unable to file information')
 export function getFilePathsFromCodeView(codeView: HTMLElement): Pick<FileInfo, 'filePath' | 'baseFilePath'> {
     const filePathElements = codeView.querySelectorAll<HTMLElement>('.file-title-name')
     if (filePathElements.length === 0) {
-        throw buildFileError('no-file-title-element')
+        throw new Error('Unable to get file paths from code view: no .file-title.name')
     }
 
     const getFilePathFromElem = (elem: HTMLElement): string => {
-        const filePath = elem.dataset.originalTitle || elem.dataset.title
+        const filePath = elem.dataset.originalTitle || elem.dataset.title || elem.title
         if (!filePath) {
-            throw buildFileError('no-file-title')
+            throw new Error('Unable to get file paths from code view: no file title')
         }
 
         return filePath
@@ -167,20 +134,6 @@ export function getFilePathsFromCodeView(codeView: HTMLElement): Pick<FileInfo, 
         filePath,
         baseFilePath: filePathDidChange ? getFilePathFromElem(filePathElements.item(0)) : filePath,
     }
-}
-
-/**
- * Gets the head commit ID from the "View file @ ..." link on the code view.
- */
-export function getHeadCommitIDFromCodeView(codeView: HTMLElement): FileInfo['commitID'] {
-    const fileActionsLinks = codeView.querySelectorAll<HTMLLinkElement>('.file-actions a')
-    for (const linkElement of fileActionsLinks) {
-        const revMatch = new URL(linkElement.href).pathname.match(/blob\/(.*?)\//)
-        if (revMatch) {
-            return revMatch[1]
-        }
-    }
-    throw new Error('Unable to determine head revision from code view')
 }
 
 interface GitLabCommitPageInfo extends RawRepoSpec, Pick<GitLabInfo, 'owner' | 'projectName'> {
