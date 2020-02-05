@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -376,11 +378,7 @@ func TestChangesetEventsLabels(t *testing.T) {
 		want    []ChangesetLabel
 	}{
 		{
-			name:    "zero values",
-			current: []ChangesetLabel{},
-			since:   time.Time{},
-			events:  ChangesetEvents{},
-			want:    []ChangesetLabel{},
+			name: "zero values",
 		},
 		{
 			name: "no events",
@@ -453,7 +451,7 @@ func TestChangesetEventsLabels(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			have := tc.events.Labels(tc.current, tc.since)
 			want := tc.want
-			if diff := cmp.Diff(have, want); diff != "" {
+			if diff := cmp.Diff(have, want, cmpopts.EquateEmpty()); diff != "" {
 				t.Fatal(diff)
 			}
 		})
