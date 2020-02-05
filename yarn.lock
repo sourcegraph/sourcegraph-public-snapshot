@@ -1694,10 +1694,10 @@
     retry-axios "^1.0.1"
     winston "^2.0.0"
 
-"@percy/puppeteer@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.npmjs.org/@percy/puppeteer/-/puppeteer-1.0.8.tgz#9ce4359f885e446bea12bfaa99e746ff38755b03"
-  integrity sha512-YTR5scNNANchsP4iUurXYHVaBg3XPJBMmnfgHwJD9/SnSMjPvSEr7uN4cPGKH78rWibl/js8FFggedkK5+7fQA==
+"@percy/puppeteer@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/@percy/puppeteer/-/puppeteer-1.1.0.tgz#3b055cd4931865f131b3b525be5971ec4a7c8012"
+  integrity sha512-ndQDSC4UYE0WrK+6e14xpuz4FktSG2FwiQJ7n68QVm4TcgetdeXkgcAn1xtwvDbLpEcMyzcQEPBJMOMNf7Nfdg==
   dependencies:
     "@percy/agent" "~0"
 
@@ -3335,10 +3335,10 @@
     "@types/source-list-map" "*"
     source-map "^0.6.1"
 
-"@types/webpack@*", "@types/webpack@4.41.3":
-  version "4.41.3"
-  resolved "https://registry.npmjs.org/@types/webpack/-/webpack-4.41.3.tgz#30c2251db1d69a45bbffd79c0577dd9baf50e7ba"
-  integrity sha512-dH+BZ6pHBZFrXpnif0YU/PbmUq3lQrvRPnqkxsciSIzvG/DE+Vm/Wrjn56T7V3+B5ryQa5fw0oGnHL8tk4ll6w==
+"@types/webpack@*", "@types/webpack@4.41.5":
+  version "4.41.5"
+  resolved "https://registry.npmjs.org/@types/webpack/-/webpack-4.41.5.tgz#70c1253b008c3e293497cff557fbacdca03c66f0"
+  integrity sha512-693JfV/83UZxpQY8vutDSwkDjNujy2327UrFqQciJWXh761B/aUIZIM5N05IRIZ17WwsG8VfUSE3edwXvkehiQ==
   dependencies:
     "@types/anymatch" "*"
     "@types/node" "*"

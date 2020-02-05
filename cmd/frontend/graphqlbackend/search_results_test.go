@@ -563,6 +563,11 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		Repo:  repo,
 	}
 
+	ignoreListFileMatch := &FileMatchResolver{
+		JPath: "/.gitignore",
+		Repo:  repo,
+	}
+
 	rev := "develop"
 	fileMatchRev := &FileMatchResolver{
 		JPath:    "/testFile.md",
@@ -625,6 +630,14 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			descr:                     "no results",
 			searchResults:             []SearchResultResolver{},
 			expectedDynamicFilterStrs: map[string]struct{}{},
+		},
+		{
+			descr:         "values containing spaces are quoted",
+			searchResults: []SearchResultResolver{ignoreListFileMatch},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:^testRepo$`:    {},
+				`lang:"ignore list"`: {},
+			},
 		},
 	}
 
