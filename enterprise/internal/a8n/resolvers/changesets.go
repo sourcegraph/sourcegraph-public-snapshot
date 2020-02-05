@@ -248,9 +248,8 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	labels := r.Changeset.Labels()
 	events := a8n.ChangesetEvents(es)
-	labels = events.Labels(labels, r.Changeset.UpdatedAt)
+	labels := events.UpdateLabelsSince(r.Changeset)
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})

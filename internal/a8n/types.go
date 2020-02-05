@@ -578,9 +578,15 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 	return SelectReviewState(states), nil
 }
 
-// Labels returns the set of current labels based the starting set of labels and looking at events
+// UpdateLabelsSince returns the set of current labels based the starting set of labels and looking at events
 // that have occurred after "since".
-func (ce *ChangesetEvents) Labels(current []ChangesetLabel, since time.Time) []ChangesetLabel {
+func (ce *ChangesetEvents) UpdateLabelsSince(cs *Changeset) []ChangesetLabel {
+	var current []ChangesetLabel
+	var since time.Time
+	if cs != nil {
+		current = cs.Labels()
+		since = cs.UpdatedAt
+	}
 	// Copy slice so that we don't mutate ce
 	sorted := make(ChangesetEvents, len(*ce))
 	copy(sorted, *ce)
