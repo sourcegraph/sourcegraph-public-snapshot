@@ -2062,6 +2062,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					now = now.Add(time.Second)
 					c.StartedAt = now.Add(1 * time.Second)
 					c.FinishedAt = now.Add(1 * time.Second)
+					c.Branch = "upgrade-es-lint"
 					c.Error = "updated-error"
 
 					want := c

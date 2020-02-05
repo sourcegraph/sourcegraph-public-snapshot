@@ -856,6 +856,7 @@ func fakeRunChangesetJobs(
 		cs = append(cs, changeset)
 
 		changesetJob.ChangesetID = changeset.ID
+		changesetJob.Branch = campaign.Branch
 		changesetJob.StartedAt = now
 		changesetJob.FinishedAt = now
 
