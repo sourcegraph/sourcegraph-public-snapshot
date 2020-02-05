@@ -1,6 +1,6 @@
 import { first, identity } from 'lodash'
 import { Observable, zip, of } from 'rxjs'
-import { map, switchMap, tap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { GitLabInfo } from './scrape'
@@ -71,10 +71,7 @@ const getBaseCommitIDFromDiffID = memoizeObservable(
         diffID
             ? get<DiffVersionsResponse>(
                   buildURL(owner, projectName, `/merge_requests/${mergeRequestID}/versions/${diffID}`)
-              ).pipe(
-                  tap(resp => console.log('diff ' + diffID, resp)),
-                  map(({ base_commit_sha }) => base_commit_sha)
-              )
+              ).pipe(map(({ base_commit_sha }) => base_commit_sha))
             : of(undefined),
     ({ owner, projectName, mergeRequestID, diffID }) => `${owner}${projectName}${mergeRequestID}${diffID}`
 )
