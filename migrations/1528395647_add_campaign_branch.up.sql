@@ -17,12 +17,9 @@ WHERE branch IS NULL AND campaign_plan_id IS NOT NULL;
 -- The branch name is inherited from the campaign if the changeset
 -- job is finished running.
 ALTER TABLE changeset_jobs ADD COLUMN IF NOT EXISTS branch text;
-UPDATE changeset_jobs AS csj 
+UPDATE changeset_jobs csj 
     SET branch=c.branch
 FROM campaigns c
-WHERE 
-    csj.campaign_id = c.id
-    AND csj.finished_at IS NOT NULL
-    AND csj.branch IS NULL;
+WHERE csj.campaign_id = c.id AND csj.branch IS NULL;
 
 COMMIT;
