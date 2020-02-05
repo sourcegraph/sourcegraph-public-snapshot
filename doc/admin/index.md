@@ -1,6 +1,6 @@
 # Site administration documentation
 
-Site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users.
+Site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. Site administrator also come with [extra capabilities](capabilities.md) compare to regular users.
 
 ## [Install Sourcegraph](install/index.md)
 
