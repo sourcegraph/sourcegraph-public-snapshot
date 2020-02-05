@@ -8,11 +8,10 @@ BEGIN;
 -- This pattern is based from the default branch name 
 -- in previous versions.
 ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS branch text;
-UPDATE 
-    campaigns 
+UPDATE campaigns 
 SET 
     branch=concat('sourcegraph/campaign-', date_part('epoch', created_at)::int)
-WHERE branch != '';
+WHERE branch != '' AND campaign_plan_id != 0;
 
 -- Add and populate branch column to the changeset jobs table.
 -- The branch name is inherited from the campaign if the changeset
