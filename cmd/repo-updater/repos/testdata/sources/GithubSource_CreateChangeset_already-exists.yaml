@@ -3,14 +3,15 @@ version: 1
 interactions:
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
-      label on Label {\n  name\n  color\n  description\n}\n\nfragment commit on Commit
-      {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
       {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
       review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
-      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  timelineItems(first:
-      250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT,
+      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      100) {\n    nodes{\n      ...label\n    }\n  }\n  timelineItems(first: 250,
+      itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT,
       MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT,
       REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT,
       UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT]) {\n    nodes {\n      __typename\n      ...
@@ -49,7 +50,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":228,"column":3}],"message":"A
+    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":234,"column":3}],"message":"A
       pull request already exists for sourcegraph:always-open-pr."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -65,7 +66,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 31 Jan 2020 10:06:21 GMT
+      - Wed, 05 Feb 2020 08:11:04 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -85,7 +86,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - C9F8:43800:5D6F7BF:700C54F:5E33FC1C
+      - FED7:2656B:37B6A99:41FF5C0:5E3A7898
       X-Oauth-Scopes:
       - read:org, repo
       X-Xss-Protection:
@@ -95,14 +96,15 @@ interactions:
     duration: ""
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
-      label on Label {\n  name\n  color\n  description\n}\n\nfragment commit on Commit
-      {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
       {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
       review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
-      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  timelineItems(first:
-      250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT,
+      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      100) {\n    nodes{\n      ...label\n    }\n  }\n  timelineItems(first: 250,
+      itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT,
       MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT,
       REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT,
       UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT]) {\n    nodes {\n      __typename\n      ...
@@ -144,7 +146,7 @@ interactions:
   response:
     body: '{"data":{"repository":{"pullRequests":{"nodes":[{"id":"MDExOlB1bGxSZXF1ZXN0MzM5NzUyNDQy","title":"This
       is a test PR that is always open (keep it open!)","body":"Feel free to ignore
-      this. This is a test PR that is always open.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/1","number":1,"createdAt":"2019-11-12T06:40:21Z","updatedAt":"2019-12-05T07:09:31Z","headRefOid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"always-open-pr","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"timelineItems":{"nodes":[{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:16Z","url":"https://github.com/sourcegraph/automation-testing/pull/1#event-2855920542"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-05T07:09:21Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"This
+      this. This is a test PR that is always open.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/1","number":1,"createdAt":"2019-11-12T06:40:21Z","updatedAt":"2019-12-05T07:09:31Z","headRefOid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"always-open-pr","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"timelineItems":{"nodes":[{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:16Z","url":"https://github.com/sourcegraph/automation-testing/pull/1#event-2855920542"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-05T07:09:21Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"This
       is a test PR that is always open","currentTitle":"This is a test PR that is
       always open (keep it open!)","createdAt":"2019-12-05T07:09:31Z"}]}}]}}}}'
     headers:
@@ -161,7 +163,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 31 Jan 2020 10:06:22 GMT
+      - Wed, 05 Feb 2020 08:11:05 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -181,7 +183,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - C9F8:43800:5D6F9E6:700C70E:5E33FC1D
+      - FED7:2656B:37B6C87:41FF76C:5E3A7898
       X-Oauth-Scopes:
       - read:org, repo
       X-Xss-Protection:

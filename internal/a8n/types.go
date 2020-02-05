@@ -489,6 +489,23 @@ func (c *Changeset) BaseRef() (string, error) {
 	}
 }
 
+func (c *Changeset) Labels() []ChangesetLabel {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		labels := make([]ChangesetLabel, len(m.Labels.Nodes))
+		for i, l := range m.Labels.Nodes {
+			labels[i] = ChangesetLabel{
+				Name:        l.Name,
+				Color:       l.Color,
+				Description: l.Description,
+			}
+		}
+		return labels
+	default:
+		return []ChangesetLabel{}
+	}
+}
+
 // SelectReviewState computes the single review state for a given set of
 // ChangesetReviewStates. Since a pull request, for example, can have multiple
 // reviews with different states, we need a function to determine what the
@@ -561,32 +578,45 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 	return SelectReviewState(states), nil
 }
 
-// Labels returns the set of current labels based on the sequence of events
-func (ce *ChangesetEvents) Labels() []ChangesetLabel {
+// UpdateLabelsSince returns the set of current labels based the starting set of labels and looking at events
+// that have occurred after "since".
+func (ce *ChangesetEvents) UpdateLabelsSince(cs *Changeset) []ChangesetLabel {
+	var current []ChangesetLabel
+	var since time.Time
+	if cs != nil {
+		current = cs.Labels()
+		since = cs.UpdatedAt
+	}
 	// Copy slice so that we don't mutate ce
 	sorted := make(ChangesetEvents, len(*ce))
 	copy(sorted, *ce)
 	sort.Sort(sorted)
 
 	// Iterate through all label events to get the current set
-	set := make(map[string]*github.LabelEvent)
+	set := make(map[string]ChangesetLabel)
+	for _, l := range current {
+		set[l.Name] = l
+	}
 	for _, event := range sorted {
 		switch e := event.Metadata.(type) {
 		case *github.LabelEvent:
+			if e.CreatedAt.Before(since) {
+				continue
+			}
 			if e.Removed {
 				delete(set, e.Label.Name)
-			} else {
-				set[e.Label.Name] = e
+				continue
+			}
+			set[e.Label.Name] = ChangesetLabel{
+				Name:        e.Label.Name,
+				Color:       e.Label.Color,
+				Description: e.Label.Description,
 			}
 		}
 	}
 	labels := make([]ChangesetLabel, 0, len(set))
 	for _, label := range set {
-		labels = append(labels, ChangesetLabel{
-			Name:        label.Label.Name,
-			Color:       label.Label.Color,
-			Description: label.Label.Description,
-		})
+		labels = append(labels, label)
 	}
 	return labels
 }

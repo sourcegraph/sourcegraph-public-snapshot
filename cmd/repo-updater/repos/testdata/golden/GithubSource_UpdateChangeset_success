@@ -19,8 +19,35 @@
     "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
     "Login": "mrnugget",
     "URL": "https://github.com/mrnugget"
+   },
+   {
+    "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+    "Login": "eseliger",
+    "URL": "https://github.com/eseliger"
    }
   ],
+  "Labels": {
+   "Nodes": [
+    {
+     "ID": "MDU6TGFiZWwxNjcxNTU2OTI5",
+     "Color": "a2eeef",
+     "Description": "New feature or request",
+     "Name": "enhancement"
+    },
+    {
+     "ID": "MDU6TGFiZWwxNjcxNTU2OTMw",
+     "Color": "7057ff",
+     "Description": "Good for newcomers",
+     "Name": "good first issue"
+    },
+    {
+     "ID": "MDU6TGFiZWwxNjcxNTU2OTMx",
+     "Color": "008672",
+     "Description": "Extra attention is needed",
+     "Name": "help wanted"
+    }
+   ]
+  },
   "TimelineItems": [
    {
     "Type": "RenamedTitleEvent",
@@ -47,8 +74,62 @@
      "CurrentTitle": "This is a new title",
      "CreatedAt": "2020-01-08T16:24:43Z"
     }
+   },
+   {
+    "Type": "LabeledEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "Login": "eseliger",
+      "URL": "https://github.com/eseliger"
+     },
+     "Label": {
+      "ID": "MDU6TGFiZWwxNjcxNTU2OTI5",
+      "Color": "a2eeef",
+      "Description": "New feature or request",
+      "Name": "enhancement"
+     },
+     "CreatedAt": "2020-02-01T22:33:58Z",
+     "Removed": false
+    }
+   },
+   {
+    "Type": "LabeledEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "Login": "eseliger",
+      "URL": "https://github.com/eseliger"
+     },
+     "Label": {
+      "ID": "MDU6TGFiZWwxNjcxNTU2OTMw",
+      "Color": "7057ff",
+      "Description": "Good for newcomers",
+      "Name": "good first issue"
+     },
+     "CreatedAt": "2020-02-01T22:33:58Z",
+     "Removed": false
+    }
+   },
+   {
+    "Type": "LabeledEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "Login": "eseliger",
+      "URL": "https://github.com/eseliger"
+     },
+     "Label": {
+      "ID": "MDU6TGFiZWwxNjcxNTU2OTMx",
+      "Color": "008672",
+      "Description": "Extra attention is needed",
+      "Name": "help wanted"
+     },
+     "CreatedAt": "2020-02-01T22:33:58Z",
+     "Removed": false
+    }
    }
   ],
   "CreatedAt": "2020-01-08T15:59:11Z",
-  "UpdatedAt": "2020-01-31T10:04:25Z"
+  "UpdatedAt": "2020-02-05T08:08:22Z"
  }

@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -348,4 +350,94 @@ func TestChangesetEventsReviewState(t *testing.T) {
 			t.Errorf("wrong reviewstate. have=%s, want=%s", have, want)
 		}
 	}
+}
+
+func TestChangesetEventsLabels(t *testing.T) {
+	now := time.Now()
+	labelEvent := func(name string, kind ChangesetEventKind, when time.Time) *ChangesetEvent {
+		removed := kind == ChangesetEventKindGitHubUnlabeled
+		return &ChangesetEvent{
+			Kind:      kind,
+			UpdatedAt: when,
+			Metadata: &github.LabelEvent{
+				Actor: github.Actor{},
+				Label: github.Label{
+					Name: name,
+				},
+				CreatedAt: when,
+				Removed:   removed,
+			},
+		}
+	}
+	changeset := func(names []string, updated time.Time) *Changeset {
+		meta := &github.PullRequest{}
+		for _, name := range names {
+			meta.Labels.Nodes = append(meta.Labels.Nodes, github.Label{
+				Name: name,
+			})
+		}
+		return &Changeset{
+			UpdatedAt: updated,
+			Metadata:  meta,
+		}
+	}
+	labels := func(names ...string) []ChangesetLabel {
+		var ls []ChangesetLabel
+		for _, name := range names {
+			ls = append(ls, ChangesetLabel{Name: name})
+		}
+		return ls
+	}
+
+	tests := []struct {
+		name      string
+		changeset *Changeset
+		events    ChangesetEvents
+		want      []ChangesetLabel
+	}{
+		{
+			name: "zero values",
+		},
+		{
+			name:      "no events",
+			changeset: changeset([]string{"label1"}, time.Time{}),
+			events:    ChangesetEvents{},
+			want:      labels("label1"),
+		},
+		{
+			name:      "remove event",
+			changeset: changeset([]string{"label1"}, time.Time{}),
+			events: ChangesetEvents{
+				labelEvent("label1", ChangesetEventKindGitHubUnlabeled, now),
+			},
+			want: []ChangesetLabel{},
+		},
+		{
+			name:      "add event",
+			changeset: changeset([]string{"label1"}, time.Time{}),
+			events: ChangesetEvents{
+				labelEvent("label2", ChangesetEventKindGitHubLabeled, now),
+			},
+			want: labels("label1", "label2"),
+		},
+		{
+			name:      "old add event",
+			changeset: changeset([]string{"label1"}, now.Add(5*time.Minute)),
+			events: ChangesetEvents{
+				labelEvent("label2", ChangesetEventKindGitHubLabeled, now),
+			},
+			want: labels("label1"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			have := tc.events.UpdateLabelsSince(tc.changeset)
+			want := tc.want
+			if diff := cmp.Diff(have, want, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+
 }
