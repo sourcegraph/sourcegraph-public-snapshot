@@ -230,18 +230,12 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 }
 
 func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheckState, error) {
-	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
-		// TODO: Implement for BitBucket
-		return nil, nil
-	}
-
-	es, err := r.computeEvents(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	events := a8n.ChangesetEvents(es)
-	return events.CheckState()
+	// TODO: Support CheckRun and CheckSuite for GitHub
+	// TODO: Implement for BitBucket
+	// TODO: Support webhooks for GitHub
+	// TODO: Support webhooks for BitBucket
+	syncedState := r.Changeset.CheckState()
+	return syncedState, nil
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {

@@ -406,6 +406,21 @@ func (c *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 	return SelectReviewState(states), nil
 }
 
+func (c *Changeset) CheckState() *ChangesetCheckState {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		if len(m.Commits.Nodes) == 0 {
+			return nil
+		}
+		commit := m.Commits.Nodes[0]
+		state := commit.Commit.Status.State
+		return parseGithubCheckState(state)
+	case *bitbucketserver.PullRequest:
+		// TODO: Implement
+	}
+	return nil
+}
+
 // Events returns the list of ChangesetEvents from the Changeset's metadata.
 func (c *Changeset) Events() (events []*ChangesetEvent) {
 	switch m := c.Metadata.(type) {
@@ -608,14 +623,11 @@ func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
 
 	states := make(map[ChangesetCheckState]bool)
 	for _, c := range latest.Status.Contexts {
-		switch c.State {
-		case "ERROR", "FAILURE":
-			states[ChangesetCheckStateFailed] = true
-		case "EXPECTED", "PENDING":
-			states[ChangesetCheckStatePending] = true
-		case "SUCCESS":
-			states[ChangesetCheckStatePassed] = true
+		state := parseGithubCheckState(c.State)
+		if state == nil {
+			continue
 		}
+		states[*state] = true
 	}
 
 	state := ChangesetCheckStatePending
@@ -632,6 +644,21 @@ func (ce ChangesetEvents) CheckState() (*ChangesetCheckState, error) {
 	}
 
 	return &state, nil
+}
+
+func parseGithubCheckState(s string) *ChangesetCheckState {
+	var state ChangesetCheckState
+	switch s {
+	case "ERROR", "FAILURE":
+		state = ChangesetCheckStateFailed
+	case "EXPECTED", "PENDING":
+		state = ChangesetCheckStatePending
+	case "SUCCESS":
+		state = ChangesetCheckStatePassed
+	default:
+		return nil
+	}
+	return &state
 }
 
 // UpdateLabelsSince returns the set of current labels based the starting set of labels and looking at events

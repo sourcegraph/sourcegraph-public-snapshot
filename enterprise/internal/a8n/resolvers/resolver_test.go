@@ -439,7 +439,7 @@ func TestCampaigns(t *testing.T) {
 				ReviewState: "APPROVED",
 				CheckState:  "PASSED",
 				Events: ChangesetEventConnection{
-					TotalCount: 46,
+					TotalCount: 57,
 				},
 				Head: GitRef{
 					Name:        "refs/heads/vo/add-type-issue-filter",
