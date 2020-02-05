@@ -272,14 +272,9 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	}
 
 	updateArgs := ee.UpdateCampaignArgs{Campaign: campaignID}
-
-	if args.Input.Name != nil {
-		updateArgs.Name = args.Input.Name
-	}
-
-	if args.Input.Description != nil {
-		updateArgs.Description = args.Input.Description
-	}
+	updateArgs.Name = args.Input.Name
+	updateArgs.Description = args.Input.Description
+	updateArgs.Branch = args.Input.Branch
 
 	if args.Input.Plan != nil {
 		campaignPlanID, err := unmarshalCampaignPlanID(*args.Input.Plan)
