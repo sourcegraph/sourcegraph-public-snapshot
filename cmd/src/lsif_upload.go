@@ -26,12 +26,15 @@ Examples:
 
   Upload an LSIF dump:
 
-    	$ src lsif upload -repo=FOO -commit=BAR -upload-token=BAZ -file=data.lsif
+    	$ src lsif upload -repo=FOO -commit=BAR -file=data.lsif
 
   Upload an LSIF dump for a subproject:
 
-    	$ src lsif upload -repo=FOO -commit=BAR -upload-token=BAZ -file=data.lsif -root=cmd/
+    	$ src lsif upload -repo=FOO -commit=BAR -file=data.lsif -root=cmd/
 
+  Upload an LSIF dump when lsifEnforceAuth is enabled:
+
+    	$ src lsif upload -repo=FOO -commit=BAR -file=data.lsif -github-token=BAZ
 `
 
 	flagSet := flag.NewFlagSet("upload", flag.ExitOnError)
@@ -151,8 +154,10 @@ Examples:
 		if *apiFlags.getCurl {
 			curl := fmt.Sprintf("gzip -c %s | curl \\\n", shellquote.Join(*fileFlag))
 			curl += fmt.Sprintf("   -X POST \\\n")
-
 			curl += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Content-Type: application/x-ndjson+lsif"))
+			if cfg.AccessToken != "" {
+				curl += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Authorization: token "+cfg.AccessToken))
+			}
 			curl += fmt.Sprintf("   %s \\\n", shellquote.Join(url.String()))
 			curl += fmt.Sprintf("   %s", shellquote.Join("--data-binary", "@-"))
 
@@ -176,6 +181,9 @@ Examples:
 		}
 
 		req.Header.Set("Content-Type", "application/x-ndjson+lsif")
+		if cfg.AccessToken != "" {
+			req.Header.Set("Authorization", "token "+cfg.AccessToken)
+		}
 
 		// Perform the request.
 		resp, err := http.DefaultClient.Do(req)
@@ -194,7 +202,7 @@ Examples:
 			return err
 		}
 
-		// Our request may have failed before the reaching GraphQL endpoint, so
+		// Our request may have failed before the reaching the upload endpoint, so
 		// confirm the status code. You can test this easily with e.g. an invalid
 		// endpoint like -endpoint=https://google.com
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
