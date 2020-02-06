@@ -17,40 +17,87 @@ When running Sourcegraph in production, deploying Sourcegraph via [Docker Compos
 1. Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
 1. Add the following user data (as text) in the **Advanced Details** section:
 
-   ```yaml
-   #cloud-config
-   repo_update: true
-   repo_upgrade: all
+    ```bash
+    #!/usr/bin/env bash
 
-   runcmd:
-   # Install, configure, and enable Docker
-   - yum update -y
-   - amazon-linux-extras install docker
-   - systemctl enable --now --no-block docker
-   - sed -i -e 's/1024/10240/g' /etc/sysconfig/docker
-   - sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
-   - usermod -a -G docker ec2-user
+    set -euxo pipefail
 
-   # Install Docker Compose
-   - curl -L "https://github.com/docker/compose/releases/download/1.25.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-   - chmod +x /usr/local/bin/docker-compose
-   - curl -L https://raw.githubusercontent.com/docker/compose/1.25.3/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
-   
-   # Install git, clone Docker Compose definition
-   - yum install git -y
-   - git clone https://github.com/sourcegraph/deploy-sourcegraph-docker.git /home/ec2-user/deploy-sourcegraph-docker
-   - cd /home/ec2-user/deploy-sourcegraph-docker/docker-compose
-   - git checkout "v3.12.5"
+    EBS_VOLUME_DEVICE_NAME='/dev/sdb'
+    DOCKER_DATA_ROOT='/mnt/docker-data'
 
-   # Run Sourcegraph. Restart the containers upon reboot.
-   - docker-compose up -d
-   ```
+    DOCKER_COMPOSE_VERSION='1.25.3'
+    SOURCEGRAPH_VERSION='v3.12.5'
+    DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
+
+    # Format (if necessary) and mount EBS volume
+    device_fs=$(lsblk "${EBS_VOLUME_DEVICE_NAME}" --noheadings --output fsType)
+    if [ "${device_fs}" == ""] ## only format the volume if it isn't already formatted
+    then
+      mkfs -t xfs "${EBS_VOLUME_DEVICE_NAME}"
+    fi
+    mkdir -p "${DOCKER_DATA_ROOT}"
+    mount "${EBS_VOLUME_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
+
+    # Mount EBS volume on reboots
+    EBS_UUID=$(blkid -s UUID -o value "${EBS_VOLUME_DEVICE_NAME}")
+    echo "UUID=${EBS_UUID}  ${DOCKER_DATA_ROOT}  xfs  defaults,nofail  0  2" >> '/etc/fstab'
+    umount "${DOCKER_DATA_ROOT}"
+    mount -a
+
+    # Install, configure, and enable Docker
+    yum update -y
+    amazon-linux-extras install docker
+    systemctl enable --now docker
+    sed -i -e 's/1024/10240/g' /etc/sysconfig/docker
+    sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
+    usermod -a -G docker ec2-user
+
+    # Install jq for scripting
+    yum install -y jq
+
+    # Edit Docker storage directory to mounted volume
+    DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
+
+    ## initialize the config file with empty json if it doesn't exist
+    if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]
+    then
+      mkdir -p $(dirname "${DOCKER_DAEMON_CONFIG_FILE}")
+      echo '{}' > "${DOCKER_DAEMON_CONFIG_FILE}"
+    fi
+
+    ## update Docker's 'data-root' to point to our mounted disk
+    tmp_config=$(mktemp)
+    trap "rm -f ${tmp_config}" EXIT
+    cat "${DOCKER_DAEMON_CONFIG_FILE}" | jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' > "${tmp_config}"
+    cat "${tmp_config}" > "${DOCKER_DAEMON_CONFIG_FILE}"
+
+    ## finally, restart Docker daemon to pick up our changes
+    systemctl restart --now docker
+
+    # Install Docker Compose
+    curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+    curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose" -o /etc/bash_completion.d/docker-compose
+
+    # Install git
+    yum install git -y
+
+    # Clone Docker Compose definition
+    git clone "https://github.com/sourcegraph/deploy-sourcegraph-docker.git" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
+    cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
+    git checkout "${SOURCEGRAPH_VERSION}"
+
+    # Run Sourcegraph. Restart the containers upon reboot.
+    docker-compose up -d
+    ```
 
 1. Select **Next: Add Storage**
-1. Select the following settings for the Root volume:
-
-    * **Size (GiB)**: `200` GB minimum *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid [resizing your root volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) later on.)*
+1. Click "Add New Volume" and add an additional volume (for storing Docker data) with the following settings:
+    * **Volume Type** (left-most column): EBS
+    * **Device**: `/dev/sdb`
+    * **Size (GiB)**: `250` GB minimum *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid [resizing your volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) later on.)*
     * **Volume Type**: General Purpose SSD (gp2)
+    * **Delete on Termination**: Leave this setting unchecked
 
 1. Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
 
@@ -88,9 +135,9 @@ docker-compose up -d
 
 ## Storage and Backups
 
-The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount). There are a few different back ways to backup this data:
+The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. The script above [configures Docker](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all Docker data on the additional EBS volume that was attached to the instance (mounted at `/mnt/docker-data` - the volumes themselves are stored under `/mnt/docker-data/volumes`) There are a few different back ways to backup this data:
 
-* (**default, recommended**) The most straightfoward method to backup this data is to [snapshot the entire disk that the EC2 instance is using](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
+* (**recommended**) The most straightfoward method to backup this data is to [snapshot the entire `/mnt/docker-data` EBS disk](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
 
 * Using an external Postgres instance (see below) lets a service such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) take care of backing up all of Sourcegraph's user data for you. If the EC2 instance running Sourcegraph ever dies or is destroyed, creating a fresh instance that's connected to that external Postgres will leave Sourcegraph in the same state that it was before.
 
