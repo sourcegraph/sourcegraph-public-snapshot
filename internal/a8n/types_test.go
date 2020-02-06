@@ -1,6 +1,7 @@
 package a8n
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -555,6 +556,8 @@ func TestChangesetEventsLabels(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			have := tc.events.UpdateLabelsSince(tc.changeset)
 			want := tc.want
+			sort.Slice(have, func(i, j int) bool { return have[i].Name < have[j].Name })
+			sort.Slice(want, func(i, j int) bool { return want[i].Name < want[j].Name })
 			if diff := cmp.Diff(have, want, cmpopts.EquateEmpty()); diff != "" {
 				t.Fatal(diff)
 			}
