@@ -646,6 +646,13 @@ enum ChangesetReviewState {
     PENDING
 }
 
+# The state of continuous integration checks on a changeset
+enum ChangesetCheckState {
+    PENDING
+    PASSED
+    FAILED
+}
+
 # The input to the createChangesets mutation.
 input CreateChangesetInput {
     # The repository ID that this Changeset belongs to.
@@ -738,6 +745,10 @@ type ExternalChangeset implements Node {
     # The diff of this changeset.
     # Only returned if the changeset has not been merged or closed.
     diff: RepositoryComparison
+
+    # The state of the continuous integration checks on this changeset.
+    # It can be null if no checks have been configured.
+    checkState: ChangesetCheckState
 }
 
 # A list of changesets.

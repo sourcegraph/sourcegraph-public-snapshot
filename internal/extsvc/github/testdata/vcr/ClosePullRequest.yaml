@@ -4,20 +4,22 @@ interactions:
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
       label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
-      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
-      {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
-      review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  status
+      {\n    state\n  }\n  committer {\n    avatarUrl\n    email\n    name\n    user
+      {\n      ...actor\n    }\n  }\n}\n\nfragment prCommit on PullRequestCommit {\n  commit
+      {\n    ...commit\n  }\n}\n\nfragment review on PullRequestReview {\n  databaseId\n  author
+      {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
       {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
-      100) {\n    nodes{\n      ...label\n    }\n  }\n  timelineItems(first: 250,
-      itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT,
-      MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT,
-      REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT,
-      UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT]) {\n    nodes {\n      __typename\n      ...
-      on AssignedEvent {\n        actor {\n          ...actor\n        }\n        assignee
-      {\n          ...actor\n        }\n        createdAt\n      }\n      ... on ClosedEvent
-      {\n        actor {\n          ...actor\n        }\n        createdAt\n        url\n      }\n      ...
+      100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
+      {\n      ...prCommit\n    }\n  }\n  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT,
+      CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW,
+      PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT,
+      REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT])
+      {\n    nodes {\n      __typename\n      ... on AssignedEvent {\n        actor
+      {\n          ...actor\n        }\n        assignee {\n          ...actor\n        }\n        createdAt\n      }\n      ...
+      on ClosedEvent {\n        actor {\n          ...actor\n        }\n        createdAt\n        url\n      }\n      ...
       on IssueComment {\n        databaseId\n        author {\n          ...actor\n        }\n        authorAssociation\n        body\n        createdAt\n        editor
       {\n          ...actor\n        }\n        url\n        updatedAt\n        includesCreatedEdit\n        publishedAt\n      }\n      ...
       on RenamedTitleEvent {\n        actor {\n          ...actor\n        }\n        previousTitle\n        currentTitle\n        createdAt\n      }\n      ...
@@ -40,7 +42,7 @@ interactions:
       {\n          ...actor\n        }\n        createdAt\n      }\n      ... on LabeledEvent
       {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
       on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
-      {\n          ...label\n        }\n        createdAt\n      }\n    }\n  }\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
+      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit{\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
       {\n  closePullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"pullRequestId":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5"}}}'
     form: {}
     headers:
@@ -50,7 +52,9 @@ interactions:
     method: POST
   response:
     body: '{"data":{"closePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5","title":"comby
-      test","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/29","number":29,"createdAt":"2019-11-14T16:18:25Z","updatedAt":"2020-01-08T09:33:38Z","headRefOid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"sourcegraph/campaign-17","baseRefName":"master","author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"participants":{"nodes":[{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"timelineItems":{"nodes":[{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:01Z","url":"https://github.com/sourcegraph/automation-testing/pull/29#event-2855919824"}]}}}}}'
+      test","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/29","number":29,"createdAt":"2019-11-14T16:18:25Z","updatedAt":"2020-01-08T09:33:38Z","headRefOid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"sourcegraph/campaign-17","baseRefName":"master","author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"participants":{"nodes":[{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","message":"comby
+      test","messageHeadline":"comby test","committedDate":"2019-11-14T16:18:20Z","pushedDate":"2019-11-14T16:18:24Z","url":"https://github.com/sourcegraph/automation-testing/commit/fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"committer":{"avatarUrl":"https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"support@sourcegraph.com","name":"sourcegraph-committer","user":null}}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","message":"comby
+      test","messageHeadline":"comby test","committedDate":"2019-11-14T16:18:20Z","pushedDate":"2019-11-14T16:18:24Z","url":"https://github.com/sourcegraph/automation-testing/commit/fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"committer":{"avatarUrl":"https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"support@sourcegraph.com","name":"sourcegraph-committer","user":null}}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:01Z","url":"https://github.com/sourcegraph/automation-testing/pull/29#event-2855919824"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -65,7 +69,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 05 Feb 2020 08:06:50 GMT
+      - Wed, 05 Feb 2020 15:11:31 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -85,15 +89,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - FD34:1A3DD:1B8E269:20ADD9F:5E3A7799
+      - F486:15283:53083F:65F34E:5E3ADB22
       X-Oauth-Scopes:
       - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4821"
+      - "4814"
       X-Ratelimit-Reset:
-      - "1580892482"
+      - "1580916215"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -102,20 +106,22 @@ interactions:
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
       label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
-      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
-      {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
-      review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  status
+      {\n    state\n  }\n  committer {\n    avatarUrl\n    email\n    name\n    user
+      {\n      ...actor\n    }\n  }\n}\n\nfragment prCommit on PullRequestCommit {\n  commit
+      {\n    ...commit\n  }\n}\n\nfragment review on PullRequestReview {\n  databaseId\n  author
+      {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
       {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
-      100) {\n    nodes{\n      ...label\n    }\n  }\n  timelineItems(first: 250,
-      itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT,
-      MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT,
-      REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT,
-      UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT]) {\n    nodes {\n      __typename\n      ...
-      on AssignedEvent {\n        actor {\n          ...actor\n        }\n        assignee
-      {\n          ...actor\n        }\n        createdAt\n      }\n      ... on ClosedEvent
-      {\n        actor {\n          ...actor\n        }\n        createdAt\n        url\n      }\n      ...
+      100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
+      {\n      ...prCommit\n    }\n  }\n  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT,
+      CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW,
+      PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT,
+      REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT])
+      {\n    nodes {\n      __typename\n      ... on AssignedEvent {\n        actor
+      {\n          ...actor\n        }\n        assignee {\n          ...actor\n        }\n        createdAt\n      }\n      ...
+      on ClosedEvent {\n        actor {\n          ...actor\n        }\n        createdAt\n        url\n      }\n      ...
       on IssueComment {\n        databaseId\n        author {\n          ...actor\n        }\n        authorAssociation\n        body\n        createdAt\n        editor
       {\n          ...actor\n        }\n        url\n        updatedAt\n        includesCreatedEdit\n        publishedAt\n      }\n      ...
       on RenamedTitleEvent {\n        actor {\n          ...actor\n        }\n        previousTitle\n        currentTitle\n        createdAt\n      }\n      ...
@@ -138,7 +144,7 @@ interactions:
       {\n          ...actor\n        }\n        createdAt\n      }\n      ... on LabeledEvent
       {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
       on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
-      {\n          ...label\n        }\n        createdAt\n      }\n    }\n  }\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
+      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit{\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
       {\n  closePullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"pullRequestId":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5"}}}'
     form: {}
     headers:
@@ -148,7 +154,9 @@ interactions:
     method: POST
   response:
     body: '{"data":{"closePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5","title":"comby
-      test","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/29","number":29,"createdAt":"2019-11-14T16:18:25Z","updatedAt":"2020-01-08T09:33:38Z","headRefOid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"sourcegraph/campaign-17","baseRefName":"master","author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"participants":{"nodes":[{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"timelineItems":{"nodes":[{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:01Z","url":"https://github.com/sourcegraph/automation-testing/pull/29#event-2855919824"}]}}}}}'
+      test","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/29","number":29,"createdAt":"2019-11-14T16:18:25Z","updatedAt":"2020-01-08T09:33:38Z","headRefOid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"sourcegraph/campaign-17","baseRefName":"master","author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"participants":{"nodes":[{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","message":"comby
+      test","messageHeadline":"comby test","committedDate":"2019-11-14T16:18:20Z","pushedDate":"2019-11-14T16:18:24Z","url":"https://github.com/sourcegraph/automation-testing/commit/fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"committer":{"avatarUrl":"https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"support@sourcegraph.com","name":"sourcegraph-committer","user":null}}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","message":"comby
+      test","messageHeadline":"comby test","committedDate":"2019-11-14T16:18:20Z","pushedDate":"2019-11-14T16:18:24Z","url":"https://github.com/sourcegraph/automation-testing/commit/fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"committer":{"avatarUrl":"https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"support@sourcegraph.com","name":"sourcegraph-committer","user":null}}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:01Z","url":"https://github.com/sourcegraph/automation-testing/pull/29#event-2855919824"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -163,7 +171,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 05 Feb 2020 08:06:51 GMT
+      - Wed, 05 Feb 2020 15:11:31 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -183,15 +191,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - FD34:1A3DD:1B8E346:20ADEAA:5E3A779A
+      - F486:15283:5309A9:65F4CC:5E3ADB23
       X-Oauth-Scopes:
       - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4818"
+      - "4811"
       X-Ratelimit-Reset:
-      - "1580892482"
+      - "1580916215"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK

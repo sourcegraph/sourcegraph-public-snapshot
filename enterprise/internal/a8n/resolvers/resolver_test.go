@@ -362,6 +362,7 @@ func TestCampaigns(t *testing.T) {
 			ServiceType string
 		}
 		ReviewState string
+		CheckState  string
 		Events      ChangesetEventConnection
 		Head        GitRef
 		Base        GitRef
@@ -408,6 +409,7 @@ func TestCampaigns(t *testing.T) {
 				serviceType
 			}
 			reviewState
+			checkState
 			events(first: 100) {
 				totalCount
 			}
@@ -435,8 +437,9 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "github",
 				},
 				ReviewState: "APPROVED",
+				CheckState:  "PASSED",
 				Events: ChangesetEventConnection{
-					TotalCount: 26,
+					TotalCount: 57,
 				},
 				Head: GitRef{
 					Name:        "refs/heads/vo/add-type-issue-filter",
@@ -480,6 +483,7 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "bitbucketServer",
 				},
 				ReviewState: "PENDING",
+				CheckState:  "", // TODO(ryanslade): Update once bitbucket support added
 				Events: ChangesetEventConnection{
 					TotalCount: 9,
 				},
@@ -523,9 +527,8 @@ func TestCampaigns(t *testing.T) {
 			c.ID = ""
 			have = append(have, c)
 		}
-
-		if !reflect.DeepEqual(have, want) {
-			t.Fatal(cmp.Diff(have, want))
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatal(diff)
 		}
 	}
 

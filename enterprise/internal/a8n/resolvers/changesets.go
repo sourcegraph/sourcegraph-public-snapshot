@@ -111,9 +111,9 @@ type changesetResolver struct {
 	repoErr  error
 
 	// cache changeset events as they are used more than once
-	eventsOnce  sync.Once
-	events      []*a8n.ChangesetEvent
-	eventsError error
+	eventsOnce sync.Once
+	events     []*a8n.ChangesetEvent
+	eventsErr  error
 }
 
 const changesetIDKind = "ExternalChangeset"
@@ -139,6 +139,19 @@ func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.Re
 		}
 	})
 	return r.repo, r.repoErr
+}
+
+func (r *changesetResolver) computeEvents(ctx context.Context) ([]*a8n.ChangesetEvent, error) {
+	r.eventsOnce.Do(func() {
+		opts := ee.ListChangesetEventsOpts{
+			ChangesetIDs: []int64{r.Changeset.ID},
+			Limit:        -1,
+		}
+		es, _, err := r.store.ListChangesetEvents(ctx, opts)
+		r.events = es
+		r.eventsErr = err
+	})
+	return r.events, r.eventsErr
 }
 
 func (r *changesetResolver) ID() graphql.ID {
@@ -199,23 +212,7 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) computeEvents(ctx context.Context) ([]*a8n.ChangesetEvent, error) {
-	r.eventsOnce.Do(func() {
-		opts := ee.ListChangesetEventsOpts{
-			ChangesetIDs: []int64{r.Changeset.ID},
-			Limit:        -1,
-		}
-		es, _, err := r.store.ListChangesetEvents(ctx, opts)
-		r.events = es
-		r.eventsError = err
-	})
-	return r.events, r.eventsError
-}
-
 func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetReviewState, error) {
-	// ChangesetEvents are currently only implemented for GitHub. For other
-	// codehosts we compute the ReviewState from the Metadata field of a
-	// Changeset.
 	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
 		return r.Changeset.ReviewState()
 	}
@@ -225,14 +222,20 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 		return a8n.ChangesetReviewStatePending, err
 	}
 
+	// Make a copy of events so that we can safely sort it
 	events := make(a8n.ChangesetEvents, len(es))
-	for i, e := range es {
-		events[i] = e
-	}
-
+	copy(events, es)
 	sort.Sort(events)
-
 	return events.ReviewState()
+}
+
+func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheckState, error) {
+	// TODO: Support CheckRun and CheckSuite for GitHub
+	// TODO: Implement for BitBucket
+	// TODO: Support webhooks for GitHub
+	// TODO: Support webhooks for BitBucket
+	syncedState := r.Changeset.CheckState()
+	return syncedState, nil
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {

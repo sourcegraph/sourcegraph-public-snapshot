@@ -1,6 +1,7 @@
 package a8n
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -118,6 +119,16 @@ func TestChangesetEvents(t *testing.T) {
 			CreatedAt: now,
 		}
 
+		commit := &github.PullRequestCommit{
+			Commit: github.Commit{
+				OID:             "123",
+				Message:         "Test Commit",
+				MessageHeadline: "",
+				URL:             "",
+				Status:          github.Status{},
+			},
+		}
+
 		cases = append(cases, testCase{"github",
 			Changeset{
 				ID: 23,
@@ -132,6 +143,7 @@ func TestChangesetEvents(t *testing.T) {
 							Comments: reviewComments[2:],
 						}},
 						{Type: "ClosedEvent", Item: closedEvent},
+						{Type: "PullRequestCommit", Item: commit},
 					},
 				},
 			},
@@ -165,6 +177,11 @@ func TestChangesetEvents(t *testing.T) {
 				Kind:        ChangesetEventKindGitHubClosed,
 				Key:         closedEvent.Key(),
 				Metadata:    closedEvent,
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubCommit,
+				Key:         commit.Key(),
+				Metadata:    commit,
 			}},
 		})
 	}
@@ -352,6 +369,111 @@ func TestChangesetEventsReviewState(t *testing.T) {
 	}
 }
 
+func TestChangesetEventCheckState(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	testCommit := func(daysAgo int, statuses ...string) *ChangesetEvent {
+		commit := &github.PullRequestCommit{
+			Commit: github.Commit{
+				CommittedDate: now.Add(-24 * time.Duration(daysAgo) * time.Hour),
+			},
+		}
+		for _, s := range statuses {
+			commit.Commit.Status.Contexts = append(commit.Commit.Status.Contexts, github.Context{
+				State: s,
+			})
+		}
+		ce := &ChangesetEvent{
+			Kind:     ChangesetEventKindGitHubCommit,
+			Metadata: commit,
+		}
+		return ce
+	}
+	pState := func(s ChangesetCheckState) *ChangesetCheckState {
+		return &s
+	}
+
+	tests := []struct {
+		name string
+		ce   ChangesetEvents
+		want *ChangesetCheckState
+	}{
+		{
+			name: "empty slice",
+			ce:   nil,
+			want: nil,
+		},
+		{
+			name: "single success",
+			ce: ChangesetEvents{
+				testCommit(1, "SUCCESS"),
+			},
+			want: pState(ChangesetCheckStatePassed),
+		},
+		{
+			name: "single pending",
+			ce: ChangesetEvents{
+				testCommit(1, "PENDING"),
+			},
+			want: pState(ChangesetCheckStatePending),
+		},
+		{
+			name: "single pending",
+			ce: ChangesetEvents{
+				testCommit(1, "ERROR"),
+			},
+			want: pState(ChangesetCheckStateFailed),
+		},
+		{
+			name: "pending + error",
+			ce: ChangesetEvents{
+				testCommit(1, "ERROR", "PENDING"),
+			},
+			want: pState(ChangesetCheckStatePending),
+		},
+		{
+			name: "pending + success",
+			ce: ChangesetEvents{
+				testCommit(1, "SUCCESS", "PENDING"),
+			},
+			want: pState(ChangesetCheckStatePending),
+		},
+		{
+			name: "success + error",
+			ce: ChangesetEvents{
+				testCommit(1, "SUCCESS", "ERROR"),
+			},
+			want: pState(ChangesetCheckStateFailed),
+		},
+		{
+			name: "success x2",
+			ce: ChangesetEvents{
+				testCommit(1, "SUCCESS", "SUCCESS"),
+			},
+			want: pState(ChangesetCheckStatePassed),
+		},
+		{
+			name: "pick latest commit",
+			ce: ChangesetEvents{
+				testCommit(1, "SUCCESS"),
+				testCommit(2, "ERROR"),
+			},
+			want: pState(ChangesetCheckStatePassed),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := tc.ce.CheckState()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatalf(diff)
+			}
+		})
+	}
+}
+
 func TestChangesetEventsLabels(t *testing.T) {
 	now := time.Now()
 	labelEvent := func(name string, kind ChangesetEventKind, when time.Time) *ChangesetEvent {
@@ -434,10 +556,11 @@ func TestChangesetEventsLabels(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			have := tc.events.UpdateLabelsSince(tc.changeset)
 			want := tc.want
+			sort.Slice(have, func(i, j int) bool { return have[i].Name < have[j].Name })
+			sort.Slice(want, func(i, j int) bool { return want[i].Name < want[j].Name })
 			if diff := cmp.Diff(have, want, cmpopts.EquateEmpty()); diff != "" {
 				t.Fatal(diff)
 			}
 		})
 	}
-
 }

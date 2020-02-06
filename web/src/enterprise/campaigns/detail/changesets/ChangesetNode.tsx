@@ -6,6 +6,7 @@ import {
     IFileDiff,
     IPreviewFileDiff,
     ChangesetState,
+    ChangesetCheckState,
 } from '../../../../../../shared/src/graphql/schema'
 import React, { useState } from 'react'
 import {
@@ -14,6 +15,9 @@ import {
     changesetStageLabels,
     changesetStatusColorClasses,
     changesetStateIcons,
+    changesetCheckStateIcons,
+    changesetCheckStateColors,
+    changesetCheckStateTooltips,
 } from './presentation'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
@@ -71,6 +75,10 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         node.__typename === 'ExternalChangeset'
             ? changesetReviewStateIcons[node.reviewState]
             : changesetReviewStateIcons[ChangesetReviewState.PENDING]
+    const ChangesetCheckStateIcon =
+        node.__typename === 'ExternalChangeset' && node.checkState
+            ? changesetCheckStateIcons[node.checkState]
+            : changesetCheckStateIcons[ChangesetCheckState.PENDING]
     const changesetState = node.__typename === 'ExternalChangeset' ? node.state : ChangesetState.OPEN
     const changesetNodeRow = (
         <div className="d-flex align-items-center m-1">
@@ -137,6 +145,14 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <DiffStat {...fileDiffs.diffStat} expandedCounts={true}></DiffStat>
                 </span>
             )}
+            <span className="ml-1 changeset-node__check-status d-flex justify-content-end">
+                {node.__typename === 'ExternalChangeset' && node.checkState && (
+                    <ChangesetCheckStateIcon
+                        className={changesetCheckStateColors[node.checkState]}
+                        data-tooltip={changesetCheckStateTooltips[node.checkState]}
+                    />
+                )}
+            </span>
             {enablePublishing && node.__typename === 'ChangesetPlan' && !node.publicationEnqueued && (
                 <>
                     {publishError && <ErrorIcon data-tooltip={publishError.message} className="ml-2" />}
