@@ -44,6 +44,10 @@ var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms
 // - If no authz providers match the repository, consult `authzAllowByDefault`. If true, then return
 //   the repository; otherwise, do not.
 func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
+	if authz.BypassPermissionCheckFromContext(ctx) {
+		return repos, nil
+	}
+
 	var currentUser *types.User
 
 	tr, ctx := trace.New(ctx, "authzFilter", "")
