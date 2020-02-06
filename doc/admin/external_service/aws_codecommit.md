@@ -5,8 +5,8 @@ Site admins can sync Git repositories hosted on [AWS CodeCommit](https://aws.ama
 To set this up, add AWS CodeCommit as an external service to Sourcegraph:
 
 1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
+1. Open the **Repositories > Manage repositories** page.
+1. Press **+ Add repositories**.
 1. Enter a **Display name** (using "AWS CodeCommit" is OK if you only have one AWS CodeCommit connection).
 1. In the **Kind** menu, select **AWS CodeCommit**.
 1. Configure the connection to AWS CodeCommit in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](aws_codecommit.md#configuration).

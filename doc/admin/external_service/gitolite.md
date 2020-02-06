@@ -6,8 +6,8 @@ To set this up, add Gitolite as an external service to Sourcegraph:
 
 1. Set up [git SSH authentication](../repo/auth.md) for your gitolite server.
 1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
+1. Open the **Repositories > Manage repositories** page.
+1. Press **+ Add repositories**.
 1. Enter a **Display name** (using "Gitolite" is OK if you only have one Gitolite instance).
 1. In the **Kind** menu, select **Gitolite**.
 1. Configure the connection to Gitolite in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).

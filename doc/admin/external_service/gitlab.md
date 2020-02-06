@@ -5,8 +5,8 @@ Site admins can sync Git repositories hosted on [GitLab](https://gitlab.com) (Gi
 To set this up, add GitLab as an external service to Sourcegraph:
 
 1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
+1. Open the **Repositories > Manage repositories** page.
+1. Press **+ Add repositories**.
 1. Enter a **Display name** (using "GitLab" is OK if you only have one GitLab instance).
 1. In the **Kind** menu, select **GitLab**.
 1. Configure the connection to GitLab in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).

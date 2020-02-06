@@ -5,8 +5,8 @@ Site admins can sync Git repositories on any Git repository host (by Git clone U
 To add Git repositories from any Git repository host:
 
 1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
+1. Open the **Repositories > Manage repositories** page.
+1. Press **+ Add repositories**.
 1. Press **Single Git repositories**.
 1. Enter a **Display name** (such as the human-readable name of the repository host).
 1. Set the `url` and `repos` fields in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).

@@ -5,8 +5,8 @@ Site admins can sync Git repositories hosted on [Bitbucket Cloud](https://bitbuc
 To set this up, add Bitbucket Cloud as an external service to Sourcegraph:
 
 1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
+1. Open the **Repositories > Manage repositories** page.
+1. Press **+ Add repositories**.
 1. In the list, select **Bitbucket.org repositories**.
 1. Enter a **Display name** (using "Bitbucket Cloud" is OK).
 1. Configure the connection to Bitbucket Cloud in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).

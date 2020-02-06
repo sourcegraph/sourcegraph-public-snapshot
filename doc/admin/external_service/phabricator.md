@@ -7,8 +7,8 @@ Site admins can associate Git repositories on [Phabricator](https://phabricator.
 To set this up, add Phabricator as an external service to Sourcegraph:
 
 1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
+1. Open the **Repositories > Manage repositories** page.
+1. Press **+ Add repositories**.
 1. Enter a **Display name** (using "Phabricator" is OK if you only have one Phabricator instance).
 1. In the **Kind** menu, select **Phabricator**.
 1. Configure the connection to Phabricator in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).
