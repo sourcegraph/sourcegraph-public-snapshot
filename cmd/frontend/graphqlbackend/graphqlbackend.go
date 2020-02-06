@@ -354,6 +354,9 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+	if resolver == nil {
+		return nil, errors.New("repository not found")
+	}
 	return resolver.repo, nil
 }
 
