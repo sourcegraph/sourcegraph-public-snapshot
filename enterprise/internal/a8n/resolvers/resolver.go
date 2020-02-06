@@ -287,7 +287,6 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 

@@ -1853,6 +1853,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignID:    int64(i + 1),
 						CampaignJobID: int64(i + 1),
 						ChangesetID:   int64(i + 1),
+						Branch:        "test-branch",
 						Error:         "only set on error",
 						StartedAt:     now,
 						FinishedAt:    now,
@@ -2398,7 +2399,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				campaign := testCampaign(123, plan.ID, "test-branch")
+				campaign := testCampaign(123, plan.ID)
 				err = s.CreateCampaign(ctx, campaign)
 				if err != nil {
 					t.Fatal(err)
