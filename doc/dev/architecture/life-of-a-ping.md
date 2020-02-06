@@ -1,6 +1,6 @@
 # Life of a ping
 
-Each instance of Sourcegraph periodically performs an [update check]((https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40b887ad1+func+check%28+file:updatecheck)) to determine if there is a newer version of Sourcegraph available. This performs an HTTP request to sourcegraph.com with an anonymized site identifier, the current instance version, and a set of anonymized and aggregated statistics about the usage of the instance.
+Each instance of Sourcegraph periodically sends an [HTTP request](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40b887ad1+func+check%28+file:updatecheck) to sourcegraph.com to check if an update is available and to send some [anonymized aggregated statistics](https://docs.sourcegraph.com/admin/pings).
 
 On sourcegraph.com, this request is handled [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40b887ad1+func+Handler+file:updatecheck) by responding with 204 No Content if the instance version is the newest available, or 200 OK with the new version string. In both cases, the request data is serialized into a JSON blob and [published](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40b887ad1+func+Publish+file:pubsub) to a [Pub/Sub topic](https://console.cloud.google.com/cloudpubsub/topic/detail/server-update-checks?authuser=1&folder=&organizationId=&project=telligentsourcegraph).
 
