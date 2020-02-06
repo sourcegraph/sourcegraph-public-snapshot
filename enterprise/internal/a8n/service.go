@@ -775,7 +775,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, errors.Wrap(err, "getting campaign")
 	}
 
-	var updateAttributes, updatePlanID bool
+	var updateAttributes, updatePlanID, updateBranch bool
 
 	if args.Name != nil && campaign.Name != *args.Name {
 		if *args.Name == "" {
@@ -797,7 +797,16 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		updatePlanID = true
 	}
 
-	if !updateAttributes && !updatePlanID {
+	if args.Branch != nil && campaign.Branch != *args.Branch {
+		if *args.Branch == "" {
+			return nil, nil, ErrCampaignBranchBlank
+		}
+
+		campaign.Branch = *args.Branch
+		updateBranch = true
+	}
+
+	if !updateAttributes && !updatePlanID && !updateBranch {
 		return campaign, nil, nil
 	}
 
@@ -816,11 +825,9 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 	partiallyPublished := !published && status.Total != 0
 
-	if campaign.CampaignPlanID != 0 && args.Branch != nil {
+	if campaign.CampaignPlanID != 0 && updateBranch {
 		if published || partiallyPublished {
 			return nil, nil, ErrPublishedCampaignBranchChange
-		} else if *args.Branch == "" {
-			return nil, nil, ErrCampaignBranchBlank
 		} else {
 			campaign.Branch = *args.Branch
 		}
