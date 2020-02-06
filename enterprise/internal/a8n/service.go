@@ -297,11 +297,13 @@ func RunChangesetJob(
 	// We should probably persist the `headRefName` on `ChangesetJob` and keep
 	// it stable across retries and only set it the first time.
 
+	branch := c.Branch
 	ensureUniqueRef := true
 	if job.Branch != "" {
 		// If job.Branch is set that means this method has already been
 		// executed for the given job. In that case, we want to use job.Branch
 		// as the ref, since we created it, and not fallback to another ref.
+		branch = job.Branch
 		ensureUniqueRef = false
 	}
 
@@ -311,7 +313,7 @@ func RunChangesetJob(
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 		// will fail with "corrupt patch at line <N>" where N is the last line.
 		Patch:     campaignJob.Diff + "\n",
-		TargetRef: c.Branch,
+		TargetRef: branch,
 		UniqueRef: ensureUniqueRef,
 		CommitInfo: protocol.PatchCommitInfo{
 			Message:     c.Name,

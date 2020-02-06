@@ -54,9 +54,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	ref := req.TargetRef
-	if req.Push {
-		ref = ensureRefPrefix(ref)
-	}
 
 	var (
 		remoteURL string
@@ -113,6 +110,10 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			retry++
 		}
 		ref = tmp
+	}
+
+	if req.Push {
+		ref = ensureRefPrefix(ref)
 	}
 
 	tmpGitPathEnv := "GIT_DIR=" + filepath.Join(tmpRepoDir, ".git")
