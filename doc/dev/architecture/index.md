@@ -46,6 +46,7 @@ Here are some guides to help you understand how multiple systems fit together:
 - [Life of a search query](life-of-a-search-query.md)
 - [Life of an LSIF upload](life-of-an-lsif-upload.md)
 - [Life of a code intelligence query](life-of-a-code-intelligence-query.md)
+- [Life of a ping](life-of-a-ping.md)
 - [Search pagination](search-pagination.md)
 - Future topics we will cover here:
   - Life of a repository (i.e. how does code end up on gitserver?)
