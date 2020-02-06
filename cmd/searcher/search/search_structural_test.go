@@ -132,6 +132,49 @@ func foo(real string) {}
 	}
 }
 
+func TestRecordMetrics(t *testing.T) {
+	cases := []struct {
+		name            string
+		matcher         string
+		includePatterns *[]string
+		want            string
+	}{
+		{
+			name:            "Empty values",
+			matcher:         "",
+			includePatterns: &[]string{},
+			want:            "inferred:.generic",
+		},
+		{
+			name:            "Include patterns no extension",
+			matcher:         "",
+			includePatterns: &[]string{"foo", "bar.go"},
+			want:            "inferred:.generic",
+		},
+		{
+			name:            "Include patterns first extension",
+			matcher:         "",
+			includePatterns: &[]string{"foo.c", "bar.go"},
+			want:            "inferred:.c",
+		},
+		{
+			name:            "Non-empty matcher",
+			matcher:         ".xml",
+			includePatterns: &[]string{"foo.c", "bar.go"},
+			want:            ".xml",
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := languageMetric(tt.matcher, tt.includePatterns)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("got %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 // Tests that includePatterns works. includePatterns serve a similar role in
 // structural search compared to regex search, but is interpreted _differently_.
 // includePatterns cannot be a regex expression (as in traditional search), but

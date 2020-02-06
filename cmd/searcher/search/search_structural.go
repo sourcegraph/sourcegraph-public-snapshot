@@ -2,6 +2,8 @@ package search
 
 import (
 	"context"
+	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -161,6 +163,24 @@ func lookupMatcher(language string) string {
 	return ""
 }
 
+func languageMetric(matcher string, includePatterns *[]string) string {
+	if matcher == "" {
+		var extension string
+		if len(*includePatterns) > 0 {
+			extension = filepath.Ext((*includePatterns)[0])
+			if extension == "" {
+				return "inferred:.generic"
+			} else {
+				return fmt.Sprintf("inferred:%s", extension)
+			}
+		} else {
+			return "inferred:.generic"
+		}
+	} else {
+		return matcher
+	}
+}
+
 func structuralSearch(ctx context.Context, zipPath, pattern, rule string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
@@ -175,11 +195,8 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
 	}
 
-	if matcher == "" {
-		requestTotalStructuralSearch.WithLabelValues("inferred").Inc()
-	} else {
-		requestTotalStructuralSearch.WithLabelValues(matcher).Inc()
-	}
+	v := languageMetric(matcher, &includePatterns)
+	requestTotalStructuralSearch.WithLabelValues(v).Inc()
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
