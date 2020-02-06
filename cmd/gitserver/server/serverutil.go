@@ -291,7 +291,12 @@ var repoRemoteRefs = func(ctx context.Context, url, prefix string) (map[string]s
 	}
 
 	refs := make(map[string]string)
-	for _, line := range strings.Split(stdout.String(), "\n") {
+	raw := stdout.String()
+	if raw == "" {
+		return refs, nil
+	}
+
+	for _, line := range strings.Split(raw, "\n") {
 		fields := strings.Fields(line)
 		if len(fields) != 2 {
 			return nil, fmt.Errorf("git %s failed (invalid output): %s", cmd.Args, line)
