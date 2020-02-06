@@ -124,6 +124,8 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		patternType:   searchType,
 		zoekt:         search.Indexed(),
 		searcherURLs:  search.SearcherURLs(),
+
+		authzPostFilter: true, // TODO: set via setting
 	}, nil
 }
 
@@ -206,6 +208,15 @@ type searchResolver struct {
 
 	zoekt        *searchbackend.Zoekt
 	searcherURLs *endpoint.Map
+
+	// By default, the searched repository set is filtered for authz *before* the underlying search
+	// queries are issued. If this is true, then all repositories will be searched, and the authz
+	// filtering will be done *after*, on the search results over the complete set.
+	authzPostFilter bool
+
+	// Inflates the maximum number of results to collect by an integer factor. This should be left
+	// unset most of the time. It is used in conjunction with authzPostFilter.
+	countInflationFactor int
 }
 
 // rawQuery returns the original query string input.
@@ -222,6 +233,11 @@ func (r *searchResolver) countIsSet() bool {
 const defaultMaxSearchResults = 30
 
 func (r *searchResolver) maxResults() int32 {
+	inflationFactor := 1
+	if r.countInflationFactor > 0 {
+		inflationFactor = r.countInflationFactor
+	}
+
 	if r.pagination != nil {
 		// Paginated search requests always consume an entire result set for a
 		// given repository, so we do not want any limit here. See
@@ -232,17 +248,17 @@ func (r *searchResolver) maxResults() int32 {
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
 		if n > 0 {
-			return int32(n)
+			return int32(n * inflationFactor)
 		}
 	}
 	max, _ := r.query.StringValues(query.FieldMax)
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
 		if n > 0 {
-			return int32(n)
+			return int32(n * inflationFactor)
 		}
 	}
-	return defaultMaxSearchResults
+	return defaultMaxSearchResults * int32(inflationFactor)
 }
 
 var mockResolveRepoGroups func() (map[string][]*types.Repo, error)

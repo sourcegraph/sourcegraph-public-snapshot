@@ -16,6 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
+// searchAlert is a user-visible alert about an event or notification about a user's search query.
+//
+// 🚨 SECURITY: When authz post-filtering is enabled, the searchAlert should *NOT* contain
+// any information about repositories that the current user is not authorized to view.
 type searchAlert struct {
 	prometheusType  string
 	title           string

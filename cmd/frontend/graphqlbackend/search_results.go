@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -159,6 +160,41 @@ type SearchResultsResolver struct {
 	// cursor to return for paginated search requests, or nil if the request
 	// wasn't paginated.
 	cursor *searchCursor
+}
+
+// applyAuthzPostFilter post-filters the search results to just those visible to the current user.
+func (sr *SearchResultsResolver) applyAuthzPostFilter(ctx context.Context) error {
+	if sr.cursor != nil {
+		return errors.New("Authz post-filtering of paginated search results unsupported")
+	}
+
+	// Filter SearchResults
+	oldCount := len(sr.SearchResults)
+	filterer := newAuthzSearchResultFilterer(ctx, sr.SearchResults)
+	authz.Filter(filterer)
+	sr.SearchResults = filterer.FilteredResults
+	newCount := len(sr.SearchResults)
+	lost := int32(oldCount - newCount)
+
+	// Filter searchResultsCommon
+	sr.searchResultsCommon.repos = filterRepos(sr.searchResultsCommon.repos, filterer.FilteredRepoNames)
+	sr.searchResultsCommon.searched = filterRepos(sr.searchResultsCommon.searched, filterer.FilteredRepoNames)
+	sr.searchResultsCommon.indexed = filterRepos(sr.searchResultsCommon.indexed, filterer.FilteredRepoNames)
+	sr.searchResultsCommon.cloning = filterRepos(sr.searchResultsCommon.cloning, filterer.FilteredRepoNames)
+	sr.searchResultsCommon.missing = filterRepos(sr.searchResultsCommon.missing, filterer.FilteredRepoNames)
+	sr.searchResultsCommon.timedout = filterRepos(sr.searchResultsCommon.timedout, filterer.FilteredRepoNames)
+	newPartial := map[api.RepoName]struct{}{}
+	for repoName := range sr.searchResultsCommon.partial {
+		if _, in := filterer.FilteredRepoNames[string(repoName)]; in {
+			newPartial[repoName] = struct{}{}
+		}
+	}
+	sr.searchResultsCommon.partial = newPartial
+	sr.searchResultsCommon.maxResultsCount -= lost
+	sr.searchResultsCommon.resultCount -= lost
+
+	return nil
+
 }
 
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
@@ -955,6 +991,50 @@ func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, al
 //
 // Partial results AND an error may be returned.
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *SearchResultsResolver, err error) {
+	// Set timeout
+	ctx, cancel, err := r.withTimeout(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+
+	// 🚨 SECURITY: If post-filtering is not enabled, then just make one attempt
+	if !r.authzPostFilter {
+		return r.doResultsAttempt(ctx, forceOnlyResultType, cancel)
+	}
+
+	// If post-filtering is enabled, then we must account for the scenario in which results are
+	// returned, but all of them are filtered out by the authz checks. In this case, increase the
+	// search count by 2 and try up to 3 times (inflating by a factor of 2, 4, and 8 respectively)
+	// to try to get a non-zero set of results visible to the current user.
+	doResultsWithAuthzFilter := func(countInflationFactor int) (*SearchResultsResolver, error) {
+		rCopy := *r
+		rCopy.countInflationFactor = countInflationFactor
+		res, err := (&rCopy).doResultsAttempt(ctx, forceOnlyResultType, cancel)
+		if err != nil {
+			return nil, err
+		}
+		// 🚨 SECURITY: verify permissions on the results set when post-filtering is enabled
+		if err := res.applyAuthzPostFilter(ctx); err != nil {
+			return nil, err
+		}
+		return res, nil
+	}
+	for _, countInflationFactor := range []int{2, 4, 8} {
+		res, err := doResultsWithAuthzFilter(countInflationFactor)
+		if len(res.SearchResults) > 0 || !res.searchResultsCommon.LimitHit() || res.alert != nil {
+			return res, err
+		}
+		log15.Info("Retrying search with larger count, because permissions filtered out all results but limit was not hit", "countFactor", countInflationFactor)
+	}
+	return doResultsWithAuthzFilter(16)
+}
+
+// doResultsAttempt contains most of the top-level search logic. It sits between the underlying
+// search providers that execute specific search strategies (e.g., text, symbols, files, repos) and
+// the higher-level doResults, which is mainly responsible for enforcing proper authz checks.
+func (r *searchResolver) doResultsAttempt(ctx context.Context, forceOnlyResultType string, cancel func()) (res *SearchResultsResolver, err error) {
+	// Tracing
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -963,13 +1043,30 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	start := time.Now()
 
-	ctx, cancel, err := r.withTimeout(ctx)
+	// Validate inputs
+	options := &getPatternInfoOptions{}
+	if r.patternType == SearchTypeStructural {
+		options = &getPatternInfoOptions{performStructuralSearch: true}
+	}
+	p, err := r.getPatternInfo(options)
 	if err != nil {
 		return nil, err
 	}
-	defer cancel()
+	if err := p.Validate(); err != nil {
+		return nil, &badRequestError{err}
+	}
+	if err := validateRepoHasFileUsage(r.query); err != nil {
+		return nil, err
+	}
 
-	repos, missingRepoRevs, alertResult, err := r.determineRepos(ctx, tr, start)
+	// Determine repositories to search
+	determineReposCtx := ctx
+	if r.authzPostFilter {
+		// 🚨 SECURITY: only bypass the permissions check, because we are going to check the result
+		// permissions later.
+		determineReposCtx = authz.WithBypassPermissionsCheck(ctx, true)
+	}
+	repos, missingRepoRevs, alertResult, err := r.determineRepos(determineReposCtx, tr, start)
 	if err != nil {
 		return nil, err
 	}
@@ -977,15 +1074,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return alertResult, nil
 	}
 
-	options := &getPatternInfoOptions{}
-	if r.patternType == SearchTypeStructural {
-		options = &getPatternInfoOptions{performStructuralSearch: true}
-	}
-	p, err := r.getPatternInfo(options)
-
-	if err != nil {
-		return nil, err
-	}
 	args := search.TextParameters{
 		PatternInfo:     p,
 		Repos:           repos,
@@ -993,14 +1081,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
-	}
-	if err := args.PatternInfo.Validate(); err != nil {
-		return nil, &badRequestError{err}
-	}
-
-	err = validateRepoHasFileUsage(r.query)
-	if err != nil {
-		return nil, err
 	}
 
 	resultTypes, seenResultTypes := r.determineResultTypes(args, forceOnlyResultType)
@@ -1320,7 +1400,7 @@ type SearchResultResolver interface {
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
 	ToCodemodResult() (*codemodResultResolver, bool)
 
-	// SearchResultURIs returns the repo name and file uri respectiveley
+	// searchResultURIs returns the repo name and file uri respectiveley
 	searchResultURIs() (string, string)
 	resultCount() int32
 }
