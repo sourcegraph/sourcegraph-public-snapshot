@@ -17,6 +17,7 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/elixir":     true,
 	"sourcegraph/erlang":     true,
 	"sourcegraph/go":         true,
+	"sourcegraph/graphql":    true,
 	"sourcegraph/haskell":    true,
 	"sourcegraph/java":       true,
 	"sourcegraph/kotlin":     true,
