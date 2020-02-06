@@ -248,6 +248,7 @@ func (*GitHubWebhook) labeledEvent(e *gh.PullRequestEvent) *github.LabelEvent {
 			Color:       e.Label.GetColor(),
 			Description: e.Label.GetDescription(),
 			Name:        e.Label.GetName(),
+			ID:          e.Label.GetNodeID(),
 		},
 		CreatedAt: e.GetPullRequest().GetUpdatedAt(),
 		Removed:   e.GetAction() == "unlabeled",

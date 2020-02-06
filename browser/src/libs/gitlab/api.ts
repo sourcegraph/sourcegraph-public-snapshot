@@ -1,11 +1,13 @@
-import { first } from 'lodash'
-import { Observable } from 'rxjs'
+import { first, identity } from 'lodash'
+import { Observable, zip, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { GitLabDiffInfo } from './scrape'
+import { GitLabInfo } from './scrape'
 import { fromFetch } from 'rxjs/fetch'
 import { checkOk } from '../../../../shared/src/backend/fetch'
+import { FileInfo } from '../code_intelligence'
+import { Omit } from 'utility-types'
 
 /**
  * Significant revisions for a merge request.
@@ -22,6 +24,7 @@ interface DiffRefs {
  */
 interface MergeRequestResponse {
     diff_refs: DiffRefs
+    source_project_id: string
 }
 
 /**
@@ -32,8 +35,6 @@ interface DiffVersionsResponse {
     base_commit_sha: string
 }
 
-type GetBaseCommitIDInput = Pick<GitLabDiffInfo, 'owner' | 'projectName' | 'mergeRequestID' | 'diffID'>
-
 const buildURL = (owner: string, projectName: string, path: string): string =>
     `${window.location.origin}/api/v4/projects/${encodeURIComponent(owner)}%2f${projectName}${path}`
 
@@ -43,24 +44,71 @@ const get = <T>(url: string): Observable<T> =>
         switchMap(response => response.json())
     )
 
+const getRepoNameFromProjectID = memoizeObservable(
+    (projectId: string): Observable<string> =>
+        get<{ web_url: string }>(`${window.location.origin}/api/v4/projects/${projectId}`).pipe(
+            map(({ web_url }) => {
+                const { hostname, pathname } = new URL(web_url)
+                return `${hostname}${pathname}`
+            })
+        ),
+    identity
+)
+
 /**
- * Get the base commit ID for a merge request.
+ * Fetches the base commit ID of the merge request at the given diffID.
+ * If there is no diffID, emits `undefined`.
  */
-export const getBaseCommitIDForMergeRequest: (info: GetBaseCommitIDInput) => Observable<string> = memoizeObservable(
-    ({ owner, projectName, mergeRequestID, diffID }: GetBaseCommitIDInput) => {
-        const mrURL = buildURL(owner, projectName, `/merge_requests/${mergeRequestID}`)
+const getBaseCommitIDFromDiffID = memoizeObservable(
+    ({
+        owner,
+        projectName,
+        mergeRequestID,
+        diffID,
+    }: Pick<GitLabInfo, 'owner' | 'projectName'> & { mergeRequestID: string; diffID?: string }): Observable<
+        string | undefined
+    > =>
+        diffID
+            ? get<DiffVersionsResponse>(
+                  buildURL(owner, projectName, `/merge_requests/${mergeRequestID}/versions/${diffID}`)
+              ).pipe(map(({ base_commit_sha }) => base_commit_sha))
+            : of(undefined),
+    ({ owner, projectName, mergeRequestID, diffID }) => `${owner}${projectName}${mergeRequestID}${diffID}`
+)
 
-        // If we have a `diffID`, retrieve the information for that individual diff.
-        if (diffID) {
-            return get<DiffVersionsResponse>(`${mrURL}/versions/${diffID}`).pipe(
-                map(({ base_commit_sha }) => base_commit_sha)
+/**
+ * Fetches the fields of FileInfo common to all code views from the GitLab API.
+ */
+export const getMergeRequestDetailsFromAPI = memoizeObservable(
+    ({
+        owner,
+        projectName,
+        mergeRequestID,
+        rawRepoName,
+        diffID,
+    }: Pick<GitLabInfo, 'owner' | 'projectName' | 'rawRepoName'> & {
+        mergeRequestID: string
+        diffID?: string
+    }): Observable<Omit<FileInfo, 'filePath' | 'baseFilePath'>> =>
+        zip(
+            get<MergeRequestResponse>(buildURL(owner, projectName, `/merge_requests/${mergeRequestID}`)),
+            getBaseCommitIDFromDiffID({ owner, projectName, mergeRequestID, diffID })
+        ).pipe(
+            switchMap(([{ diff_refs, source_project_id }, baseCommitIDFromDiffID]) =>
+                getRepoNameFromProjectID(source_project_id).pipe(
+                    map(
+                        (baseRawRepoName): Omit<FileInfo, 'filePath' | 'baseFilePath'> => ({
+                            baseCommitID: baseCommitIDFromDiffID || diff_refs.base_sha,
+                            commitID: diff_refs.head_sha,
+                            rawRepoName,
+                            baseRawRepoName,
+                        })
+                    )
+                )
             )
-        }
-
-        // Otherwise, just get the overall base `commitID` for the merge request.
-        return get<MergeRequestResponse>(mrURL).pipe(map(({ diff_refs: { base_sha } }) => base_sha))
-    },
-    ({ mergeRequestID, diffID }) => mergeRequestID + (diffID ? `/${diffID}` : '')
+        ),
+    ({ owner, projectName, mergeRequestID, rawRepoName, diffID }) =>
+        `${owner}${projectName}${mergeRequestID}${rawRepoName}${diffID}`
 )
 
 interface CommitResponse {
@@ -74,9 +122,7 @@ export const getBaseCommitIDForCommit: ({
     owner,
     projectName,
     commitID,
-}: Pick<GetBaseCommitIDInput, 'owner' | 'projectName'> & { commitID: string }) => Observable<
-    string
-> = memoizeObservable(
+}: Pick<GitLabInfo, 'owner' | 'projectName'> & { commitID: string }) => Observable<string> = memoizeObservable(
     ({ owner, projectName, commitID }) =>
         get<CommitResponse>(buildURL(owner, projectName, `/repository/commits/${commitID}`)).pipe(
             map(({ parent_ids }) => first(parent_ids)!) // ! because it'll always have a parent if we are looking at the commit page.

@@ -244,8 +244,12 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	if err != nil {
 		return nil, err
 	}
+	// We use changeset labels as the source of truth as they can be renamed
+	// or removed but we'll also take into account any changeset events that
+	// have happened since the last sync in order to reflect changes that
+	// have come in via webhooks
 	events := a8n.ChangesetEvents(es)
-	labels := events.Labels()
+	labels := events.UpdateLabelsSince(r.Changeset)
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})

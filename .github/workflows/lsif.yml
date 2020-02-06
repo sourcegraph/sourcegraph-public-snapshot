@@ -2,69 +2,15 @@ name: LSIF
 on:
   - push
 jobs:
-  lsif-cmd:
+  lsif-go:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
         uses: sourcegraph/lsif-go-action@master
         with:
-          project_root: cmd/
-          file: cmd/dump.lsif
           verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          file: cmd/dump.lsif
-
-  lsif-internal:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: Generate LSIF data
-        uses: sourcegraph/lsif-go-action@master
-        with:
-          project_root: internal/
-          file: internal/dump.lsif
-          verbose: "true"
-      - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        continue-on-error: true
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          file: internal/dump.lsif
-
-  lsif-enterprise-cmd:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: Generate LSIF data
-        uses: sourcegraph/lsif-go-action@master
-        with:
-          project_root: enterprise/cmd
-          file: enterprise/cmd/dump.lsif
-          verbose: "true"
-      - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        continue-on-error: true
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          file: enterprise/cmd/dump.lsif
-
-  lsif-enterprise-internal:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: Generate LSIF data
-        uses: sourcegraph/lsif-go-action@master
-        with:
-          project_root: enterprise/internal
-          file: enterprise/internal/dump.lsif
-          verbose: "true"
-      - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        continue-on-error: true
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          file: enterprise/internal/dump.lsif

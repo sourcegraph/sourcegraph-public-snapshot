@@ -73,6 +73,7 @@ type StatusContext struct {
 }
 
 type Label struct {
+	ID          string
 	Color       string
 	Description string
 	Name        string
@@ -93,6 +94,7 @@ type PullRequest struct {
 	Number        int64
 	Author        Actor
 	Participants  []Actor
+	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
@@ -305,7 +307,11 @@ type LabelEvent struct {
 }
 
 func (e LabelEvent) Key() string {
-	return fmt.Sprintf("%s:%s:%v:%d", e.Actor.Login, e.Label.Name, e.Removed, e.CreatedAt.UnixNano())
+	action := "add"
+	if e.Removed {
+		action = "delete"
+	}
+	return fmt.Sprintf("%s:%s:%d", e.Label.ID, action, e.CreatedAt.UnixNano())
 }
 
 // TimelineItem is a union type of all supported pull request timeline items.
@@ -656,6 +662,7 @@ fragment label on Label {
   name
   color
   description
+  id
 }
 
 fragment commit on Commit {
@@ -711,6 +718,11 @@ fragment pr on PullRequest {
   participants(first: 100) {
     nodes {
       ...actor
+    }
+  }
+  labels(first: 100) {
+    nodes{
+      ...label
     }
   }
   timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT]) {

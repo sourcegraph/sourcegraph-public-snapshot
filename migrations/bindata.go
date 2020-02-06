@@ -60,8 +60,10 @@
 // 1528395645_event_logs_json_arguments.up.sql (135B)
 // 1528395646_add_last_verification_sent_at_to_user_emails.down.sql (90B)
 // 1528395646_add_last_verification_sent_at_to_user_emails.up.sql (104B)
-// 1528395647_add_campaign_branch.down.sql (126B)
-// 1528395647_add_campaign_branch.up.sql (820B)
+// 1528395647_remove_label_events_from_changeset_events.down.sql (39B)
+// 1528395647_remove_label_events_from_changeset_events.up.sql (106B)
+// 1528395648_add_campaign_branch.down.sql (126B)
+// 1528395648_add_campaign_branch.up.sql (820B)
 
 package migrations
 
@@ -1330,42 +1332,82 @@ func _1528395646_add_last_verification_sent_at_to_user_emailsUpSql() (*asset, er
 	return a, nil
 }
 
-var __1528395647_add_campaign_branchDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2a\x4a\xcc\x4b\xce\xb0\x46\xd5\x93\x91\x98\x97\x9e\x5a\x9c\x5a\x12\x9f\x95\x9f\x44\x48\x23\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xd6\xbd\x1e\x49\x7e\x00\x00\x00")
+var __1528395647_remove_label_events_from_changeset_eventsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\xf0\xcb\x2f\xc9\xc8\xcc\x4b\x57\x28\xc9\x57\x48\xc9\x57\xc8\x48\x2d\x4a\xe5\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x57\x94\x36\x41\x27\x00\x00\x00")
 
-func _1528395647_add_campaign_branchDownSqlBytes() ([]byte, error) {
+func _1528395647_remove_label_events_from_changeset_eventsDownSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395647_add_campaign_branchDownSql,
-		"1528395647_add_campaign_branch.down.sql",
+		__1528395647_remove_label_events_from_changeset_eventsDownSql,
+		"1528395647_remove_label_events_from_changeset_events.down.sql",
 	)
 }
 
-func _1528395647_add_campaign_branchDownSql() (*asset, error) {
-	bytes, err := _1528395647_add_campaign_branchDownSqlBytes()
+func _1528395647_remove_label_events_from_changeset_eventsDownSql() (*asset, error) {
+	bytes, err := _1528395647_remove_label_events_from_changeset_eventsDownSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395647_add_campaign_branch.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395647_remove_label_events_from_changeset_events.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4b, 0xad, 0xb, 0x13, 0xcb, 0xfa, 0xd2, 0x1, 0xe3, 0x96, 0xa5, 0xaf, 0x4a, 0x78, 0xe3, 0x80, 0xcf, 0x17, 0xd0, 0x7a, 0x9b, 0xf9, 0x2b, 0x23, 0x6a, 0x4, 0x11, 0xe, 0x53, 0x22, 0xb8, 0x2c}}
+	return a, nil
+}
+
+var __1528395647_remove_label_events_from_changeset_eventsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x71\xf5\x71\x0d\x71\x55\x70\x0b\xf2\xf7\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\x4f\x2d\x4b\xcd\x2b\x29\xe6\x0a\xf7\x70\x0d\x72\x55\xc8\xce\xcc\x4b\x51\xb0\x55\x50\x4f\xcf\x2c\xc9\x28\x4d\xb2\xca\x49\x4c\x4a\xcd\x49\x4d\x51\x57\xf0\x0f\x42\x97\x2a\xcd\x83\x49\x5a\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x9a\x86\x1f\x3e\x6a\x00\x00\x00")
+
+func _1528395647_remove_label_events_from_changeset_eventsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395647_remove_label_events_from_changeset_eventsUpSql,
+		"1528395647_remove_label_events_from_changeset_events.up.sql",
+	)
+}
+
+func _1528395647_remove_label_events_from_changeset_eventsUpSql() (*asset, error) {
+	bytes, err := _1528395647_remove_label_events_from_changeset_eventsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395647_remove_label_events_from_changeset_events.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x15, 0x77, 0xad, 0x19, 0xa, 0x80, 0xbd, 0xb8, 0xbd, 0x8f, 0x65, 0xda, 0xdc, 0x91, 0xe4, 0x3d, 0xd1, 0x2b, 0x8e, 0x41, 0x89, 0xcf, 0x6d, 0xe0, 0x12, 0x39, 0xea, 0x9d, 0x58, 0x69, 0x2f, 0xd9}}
+	return a, nil
+}
+
+var __1528395648_add_campaign_branchDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2a\x4a\xcc\x4b\xce\xb0\x46\xd5\x93\x91\x98\x97\x9e\x5a\x9c\x5a\x12\x9f\x95\x9f\x44\x48\x23\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xd6\xbd\x1e\x49\x7e\x00\x00\x00")
+
+func _1528395648_add_campaign_branchDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395648_add_campaign_branchDownSql,
+		"1528395648_add_campaign_branch.down.sql",
+	)
+}
+
+func _1528395648_add_campaign_branchDownSql() (*asset, error) {
+	bytes, err := _1528395648_add_campaign_branchDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395648_add_campaign_branch.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6c, 0xab, 0x45, 0x60, 0x7c, 0xfd, 0xbb, 0xf6, 0x9f, 0x35, 0xbe, 0xb7, 0x18, 0x88, 0x80, 0x1a, 0x3d, 0x7a, 0x77, 0x3a, 0x23, 0xb5, 0xde, 0x5a, 0xae, 0x84, 0xfa, 0x90, 0x3a, 0x60, 0x2b, 0x9c}}
 	return a, nil
 }
 
-var __1528395647_add_campaign_branchUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x51\x5f\x6b\xdb\x3e\x14\x7d\xd7\xa7\xb8\x6f\x69\xa1\xf1\xef\x3d\xf9\x75\xe0\x36\xee\x16\x48\xe2\x91\x28\x6c\x6f\x46\x96\x6e\x2c\x19\xe7\xca\x48\xd7\x5d\x3f\xfe\xb0\x13\x07\x67\x0c\x46\xdf\x04\x3a\xe7\xdc\xf3\xe7\x25\xfb\xba\xde\x2d\x85\x98\xcf\x21\x35\x06\x14\x19\x68\x7d\xdb\x35\x8a\x11\xca\xa0\x48\x5b\xd0\xbe\xe9\xce\x04\xec\x81\x2d\x82\x56\xe7\x56\xb9\x8a\x22\xb0\x2a\x1b\x4c\x7a\xa6\xb4\x37\x30\xa9\x33\x82\x8b\x50\x21\x61\x50\x8c\x06\x7e\x39\xb6\xc0\xd6\x45\x68\x15\x33\x06\x5a\x88\xf9\xbc\x67\x45\xdf\x05\x8d\x55\x50\xad\xfd\x6f\x54\x9d\xff\xdf\x91\xfb\x00\x1d\x50\xb1\xf3\x04\x46\x31\x7e\xb9\xe2\xe5\x44\xa3\x3f\x51\xaa\x88\x06\x4e\xc1\x9f\x07\x63\x06\x4f\xaa\x6b\xf8\xce\x48\x4f\x73\x04\x6d\xc0\x77\xe7\xbb\x08\xef\x18\xa2\xf3\x14\x13\x91\x6e\x64\xb6\x07\x99\xbe\x6c\xb2\x49\xa4\x74\xb5\x82\xd7\x7c\x73\xdc\xee\x60\xfd\x06\xbb\x5c\x42\xf6\x73\x7d\x90\x87\x51\x94\xf1\x83\x97\xe2\xf8\x7d\x95\xca\x29\x4d\x1c\x32\x09\x02\x00\xae\xb8\x67\xed\x49\x2b\x7e\x98\xfd\x35\xe2\xec\x69\x88\x55\xb4\x2a\xf0\xc3\x0c\x5b\xaf\xed\xec\xe9\x12\x19\x4d\xa1\xf8\x71\xb1\x70\xc4\x8f\xe2\xc7\xb7\x6c\x9f\x8d\x97\xd7\x07\xd8\x1d\x37\x1b\x48\x77\xab\xdb\xe1\xa2\x6d\x14\x15\xce\x0c\x9f\xb9\x1c\x00\x9f\x9a\xd2\x2a\xaa\x30\x22\x43\xed\xcb\x7f\xec\xe9\xc8\x62\x70\x3c\x2d\x7c\xb4\x01\xee\x74\x2f\xd7\x4b\xd4\xbe\xec\x69\x27\x47\x2e\x5a\x34\x10\x3a\x22\x47\xd5\x1f\xc5\x8f\x8c\x62\x30\xf0\xb9\xf6\xef\xb9\x3a\xd6\x97\x05\xfa\x29\xc6\x15\x92\xcb\x43\xbc\xed\xf3\xed\x64\x2e\x7d\xad\x56\xc7\x3a\xb9\x75\xe9\x0c\x3c\x83\x4e\x9c\xb9\x54\x1c\xeb\xe4\xbe\xf9\xa5\x10\xaf\xf9\x76\xbb\x96\x4b\xf1\x3b\x00\x00\xff\xff\x51\xdb\x74\x65\x34\x03\x00\x00")
+var __1528395648_add_campaign_branchUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x51\x5f\x6b\xdb\x3e\x14\x7d\xd7\xa7\xb8\x6f\x69\xa1\xf1\xef\x3d\xf9\x75\xe0\x36\xee\x16\x48\xe2\x91\x28\x6c\x6f\x46\x96\x6e\x2c\x19\xe7\xca\x48\xd7\x5d\x3f\xfe\xb0\x13\x07\x67\x0c\x46\xdf\x04\x3a\xe7\xdc\xf3\xe7\x25\xfb\xba\xde\x2d\x85\x98\xcf\x21\x35\x06\x14\x19\x68\x7d\xdb\x35\x8a\x11\xca\xa0\x48\x5b\xd0\xbe\xe9\xce\x04\xec\x81\x2d\x82\x56\xe7\x56\xb9\x8a\x22\xb0\x2a\x1b\x4c\x7a\xa6\xb4\x37\x30\xa9\x33\x82\x8b\x50\x21\x61\x50\x8c\x06\x7e\x39\xb6\xc0\xd6\x45\x68\x15\x33\x06\x5a\x88\xf9\xbc\x67\x45\xdf\x05\x8d\x55\x50\xad\xfd\x6f\x54\x9d\xff\xdf\x91\xfb\x00\x1d\x50\xb1\xf3\x04\x46\x31\x7e\xb9\xe2\xe5\x44\xa3\x3f\x51\xaa\x88\x06\x4e\xc1\x9f\x07\x63\x06\x4f\xaa\x6b\xf8\xce\x48\x4f\x73\x04\x6d\xc0\x77\xe7\xbb\x08\xef\x18\xa2\xf3\x14\x13\x91\x6e\x64\xb6\x07\x99\xbe\x6c\xb2\x49\xa4\x74\xb5\x82\xd7\x7c\x73\xdc\xee\x60\xfd\x06\xbb\x5c\x42\xf6\x73\x7d\x90\x87\x51\x94\xf1\x83\x97\xe2\xf8\x7d\x95\xca\x29\x4d\x1c\x32\x09\x02\x00\xae\xb8\x67\xed\x49\x2b\x7e\x98\xfd\x35\xe2\xec\x69\x88\x55\xb4\x2a\xf0\xc3\x0c\x5b\xaf\xed\xec\xe9\x12\x19\x4d\xa1\xf8\x71\xb1\x70\xc4\x8f\xe2\xc7\xb7\x6c\x9f\x8d\x97\xd7\x07\xd8\x1d\x37\x1b\x48\x77\xab\xdb\xe1\xa2\x6d\x14\x15\xce\x0c\x9f\xb9\x1c\x00\x9f\x9a\xd2\x2a\xaa\x30\x22\x43\xed\xcb\x7f\xec\xe9\xc8\x62\x70\x3c\x2d\x7c\xb4\x01\xee\x74\x2f\xd7\x4b\xd4\xbe\xec\x69\x27\x47\x2e\x5a\x34\x10\x3a\x22\x47\xd5\x1f\xc5\x8f\x8c\x62\x30\xf0\xb9\xf6\xef\xb9\x3a\xd6\x97\x05\xfa\x29\xc6\x15\x92\xcb\x43\xbc\xed\xf3\xed\x64\x2e\x7d\xad\x56\xc7\x3a\xb9\x75\xe9\x0c\x3c\x83\x4e\x9c\xb9\x54\x1c\xeb\xe4\xbe\xf9\xa5\x10\xaf\xf9\x76\xbb\x96\x4b\xf1\x3b\x00\x00\xff\xff\x51\xdb\x74\x65\x34\x03\x00\x00")
 
-func _1528395647_add_campaign_branchUpSqlBytes() ([]byte, error) {
+func _1528395648_add_campaign_branchUpSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395647_add_campaign_branchUpSql,
-		"1528395647_add_campaign_branch.up.sql",
+		__1528395648_add_campaign_branchUpSql,
+		"1528395648_add_campaign_branch.up.sql",
 	)
 }
 
-func _1528395647_add_campaign_branchUpSql() (*asset, error) {
-	bytes, err := _1528395647_add_campaign_branchUpSqlBytes()
+func _1528395648_add_campaign_branchUpSql() (*asset, error) {
+	bytes, err := _1528395648_add_campaign_branchUpSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395647_add_campaign_branch.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395648_add_campaign_branch.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x41, 0x5f, 0x77, 0xd6, 0xe9, 0x21, 0x60, 0x95, 0xa3, 0x4c, 0x19, 0x41, 0x51, 0x52, 0x62, 0x46, 0x60, 0xec, 0x18, 0x5a, 0x3f, 0xa9, 0x52, 0x33, 0x1f, 0xa1, 0x89, 0x95, 0xcb, 0x30, 0xe3, 0x9b}}
 	return a, nil
 }
@@ -1521,8 +1563,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395645_event_logs_json_arguments.up.sql":                      _1528395645_event_logs_json_argumentsUpSql,
 	"1528395646_add_last_verification_sent_at_to_user_emails.down.sql": _1528395646_add_last_verification_sent_at_to_user_emailsDownSql,
 	"1528395646_add_last_verification_sent_at_to_user_emails.up.sql":   _1528395646_add_last_verification_sent_at_to_user_emailsUpSql,
-	"1528395647_add_campaign_branch.down.sql":                          _1528395647_add_campaign_branchDownSql,
-	"1528395647_add_campaign_branch.up.sql":                            _1528395647_add_campaign_branchUpSql,
+	"1528395647_remove_label_events_from_changeset_events.down.sql":    _1528395647_remove_label_events_from_changeset_eventsDownSql,
+	"1528395647_remove_label_events_from_changeset_events.up.sql":      _1528395647_remove_label_events_from_changeset_eventsUpSql,
+	"1528395648_add_campaign_branch.down.sql":                          _1528395648_add_campaign_branchDownSql,
+	"1528395648_add_campaign_branch.up.sql":                            _1528395648_add_campaign_branchUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1626,8 +1670,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395645_event_logs_json_arguments.up.sql":                      {_1528395645_event_logs_json_argumentsUpSql, map[string]*bintree{}},
 	"1528395646_add_last_verification_sent_at_to_user_emails.down.sql": {_1528395646_add_last_verification_sent_at_to_user_emailsDownSql, map[string]*bintree{}},
 	"1528395646_add_last_verification_sent_at_to_user_emails.up.sql":   {_1528395646_add_last_verification_sent_at_to_user_emailsUpSql, map[string]*bintree{}},
-	"1528395647_add_campaign_branch.down.sql":                          {_1528395647_add_campaign_branchDownSql, map[string]*bintree{}},
-	"1528395647_add_campaign_branch.up.sql":                            {_1528395647_add_campaign_branchUpSql, map[string]*bintree{}},
+	"1528395647_remove_label_events_from_changeset_events.down.sql":    {_1528395647_remove_label_events_from_changeset_eventsDownSql, map[string]*bintree{}},
+	"1528395647_remove_label_events_from_changeset_events.up.sql":      {_1528395647_remove_label_events_from_changeset_eventsUpSql, map[string]*bintree{}},
+	"1528395648_add_campaign_branch.down.sql":                          {_1528395648_add_campaign_branchDownSql, map[string]*bintree{}},
+	"1528395648_add_campaign_branch.up.sql":                            {_1528395648_add_campaign_branchUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
