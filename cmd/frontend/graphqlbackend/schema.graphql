@@ -563,6 +563,9 @@ type Campaign implements Node {
     # The description as Markdown.
     description: String!
 
+    # The branch of the changesets created by a campaign plan.
+    branch: String! 
+
     # The user who authored the campaign.
     author: User!
 
