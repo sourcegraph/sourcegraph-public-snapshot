@@ -1,6 +1,6 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
-import { uniqueId } from 'lodash'
+import { uniqueId, noop } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take, first } from 'rxjs/operators'
@@ -27,8 +27,9 @@ import { toCodeViewResolver } from './code_views'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
+import { toPrettyBlobURL } from '../../../../shared/src/util/url'
 
-const RENDER = jest.fn()
+const RENDER = sinon.spy()
 
 const notificationClassNames = {
     [NotificationType.Log]: 'log',
@@ -39,7 +40,7 @@ const notificationClassNames = {
 }
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
-    const call = RENDER.mock.calls.find(call => call[1] === mount)
+    const call = RENDER.args.find(call => call[1] === mount)
     return call?.[0]
 }
 
@@ -50,15 +51,15 @@ jest.mock('uuid', () => ({
 const createMockController = (services: Services): Controller => ({
     services,
     notifications: NEVER,
-    executeCommand: jest.fn(),
-    unsubscribe: jest.fn(),
+    executeCommand: () => Promise.resolve(),
+    unsubscribe: noop,
 })
 
 const createMockPlatformContext = (
     partialMocks?: Partial<CodeIntelligenceProps['platformContext']>
 ): CodeIntelligenceProps['platformContext'] => ({
-    forceUpdateTooltip: jest.fn(),
-    urlToFile: jest.fn(),
+    forceUpdateTooltip: noop,
+    urlToFile: toPrettyBlobURL,
     requestGraphQL: mockRequestGraphQL(),
     sideloadedExtensionURL: new Subject<string | null>(),
     settings: NEVER,
@@ -91,7 +92,7 @@ describe('code_intelligence', () => {
         let subscriptions = new Subscription()
 
         afterEach(() => {
-            RENDER.mockClear()
+            RENDER.resetHistory()
             resetAllMemoizationCaches()
             subscriptions.unsubscribe()
             subscriptions = new Subscription()
@@ -205,10 +206,10 @@ describe('code_intelligence', () => {
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom: {
-                                    getCodeElementFromTarget: jest.fn(),
-                                    getCodeElementFromLineNumber: jest.fn(),
-                                    getLineElementFromLineNumber: jest.fn(),
-                                    getLineNumberFromCodeElement: jest.fn(),
+                                    getCodeElementFromTarget: sinon.spy(),
+                                    getCodeElementFromLineNumber: sinon.spy(),
+                                    getLineElementFromLineNumber: sinon.spy(),
+                                    getLineNumberFromCodeElement: sinon.spy(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
                                 getToolbarMount: () => toolbarMount,
@@ -541,10 +542,10 @@ describe('code_intelligence', () => {
                         codeViewResolvers: [
                             toCodeViewResolver('.code', {
                                 dom: {
-                                    getCodeElementFromTarget: jest.fn(),
-                                    getCodeElementFromLineNumber: jest.fn(),
-                                    getLineElementFromLineNumber: jest.fn(),
-                                    getLineNumberFromCodeElement: jest.fn(),
+                                    getCodeElementFromTarget: sinon.spy(),
+                                    getCodeElementFromLineNumber: sinon.spy(),
+                                    getLineElementFromLineNumber: sinon.spy(),
+                                    getLineNumberFromCodeElement: sinon.spy(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
                             }),
@@ -795,10 +796,10 @@ describe('code_intelligence', () => {
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom: {
-                                    getCodeElementFromTarget: jest.fn(),
-                                    getCodeElementFromLineNumber: jest.fn(),
-                                    getLineElementFromLineNumber: jest.fn(),
-                                    getLineNumberFromCodeElement: jest.fn(),
+                                    getCodeElementFromTarget: sinon.spy(),
+                                    getCodeElementFromLineNumber: sinon.spy(),
+                                    getLineElementFromLineNumber: sinon.spy(),
+                                    getLineNumberFromCodeElement: sinon.spy(),
                                 },
                                 resolveFileInfo: () => of(fileInfo),
                             }),
