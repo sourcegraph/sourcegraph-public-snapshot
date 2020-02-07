@@ -27,6 +27,9 @@ import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/ut
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
 import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
+import { matchPath } from 'react-router'
+import { routes } from '../routes'
+import { enterpriseRoutes } from '../enterprise/routes'
 
 interface Props
     extends SettingsCascadeProps,
@@ -103,7 +106,38 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         this.subscriptions.add(authRequired.subscribe(authRequired => this.setState({ authRequired })))
     }
 
+    private isNonSearchRelatedPage = (): boolean => {
+        const allPaths = [
+            ...routes,
+            ...enterpriseRoutes,
+            { path: '/user/(.*)' },
+            { path: '/users/(.*)' },
+            { path: '/orgs/(.*)' },
+            { path: '/extensions/(.*)' },
+            { path: '/site-admin/(.*)' },
+        ]
+
+        const nonSearchOrRepoRoutes = allPaths
+            .map(route => route.path)
+            .filter(path => path !== '/search' && path !== '/:repoRevAndRest+')
+
+        for (const route of nonSearchOrRepoRoutes) {
+            const pathIsNonSearchRelated = matchPath(this.props.location.pathname, { path: route, exact: true })
+            if (pathIsNonSearchRelated) {
+                return true
+            }
+        }
+        return false
+    }
+
     public componentDidUpdate(prevProps: Props): void {
+        if (prevProps.location !== this.props.location) {
+            if (this.isNonSearchRelatedPage()) {
+                this.props.onNavbarQueryChange({ query: '', cursorPosition: 0 })
+                this.props.onFiltersInQueryChange({})
+            }
+        }
+
         if (prevProps.location.search !== this.props.location.search) {
             const query = parseSearchURLQuery(this.props.location.search || '')
             if (query) {
@@ -183,6 +217,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                     authRequired={this.state.authRequired}
                                     navbarSearchState={this.props.navbarSearchQueryState}
                                     onNavbarQueryChange={this.props.onNavbarQueryChange}
+                                    lowProfile={this.isNonSearchRelatedPage()}
                                 />
                             )
                         ) : (

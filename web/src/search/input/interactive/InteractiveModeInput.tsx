@@ -41,6 +41,8 @@ interface InteractiveModeProps
     history: H.History
     navbarSearchState: QueryState
     onNavbarQueryChange: (userQuery: QueryState) => void
+    /** Whether to hide the selected filters and add filter rows. */
+    lowProfile: boolean
 
     // For NavLinks
     authRequired?: boolean
@@ -253,19 +255,21 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                         <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
                     )}
                 </div>
-                <div>
-                    <SelectedFiltersRow
-                        filtersInQuery={this.props.filtersInQuery}
-                        navbarQuery={this.props.navbarSearchState}
-                        onSubmit={this.onSubmit}
-                        onFilterEdited={this.onFilterEdited}
-                        onFilterDeleted={this.onFilterDeleted}
-                        toggleFilterEditable={this.toggleFilterEditable}
-                        toggleFilterNegated={this.toggleFilterNegated}
-                        isHomepage={isSearchHomepage}
-                    />
-                    <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={isSearchHomepage} />
-                </div>
+                {!this.props.lowProfile && (
+                    <div>
+                        <SelectedFiltersRow
+                            filtersInQuery={this.props.filtersInQuery}
+                            navbarQuery={this.props.navbarSearchState}
+                            onSubmit={this.onSubmit}
+                            onFilterEdited={this.onFilterEdited}
+                            onFilterDeleted={this.onFilterDeleted}
+                            toggleFilterEditable={this.toggleFilterEditable}
+                            toggleFilterNegated={this.toggleFilterNegated}
+                            isHomepage={isSearchHomepage}
+                        />
+                        <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={isSearchHomepage} />
+                    </div>
+                )}
             </div>
         )
     }
