@@ -603,32 +603,52 @@ func ComputeCheckState(c *Changeset, events []*ChangesetEvent) *ChangesetCheckSt
 }
 
 func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*ChangesetEvent) *ChangesetCheckState {
-	var statuses []*github.CommitStatus
-	// Get all status updates that have happened since our last sync
-	for _, e := range events {
-		cs, ok := e.Metadata.(*github.CommitStatus)
-		if !ok {
-			continue
-		}
-		if cs.ReceivedAt.After(lastSynced) {
-			statuses = append(statuses, cs)
-		}
-	}
+	// We should only consider the latest commit. This could be from a sync or a webhook that
+	// has occurred later
+	var latestCommitTime time.Time
+	var latestSHA string
 	statusPerContext := make(map[string]*ChangesetCheckState)
+
 	if len(pr.Commits.Nodes) > 0 {
 		// We only request the most recent commit
 		commit := pr.Commits.Nodes[0]
+		latestCommitTime = commit.Commit.CommittedDate
+		latestSHA = commit.Commit.OID
 		// Calc status per context for the most recent synced commit
 		for _, c := range commit.Commit.Status.Contexts {
 			statusPerContext[c.Context] = parseGithubCheckState(c.State)
 		}
 	}
+
+	var statuses []*github.CommitStatus
+	// Get all status updates that have happened since our last sync
+	for _, e := range events {
+		switch m := e.Metadata.(type) {
+		case *github.CommitStatus:
+			if m.ReceivedAt.After(lastSynced) {
+				statuses = append(statuses, m)
+			}
+		case *github.PullRequestCommit:
+			if m.Commit.CommittedDate.After(latestCommitTime) {
+				latestCommitTime = m.Commit.CommittedDate
+				latestSHA = m.Commit.OID
+				// statusPerContext is now out of date, reset it
+				for k := range statusPerContext {
+					delete(statusPerContext, k)
+				}
+			}
+		}
+	}
+
 	if len(statuses) > 0 {
-		// Update the statuses using any new webhook events
+		// Update the statuses using any new webhook events for the latest commit
 		sort.Slice(statuses, func(i, j int) bool {
 			return statuses[i].ReceivedAt.Before(statuses[j].ReceivedAt)
 		})
 		for _, s := range statuses {
+			if s.SHA != latestSHA {
+				continue
+			}
 			statusPerContext[s.Context] = parseGithubCheckState(s.State)
 		}
 	}
