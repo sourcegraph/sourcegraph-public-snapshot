@@ -528,7 +528,7 @@ describe('Search regression test suite', () => {
         })
     })
 
-    describe.only('Interactive search mode', () => {
+    describe('Interactive search mode', () => {
         let driver: Driver
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
