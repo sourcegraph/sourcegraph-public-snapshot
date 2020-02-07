@@ -163,22 +163,22 @@ func lookupMatcher(language string) string {
 	return ""
 }
 
+// languageMetric takes an extension and list of include patterns and returns a
+// label that describes which language is inferred for structural matching.
 func languageMetric(matcher string, includePatterns *[]string) string {
-	if matcher == "" {
-		var extension string
-		if len(*includePatterns) > 0 {
-			extension = filepath.Ext((*includePatterns)[0])
-			if extension == "" {
-				return "inferred:.generic"
-			} else {
-				return fmt.Sprintf("inferred:%s", extension)
-			}
-		} else {
-			return "inferred:.generic"
-		}
-	} else {
+	if matcher != "" {
 		return matcher
 	}
+
+	var extension string
+	if len(*includePatterns) > 0 {
+		extension = filepath.Ext((*includePatterns)[0])
+		if extension == "" {
+			return "inferred:.generic"
+		}
+		return fmt.Sprintf("inferred:%s", extension)
+	}
+	return "inferred:.generic"
 }
 
 func structuralSearch(ctx context.Context, zipPath, pattern, rule string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
