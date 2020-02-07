@@ -28,7 +28,7 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 
     # Format (if necessary) and mount EBS volume
     device_fs=$(lsblk "${EBS_VOLUME_DEVICE_NAME}" --noheadings --output fsType)
-    if [ "${device_fs}" == ""] ## only format the volume if it isn't already formatted
+    if [ "${device_fs}" == "" ] ## only format the volume if it isn't already formatted
     then
       mkfs -t xfs "${EBS_VOLUME_DEVICE_NAME}"
     fi
