@@ -13,7 +13,7 @@
   "scripts": {
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
     "prettier-check": "yarn -s run prettier --write=false",
-    "all:eslint": "dev/foreach-ts-project.sh yarn -s run eslint",
+    "all:eslint": "dev/foreach-ts-project.sh yarn -s run eslint --quiet",
     "all:tslint": "dev/foreach-ts-project.sh yarn -s run tslint",
     "all:stylelint": "yarn --cwd web run stylelint && yarn --cwd shared run stylelint && yarn --cwd browser run stylelint",
     "build-ts": "tsc -b .",
@@ -63,7 +63,7 @@
     "@percy/puppeteer": "^1.1.0",
     "@slack/web-api": "^5.6.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
-    "@sourcegraph/eslint-config": "^0.5.3",
+    "@sourcegraph/eslint-config": "^0.6.0",
     "@sourcegraph/prettierrc": "^3.0.2",
     "@sourcegraph/stylelint-config": "^1.1.6",
     "@sourcegraph/tsconfig": "^4.0.0",
