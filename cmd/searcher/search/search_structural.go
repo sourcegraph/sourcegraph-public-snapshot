@@ -173,10 +173,10 @@ func languageMetric(matcher string, includePatterns *[]string) string {
 	var extension string
 	if len(*includePatterns) > 0 {
 		extension = filepath.Ext((*includePatterns)[0])
-		if extension == "" {
-			return "inferred:.generic"
+		if extension != "" {
+			return fmt.Sprintf("inferred:%s", extension)
 		}
-		return fmt.Sprintf("inferred:%s", extension)
+		return "inferred:.generic"
 	}
 	return "inferred:.generic"
 }
