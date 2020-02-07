@@ -352,6 +352,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				Participants: []github.Actor{githubActor},
 				CreatedAt:    now,
 				UpdatedAt:    now,
+				HeadRefName:  "a8n/test",
 			}
 
 			changesets := make([]*a8n.Changeset, 0, 3)
@@ -394,6 +395,17 @@ func testStore(db *sql.DB) func(*testing.T) {
 					if diff := cmp.Diff(have, want); diff != "" {
 						t.Fatal(diff)
 					}
+				}
+			})
+
+			t.Run("GetGithubExternalIDForRefs", func(t *testing.T) {
+				have, err := s.GetGithubExternalIDForRefs(ctx, []string{"a8n/test"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := []string{"foobar-0", "foobar-1", "foobar-2"}
+				if diff := cmp.Diff(want, have); diff != "" {
+					t.Fatal(diff)
 				}
 			})
 
@@ -2494,6 +2506,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatalf("want %v, got %v", clock(), have)
 				}
 			})
+
 		})
 	}
 }
