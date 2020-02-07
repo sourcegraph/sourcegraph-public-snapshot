@@ -133,7 +133,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         const query_data = queryTelemetryData(query)
                         this.props.telemetryService.log('SearchResultsQueried', {
                             code_search: { query_data },
-                            mode: this.props.interactiveSearchMode ? 'plain' : 'interactive',
+                            ...(this.state.splitSearchModes ? { mode: this.props.interactiveSearchMode ? 'plain' : 'interactive' } : {}),
                         })
                         if (
                             query_data.query &&
