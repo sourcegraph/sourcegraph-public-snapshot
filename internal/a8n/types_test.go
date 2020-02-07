@@ -369,21 +369,16 @@ func TestChangesetEventsReviewState(t *testing.T) {
 	}
 }
 
-func TestChangesetEventCheckState(t *testing.T) {
+func TestComputeGithubCheckState(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	testCommit := func(daysAgo int, statuses ...string) *ChangesetEvent {
-		commit := &github.PullRequestCommit{
-			Commit: github.Commit{
-				CommittedDate: now.Add(-24 * time.Duration(daysAgo) * time.Hour),
-			},
-		}
-		for _, s := range statuses {
-			commit.Commit.Status.Contexts = append(commit.Commit.Status.Contexts, github.Context{
-				State: s,
-			})
+	testEvent := func(minutesSinceSync int, context, state string) *ChangesetEvent {
+		commit := &github.CommitStatus{
+			Context:    context,
+			State:      state,
+			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
 		}
 		ce := &ChangesetEvent{
-			Kind:     ChangesetEventKindGitHubCommit,
+			Kind:     ChangesetEventKindCommitStatus,
 			Metadata: commit,
 		}
 		return ce
@@ -392,70 +387,77 @@ func TestChangesetEventCheckState(t *testing.T) {
 		return &s
 	}
 
+	lastSynced := now.Add(-1 * time.Minute)
+	pr := &github.PullRequest{}
+
 	tests := []struct {
-		name string
-		ce   ChangesetEvents
-		want *ChangesetCheckState
+		name   string
+		events []*ChangesetEvent
+		want   *ChangesetCheckState
 	}{
 		{
-			name: "empty slice",
-			ce:   nil,
-			want: nil,
+			name:   "empty slice",
+			events: nil,
+			want:   nil,
 		},
 		{
 			name: "single success",
-			ce: ChangesetEvents{
-				testCommit(1, "SUCCESS"),
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "SUCCESS"),
 			},
 			want: pState(ChangesetCheckStatePassed),
 		},
 		{
 			name: "single pending",
-			ce: ChangesetEvents{
-				testCommit(1, "PENDING"),
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
 			},
 			want: pState(ChangesetCheckStatePending),
 		},
 		{
-			name: "single pending",
-			ce: ChangesetEvents{
-				testCommit(1, "ERROR"),
+			name: "single error",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "ERROR"),
 			},
 			want: pState(ChangesetCheckStateFailed),
 		},
 		{
 			name: "pending + error",
-			ce: ChangesetEvents{
-				testCommit(1, "ERROR", "PENDING"),
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+				testEvent(1, "ctx2", "ERROR"),
 			},
 			want: pState(ChangesetCheckStatePending),
 		},
 		{
 			name: "pending + success",
-			ce: ChangesetEvents{
-				testCommit(1, "SUCCESS", "PENDING"),
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+				testEvent(1, "ctx2", "SUCCESS"),
 			},
 			want: pState(ChangesetCheckStatePending),
 		},
 		{
 			name: "success + error",
-			ce: ChangesetEvents{
-				testCommit(1, "SUCCESS", "ERROR"),
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "SUCCESS"),
+				testEvent(1, "ctx2", "ERROR"),
 			},
 			want: pState(ChangesetCheckStateFailed),
 		},
 		{
 			name: "success x2",
-			ce: ChangesetEvents{
-				testCommit(1, "SUCCESS", "SUCCESS"),
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "SUCCESS"),
+				testEvent(1, "ctx2", "SUCCESS"),
 			},
 			want: pState(ChangesetCheckStatePassed),
 		},
 		{
-			name: "pick latest commit",
-			ce: ChangesetEvents{
-				testCommit(1, "SUCCESS"),
-				testCommit(2, "ERROR"),
+			name: "later events have precedence",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+				testEvent(1, "ctx1", "SUCCESS"),
 			},
 			want: pState(ChangesetCheckStatePassed),
 		},
@@ -463,10 +465,7 @@ func TestChangesetEventCheckState(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := tc.ce.CheckState()
-			if err != nil {
-				t.Fatal(err)
-			}
+			got := computeGitHubCheckState(lastSynced, pr, tc.events)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatalf(diff)
 			}

@@ -593,7 +593,7 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 func ComputeCheckState(c *Changeset, events []*ChangesetEvent) *ChangesetCheckState {
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		return computeGitHubCheckState(c, m, events)
+		return computeGitHubCheckState(c.UpdatedAt, m, events)
 
 	case *bitbucketserver.PullRequest:
 		// TODO
@@ -602,7 +602,7 @@ func ComputeCheckState(c *Changeset, events []*ChangesetEvent) *ChangesetCheckSt
 	return nil
 }
 
-func computeGitHubCheckState(c *Changeset, m *github.PullRequest, events []*ChangesetEvent) *ChangesetCheckState {
+func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*ChangesetEvent) *ChangesetCheckState {
 	var statuses []*github.CommitStatus
 	// Get all status updates that have happened since our last sync
 	for _, e := range events {
@@ -610,27 +610,27 @@ func computeGitHubCheckState(c *Changeset, m *github.PullRequest, events []*Chan
 		if !ok {
 			continue
 		}
-		if cs.ReceivedAt.After(c.UpdatedAt) {
+		if cs.ReceivedAt.After(lastSynced) {
 			statuses = append(statuses, cs)
 		}
 	}
-	if len(m.Commits.Nodes) == 0 && len(statuses) == 0 {
-		return nil
-	}
-	// We only request the most recent commit
-	commit := m.Commits.Nodes[0]
-	syncedStatus := commit.Commit.Status
 	statusPerContext := make(map[string]*ChangesetCheckState)
-	// Calc status per context for the most recent synced commit
-	for _, c := range syncedStatus.Contexts {
-		statusPerContext[c.Context] = parseGithubCheckState(c.State)
+	if len(pr.Commits.Nodes) > 0 {
+		// We only request the most recent commit
+		commit := pr.Commits.Nodes[0]
+		// Calc status per context for the most recent synced commit
+		for _, c := range commit.Commit.Status.Contexts {
+			statusPerContext[c.Context] = parseGithubCheckState(c.State)
+		}
 	}
-	// Update the statuses using any new webhook events
-	sort.Slice(statuses, func(i, j int) bool {
-		return statuses[i].ReceivedAt.Before(statuses[j].ReceivedAt)
-	})
-	for _, s := range statuses {
-		statusPerContext[s.Context] = parseGithubCheckState(s.State)
+	if len(statuses) > 0 {
+		// Update the statuses using any new webhook events
+		sort.Slice(statuses, func(i, j int) bool {
+			return statuses[i].ReceivedAt.Before(statuses[j].ReceivedAt)
+		})
+		for _, s := range statuses {
+			statusPerContext[s.Context] = parseGithubCheckState(s.State)
+		}
 	}
 	finalStates := make([]*ChangesetCheckState, 0, len(statusPerContext))
 	for k := range statusPerContext {
