@@ -175,7 +175,6 @@ func languageMetric(matcher string, includePatterns *[]string) string {
 		if extension != "" {
 			return fmt.Sprintf("inferred:%s", extension)
 		}
-		return "inferred:.generic"
 	}
 	return "inferred:.generic"
 }
