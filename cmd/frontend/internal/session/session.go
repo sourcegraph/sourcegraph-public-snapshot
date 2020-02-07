@@ -103,7 +103,8 @@ func NewRedisStore(secureCookie func() bool) sessions.Store {
 	rstore.Options.Path = "/"
 	rstore.Options.Secure = secureCookie()
 	rstore.Options.HttpOnly = true
-	rstore.Options.SameSite = http.SameSiteStrictMode
+	// see issue https://github.com/sourcegraph/sourcegraph/issues/6167
+	rstore.Options.SameSite = http.SameSiteNoneMode
 
 	return &sessionsStore{
 		Store:  rstore,
