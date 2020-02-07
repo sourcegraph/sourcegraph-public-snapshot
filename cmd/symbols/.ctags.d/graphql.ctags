@@ -8,3 +8,4 @@
 --regex-graphql=/^[ \t]*mutation[ \t]+([_A-Za-z][_0-9A-Za-z]*)/\1/m,mutation/
 --regex-graphql=/^[ \t]*query[ \t]+([_A-Za-z][_0-9A-Za-z]*)/\1/q,query/
 --regex-graphql=/^[ \t]*type[ \t]+([_A-Za-z][_0-9A-Za-z]*)/\1/t,type/
+--regex-graphql=/^[ \t]*scalar[ \t]+([_A-Za-z][_0-9A-Za-z]*)/\1/t,type/
