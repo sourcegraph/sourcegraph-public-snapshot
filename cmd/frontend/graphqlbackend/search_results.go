@@ -980,6 +980,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	options := &getPatternInfoOptions{}
 	if r.patternType == SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
+		forceOnlyResultType = "file"
 	}
 	p, err := r.getPatternInfo(options)
 
