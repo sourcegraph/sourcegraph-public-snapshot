@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // 🚨 SECURITY: This filterer enforces the integrity of authz checks against search results when
@@ -85,4 +86,12 @@ func filterRepos(repos []*types.Repo, keepRepoNames map[string]struct{}) []*type
 	}
 	authz.Filter(&repoFilterer)
 	return repoFilterer.FilteredRepos
+}
+
+func authzShouldPostFilter() bool {
+	f := conf.Get().ExperimentalFeatures
+	if f == nil {
+		return false
+	}
+	return f.AuthzPostSearchFilter
 }

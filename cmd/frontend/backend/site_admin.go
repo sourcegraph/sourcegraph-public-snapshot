@@ -100,6 +100,8 @@ func CurrentUser(ctx context.Context) (*types.User, error) {
 // WithAuthzBypass returns a context that backend.CheckXyz funcs report as being a site admin. It
 // is used to bypass the backend.CheckXyz access control funcs when needed.
 //
+// This should ONLY be used by tests for now.
+//
 // 🚨 SECURITY: The caller MUST ensure that it performs its own access controls or removal of
 // sensitive data.
 func WithAuthzBypass(ctx context.Context) context.Context {

@@ -118,14 +118,13 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	}
 
 	return &searchResolver{
-		query:         q,
-		originalQuery: args.Query,
-		pagination:    pagination,
-		patternType:   searchType,
-		zoekt:         search.Indexed(),
-		searcherURLs:  search.SearcherURLs(),
-
-		authzPostFilter: true, // TODO: set via setting
+		query:           q,
+		originalQuery:   args.Query,
+		pagination:      pagination,
+		patternType:     searchType,
+		zoekt:           search.Indexed(),
+		searcherURLs:    search.SearcherURLs(),
+		authzPostFilter: authzShouldPostFilter(),
 	}, nil
 }
 

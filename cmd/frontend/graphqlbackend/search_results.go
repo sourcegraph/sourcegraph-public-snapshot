@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -998,8 +999,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	// 🚨 SECURITY: If post-filtering is not enabled, then just make one attempt
-	if !r.authzPostFilter {
+	// 🚨 SECURITY: If post-filtering is not enabled or if the current user is site admin, then just
+	// make one attempt.
+	if !r.authzPostFilter || backend.CheckCurrentUserIsSiteAdmin(ctx) == nil {
 		return r.doResultsAttempt(ctx, forceOnlyResultType, cancel)
 	}
 

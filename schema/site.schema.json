@@ -73,6 +73,12 @@
             }
           }
         },
+        "authz.postSearchFilter": {
+          "description": "Enables post-filter verification of permissions on search results. On instances with a large number of repositories, this can vastly reduce the number of repository permission checks that block the return of search results. This significantly improves search performance when permission checks are expensive. (If there is a significant difference in search performance for admin vs. non-admin users, it is likely due to permission checks.) The tradeoff is that the result count may not match the requested count (as specified by the `count` search keyword) for non-admin users. Non-admin users may also be able to infer estimates of the real result count, even if they are not allowed to view a proportion of the results.",
+          "type": "boolean",
+          "default": false,
+          "group": "Security"
+        },
         "automation": {
           "description": "Enables the experimental code automation features.",
           "type": "string",

@@ -340,6 +340,8 @@ type ExcludedGitoliteRepo struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
+	// AuthzPostSearchFilter description: Enables post-filter verification of permissions on search results. On instances with a large number of repositories, this can vastly reduce the number of repository permission checks that block the return of search results. This significantly improves search performance when permission checks are expensive. (If there is a significant difference in search performance for admin vs. non-admin users, it is likely due to permission checks.) The tradeoff is that the result count may not match the requested count (as specified by the `count` search keyword) for non-admin users. Non-admin users may also be able to infer estimates of the real result count, even if they are not allowed to view a proportion of the results.
+	AuthzPostSearchFilter bool `json:"authz.postSearchFilter,omitempty"`
 	// Automation description: Enables the experimental code automation features.
 	Automation string `json:"automation,omitempty"`
 	// BitbucketServerFastPerm description: Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. This requires the installation of the Bitbucket Server Sourcegraph plugin. Warning: there may be performance degradation under significant load.
