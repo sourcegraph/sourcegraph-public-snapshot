@@ -252,11 +252,14 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("UpdateCampaignWithUnprocessedChangesetJobs", func(t *testing.T) {
+	t.Run("UpdateCampaign", func(t *testing.T) {
+		strPointer := func(s string) *string { return &s }
 		subTests := []struct {
-			name  string
-			draft bool
-			err   string
+			name    string
+			branch  *string
+			draft   bool
+			process bool
+			err     string
 		}{
 			{
 				name:  "published campaign",
@@ -266,6 +269,25 @@ func TestService(t *testing.T) {
 			{
 				name:  "draft campaign",
 				draft: true,
+			},
+			{
+				name:    "change campaign branch",
+				branch:  strPointer("changed-branch"),
+				draft:   true,
+				process: true,
+			},
+			{
+				name:    "change published campaign branch",
+				branch:  strPointer("changed-branch"),
+				process: true,
+				err:     ErrPublishedCampaignBranchChange.Error(),
+			},
+			{
+				name:    "change campaign blank branch",
+				branch:  strPointer(""),
+				draft:   true,
+				process: true,
+				err:     ErrCampaignBranchBlank.Error(),
 			},
 		}
 		for _, tc := range subTests {
@@ -310,10 +332,17 @@ func TestService(t *testing.T) {
 					if !haveJobs[0].StartedAt.IsZero() {
 						t.Errorf("ChangesetJobs is not unprocessed. StartedAt=%v", haveJobs[0].StartedAt)
 					}
+
+					if tc.process {
+						campaignJobsByID := map[int64]*a8n.CampaignJob{
+							campaignJob.ID: campaignJob,
+						}
+						fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID)
+					}
 				}
 
 				newName := "this is a new campaign name"
-				args := UpdateCampaignArgs{Campaign: campaign.ID, Name: &newName}
+				args := UpdateCampaignArgs{Campaign: campaign.ID, Name: &newName, Branch: tc.branch}
 
 				updatedCampaign, _, err := svc.UpdateCampaign(ctx, args)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
@@ -326,6 +355,10 @@ func TestService(t *testing.T) {
 
 				if updatedCampaign.Name != newName {
 					t.Errorf("Name not updated. want=%q, have=%q", newName, updatedCampaign.Name)
+				}
+
+				if tc.branch != nil && updatedCampaign.Branch != *tc.branch {
+					t.Errorf("Branch not updated. want=%q, have %q", updatedCampaign.Branch, *tc.branch)
 				}
 			})
 		}

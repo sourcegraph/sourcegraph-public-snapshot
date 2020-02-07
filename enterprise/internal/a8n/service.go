@@ -828,8 +828,6 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	if campaign.CampaignPlanID != 0 && updateBranch {
 		if published || partiallyPublished {
 			return nil, nil, ErrPublishedCampaignBranchChange
-		} else {
-			campaign.Branch = *args.Branch
 		}
 	}
 
