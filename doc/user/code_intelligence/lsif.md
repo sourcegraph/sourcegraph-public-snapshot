@@ -1,6 +1,14 @@
 # LSIF: Fast and precise code intelligence
 
-[LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) is a file format for precomputed code intelligence data. It provides fast and precise code intelligence but needs to be periodically generated and uploaded to your Sourcegraph instance. LSIF is opt-in: repositories for which you have not uploaded LSIF data will continue to use the built-in code intelligence.
+## Background
+
+To efficiently answer precise code intelligence queries such as Go-to-Definition and Find References, it is usually necessary to perform an indexing step. Resolving the target of a referring expression in code generally requires knowledge of the dependencies of the code. That, in turn, requires information about the build and/or deployment environment of the code.
+
+Historically, sourcegraph used [language servers](https://microsoft.github.io/language-server-protocol/implementors/servers) to answer these queries, but the performance and operational costs of maintaining a fleet of such services per repository were deemed unacceptable. Instead, we now promote a separate offline indexing strategy: For each language to be indexed, run a standalone language-specific precise code indexer program over each designated repository. These indexers emit data in the [Language Server Index Format (LSIF)](https://code.visualstudio.com/blogs/2019/02/19/lsif), and those data are captured (uploaded) to persistent storage.
+
+[LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) is a file format for precomputed code intelligence data. It allows precise code intelligence queries to be answered quickly, but needs to be periodically (re-)generated and uploaded to your Sourcegraph instance. Sourcegraph can then use the stored index data to answer precise code intelligence queries without the need to run, maintain, and call out to a separate language server process.  Precise code intelligence is currently opt-in: repositories for which you have not uploaded LSIF data will continue to use the built-in code intelligence.
+
+To automate building and updating code intelligence data, we advocate running precise code indexers (colloquially: “LSIF indexers”) as part of testing, continuous integration/deployment, or other code-host automation tasks (using, for example, GitHub Actions, Travis CI, Bitbucket Pipelines, etc.). This approach ensures the indexers run in the same (or similar) environment as a production build or deployment, so that the correct tools and dependencies are visible to the indexer. It also gives the customer control over what code to index, and how often.
 
 > Precise code intelligence using LSIF is supported in Sourcegraph 3.8 and up.
 
