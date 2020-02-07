@@ -906,9 +906,9 @@ type SiteConfiguration struct {
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently to update repositories.
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
-	// GithubClientID description: Client ID for GitHub.
+	// GithubClientID description: Client ID for GitHub. (DEPRECATED)
 	GithubClientID string `json:"githubClientID,omitempty"`
-	// GithubClientSecret description: Client secret for GitHub.
+	// GithubClientSecret description: Client secret for GitHub. (DEPRECATED)
 	GithubClientSecret string `json:"githubClientSecret,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
