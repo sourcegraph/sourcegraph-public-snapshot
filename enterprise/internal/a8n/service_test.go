@@ -262,7 +262,7 @@ func TestService(t *testing.T) {
 			err     string
 		}{
 			{
-				name:  "published campaign",
+				name:  "published unprocessed campaign",
 				draft: false,
 				err:   ErrUpdateProcessingCampaign.Error(),
 			},
