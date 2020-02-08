@@ -177,11 +177,11 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 	log15.Info("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
-		prs = []int64{int64(*e.Issue.Number)}
+		prs = append(prs, int64(*e.Issue.Number))
 		return prs, h.issueComment(e)
 
 	case *gh.PullRequestEvent:
-		prs = []int64{int64(*e.Number)}
+		prs = append(prs, int64(*e.Number))
 
 		switch *e.Action {
 		case "assigned":
@@ -205,11 +205,11 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		}
 
 	case *gh.PullRequestReviewEvent:
-		prs = []int64{int64(*e.PullRequest.Number)}
+		prs = append(prs, int64(*e.PullRequest.Number))
 		ours = h.pullRequestReviewEvent(e)
 
 	case *gh.PullRequestReviewCommentEvent:
-		prs = []int64{int64(*e.PullRequest.Number)}
+		prs = append(prs, int64(*e.PullRequest.Number))
 		switch *e.Action {
 		case "created", "edited":
 			ours = h.pullRequestReviewCommentEvent(e)
