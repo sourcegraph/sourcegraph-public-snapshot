@@ -606,14 +606,14 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 	// We should only consider the latest commit. This could be from a sync or a webhook that
 	// has occurred later
 	var latestCommitTime time.Time
-	var latestSHA string
+	var latestOID string
 	statusPerContext := make(map[string]*ChangesetCheckState)
 
 	if len(pr.Commits.Nodes) > 0 {
 		// We only request the most recent commit
 		commit := pr.Commits.Nodes[0]
 		latestCommitTime = commit.Commit.CommittedDate
-		latestSHA = commit.Commit.OID
+		latestOID = commit.Commit.OID
 		// Calc status per context for the most recent synced commit
 		for _, c := range commit.Commit.Status.Contexts {
 			statusPerContext[c.Context] = parseGithubCheckState(c.State)
@@ -631,7 +631,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 		case *github.PullRequestCommit:
 			if m.Commit.CommittedDate.After(latestCommitTime) {
 				latestCommitTime = m.Commit.CommittedDate
-				latestSHA = m.Commit.OID
+				latestOID = m.Commit.OID
 				// statusPerContext is now out of date, reset it
 				for k := range statusPerContext {
 					delete(statusPerContext, k)
@@ -646,7 +646,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 			return statuses[i].ReceivedAt.Before(statuses[j].ReceivedAt)
 		})
 		for _, s := range statuses {
-			if s.SHA != latestSHA {
+			if s.SHA != latestOID {
 				continue
 			}
 			statusPerContext[s.Context] = parseGithubCheckState(s.State)
