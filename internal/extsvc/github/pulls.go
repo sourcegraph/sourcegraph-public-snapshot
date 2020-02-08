@@ -74,7 +74,7 @@ type CommitStatus struct {
 
 func (c *CommitStatus) Key() string {
 	key := fmt.Sprintf("%s:%s:%s:%d", c.SHA, c.State, c.Context, c.ReceivedAt.UnixNano())
-	return fmt.Sprintf("%x", fnv1.HashString64(key))
+	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
 }
 
 // Context represent the individual commit status context
