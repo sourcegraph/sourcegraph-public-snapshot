@@ -239,7 +239,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 			i, err := strconv.ParseInt(id, 10, 64)
 			if err != nil {
 				log15.Error("Error parsing external id", "err", err)
-				return nil, nil
+				continue
 			}
 			prs = append(prs, i)
 		}
