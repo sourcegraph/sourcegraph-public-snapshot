@@ -224,14 +224,17 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 				refs = append(refs, name)
 			}
 		}
+
 		if len(refs) == 0 {
 			return nil, nil
 		}
+
 		ids, err := h.Store.GetGithubExternalIDForRefs(ctx, refs)
 		if err != nil {
 			log15.Error("Error executing GetGithubExternalIDForRefs", "err", err)
 			return nil, nil
 		}
+
 		for _, id := range ids {
 			i, err := strconv.ParseInt(id, 10, 64)
 			if err != nil {
@@ -240,6 +243,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 			}
 			prs = append(prs, i)
 		}
+
 		ours = h.commitStatusEvent(e)
 	}
 
