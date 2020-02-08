@@ -122,7 +122,7 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 To update to the most recent version of Sourcegraph (X.Y.Z), SSH into your instance and run the following:
 
 ```bash
-cd /home/ec2-user/deploy-sourcerph-docker/docker-compose
+cd /home/ec2-user/deploy-sourcegraph-docker/docker-compose
 git pull
 git checkout vX.Y.Z
 docker-compose up -d
