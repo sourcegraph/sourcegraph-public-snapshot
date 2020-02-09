@@ -62,6 +62,8 @@
 // 1528395646_add_last_verification_sent_at_to_user_emails.up.sql (104B)
 // 1528395647_remove_label_events_from_changeset_events.down.sql (39B)
 // 1528395647_remove_label_events_from_changeset_events.up.sql (106B)
+// 1528395648_add_external_branch_to_changesets.down.sql (79B)
+// 1528395648_add_external_branch_to_changesets.up.sql (444B)
 
 package migrations
 
@@ -1370,6 +1372,46 @@ func _1528395647_remove_label_events_from_changeset_eventsUpSql() (*asset, error
 	return a, nil
 }
 
+var __1528395648_add_external_branch_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\xe6\x72\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x4f\x2a\x4a\xcc\x4b\xce\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x89\xb4\x1b\xc1\x4f\x00\x00\x00")
+
+func _1528395648_add_external_branch_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395648_add_external_branch_to_changesetsDownSql,
+		"1528395648_add_external_branch_to_changesets.down.sql",
+	)
+}
+
+func _1528395648_add_external_branch_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395648_add_external_branch_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395648_add_external_branch_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd1, 0xdd, 0x28, 0x26, 0x48, 0x32, 0xae, 0x1d, 0x49, 0xe6, 0x1, 0xeb, 0xb9, 0xfd, 0x73, 0x52, 0xa4, 0x79, 0x28, 0xeb, 0x8, 0x64, 0x20, 0x1f, 0x35, 0x53, 0x3, 0xd2, 0x64, 0x68, 0x3a, 0x70}}
+	return a, nil
+}
+
+var __1528395648_add_external_branch_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x8e\xc1\x4a\xc3\x40\x14\x45\xf7\xf3\x15\x6f\xf7\x14\xaa\xfd\x80\x50\x21\x6d\x06\x5b\x48\x52\x49\xa7\xe8\xae\xbc\x4c\x6e\x9a\x60\x13\xcb\xcc\x6b\xd1\xbf\x17\xdc\x14\x75\x21\x76\x79\xe1\x1c\xce\x9d\xdb\xc7\x55\x99\x18\x93\xe6\xce\x56\xe4\xd2\x79\x6e\xc9\x77\x32\xee\x11\xa1\x91\xd2\x2c\xa3\xc5\x3a\xdf\x16\x25\xe1\x5d\x11\x46\x39\xec\xea\x20\xa3\xef\xc8\xd9\x17\x97\x18\xb3\x7d\xca\x52\xf7\xcd\xd9\x58\xf7\x0b\x9e\xd1\x00\x95\x46\x54\xe8\xee\x81\x78\x09\x69\x2a\xb4\xa5\x0c\x60\xf3\xbc\xb4\x95\xbd\x18\x11\xe1\xdc\x7b\xec\xf4\xe3\x08\x9a\x11\xef\x7b\xed\x4e\x35\x5f\x9b\x6a\xc3\xdb\x50\xa1\xe5\xaf\xd1\x37\x7f\xe6\xea\x5e\xeb\x93\x7f\x85\x6e\x10\xce\x08\xff\xe9\x06\x1c\x0f\xe2\x71\x73\x01\xef\x7f\x40\x13\xe2\x80\x36\x4e\x3b\x48\x13\xa7\x3c\x61\xbe\xbd\xe2\xcf\x62\x5d\x14\x2b\x97\x98\xcf\x00\x00\x00\xff\xff\x5a\xfd\x0b\x79\xbc\x01\x00\x00")
+
+func _1528395648_add_external_branch_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395648_add_external_branch_to_changesetsUpSql,
+		"1528395648_add_external_branch_to_changesets.up.sql",
+	)
+}
+
+func _1528395648_add_external_branch_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395648_add_external_branch_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395648_add_external_branch_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf8, 0xef, 0x9c, 0x36, 0x27, 0x49, 0xda, 0x4a, 0xb1, 0xde, 0x2a, 0x3f, 0xc8, 0x4e, 0xad, 0xbd, 0xcb, 0x61, 0x1c, 0x7f, 0xce, 0x74, 0xbc, 0x5b, 0x9e, 0x23, 0x41, 0xfb, 0x43, 0x8f, 0xc6, 0x85}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1523,6 +1565,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395646_add_last_verification_sent_at_to_user_emails.up.sql":   _1528395646_add_last_verification_sent_at_to_user_emailsUpSql,
 	"1528395647_remove_label_events_from_changeset_events.down.sql":    _1528395647_remove_label_events_from_changeset_eventsDownSql,
 	"1528395647_remove_label_events_from_changeset_events.up.sql":      _1528395647_remove_label_events_from_changeset_eventsUpSql,
+	"1528395648_add_external_branch_to_changesets.down.sql":            _1528395648_add_external_branch_to_changesetsDownSql,
+	"1528395648_add_external_branch_to_changesets.up.sql":              _1528395648_add_external_branch_to_changesetsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1628,6 +1672,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395646_add_last_verification_sent_at_to_user_emails.up.sql":   {_1528395646_add_last_verification_sent_at_to_user_emailsUpSql, map[string]*bintree{}},
 	"1528395647_remove_label_events_from_changeset_events.down.sql":    {_1528395647_remove_label_events_from_changeset_eventsDownSql, map[string]*bintree{}},
 	"1528395647_remove_label_events_from_changeset_events.up.sql":      {_1528395647_remove_label_events_from_changeset_eventsUpSql, map[string]*bintree{}},
+	"1528395648_add_external_branch_to_changesets.down.sql":            {_1528395648_add_external_branch_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395648_add_external_branch_to_changesets.up.sql":              {_1528395648_add_external_branch_to_changesetsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
