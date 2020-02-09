@@ -1035,6 +1035,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 // doResultsAttempt contains most of the top-level search logic. It sits between the underlying
 // search providers that execute specific search strategies (e.g., text, symbols, files, repos) and
 // the higher-level doResults, which is mainly responsible for enforcing proper authz checks.
+//
+// 🚨 SECURITY: callers should not call this directly, but should call doResults, instead. When
+// searchResolver.authzPostFilter is true, this method does not verify permissions on the returned
+// search result set.
 func (r *searchResolver) doResultsAttempt(ctx context.Context, forceOnlyResultType string, cancel func()) (res *SearchResultsResolver, err error) {
 	// Tracing
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
@@ -1402,7 +1406,10 @@ type SearchResultResolver interface {
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
 	ToCodemodResult() (*codemodResultResolver, bool)
 
-	// searchResultURIs returns the repo name and file uri respectiveley
+	// searchResultURIs returns the repo name and file uri respectively
+	//
+	// 🚨 SECURITY: The repo name is used to enforce authz, so implementors should take extra care
+	// to ensure this is correct.
 	searchResultURIs() (string, string)
 	resultCount() int32
 }

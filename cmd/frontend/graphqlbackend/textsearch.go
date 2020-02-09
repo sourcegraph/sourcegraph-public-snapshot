@@ -141,6 +141,7 @@ func (r *FileMatchResolver) ToCodemodResult() (*codemodResultResolver, bool) {
 	return nil, false
 }
 
+// 🚨 SECURITY: the returned repository name is used to enforce authz.
 func (fm *FileMatchResolver) searchResultURIs() (string, string) {
 	return string(fm.Repo.Name), fm.JPath
 }

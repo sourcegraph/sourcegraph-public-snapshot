@@ -73,6 +73,9 @@ func (r *commitSearchResultResolver) ToCodemodResult() (*codemodResultResolver, 
 	return nil, false
 }
 
+// 🚨 SECURITY: the returned repository name is used to enforce authz. Because no repository exists
+// with this name, all results will effectively be filtered out when search post-filtering is
+// enabled.
 func (r *commitSearchResultResolver) searchResultURIs() (string, string) {
 	// Diffs aren't going to be returned with other types of results
 	// and are already ordered in the desired order, so we'll just leave them in place.

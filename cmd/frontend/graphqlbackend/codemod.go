@@ -59,6 +59,7 @@ func (r *codemodResultResolver) ToCodemodResult() (*codemodResultResolver, bool)
 	return r, true
 }
 
+// 🚨 SECURITY: the returned repository name is used to enforce authz
 func (r *codemodResultResolver) searchResultURIs() (string, string) {
 	return string(r.commit.repo.repo.Name), r.path
 }
