@@ -50,6 +50,12 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		return nil, nil
 	}
 
+	if authzShouldPostFilter() {
+		// No suggestions, if authz post-filtering is enabled (to avoid expensive permissions
+		// computation)
+		return nil, nil
+	}
+
 	// Only suggest for type:file.
 	typeValues, _ := r.query.StringValues(query.FieldType)
 	for _, resultType := range typeValues {
