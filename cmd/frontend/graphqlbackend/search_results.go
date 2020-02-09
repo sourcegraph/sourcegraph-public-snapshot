@@ -1032,6 +1032,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	return doResultsWithAuthzFilter(16)
 }
 
+// mockDoResultsAttempt exists for testing doResults
+var mockDoResultsAttempt func(ctx context.Context, forceOnlyResultType string, cancel func()) (res *SearchResultsResolver, err error)
+
 // doResultsAttempt contains most of the top-level search logic. It sits between the underlying
 // search providers that execute specific search strategies (e.g., text, symbols, files, repos) and
 // the higher-level doResults, which is mainly responsible for enforcing proper authz checks.
@@ -1040,6 +1043,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 // searchResolver.authzPostFilter is true, this method does not verify permissions on the returned
 // search result set.
 func (r *searchResolver) doResultsAttempt(ctx context.Context, forceOnlyResultType string, cancel func()) (res *SearchResultsResolver, err error) {
+	if mockDoResultsAttempt != nil {
+		return mockDoResultsAttempt(ctx, forceOnlyResultType, cancel)
+	}
+
 	// Tracing
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
