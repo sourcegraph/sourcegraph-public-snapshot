@@ -5,11 +5,11 @@
   "captainGitHubUsername": "beyang",
 
   "majorVersion": "3",
-  "minorVersion": "12",
-  "releaseDateTime": "20 Jan 2020 10:00 PST",
-  "oneWorkingDayBeforeRelease": "17 Jan 2020 10:00 PST",
-  "fourWorkingDaysBeforeRelease": "14 Jan 2020 10:00 PST",
-  "fiveWorkingDaysBeforeRelease": "13 Jan 2020 10:00 PST",
+  "minorVersion": "13",
+  "releaseDateTime": "20 Feb 2020 10:00 PST",
+  "oneWorkingDayBeforeRelease": "19 Feb 2020 10:00 PST",
+  "fourWorkingDaysBeforeRelease": "14 Feb 2020 10:00 PST",
+  "fiveWorkingDaysBeforeRelease": "13 Feb 2020 10:00 PST",
 
   "slackAnnounceChannel": "dev-announce"
 }
