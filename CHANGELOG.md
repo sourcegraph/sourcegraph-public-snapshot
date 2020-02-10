@@ -37,6 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 - It is now possible to escape spaces using `\` in the search queries when using regexp. [#7604](https://github.com/sourcegraph/sourcegraph/issues/7604))
 - **Monitoring:** Fixed an issue with the **Frontend** -> **Search responses by status** panel which caused search response types to not be aggregated as expected. [#7627](https://github.com/sourcegraph/sourcegraph/issues/7627)
 - **Monitoring:** Fixed an issue with the **Replacer**, **Repo Updater**, and **Searcher** dashboards would incorrectly report on a metric from the unrelated query-runner service. [#7531](https://github.com/sourcegraph/sourcegraph/issues/7531)
+- Hover tooltips for Perl files now have syntax highlighting. [#8307](https://github.com/sourcegraph/sourcegraph/issues/8307)
 
 ### Removed
 
