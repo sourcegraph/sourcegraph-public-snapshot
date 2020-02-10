@@ -80,8 +80,6 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (err error) {
 			return
 		}
 
-		fmt.Printf("%v\n", commit.Author)
-
 		r.author = *toSignatureResolver(&commit.Author, r.long)
 		r.committer = toSignatureResolver(commit.Committer, r.long)
 		r.message = commit.Message
