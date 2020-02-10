@@ -182,4 +182,12 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         errorAlertClassName: notificationClassNames[NotificationType.Error],
     },
     codeViewsRequireTokenization: true,
+    getHoverOverlayMountLocation: (): string | null => {
+        const { pageKind } = getPageInfo()
+        // On merge request pages only, mount the hover overlay to the diffs tab container.
+        if (pageKind === GitLabPageKind.MergeRequest) {
+            return 'div.tab-pane.diffs'
+        }
+        return null
+    },
 })

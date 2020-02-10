@@ -27,6 +27,23 @@ export interface GitLabInfo extends RawRepoSpec {
  */
 interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevSpec {}
 
+export const getPageKindFromPathName = (owner: string, projectName: string, pathname: string): GitLabPageKind => {
+    const pageKindMatch = pathname.match(new RegExp(`^/${owner}/${projectName}(/-)?/(commit|merge_requests|blob)/`))
+    if (!pageKindMatch) {
+        return GitLabPageKind.Other
+    }
+    switch (pageKindMatch[2]) {
+        case 'commit':
+            return GitLabPageKind.Commit
+        case 'merge_requests':
+            return GitLabPageKind.MergeRequest
+        case 'blob':
+            return GitLabPageKind.File
+        default:
+            return GitLabPageKind.Other
+    }
+}
+
 /**
  * Gets information about the page.
  */
@@ -43,21 +60,7 @@ export function getPageInfo(): GitLabInfo {
     const owner = take(parts, parts.length - 1).join('/')
     const projectName = last(parts)!
 
-    let pageKind: GitLabPageKind
-    if (window.location.pathname.includes(`${owner}/${projectName}/commit`)) {
-        pageKind = GitLabPageKind.Commit
-    } else if (
-        window.location.pathname.includes(`${owner}/${projectName}/merge_requests`) ||
-        // https://github.com/sourcegraph/sourcegraph/issues/8134
-        window.location.pathname.includes(`${owner}/${projectName}/-/merge_requests`)
-    ) {
-        pageKind = GitLabPageKind.MergeRequest
-    } else if (window.location.pathname.includes(`${owner}/${projectName}/blob`)) {
-        pageKind = GitLabPageKind.File
-    } else {
-        pageKind = GitLabPageKind.Other
-    }
-
+    const pageKind = getPageKindFromPathName(owner, projectName, window.location.pathname)
     const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
 
     return {
@@ -72,16 +75,14 @@ export function getPageInfo(): GitLabInfo {
  * Gets information about a file view page.
  */
 export function getFilePageInfo(): GitLabFileInfo {
-    const { rawRepoName, owner, projectName } = getPageInfo()
-
-    const matches = window.location.pathname.match(new RegExp(`${owner}/${projectName}/blob/(.*?)/(.*)`))
+    const { rawRepoName } = getPageInfo()
+    const matches = window.location.pathname.match(/\/blob\/(.*?)\/(.*)/)
     if (!matches) {
         throw new Error('Unable to determine revision or file path')
     }
 
     const rev = decodeURIComponent(matches[1])
     const filePath = decodeURIComponent(matches[2])
-
     return {
         rawRepoName,
         filePath,

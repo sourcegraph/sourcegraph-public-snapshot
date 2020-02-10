@@ -33,6 +33,8 @@ import {
     switchMap,
     withLatestFrom,
     tap,
+    startWith,
+    distinctUntilChanged,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
@@ -74,7 +76,7 @@ import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { EventLogger } from '../../shared/tracking/eventLogger'
-import { MutationRecordLike } from '../../shared/util/dom'
+import { MutationRecordLike, querySelectorOrSelf } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
 import { githubCodeHost } from '../github/code_intelligence'
@@ -205,6 +207,13 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      */
     getCommandPaletteMount?: MountGetter
 
+    /**
+     * Returns a selector used to determine the mount location of the hover overlay in the DOM.
+     *
+     * If undefined, or when null is returned, the hover overlay container will be mounted to <body>.
+     */
+    getHoverOverlayMountLocation?: () => string | null
+
     /** Construct the URL to the specified file. */
     urlToFile?: (
         sourcegraphURL: string,
@@ -292,10 +301,10 @@ export interface CodeIntelligenceProps
     showGlobalDebug?: boolean
 }
 
-export const createOverlayMount = (codeHostName: string): HTMLElement => {
+export const createOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
     const mount = document.createElement('div')
     mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`, 'theme-light')
-    document.body.appendChild(mount)
+    container.appendChild(mount)
     return mount
 }
 
@@ -312,7 +321,8 @@ export const createGlobalDebugMount = (): HTMLElement => {
  *
  * @param codeHost
  */
-export function initCodeIntelligence({
+function initCodeIntelligence({
+    mutations,
     codeHost,
     platformContext,
     extensionsController,
@@ -322,6 +332,7 @@ export function initCodeIntelligence({
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: typeof reactDOMRender
     hoverAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[]
+    mutations: Observable<MutationRecordLike[]>
 }): {
     hoverifier: Hoverifier<
         RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
@@ -434,12 +445,95 @@ export function initCodeIntelligence({
         }
     }
 
-    // This renders to document.body, which we can assume is never removed,
-    // so we don't need to subscribe to mutations.
-    const overlayMount = createOverlayMount(codeHost.type)
-    render(<HoverOverlayContainer />, overlayMount)
+    const { getHoverOverlayMountLocation } = codeHost
+    if (!getHoverOverlayMountLocation) {
+        // This renders to document.body, which we can assume is never removed,
+        // so we don't need to subscribe to mutations.
+        const overlayMount = createOverlayMount(codeHost.type, document.body)
+        render(<HoverOverlayContainer />, overlayMount)
+    } else {
+        let previousMount: HTMLElement | null = null
+        subscription.add(
+            observeHoverOverlayMountLocation(getHoverOverlayMountLocation, mutations).subscribe(mountLocation => {
+                // Remove the previous mount if it exists,
+                // to avoid displaying duplicate hovers.
+                if (previousMount) {
+                    previousMount.remove()
+                }
+                const mount = createOverlayMount(codeHost.type, mountLocation)
+                previousMount = mount
+                render(<HoverOverlayContainer />, mount)
+            })
+        )
+    }
 
     return { hoverifier, subscription }
+}
+
+/**
+ * Returns an Observable that emits the element where
+ * the hover overlay mount should be appended, taking account
+ * mutations and {@link CodeHost#getHoverOverlayMountLocation}.
+ *
+ * The caller is responsible for removing the previous mount if it exists.
+ *
+ * This is useful to mount the hover overlay to a different container than document.body,
+ * so that it is affected by the visibility changes of that container.
+ *
+ * Related issue: https://gitlab.com/gitlab-org/gitlab/issues/193433
+ *
+ * Example use case on GitLab:
+ * 1. User visits https://gitlab.com/gitlab-org/gitaly/-/merge_requests/1575. div.tab-pane.diffs doesn't exist yet (it'll be lazy-loaded)
+ *      -> Mount the  hover overlay is to document.body.
+ * 2. User visits the 'Changes' tab
+ *      -> Unmount from document.body, mount to div.tab-pane.diffs
+ * 3. User visits the 'Overview' tab again
+ *      -> div.tab-pane.diffs is hidden, and as a result so is the hover overlay.
+ * 4. User navigates away from the merge request (soft-reload), div.tab-pane.diffs is removed
+ *      -> Mount to document.body again
+ */
+export function observeHoverOverlayMountLocation(
+    getMountLocationSelector: NonNullable<CodeHost['getHoverOverlayMountLocation']>,
+    mutations: Observable<MutationRecordLike[]>
+): Observable<HTMLElement> {
+    return mutations.pipe(
+        concatAll(),
+        map(({ addedNodes, removedNodes }): HTMLElement | null => {
+            // If no selector can be used to determine the mount location
+            // return document.body as the mount location.
+            const selector = getMountLocationSelector()
+            if (selector === null) {
+                return document.body
+            }
+            // If any of the added nodes match the selector, return it
+            // as the new mount location.
+            for (const addedNode of addedNodes) {
+                if (!(addedNode instanceof HTMLElement)) {
+                    continue
+                }
+                const mountLocation = querySelectorOrSelf<HTMLElement>(addedNode, selector)
+                if (mountLocation) {
+                    return mountLocation
+                }
+            }
+            // If any of the removed nodes match the selector,
+            // return document.body as the new mount location.
+            for (const removedNode of removedNodes) {
+                if (!(removedNode instanceof HTMLElement)) {
+                    continue
+                }
+                if (querySelectorOrSelf<HTMLElement>(removedNode, selector)) {
+                    return document.body
+                }
+            }
+            // Neither added nodes nor removed nodes match the selector,
+            // don't return a new mount location.
+            return null
+        }),
+        filter(isDefined),
+        startWith(document.body),
+        distinctUntilChanged()
+    )
 }
 
 export function handleCodeHost({
@@ -497,6 +591,7 @@ export function handleCodeHost({
         telemetryService,
         render,
         hoverAlerts,
+        mutations,
     })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
