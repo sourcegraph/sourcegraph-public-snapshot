@@ -222,6 +222,7 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	}
 
 	for i := range cs {
+		cs[i].Changeset.ExternalBranch = prs[i].HeadRefName
 		cs[i].Changeset.Metadata = prs[i]
 	}
 
