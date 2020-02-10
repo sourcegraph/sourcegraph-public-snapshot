@@ -410,6 +410,17 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
+			t.Run("GetGithubExternalIDForRefs no branch", func(t *testing.T) {
+				have, err := s.GetGithubExternalIDForRefs(ctx, []string{"foo"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := []string{}
+				if diff := cmp.Diff(want, have); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
 			t.Run("CreateAlreadyExistingChangesets", func(t *testing.T) {
 				ids := make([]int64, len(changesets))
 				for i, c := range changesets {
