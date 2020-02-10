@@ -9,11 +9,11 @@ Sourcegraph by default provides its own PostgreSQL and Redis databases for data 
 
 You can use your own PostgreSQL v9.6+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
 
-Simply add the standard PostgreSQL environment variables to your `docker run` command and Sourcegraph will use that PostgreSQL server instead of its built-in one. For example:
+Simply add the standard PostgreSQL environment variables to your Sourcegraph deployment files and Sourcegraph will use that PostgreSQL server instead of its built-in one.
 
-### Version requirements
+### sourcegraph/server
 
-Please refer to our [Postgres](https://docs.sourcegraph.com/admin/postgres) documentation to learn about version requirements.
+Add the following to your `docker run` command:
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
@@ -21,6 +21,58 @@ Please refer to our [Postgres](https://docs.sourcegraph.com/admin/postgres) docu
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 <pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.12.5</code></pre>
+
+### Docker Compose
+
+1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services and the `sourcegraph-frontend-internal` service in ` [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.12.5/docker-compose/docker-compose.yaml): 
+
+    ```yaml
+    sourcegraph-frontend-0:
+      # ...
+      environment:
+        # ...
+        - 'PGHOST=psql.mycompany.org'
+        - 'PGUSER=sourcegraph'
+        - 'PGPASSWORD=secret'
+        - 'PGDATABASE=sourcegraph'
+        - 'PGSSLMODE=require'
+      # ...
+    ```
+
+    - See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a `.env` file, etc.).
+
+1. Comment out / remove the internal `pgsql` service in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.12.5/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
+
+    ```yaml
+    # # Description: PostgreSQL database for various data.
+    # #
+    # # Disk: 128GB / persistent SSD
+    # # Ports exposed to other Sourcegraph services: 5432/TCP 9187/TCP
+    # # Ports exposed to the public internet: none
+    # #
+    # pgsql:
+    # container_name: pgsql
+    # image: 'index.docker.io/sourcegraph/postgres-11.4:19-11-14_b084311b@sha256:072481559d559cfd9a53ad77c3688b5cf583117457fd452ae238a20405923297'
+    # cpus: 4
+    # mem_limit: '2g'
+    # healthcheck:
+    #    test: '/liveness.sh'
+    #    interval: 10s
+    #    timeout: 1s
+    #    retries: 3
+    #    start_period: 15s
+    # volumes:
+    #    - 'pgsql:/data/'
+    # networks:
+    #     - sourcegraph
+    # restart: always
+    ```
+
+### Version requirements
+
+Please refer to our [Postgres](https://docs.sourcegraph.com/admin/postgres) documentation to learn about version requirements.
+
+### Caveats
 
 > NOTE: If your PostgreSQL server does not support SSL, set `PGSSLMODE=disable` instead of `PGSSLMODE=require`. Note that this is potentially insecure.
 
