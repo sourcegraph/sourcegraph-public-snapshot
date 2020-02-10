@@ -25,7 +25,7 @@ func useRefspecOverrides() bool {
 //
 // To not clone everything we instead init a bare repo and only add the
 // refspecs we care about. Then we finally do a fetch.
-func refspecOverridesCloneCmd(ctx context.Context, tmpPath, url string) (*exec.Cmd, error) {
+func refspecOverridesCloneCmd(ctx context.Context, url, tmpPath string) (*exec.Cmd, error) {
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "clone failed to create tmp dir")
 	}

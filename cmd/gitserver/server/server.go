@@ -814,7 +814,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 
 		var cmd *exec.Cmd
 		if useRefspecOverrides() {
-			cmd, err = refspecOverridesCloneCmd(ctx, tmpPath, url)
+			cmd, err = refspecOverridesCloneCmd(ctx, url, tmpPath)
 			if err != nil {
 				return err
 			}
