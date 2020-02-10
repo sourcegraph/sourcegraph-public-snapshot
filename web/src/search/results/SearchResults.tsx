@@ -102,12 +102,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(q)
             const newLoc =
                 '/search?' +
-                buildSearchURLQuery(
-                    navbarQuery,
-                    GQL.SearchPatternType.regexp,
-                    this.props.caseSensitive,
-                    filtersInQuery
-                )
+                buildSearchURLQuery(navbarQuery, GQL.SearchPatternType.regexp, this.props.caseSensitive, filtersInQuery)
             window.location.replace(newLoc)
         }
 
