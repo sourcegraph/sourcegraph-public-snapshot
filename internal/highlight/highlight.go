@@ -59,6 +59,12 @@ type Params struct {
 	// Whether or not the light theme should be used to highlight the code.
 	IsLightTheme bool
 
+	// HighlightLongLines, if true, highlighting lines which are greater than
+	// 2000 bytes is enabled. This may produce a significant amount of HTML
+	// which some browsers (such as Chrome, but not Firefox) may have trouble
+	// rendering efficiently.
+	HighlightLongLines bool
+
 	// Whether or not to simulate the syntax highlighter taking too long to
 	// respond.
 	SimulateTimeout bool
@@ -203,6 +209,16 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 	table, err := preSpansToTable(resp.Data)
 	if err != nil {
 		return "", false, err
+	}
+	if !p.HighlightLongLines {
+		// This number was arbitrarily chosen. We don't want long lines in general to be unhighlighted,
+		// but if there are super long lines OR many lines of near this length we don't want it to slow
+		// down the browser's rendering.
+		maxLineLength := 2000
+		table, err = unhighlightLongLines(table, maxLineLength)
+		if err != nil {
+			return "", false, err
+		}
 	}
 	return template.HTML(table), false, nil
 }
@@ -371,4 +387,30 @@ func generatePlainTable(code string) (template.HTML, error) {
 		return "", err
 	}
 	return template.HTML(buf.String()), nil
+}
+
+// unhighlightLongLines takes highlighted HTML and unhighlights lines which are
+// longer than N bytes in (plaintext) length, making them easier for some
+// browsers such as Chrome to render.
+//
+// And the returned HTML has all <span> tags removed from lines whose length
+// are > N bytes.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/6489
+func unhighlightLongLines(h string, n int) (string, error) {
+	doc, err := html.Parse(strings.NewReader(h))
+	if err != nil {
+		return "", err
+	}
+
+	// TODO:
+	// - Walk over each `table>tr>td.code>div` element in `doc`
+	// - Count plaintext length of line (excluding HTML elements)
+	// - If line exceeds N bytes in length, remove all spans and instead use just one single wrapping span for the whole line (matches structure produced by generatePlainTable)
+
+	var buf bytes.Buffer
+	if err := html.Render(&buf, doc); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }

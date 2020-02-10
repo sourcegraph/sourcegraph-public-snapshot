@@ -93,8 +93,9 @@ func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
 func (h *highlightedFileResolver) HTML() string  { return h.html }
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
-	DisableTimeout bool
-	IsLightTheme   bool
+	DisableTimeout     bool
+	IsLightTheme       bool
+	HighlightLongLines bool
 }) (*highlightedFileResolver, error) {
 	// Timeout for reading file via Git.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -117,11 +118,12 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 	)
 	simulateTimeout := r.commit.repo.repo.Name == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	html, result.aborted, err = highlight.Code(ctx, highlight.Params{
-		Content:         content,
-		Filepath:        r.Path(),
-		DisableTimeout:  args.DisableTimeout,
-		IsLightTheme:    args.IsLightTheme,
-		SimulateTimeout: simulateTimeout,
+		Content:            content,
+		Filepath:           r.Path(),
+		DisableTimeout:     args.DisableTimeout,
+		IsLightTheme:       args.IsLightTheme,
+		HighlightLongLines: args.HighlightLongLines,
+		SimulateTimeout:    simulateTimeout,
 		Metadata: highlight.Metadata{
 			RepoName: string(r.commit.repo.repo.Name),
 			Revision: string(r.commit.oid),
