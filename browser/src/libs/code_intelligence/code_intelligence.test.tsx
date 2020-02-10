@@ -4,6 +4,7 @@ import { uniqueId, noop } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take, first } from 'rxjs/operators'
+import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
@@ -22,6 +23,7 @@ import {
     createOverlayMount,
     FileInfo,
     handleCodeHost,
+    observeHoverOverlayMountLocation,
 } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
@@ -42,6 +44,15 @@ const notificationClassNames = {
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.args.find(call => call[1] === mount)
     return call?.[0]
+}
+
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
+
+const createTestElement = (): HTMLElement => {
+    const el = document.createElement('div')
+    el.className = `test test-${uniqueId()}`
+    document.body.appendChild(el)
+    return el
 }
 
 jest.mock('uuid', () => ({
@@ -73,7 +84,7 @@ describe('code_intelligence', () => {
 
     describe('createOverlayMount()', () => {
         it('should create the overlay mount', () => {
-            createOverlayMount('some-code-host')
+            createOverlayMount('some-code-host', document.body)
             const mount = document.body.querySelector('.hover-overlay-mount')
             expect(mount).toBeDefined()
             expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host theme-light')
@@ -97,13 +108,6 @@ describe('code_intelligence', () => {
             subscriptions.unsubscribe()
             subscriptions = new Subscription()
         })
-
-        const createTestElement = (): HTMLElement => {
-            const el = document.createElement('div')
-            el.className = `test test-${uniqueId()}`
-            document.body.appendChild(el)
-            return el
-        }
 
         test('renders the hover overlay mount', async () => {
             const { services } = await integrationTestContext()
@@ -835,6 +839,104 @@ describe('code_intelligence', () => {
                     type: 'CodeEditor',
                 },
             ])
+        })
+    })
+
+    describe('observeHoverOverlayMountLocation()', () => {
+        test('emits document.body if the getMountLocationSelector() returns null', () => {
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => null,
+                        cold<MutationRecordLike[]>('a', {
+                            a: [
+                                {
+                                    addedNodes: [document.body],
+                                    removedNodes: [],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('a', {
+                    a: document.body,
+                })
+            })
+        })
+
+        test('emits a custom mount location if a node matching the selector is in addedNodes()', () => {
+            const el = createTestElement()
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => '.test',
+                        cold<MutationRecordLike[]>('-b', {
+                            b: [
+                                {
+                                    addedNodes: [el],
+                                    removedNodes: [],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('ab', {
+                    a: document.body,
+                    b: el,
+                })
+            })
+        })
+
+        test('emits a custom mount location if a node matching the selector is nested in an addedNode', () => {
+            const el = createTestElement()
+            const nested = document.createElement('div')
+            nested.classList.add('nested')
+            el.appendChild(nested)
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => '.nested',
+                        cold<MutationRecordLike[]>('-b', {
+                            b: [
+                                {
+                                    addedNodes: [el],
+                                    removedNodes: [],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('ab', {
+                    a: document.body,
+                    b: nested,
+                })
+            })
+        })
+
+        test('emits document.body if a node matching the selector is removed', () => {
+            const el = createTestElement()
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => '.test',
+                        cold<MutationRecordLike[]>('-bc', {
+                            b: [
+                                {
+                                    addedNodes: [el],
+                                    removedNodes: [],
+                                },
+                            ],
+                            c: [
+                                {
+                                    addedNodes: [],
+                                    removedNodes: [el],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('abc', {
+                    a: document.body,
+                    b: el,
+                    c: document.body,
+                })
+            })
         })
     })
 })

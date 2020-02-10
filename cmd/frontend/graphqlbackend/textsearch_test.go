@@ -28,6 +28,48 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func TestZoektResultCountFactor(t *testing.T) {
+	cases := []struct {
+		name     string
+		numRepos int
+		pattern  *search.TextPatternInfo
+		want     int
+	}{
+		{
+			name:     "One repo implies max scaling factor",
+			numRepos: 1,
+			pattern:  &search.TextPatternInfo{},
+			want:     100,
+		},
+		{
+			name:     "Eleven repos implies a scaling factor between min and max",
+			numRepos: 11,
+			pattern:  &search.TextPatternInfo{},
+			want:     8,
+		},
+		{
+			name:     "More than 500 repos implies a min scaling factor",
+			numRepos: 501,
+			pattern:  &search.TextPatternInfo{},
+			want:     1,
+		},
+		{
+			name:     "Setting a count greater than defautl max results (30) adapts scaling factor",
+			numRepos: 501,
+			pattern:  &search.TextPatternInfo{FileMatchLimit: 100},
+			want:     10,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := zoektResultCountFactor(tt.numRepos, tt.pattern)
+			if tt.want != got {
+				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
+			}
+		})
+	}
+}
+
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
