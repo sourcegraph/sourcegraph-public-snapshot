@@ -314,6 +314,7 @@ WITH batch AS (
       campaign_ids          jsonb,
       external_id           text,
       external_service_type text,
+      external_branch       text,
       external_deleted_at   timestamptz
     )
   )
@@ -332,6 +333,7 @@ changed AS (
     campaign_ids,
     external_id,
     external_service_type,
+    external_branch,
 	external_deleted_at
   )
   SELECT
@@ -342,6 +344,7 @@ changed AS (
     campaign_ids,
     external_id,
     external_service_type,
+    external_branch,
 	external_deleted_at
   FROM batch
   ON CONFLICT ON CONSTRAINT
@@ -361,6 +364,7 @@ SELECT
   COALESCE(changed.campaign_ids, existing.campaign_ids) AS campaign_ids,
   COALESCE(changed.external_id, existing.external_id) AS external_id,
   COALESCE(changed.external_service_type, existing.external_service_type) AS external_service_type,
+  COALESCE(changed.external_branch, existing.external_branch) AS external_branch,
   COALESCE(changed.external_deleted_at, existing.external_deleted_at) AS external_deleted_at
 FROM changed
 RIGHT JOIN batch ON batch.repo_id = changed.repo_id
@@ -394,6 +398,7 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 		CampaignIDs         json.RawMessage `json:"campaign_ids"`
 		ExternalID          string          `json:"external_id"`
 		ExternalServiceType string          `json:"external_service_type"`
+		ExternalBranch      string          `json:"external_branch"`
 		ExternalDeletedAt   *time.Time      `json:"external_deleted_at"`
 	}
 
@@ -419,6 +424,7 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 			CampaignIDs:         campaignIDs,
 			ExternalID:          c.ExternalID,
 			ExternalServiceType: c.ExternalServiceType,
+			ExternalBranch:      c.ExternalBranch,
 			ExternalDeletedAt:   nullTimeColumn(c.ExternalDeletedAt),
 		})
 	}
@@ -506,6 +512,7 @@ SELECT
   campaign_ids,
   external_id,
   external_service_type,
+  external_branch,
   external_deleted_at
 FROM changesets
 WHERE %s
@@ -575,6 +582,7 @@ SELECT
   campaign_ids,
   external_id,
   external_service_type,
+  external_branch,
   external_deleted_at
 FROM changesets
 WHERE %s
@@ -649,6 +657,7 @@ changed AS (
     campaign_ids          = batch.campaign_ids,
     external_id           = batch.external_id,
     external_service_type = batch.external_service_type,
+    external_branch       = batch.external_branch,
 	external_deleted_at   = batch.external_deleted_at
   FROM batch
   WHERE changesets.id = batch.id
@@ -666,6 +675,7 @@ SELECT
   changed.campaign_ids,
   changed.external_id,
   changed.external_service_type,
+  changed.external_branch,
   changed.external_deleted_at
 FROM changed
 LEFT JOIN batch ON batch.repo_id = changed.repo_id
@@ -2480,6 +2490,40 @@ SET
 WHERE %s
 `
 
+// GetGithubExternalIDForRefs allows us to find the external id for GitHub pull requests based on
+// a slice of head refs. We need this in order to match incoming status webhooks to pull requests as
+// the only information they provide is the remote branch
+func (s *Store) GetGithubExternalIDForRefs(ctx context.Context, refs []string) ([]string, error) {
+	queryFmtString := `
+SELECT external_id FROM changesets
+WHERE external_service_type = 'github'
+AND external_branch IN (%s)
+ORDER BY id ASC
+`
+	inClause := make([]*sqlf.Query, 0, len(refs))
+	for _, ref := range refs {
+		if ref == "" {
+			continue
+		}
+		inClause = append(inClause, sqlf.Sprintf("%s", ref))
+	}
+	q := sqlf.Sprintf(queryFmtString, sqlf.Join(inClause, ","))
+	ids := make([]string, 0, len(refs))
+	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var s string
+		err = sc.Scan(&s)
+		if err != nil {
+			return 0, 0, err
+		}
+		ids = append(ids, s)
+		return 0, 1, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	_, _, err := s.query(ctx, q, sc)
 	return err
@@ -2535,6 +2579,7 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
 		&t.ExternalID,
 		&t.ExternalServiceType,
+		&t.ExternalBranch,
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 	)
 	if err != nil {

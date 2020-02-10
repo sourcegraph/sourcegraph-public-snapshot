@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -60,6 +61,20 @@ type Commit struct {
 type Status struct {
 	State    string
 	Contexts []Context
+}
+
+// CommitStatus represents the state of a commit context received
+// via the StatusEvent webhook
+type CommitStatus struct {
+	SHA        string
+	Context    string
+	State      string
+	ReceivedAt time.Time
+}
+
+func (c *CommitStatus) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.SHA, c.State, c.Context, c.ReceivedAt.UnixNano())
+	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
 }
 
 // Context represent the individual commit status context
@@ -685,6 +700,12 @@ fragment commit on Commit {
   url
   status {
     state
+    contexts {
+      id
+      context
+      state
+      description
+    }
   }
   committer {
     avatarUrl
@@ -905,7 +926,7 @@ fragment pr on PullRequest {
         }
         createdAt
       }
-      ... on PullRequestCommit{
+      ... on PullRequestCommit {
         ...prCommit
       }
     }
