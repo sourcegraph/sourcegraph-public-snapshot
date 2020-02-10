@@ -470,6 +470,28 @@ function initCodeIntelligence({
     return { hoverifier, subscription }
 }
 
+/**
+ * Returns an Observable that emits the element where
+ * the hover overlay mount should be appended, taking account
+ * mutations and {@link CodeHost#getHoverOverlayMountLocation}.
+ *
+ * The caller is responsible for removing the previous mount if it exists.
+ *
+ * This is useful to mount the hover overlay to a different container than document.body,
+ * so that it is affected by the visibility changes of that container.
+ *
+ * Related issue: https://gitlab.com/gitlab-org/gitlab/issues/193433
+ *
+ * Example use case on GitLab:
+ * 1. User visits https://gitlab.com/gitlab-org/gitaly/-/merge_requests/1575. div.tab-pane.diffs doesn't exist yet (it'll be lazy-loaded)
+ *      -> Mount the  hover overlay is to document.body.
+ * 2. User visits the 'Changes' tab
+ *      -> Unmount from document.body, mount to div.tab-pane.diffs
+ * 3. User visits the 'Overview' tab again
+ *      -> div.tab-pane.diffs is hidden, and as a result so is the hover overlay.
+ * 4. User navigates away from the merge request (soft-reload), div.tab-pane.diffs is removed
+ *      -> Mount to document.body again
+ */
 export function observeHoverOverlayMountLocation(
     getMountLocationSelector: NonNullable<CodeHost['getHoverOverlayMountLocation']>,
     mutations: Observable<MutationRecordLike[]>
