@@ -137,7 +137,7 @@ docker-compose up -d
 
 ## Storage and Backups
 
-The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. The script above [configures Docker](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all Docker data on the additional persistent disk that was attached to the instance (mounted at `/mnt/docker-data` - the volumes themselves are stored under `/mnt/docker-data/volumes`) There are a few different back ways to backup this data:
+The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. The script above [configures Docker](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all Docker data on the additional persistent disk that was attached to the instance (mounted at `/mnt/docker-data` - the volumes themselves are stored under `/mnt/docker-data/volumes`) There are a few different ways to backup this data:
 
 * (**recommended**) The most straightfoward method to backup this data is to [snapshot the entire `/mnt/docker-data` persistsent disk](https://cloud.google.com/compute/docs/disks/create-snapshots) on an [automatic, scheduled basis](https://cloud.google.com/compute/docs/disks/scheduled-snapshots). The directions above tell you how to set up this schedule when the instance is first created, but you can also [create the schedule afterwards](https://cloud.google.com/compute/docs/disks/scheduled-snapshots).
 
