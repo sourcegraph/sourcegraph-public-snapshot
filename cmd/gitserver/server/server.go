@@ -43,10 +43,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// HACK(keegancsmith) workaround to experiment with cloning less in a large
-// monorepo. https://github.com/sourcegraph/customer/issues/19
-var refspecOverrides = strings.Fields(env.Get("SRC_GITSERVER_REFSPECS", "", "EXPERIMENTAL: override refspec we fetch. Space separated."))
-
 // tempDirName is the name used for the temporary directory under ReposDir.
 const tempDirName = ".tmp"
 
@@ -817,33 +813,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		tmp := GitDir(tmpPath)
 
 		var cmd *exec.Cmd
-		if len(refspecOverrides) > 0 {
-			// HACK(keegancsmith) workaround to experiment with cloning less
-			// in a large monorepo.
-			// https://github.com/sourcegraph/customer/issues/19
-			//
-			// To not clone everything we instead init a bare repo and only
-			// add the refspecs we care about. Then we finally do a fetch.
-			if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
-				return errors.Wrapf(err, "clone failed to create tmp dir")
+		if useRefspecOverrides() {
+			cmd, err = refspecOverridesCloneCmd(ctx, tmpPath, url)
+			if err != nil {
+				return err
 			}
-			cmds := [][]string{
-				{"init", "--bare", "."},
-				{"config", "--add", "remote.origin.url", url},
-				{"config", "--add", "remote.origin.mirror", "true"},
-			}
-			for _, refspec := range refspecOverrides {
-				cmds = append(cmds, []string{"config", "--add", "remote.origin.fetch", refspec})
-			}
-			for _, args := range cmds {
-				cmd := exec.CommandContext(ctx, "git", args...)
-				cmd.Dir = tmpPath
-				if err := cmd.Run(); err != nil {
-					return errors.Wrapf(err, "clone setup failed")
-				}
-			}
-			cmd = exec.CommandContext(ctx, "git", "fetch", "--progress")
-			cmd.Dir = tmpPath
 		} else {
 			cmd = exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
 		}
@@ -1327,10 +1301,8 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	}
 
 	var cmd *exec.Cmd
-	if len(refspecOverrides) > 0 {
-		// HACK(keegancsmith) workaround to experiment with cloning less in a
-		// large monorepo. https://github.com/sourcegraph/customer/issues/19
-		cmd = exec.CommandContext(ctx, "git", append([]string{"fetch", "--prune", url}, refspecOverrides...)...)
+	if useRefspecOverrides() {
+		cmd = refspecOverridesFetchCmd(ctx, url)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
 	}
