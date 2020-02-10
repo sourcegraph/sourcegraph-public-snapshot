@@ -8,50 +8,97 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 
 ## Run Sourcegraph on a Digital Ocean Droplet
 
-1. [Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new). 
+1. [Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new).
 
-    * Set the operating system to be **Ubuntu 18.04**. 
+    * Set the operating system to be **Ubuntu 18.04**.
     * For droplet size: we recommend at least `8` CPU and `32` GB RAM , but you may need more depending on team size and number of repositories.
-    * For disk size: we recommend a droplet with > 200 GB SSD at minimum. *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid needing to select a droplet with a larger root disk later on.)*
     * (**optional, recommended**) Set up SSH access (Authentication > SSH keys) for convenient access to the droplet.
     * (**optional, recommended**) Check the "Enable backups" checkbox to enable weekly backups of all your data.
 
 1. In the "Select additional options" section of the Droplet creation page, select the "User Data" and "Monitoring" boxes,
    and paste the following script in the "`Enter user data here...`" text box:
 
-   ```bash
-   #!/usr/bin/env bash
+    ```bash
+    #!/usr/bin/env bash
 
-   set -euxo pipefail
+    set -euxo pipefail
 
-   DOCKER_COMPOSE_VERSION='1.25.3'
-   SOURCEGRAPH_VERSION='v3.12.5'
-   DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
-  
-   # Install Docker
-   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-   sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-   sudo apt-get update
-   apt-cache policy docker-ce
-   apt-get install -y docker-ce docker-ce-cli containerd.io
-  
-   # Install Docker Compose
-   curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-   chmod +x /usr/local/bin/docker-compose
-   curl -L https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose
+    PERSISTENT_DISK_DEVICE_NAME='/dev/sda'
+    DOCKER_DATA_ROOT='/mnt/docker-data'
 
-   # Install git
-   sudo apt-get update
-   sudo apt-get install -y git
+    DOCKER_COMPOSE_VERSION='1.25.3'
+    SOURCEGRAPH_VERSION='v3.12.5'
+    DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 
-   # Clone Docker Compose definition
-   git clone https://github.com/sourcegraph/deploy-sourcegraph-docker.git ${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}
-   cd ${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}/docker-compose
-   git checkout ${SOURCEGRAPH_VERSION}
+    # Install git
+    sudo apt-get update -y
+    sudo apt-get install -y git
 
-   # Run Sourcegraph. Restart the containers upon reboot.
-   docker-compose up -d
-   ```
+    # Clone Docker Compose definition
+    git clone "https://github.com/sourcegraph/deploy-sourcegraph-docker.git" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
+    cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
+    git checkout ${SOURCEGRAPH_VERSION}
+
+    # Format (if necessary) and mount DO persistent disk
+    device_fs=$(sudo lsblk "${PERSISTENT_DISK_DEVICE_NAME}" --noheadings --output fsType)
+    if [ "${device_fs}" == "" ] ## only format the volume if it isn't already formatted
+    then
+        echo "--- ${PERSISTENT_DISK_DEVICE_NAME} is already formatted, skipping..."
+        sudo mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard "${PERSISTENT_DISK_DEVICE_NAME}"
+    fi
+    sudo mkdir -p "${DOCKER_DATA_ROOT}"
+    sudo mount -o discard,defaults "${PERSISTENT_DISK_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
+
+    # Mount DO disk on reboots
+    DISK_UUID=$(sudo blkid -s UUID -o value "${PERSISTENT_DISK_DEVICE_NAME}")
+    sudo echo "UUID=${DISK_UUID}  ${DOCKER_DATA_ROOT}  ext4  discard,defaults,nofail  0  2" >> '/etc/fstab'
+    umount "${DOCKER_DATA_ROOT}"
+    mount -a
+
+    # Install Docker
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    sudo apt-get update -y
+    apt-cache policy docker-ce
+    apt-get install -y docker-ce docker-ce-cli containerd.io
+
+    # Install jq for scripting
+    sudo apt-get update -y
+    sudo apt-get install -y jq
+
+    # Edit Docker storage directory to mounted volume
+    DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
+
+    ## initialize the config file with empty json if it doesn't exist
+    if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]
+    then
+        mkdir -p $(dirname "${DOCKER_DAEMON_CONFIG_FILE}")
+        echo '{}' > "${DOCKER_DAEMON_CONFIG_FILE}"
+    fi
+
+    ## update Docker's 'data-root' to point to our mounted disk
+    tmp_config=$(mktemp)
+    trap "rm -f ${tmp_config}" EXIT
+    sudo cat "${DOCKER_DAEMON_CONFIG_FILE}" | sudo jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' > "${tmp_config}"
+    sudo cat "${tmp_config}" > "${DOCKER_DAEMON_CONFIG_FILE}"
+
+    ## finally, restart Docker daemon to pick up our changes
+    sudo systemctl restart --now docker
+
+    # Install Docker Compose
+    curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+    curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose" -o /etc/bash_completion.d/docker-compose
+
+    # Run Sourcegraph. Restart the containers upon reboot.
+    cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
+    docker-compose up -d
+    ```
+
+1. Click on "Add Volume" and add new block storage with the following settings:
+
+    * **Size**: We recommend >> 250 GB. *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid needing to select a droplet with a larger root disk later on.)*
+    * Under **Chose configuration options**, select "Manually Format and Mount"
 
 1. You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the Droplet and viewing the logs:
 
@@ -95,7 +142,7 @@ docker-compose up -d
 
 The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount). There are a few different back ways to backup this data:
 
-* (**default, recommended**) The most straightfoward method to backup this data is to [backup the entire root disk that the droplet instance is using on an automatic, scheduled basis](https://www.digitalocean.com/docs/images/backups/).
+* (**recommended**) The most straightfoward method to backup this data is to [snapshot the entire `/mnt/docker-data` block storage volume on an automatic scheduled basis](https://www.digitalocean.com/docs/images/snapshots/).
 
 * Using an external Postgres instance (see below) lets a service such as [Digital Ocean's Managed Database for Postgres](https://www.digitalocean.com/products/managed-databases-postgresql/) take care of backing up all of Sourcegraph's user data for you. If the droplet running Sourcegraph ever dies or is destroyed, creating a fresh droplet that's connected to that external Postgres will leave Sourcegraph in the same state that it was before.
 
