@@ -367,6 +367,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignIDs:         []int64{int64(i) + 1},
 						ExternalID:          fmt.Sprintf("foobar-%d", i),
 						ExternalServiceType: "github",
+						ExternalBranch:      "a8n/test",
 					}
 
 					changesets = append(changesets, th)

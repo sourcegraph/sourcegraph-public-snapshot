@@ -265,6 +265,7 @@ type Changeset struct {
 	CampaignIDs         []int64
 	ExternalID          string
 	ExternalServiceType string
+	ExternalBranch      string
 	ExternalDeletedAt   time.Time
 }
 
