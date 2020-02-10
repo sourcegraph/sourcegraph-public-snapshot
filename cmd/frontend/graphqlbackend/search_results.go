@@ -1010,9 +1010,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// search count by 2 and try up to 3 times (inflating by a factor of 2, 4, and 8 respectively)
 	// to try to get a non-zero set of results visible to the current user.
 	doResultsWithAuthzFilter := func(countInflationFactor int) (*SearchResultsResolver, error) {
-		rCopy := *r
-		rCopy.countInflationFactor = countInflationFactor
-		res, err := (&rCopy).doResultsAttempt(ctx, forceOnlyResultType, cancel)
+		origCountInflationFactor := r.countInflationFactor
+		defer func() { r.countInflationFactor = origCountInflationFactor }()
+
+		r.countInflationFactor = countInflationFactor
+		res, err := r.doResultsAttempt(ctx, forceOnlyResultType, cancel)
 		if err != nil {
 			return nil, err
 		}

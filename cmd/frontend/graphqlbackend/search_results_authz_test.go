@@ -125,7 +125,7 @@ func TestSearch_authzPostFilter(t *testing.T) {
 			for _, forbiddenString := range tc.forbiddenResultStrings {
 				if strings.Contains(rawResults, forbiddenString) {
 					var r interface{}
-					json.Unmarshal([]byte(rawResults), &r)
+					_ = json.Unmarshal([]byte(rawResults), &r)
 					rb, _ := json.MarshalIndent(r, "", "  ")
 					t.Errorf("results contain forbidden string %q, results: %s", forbiddenString, string(rb))
 				}
@@ -133,7 +133,7 @@ func TestSearch_authzPostFilter(t *testing.T) {
 			for _, wantString := range tc.wantResultStrings {
 				if !strings.Contains(rawResults, wantString) {
 					var r interface{}
-					json.Unmarshal([]byte(rawResults), &r)
+					_ = json.Unmarshal([]byte(rawResults), &r)
 					rb, _ := json.MarshalIndent(r, "", "  ")
 					t.Errorf("results do not contain wanted string %q, results: %s", wantString, string(rb))
 				}
