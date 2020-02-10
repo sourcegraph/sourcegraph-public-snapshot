@@ -220,7 +220,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		// PR so we need to find them all
 		refs := make([]string, 0, len(e.Branches))
 		for _, branch := range e.Branches {
-			if name := branch.GetName(); name != "" && name != "master" {
+			if name := branch.GetName(); name != "" {
 				refs = append(refs, name)
 			}
 		}
