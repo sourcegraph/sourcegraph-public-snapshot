@@ -1,8 +1,12 @@
 # Language servers
 
-> Language servers are not recommended because they are complex to configure, require separate deployment, and are slow to initialize. Instead, we recommend using [LSIF](./lsif.md) to get precise code intelligence.
+- **Important note:** Language servers are *not recommended* because they are complex to configure, require separate deployment, and are slow to initialize. We recommend using [LSIF](./lsif.md) to get precise code intelligence. The remainder of this document provides context for this recommendation.
 
-Language servers provide more precise code intelligence than the out-of-the-box experience. There are language servers for the following languages:
+A [language server](https://microsoft.github.io/language-server-protocol/implementors/servers) is a separate process that runs alongside your development environment, and provides language-specific browsing and editing features. Historically, Sourcegraph used language servers to answer precise code intelligence queries. The performance and operational costs of maintaining a fleet of such services per repository were deemed unacceptable, however.
+
+Instead, we now promote a separate [offline indexing strategy](lsif.md): For each language to be indexed, run a standalone language-specific precise code indexer program over each designated repository. The indexer emits data in the [Language Server Index Format (LSIF)](https://code.visualstudio.com/blogs/2019/02/19/lsif), and those data are captured (uploaded) to persistent storage.
+
+There are language servers for the following languages:
 
 - [Go](https://sourcegraph.com/extensions/sourcegraph/go)
 - [TypeScript](https://sourcegraph.com/extensions/sourcegraph/typescript)
