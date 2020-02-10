@@ -30,6 +30,7 @@ import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -96,13 +97,16 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         if (!patternType) {
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
             // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
+
+            const q = parseSearchURLQuery(this.props.location.search) || ''
+            const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(q)
             const newLoc =
                 '/search?' +
                 buildSearchURLQuery(
-                    this.props.navbarSearchQueryState.query,
+                    navbarQuery,
                     GQL.SearchPatternType.regexp,
                     this.props.caseSensitive,
-                    this.props.filtersInQuery
+                    filtersInQuery
                 )
             window.location.replace(newLoc)
         }
