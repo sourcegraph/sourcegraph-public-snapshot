@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -34,6 +36,9 @@ type GitCommitResolver struct {
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
 
+	// fetch + serve sourcegraph stored user information
+	long bool
+
 	// oid MUST be specified and a 40-character Git SHA.
 	oid GitObjectID
 
@@ -41,20 +46,48 @@ type GitCommitResolver struct {
 	committer *signatureResolver
 	message   string
 	parents   []api.CommitID
+
+	once sync.Once
 }
 
 func toGitCommitResolver(repo *RepositoryResolver, commit *git.Commit) *GitCommitResolver {
-	authorResolver := toSignatureResolver(&commit.Author)
-	return &GitCommitResolver{
+	res := &GitCommitResolver{
 		repo: repo,
+		long: true,
 
 		oid: GitObjectID(commit.ID),
 
-		author:    *authorResolver,
-		committer: toSignatureResolver(commit.Committer),
+		author:    *toSignatureResolver(&commit.Author, true),
+		committer: toSignatureResolver(commit.Committer, true),
 		message:   commit.Message,
 		parents:   commit.Parents,
 	}
+	res.once.Do(func() {})
+	return res
+}
+
+func (r *GitCommitResolver) resolveCommit(ctx context.Context) (err error) {
+	r.once.Do(func() {
+		var cachedRepo *gitserver.Repo
+		cachedRepo, err = backend.CachedGitRepo(ctx, r.repo.repo)
+		if err != nil {
+			return
+		}
+
+		var commit *git.Commit
+		commit, err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid))
+		if err != nil {
+			return
+		}
+
+		fmt.Printf("%v\n", commit.Author)
+
+		r.author = *toSignatureResolver(&commit.Author, r.long)
+		r.committer = toSignatureResolver(commit.Committer, r.long)
+		r.message = commit.Message
+		r.parents = commit.Parents
+	})
+	return
 }
 
 // gitCommitGQLID is a type used for marshaling and unmarshaling a Git commit's
@@ -85,19 +118,41 @@ func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
 func (r *GitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]
 }
-func (r *GitCommitResolver) Author() *signatureResolver    { return &r.author }
-func (r *GitCommitResolver) Committer() *signatureResolver { return r.committer }
-func (r *GitCommitResolver) Message() string               { return r.message }
-func (r *GitCommitResolver) Subject() string               { return gitCommitSubject(r.message) }
-func (r *GitCommitResolver) Body() *string {
+func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
+	err := r.resolveCommit(ctx)
+	return &r.author, err
+}
+func (r *GitCommitResolver) Committer(ctx context.Context) (*signatureResolver, error) {
+	err := r.resolveCommit(ctx)
+	return r.committer, err
+}
+func (r *GitCommitResolver) Message(ctx context.Context) (string, error) {
+	err := r.resolveCommit(ctx)
+	return r.message, err
+}
+func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
+	err := r.resolveCommit(ctx)
+	return gitCommitSubject(r.message), err
+}
+func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
+	err := r.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	body := gitCommitBody(r.message)
 	if body == "" {
-		return nil
+		return nil, nil
 	}
-	return &body
+	return &body, nil
 }
 
 func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, error) {
+	err := r.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	resolvers := make([]*GitCommitResolver, len(r.parents))
 	for i, parent := range r.parents {
 		var err error

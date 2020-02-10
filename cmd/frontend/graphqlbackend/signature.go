@@ -19,7 +19,7 @@ func (r signatureResolver) Date() string {
 	return r.date.Format(time.RFC3339)
 }
 
-func toSignatureResolver(sig *git.Signature) *signatureResolver {
+func toSignatureResolver(sig *git.Signature, long bool) *signatureResolver {
 	if sig == nil {
 		return nil
 	}
@@ -27,6 +27,7 @@ func toSignatureResolver(sig *git.Signature) *signatureResolver {
 		person: &personResolver{
 			name:  sig.Name,
 			email: sig.Email,
+			long:  long,
 		},
 		date: sig.Date,
 	}
