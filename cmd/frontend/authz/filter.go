@@ -1,14 +1,27 @@
 package authz
 
+// Filterer provides an interface for filtering a list of items keyed by repository name. It should
+// be passed to the Filter function.
 type Filterer interface {
+	// Len returns the length of the list of items to filter.
 	Len() int
-	RepoNameForElem(i int) string
-	Select(i int) // guaranteed to be called at most once
 
-	// Returns the set of repo names to keep. Does not have to be a subset of repoNames argument.
+	// RepoNameForElem returns the repo name associated with the element.
+	RepoNameForElem(i int) string
+
+	// Select is invoked when calling Filter to select an element. Elements that are not explicitly
+	// selected should be considered "filtered out". It is guaranteed to be called at most once.
+	Select(i int)
+
+	// FilterRepoNames maps from a set of repo names to the set of repo names to keep. Note that the
+	// returned repo set is allowed to have entries not present in the input repo set. The
+	// intersection of the input repo set and the returned repo set is what is selected in the
+	// filter.
 	FilterRepoNames(repoNames map[string]struct{}) (filteredRepoNames map[string]struct{})
 }
 
+// Filter accepts a Filterer and invokes its Select method exactly once for each item in the list
+// that should be included.
 func Filter(f Filterer) {
 	l := f.Len()
 	repoNameSet := map[string]struct{}{}
