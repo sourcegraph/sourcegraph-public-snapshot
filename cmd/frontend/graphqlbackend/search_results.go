@@ -163,7 +163,8 @@ type SearchResultsResolver struct {
 	cursor *searchCursor
 }
 
-// applyAuthzPostFilter post-filters the search results to just those visible to the current user.
+// applyAuthzPostFilter post-filters the search results to just those for which the current user has
+// permissions to read.
 func (sr *SearchResultsResolver) applyAuthzPostFilter(ctx context.Context) error {
 	if sr.cursor != nil {
 		return errors.New("Authz post-filtering of paginated search results unsupported")
