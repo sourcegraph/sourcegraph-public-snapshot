@@ -43,7 +43,6 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
     device_fs=$(sudo lsblk "${PERSISTENT_DISK_DEVICE_NAME}" --noheadings --output fsType)
     if [ "${device_fs}" == "" ] ## only format the volume if it isn't already formatted
     then
-        echo "--- ${PERSISTENT_DISK_DEVICE_NAME} is already formatted, skipping..."
         sudo mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard "${PERSISTENT_DISK_DEVICE_NAME}"
     fi
     sudo mkdir -p "${DOCKER_DATA_ROOT}"

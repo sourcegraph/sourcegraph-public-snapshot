@@ -26,6 +26,15 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
     SOURCEGRAPH_VERSION='v3.12.5'
     DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
 
+    # Install git
+    yum update -y
+    yum install git -y
+
+    # Clone Docker Compose definition
+    git clone "https://github.com/sourcegraph/deploy-sourcegraph-docker.git" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
+    cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
+    git checkout "${SOURCEGRAPH_VERSION}"
+
     # Format (if necessary) and mount EBS volume
     device_fs=$(lsblk "${EBS_VOLUME_DEVICE_NAME}" --noheadings --output fsType)
     if [ "${device_fs}" == "" ] ## only format the volume if it isn't already formatted
@@ -76,15 +85,8 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
     chmod +x /usr/local/bin/docker-compose
     curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose" -o /etc/bash_completion.d/docker-compose
 
-    # Install git
-    yum install git -y
-
-    # Clone Docker Compose definition
-    git clone "https://github.com/sourcegraph/deploy-sourcegraph-docker.git" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
-    cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
-    git checkout "${SOURCEGRAPH_VERSION}"
-
     # Run Sourcegraph. Restart the containers upon reboot.
+    cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
     docker-compose up -d
     ```
 
