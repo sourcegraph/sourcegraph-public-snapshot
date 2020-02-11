@@ -2746,7 +2746,7 @@ type GitBlob implements TreeEntry & File2 {
     # Blame the blob.
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Highlight the blob contents.
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!, highlightLongLines: Boolean = false): HighlightedFile!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # Symbols defined in this blob.
