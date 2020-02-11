@@ -47,31 +47,9 @@ export function bidirectionalLineage(): string {
 
 /**
  * Return a set of CTE definitions assuming the definition of a previous CTE named `lineage`.
- * This creates the CTE `lineage_with_dumps`, which gathers the set of LSIF dump identifiers
- * whose commit occurs in `lineage` (within the given traversal limit).
- *
- * @param limit The maximum number of dumps that can be extracted from `lineage`.
- */
-export function lineageWithDumps(limit: number = MAX_TRAVERSAL_LIMIT): string {
-    return `
-        -- Limit the visibility to the maximum traversal depth and approximate
-        -- each commit's depth by its row number.
-        limited_lineage AS (
-            SELECT a.*, row_number() OVER() as n from lineage a LIMIT ${limit}
-        ),
-        -- Correlate commits to dumps and filter out commits without LSIF data
-        lineage_with_dumps AS (
-            SELECT a.*, d.root, d.indexer, d.id as dump_id FROM limited_lineage a
-            JOIN lsif_dumps d ON d.repository_id = a.repository_id AND d."commit" = a."commit"
-        )
-    `
-}
-
-/**
- * Return a set of CTE definitions assuming the definition of a previous CTE named `lineage`.
  * This creates the CTE `visible_ids`, which gathers the set of LSIF dump identifiers whose
  * commit occurs in `lineage` (within the given traversal limit) and whose root does not
- * overlap another visible dump from the same indexser
+ * overlap another visible dump from the same indexer.
  *
  * @param limit The maximum number of dumps that can be extracted from `lineage`.
  */
@@ -90,6 +68,28 @@ export function visibleDumps(limit: number = MAX_TRAVERSAL_LIMIT): string {
                     t1.root LIKE (t2.root || '%')
                 )
             )
+        )
+    `
+}
+
+/**
+ * Return a set of CTE definitions assuming the definition of a previous CTE named `lineage`.
+ * This creates the CTE `lineage_with_dumps`, which gathers the set of LSIF dump identifiers
+ * whose commit occurs in `lineage` (within the given traversal limit).
+ *
+ * @param limit The maximum number of dumps that can be extracted from `lineage`.
+ */
+function lineageWithDumps(limit: number = MAX_TRAVERSAL_LIMIT): string {
+    return `
+        -- Limit the visibility to the maximum traversal depth and approximate
+        -- each commit's depth by its row number.
+        limited_lineage AS (
+            SELECT a.*, row_number() OVER() as n from lineage a LIMIT ${limit}
+        ),
+        -- Correlate commits to dumps and filter out commits without LSIF data
+        lineage_with_dumps AS (
+            SELECT a.*, d.root, d.indexer, d.id as dump_id FROM limited_lineage a
+            JOIN lsif_dumps d ON d.repository_id = a.repository_id AND d."commit" = a."commit"
         )
     `
 }

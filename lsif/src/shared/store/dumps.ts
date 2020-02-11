@@ -5,9 +5,7 @@ import { Brackets, Connection, EntityManager } from 'typeorm'
 import { logAndTraceCall, TracingContext } from '../tracing'
 import { instrumentQuery, instrumentQueryOrTransaction, withInstrumentedTransaction } from '../database/postgres'
 import { TableInserter } from '../database/inserter'
-import { visibleDumps, lineageWithDumps, ancestorLineage, bidirectionalLineage } from '../models/queries'
-import { isDefined } from '../util'
-import { sortMonikers } from '../../server/backend/database'
+import { visibleDumps, ancestorLineage, bidirectionalLineage } from '../models/queries'
 
 /**
  * The insertion metrics for Postgres.
