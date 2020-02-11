@@ -147,7 +147,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		{
 			// No permissions cached.
 			ps, err := load(s)
-			equal(t, "err", err, &StalePermissionsError{UserPermissions: ps})
+			equal(t, "err", err, &authz.ErrStalePermissions{ps.UserID, ps.Perm, ps.Type})
 			equal(t, "ids", array(ps.IDs), []uint32(nil))
 		}
 
@@ -158,7 +158,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			atomic.AddInt64(&now, int64(hardTTL))
 
 			ps, err := load(s)
-			equal(t, "err", err, &StalePermissionsError{UserPermissions: ps})
+			equal(t, "err", err, &authz.ErrStalePermissions{ps.UserID, ps.Perm, ps.Type})
 			equal(t, "ids", array(ps.IDs), ids)
 		}
 
