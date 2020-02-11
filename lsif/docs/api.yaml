@@ -173,7 +173,7 @@ paths:
         - name: uploadId
           in: query
           description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
-          required: false
+          required: true
           schema:
             type: number
       responses:
@@ -224,7 +224,7 @@ paths:
         - name: uploadId
           in: query
           description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
-          required: false
+          required: true
           schema:
             type: number
         - name: limit
@@ -293,7 +293,7 @@ paths:
         - name: uploadId
           in: query
           description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
-          required: false
+          required: true
           schema:
             type: number
       responses:

@@ -84,6 +84,7 @@ async function main(logger: Logger): Promise<void> {
                         upload.repositoryId,
                         upload.commit,
                         upload.root,
+                        upload.indexer,
                         { logger, span },
                         entityManager
                     )

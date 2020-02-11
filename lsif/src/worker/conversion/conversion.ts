@@ -18,7 +18,7 @@ import { DependencyManager } from '../../shared/store/dependencies'
  * @param entityManager The EntityManager to use as part of a transaction.
  * @param dumpManager The dumps manager instance.
  * @param dependencyManager The dependency manager instance.
- * @param upload THe unprocessed upload record.
+ * @param upload The unprocessed upload record.
  * @param ctx The tracing context.
  */
 export async function convertDatabase(
@@ -57,6 +57,7 @@ export async function convertDatabase(
         throw error
     }
 
+    // Remove source upload
     await fs.unlink(upload.filename)
 }
 
