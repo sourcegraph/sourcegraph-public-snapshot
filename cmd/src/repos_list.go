@@ -26,14 +26,6 @@ Examples:
 
     	$ src repos list -query='myquery'
 
-  Include repositories that are disabled:
-
-    	$ src repos list -query='myquery' -disabled
-
-  List only repositories that are disabled:
-
-    	$ src repos list -disabled -enabled=false -query='github.com/slimsag/'
-
 `
 
 	flagSet := flag.NewFlagSet("list", flag.ExitOnError)
@@ -46,8 +38,6 @@ Examples:
 		firstFlag = flagSet.Int("first", 1000, "Returns the first n repositories from the list. (use -1 for unlimited)")
 		queryFlag = flagSet.String("query", "", `Returns repositories whose names match the query. (e.g. "myorg/")`)
 		// TODO: add support for "names" field.
-		enabledFlag          = flagSet.Bool("enabled", true, "Include enabled repositories.")
-		disabledFlag         = flagSet.Bool("disabled", false, "Include disabled repositories.")
 		clonedFlag           = flagSet.Bool("cloned", true, "Include cloned repositories.")
 		cloneInProgressFlag  = flagSet.Bool("clone-in-progress", true, "Include repositories that are currently being cloned.")
 		notClonedFlag        = flagSet.Bool("not-cloned", true, "Include repositories that are not yet cloned and for which cloning is not in progress.")
@@ -71,8 +61,6 @@ Examples:
 		query := `query Repositories(
   $first: Int,
   $query: String,
-  $enabled: Boolean,
-  $disabled: Boolean,
   $cloned: Boolean,
   $cloneInProgress: Boolean,
   $notCloned: Boolean,
@@ -84,8 +72,6 @@ Examples:
   repositories(
     first: $first,
     query: $query,
-    enabled: $enabled,
-    disabled: $disabled,
     cloned: $cloned,
     cloneInProgress: $cloneInProgress,
     notCloned: $notCloned,
@@ -121,8 +107,6 @@ Examples:
 			vars: map[string]interface{}{
 				"first":           nullInt(*firstFlag),
 				"query":           nullString(*queryFlag),
-				"enabled":         *enabledFlag,
-				"disabled":        *disabledFlag,
 				"cloned":          *clonedFlag,
 				"cloneInProgress": *cloneInProgressFlag,
 				"notCloned":       *notClonedFlag,
