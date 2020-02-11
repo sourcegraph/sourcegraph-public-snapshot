@@ -66,7 +66,7 @@ async function main(logger: Logger): Promise<void> {
     // note that if the cleanup is handling an assumption from the last
     // minor version, there may be instances of that version running
     // after this migration step completes.
-    await migrate({ logger }, connection, dumpManager)
+    await migrate({ logger })
 
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
