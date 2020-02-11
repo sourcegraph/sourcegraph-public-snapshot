@@ -273,8 +273,8 @@ export class FilterInput extends React.Component<Props, State> {
         e.preventDefault()
         e.stopPropagation()
 
-        if (this.state.inputValue !== '') {
-            // Don't allow empty filters.
+        if (this.state.inputValue !== '' || this.props.filterType === FilterTypes.type) {
+            // Don't allow empty filters, unless it's the type filter.
             // Update the top-level filtersInQueryMap with the new value for this filter.
             this.props.onFilterEdited(this.props.mapKey, this.state.inputValue)
         }
@@ -511,7 +511,7 @@ export class FilterInput extends React.Component<Props, State> {
                                         autoFocus={true}
                                     />
                                     <label htmlFor={val.value} tabIndex={0} className="filter-input__radio-label">
-                                        {startCase(val.value)}
+                                        {val.displayValue ? startCase(val.displayValue) : startCase(val.value)}
                                     </label>
                                 </div>
                             ))}

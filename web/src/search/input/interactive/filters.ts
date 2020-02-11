@@ -53,13 +53,13 @@ export const finiteFilters: Record<
         ),
     },
     type: {
-        default: 'code',
+        default: '',
         values: [
-            { value: 'code' },
+            { displayValue: 'code', value: '' },
             { value: 'commit' },
             { value: 'diff' },
             { value: 'repo' },
-            { value: 'path' },
+            { displayValue: 'filenames', value: 'path' },
             { value: 'symbols' },
         ].map(
             assign({
