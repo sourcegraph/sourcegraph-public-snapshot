@@ -33,13 +33,16 @@ func splitOnHolesPattern() string {
 
 var matchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
 
-// Converts comby a structural pattern to a Zoekt regular expression query. It
-// converts whitespace in the pattern so that content across newlines can be
-// matched in the index. As an incomplete approximation, we use the regex
-// pattern .*? to scan ahead.
+// StructuralPatToRegexpQuery converts a comby pattern to a Zoekt regular
+// expression query. It converts whitespace in the pattern so that content
+// across newlines can be matched in the index. As an incomplete approximation,
+// we use the regex pattern .*? to scan ahead. A shortcircuit option returns a
+// regexp query that may find true matches faster, but may miss all possible
+// matches.
+//
 // Example:
 // "ParseInt(:[args]) if err != nil" -> "ParseInt(.*)\s+if\s+err!=\s+nil"
-func StructuralPatToRegexpQuery(pattern string) (zoektquery.Q, error) {
+func StructuralPatToRegexpQuery(pattern string, shortcircuit bool) (zoektquery.Q, error) {
 	substrings := matchHoleRegexp.Split(pattern, -1)
 	var children []zoektquery.Q
 	var pieces []string
@@ -63,29 +66,11 @@ func StructuralPatToRegexpQuery(pattern string) (zoektquery.Q, error) {
 	return &zoektquery.And{Children: children}, nil
 }
 
-func StructuralPatToQuery(pattern string) (zoektquery.Q, error) {
-	regexpQuery, err := StructuralPatToRegexpQuery(pattern)
-	if err != nil {
-		return nil, err
-	}
-	return &zoektquery.Or{Children: []zoektquery.Q{regexpQuery}}, nil
-}
-
-func StructuralQueryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery.Q, error) {
+func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
-	var q zoektquery.Q
-	var err error
-	q, err = StructuralPatToQuery(query.Pattern)
-	if err != nil {
-		return nil, err
-	}
-
-	and = append(and, q)
-
-	// zoekt also uses regular expressions for file paths
-	// TODO PathPatternsAreCaseSensitive
-	// TODO whitespace in file path patterns?
+	// Zoekt uses regular expressions for file paths.
+	// Unhandled cases: PathPatternsAreCaseSensitive and whitespace in file path patterns.
 	if !query.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
@@ -104,7 +89,7 @@ func StructuralQueryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (
 		and = append(and, &zoektquery.Not{Child: q})
 	}
 
-	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
+	return zoektquery.NewAnd(and...), nil
 }
 
 // zoektSearchHEADOnlyFiles searches repositories using zoekt, returning only the file paths containing
@@ -113,7 +98,7 @@ func StructuralQueryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func ZoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -124,11 +109,6 @@ func ZoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	for _, repoRev := range repos {
 		repoSet.Set[string(repoRev.Repo.Name)] = true
 		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
-	}
-
-	queryExceptRepos, err := StructuralQueryToZoektQuery(args.PatternInfo, isSymbol)
-	if err != nil {
-		return nil, false, nil, err
 	}
 
 	k := zoektResultCountFactor(len(repos), args.PatternInfo)
@@ -157,16 +137,29 @@ func ZoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		defer cancel()
 	}
 
-	// If the query has a `repohasfile` or `-repohasfile` flag, we want to construct a new reposet based
-	// on the values passed in to the flag.
+	shortcircuit := false
+	q, err := StructuralPatToRegexpQuery(args.PatternInfo.Pattern, shortcircuit)
+	if err != nil {
+		return nil, false, nil, err
+	}
+
+	filePathPatterns, err := HandleFilePathPatterns(args.PatternInfo)
+	q = zoektquery.NewAnd(filePathPatterns, q)
+	if err != nil {
+		return nil, false, nil, err
+	}
+
+	// Handle `repohasfile` or `-repohasfile`
 	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.PatternInfo, args.Zoekt.Client, repoSet)
 	if err != nil {
 		return nil, false, nil, err
 	}
-	finalQuery := zoektquery.NewAnd(newRepoSet, queryExceptRepos)
+
+	q = zoektquery.NewAnd(newRepoSet, q)
+	q = zoektquery.Simplify(q)
 
 	t0 := time.Now()
-	resp, err := args.Zoekt.Client.Search(ctx, finalQuery, &searchOpts)
+	resp, err := args.Zoekt.Client.Search(ctx, q, &searchOpts)
 	if err != nil {
 		return nil, false, nil, err
 	}

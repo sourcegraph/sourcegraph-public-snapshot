@@ -388,11 +388,6 @@ func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery
 		if err != nil {
 			return nil, err
 		}
-	} else if query.IsStructuralPat {
-		q, err = StructuralPatToQuery(query.Pattern)
-		if err != nil {
-			return nil, err
-		}
 	} else {
 		q = &zoektquery.Substring{
 			Pattern:       query.Pattern,
