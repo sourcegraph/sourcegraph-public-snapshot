@@ -60,7 +60,7 @@ func (r *searchResolver) alertForStalePermissions(_ context.Context) (*searchAle
 	return &searchAlert{
 		prometheusType: "no_resolved_repos__stale_permissions",
 		title:          "Permissions syncing in progress",
-		description:    "Permissions are being synced from your code host, please wait for a minute and refresh the page.",
+		description:    "Permissions are being synced from your code host, please wait for a minute and try again.",
 	}, nil
 }
 
