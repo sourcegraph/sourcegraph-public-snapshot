@@ -403,12 +403,45 @@ func unhighlightLongLines(h string, n int) (string, error) {
 		return "", err
 	}
 
-	// TODO:
-	// - Walk over each `table>tr>td.code>div` element in `doc`
-	// - Count plaintext length of line (excluding HTML elements)
-	// - If line exceeds N bytes in length, remove all spans and instead use just one single wrapping span for the whole line (matches structure produced by generatePlainTable)
+	table := doc.FirstChild.LastChild.FirstChild // html->body->table
+	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
+		return "", fmt.Errorf("expected html->body->table, found %+v", table)
+	}
 
+	// Iterate over each table row and check length
 	var buf bytes.Buffer
+	tr := table.FirstChild.FirstChild // ->tbody->tr
+	for tr != nil {
+		div := tr.LastChild.FirstChild // ->td->div
+		span := div.FirstChild         // ->span
+		for span != nil {
+			node := span.FirstChild
+			for node != nil {
+				buf.WriteString(node.Data)
+				node = node.NextSibling
+			}
+			span = span.NextSibling
+		}
+
+		// Length exceeds the limit, replace existing child with plain text
+		if buf.Len() > n {
+			span := &html.Node{
+				Type:     html.ElementNode,
+				DataAtom: atom.Span,
+				Data:     atom.Span.String(),
+			}
+			span.AppendChild(&html.Node{
+				Type: html.TextNode,
+				Data: buf.String(),
+			})
+			div.FirstChild = span
+		}
+
+		buf.Reset()
+		tr = tr.NextSibling
+	}
+
+	buf.Reset()
 	if err := html.Render(&buf, doc); err != nil {
 		return "", err
 	}
