@@ -76,31 +76,9 @@ func structuralQueryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (
 
 	var q zoektquery.Q
 	var err error
-	if query.IsRegExp {
-		fileNameOnly := query.PatternMatchesPath && !query.PatternMatchesContent
-		q, err = parseRe(query.Pattern, fileNameOnly, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-	} else if query.IsStructuralPat {
-		q, err = StructuralPatToQuery(query.Pattern)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		q = &zoektquery.Substring{
-			Pattern:       query.Pattern,
-			CaseSensitive: query.IsCaseSensitive,
-
-			FileName: true,
-			Content:  true,
-		}
-	}
-
-	if isSymbol {
-		q = &zoektquery.Symbol{
-			Expr: q,
-		}
+	q, err = StructuralPatToQuery(query.Pattern)
+	if err != nil {
+		return nil, err
 	}
 
 	and = append(and, q)
@@ -148,7 +126,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
 	}
 
-	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, isSymbol)
+	queryExceptRepos, err := structuralQueryToZoektQuery(args.PatternInfo, isSymbol)
 	if err != nil {
 		return nil, false, nil, err
 	}
