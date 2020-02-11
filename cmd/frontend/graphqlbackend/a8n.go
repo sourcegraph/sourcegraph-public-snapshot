@@ -184,7 +184,7 @@ type CampaignResolver interface {
 	ID() graphql.ID
 	Name() string
 	Description() string
-	Branch() string
+	Branch() *string
 	Author(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)

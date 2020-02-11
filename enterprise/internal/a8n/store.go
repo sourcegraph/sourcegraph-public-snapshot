@@ -2652,7 +2652,7 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&c.ID,
 		&c.Name,
 		&c.Description,
-		&c.Branch,
+		&dbutil.NullString{S: &c.Branch},
 		&c.AuthorID,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
