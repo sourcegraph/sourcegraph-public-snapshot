@@ -71,7 +71,7 @@ func StructuralPatToQuery(pattern string) (zoektquery.Q, error) {
 	return &zoektquery.Or{Children: []zoektquery.Q{regexpQuery}}, nil
 }
 
-func structuralQueryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery.Q, error) {
+func StructuralQueryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	var q zoektquery.Q
@@ -113,7 +113,7 @@ func structuralQueryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func ZoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -126,7 +126,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
 	}
 
-	queryExceptRepos, err := structuralQueryToZoektQuery(args.PatternInfo, isSymbol)
+	queryExceptRepos, err := StructuralQueryToZoektQuery(args.PatternInfo, isSymbol)
 	if err != nil {
 		return nil, false, nil, err
 	}
