@@ -88,7 +88,7 @@ func zoektSearchHEADOnlyFileResults(ctx context.Context, args *search.TextParame
 		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
 	}
 
-	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, isSymbol)
+	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, isSymbol, false)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -129,17 +129,27 @@ func zoektSearchHEADOnlyFileResults(ctx context.Context, args *search.TextParame
 	finalQuery = zoektquery.NewAnd(newRepoSet, queryExceptRepos)
 
 	t0 := time.Now()
-	resp, err := args.Zoekt.Client.Search(ctx, finalQuery, &searchOpts)
+	var resp *zoekt.SearchResult
+	resp, err = args.Zoekt.Client.Search(ctx, finalQuery, &searchOpts)
 	if err != nil {
 		return nil, false, nil, err
 	}
 	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
 		return nil, false, nil, errNoResultsInTimeout
 	}
-	if len(resp.Files) == 0 {
-		return nil, false, nil, nil
+	limitHit = true
+
+	if len(resp.Files) < 10 || args.PatternInfo.FileMatchLimit > 30 {
+		// search more aggressively
+		queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, isSymbol, true)
+		if err != nil {
+			return nil, false, nil, err
+		}
+		finalQuery := zoektquery.NewAnd(repoSet, queryExceptRepos)
+		resp, err = args.Zoekt.Client.Search(ctx, finalQuery, &searchOpts)
+		limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
 	}
-	limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
+
 	// Repositories that weren't fully evaluated because they hit the Zoekt or Sourcegraph file match limits.
 	reposLimitHit = make(map[string]struct{})
 	if limitHit {
@@ -214,7 +224,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
 	}
 
-	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, isSymbol)
+	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, isSymbol, false)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -524,7 +534,7 @@ var matchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
 // pattern .*? to scan ahead.
 // Example:
 // "ParseInt(:[args]) if err != nil" -> "ParseInt(.*)\s+if\s+err!=\s+nil"
-func StructuralPatToRegexpQuery(pattern string) (zoektquery.Q, error) {
+func StructuralPatToRegexpQuery(pattern string, aggressive bool) (zoektquery.Q, error) {
 	substrings := matchHoleRegexp.Split(pattern, -1)
 	var children []zoektquery.Q
 	var pieces []string
@@ -538,7 +548,13 @@ func StructuralPatToRegexpQuery(pattern string) (zoektquery.Q, error) {
 	if len(pieces) == 0 {
 		return &zoektquery.Const{Value: true}, nil
 	}
-	rs := "(" + strings.Join(pieces, ")(.|\\s)*?(") + ")"
+	var rs string
+	if aggressive {
+		rs = "(" + strings.Join(pieces, ")(.|\\s)*?(") + ")"
+	} else {
+		rs = "(" + strings.Join(pieces, ")(.)*?(") + ")"
+
+	}
 	re, _ := syntax.Parse(rs, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 	children = append(children, &zoektquery.Regexp{
 		Regexp:        re,
@@ -548,15 +564,15 @@ func StructuralPatToRegexpQuery(pattern string) (zoektquery.Q, error) {
 	return &zoektquery.And{Children: children}, nil
 }
 
-func StructuralPatToQuery(pattern string) (zoektquery.Q, error) {
-	regexpQuery, err := StructuralPatToRegexpQuery(pattern)
+func StructuralPatToQuery(pattern string, aggressive bool) (zoektquery.Q, error) {
+	regexpQuery, err := StructuralPatToRegexpQuery(pattern, aggressive)
 	if err != nil {
 		return nil, err
 	}
 	return &zoektquery.Or{Children: []zoektquery.Q{regexpQuery}}, nil
 }
 
-func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery.Q, error) {
+func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool, aggressive bool) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	var q zoektquery.Q
@@ -568,7 +584,7 @@ func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery
 			return nil, err
 		}
 	} else if query.IsStructuralPat {
-		q, err = StructuralPatToQuery(query.Pattern)
+		q, err = StructuralPatToQuery(query.Pattern, aggressive)
 		if err != nil {
 			return nil, err
 		}
