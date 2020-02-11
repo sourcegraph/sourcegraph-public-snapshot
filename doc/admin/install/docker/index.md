@@ -1,6 +1,10 @@
 # Install Sourcegraph with Docker
 
-It takes less than 5 minutes to run and install Sourcegraph using Docker:
+> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to chose a deployment type that suits your needs.
+
+---
+
+It takes less than a minute to run and install Sourcegraph using Docker:
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
