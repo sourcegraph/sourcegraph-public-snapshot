@@ -119,7 +119,11 @@ func (s *store) UpdatePermissions(
 
 		// No valid permissions available yet or hard TTL expired.
 		if p.UpdatedAt.IsZero() || p.Expired(s.hardTTL, now) {
-			return &authz.ErrStalePermissions{p.UserID, p.Perm, p.Type}
+			return &authz.ErrStalePermissions{
+				UserID: p.UserID,
+				Perm:   p.Perm,
+				Type:   p.Type,
+			}
 		}
 
 		return nil
@@ -130,7 +134,11 @@ func (s *store) UpdatePermissions(
 	case err == nil:
 	case err == errLockNotAvailable:
 		if p.Expired(s.hardTTL, now) {
-			return &authz.ErrStalePermissions{p.UserID, p.Perm, p.Type}
+			return &authz.ErrStalePermissions{
+				UserID: p.UserID,
+				Perm:   p.Perm,
+				Type:   p.Type,
+			}
 		}
 	default:
 		return err
