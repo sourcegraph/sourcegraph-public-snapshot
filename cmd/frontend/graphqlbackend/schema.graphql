@@ -2701,12 +2701,15 @@ interface File2 {
     # The URLs to this file on external services.
     externalURLs: [ExternalLink!]!
     # Highlight the file.
-    #
-    # If highlightLongLines is true, highlighting lines which are greater than
-    # 2000 bytes is enabled. This may produce a significant amount of HTML
-    # which some browsers (such as Chrome, but not Firefox) may have trouble
-    # rendering efficiently.
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!, highlightLongLines: Boolean = false): HighlightedFile!
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        # If highlightLongLines is true, highlighting lines which are greater than
+        # 2000 bytes is enabled. This may produce a significant amount of HTML
+        # which some browsers (such as Chrome, but not Firefox) may have trouble
+        # rendering efficiently.
+        highlightLongLines: Boolean = false
+    ): HighlightedFile!
 }
 
 # File is temporarily preserved for backcompat with browser extension search API client code.

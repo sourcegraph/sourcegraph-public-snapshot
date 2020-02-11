@@ -403,17 +403,17 @@ func unhighlightLongLines(h string, n int) (string, error) {
 		return "", err
 	}
 
-	table := doc.FirstChild.LastChild.FirstChild // html->body->table
+	table := doc.FirstChild.LastChild.FirstChild // html > body > table
 	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
 		return "", fmt.Errorf("expected html->body->table, found %+v", table)
 	}
 
 	// Iterate over each table row and check length
 	var buf bytes.Buffer
-	tr := table.FirstChild.FirstChild // ->tbody->tr
+	tr := table.FirstChild.FirstChild // table > tbody > tr
 	for tr != nil {
-		div := tr.LastChild.FirstChild // ->td->div
-		span := div.FirstChild         // ->span
+		div := tr.LastChild.FirstChild // tr > td > div
+		span := div.FirstChild         // div > span
 		for span != nil {
 			node := span.FirstChild
 			for node != nil {
