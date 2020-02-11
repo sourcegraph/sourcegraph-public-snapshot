@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -105,6 +104,19 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (*json.RawMessage, err
 	return &message, nil
 }
 
+func getAndMarshalAutomationUsageJSON(ctx context.Context) (*json.RawMessage, error) {
+	automationUsage, err := usagestats.GetAutomationUsageStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(automationUsage)
+	if err != nil {
+		return nil, err
+	}
+	message := json.RawMessage(contents)
+	return &message, nil
+}
+
 func updateURL(ctx context.Context) string {
 	return baseURL.String()
 }
@@ -157,10 +169,9 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
-
-	totalCampaigns, err := campaignsCount(ctx)
+	automationUsage, err := getAndMarshalAutomationUsageJSON(ctx)
 	if err != nil {
-		logFunc("campaignsCount failed", "error", err)
+		logFunc("getAndMarshalAutomationUsageJSON failed", "error", err)
 	}
 
 	contents, err := json.Marshal(&pingRequest{
@@ -179,7 +190,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		HasRepos:             hasRepos,
 		EverSearched:         hasRepos && searchOccurred, // Searches only count if repos have been added.
 		EverFindRefs:         findRefsOccurred,
-		TotalCampaigns:       int32(totalCampaigns),
+		AutomationUsage:      automationUsage,
 	})
 	if err != nil {
 		return nil, err
@@ -207,17 +218,6 @@ func externalServiceKinds(ctx context.Context) ([]string, error) {
 		kinds[i] = s.Kind
 	}
 	return kinds, nil
-}
-
-func campaignsCount(ctx context.Context) (int, error) {
-	const q = "SELECT COUNT(*) FROM campaigns;"
-
-	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(&count); err != nil {
-		return 0, err
-	}
-
-	return count, nil
 }
 
 // check performs an update check. It returns the result and updates the global state
