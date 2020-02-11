@@ -2,15 +2,12 @@
 
 Site admins can sync Git repositories on any Git repository host (by Git clone URL) with Sourcegraph so that users can search and navigate the repositories. Use this method only when your repository host is not named as a supported [external service](index.md).
 
-To add Git repositories from any Git repository host:
+To connect generic Git host to Sourcegraph:
 
-1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
-1. Press **Single Git repositories**.
-1. Enter a **Display name** (such as the human-readable name of the repository host).
-1. Set the `url` and `repos` fields in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).
-1. Press **Add external service**.
+1. Go to **Site admin > Manage repositories > Add repositories**
+1. Select **Generic Git host**.
+1. Configure the connection to generic Git host the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
 
 ## Constructing the `url` for SSH access
 

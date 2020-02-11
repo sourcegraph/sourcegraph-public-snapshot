@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -50,6 +51,7 @@ type Commit struct {
 	Message         string
 	MessageHeadline string
 	URL             string
+	Status          Status
 	Committer       GitActor
 	CommittedDate   time.Time
 	PushedDate      time.Time
@@ -57,19 +59,30 @@ type Commit struct {
 
 // A Status represents a Commit status.
 type Status struct {
-	Contexts []StatusContext // The individual status contexts for this commit.
-	State    string          // The combined commit status.
+	State    string
+	Contexts []Context
 }
 
-// A StatusContext represents an individual commit status context
-type StatusContext struct {
-	AvatarURL   string
+// CommitStatus represents the state of a commit context received
+// via the StatusEvent webhook
+type CommitStatus struct {
+	SHA        string
+	Context    string
+	State      string
+	ReceivedAt time.Time
+}
+
+func (c *CommitStatus) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.SHA, c.State, c.Context, c.ReceivedAt.UnixNano())
+	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
+}
+
+// Context represent the individual commit status context
+type Context struct {
+	ID          string
 	Context     string
 	Description string
 	State       string
-	TargetURL   string
-	CreatedAt   time.Time
-	Creator     Actor
 }
 
 type Label struct {
@@ -96,6 +109,7 @@ type PullRequest struct {
 	Participants  []Actor
 	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
+	Commits       struct{ Nodes []PullRequestCommit }
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -196,6 +210,14 @@ func (e PullRequestReview) Key() string {
 // That's why this type doesn't have a Key method like the others.
 type PullRequestReviewThread struct {
 	Comments []*PullRequestReviewComment
+}
+
+type PullRequestCommit struct {
+	Commit Commit
+}
+
+func (c PullRequestCommit) Key() string {
+	return c.Commit.OID
 }
 
 // PullRequestReviewComment represents a review comment on a given pull request.
@@ -353,6 +375,8 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 		i.Item = new(PullRequestReviewComment)
 	case "PullRequestReviewThread":
 		i.Item = new(PullRequestReviewThread)
+	case "PullRequestCommit":
+		i.Item = new(PullRequestCommit)
 	case "ReopenedEvent":
 		i.Item = new(ReopenedEvent)
 	case "ReviewDismissedEvent":
@@ -651,6 +675,8 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	return &pr, nil
 }
 
+// This fragment was formatted using the "prettify" button in the GitHub API explorer:
+// https://developer.github.com/v4/explorer/
 const pullRequestFragments = `
 fragment actor on Actor {
   avatarUrl
@@ -672,6 +698,15 @@ fragment commit on Commit {
   committedDate
   pushedDate
   url
+  status {
+    state
+    contexts {
+      id
+      context
+      state
+      description
+    }
+  }
   committer {
     avatarUrl
     email
@@ -679,6 +714,12 @@ fragment commit on Commit {
     user {
       ...actor
     }
+  }
+}
+
+fragment prCommit on PullRequestCommit {
+  commit {
+    ...commit
   }
 }
 
@@ -721,11 +762,16 @@ fragment pr on PullRequest {
     }
   }
   labels(first: 100) {
-    nodes{
+    nodes {
       ...label
     }
   }
-  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT]) {
+  commits(last: 1) {
+    nodes {
+      ...prCommit
+    }
+  }
+  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT]) {
     nodes {
       __typename
       ... on AssignedEvent {
@@ -879,6 +925,9 @@ fragment pr on PullRequest {
           ...label
         }
         createdAt
+      }
+      ... on PullRequestCommit {
+        ...prCommit
       }
     }
   }

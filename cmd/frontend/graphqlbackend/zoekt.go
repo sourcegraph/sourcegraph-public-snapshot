@@ -28,18 +28,18 @@ func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 	// arbitrary.
 	k := 1
 	switch {
-	case numRepos <= 500:
-		k = 2
-	case numRepos <= 100:
-		k = 3
-	case numRepos <= 50:
-		k = 5
-	case numRepos <= 25:
-		k = 8
-	case numRepos <= 10:
-		k = 10
 	case numRepos <= 5:
 		k = 100
+	case numRepos <= 10:
+		k = 10
+	case numRepos <= 25:
+		k = 8
+	case numRepos <= 50:
+		k = 5
+	case numRepos <= 100:
+		k = 3
+	case numRepos <= 500:
+		k = 2
 	}
 	if query.FileMatchLimit > defaultMaxSearchResults {
 		k = int(float64(k) * 3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))

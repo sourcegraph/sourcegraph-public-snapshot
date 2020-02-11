@@ -1,6 +1,7 @@
 package a8n
 
 import (
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -202,6 +203,15 @@ const (
 	ChangesetReviewStateCommented        ChangesetReviewState = "COMMENTED"
 )
 
+// ChangesetCheckState constants.
+type ChangesetCheckState string
+
+const (
+	ChangesetCheckStatePending ChangesetCheckState = "PENDING"
+	ChangesetCheckStatePassed  ChangesetCheckState = "PASSED"
+	ChangesetCheckStateFailed  ChangesetCheckState = "FAILED"
+)
+
 // Valid returns true if the given Changeset is valid.
 func (s ChangesetReviewState) Valid() bool {
 	switch s {
@@ -258,6 +268,7 @@ type Changeset struct {
 	CampaignIDs         []int64
 	ExternalID          string
 	ExternalServiceType string
+	ExternalBranch      string
 	ExternalDeletedAt   time.Time
 }
 
@@ -581,6 +592,123 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 	return SelectReviewState(states), nil
 }
 
+// ComputeCheckState computes the overall check state based on the current synced check state
+// and any webhook events that have arrived after the most recent sync
+func ComputeCheckState(c *Changeset, events []*ChangesetEvent) *ChangesetCheckState {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		return computeGitHubCheckState(c.UpdatedAt, m, events)
+
+	case *bitbucketserver.PullRequest:
+		// TODO
+	}
+
+	return nil
+}
+
+func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*ChangesetEvent) *ChangesetCheckState {
+	// We should only consider the latest commit. This could be from a sync or a webhook that
+	// has occurred later
+	var latestCommitTime time.Time
+	var latestOID string
+	statusPerContext := make(map[string]*ChangesetCheckState)
+
+	if len(pr.Commits.Nodes) > 0 {
+		// We only request the most recent commit
+		commit := pr.Commits.Nodes[0]
+		latestCommitTime = commit.Commit.CommittedDate
+		latestOID = commit.Commit.OID
+		// Calc status per context for the most recent synced commit
+		for _, c := range commit.Commit.Status.Contexts {
+			statusPerContext[c.Context] = parseGithubCheckState(c.State)
+		}
+	}
+
+	var statuses []*github.CommitStatus
+	// Get all status updates that have happened since our last sync
+	for _, e := range events {
+		switch m := e.Metadata.(type) {
+		case *github.CommitStatus:
+			if m.ReceivedAt.After(lastSynced) {
+				statuses = append(statuses, m)
+			}
+		case *github.PullRequestCommit:
+			if m.Commit.CommittedDate.After(latestCommitTime) {
+				latestCommitTime = m.Commit.CommittedDate
+				latestOID = m.Commit.OID
+				// statusPerContext is now out of date, reset it
+				for k := range statusPerContext {
+					delete(statusPerContext, k)
+				}
+			}
+		}
+	}
+
+	if len(statuses) > 0 {
+		// Update the statuses using any new webhook events for the latest commit
+		sort.Slice(statuses, func(i, j int) bool {
+			return statuses[i].ReceivedAt.Before(statuses[j].ReceivedAt)
+		})
+		for _, s := range statuses {
+			if s.SHA != latestOID {
+				continue
+			}
+			statusPerContext[s.Context] = parseGithubCheckState(s.State)
+		}
+	}
+	finalStates := make([]*ChangesetCheckState, 0, len(statusPerContext))
+	for k := range statusPerContext {
+		finalStates = append(finalStates, statusPerContext[k])
+	}
+	return combineCheckStates(finalStates)
+}
+
+// combineCheckStates combines multiple check states into an overall state
+// pending takes highest priority
+// followed by error
+// success return only if all successful
+func combineCheckStates(states []*ChangesetCheckState) *ChangesetCheckState {
+	if len(states) == 0 {
+		return nil
+	}
+	stateMap := make(map[ChangesetCheckState]bool)
+	for _, s := range states {
+		if s != nil {
+			stateMap[*s] = true
+		}
+	}
+
+	state := ChangesetCheckStatePending
+	switch {
+	case stateMap[ChangesetCheckStatePending]:
+		// If are pending, overall is Pending
+		state = ChangesetCheckStatePending
+	case stateMap[ChangesetCheckStateFailed]:
+		// If no pending, but have errors then overall is Failed
+		state = ChangesetCheckStateFailed
+	case stateMap[ChangesetCheckStatePassed]:
+		// No pending or errors then overall is Passed
+		state = ChangesetCheckStatePassed
+	}
+
+	return &state
+}
+
+func parseGithubCheckState(s string) *ChangesetCheckState {
+	var state ChangesetCheckState
+	switch s {
+	case "ERROR", "FAILURE":
+		state = ChangesetCheckStateFailed
+	case "EXPECTED", "PENDING":
+		state = ChangesetCheckStatePending
+	case "SUCCESS":
+		state = ChangesetCheckStatePassed
+	default:
+		return nil
+	}
+	return &state
+}
+
 // UpdateLabelsSince returns the set of current labels based the starting set of labels and looking at events
 // that have occurred after "since".
 func (ce *ChangesetEvents) UpdateLabelsSince(cs *Changeset) []ChangesetLabel {
@@ -718,6 +846,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = e.CreatedAt
 	case *github.LabelEvent:
 		t = e.CreatedAt
+	case *github.CommitStatus:
+		t = e.ReceivedAt
 	case *bitbucketserver.Activity:
 		t = unixMilliToTime(int64(e.CreatedDate))
 	}
@@ -900,7 +1030,7 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 			e.UpdatedAt = o.UpdatedAt
 		}
 
-		if e, o := e.Commit, o.Commit; e != o {
+		if e, o := e.Commit, o.Commit; !reflect.DeepEqual(e, o) {
 			updateGitHubCommit(&e, &o)
 		}
 
@@ -1025,7 +1155,7 @@ func updateGitHubPullRequestReview(e, o *github.PullRequestReview) {
 		e.UpdatedAt = o.UpdatedAt
 	}
 
-	if e, o := e.Commit, o.Commit; e != o {
+	if e, o := e.Commit, o.Commit; !reflect.DeepEqual(e, o) {
 		updateGitHubCommit(&e, &o)
 	}
 
@@ -1092,11 +1222,15 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitHubReviewRequested
 	case *github.UnassignedEvent:
 		return ChangesetEventKindGitHubUnassigned
+	case *github.PullRequestCommit:
+		return ChangesetEventKindGitHubCommit
 	case *github.LabelEvent:
 		if e.Removed {
 			return ChangesetEventKindGitHubUnlabeled
 		}
 		return ChangesetEventKindGitHubLabeled
+	case *github.CommitStatus:
+		return ChangesetEventKindCommitStatus
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
 	default:
@@ -1136,10 +1270,14 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 			return new(github.ReviewRequestedEvent), nil
 		case ChangesetEventKindGitHubUnassigned:
 			return new(github.UnassignedEvent), nil
+		case ChangesetEventKindGitHubCommit:
+			return new(github.PullRequestCommit), nil
 		case ChangesetEventKindGitHubLabeled:
 			return new(github.LabelEvent), nil
 		case ChangesetEventKindGitHubUnlabeled:
 			return &github.LabelEvent{Removed: true}, nil
+		case ChangesetEventKindCommitStatus:
+			return new(github.CommitStatus), nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
@@ -1164,8 +1302,10 @@ const (
 	ChangesetEventKindGitHubReviewRequested      ChangesetEventKind = "github:review_requested"
 	ChangesetEventKindGitHubReviewCommented      ChangesetEventKind = "github:review_commented"
 	ChangesetEventKindGitHubUnassigned           ChangesetEventKind = "github:unassigned"
+	ChangesetEventKindGitHubCommit               ChangesetEventKind = "github:commit"
 	ChangesetEventKindGitHubLabeled              ChangesetEventKind = "github:labeled"
 	ChangesetEventKindGitHubUnlabeled            ChangesetEventKind = "github:unlabeled"
+	ChangesetEventKindCommitStatus               ChangesetEventKind = "github:commit_status"
 
 	ChangesetEventKindBitbucketServerApproved   ChangesetEventKind = "bitbucketserver:approved"
 	ChangesetEventKindBitbucketServerUnapproved ChangesetEventKind = "bitbucketserver:unapproved"

@@ -812,7 +812,15 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		tmpPath = filepath.Join(tmpPath, ".git")
 		tmp := GitDir(tmpPath)
 
-		cmd := exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
+		var cmd *exec.Cmd
+		if useRefspecOverrides() {
+			cmd, err = refspecOverridesCloneCmd(ctx, url, tmpPath)
+			if err != nil {
+				return err
+			}
+		} else {
+			cmd = exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
+		}
 		// see issue #7322: skip LFS content in repositories with Git LFS configured
 		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
@@ -1292,7 +1300,12 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		}
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
+	var cmd *exec.Cmd
+	if useRefspecOverrides() {
+		cmd = refspecOverridesFetchCmd(ctx, url)
+	} else {
+		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
+	}
 	cmd.Dir = string(dir)
 
 	// drop temporary pack files after a fetch. this function won't

@@ -180,13 +180,13 @@ const SiteSchemaJSON = `{
       "group": "External services"
     },
     "githubClientID": {
-      "description": "Client ID for GitHub.",
+      "description": "Client ID for GitHub. (DEPRECATED)",
       "type": "string",
       "group": "Internal",
       "hide": true
     },
     "githubClientSecret": {
-      "description": "Client secret for GitHub.",
+      "description": "Client secret for GitHub. (DEPRECATED)",
       "type": "string",
       "group": "Internal",
       "hide": true

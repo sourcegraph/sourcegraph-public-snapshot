@@ -10,6 +10,7 @@ import (
 	"time"
 
 	gh "github.com/google/go-github/v28/github"
+	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
@@ -109,14 +110,21 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pr, ev := h.convertEvent(e)
-	if pr == 0 || ev == nil {
+	prs, ev := h.convertEvent(r.Context(), e)
+	if len(prs) == 0 || ev == nil {
 		respond(w, http.StatusOK, nil) // Nothing to do
 		return
 	}
 
-	if err := h.upsertChangesetEvent(r.Context(), pr, ev); err != nil {
-		respond(w, http.StatusInternalServerError, err)
+	m := new(multierror.Error)
+	for _, pr := range prs {
+		err := h.upsertChangesetEvent(r.Context(), pr, ev)
+		if err != nil {
+			m = multierror.Append(m, err)
+		}
+	}
+	if m.ErrorOrNil() != nil {
+		respond(w, http.StatusInternalServerError, m)
 	}
 }
 
@@ -165,14 +173,15 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
 	return e, nil
 }
 
-func (h *GitHubWebhook) convertEvent(theirs interface{}) (pr int64, ours interface{ Key() string }) {
+func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (prs []int64, ours interface{ Key() string }) {
+	log15.Info("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
-		pr = int64(*e.Issue.Number)
-		return pr, h.issueComment(e)
+		prs = append(prs, int64(*e.Issue.Number))
+		return prs, h.issueComment(e)
 
 	case *gh.PullRequestEvent:
-		pr = int64(*e.Number)
+		prs = append(prs, int64(*e.Number))
 
 		switch *e.Action {
 		case "assigned":
@@ -196,15 +205,46 @@ func (h *GitHubWebhook) convertEvent(theirs interface{}) (pr int64, ours interfa
 		}
 
 	case *gh.PullRequestReviewEvent:
-		pr = int64(*e.PullRequest.Number)
+		prs = append(prs, int64(*e.PullRequest.Number))
 		ours = h.pullRequestReviewEvent(e)
 
 	case *gh.PullRequestReviewCommentEvent:
-		pr = int64(*e.PullRequest.Number)
+		prs = append(prs, int64(*e.PullRequest.Number))
 		switch *e.Action {
 		case "created", "edited":
 			ours = h.pullRequestReviewCommentEvent(e)
 		}
+
+	case *gh.StatusEvent:
+		// A status event could potentially relate to more than one
+		// PR so we need to find them all
+		refs := make([]string, 0, len(e.Branches))
+		for _, branch := range e.Branches {
+			if name := branch.GetName(); name != "" {
+				refs = append(refs, name)
+			}
+		}
+
+		if len(refs) == 0 {
+			return nil, nil
+		}
+
+		ids, err := h.Store.GetGithubExternalIDForRefs(ctx, refs)
+		if err != nil {
+			log15.Error("Error executing GetGithubExternalIDForRefs", "err", err)
+			return nil, nil
+		}
+
+		for _, id := range ids {
+			i, err := strconv.ParseInt(id, 10, 64)
+			if err != nil {
+				log15.Error("Error parsing external id", "err", err)
+				continue
+			}
+			prs = append(prs, i)
+		}
+
+		ours = h.commitStatusEvent(e)
 	}
 
 	return
@@ -430,6 +470,15 @@ func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewComme
 	}
 
 	return &comment
+}
+
+func (*GitHubWebhook) commitStatusEvent(e *gh.StatusEvent) *github.CommitStatus {
+	return &github.CommitStatus{
+		SHA:        e.GetSHA(),
+		State:      e.GetState(),
+		Context:    e.GetContext(),
+		ReceivedAt: time.Now(),
+	}
 }
 
 // Upsert ensures the creation of the BitbucketServer automation webhook.

@@ -283,6 +283,7 @@ export const queryChangesets = (
                                 body
                                 state
                                 reviewState
+                                checkState
                                 labels {
                                     text
                                     description

@@ -1,14 +1,14 @@
 {
-  "ID": "MDExOlB1bGxSZXF1ZXN0MzcxMjM1MzIz",
+  "ID": "MDExOlB1bGxSZXF1ZXN0MzcxNDI2MzEw",
   "Title": "This is a test PR, feel free to ignore",
   "Body": "I'm opening this PR to test something. Please ignore.",
   "State": "OPEN",
-  "URL": "https://github.com/sourcegraph/automation-testing/pull/140",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/144",
   "HeadRefOid": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
   "BaseRefOid": "3b79a5d479d2af9cfe91e0aad4e9dddca7278150",
   "HeadRefName": "test-pr-3",
   "BaseRefName": "master",
-  "Number": 140,
+  "Number": 144,
   "Author": {
    "AvatarURL": "https://avatars3.githubusercontent.com/u/25610?v=4",
    "Login": "ryanslade",
@@ -29,7 +29,63 @@
   "Labels": {
    "Nodes": []
   },
-  "TimelineItems": [],
-  "CreatedAt": "2020-02-05T08:06:47Z",
-  "UpdatedAt": "2020-02-05T08:06:47Z"
+  "TimelineItems": [
+   {
+    "Type": "PullRequestCommit",
+    "Item": {
+     "Commit": {
+      "OID": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
+      "Message": "Add foobar.md file",
+      "MessageHeadline": "Add foobar.md file",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
+      "Status": {
+       "State": "",
+       "Contexts": null
+      },
+      "Committer": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "Email": "mrnugget@gmail.com",
+       "Name": "Thorsten Ball",
+       "User": {
+        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+        "Login": "mrnugget",
+        "URL": "https://github.com/mrnugget"
+       }
+      },
+      "CommittedDate": "2019-11-12T12:57:33Z",
+      "PushedDate": "2019-11-12T13:00:07Z"
+     }
+    }
+   }
+  ],
+  "Commits": {
+   "Nodes": [
+    {
+     "Commit": {
+      "OID": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
+      "Message": "Add foobar.md file",
+      "MessageHeadline": "Add foobar.md file",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
+      "Status": {
+       "State": "",
+       "Contexts": null
+      },
+      "Committer": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "Email": "mrnugget@gmail.com",
+       "Name": "Thorsten Ball",
+       "User": {
+        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+        "Login": "mrnugget",
+        "URL": "https://github.com/mrnugget"
+       }
+      },
+      "CommittedDate": "2019-11-12T12:57:33Z",
+      "PushedDate": "2019-11-12T13:00:07Z"
+     }
+    }
+   ]
+  },
+  "CreatedAt": "2020-02-05T15:11:28Z",
+  "UpdatedAt": "2020-02-05T15:11:28Z"
  }

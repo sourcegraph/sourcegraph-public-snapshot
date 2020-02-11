@@ -2,15 +2,12 @@
 
 Site admins can sync Git repositories hosted on [Bitbucket Server](https://www.atlassian.com/software/bitbucket/server) (and the [Bitbucket Data Center](https://www.atlassian.com/enterprise/data-center/bitbucket) deployment option) with Sourcegraph so that users can search and navigate the repositories.
 
-To set this up, add Bitbucket Server as an external service to Sourcegraph:
+To connect Bitbucket Server to Sourcegraph:
 
-1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
-1. Enter a **Display name** (using "Bitbucket Server" is OK if you only have one Bitbucket Server instance).
-1. In the **Kind** menu, select **Bitbucket Server**.
-1. Configure the connection to Bitbucket Server in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).
-1. Press **Add external service**.
+1. Go to **Site admin > Manage repositories > Add repositories**
+1. Select **Bitbucket Server**.
+1. Configure the connection to Bitbucket Server using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
 
 ## Repository syncing
 

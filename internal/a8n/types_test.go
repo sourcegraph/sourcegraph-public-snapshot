@@ -1,6 +1,7 @@
 package a8n
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -118,6 +119,16 @@ func TestChangesetEvents(t *testing.T) {
 			CreatedAt: now,
 		}
 
+		commit := &github.PullRequestCommit{
+			Commit: github.Commit{
+				OID:             "123",
+				Message:         "Test Commit",
+				MessageHeadline: "",
+				URL:             "",
+				Status:          github.Status{},
+			},
+		}
+
 		cases = append(cases, testCase{"github",
 			Changeset{
 				ID: 23,
@@ -132,6 +143,7 @@ func TestChangesetEvents(t *testing.T) {
 							Comments: reviewComments[2:],
 						}},
 						{Type: "ClosedEvent", Item: closedEvent},
+						{Type: "PullRequestCommit", Item: commit},
 					},
 				},
 			},
@@ -165,6 +177,11 @@ func TestChangesetEvents(t *testing.T) {
 				Kind:        ChangesetEventKindGitHubClosed,
 				Key:         closedEvent.Key(),
 				Metadata:    closedEvent,
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubCommit,
+				Key:         commit.Key(),
+				Metadata:    commit,
 			}},
 		})
 	}
@@ -352,6 +369,110 @@ func TestChangesetEventsReviewState(t *testing.T) {
 	}
 }
 
+func TestComputeGithubCheckState(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	testEvent := func(minutesSinceSync int, context, state string) *ChangesetEvent {
+		commit := &github.CommitStatus{
+			Context:    context,
+			State:      state,
+			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
+		}
+		ce := &ChangesetEvent{
+			Kind:     ChangesetEventKindCommitStatus,
+			Metadata: commit,
+		}
+		return ce
+	}
+	pState := func(s ChangesetCheckState) *ChangesetCheckState {
+		return &s
+	}
+
+	lastSynced := now.Add(-1 * time.Minute)
+	pr := &github.PullRequest{}
+
+	tests := []struct {
+		name   string
+		events []*ChangesetEvent
+		want   *ChangesetCheckState
+	}{
+		{
+			name:   "empty slice",
+			events: nil,
+			want:   nil,
+		},
+		{
+			name: "single success",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "SUCCESS"),
+			},
+			want: pState(ChangesetCheckStatePassed),
+		},
+		{
+			name: "single pending",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+			},
+			want: pState(ChangesetCheckStatePending),
+		},
+		{
+			name: "single error",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "ERROR"),
+			},
+			want: pState(ChangesetCheckStateFailed),
+		},
+		{
+			name: "pending + error",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+				testEvent(1, "ctx2", "ERROR"),
+			},
+			want: pState(ChangesetCheckStatePending),
+		},
+		{
+			name: "pending + success",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+				testEvent(1, "ctx2", "SUCCESS"),
+			},
+			want: pState(ChangesetCheckStatePending),
+		},
+		{
+			name: "success + error",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "SUCCESS"),
+				testEvent(1, "ctx2", "ERROR"),
+			},
+			want: pState(ChangesetCheckStateFailed),
+		},
+		{
+			name: "success x2",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "SUCCESS"),
+				testEvent(1, "ctx2", "SUCCESS"),
+			},
+			want: pState(ChangesetCheckStatePassed),
+		},
+		{
+			name: "later events have precedence",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+				testEvent(1, "ctx1", "SUCCESS"),
+			},
+			want: pState(ChangesetCheckStatePassed),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := computeGitHubCheckState(lastSynced, pr, tc.events)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatalf(diff)
+			}
+		})
+	}
+}
+
 func TestChangesetEventsLabels(t *testing.T) {
 	now := time.Now()
 	labelEvent := func(name string, kind ChangesetEventKind, when time.Time) *ChangesetEvent {
@@ -434,10 +555,11 @@ func TestChangesetEventsLabels(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			have := tc.events.UpdateLabelsSince(tc.changeset)
 			want := tc.want
+			sort.Slice(have, func(i, j int) bool { return have[i].Name < have[j].Name })
+			sort.Slice(want, func(i, j int) bool { return want[i].Name < want[j].Name })
 			if diff := cmp.Diff(have, want, cmpopts.EquateEmpty()); diff != "" {
 				t.Fatal(diff)
 			}
 		})
 	}
-
 }

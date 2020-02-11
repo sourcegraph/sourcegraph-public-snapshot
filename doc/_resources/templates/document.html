@@ -47,8 +47,9 @@
                 </span>
             </nav>
             <div id="content-nav" class="content-nav">
-                <form class="search-form form-inline mobile-search large-hidden medium-hidden">
-                    <input name="search" class="nav-search form-control" type="search" placeholder="Search docs..." spellcheck="false">
+                <form class="search-form form-inline mobile-search large-hidden medium-hidden" method="get" action="/search">
+                    <input name="q" class="nav-search form-control" type="search" placeholder="Search docs..." spellcheck="false">
+                    <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
                     <button class="btn btn-primary nav-search-button ml-2" type="submit">Search</button>
                 </form>
                 <ul class="content-nav-section expandable">
@@ -106,6 +107,7 @@
                     <li class="content-nav-no-hover">
                         <a class="content-nav-section-header" href="/admin">Site admin documentation</a>
                         <ul class="content-nav-section-group">
+                            <li><a href="/admin/privileges">Site admin privileges</a></li>
                             <li><a href="/admin/install">Installing Sourcegraph</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">

@@ -58,7 +58,7 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 }
 
 // SyncChangesetsWithSources refreshes the metadata of the given changesets
-// with the given ChangesetSources updates them in the database.
+// with the given ChangesetSources and updates them in the database.
 func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySource []*SourceChangesets) (err error) {
 	var (
 		events []*a8n.ChangesetEvent
