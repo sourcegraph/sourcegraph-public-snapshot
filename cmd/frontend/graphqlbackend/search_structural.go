@@ -3,21 +3,15 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/url"
 	"regexp"
 	"regexp/syntax"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 func splitOnHolesPattern() string {
@@ -158,16 +152,6 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	if err != nil {
 		return nil, false, nil, err
 	}
-	finalQuery := zoektquery.NewAnd(repoSet, queryExceptRepos)
-
-	tr, ctx := trace.New(ctx, "zoekt.Search", fmt.Sprintf("%d %+v", len(repoSet.Set), finalQuery.String()))
-	defer func() {
-		tr.SetError(err)
-		if len(fm) > 0 {
-			tr.LazyPrintf("%d file matches", len(fm))
-		}
-		tr.Finish()
-	}()
 
 	k := zoektResultCountFactor(len(repos), args.PatternInfo)
 	searchOpts := zoektSearchOpts(k, args.PatternInfo)
@@ -201,8 +185,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	if err != nil {
 		return nil, false, nil, err
 	}
-	finalQuery = zoektquery.NewAnd(newRepoSet, queryExceptRepos)
-	tr.LazyPrintf("after repohasfile filters: nRepos=%d query=%v", len(newRepoSet.Set), finalQuery)
+	finalQuery := zoektquery.NewAnd(newRepoSet, queryExceptRepos)
 
 	t0 := time.Now()
 	resp, err := args.Zoekt.Client.Search(ctx, finalQuery, &searchOpts)
@@ -230,8 +213,6 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, nil
 	}
 
-	maxLineMatches := 25 + k
-	maxLineFragmentMatches := 3 + k
 	if limit := int(args.PatternInfo.FileMatchLimit); len(resp.Files) > limit {
 		// List of files we cut out from the Zoekt response because they exceed the file match limit on the Sourcegraph end.
 		// We use this to get a list of repositories that do not have complete results.
@@ -253,6 +234,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		limitHit = true
 	}
 
+	maxLineMatches := 25 + k
 	matches := make([]*FileMatchResolver, len(resp.Files))
 	for i, file := range resp.Files {
 		fileLimitHit := false
@@ -262,59 +244,12 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 			limitHit = true
 		}
 		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
-		inputRev := repoRev.RevSpecs()[0]
-		baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
-		lines := make([]*lineMatch, 0, len(file.LineMatches))
-		symbols := []*searchSymbolResult{}
-		for _, l := range file.LineMatches {
-			if !l.FileName {
-				if len(l.LineFragments) > maxLineFragmentMatches {
-					l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
-				}
-				offsets := make([][2]int32, len(l.LineFragments))
-				for k, m := range l.LineFragments {
-					offset := utf8.RuneCount(l.Line[:m.LineOffset])
-					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-					offsets[k] = [2]int32{int32(offset), int32(length)}
-					if isSymbol && m.SymbolInfo != nil {
-						commit := &GitCommitResolver{
-							repo:     &RepositoryResolver{repo: repoRev.Repo},
-							oid:      GitObjectID(repoRev.IndexedHEADCommit()),
-							inputRev: &inputRev,
-						}
-
-						symbols = append(symbols, &searchSymbolResult{
-							symbol: protocol.Symbol{
-								Name:       m.SymbolInfo.Sym,
-								Kind:       m.SymbolInfo.Kind,
-								Parent:     m.SymbolInfo.Parent,
-								ParentKind: m.SymbolInfo.ParentKind,
-								Path:       file.FileName,
-								Line:       l.LineNumber,
-							},
-							lang:    strings.ToLower(file.Language),
-							baseURI: baseURI,
-							commit:  commit,
-						})
-					}
-				}
-				if !isSymbol {
-					lines = append(lines, &lineMatch{
-						JPreview:          string(l.Line),
-						JLineNumber:       int32(l.LineNumber - 1),
-						JOffsetAndLengths: offsets,
-					})
-				}
-			}
-		}
 		matches[i] = &FileMatchResolver{
-			JPath:        file.FileName,
-			JLineMatches: lines,
-			JLimitHit:    fileLimitHit,
-			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
-			symbols:      symbols,
-			Repo:         repoRev.Repo,
-			CommitID:     repoRev.IndexedHEADCommit(),
+			JPath:     file.FileName,
+			JLimitHit: fileLimitHit,
+			uri:       fileMatchURI(repoRev.Repo.Name, "", file.FileName),
+			Repo:      repoRev.Repo,
+			CommitID:  repoRev.IndexedHEADCommit(),
 		}
 	}
 
