@@ -40,6 +40,7 @@ All notable changes to Sourcegraph are documented in this file.
 - **Monitoring:** Fixed an issue with the **Replacer**, **Repo Updater**, and **Searcher** dashboards would incorrectly report on a metric from the unrelated query-runner service. [#7531](https://github.com/sourcegraph/sourcegraph/issues/7531)
 - Hover tooltips for Perl files now have syntax highlighting. [#8307](https://github.com/sourcegraph/sourcegraph/issues/8307)
 - Deterministic ordering of results from indexed search. Previously when refreshing a page with many results some results may come and go.
+- Spread out periodic git reclones. Previously we would reclone all git repositories every 45 days. We now add in a jitter of 12 days to spread out the load for larger installations. [#8259](https://github.com/sourcegraph/sourcegraph/issues/8259)
 
 ### Removed
 
