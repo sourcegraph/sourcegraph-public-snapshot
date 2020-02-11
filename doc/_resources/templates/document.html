@@ -47,8 +47,9 @@
                 </span>
             </nav>
             <div id="content-nav" class="content-nav">
-                <form class="search-form form-inline mobile-search large-hidden medium-hidden">
-                    <input name="search" class="nav-search form-control" type="search" placeholder="Search docs..." spellcheck="false">
+                <form class="search-form form-inline mobile-search large-hidden medium-hidden" method="get" action="/search">
+                    <input name="q" class="nav-search form-control" type="search" placeholder="Search docs..." spellcheck="false">
+                    <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
                     <button class="btn btn-primary nav-search-button ml-2" type="submit">Search</button>
                 </form>
                 <ul class="content-nav-section expandable">
