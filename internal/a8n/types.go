@@ -609,6 +609,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 	var latestCommitTime time.Time
 	var latestOID string
 	statusPerContext := make(map[string]*ChangesetCheckState)
+	statusPerCheckSuite := make(map[string]*ChangesetCheckState)
 
 	if len(pr.Commits.Nodes) > 0 {
 		// We only request the most recent commit
@@ -618,6 +619,9 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 		// Calc status per context for the most recent synced commit
 		for _, c := range commit.Commit.Status.Contexts {
 			statusPerContext[c.Context] = parseGithubCheckState(c.State)
+		}
+		for _, c := range commit.Commit.CheckSuites.Nodes {
+			statusPerCheckSuite[c.ID] = parseGithubCheckSuiteState(c.Status, c.Conclusion)
 		}
 	}
 
@@ -656,6 +660,9 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 	finalStates := make([]*ChangesetCheckState, 0, len(statusPerContext))
 	for k := range statusPerContext {
 		finalStates = append(finalStates, statusPerContext[k])
+	}
+	for k := range statusPerCheckSuite {
+		finalStates = append(finalStates, statusPerCheckSuite[k])
 	}
 	return combineCheckStates(finalStates)
 }
@@ -702,6 +709,28 @@ func parseGithubCheckState(s string) *ChangesetCheckState {
 		state = ChangesetCheckStatePassed
 	default:
 		return nil
+	}
+	return &state
+}
+
+func parseGithubCheckSuiteState(status, conclusion string) *ChangesetCheckState {
+	var state ChangesetCheckState
+	switch status {
+	case "IN_PROGRESS", "QUEUED", "REQUESTED":
+		state = ChangesetCheckStatePending
+		return &state
+	}
+	if status != "COMPLETED" {
+		// Unknown status
+		return nil
+	}
+	switch conclusion {
+	case "SUCCESS", "NEUTRAL":
+		state = ChangesetCheckStatePassed
+	case "ACTION_REQUIRED":
+		state = ChangesetCheckStatePending
+	case "CANCELLED", "FAILURE", "TIMED_OUT":
+		state = ChangesetCheckStateFailed
 	}
 	return &state
 }
