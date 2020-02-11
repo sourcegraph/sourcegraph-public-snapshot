@@ -65,14 +65,6 @@ type Commit struct {
 	PushedDate      time.Time
 }
 
-// Represents only basic information about a commit
-type BasicCommit struct {
-	OID           string
-	CheckSuites   struct{ Nodes []CheckSuite }
-	Status        Status
-	CommittedDate time.Time
-}
-
 // A Status represents a Commit status.
 type Status struct {
 	State    string
@@ -229,7 +221,12 @@ type PullRequestReviewThread struct {
 }
 
 type PullRequestCommit struct {
-	Commit BasicCommit
+	Commit struct {
+		OID           string
+		CheckSuites   struct{ Nodes []CheckSuite }
+		Status        Status
+		CommittedDate time.Time
+	}
 }
 
 func (c PullRequestCommit) Key() string {
