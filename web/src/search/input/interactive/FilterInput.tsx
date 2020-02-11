@@ -261,6 +261,12 @@ export class FilterInput extends React.Component<Props, State> {
         this.setFiniteFilterDefault.next()
     }
 
+    public componentDidUpdate(prevProps: Props): void {
+        if (isFiniteFilter(this.props.filterType) && this.props.value !== prevProps.value) {
+            this.inputValues.next(this.props.value)
+        }
+    }
+
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
