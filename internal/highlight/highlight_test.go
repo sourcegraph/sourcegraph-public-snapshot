@@ -107,9 +107,9 @@ func TestUnhighlightLongLines_Simple(t *testing.T) {
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span>this line is over 40 bytes</span><span> so spans are not kept
 </span></div></td></tr></table>`
 
-	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span>under 40 bytes</span><span> spans are kept
+	want := `<html><head></head><body><table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span>under 40 bytes</span><span> spans are kept
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span>this line is over 40 bytes so spans are not kept
-</span></div></td></tr></table>`
+</span></div></td></tr></tbody></table></body></html>`
 	got, err := unhighlightLongLines(input, 40)
 	if err != nil {
 		t.Fatal(err)
