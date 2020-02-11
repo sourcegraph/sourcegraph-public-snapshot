@@ -45,16 +45,32 @@ type Review struct {
 	SubmittedAt time.Time
 }
 
+// CheckSuite represents the status of a checksuite
+type CheckSuite struct {
+	ID string
+	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
+	Status string
+	// On of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
+	Conclusion string
+}
+
 // A Commit in a Repository.
 type Commit struct {
 	OID             string
 	Message         string
 	MessageHeadline string
 	URL             string
-	Status          Status
 	Committer       GitActor
 	CommittedDate   time.Time
 	PushedDate      time.Time
+}
+
+// Represents only basic information about a commit
+type BasicCommit struct {
+	OID           string
+	CheckSuites   struct{ Nodes []CheckSuite }
+	Status        Status
+	CommittedDate time.Time
 }
 
 // A Status represents a Commit status.
@@ -213,7 +229,7 @@ type PullRequestReviewThread struct {
 }
 
 type PullRequestCommit struct {
-	Commit Commit
+	Commit BasicCommit
 }
 
 func (c PullRequestCommit) Key() string {
@@ -698,15 +714,6 @@ fragment commit on Commit {
   committedDate
   pushedDate
   url
-  status {
-    state
-    contexts {
-      id
-      context
-      state
-      description
-    }
-  }
   committer {
     avatarUrl
     email
@@ -717,9 +724,30 @@ fragment commit on Commit {
   }
 }
 
+fragment basicCommit on Commit {
+  oid
+  status {
+    state
+    contexts {
+      id
+      context
+      state
+      description
+    }
+  }
+  checkSuites(last: 10){
+    nodes {
+      id
+      status
+      conclusion
+    }
+  }
+  committedDate
+}
+
 fragment prCommit on PullRequestCommit {
   commit {
-    ...commit
+    ...basicCommit
   }
 }
 
