@@ -56,9 +56,9 @@ func toGitCommitResolver(repo *RepositoryResolver, commit *git.Commit) *GitCommi
 		includeUserInfo: true,
 		oid:             GitObjectID(commit.ID),
 	}
-	res.consumeCommit(commit)
-
-	res.once.Do(func() {})
+	res.once.Do(func() {
+		res.consumeCommit(commit)
+	})
 	return res
 }
 
