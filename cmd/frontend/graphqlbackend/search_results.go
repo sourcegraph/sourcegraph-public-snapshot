@@ -864,10 +864,8 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
-			alert, err := r.alertForStalePermissions(ctx)
-			if err != nil {
-				return nil, nil, nil, err
-			}
+			log15.Debug("searchResolver.determineRepos", "err", err)
+			alert := r.alertForStalePermissions(ctx)
 			return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
 		return nil, nil, nil, err

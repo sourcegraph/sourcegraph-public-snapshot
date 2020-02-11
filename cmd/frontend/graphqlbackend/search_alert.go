@@ -56,12 +56,12 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	return &a.proposedQueries
 }
 
-func (r *searchResolver) alertForStalePermissions(_ context.Context) (*searchAlert, error) {
+func (r *searchResolver) alertForStalePermissions(_ context.Context) *searchAlert {
 	return &searchAlert{
 		prometheusType: "no_resolved_repos__stale_permissions",
 		title:          "Permissions syncing in progress",
 		description:    "Permissions are being synced from your code host, please wait for a minute and try again.",
-	}, nil
+	}
 }
 
 func (r *searchResolver) alertForQuotesInQueryInLiteralMode(_ context.Context) (*searchAlert, error) {
