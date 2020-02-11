@@ -47,7 +47,9 @@ type GitCommitResolver struct {
 	message   string
 	parents   []api.CommitID
 
+	// once ensures that fetching git commit information occurs once
 	once sync.Once
+	err  error
 }
 
 func toGitCommitResolver(repo *RepositoryResolver, commit *git.Commit) *GitCommitResolver {
@@ -62,23 +64,26 @@ func toGitCommitResolver(repo *RepositoryResolver, commit *git.Commit) *GitCommi
 	return res
 }
 
-func (r *GitCommitResolver) resolveCommit(ctx context.Context) (err error) {
+func (r *GitCommitResolver) resolveCommit(ctx context.Context) {
+	if r.err != nil {
+		return
+	}
+
 	r.once.Do(func() {
 		var cachedRepo *gitserver.Repo
-		cachedRepo, err = backend.CachedGitRepo(ctx, r.repo.repo)
-		if err != nil {
+		cachedRepo, r.err = backend.CachedGitRepo(ctx, r.repo.repo)
+		if r.err != nil {
 			return
 		}
 
 		var commit *git.Commit
-		commit, err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid))
-		if err != nil {
+		commit, r.err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid))
+		if r.err != nil {
 			return
 		}
 
 		r.consumeCommit(commit)
 	})
-	return
 }
 
 func (r *GitCommitResolver) consumeCommit(commit *git.Commit) {
@@ -117,25 +122,28 @@ func (r *GitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]
 }
 func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
-	err := r.resolveCommit(ctx)
-	return &r.author, err
+	r.resolveCommit(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+	return &r.author, nil
 }
 func (r *GitCommitResolver) Committer(ctx context.Context) (*signatureResolver, error) {
-	err := r.resolveCommit(ctx)
-	return r.committer, err
+	r.resolveCommit(ctx)
+	return r.committer, r.err
 }
 func (r *GitCommitResolver) Message(ctx context.Context) (string, error) {
-	err := r.resolveCommit(ctx)
-	return r.message, err
+	r.resolveCommit(ctx)
+	return r.message, r.err
 }
 func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
-	err := r.resolveCommit(ctx)
-	return gitCommitSubject(r.message), err
+	r.resolveCommit(ctx)
+	return gitCommitSubject(r.message), r.err
 }
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
-	err := r.resolveCommit(ctx)
-	if err != nil {
-		return nil, err
+	r.resolveCommit(ctx)
+	if r.err != nil {
+		return nil, r.err
 	}
 
 	body := gitCommitBody(r.message)
@@ -146,9 +154,9 @@ func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
 }
 
 func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, error) {
-	err := r.resolveCommit(ctx)
-	if err != nil {
-		return nil, err
+	r.resolveCommit(ctx)
+	if r.err != nil {
+		return nil, r.err
 	}
 
 	resolvers := make([]*GitCommitResolver, len(r.parents))
