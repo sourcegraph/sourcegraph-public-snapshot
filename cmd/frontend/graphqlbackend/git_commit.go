@@ -37,7 +37,7 @@ type GitCommitResolver struct {
 	inputRev *string
 
 	// fetch + serve sourcegraph stored user information
-	long bool
+	includeUserInfo bool
 
 	// oid MUST be specified and a 40-character Git SHA.
 	oid GitObjectID
@@ -52,16 +52,12 @@ type GitCommitResolver struct {
 
 func toGitCommitResolver(repo *RepositoryResolver, commit *git.Commit) *GitCommitResolver {
 	res := &GitCommitResolver{
-		repo: repo,
-		long: true,
-
-		oid: GitObjectID(commit.ID),
-
-		author:    *toSignatureResolver(&commit.Author, true),
-		committer: toSignatureResolver(commit.Committer, true),
-		message:   commit.Message,
-		parents:   commit.Parents,
+		repo:            repo,
+		includeUserInfo: true,
+		oid:             GitObjectID(commit.ID),
 	}
+	res.consumeCommit(commit)
+
 	res.once.Do(func() {})
 	return res
 }
@@ -80,12 +76,16 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (err error) {
 			return
 		}
 
-		r.author = *toSignatureResolver(&commit.Author, r.long)
-		r.committer = toSignatureResolver(commit.Committer, r.long)
-		r.message = commit.Message
-		r.parents = commit.Parents
+		r.consumeCommit(commit)
 	})
 	return
+}
+
+func (r *GitCommitResolver) consumeCommit(commit *git.Commit) {
+	r.author = *toSignatureResolver(&commit.Author, r.includeUserInfo)
+	r.committer = toSignatureResolver(commit.Committer, r.includeUserInfo)
+	r.message = commit.Message
+	r.parents = commit.Parents
 }
 
 // gitCommitGQLID is a type used for marshaling and unmarshaling a Git commit's

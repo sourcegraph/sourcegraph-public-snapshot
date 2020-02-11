@@ -15,7 +15,7 @@ type personResolver struct {
 	email string
 
 	// fetch + serve sourcegraph stored user information
-	long bool
+	includeUserInfo bool
 
 	// cache result because it is used by multiple fields
 	once sync.Once
@@ -27,7 +27,7 @@ type personResolver struct {
 // resolved to a user.
 func (r *personResolver) resolveUser(ctx context.Context) (*types.User, error) {
 	r.once.Do(func() {
-		if r.long && r.email != "" {
+		if r.includeUserInfo && r.email != "" {
 			r.user, r.err = db.Users.GetByVerifiedEmail(ctx, r.email)
 			if errcode.IsNotFound(r.err) {
 				r.err = nil
