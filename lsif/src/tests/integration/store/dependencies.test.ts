@@ -49,7 +49,7 @@ describe('DependencyManager', () => {
             root: string,
             identifiers: string[]
         ): Promise<pgModels.LsifDump> => {
-            const dump = await util.insertDump(connection, dumpManager, repositoryId1, commit, root)
+            const dump = await util.insertDump(connection, dumpManager, repositoryId1, commit, root, 'test')
 
             await dependencyManager.addPackagesAndReferences(
                 dump.id,
@@ -118,7 +118,7 @@ describe('DependencyManager', () => {
             root: string,
             identifiers: string[]
         ): Promise<pgModels.LsifDump> => {
-            const dump = await util.insertDump(connection, dumpManager, repositoryId1, commit, root)
+            const dump = await util.insertDump(connection, dumpManager, repositoryId1, commit, root, 'test')
 
             await dependencyManager.addPackagesAndReferences(
                 dump.id,
@@ -189,9 +189,9 @@ describe('DependencyManager', () => {
             },
         ]
 
-        const dumpa = await util.insertDump(connection, dumpManager, repositoryId1, ca, '')
-        const dumpb = await util.insertDump(connection, dumpManager, repositoryId1, cb, '')
-        const dumpc = await util.insertDump(connection, dumpManager, repositoryId1, cc, '')
+        const dumpa = await util.insertDump(connection, dumpManager, repositoryId1, ca, '', 'test')
+        const dumpb = await util.insertDump(connection, dumpManager, repositoryId1, cb, '', 'test')
+        const dumpc = await util.insertDump(connection, dumpManager, repositoryId1, cc, '', 'test')
 
         await dependencyManager.addPackagesAndReferences(dumpa.id, [], references)
         await dependencyManager.addPackagesAndReferences(dumpb.id, [], references)

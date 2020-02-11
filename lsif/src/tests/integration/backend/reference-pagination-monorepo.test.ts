@@ -61,6 +61,7 @@ describe('Backend', () => {
                     repositoryId,
                     commit,
                     `${project}/`,
+                    'test',
                     `reference-pagination-monorepo/data/${project}${suffix}.lsif.gz`,
                     false
                 )
@@ -184,6 +185,7 @@ describe('Backend', () => {
                     externalRepositoryId,
                     util.createCommit(0),
                     'f/',
+                    'test',
                     'reference-pagination-monorepo/data/f-ref.lsif.gz'
                 )
             )
