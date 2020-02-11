@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -157,6 +158,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
 
+	totalCampaigns, err := campaignsCount(ctx)
+	if err != nil {
+		logFunc("campaignsCount failed", "error", err)
+	}
+
 	contents, err := json.Marshal(&pingRequest{
 		ClientSiteID:         siteid.Get(),
 		DeployType:           conf.DeployType(),
@@ -173,6 +179,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		HasRepos:             hasRepos,
 		EverSearched:         hasRepos && searchOccurred, // Searches only count if repos have been added.
 		EverFindRefs:         findRefsOccurred,
+		TotalCampaigns:       int32(totalCampaigns),
 	})
 	if err != nil {
 		return nil, err
@@ -200,6 +207,17 @@ func externalServiceKinds(ctx context.Context) ([]string, error) {
 		kinds[i] = s.Kind
 	}
 	return kinds, nil
+}
+
+func campaignsCount(ctx context.Context) (int, error) {
+	const q = "SELECT COUNT(*) FROM campaigns;"
+
+	var count int
+	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(&count); err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 // check performs an update check. It returns the result and updates the global state
