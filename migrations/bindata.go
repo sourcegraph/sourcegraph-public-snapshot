@@ -64,6 +64,8 @@
 // 1528395647_remove_label_events_from_changeset_events.up.sql (106B)
 // 1528395648_add_external_branch_to_changesets.down.sql (79B)
 // 1528395648_add_external_branch_to_changesets.up.sql (444B)
+// 1528395649_add_lsif_indexer.down.sql (537B)
+// 1528395649_add_lsif_indexer.up.sql (513B)
 
 package migrations
 
@@ -1412,6 +1414,46 @@ func _1528395648_add_external_branch_to_changesetsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395649_add_lsif_indexerDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x90\xcb\x6a\xe3\x40\x14\x44\xf7\xfa\x8a\xc2\x1b\xcf\x0c\xb6\x3f\xc0\x62\x16\xb2\xdc\x33\x11\xe8\x91\xc8\x72\x9c\x5d\x23\xd4\xd7\xb8\x41\xea\x56\xfa\x11\x27\x7f\x1f\x2c\x91\x20\x05\xb2\xc8\xf2\xc2\xb9\xc5\xa9\xda\xb1\xff\x49\x1e\x06\xc1\x7a\x8d\x92\xac\xd3\x86\xa0\x5b\x01\xaf\xe4\xb3\x27\x48\x25\xe8\x35\xd8\x97\xc5\x3d\x92\x7c\xcf\x9e\xd0\x5a\x79\xe6\xbe\x6f\x75\x2d\x2c\x37\xd4\x6b\x2b\x9d\x36\x6f\x5c\x0a\xde\xe8\xae\x93\x8e\x1b\xad\x1d\x1f\xfe\xc8\x84\x41\x5c\xb2\xa8\x62\x38\xe6\xc9\xc3\x91\xfd\x28\x03\x45\x3e\x23\x7f\xcd\xc8\x15\x16\x23\xbb\x58\xe1\x46\xff\xc6\xe9\x8e\x95\x0c\xd6\xd5\x8e\xf0\x17\xcb\x46\x77\x7d\x4b\x8e\xc4\x72\xbb\x9d\xc4\xf0\x01\x18\xfb\xee\x8d\xee\xf1\x22\xe9\x0a\x41\x3d\x29\x41\xca\x41\x2b\x28\xba\xa2\xd1\xad\xef\xd4\x58\xfc\x31\x61\xa7\xd1\x44\xf8\xae\xb7\x93\xdf\x09\x19\xa5\x15\x2b\x51\x45\xbb\x94\xcd\xac\x31\x44\xc4\x45\x7a\xcc\x72\x7c\xae\x32\xae\xdd\x18\xba\xc9\x0e\x06\x57\xe9\x2e\x93\x3c\xa8\xba\x23\xfb\xb1\xde\x17\x03\x44\x07\x1c\x58\xca\xe2\x0a\x7e\xf3\x67\x05\xbf\x39\x4b\x25\xed\x85\x04\xaf\x1d\x6a\x8b\xde\xe8\x86\xac\x1d\xef\x7f\x65\x91\xcd\x95\xfc\xf7\x5b\x85\x41\x10\x17\x59\x96\x54\x61\xf0\x1e\x00\x00\xff\xff\x52\x38\x31\x8f\x19\x02\x00\x00")
+
+func _1528395649_add_lsif_indexerDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395649_add_lsif_indexerDownSql,
+		"1528395649_add_lsif_indexer.down.sql",
+	)
+}
+
+func _1528395649_add_lsif_indexerDownSql() (*asset, error) {
+	bytes, err := _1528395649_add_lsif_indexerDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395649_add_lsif_indexer.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x7a, 0x2a, 0x79, 0x4f, 0x52, 0x54, 0xc1, 0x79, 0x6b, 0x3b, 0xc8, 0x6b, 0x31, 0x5f, 0xbc, 0xbf, 0x5, 0xe, 0x1e, 0xf8, 0x30, 0xc8, 0x2a, 0x8, 0x9b, 0x9f, 0xf9, 0xfa, 0x8d, 0x6, 0x16, 0xbb}}
+	return a, nil
+}
+
+var __1528395649_add_lsif_indexerUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x8f\xcd\x6e\xa3\x30\x14\x46\xf7\x7e\x8a\x4f\xd9\x64\x66\x44\xf2\x00\x41\xb3\x20\xe0\x99\x22\xf1\xd3\x12\xd2\x64\x67\x21\x7c\x51\x2c\x01\xa6\xd8\x6e\x9a\xb7\xaf\x52\x94\xa8\x54\xea\xa2\x4b\x5b\xf7\xdc\x7b\xce\x96\xff\x8f\x33\x9f\xb1\x20\x29\x79\x81\x32\xd8\x26\x1c\xad\x51\x8d\x70\x43\xab\x2b\x69\x10\x44\x11\xc2\x3c\xd9\xa7\x19\x54\x2f\xe9\x8d\x46\x94\xfc\x58\xfa\x8c\xad\x56\x28\xa8\x1e\xa9\xb2\x84\x57\x45\x67\x9c\x95\x3d\xa1\xa7\x33\x6a\xdd\xba\xae\x47\x5f\x75\x64\x58\x54\xe4\x8f\x78\x8e\xf9\x61\xda\x2b\x5d\x37\x18\x9f\x85\x05\x0f\x4a\xfe\xf5\x1f\xc1\x0e\x3b\x9e\xf0\xb0\x84\x5b\xff\xf1\xe0\xd6\x8d\xea\x95\x39\x91\x14\x95\x45\x65\x30\x8c\xba\x26\x63\xa6\xf7\xbf\x22\x4f\xe7\xb2\x0e\x87\x07\x5e\x70\x18\x7b\x95\xfa\x8b\x65\xad\xbb\xa1\x25\x4b\x72\x39\x09\xa7\x5a\xaa\xe6\x02\xd7\xab\x17\x47\x53\x10\xac\x86\xea\xeb\xd6\x49\xba\x17\x36\x8a\x5a\x39\x99\xc7\x59\xc4\x8f\xb3\x2b\x62\xa4\x41\x1b\x65\xf5\x78\x11\x4a\x8a\x5a\x77\x9d\xb2\x62\xd4\xda\xde\xb3\xf6\x59\xfc\xb4\xe7\x3f\x62\xc5\xed\x76\x9e\xcd\x88\x5f\x33\xc2\xc3\x62\x62\x16\x1e\xae\x94\x77\x53\xfe\xfd\x7d\xf9\x66\xf3\x69\x9f\xf8\x18\xf0\x19\x0b\xf3\x34\x8d\x4b\x9f\xbd\x07\x00\x00\xff\xff\x1e\xed\x6f\x40\x01\x02\x00\x00")
+
+func _1528395649_add_lsif_indexerUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395649_add_lsif_indexerUpSql,
+		"1528395649_add_lsif_indexer.up.sql",
+	)
+}
+
+func _1528395649_add_lsif_indexerUpSql() (*asset, error) {
+	bytes, err := _1528395649_add_lsif_indexerUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395649_add_lsif_indexer.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xdc, 0x5, 0x46, 0x84, 0x83, 0xba, 0x13, 0xe2, 0xd7, 0x93, 0x76, 0x5d, 0xa0, 0xac, 0xc2, 0x20, 0xeb, 0x7b, 0x13, 0xa5, 0x70, 0xda, 0x74, 0x4f, 0xbb, 0x8, 0x90, 0x71, 0x8, 0x86, 0x9d, 0xc4}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1567,6 +1609,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395647_remove_label_events_from_changeset_events.up.sql":      _1528395647_remove_label_events_from_changeset_eventsUpSql,
 	"1528395648_add_external_branch_to_changesets.down.sql":            _1528395648_add_external_branch_to_changesetsDownSql,
 	"1528395648_add_external_branch_to_changesets.up.sql":              _1528395648_add_external_branch_to_changesetsUpSql,
+	"1528395649_add_lsif_indexer.down.sql":                             _1528395649_add_lsif_indexerDownSql,
+	"1528395649_add_lsif_indexer.up.sql":                               _1528395649_add_lsif_indexerUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1674,6 +1718,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395647_remove_label_events_from_changeset_events.up.sql":      {_1528395647_remove_label_events_from_changeset_eventsUpSql, map[string]*bintree{}},
 	"1528395648_add_external_branch_to_changesets.down.sql":            {_1528395648_add_external_branch_to_changesetsDownSql, map[string]*bintree{}},
 	"1528395648_add_external_branch_to_changesets.up.sql":              {_1528395648_add_external_branch_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395649_add_lsif_indexer.down.sql":                             {_1528395649_add_lsif_indexerDownSql, map[string]*bintree{}},
+	"1528395649_add_lsif_indexer.up.sql":                               {_1528395649_add_lsif_indexerUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
