@@ -22,6 +22,7 @@ interface Props extends Repo {
     // How many extra lines to show in the excerpt before/after the ref.
     context?: number
     highlightRanges: HighlightRange[]
+    lastSubsetMatchLineNumber: number
     className?: string
     isLightTheme: boolean
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
@@ -122,8 +123,23 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
 
     private getLastLine(blobLines: string[] | undefined): number {
         const contextLines = this.props.context || this.props.context === 0 ? this.props.context : 1
+
+        const highlightRangeLines = this.props.highlightRanges.map(r => r.line)
+        // The highest line number of all highlights.
+        const lastHighlightLineNumber = Math.max(...highlightRangeLines)
+        // If the highest highlight line number is greater than the line number of the last line number of the subsetMatches,
+        // then we know that there's at least one highlight in the context lines.
+        const contextLineHasHighlight = lastHighlightLineNumber > this.props.lastSubsetMatchLineNumber
+        const remainingContextLines = lastHighlightLineNumber - this.props.lastSubsetMatchLineNumber
+        const numberOfcontextLinesToShow = contextLineHasHighlight
+            ? contextLines - (remainingContextLines <= contextLines ? remainingContextLines : 0)
+            : contextLines
+
         // Of the matches in this excerpt, pick the one with the highest line number + lines of context.
-        const lastLine = Math.max(...this.props.highlightRanges.map(r => r.line)) + contextLines
+        // Don't add the context value to calculate the last line if the last highlight match is the highlight range + contextLines
+        const lastLine = contextLineHasHighlight
+            ? Math.max(...this.props.highlightRanges.map(r => r.line)) + numberOfcontextLinesToShow
+            : Math.max(...this.props.highlightRanges.map(r => r.line)) + contextLines
         // If there are lines, take the minimum of lastLine and the number of lines in the file,
         // so we don't try to display a line index beyond the maximum line number in the file.
         return blobLines ? Math.min(lastLine, blobLines.length) : lastLine
