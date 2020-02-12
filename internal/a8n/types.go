@@ -589,9 +589,7 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 			ChangesetReviewStateChangesRequested:
 			reviewsByAuthor[author] = s
 		case ChangesetReviewStateDismissed:
-			if _, ok := reviewsByAuthor[author]; ok {
-				delete(reviewsByAuthor, author)
-			}
+			delete(reviewsByAuthor, author)
 		}
 	}
 
