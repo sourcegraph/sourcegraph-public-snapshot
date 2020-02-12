@@ -200,6 +200,7 @@ const (
 	ChangesetReviewStateChangesRequested ChangesetReviewState = "CHANGES_REQUESTED"
 	ChangesetReviewStatePending          ChangesetReviewState = "PENDING"
 	ChangesetReviewStateCommented        ChangesetReviewState = "COMMENTED"
+	ChangesetReviewStateDismissed        ChangesetReviewState = "DISMISSED"
 )
 
 // ChangesetCheckState constants.
@@ -217,7 +218,8 @@ func (s ChangesetReviewState) Valid() bool {
 	case ChangesetReviewStateApproved,
 		ChangesetReviewStateChangesRequested,
 		ChangesetReviewStatePending,
-		ChangesetReviewStateCommented:
+		ChangesetReviewStateCommented,
+		ChangesetReviewStateDismissed:
 		return true
 	default:
 		return false
@@ -384,11 +386,8 @@ func (c *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		for _, ti := range m.TimelineItems {
-			if r, ok := ti.Item.(*github.PullRequestReview); ok {
-				states[ChangesetReviewState(r.State)] = true
-			}
-		}
+		// For GitHub we need to use `ChangesetEvents.ReviewState`
+		return "", errors.New("GitHub review state is calculated through events")
 	case *bitbucketserver.PullRequest:
 		for _, r := range m.Reviewers {
 			switch r.Status {
@@ -572,7 +571,16 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 	reviewsByActor := map[string]ChangesetReviewState{}
 
 	for _, e := range ce {
+		// TODO(a8n): What about BitbucketServer?
 		switch e.Type() {
+		case ChangesetEventKindGitHubReviewDismissed:
+			m, ok := e.Metadata.(*github.ReviewDismissedEvent)
+			if !ok {
+				return "", errors.New("Event is not a ReviewDismissedEvent")
+			}
+
+			author := m.Review.Author.Login
+			delete(reviewsByActor, author)
 		case ChangesetEventKindGitHubReviewed:
 			switch s, _ := e.ReviewState(); s {
 			case ChangesetReviewStateApproved,
@@ -789,6 +797,7 @@ func (e *ChangesetEvent) Actor() string {
 func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, bool) {
 	var s ChangesetReviewState
 
+	// TODO(a8n): What about BitbucketServer here?
 	review, ok := e.Metadata.(*github.PullRequestReview)
 	if !ok {
 		return s, false

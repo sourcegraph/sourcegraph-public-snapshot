@@ -280,6 +280,21 @@ func TestChangesetEventsReviewState(t *testing.T) {
 		}
 	}
 
+	ghReviewDismissed := func(t time.Time, login, reviewer string) *ChangesetEvent {
+		return &ChangesetEvent{
+			Kind: ChangesetEventKindGitHubReviewDismissed,
+			Metadata: &github.ReviewDismissedEvent{
+				CreatedAt: t,
+				Actor:     github.Actor{Login: login},
+				Review: github.PullRequestReview{
+					Author: github.Actor{
+						Login: reviewer,
+					},
+				},
+			},
+		}
+	}
+
 	tests := []struct {
 		events ChangesetEvents
 		want   ChangesetReviewState
@@ -352,6 +367,29 @@ func TestChangesetEventsReviewState(t *testing.T) {
 				ghReview(daysAgo(3), "user1", "CHANGES_REQUESTED"),
 				ghReview(daysAgo(2), "user2", "APPROVED"),
 				ghReview(daysAgo(0), "user1", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(0), "user2", "user1"),
+			},
+			want: ChangesetReviewStatePending,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(1), "user2", "user1"),
+				ghReview(daysAgo(0), "user1", "CHANGES_REQUESTED"),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(1), "user2", "user1"),
+				ghReview(daysAgo(0), "user3", "APPROVED"),
 			},
 			want: ChangesetReviewStateApproved,
 		},

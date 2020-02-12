@@ -213,8 +213,10 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				return err
 			}
 
-			// We only care about "Approved" or "ChangesRequested" reviews
-			if s != a8n.ChangesetReviewStateApproved && s != a8n.ChangesetReviewStateChangesRequested {
+			// We only care about "Approved", "ChangesRequested" or "Dismissed" reviews
+			if s != a8n.ChangesetReviewStateApproved &&
+				s != a8n.ChangesetReviewStateChangesRequested &&
+				s != a8n.ChangesetReviewStateDismissed {
 				continue
 			}
 
@@ -223,10 +225,16 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				return err
 			}
 
-			// Save current review state, then insert new review and recompute
-			// overall review state
+			// Save current review state, then insert new review or delete
+			// dismissed review, then recompute overall review state
 			oldReviewState := currentReviewState
-			lastReviewByAuthor[author] = s
+
+			if s == a8n.ChangesetReviewStateDismissed {
+				delete(lastReviewByAuthor, author)
+			} else {
+				lastReviewByAuthor[author] = s
+			}
+
 			newReviewState := computeReviewState(lastReviewByAuthor)
 
 			if newReviewState != oldReviewState {
@@ -237,17 +245,29 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				c.AddReviewState(newReviewState, 1)
 			}
 
-		case a8n.ChangesetEventKindBitbucketServerUnapproved:
+		case a8n.ChangesetEventKindBitbucketServerUnapproved,
+			a8n.ChangesetEventKindGitHubReviewDismissed:
 			author, err := reviewAuthor(e)
 			if err != nil {
 				return err
 			}
 
-			// A BitbucketServer Unapproved can only follow a previous Approved by
-			// the same author.
-			lastReview, ok := lastReviewByAuthor[author]
-			if !ok || lastReview != a8n.ChangesetReviewStateApproved {
-				return errors.New("Bitbucket Server Unapproval not following an Approval")
+			if e.Type() == a8n.ChangesetEventKindBitbucketServerUnapproved {
+				// A BitbucketServer Unapproved can only follow a previous Approved by
+				// the same author.
+				lastReview, ok := lastReviewByAuthor[author]
+				if !ok || lastReview != a8n.ChangesetReviewStateApproved {
+					return errors.New("Bitbucket Server Unapproval not following an Approval")
+				}
+			}
+
+			if e.Type() == a8n.ChangesetEventKindGitHubReviewDismissed {
+				// A GitHub Review Dismissed can only follow a previous review by
+				// the author of the review included in the event.
+				_, ok := lastReviewByAuthor[author]
+				if !ok {
+					return errors.New("GitHub review dismissal not following a review")
+				}
 			}
 
 			// Save current review state, then remove last approval and
@@ -327,6 +347,13 @@ func reviewAuthor(e Event) (string, error) {
 		login := meta.Author.Login
 		if login == "" {
 			return "", errors.New("review author is blank")
+		}
+		return login, nil
+
+	case *github.ReviewDismissedEvent:
+		login := meta.Review.Author.Login
+		if login == "" {
+			return "", errors.New("review author in dismissed event is blank")
 		}
 		return login, nil
 
