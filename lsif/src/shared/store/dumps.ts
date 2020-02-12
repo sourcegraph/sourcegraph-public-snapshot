@@ -157,6 +157,9 @@ export class DumpManager {
                 const results: { dump_id: number }[] = await entityManager.query(query, [repositoryId, commit, file])
                 const dumpIds = results.map(({ dump_id }) => dump_id)
 
+                // Deduplicate the ids while maintaining their original order. We keep a
+                // map as the marker for what entries we've seen. This runs in time linear
+                // to the result set.
                 const seen = new Map<number, boolean>()
                 const uniqueDumpIds = dumpIds.filter(dumpId => (seen.has(dumpId) ? false : seen.set(dumpId, true)))
                 if (uniqueDumpIds.length === 0) {
@@ -170,7 +173,9 @@ export class DumpManager {
                     .where('id IN (:...ids)', { ids: uniqueDumpIds })
                     .getMany()
 
-                // Ensure models are ordered the same way as the results of the query above
+                // Ensure models are ordered the same way as the results of the query above.
+                // So that we don't have a linear scan of the list on each comparison, we
+                // stash the relative index of each id in a map for fast lookup.
                 const indexes = new Map(uniqueDumpIds.map((id, i) => [id, i]))
                 dumps.sort((a, b) => (indexes.get(a.id) || 0) - (indexes.get(b.id) || 0))
                 return dumps
