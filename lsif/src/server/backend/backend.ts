@@ -206,7 +206,7 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDatabaseAndDump = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -247,7 +247,7 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ dump: pgModels.LsifDump; locations: InternalLocation[] } | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDatabaseAndDump = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -345,7 +345,7 @@ export class Backend {
             return { dump, locations: [] }
         }
 
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDatabaseAndDump = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -745,7 +745,7 @@ export class Backend {
      * @param dumpId The identifier of the dump to load.
      * @param ctx The tracing context.
      */
-    private async loadClosestDatabase(
+    private async closestDatabase(
         repositoryId: number,
         commit: string,
         path: string,
@@ -772,6 +772,8 @@ export class Backend {
      * dump can be found. Will also return a tracing context tagged with the closest commit found.
      * This new tracing context should be used in all downstream requests so that the original
      * commit and the effective commit are both known.
+     *
+     * This method returns databases ordered by commit distance.
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.

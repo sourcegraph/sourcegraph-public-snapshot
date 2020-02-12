@@ -115,6 +115,8 @@ export class DumpManager {
      * Return the dump 'closest' to the given target commit (a direct descendant or ancestor of
      * the target commit). If no closest commit can be determined, this method returns undefined.
      *
+     * This method returns dumps ordered by commit distance.
+     *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
      * @param file One of the files in the dump.

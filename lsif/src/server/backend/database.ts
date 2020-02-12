@@ -65,7 +65,7 @@ export class Database {
                     .getRawMany()
             )
 
-            return paths.map(p => p.path)
+            return paths.map(({ path }) => path)
         })
     }
 

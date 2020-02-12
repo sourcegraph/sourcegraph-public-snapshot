@@ -180,7 +180,7 @@ export class UploadManager {
             root: string
             /** The filename. */
             filename: string
-            /** The indexer that produced this dump. */
+            /** The indexer binary name that produced this dump as specified by the metadata. */
             indexer: string
         },
         tracer?: Tracer,

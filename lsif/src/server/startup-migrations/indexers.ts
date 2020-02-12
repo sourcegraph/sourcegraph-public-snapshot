@@ -54,9 +54,9 @@ export function assignIndexer(connection: Connection, ctx: TracingContext): Prom
             await Promise.all(batch.map(updateDump))
         }
 
-        await connectionCache.close()
-        await documentCache.close()
-        await resultChunkCache.close()
+        await connectionCache.flush()
+        await documentCache.flush()
+        await resultChunkCache.flush()
     })
 }
 

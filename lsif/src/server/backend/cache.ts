@@ -104,7 +104,7 @@ export class GenericCache<K, V> {
     /**
      * Remove all values from the cache.
      */
-    public async close(): Promise<void> {
+    public async flush(): Promise<void> {
         await Promise.all(Array.from(this.cache.keys()).map(key => this.bustKey(key)))
     }
 
