@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // ChangesetCounts represents the states in which a given set of Changesets was
@@ -261,7 +262,8 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				// the same author.
 				lastReview, ok := lastReviewByAuthor[author]
 				if !ok || lastReview != a8n.ChangesetReviewStateApproved {
-					return errors.New("Bitbucket Server Unapproval not following an Approval")
+					log15.Warn("Bitbucket Server Unapproval not following an Approval", "event", e)
+					continue
 				}
 			}
 
@@ -270,7 +272,8 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				// the author of the review included in the event.
 				_, ok := lastReviewByAuthor[author]
 				if !ok {
-					return errors.New("GitHub review dismissal not following a review")
+					log15.Warn("GitHub review dismissal not following a review", "event", e)
+					continue
 				}
 			}
 

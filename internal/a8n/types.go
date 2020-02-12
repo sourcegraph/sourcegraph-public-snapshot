@@ -1,7 +1,6 @@
 package a8n
 
 import (
-	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -388,7 +388,9 @@ func (c *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		// For GitHub we need to use `ChangesetEvents.ReviewState`
-		return "", errors.New("GitHub review state is calculated through events")
+		log15.Warn("Changeset.ReviewState() called, but GitHub review state is calculated through ChangesetEvents.ReviewState", "changeset", c)
+		return ChangesetReviewStatePending, nil
+
 	case *bitbucketserver.PullRequest:
 		for _, r := range m.Reviewers {
 			switch r.Status {
@@ -841,7 +843,9 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 
 		s := ChangesetReviewState(review.State)
 		if !s.Valid() {
-			return s, fmt.Errorf("invalid review state: %s", review.State)
+			// Ignore invalid states
+			log15.Warn("invalid review state", "state", review.State)
+			return ChangesetReviewStatePending, nil
 		}
 		return s, nil
 
