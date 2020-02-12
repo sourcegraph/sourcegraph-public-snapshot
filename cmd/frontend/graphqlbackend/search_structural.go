@@ -56,7 +56,13 @@ func StructuralPatToRegexpQuery(pattern string, shortcircuit bool) (zoektquery.Q
 	if len(pieces) == 0 {
 		return &zoektquery.Const{Value: true}, nil
 	}
-	rs := "(" + strings.Join(pieces, ")(.|\\s)*?(") + ")"
+	var rs string
+	if shortcircuit {
+		// As a shortcircuit, do not match across newlines of structural search pieces.
+		rs = "(" + strings.Join(pieces, ").*?(") + ")"
+	} else {
+		rs = "(" + strings.Join(pieces, ")(.|\\s)*?(") + ")"
+	}
 	re, _ := syntax.Parse(rs, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 	children = append(children, &zoektquery.Regexp{
 		Regexp:        re,
@@ -92,6 +98,16 @@ func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 	return zoektquery.NewAnd(and...), nil
 }
 
+func buildQuery(args *search.TextParameters, newRepoSet *zoektquery.RepoSet, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
+	q, err := StructuralPatToRegexpQuery(args.PatternInfo.Pattern, shortcircuit)
+	if err != nil {
+		return nil, err
+	}
+	q = zoektquery.NewAnd(newRepoSet, filePathPatterns, q)
+	q = zoektquery.Simplify(q)
+	return q, nil
+}
+
 // zoektSearchHEADOnlyFiles searches repositories using zoekt, returning only the file paths containing
 // content matching the given pattern.
 //
@@ -103,7 +119,6 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, nil
 	}
 
-	// Tell zoekt which repos to search
 	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
 	repoMap := make(map[api.RepoName]*search.RepositoryRevisions, len(repos))
 	for _, repoRev := range repos {
@@ -137,14 +152,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		defer cancel()
 	}
 
-	shortcircuit := false
-	q, err := StructuralPatToRegexpQuery(args.PatternInfo.Pattern, shortcircuit)
-	if err != nil {
-		return nil, false, nil, err
-	}
-
 	filePathPatterns, err := HandleFilePathPatterns(args.PatternInfo)
-	q = zoektquery.NewAnd(filePathPatterns, q)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -155,24 +163,43 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, err
 	}
 
-	q = zoektquery.NewAnd(newRepoSet, q)
-	q = zoektquery.Simplify(q)
-
 	t0 := time.Now()
+	q, err := buildQuery(args, newRepoSet, filePathPatterns, true)
+	if err != nil {
+		return nil, false, nil, err
+	}
 	resp, err := args.Zoekt.Client.Search(ctx, q, &searchOpts)
 	if err != nil {
 		return nil, false, nil, err
 	}
-	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
+	if since(t0) >= searchOpts.MaxWallTime {
 		return nil, false, nil, errNoResultsInTimeout
 	}
-	limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
-	// Repositories that weren't fully evaluated because they hit the Zoekt or Sourcegraph file match limits.
+
+	// We always return approximate results (limitHit true) unless we run the branch to perform a more complete search.
+	limitHit = true
+	// If the previous indexed search did not return a substantial number of matching file candidates or count was
+	// manually specified, run a more complete and expensive search.
+	if resp.FileCount < 10 || args.PatternInfo.FileMatchLimit != defaultMaxSearchResults {
+		q, err = buildQuery(args, newRepoSet, filePathPatterns, false)
+		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
+		if err != nil {
+			return nil, false, nil, err
+		}
+		if since(t0) >= searchOpts.MaxWallTime {
+			return nil, false, nil, errNoResultsInTimeout
+		}
+		// This is the only place limitHit can be set false, meaning we covered everything.
+		limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
+	}
+
+	if len(resp.Files) == 0 {
+		return nil, false, nil, nil
+	}
+
+	// Zoekt did not evaluate some files in repositories or ignored some repositories. Record skipped repos.
 	reposLimitHit = make(map[string]struct{})
 	if limitHit {
-		// Zoekt either did not evaluate some files in repositories, or ignored some repositories altogether.
-		// In this case, we can't be sure that we have exhaustive results for _any_ repository. So, all file
-		// matches are from repos with potentially skipped matches.
 		for _, file := range resp.Files {
 			if _, ok := reposLimitHit[file.Repository]; !ok {
 				reposLimitHit[file.Repository] = struct{}{}
@@ -180,28 +207,19 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		}
 	}
 
-	if len(resp.Files) == 0 {
-		return nil, false, nil, nil
-	}
-
-	if limit := int(args.PatternInfo.FileMatchLimit); len(resp.Files) > limit {
-		// List of files we cut out from the Zoekt response because they exceed the file match limit on the Sourcegraph end.
-		// We use this to get a list of repositories that do not have complete results.
-		fileMatchesInSkippedRepos := resp.Files[limit:]
-		resp.Files = resp.Files[:limit]
+	if fileMatchLimit := int(args.PatternInfo.FileMatchLimit); len(resp.Files) > fileMatchLimit {
+		// Trim files based on count.
+		fileMatchesInSkippedRepos := resp.Files[fileMatchLimit:]
+		resp.Files = resp.Files[:fileMatchLimit]
 
 		if !limitHit {
-			// Zoekt evaluated all files and repositories, but Zoekt returned more file matches
-			// than the limit we set on Sourcegraph, so we cut out more results.
-
-			// Generate a list of repositories that had results cut because they exceeded the file match limit set on Sourcegraph.
+			// Record skipped repos with trimmed files.
 			for _, file := range fileMatchesInSkippedRepos {
 				if _, ok := reposLimitHit[file.Repository]; !ok {
 					reposLimitHit[file.Repository] = struct{}{}
 				}
 			}
 		}
-
 		limitHit = true
 	}
 
