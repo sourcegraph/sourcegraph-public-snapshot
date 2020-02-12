@@ -393,16 +393,31 @@ func TestChangesetEventsReviewState(t *testing.T) {
 			},
 			want: ChangesetReviewStateApproved,
 		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(0), "user1", "DISMISSED"),
+			},
+			want: ChangesetReviewStatePending,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(1), "user1", "DISMISSED"),
+				ghReview(daysAgo(0), "user3", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
 	}
 
-	for _, tc := range tests {
+	for i, tc := range tests {
 		have, err := tc.events.ReviewState()
 		if err != nil {
 			t.Fatalf("got error: %s", err)
 		}
 
 		if have, want := have, tc.want; have != want {
-			t.Errorf("wrong reviewstate. have=%s, want=%s", have, want)
+			t.Errorf("%d: wrong reviewstate. have=%s, want=%s", i, have, want)
 		}
 	}
 }

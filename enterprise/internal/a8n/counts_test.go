@@ -1167,7 +1167,7 @@ func TestCalcCounts(t *testing.T) {
 			events: []Event{
 				ghReview(1, daysAgo(2), "user1", "APPROVED"),
 				ghReview(1, daysAgo(1), "user2", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "user3", "user2"),
+				ghReviewDismissed(1, daysAgo(0), "user3", "user2"),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},

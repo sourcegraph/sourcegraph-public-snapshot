@@ -1,6 +1,7 @@
 package a8n
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -568,30 +569,34 @@ func (ce ChangesetEvents) Less(i, j int) bool {
 // ReviewState returns the overall review state of the review events in the
 // slice
 func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
-	reviewsByActor := map[string]ChangesetReviewState{}
+	reviewsByAuthor := map[string]ChangesetReviewState{}
 
 	for _, e := range ce {
-		// TODO(a8n): What about BitbucketServer?
-		switch e.Type() {
-		case ChangesetEventKindGitHubReviewDismissed:
-			m, ok := e.Metadata.(*github.ReviewDismissedEvent)
-			if !ok {
-				return "", errors.New("Event is not a ReviewDismissedEvent")
-			}
+		author, err := e.ReviewAuthor()
+		if err != nil {
+			return "", err
+		}
+		if author == "" {
+			continue
+		}
+		s, err := e.ReviewState()
+		if err != nil {
+			return "", err
+		}
 
-			author := m.Review.Author.Login
-			delete(reviewsByActor, author)
-		case ChangesetEventKindGitHubReviewed:
-			switch s, _ := e.ReviewState(); s {
-			case ChangesetReviewStateApproved,
-				ChangesetReviewStateChangesRequested:
-				reviewsByActor[e.Actor()] = s
+		switch s {
+		case ChangesetReviewStateApproved,
+			ChangesetReviewStateChangesRequested:
+			reviewsByAuthor[author] = s
+		case ChangesetReviewStateDismissed:
+			if _, ok := reviewsByAuthor[author]; ok {
+				delete(reviewsByAuthor, author)
 			}
 		}
 	}
 
 	states := make(map[ChangesetReviewState]bool)
-	for _, s := range reviewsByActor {
+	for _, s := range reviewsByAuthor {
 		states[s] = true
 	}
 	return SelectReviewState(states), nil
@@ -793,21 +798,61 @@ func (e *ChangesetEvent) Actor() string {
 	return a
 }
 
+// ReviewAuthor returns the author of the review if the ChangesetEvent is related to a review.
+func (e *ChangesetEvent) ReviewAuthor() (string, error) {
+	switch meta := e.Metadata.(type) {
+	case *github.PullRequestReview:
+		login := meta.Author.Login
+		if login == "" {
+			return "", errors.New("review author is blank")
+		}
+		return login, nil
+
+	case *github.ReviewDismissedEvent:
+		login := meta.Review.Author.Login
+		if login == "" {
+			return "", errors.New("review author in dismissed event is blank")
+		}
+		return login, nil
+
+	case *bitbucketserver.Activity:
+		username := meta.User.Name
+		if username == "" {
+			return "", errors.New("activity user is blank")
+		}
+		return username, nil
+	default:
+		return "", nil
+	}
+}
+
 // ReviewState returns the review state of the ChangesetEvent if it is a review event.
-func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, bool) {
-	var s ChangesetReviewState
+func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
+	switch e.Kind {
+	case ChangesetEventKindBitbucketServerApproved:
+		return ChangesetReviewStateApproved, nil
 
-	// TODO(a8n): What about BitbucketServer here?
-	review, ok := e.Metadata.(*github.PullRequestReview)
-	if !ok {
-		return s, false
-	}
+	case ChangesetEventKindBitbucketServerReviewed:
+		return ChangesetReviewStateChangesRequested, nil
 
-	s = ChangesetReviewState(review.State)
-	if !s.Valid() {
-		return s, false
+	case ChangesetEventKindGitHubReviewed:
+		review, ok := e.Metadata.(*github.PullRequestReview)
+		if !ok {
+			return "", errors.New("ChangesetEvent metadata event not PullRequestReview")
+		}
+
+		s := ChangesetReviewState(review.State)
+		if !s.Valid() {
+			return s, fmt.Errorf("invalid review state: %s", review.State)
+		}
+		return s, nil
+
+	case ChangesetEventKindGitHubReviewDismissed:
+		return ChangesetReviewStateDismissed, nil
+
+	default:
+		return ChangesetReviewStatePending, nil
 	}
-	return s, true
 }
 
 // Type returns the ChangesetEventKind of the ChangesetEvent.
