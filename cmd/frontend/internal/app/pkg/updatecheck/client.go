@@ -104,6 +104,19 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (*json.RawMessage, err
 	return &message, nil
 }
 
+func getAndMarshalAutomationUsageJSON(ctx context.Context) (*json.RawMessage, error) {
+	automationUsage, err := usagestats.GetAutomationUsageStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(automationUsage)
+	if err != nil {
+		return nil, err
+	}
+	message := json.RawMessage(contents)
+	return &message, nil
+}
+
 func updateURL(ctx context.Context) string {
 	return baseURL.String()
 }
@@ -156,6 +169,10 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
+	automationUsage, err := getAndMarshalAutomationUsageJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalAutomationUsageJSON failed", "error", err)
+	}
 
 	contents, err := json.Marshal(&pingRequest{
 		ClientSiteID:         siteid.Get(),
@@ -173,6 +190,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		HasRepos:             hasRepos,
 		EverSearched:         hasRepos && searchOccurred, // Searches only count if repos have been added.
 		EverFindRefs:         findRefsOccurred,
+		AutomationUsage:      automationUsage,
 	})
 	if err != nil {
 		return nil, err
