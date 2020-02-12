@@ -280,6 +280,21 @@ func TestChangesetEventsReviewState(t *testing.T) {
 		}
 	}
 
+	ghReviewDismissed := func(t time.Time, login, reviewer string) *ChangesetEvent {
+		return &ChangesetEvent{
+			Kind: ChangesetEventKindGitHubReviewDismissed,
+			Metadata: &github.ReviewDismissedEvent{
+				CreatedAt: t,
+				Actor:     github.Actor{Login: login},
+				Review: github.PullRequestReview{
+					Author: github.Actor{
+						Login: reviewer,
+					},
+				},
+			},
+		}
+	}
+
 	tests := []struct {
 		events ChangesetEvents
 		want   ChangesetReviewState
@@ -355,16 +370,54 @@ func TestChangesetEventsReviewState(t *testing.T) {
 			},
 			want: ChangesetReviewStateApproved,
 		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(0), "user2", "user1"),
+			},
+			want: ChangesetReviewStatePending,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(1), "user2", "user1"),
+				ghReview(daysAgo(0), "user1", "CHANGES_REQUESTED"),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(1), "user2", "user1"),
+				ghReview(daysAgo(0), "user3", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(0), "user1", "DISMISSED"),
+			},
+			want: ChangesetReviewStatePending,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(1), "user1", "DISMISSED"),
+				ghReview(daysAgo(0), "user3", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
 	}
 
-	for _, tc := range tests {
+	for i, tc := range tests {
 		have, err := tc.events.ReviewState()
 		if err != nil {
 			t.Fatalf("got error: %s", err)
 		}
 
 		if have, want := have, tc.want; have != want {
-			t.Errorf("wrong reviewstate. have=%s, want=%s", have, want)
+			t.Errorf("%d: wrong reviewstate. have=%s, want=%s", i, have, want)
 		}
 	}
 }

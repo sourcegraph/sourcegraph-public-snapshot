@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -200,6 +201,7 @@ const (
 	ChangesetReviewStateChangesRequested ChangesetReviewState = "CHANGES_REQUESTED"
 	ChangesetReviewStatePending          ChangesetReviewState = "PENDING"
 	ChangesetReviewStateCommented        ChangesetReviewState = "COMMENTED"
+	ChangesetReviewStateDismissed        ChangesetReviewState = "DISMISSED"
 )
 
 // ChangesetCheckState constants.
@@ -217,7 +219,8 @@ func (s ChangesetReviewState) Valid() bool {
 	case ChangesetReviewStateApproved,
 		ChangesetReviewStateChangesRequested,
 		ChangesetReviewStatePending,
-		ChangesetReviewStateCommented:
+		ChangesetReviewStateCommented,
+		ChangesetReviewStateDismissed:
 		return true
 	default:
 		return false
@@ -384,11 +387,10 @@ func (c *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		for _, ti := range m.TimelineItems {
-			if r, ok := ti.Item.(*github.PullRequestReview); ok {
-				states[ChangesetReviewState(r.State)] = true
-			}
-		}
+		// For GitHub we need to use `ChangesetEvents.ReviewState`
+		log15.Warn("Changeset.ReviewState() called, but GitHub review state is calculated through ChangesetEvents.ReviewState", "changeset", c)
+		return ChangesetReviewStatePending, nil
+
 	case *bitbucketserver.PullRequest:
 		for _, r := range m.Reviewers {
 			switch r.Status {
@@ -569,21 +571,32 @@ func (ce ChangesetEvents) Less(i, j int) bool {
 // ReviewState returns the overall review state of the review events in the
 // slice
 func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
-	reviewsByActor := map[string]ChangesetReviewState{}
+	reviewsByAuthor := map[string]ChangesetReviewState{}
 
 	for _, e := range ce {
-		switch e.Type() {
-		case ChangesetEventKindGitHubReviewed:
-			switch s, _ := e.ReviewState(); s {
-			case ChangesetReviewStateApproved,
-				ChangesetReviewStateChangesRequested:
-				reviewsByActor[e.Actor()] = s
-			}
+		author, err := e.ReviewAuthor()
+		if err != nil {
+			return "", err
+		}
+		if author == "" {
+			continue
+		}
+		s, err := e.ReviewState()
+		if err != nil {
+			return "", err
+		}
+
+		switch s {
+		case ChangesetReviewStateApproved,
+			ChangesetReviewStateChangesRequested:
+			reviewsByAuthor[author] = s
+		case ChangesetReviewStateDismissed:
+			delete(reviewsByAuthor, author)
 		}
 	}
 
 	states := make(map[ChangesetReviewState]bool)
-	for _, s := range reviewsByActor {
+	for _, s := range reviewsByAuthor {
 		states[s] = true
 	}
 	return SelectReviewState(states), nil
@@ -785,20 +798,63 @@ func (e *ChangesetEvent) Actor() string {
 	return a
 }
 
+// ReviewAuthor returns the author of the review if the ChangesetEvent is related to a review.
+func (e *ChangesetEvent) ReviewAuthor() (string, error) {
+	switch meta := e.Metadata.(type) {
+	case *github.PullRequestReview:
+		login := meta.Author.Login
+		if login == "" {
+			return "", errors.New("review author is blank")
+		}
+		return login, nil
+
+	case *github.ReviewDismissedEvent:
+		login := meta.Review.Author.Login
+		if login == "" {
+			return "", errors.New("review author in dismissed event is blank")
+		}
+		return login, nil
+
+	case *bitbucketserver.Activity:
+		username := meta.User.Name
+		if username == "" {
+			return "", errors.New("activity user is blank")
+		}
+		return username, nil
+	default:
+		return "", nil
+	}
+}
+
 // ReviewState returns the review state of the ChangesetEvent if it is a review event.
-func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, bool) {
-	var s ChangesetReviewState
+func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
+	switch e.Kind {
+	case ChangesetEventKindBitbucketServerApproved:
+		return ChangesetReviewStateApproved, nil
 
-	review, ok := e.Metadata.(*github.PullRequestReview)
-	if !ok {
-		return s, false
-	}
+	case ChangesetEventKindBitbucketServerReviewed:
+		return ChangesetReviewStateChangesRequested, nil
 
-	s = ChangesetReviewState(review.State)
-	if !s.Valid() {
-		return s, false
+	case ChangesetEventKindGitHubReviewed:
+		review, ok := e.Metadata.(*github.PullRequestReview)
+		if !ok {
+			return "", errors.New("ChangesetEvent metadata event not PullRequestReview")
+		}
+
+		s := ChangesetReviewState(review.State)
+		if !s.Valid() {
+			// Ignore invalid states
+			log15.Warn("invalid review state", "state", review.State)
+			return ChangesetReviewStatePending, nil
+		}
+		return s, nil
+
+	case ChangesetEventKindGitHubReviewDismissed:
+		return ChangesetReviewStateDismissed, nil
+
+	default:
+		return ChangesetReviewStatePending, nil
 	}
-	return s, true
 }
 
 // Type returns the ChangesetEventKind of the ChangesetEvent.
