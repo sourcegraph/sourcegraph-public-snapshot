@@ -650,7 +650,9 @@ func jitterDuration(key string, d time.Duration) time.Duration {
 	_, _ = io.WriteString(h, key)
 	r := time.Duration(h.Sum64())
 	if r < 0 {
-		r = -r
+		// +1 because we have one more negative value than positive. ie
+		// math.MinInt64 == -math.MinInt64.
+		r = -(r + 1)
 	}
 	return r % d
 }
