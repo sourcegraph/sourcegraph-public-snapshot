@@ -52,8 +52,8 @@ export class LsifUpload {
     /**
      * The type of indexer used to produce the dump.
      */
-    @Column('text', { nullable: true })
-    public indexer!: string | undefined
+    @Column('text')
+    public indexer!: string
 
     /**
      * The temporary file the upload data is stored. As the file is deleted after

@@ -1,6 +1,8 @@
 BEGIN;
 
 ALTER TABLE lsif_uploads ADD COLUMN indexer TEXT;
+UPDATE lsif_uploads SET indexer = '';
+ALTER TABLE lsif_uploads ALTER COLUMN indexer SET NOT NULL;
 
 -- Recreate view with new column names
 DROP VIEW lsif_dumps;
