@@ -191,6 +191,16 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 			return err
 		}
 
+		err = s.client.LoadPullRequestCommits(ctx, pr)
+		if err != nil {
+			return err
+		}
+
+		err = s.client.LoadPullRequestBuildStatuses(ctx, pr)
+		if err != nil {
+			return err
+		}
+
 		cs[i].Changeset.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
 		cs[i].Changeset.Metadata = pr
 	}
