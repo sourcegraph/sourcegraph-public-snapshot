@@ -151,6 +151,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!isSiteInit && (
                 <GlobalNavbar
                     {...props}
+                    isSearchRelatedPage={isSearchRelatedPage || false}
                     lowProfile={isSearchHomepage}
                     hideGlobalSearchInput={hideGlobalSearchInput}
                     hideNavLinks={false}

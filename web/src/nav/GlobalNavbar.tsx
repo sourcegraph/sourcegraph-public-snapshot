@@ -50,6 +50,7 @@ interface Props
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
+    isSearchRelatedPage: boolean
     showCampaigns: boolean
 
     /**
@@ -106,33 +107,9 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         this.subscriptions.add(authRequired.subscribe(authRequired => this.setState({ authRequired })))
     }
 
-    private isNonSearchRelatedPage = (): boolean => {
-        const allPaths = [
-            ...routes,
-            ...enterpriseRoutes,
-            { path: '/user/(.*)' },
-            { path: '/users/(.*)' },
-            { path: '/orgs/(.*)' },
-            { path: '/extensions/(.*)' },
-            { path: '/site-admin/(.*)' },
-        ]
-
-        const nonSearchOrRepoRoutes = allPaths
-            .map(route => route.path)
-            .filter(path => path !== '/search' && path !== '/:repoRevAndRest+')
-
-        for (const route of nonSearchOrRepoRoutes) {
-            const pathIsNonSearchRelated = matchPath(this.props.location.pathname, { path: route, exact: true })
-            if (pathIsNonSearchRelated) {
-                return true
-            }
-        }
-        return false
-    }
-
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.location !== this.props.location) {
-            if (this.isNonSearchRelatedPage()) {
+            if (!this.props.isSearchRelatedPage) {
                 this.props.onNavbarQueryChange({ query: '', cursorPosition: 0 })
                 this.props.onFiltersInQueryChange({})
             }
@@ -217,7 +194,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                     authRequired={this.state.authRequired}
                                     navbarSearchState={this.props.navbarSearchQueryState}
                                     onNavbarQueryChange={this.props.onNavbarQueryChange}
-                                    lowProfile={this.isNonSearchRelatedPage()}
+                                    lowProfile={!this.props.isSearchRelatedPage}
                                 />
                             )
                         ) : (
