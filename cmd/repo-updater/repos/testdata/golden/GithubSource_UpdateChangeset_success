@@ -59,12 +59,14 @@
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzOTAzMDI4MzY=",
          "Status": "QUEUED",
-         "Conclusion": ""
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z"
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzOTAzMDI4Mzc=",
          "Status": "QUEUED",
-         "Conclusion": ""
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z"
         }
        ]
       },
@@ -167,12 +169,14 @@
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzOTAzMDI4MzY=",
          "Status": "QUEUED",
-         "Conclusion": ""
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z"
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzOTAzMDI4Mzc=",
          "Status": "QUEUED",
-         "Conclusion": ""
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z"
         }
        ]
       },
@@ -186,5 +190,5 @@
    ]
   },
   "CreatedAt": "2020-01-08T15:59:11Z",
-  "UpdatedAt": "2020-02-11T15:54:08Z"
+  "UpdatedAt": "2020-02-12T10:50:08Z"
  }

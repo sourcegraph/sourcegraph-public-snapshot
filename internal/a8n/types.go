@@ -642,6 +642,10 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 					delete(statusPerContext, k)
 				}
 			}
+		case *github.CheckSuite:
+			if m.ReceivedAt.After(lastSynced) {
+				statusPerCheckSuite[m.ID] = parseGithubCheckSuiteState(m.Status, m.Conclusion)
+			}
 		}
 	}
 
@@ -874,6 +878,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = e.CreatedAt
 	case *github.CommitStatus:
 		t = e.ReceivedAt
+	case *github.CheckSuite:
+		return e.ReceivedAt
 	case *bitbucketserver.Activity:
 		t = unixMilliToTime(int64(e.CreatedDate))
 	}
@@ -1257,6 +1263,8 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitHubLabeled
 	case *github.CommitStatus:
 		return ChangesetEventKindCommitStatus
+	case *github.CheckSuite:
+		return ChangesetEventKindCheckSuite
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
 	default:
@@ -1304,6 +1312,8 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 			return &github.LabelEvent{Removed: true}, nil
 		case ChangesetEventKindCommitStatus:
 			return new(github.CommitStatus), nil
+		case ChangesetEventKindCheckSuite:
+			return new(github.CheckSuite), nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
@@ -1332,6 +1342,7 @@ const (
 	ChangesetEventKindGitHubLabeled              ChangesetEventKind = "github:labeled"
 	ChangesetEventKindGitHubUnlabeled            ChangesetEventKind = "github:unlabeled"
 	ChangesetEventKindCommitStatus               ChangesetEventKind = "github:commit_status"
+	ChangesetEventKindCheckSuite                 ChangesetEventKind = "github:check_suite"
 
 	ChangesetEventKindBitbucketServerApproved   ChangesetEventKind = "bitbucketserver:approved"
 	ChangesetEventKindBitbucketServerUnapproved ChangesetEventKind = "bitbucketserver:unapproved"

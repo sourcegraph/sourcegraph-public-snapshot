@@ -72,7 +72,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 11 Feb 2020 15:52:34 GMT
+      - Wed, 12 Feb 2020 10:47:43 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -92,15 +92,15 @@ interactions:
       X-Github-Media-Type:
       - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - F28D:12A86:A9211:D339B:5E42CDC2
+      - 3BC3:0B66:18A3C57:1DD85F4:5E43D7CF
       X-Oauth-Scopes:
       - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "3621"
+      - "4964"
       X-Ratelimit-Reset:
-      - "1581438081"
+      - "1581508040"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -177,7 +177,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 11 Feb 2020 15:52:35 GMT
+      - Wed, 12 Feb 2020 10:47:44 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -197,15 +197,15 @@ interactions:
       X-Github-Media-Type:
       - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - F28D:12A86:A929F:D3429:5E42CDC2
+      - 3BC3:0B66:18A3CFF:1DD8661:5E43D7CF
       X-Oauth-Scopes:
       - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "3618"
+      - "4961"
       X-Ratelimit-Reset:
-      - "1581438081"
+      - "1581508040"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -467,7 +467,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 11 Feb 2020 15:52:36 GMT
+      - Wed, 12 Feb 2020 10:47:45 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -487,15 +487,15 @@ interactions:
       X-Github-Media-Type:
       - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - F28D:12A86:A930E:D34AD:5E42CDC3
+      - 3BC3:0B66:18A3D53:1DD8720:5E43D7D0
       X-Oauth-Scopes:
       - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "3606"
+      - "4949"
       X-Ratelimit-Reset:
-      - "1581438081"
+      - "1581508040"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK

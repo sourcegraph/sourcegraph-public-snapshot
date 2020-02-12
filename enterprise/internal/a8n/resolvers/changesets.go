@@ -230,7 +230,6 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 }
 
 func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheckState, error) {
-	// TODO: Webhooks for GitHub CheckSuites
 	// TODO: Support BitBucket
 	// TODO: Support webhooks for BitBucket
 	events, err := r.computeEvents(ctx)

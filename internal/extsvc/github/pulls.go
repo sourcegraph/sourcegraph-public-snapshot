@@ -52,6 +52,12 @@ type CheckSuite struct {
 	Status string
 	// On of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
 	Conclusion string
+	ReceivedAt time.Time
+}
+
+func (c *CheckSuite) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Status, c.Conclusion, c.ReceivedAt.UnixNano())
+	return strconv.FormatUint(fnv1.HashString64(key), 16)
 }
 
 // A Commit in a Repository.

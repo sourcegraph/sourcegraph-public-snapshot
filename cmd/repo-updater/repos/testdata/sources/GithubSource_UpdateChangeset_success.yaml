@@ -57,7 +57,7 @@ interactions:
     method: POST
   response:
     body: '{"data":{"updatePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0","title":"This
-      is a new title","body":"This is a new body","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/91","number":91,"createdAt":"2020-01-08T15:59:11Z","updatedAt":"2020-02-11T15:54:08Z","headRefOid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-1578499147","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[{"name":"enhancement","color":"a2eeef","description":"New
+      is a new title","body":"This is a new body","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/91","number":91,"createdAt":"2020-01-08T15:59:11Z","updatedAt":"2020-02-12T10:50:08Z","headRefOid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-1578499147","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[{"name":"enhancement","color":"a2eeef","description":"New
       feature or request","id":"MDU6TGFiZWwxNjcxNTU2OTI5"},{"name":"good first issue","color":"7057ff","description":"Good
       for newcomers","id":"MDU6TGFiZWwxNjcxNTU2OTMw"},{"name":"help wanted","color":"008672","description":"Extra
       attention is needed","id":"MDU6TGFiZWwxNjcxNTU2OTMx"}]},"commits":{"nodes":[{"commit":{"oid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzOTAzMDI4MzY=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzOTAzMDI4Mzc=","status":"QUEUED","conclusion":null}]},"committedDate":"2020-01-08T15:59:07Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzOTAzMDI4MzY=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzOTAzMDI4Mzc=","status":"QUEUED","conclusion":null}]},"committedDate":"2020-01-08T15:59:07Z"}},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"boring
@@ -80,7 +80,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 11 Feb 2020 15:54:08 GMT
+      - Wed, 12 Feb 2020 10:50:08 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -100,7 +100,7 @@ interactions:
       X-Github-Media-Type:
       - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - F2FA:12A86:B4525:E0F9B:5E42CE1F
+      - 5B19:36836:17E2DCD:1CEE3EC:5E43D85F
       X-Oauth-Scopes:
       - read:org, repo
       X-Xss-Protection:
