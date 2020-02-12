@@ -58,7 +58,7 @@ For detailed instructions and troubleshooting, see the [local development docume
 
 ### Documentation
 
-The `docs` folder has additional documentation for developing and understanding Sourcegraph:
+The `doc` directory has additional documentation for developing and understanding Sourcegraph:
 
 - [Project FAQ](./doc/admin/faq.md)
 - [Architecture](./doc/dev/architecture/index.md): high-level architecture
