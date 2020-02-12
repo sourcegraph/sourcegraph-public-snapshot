@@ -63,9 +63,9 @@ The `docs` folder has additional documentation for developing and understanding 
 - [Project FAQ](./doc/admin/faq.md)
 - [Architecture](./doc/dev/architecture/index.md): high-level architecture
 - [Database setup](./doc/dev/postgresql.md): database setup and best practices
-- [General style guide](./doc/team/style_guide.md)
-- [Go style guide](./doc/dev/go_style_guide.md)
-- [Documentation style guide](./team/product-dev/documentation/style_guide.md)
+- [General style guide](https://about.sourcegraph.com/handbook/communication/style_guide)
+- [Go style guide](https://about.sourcegraph.com/handbook/engineering/go_style_guide)
+- [Documentation style guide](https://about.sourcegraph.com/handbook/documentation)
 - [GraphQL API](./doc/dev/graphql_api.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
 
