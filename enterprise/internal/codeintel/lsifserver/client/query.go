@@ -188,7 +188,7 @@ func (c *Client) Hover(ctx context.Context, args *struct {
 	query.Set("path", args.Path)
 	query.SetInt("line", int64(args.Line))
 	query.SetInt("character", int64(args.Character))
-	query.SetInt("uploadID", int64(args.UploadID))
+	query.SetInt("uploadId", int64(args.UploadID))
 
 	req := &lsifRequest{
 		path:  fmt.Sprintf("/hover"),
