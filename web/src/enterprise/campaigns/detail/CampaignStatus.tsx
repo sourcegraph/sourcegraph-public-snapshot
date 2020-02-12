@@ -51,48 +51,53 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                     </p>
                 </div>
             )}
-            {campaign.__typename === 'Campaign' && !campaign.closedAt && !campaign.publishedAt && (
+            {campaign.__typename === 'Campaign' && (
                 <>
-                    <div className="d-flex my-3">
-                        <InformationIcon className="icon-inline text-info mr-1" /> Campaign is a draft.{' '}
-                        {campaign.changesets.totalCount === 0
-                            ? 'No changesets have'
-                            : 'Only a subset of changesets has'}{' '}
-                        been created on code hosts yet.
-                    </div>
-                    {campaign.viewerCanAdminister && (
-                        <button type="button" className="mb-3 btn btn-primary" onClick={onPublish}>
-                            Publish campaign
-                        </button>
+                    {!campaign.closedAt && !campaign.publishedAt && (
+                        <>
+                            <div className="d-flex my-3">
+                                <InformationIcon className="icon-inline text-info mr-1" /> Campaign is a draft.{' '}
+                                {campaign.changesets.totalCount === 0
+                                    ? 'No changesets have'
+                                    : 'Only a subset of changesets has'}{' '}
+                                been created on code hosts yet.
+                            </div>
+                            {campaign.viewerCanAdminister && (
+                                <button type="button" className="mb-3 btn btn-primary" onClick={onPublish}>
+                                    Publish campaign
+                                </button>
+                            )}
+                        </>
+                    )}
+                    {campaign.closedAt ? (
+                        <div className="d-flex my-3">
+                            <WarningIcon className="icon-inline text-warning mr-1" /> Campaign is closed
+                        </div>
+                    ) : (
+                        status.pendingCount + status.completedCount > 0 &&
+                        status.state === GQL.BackgroundProcessState.COMPLETED &&
+                        !creationCompletedLongAgo && (
+                            <div className="d-flex my-3">
+                                <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />{' '}
+                                Creation completed
+                            </div>
+                        )
                     )}
                 </>
             )}
-            {campaign.__typename === 'Campaign' && campaign.closedAt ? (
-                <div className="d-flex my-3">
-                    <WarningIcon className="icon-inline text-warning mr-1" /> Campaign is closed
-                </div>
-            ) : (
-                status.pendingCount + status.completedCount > 0 &&
-                status.state !== GQL.BackgroundProcessState.PROCESSING &&
-                !creationCompletedLongAgo && (
-                    <div className="d-flex my-3">
-                        {status.state === GQL.BackgroundProcessState.COMPLETED && (
-                            <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />
-                        )}
-                        {status.state === GQL.BackgroundProcessState.ERRORED && (
-                            <AlertCircleIcon className="icon-inline text-danger mr-1" />
-                        )}{' '}
-                        {campaign.__typename === 'Campaign' ? 'Creation' : 'Preview'} {status.state.toLocaleLowerCase()}
-                    </div>
-                )
+            {status.state === GQL.BackgroundProcessState.ERRORED && (
+                <>
+                    <AlertCircleIcon className="icon-inline text-danger mr-1" />
+                    Creation errored
+                </>
             )}
             {status.errors.map((error, i) => (
                 // There is no other suitable key, so:
                 // eslint-disable-next-line react/no-array-index-key
                 <ErrorAlert error={error} className="mt-3" key={i} />
             ))}
-            {status.state === GQL.BackgroundProcessState.ERRORED &&
-                campaign?.__typename === 'Campaign' &&
+            {campaign.__typename === 'Campaign' &&
+                status.state === GQL.BackgroundProcessState.ERRORED &&
                 !campaign.closedAt &&
                 campaign.viewerCanAdminister && (
                     <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
