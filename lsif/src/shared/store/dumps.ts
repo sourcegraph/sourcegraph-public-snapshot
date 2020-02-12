@@ -156,8 +156,9 @@ export class DumpManager {
             return withInstrumentedTransaction(this.connection, async entityManager => {
                 const results: { dump_id: number }[] = await entityManager.query(query, [repositoryId, commit, file])
                 const dumpIds = results.map(({ dump_id }) => dump_id)
-                const uniqueDumpIds = dumpIds.filter((dumpId, pos) => dumpIds.indexOf(dumpId) === pos)
 
+                const seen = new Map<number, boolean>()
+                const uniqueDumpIds = dumpIds.filter(dumpId => (seen.has(dumpId) ? false : seen.set(dumpId, true)))
                 if (uniqueDumpIds.length === 0) {
                     return []
                 }
@@ -170,7 +171,8 @@ export class DumpManager {
                     .getMany()
 
                 // Ensure models are ordered the same way as the results of the query above
-                dumps.sort((a, b) => uniqueDumpIds.indexOf(a.id) - uniqueDumpIds.indexOf(b.id))
+                const indexes = new Map(uniqueDumpIds.map((id, i) => [id, i]))
+                dumps.sort((a, b) => (indexes.get(a.id) || 0) - (indexes.get(b.id) || 0))
                 return dumps
             })
         })
