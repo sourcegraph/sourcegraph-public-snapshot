@@ -147,7 +147,7 @@ const SiteSchemaJSON = `{
       "group": "Security"
     },
     "disableNonCriticalTelemetry": {
-      "description": "Disable aggregated event counts from being sent back via pings.",
+      "description": "Disable aggregated event counts from being sent to Sourcegraph.com via pings.",
       "type": "boolean",
       "default": false,
       "group": "Misc."
