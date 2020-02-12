@@ -141,6 +141,12 @@
       "default": false,
       "group": "Security"
     },
+    "disableNonCriticalTelemetry": {
+      "description": "Disable aggregated event counts from being sent to Sourcegraph.com via pings.",
+      "type": "boolean",
+      "default": false,
+      "group": "Misc."
+    },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",

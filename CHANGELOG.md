@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - experimentalFeatures.splitSearchModes was removed as a site configuration option. It should be set in global/org/user settings.
 - Sourcegraph now waits for `90s` instead of `5s` for Redis to be available before quitting. This duration is configurable with the new `SRC_REDIS_WAIT_FOR` environment variable.
+- Code intelligence usage statistics will be sent back via pings by default. Aggregated event counts can be disabled via the site admin flag `disableNonCriticalTelemetry`.
 - The Sourcegraph Docker image optimized its use of Redis to make start-up significantly faster in certain scenarios (e.g when container restarts were frequent). ([#3300](https://github.com/sourcegraph/sourcegraph/issues/3300), [#2904](https://github.com/sourcegraph/sourcegraph/issues/2904))
 - Upgrading Sourcegraph is officially supported for one minor version increment (e.g., 3.12 -> 3.13). Previously, upgrades from 2 minor versions previous were supported. Please reach out to support@sourcegraph.com if you would like assistance upgrading from a much older version of Sourcegraph.
 - The GraphQL mutation `previewCampaignPlan` has been renamed to `createCampaignPlan`. This mutation is part of Automation, which is still in beta and behind a feature flag and thus subject to possible breaking changes while we still work on it.
