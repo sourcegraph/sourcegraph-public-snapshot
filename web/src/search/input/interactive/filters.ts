@@ -2,32 +2,10 @@ import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/ut
 import { Suggestion } from '../Suggestion'
 import { assign } from 'lodash/fp'
 import { FilterTypes } from '../../../../../shared/src/search/interactive/util'
+import { getFilterDefinition } from '../../../../../shared/src/search/parser/filters'
 
 /** FilterTypes which have a finite number of valid options. */
 export type FiniteFilterTypes = FilterTypes.archived | FilterTypes.fork | FilterTypes.type
-
-export function isTextFilter(filter: FilterTypes): boolean {
-    const validTextFilters = [
-        'repo',
-        'repogroup',
-        'repohasfile',
-        'repohascommitafter',
-        'file',
-        'lang',
-        'count',
-        'timeout',
-        'before',
-        'after',
-        'message',
-        'author',
-        '-repo',
-        '-repohasfile',
-        '-file',
-        '-lang',
-    ]
-
-    return validTextFilters.includes(filter)
-}
 
 export const finiteFilters: Record<
     FiniteFilterTypes,
@@ -70,7 +48,11 @@ export const finiteFilters: Record<
 }
 
 export const isFiniteFilter = (filter: FilterTypes): filter is FiniteFilterTypes =>
-    ['archived', 'fork', 'type'].includes(filter)
+    !!getFilterDefinition(filter) && ['fork', 'archived', 'type'].includes(filter)
+
+export function isTextFilter(filter: FilterTypes): boolean {
+    return !!getFilterDefinition(filter) && !isFiniteFilter(filter)
+}
 
 /**
  * Some filter types should have their suggestions searched without influence
