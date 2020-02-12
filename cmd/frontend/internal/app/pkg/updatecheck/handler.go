@@ -166,6 +166,7 @@ type pingRequest struct {
 	HasRepos             bool             `json:"repos"`
 	EverSearched         bool             `json:"searched"`
 	EverFindRefs         bool             `json:"refs"`
+	AutomationUsage      *json.RawMessage `json:"automationUsage"`
 }
 
 // readPingRequest reads the ping request payload from the request. If the
