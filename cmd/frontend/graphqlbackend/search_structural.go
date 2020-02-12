@@ -164,8 +164,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	}
 
 	t0 := time.Now()
-	shortcircuit := true
-	q, err := buildQuery(args, newRepoSet, filePathPatterns, shortcircuit)
+	q, err := buildQuery(args, newRepoSet, filePathPatterns, true)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -182,8 +181,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	// If the previous indexed search did not return a substantial number of matching file candidates or count was
 	// manually specified, run a more complete and expensive search.
 	if resp.FileCount < 10 || args.PatternInfo.FileMatchLimit != defaultMaxSearchResults {
-		shortcircuit := false
-		q, err = buildQuery(args, newRepoSet, filePathPatterns, shortcircuit)
+		q, err = buildQuery(args, newRepoSet, filePathPatterns, false)
 		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
 		if err != nil {
 			return nil, false, nil, err
