@@ -47,6 +47,9 @@ Object {
           expandedCounts={true}
         />
       </span>
+      <span
+        className="ml-1 changeset-node__check-status d-flex justify-content-end"
+      />
     </div>
   </div>,
   "className": "list-group-item e2e-changeset-node",
@@ -105,6 +108,9 @@ Object {
           expandedCounts={true}
         />
       </span>
+      <span
+        className="ml-1 changeset-node__check-status d-flex justify-content-end"
+      />
       <React.Fragment>
         <button
           className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
@@ -201,6 +207,14 @@ Object {
             changed={200}
             deleted={100}
             expandedCounts={true}
+          />
+        </span>
+        <span
+          className="ml-1 changeset-node__check-status d-flex justify-content-end"
+        >
+          <Memo(ErrorIcon)
+            className="text-danger"
+            data-tooltip="Some checks failed"
           />
         </span>
       </div>

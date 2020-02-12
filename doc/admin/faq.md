@@ -62,6 +62,24 @@ If you are keen for more details on what bare Git repositories are, [check out t
 
 The directories should contain just a few files and directories, namely: HEAD, config, description, hooks, info, objects, packed-refs, refs
 
+## Does Sourcegraph support svn?
+
+Sourcegraph natively supports Git repositories, but Subversion repositories can be indexed through
+`git svn` or other svn-to-git translation tools. Here is a rough outline of how to make a Subversion
+repository available on Sourcegraph:
+
+1. Convert the Subversion repository to Git using [`git svn`](https://git-scm.com/docs/git-svn). For
+   larger repositories, `git svn` may take
+   awhile. [`svn2git`](https://github.com/svn-all-fast-export/svn2git) is a faster alternative that
+   can be run as a Docker container.
+1. Once the Subversion repository is converted to a Git repository, push it to a Git code host that
+   is accessible by Sourcegraph. If you do not have a Git code host, you can [set up a simple Git
+   server](https://www.linux.com/tutorials/how-run-your-own-git-server/) or run
+   [GitLab](https://about.gitlab.com/install/), which is free and open-source.
+1. Connect Sourcegraph to your Git code host and [configure
+   it](https://docs.sourcegraph.com/admin/external_service) to index your converted Subversion
+   repositories.
+
 ## Troubleshooting
 
 Content moved to a [dedicated troubleshooting page](troubleshooting.md).

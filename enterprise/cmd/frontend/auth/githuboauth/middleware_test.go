@@ -117,7 +117,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGitHubCom.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "repo user:email read:org"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "user:email repo read:org"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -150,7 +150,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGHE.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "repo user:email read:org"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "user:email repo read:org"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -183,7 +183,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGitHubCom.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "repo user:email read:org"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "user:email repo read:org"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -280,6 +280,7 @@ func newMockProvider(t *testing.T, clientID, clientSecret, baseURL string) *Mock
 		Url:          baseURL,
 		ClientSecret: clientSecret,
 		ClientID:     clientID,
+		AllowOrgs:    []string{"myorg"},
 	}}
 	mp.Provider, problems = parseProvider(cfg.Github, cfg)
 	if len(problems) > 0 {

@@ -7,17 +7,17 @@ import { getProviders } from '../../../../shared/src/search/parser/providers'
 import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
 import { fetchSuggestions } from '../backend'
 import { toArray, map, distinctUntilChanged, publishReplay, refCount } from 'rxjs/operators'
-import { RegexpToggle, RegexpToggleProps } from './RegexpToggle'
-import { CaseSensitivityToggle } from './CaseSensitivityToggle'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { CaseSensitivityProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps } from '..'
+import { Toggles, TogglesProps } from './toggles/Toggles'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 export interface MonacoQueryInputProps
-    extends Omit<RegexpToggleProps, 'navbarSearchQuery'>,
+    extends Omit<TogglesProps, 'navbarSearchQuery'>,
         ThemeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        PatternTypeProps {
     location: H.Location
     history: H.History
     queryState: QueryState
@@ -211,15 +211,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                         border={false}
                     ></MonacoEditor>
                 </div>
-                <CaseSensitivityToggle
-                    {...this.props}
-                    navbarSearchQuery={this.props.queryState.query}
-                ></CaseSensitivityToggle>
-                <RegexpToggle
-                    {...this.props}
-                    navbarSearchQuery={this.props.queryState.query}
-                    className="monaco-query-input-container__regexp-toggle"
-                ></RegexpToggle>
+                <Toggles {...this.props} navbarSearchQuery={this.props.queryState.query} />
             </div>
         )
     }

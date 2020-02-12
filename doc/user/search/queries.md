@@ -1,17 +1,63 @@
 # Search query syntax
 
 <style>
+tr td:nth-child(1) {
+  min-width:175px;
+}
+
 tr td:nth-child(3) {
   min-width: 250px;
 }
 tr td:nth-child(3) code {
   word-break: break-all;
 }
+
+img {
+  border: 1px solid !important;
+  border-radius: 2px;
+  width: 18px;
+}
 </style>
 
-Search queries can consist of just words, and you'll see results where those words appear in order, in all files across all repositories. Many queries will also use keywords. Keywords help to filter searches, define the type of search, and more. This page is a comprehensive list of keywords available for code search.
+This page describes search pattern syntax and keywords available for code search. A typical search pattern describes content or filenames to find across all repositories. At the most basic level, a search pattern can simply be a word like `hello`. See our [search patterns](#search-patterns) documentation for detailed usage. Queries can also include keywords. For example, a typical search query will include a `repo:` keyword that filters search results for a specific repository. See our [keywords](#keywords-all-searches) documentation for more examples.
 
-As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. Site admins and users can change their instance and personal default behavior by changing the `search.defaultPatternType` setting to "literal" or "regexp". To toggle regexp search, you can click the dot-star icon in the search input, or use the `patterntype:` keyword in your search.
+## Search pattern syntax
+
+This section documents the available search pattern syntax and interpretation in Sourcegraph. A search pattern is _required_ to match file content. A search pattern is _optional_ and may be omitted when searching for [commits](#keywords-diff-and-commit-searches-only), [filenames](#filename-search), or [repository names](#repository-name-search).
+
+### Literal search (default)
+
+Literal search interprets search patterns literally to simplify searching for words or punctuation. 
+
+| Search pattern syntax | Description |
+| --- | --- | 
+| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal) | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`. Matching is case-_insensitive_ (toggle the <img src=../img/case.png> button to change). | |
+| [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=literal) | Match the string `"foo bar"`. The quotes are matched literally. |
+
+
+As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. To change the default search, site admins and users can change their instance and personal default by setting `search.defaultPatternType` to `"literal"` or `"regexp"`. 
+
+### Regexp search 
+
+Click the <img src=../img/regex.png> toggle to interpret search patterns as regexps. [RE2 syntax](https://golang.org/s/re2syntax) is supported. In general, special characters may be escaped with `\`. Here is a list of valid syntax and behavior:
+
+| Search pattern syntax | Description |
+| --- | --- |
+| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=regexp) | Search for the regexp `foo(.*?)bar`. Spaces between non-whitespace strings is converted to `.*?` to create a fuzzy search. Matching is case _insensitive_ (toggle the <img src=../img/case.png> button to change). |
+| [`foo\ bar`](https://sourcegraph.com/search?q=foo%5C+bar&patternType=regexp) or<br/>[`/foo bar/`](https://sourcegraph.com/search?q=/foo+bar/&patternType=regexp) | Search for the regexp `foo bar`. The `\` escapes the space and treats the space as part of the pattern. Using the delimiter syntax `/ ... /` avoids the need for escaping spaces. |
+| [`foo\nbar`](https://sourcegraph.com/search?q=foo%5Cnbar&patternType=regexp) | Perform a multiline regexp search. `\n` is interpreted as a newline. |
+| [`"foo bar"`](https://sourcegraph.com/search?q=%27foo+bar%27&patternType=regexp) | Match the _string literal_ `foo bar`. Quoting strings when regexp is active means patterns are interpreted [literally](#literal-search-default), except that special characters like `"` and `\` may be escaped, and whitespace escape sequences like `\n` are interpreted normally. |
+
+### Structural search
+
+Click the <img src=../img/brackets.png> toggle to activate [structural search](structural.md). Structural search is a way to match more complex syntactic structures in code, and thus only applies to matching file contents. See the dedicated [usage documentation](structural.md) for more details. Here is a  brief overview of valid syntax:
+
+| Search pattern syntax | Description |
+| --- | --- |
+| [`New(:[args])`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28:%5Bargs%5D%29+lang:go&patternType=structural) | Match the string `New` followed by _balanced parentheses_ containing zero or more characters, including newlines. Matching is _case-sensitive_. Make the search [language-aware](structural.md#current-functionality-and-restrictions) by adding a `lang:` [keyword](#keywords-all-searches). | 
+| [`"New(:[args])"`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%22New%28:%5Bargs%5D%29%22+lang:go&patternType=structural) or<br/> [`'New(:[args])'`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%27New%28:%5Bargs%5D%29%27+lang:go&patternType=structural) | Quoting the search pattern has the same meaning as `New(:[args])`, but avoids syntax errors that may conflict with [keyword syntax](#keywords-all-searches). Special characters like `"` and `\` may be escaped. |
+
+Note: It is not possible to perform case-insensitive matching with structural search. 
 
 ## Keywords (all searches)
 
@@ -19,9 +65,6 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 
 | Keyword | Description | Examples |
 | --- | --- | --- |
-| **any-string**| Strings are matched exactly, including whitespace and punctuation. | [`open(props`](https://sourcegraph.com/search?q=open%28props&patternType=literal) |
-| **patterntype:literal, patterntype:structural, patterntype:regexp**  | Configure your query to be interpreted literally, as a regular expression, or a [structural search pattern](structural.md).| [`test. patternType:literal`](https://sourcegraph.com/search?q=test.+patternType:literal)<br/>[`(open\|close)file patternType:regexp`](https://sourcegraph.com/search?q=%28open%7Cclose%29file&patternType=regexp) |
-| **"any string"**  | When using `patterntype:regexp`, double-quote a string to find exact matches. Supports `\"` and `\\` escapes. | [`"*string" patternType:regexp`](https://sourcegraph.com/search?q=%22*string%22&patternType=regexp) |
 | **repo:regexp-pattern** <br> **repo:regexp-pattern@rev** <br> _alias: r_  | Only include results from repositories whose path matches the regexp. A repository's path is a string such as _github.com/myteam/abc_ or _code.example.com/xyz_ that depends on your organization's repository host. If the regexp ends in **@rev**, that revision is searched instead of the default branch (usually `master`).  | [`repo:gorilla/mux testroute`](https://sourcegraph.com/search?q=repo:gorilla/mux+testroute)<br/>`repo:alice/abc@mybranch`  |
 | **-repo:regexp-pattern** <br> _alias: -r_ | Exclude results from repositories whose path matches the regexp. | `repo:alice/ -repo:old-repo` |
 | **repogroup:group-name** <br> _alias: g_ | Only include results from the named group of repositories (defined by the server admin). Same as using a repo: keyword that matches all of the group's repositories. Use repo: unless you know that the group exists. | |
@@ -38,6 +81,8 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 | **repohascommitafter:"string specifying time frame"** | (Experimental) Filter out stale repositories that don't contain commits past the specified time frame. | [`repohascommitafter:"last thursday"`](https://sourcegraph.com/search?q=error+repohascommitafter:%22last+thursday%22) <br> [`repohascommitafter:"june 25 2017"`](https://sourcegraph.com/search?q=error+repohascommitafter:%22june+25+2017%22) |
 | **count:_N_**<br/> | Retrieve at least <em>N</em> results. By default, Sourcegraph stops searching early and returns if it finds a full page of results. This is desirable for most interactive searches. To wait for all results, or to see results beyond the first page, use the **count:** keyword with a larger <em>N</em>. This can also be used to get deterministic results and result ordering (whose order isn't dependent on the variable time it takes to perform the search). | [`count:1000 function`](https://sourcegraph.com/search?q=count:1000+repo:sourcegraph/sourcegraph$+function) |
 | **timeout:_go-duration-value_**<br/> | Customizes the timeout for searches. The value of the parameter is a string that can be parsed by the [Go time package's `ParseDuration`](https://golang.org/pkg/time/#ParseDuration) (e.g. 10s, 100ms). By default, the timeout is set to 10 seconds, and the search will optimize for returning results as soon as possible. The timeout value cannot be set longer than 1 minute. When provided, the search is given the full timeout to complete. | [`repo:^github.com/sourcegraph timeout:15s func count:10000`](https://sourcegraph.com/search?q=repo:%5Egithub.com/sourcegraph/+timeout:15s+func+count:10000) |
+| **patterntype:literal, patterntype:regexp, patterntype:structural**  | Configure your query to be interpreted literally, as a regular expression, or a [structural search pattern](structural.md). Note: this keyword is available as an accessibility option in addition to the visual toggles. | [`test. patternType:literal`](https://sourcegraph.com/search?q=test.+patternType:literal)<br/>[`(open\|close)file patternType:regexp`](https://sourcegraph.com/search?q=%28open%7Cclose%29file&patternType=regexp) |
+
 
 Multiple or combined **repo:** and **file:** keywords are intersected. For example, `repo:foo repo:bar` limits your search to repositories whose path contains **both** _foo_ and _bar_ (such as _github.com/alice/foobar_). To include results from repositories whose path contains **either** _foo_ or _bar_, use `repo:foo|bar`.
 

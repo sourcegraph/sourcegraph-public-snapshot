@@ -141,16 +141,16 @@ tslint.config.js @sourcegraph/web
 /web/**/campaigns/** @sourcegraph/automation-web @mrnugget @sourcegraph/web
 
 # Auth
-/cmd/frontend/auth/ @beyang
-/cmd/frontend/internal/auth/ @beyang
-/cmd/frontend/internal/session/ @beyang
-/cmd/frontend/external/session/session.go @beyang
-/enterprise/cmd/frontend/auth @beyang
-/enterprise/dev/auth-provider @beyang
-/cmd/frontend/graphqlbackend/*session* @beyang
-/cmd/frontend/graphqlbackend/*auth* @beyang
-/cmd/frontend/graphqlbackend/access_token.go @beyang
-/internal/actor/ @beyang
+/cmd/frontend/auth/ @beyang @unknwon
+/cmd/frontend/internal/auth/ @beyang @unknwon
+/cmd/frontend/internal/session/ @beyang @unknwon
+/cmd/frontend/external/session/session.go @beyang @unknwon
+/enterprise/cmd/frontend/auth @beyang @unknwon
+/enterprise/dev/auth-provider @beyang @unknwon
+/cmd/frontend/graphqlbackend/*session* @beyang @unknwon
+/cmd/frontend/graphqlbackend/*auth* @beyang @unknwon
+/cmd/frontend/graphqlbackend/access_token.go @beyang @unknwon
+/internal/actor/ @beyang @unknwon
 
 # Core Services
 *git*/* @sourcegraph/core-services
@@ -176,8 +176,8 @@ tslint.config.js @sourcegraph/web
 /cmd/frontend/authz/ @sourcegraph/core-services
 /enterprise/cmd/frontend/internal/authz @sourcegraph/core-services
 # authz overrides (still owned by beyang for now)
-/enterprise/cmd/frontend/internal/authz/*github* @beyang
-/enterprise/cmd/frontend/internal/authz/*gitlab* @beyang
+/enterprise/cmd/frontend/internal/authz/*github* @beyang @unknwon
+/enterprise/cmd/frontend/internal/authz/*gitlab* @beyang @unknwon
 
 # Symbols
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel

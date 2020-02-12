@@ -1,42 +1,57 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CloseDeleteCampaignPrompt renders 1`] = `
-<div
-  className="c"
->
-  <div
-    className="card mt-1"
+<React.Fragment>
+  <details
+    className="campaign-prompt__details"
   >
+    <summary>
+      <span
+        className="btn btn-secondary dropdown-toggle"
+      >
+        Close
+      </span>
+    </summary>
     <div
-      className="card-body"
+      className="position-absolute campaign-prompt__details-menu"
     >
-      <p>
-        message
-      </p>
       <div
-        className="form-group"
+        className="card mt-1"
       >
-        <input
-          checked={true}
-          onChange={[Function]}
-          type="checkbox"
-        />
-         
-        Close all 
-        2
-         
-        changesets
-         on code hosts
+        <div
+          className="card-body"
+        >
+          <p>
+            message
+          </p>
+          <div
+            className="form-group"
+          >
+            <label>
+              <input
+                checked={false}
+                onChange={[Function]}
+                type="checkbox"
+              />
+               
+              Close all 
+              2
+               
+              changesets
+               on code hosts
+            </label>
+          </div>
+          <button
+            className="btn mr-1 btn-danger"
+            disabled={false}
+            onClick={[Function]}
+            type="button"
+          >
+            Delete
+          </button>
+        </div>
       </div>
-      <button
-        className="btn mr-1 btn-danger"
-        disabled={false}
-        onClick={[Function]}
-        type="button"
-      >
-        Delete
-      </button>
     </div>
-  </div>
-</div>
+  </details>
+</React.Fragment>
 `;

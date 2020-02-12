@@ -27,6 +27,7 @@ interface ConduitURI extends PhabEntity {
             display: string // e.g. https://secure.phabricator.com/source/phabricator.git",
             effective: string // e.g. https://secure.phabricator.com/source/phabricator.git",
             normalized: string // e.g. secure.phabricator.com/source/phabricator",
+            disabled: boolean
         }
     }
 }
@@ -359,19 +360,18 @@ async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabr
 }
 
 function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
-    let uri: ConduitURI | undefined
-    for (const u of repo.attachments.uris.uris) {
-        const normalPath = u.fields.uri.normalized.replace('\\', '')
-        if (normalPath.startsWith(window.location.host + '/')) {
-            continue
-        }
-        uri = u
-        break
-    }
-    if (!uri) {
+    const enabledURIs = repo.attachments.uris.uris
+        // Filter out disabled URIs
+        .filter(({ fields }) => !fields.uri.disabled)
+        .map(({ fields }) => ({
+            isExternalURI: !fields.uri.normalized.replace('\\', '').startsWith(window.location.host + '/'),
+            rawURI: fields.uri.raw,
+        }))
+    if (enabledURIs.length === 0) {
         return null
     }
-    const rawURI = uri.fields.uri.raw
+    // Use the external URI if there is one, otherwise use the first enabled URI.
+    const { rawURI } = enabledURIs.find(({ isExternalURI }) => isExternalURI) ?? enabledURIs[0]
     const rawRepoName = normalizeRepoName(rawURI)
     return { callsign: repo.fields.callsign, rawRepoName }
 }

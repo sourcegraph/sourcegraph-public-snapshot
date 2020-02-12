@@ -21212,17 +21212,19 @@ Array [
           Edit
         </button>
         <details
-          className="campaign-details__details"
+          className="campaign-prompt__details"
         >
           <summary>
             <span
-              className="btn btn-secondary mr-1 dropdown-toggle"
+              className="btn btn-secondary mr-1 dropdown-toggle disabled"
+              data-tooltip="Cannot close while campaign is being created"
+              onClick={[Function]}
             >
               Close
             </span>
           </summary>
           <div
-            className="position-absolute campaign-details__details-menu"
+            className="position-absolute campaign-prompt__details-menu"
           >
             <div
               className="card mt-1"
@@ -21232,29 +21234,31 @@ Array [
               >
                 <p>
                   Close campaign 
-                  <b>
+                  <strong>
                     n
-                  </b>
+                  </strong>
                   ?
                 </p>
                 <div
                   className="form-group"
                 >
-                  <input
-                    checked={false}
-                    onChange={[Function]}
-                    type="checkbox"
-                  />
-                   
-                  Close all 
-                  2
-                   
-                  changesets
-                   on code hosts
+                  <label>
+                    <input
+                      checked={false}
+                      onChange={[Function]}
+                      type="checkbox"
+                    />
+                     
+                    Close all 
+                    2
+                     
+                    changesets
+                     on code hosts
+                  </label>
                 </div>
                 <button
                   className="btn mr-1 btn-secondary"
-                  disabled={false}
+                  disabled={true}
                   onClick={[Function]}
                   type="button"
                 >
@@ -21265,17 +21269,19 @@ Array [
           </div>
         </details>
         <details
-          className="campaign-details__details"
+          className="campaign-prompt__details"
         >
           <summary>
             <span
-              className="btn btn-danger dropdown-toggle"
+              className="btn btn-danger dropdown-toggle disabled"
+              data-tooltip="Cannot delete while campaign is being created"
+              onClick={[Function]}
             >
               Delete
             </span>
           </summary>
           <div
-            className="position-absolute campaign-details__details-menu"
+            className="position-absolute campaign-prompt__details-menu"
           >
             <div
               className="card mt-1"
@@ -21293,21 +21299,23 @@ Array [
                 <div
                   className="form-group"
                 >
-                  <input
-                    checked={false}
-                    onChange={[Function]}
-                    type="checkbox"
-                  />
-                   
-                  Close all 
-                  2
-                   
-                  changesets
-                   on code hosts
+                  <label>
+                    <input
+                      checked={false}
+                      onChange={[Function]}
+                      type="checkbox"
+                    />
+                     
+                    Close all 
+                    2
+                     
+                    changesets
+                     on code hosts
+                  </label>
                 </div>
                 <button
                   className="btn mr-1 btn-danger"
-                  disabled={false}
+                  disabled={true}
                   onClick={[Function]}
                   type="button"
                 >

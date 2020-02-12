@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -260,6 +261,9 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		if ext := path.Ext(fileMatchPath); ext != "" {
 			language := extensionToLanguageLookup(fileMatchPath)
 			if language != "" {
+				if strings.Contains(language, " ") {
+					language = strconv.Quote(language)
+				}
 				value := fmt.Sprintf(`lang:%s`, language)
 				add(value, value, lineMatchCount, limitHit, "lang")
 			}
@@ -859,8 +863,14 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, res *SearchResultsResolver, err error) {
 	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
+		if errors.Is(err, authz.ErrStalePermissions{}) {
+			log15.Debug("searchResolver.determineRepos", "err", err)
+			alert := r.alertForStalePermissions(ctx)
+			return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		}
 		return nil, nil, nil, err
 	}
+
 	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
 	if len(repos) == 0 {
 		alert, err := r.alertForNoResolvedRepos(ctx)
@@ -977,6 +987,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	options := &getPatternInfoOptions{}
 	if r.patternType == SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
+		forceOnlyResultType = "file"
 	}
 	p, err := r.getPatternInfo(options)
 

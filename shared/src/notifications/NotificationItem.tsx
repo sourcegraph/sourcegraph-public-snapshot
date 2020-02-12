@@ -107,7 +107,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     )}
                 </div>
                 {this.props.notification.progress && this.state.progress && (
-                    <div className="progress">
+                    <div className="sourcegraph-notification-item__progress progress">
                         <div
                             className="sourcegraph-notification-item__progressbar progress-bar"
                             // eslint-disable-next-line react/forbid-dom-props

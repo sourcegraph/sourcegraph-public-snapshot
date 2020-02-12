@@ -1,7 +1,6 @@
 package githuboauth
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
@@ -42,6 +41,7 @@ func Test_parseConfig(t *testing.T) {
 						DisplayName:  "GitHub",
 						Type:         "github",
 						Url:          "https://github.com",
+						AllowOrgs:    []string{"myorg"},
 					},
 				}},
 			}}},
@@ -53,6 +53,7 @@ func Test_parseConfig(t *testing.T) {
 						DisplayName:  "GitHub",
 						Type:         "github",
 						Url:          "https://github.com",
+						AllowOrgs:    []string{"myorg"},
 					},
 					Provider: provider("https://github.com/", oauth2.Config{
 						ClientID:     "my-client-id",
@@ -61,7 +62,7 @@ func Test_parseConfig(t *testing.T) {
 							AuthURL:  "https://github.com/login/oauth/authorize",
 							TokenURL: "https://github.com/login/oauth/access_token",
 						},
-						Scopes: []string{"repo", "user:email", "read:org"},
+						Scopes: []string{"user:email", "repo", "read:org"},
 					}),
 				},
 			},
@@ -76,6 +77,7 @@ func Test_parseConfig(t *testing.T) {
 						DisplayName:  "GitHub",
 						Type:         "github",
 						Url:          "https://github.com",
+						AllowOrgs:    []string{"myorg"},
 					},
 				}, {
 					Github: &schema.GitHubAuthProvider{
@@ -95,6 +97,7 @@ func Test_parseConfig(t *testing.T) {
 						DisplayName:  "GitHub",
 						Type:         "github",
 						Url:          "https://github.com",
+						AllowOrgs:    []string{"myorg"},
 					},
 					Provider: provider("https://github.com/", oauth2.Config{
 						ClientID:     "my-client-id",
@@ -103,7 +106,7 @@ func Test_parseConfig(t *testing.T) {
 							AuthURL:  "https://github.com/login/oauth/authorize",
 							TokenURL: "https://github.com/login/oauth/access_token",
 						},
-						Scopes: []string{"repo", "user:email", "read:org"},
+						Scopes: []string{"user:email", "repo", "read:org"},
 					}),
 				},
 				{
@@ -121,7 +124,7 @@ func Test_parseConfig(t *testing.T) {
 							AuthURL:  "https://mycompany.com/login/oauth/authorize",
 							TokenURL: "https://mycompany.com/login/oauth/access_token",
 						},
-						Scopes: []string{"repo", "user:email", "read:org"},
+						Scopes: []string{"user:email", "repo"},
 					}),
 				},
 			},
@@ -141,11 +144,11 @@ func Test_parseConfig(t *testing.T) {
 					q.SourceConfig = schema.AuthProviders{Github: p.GitHubAuthProvider}
 				}
 			}
-			if !reflect.DeepEqual(gotProviders, tt.wantProviders) {
-				t.Error(cmp.Diff(gotProviders, tt.wantProviders))
+			if diff := cmp.Diff(tt.wantProviders, gotProviders); diff != "" {
+				t.Errorf("providers: %s", diff)
 			}
-			if !reflect.DeepEqual(gotProblems.Messages(), tt.wantProblems) {
-				t.Errorf("parseConfig() gotProblems = %v, want %v", gotProblems, tt.wantProblems)
+			if diff := cmp.Diff(tt.wantProblems, gotProblems.Messages()); diff != "" {
+				t.Errorf("problems: %s", diff)
 			}
 		})
 	}

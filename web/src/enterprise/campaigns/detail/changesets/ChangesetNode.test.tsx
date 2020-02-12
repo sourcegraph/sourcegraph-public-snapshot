@@ -7,6 +7,7 @@ import {
     ChangesetReviewState,
     ChangesetState,
     IExternalChangeset,
+    ChangesetCheckState,
 } from '../../../../../../shared/src/graphql/schema'
 import { Subject } from 'rxjs'
 
@@ -77,6 +78,7 @@ describe('ChangesetNode', () => {
                         },
                         title: 'Remove lodash',
                         body: 'We should remove lodash',
+                        checkState: ChangesetCheckState.FAILED,
                         diff: {
                             fileDiffs: {
                                 diffStat: {
