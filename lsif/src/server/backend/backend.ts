@@ -773,7 +773,7 @@ export class Backend {
      * This new tracing context should be used in all downstream requests so that the original
      * commit and the effective commit are both known.
      *
-     * This method returns databases ordered by commit distance.
+     * This method returns databases ordered by commit distance (nearest first).
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.

@@ -9,6 +9,12 @@ import { dbFilename } from '../../shared/paths'
 import { createSilentLogger } from '../../shared/logging'
 import { chunk } from 'lodash'
 
+/**
+ * How many databases to search in parallel. This value limits the number of open
+ * SQLite handles, which could probably be much higher. There are only a few hundred
+ * (at most) active dumps per instance at this point, so we don't need to go crazy
+ * here either.
+ */
 const CONCURRENCY_LEVEL = 20
 
 /**
