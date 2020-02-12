@@ -610,10 +610,33 @@ func ComputeCheckState(c *Changeset, events []*ChangesetEvent) *ChangesetCheckSt
 		return computeGitHubCheckState(c.UpdatedAt, m, events)
 
 	case *bitbucketserver.PullRequest:
-		// TODO
+		return computeBitbucketBuildStatus(m)
 	}
 
 	return nil
+}
+
+func computeBitbucketBuildStatus(pr *bitbucketserver.PullRequest) *ChangesetCheckState {
+	var states []*ChangesetCheckState
+	for _, status := range pr.BuildStatuses {
+		states = append(states, parseBitbucketBuildState(status.State))
+	}
+	return combineCheckStates(states)
+}
+
+func parseBitbucketBuildState(s string) *ChangesetCheckState {
+	var state ChangesetCheckState
+	switch s {
+	case "FAILED":
+		state = ChangesetCheckStateFailed
+	case "INPROGRESS":
+		state = ChangesetCheckStatePending
+	case "SUCCESSFUL":
+		state = ChangesetCheckStatePassed
+	default:
+		return nil
+	}
+	return &state
 }
 
 func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*ChangesetEvent) *ChangesetCheckState {

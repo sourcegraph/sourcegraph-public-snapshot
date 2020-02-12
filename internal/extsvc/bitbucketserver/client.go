@@ -609,7 +609,6 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 	}
 
 	path := fmt.Sprintf("rest/build-status/1.0/commits/%s", latestCommit.ID)
-	log15.Info("path", "p", path)
 
 	t := &PageToken{Limit: 1000}
 
@@ -1056,7 +1055,7 @@ type PullRequest struct {
 
 	Activities    []Activity    `json:"activities,omitempty"`
 	Commits       []Commit      `json:"commits,omitempty"`
-	BuildStatuses []BuildStatus `json:"commits,omitempty"`
+	BuildStatuses []BuildStatus `json:"buildstatuses,omitempty"`
 }
 
 // Activity is a union type of all supported pull request activity items.
