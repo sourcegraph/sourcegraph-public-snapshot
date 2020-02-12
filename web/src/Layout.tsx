@@ -118,7 +118,7 @@ export interface LayoutProps
 
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
-    const isSearchRelatedPage = routeMatch === '' || routeMatch?.startsWith('/search')
+    const isSearchRelatedPage = routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
     const needsSiteInit = window.context.showOnboarding
