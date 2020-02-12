@@ -18,8 +18,8 @@ We maintain multiple Sourcegraph clients:
 - [Editor integrations](https://docs.sourcegraph.com/integration/editor)
   - [Visual Studio Code](https://github.com/sourcegraph/sourcegraph-vscode)
   - [Atom](https://github.com/sourcegraph/sourcegraph-atom)
-  - [IntelliJ](https://github.com/sourcegraph/sourcegraph-jetbrains)
-  - [Sublime](https://github.com/sourcegraph/sourcegraph-sublime)
+  - [JetBrains IDEs](https://github.com/sourcegraph/sourcegraph-jetbrains)
+  - [Sublime Text 3](https://github.com/sourcegraph/sourcegraph-sublime)
 
 These clients generally communicate with a Sourcegraph instance (either https://sourcegraph.com or a private customer instance) through our [GraphQL API](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/schema.graphql). There are also a small number of REST endpoints for specific use-cases.
 
