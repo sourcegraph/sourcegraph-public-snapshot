@@ -19,12 +19,13 @@ export interface FetchFileCtx {
 interface Props extends Repo {
     commitID: string
     filePath: string
-    // How many extra lines to show in the excerpt before/after the ref.
-    context?: number
     highlightRanges: HighlightRange[]
+    /** The highest line number among the subset matches. */
     lastSubsetMatchLineNumber: number
-    className?: string
     isLightTheme: boolean
+    className?: string
+    /** How many extra lines to show in the excerpt before/after the ref.  */
+    context?: number
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
@@ -125,14 +126,20 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         const contextLines = this.props.context || this.props.context === 0 ? this.props.context : 1
 
         const highlightRangeLines = this.props.highlightRanges.map(r => r.line)
-        // The highest line number of all highlights.
+        // The highest line number of all highlights in this excerpt.
         const lastHighlightLineNumber = Math.max(...highlightRangeLines)
+
         // If the highest highlight line number is greater than the line number of the last line number of the subsetMatches,
         // then we know that there's at least one highlight in the context lines.
         const contextLineHasHighlight = lastHighlightLineNumber > this.props.lastSubsetMatchLineNumber
-        const remainingContextLines = lastHighlightLineNumber - this.props.lastSubsetMatchLineNumber
+
+        // The gap between the last highlight provided to this excerpt, and the line number of the last highlighted
+        // match that is not a context line. If this value is larger than contextLines, it means that we are
+        // displaying _all_ matches, and therefore, do not need to reduce the number of context lines shown.
+        const remainingContextLinesToShow = lastHighlightLineNumber - this.props.lastSubsetMatchLineNumber
+
         const numberOfcontextLinesToShow = contextLineHasHighlight
-            ? contextLines - (remainingContextLines <= contextLines ? remainingContextLines : 0)
+            ? contextLines - (remainingContextLinesToShow <= contextLines ? remainingContextLinesToShow : 0)
             : contextLines
 
         // Of the matches in this excerpt, pick the one with the highest line number + lines of context.

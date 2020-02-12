@@ -68,6 +68,9 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         }
         return 1
     })
+
+    // This checks the highest line number amongst the number of matches
+    // that we want to show in a collapsed result preview.
     const highestLineNumberWithinSubsetMatches =
         sortedItems.length > props.subsetMatches
             ? sortedItems[props.subsetMatches - 1].line
