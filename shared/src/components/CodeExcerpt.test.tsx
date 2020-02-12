@@ -42,6 +42,7 @@ describe('CodeExcerpt', () => {
             { line: 1, character: 7, highlightLength: 4 },
             { line: 2, character: 6, highlightLength: 4 },
         ],
+        lastSubsetMatchLineNumber: 2,
         isLightTheme: false,
         className: 'file-match__item-code-excerpt',
         fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
