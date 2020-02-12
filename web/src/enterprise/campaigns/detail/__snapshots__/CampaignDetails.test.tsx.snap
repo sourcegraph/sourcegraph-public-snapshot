@@ -392,6 +392,7 @@ Array [
         "author": Object {
           "username": "alice",
         },
+        "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesetPlans": Object {
           "nodes": Array [],
@@ -10842,6 +10843,7 @@ Array [
         "author": Object {
           "username": "alice",
         },
+        "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesetPlans": Object {
           "nodes": Array [],
@@ -21416,6 +21418,7 @@ Array [
         "author": Object {
           "username": "alice",
         },
+        "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesetPlans": Object {
           "nodes": Array [],
