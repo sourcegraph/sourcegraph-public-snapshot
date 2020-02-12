@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"hash/fnv"
+	"io"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -89,10 +90,10 @@ func (s *Server) cleanupRepos() {
 		// Add a jitter to spread out recloning of repos cloned at the same
 		// time.
 		var reason string
-		if time.Since(recloneTime) > repoTTL+randDuration(repoTTL/4) {
+		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
 			reason = "old"
 		}
-		if time.Since(recloneTime) > repoTTLGC+randDuration(repoTTLGC/4) {
+		if time.Since(recloneTime) > repoTTLGC+jitterDuration(string(dir), repoTTLGC/4) {
 			if gclog, err := ioutil.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
 				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
 			}
@@ -174,12 +175,12 @@ func (s *Server) cleanupRepos() {
 		// We always want to have the same git attributes file at
 		// info/attributes.
 		{"ensure git attributes", ensureGitAttributes},
+		// Old git clones accumulate loose git objects that waste space and
+		// slow down git operations. Periodically do a fresh clone to avoid
+		// these problems. git gc is slow and resource intensive. It is
+		// cheaper and faster to just reclone the repository.
+		{"maybe reclone", maybeReclone},
 	}
-	// Old git clones accumulate loose git objects that waste space and
-	// slow down git operations. Periodically do a fresh clone to avoid
-	// these problems. git gc is slow and resource intensive. It is
-	// cheaper and faster to just reclone the repository.
-	cleanups = append(cleanups, cleanupFn{"maybe reclone", maybeReclone})
 
 	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {
 		if s.ignorePath(dir) {
@@ -641,9 +642,19 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-// randDuration returns a psuedo-random duration between [0, d)
-func randDuration(d time.Duration) time.Duration {
-	return time.Duration(rand.Int63n(int64(d)))
+// jitterDuration returns a duration between [0, d) based on key. This is like
+// a random duration, but instead of a random source it is computed via a hash
+// on key.
+func jitterDuration(key string, d time.Duration) time.Duration {
+	h := fnv.New64()
+	_, _ = io.WriteString(h, key)
+	r := time.Duration(h.Sum64())
+	if r < 0 {
+		// +1 because we have one more negative value than positive. ie
+		// math.MinInt64 == -math.MinInt64.
+		r = -(r + 1)
+	}
+	return r % d
 }
 
 // wrapCmdError will wrap errors for cmd to include the arguments. If the error

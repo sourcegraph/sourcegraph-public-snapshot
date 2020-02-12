@@ -66,6 +66,7 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                     <li>
                         Aggregate daily, weekly, and monthly latencies (in ms) of certain events (e.g., hover tooltips)
                     </li>
+                    <li>Aggregate daily, weekly, and monthly total counts of certain events (e.g., hover tooltips)</li>
                 </ul>
                 {!pingsEnabled ? (
                     <p>Pings are disabled.</p>

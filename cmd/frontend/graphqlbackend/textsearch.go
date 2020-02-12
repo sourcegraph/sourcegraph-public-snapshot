@@ -684,7 +684,15 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	go func() {
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
-		matches, limitHit, reposLimitHit, err := zoektSearchHEAD(ctx, args, zoektRepos, false, time.Since)
+		var matches []*FileMatchResolver
+		var reposLimitHit map[string]struct{}
+		var limitHit bool
+		var err error
+		if !args.PatternInfo.IsStructuralPat {
+			matches, limitHit, reposLimitHit, err = zoektSearchHEAD(ctx, args, zoektRepos, false, time.Since)
+		} else {
+			matches, limitHit, reposLimitHit, err = zoektSearchHEADOnlyFiles(ctx, args, zoektRepos, false, time.Since)
+		}
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
