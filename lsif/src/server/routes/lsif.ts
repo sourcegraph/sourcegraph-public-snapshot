@@ -279,8 +279,8 @@ export function createLsifRouter(
 }
 
 /**
- * Decode and read the first line from the dump and return the tool info name field
- * from the metadata vertex, if it exists.
+ * Read and decode the first entry of the dump. If the entry exists, encodes a metadata vertex,
+ * and contains a tool info name field, return the contents of that field; otherwise undefined.
  *
  * @param filename The filename to read.
  */
