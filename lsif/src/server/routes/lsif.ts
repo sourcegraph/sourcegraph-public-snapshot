@@ -143,7 +143,7 @@ export function createLsifRouter(
                 // TODO - multiple to the GraphQL API. Punting on this for now as
                 // it may cause a non-trivial change in the API shape that may also
                 // affect basic-code-intel.
-                res.json({ upload: uploads ?? uploads[0] })
+                res.json({ upload: uploads[0] })
             }
         )
     )
