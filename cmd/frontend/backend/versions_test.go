@@ -1,11 +1,48 @@
 package backend
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Masterminds/semver"
+	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
+func TestUpdateServiceVersion(t *testing.T) {
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+	for _, tc := range []struct {
+		version string
+		err     error
+	}{
+		{"0.0.0", nil},
+		{"0.0.1", nil},
+		{"0.1.0", nil},
+		{"0.2.0", nil},
+		{"1.0.0", nil},
+		{"1.2.0", &UpgradeError{
+			Service:  "service",
+			Previous: semver.MustParse("1.0.0"),
+			Latest:   semver.MustParse("1.2.0"),
+		}},
+		{"2.1.0", &UpgradeError{
+			Service:  "service",
+			Previous: semver.MustParse("1.0.0"),
+			Latest:   semver.MustParse("2.1.0"),
+		}},
+	} {
+		have := UpdateServiceVersion(ctx, "service", tc.version)
+		want := tc.err
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatal(diff)
+		}
+
+		t.Logf("version = %q", tc.version)
+	}
+}
 func TestIsValidUpgrade(t *testing.T) {
 	for _, tc := range []struct {
 		name     string

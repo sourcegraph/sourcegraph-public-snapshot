@@ -62,7 +62,13 @@ func UpdateServiceVersion(ctx context.Context, service, version string) error {
 			return &UpgradeError{Service: service, Previous: previous, Latest: latest}
 		}
 
-		q = sqlf.Sprintf(upsertVersionQuery, service, latest.String(), time.Now().UTC())
+		q = sqlf.Sprintf(
+			upsertVersionQuery,
+			service,
+			latest.String(),
+			previous.String(),
+			time.Now().UTC(),
+		)
 		_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		return err
 	})
@@ -74,7 +80,8 @@ const upsertVersionQuery = `
 INSERT INTO versions (service, version, updated_at)
 VALUES (%s, %s, %s) ON CONFLICT (service) DO
 UPDATE SET (version, updated_at) =
-	(excluded.version, excluded.updated_at)`
+	(excluded.version, excluded.updated_at)
+WHERE version = %s`
 
 // IsValidUpgrade returns true if the given previous and
 // latest versions comply with our documented upgrade policy.
