@@ -21,7 +21,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 16 Dec 2019 14:42:01 GMT
+      - Thu, 13 Feb 2020 12:11:56 GMT
       Pragma:
       - no-cache
       Server:
@@ -29,11 +29,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1JRK3O7x882x198238x0'
+      - '@1JRK3O7x731x4928711x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - 3sq5rd
+      - 1ozru61
       X-Auserid:
       - "1"
       X-Ausername:
@@ -88,7 +88,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 16 Dec 2019 14:42:01 GMT
+      - Thu, 13 Feb 2020 12:11:56 GMT
       Pragma:
       - no-cache
       Server:
@@ -96,11 +96,96 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1JRK3O7x882x198239x0'
+      - '@1JRK3O7x731x4928712x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - 1g4583l
+      - 1twxjja
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/2/commits?limit=1000
+    method: GET
+  response:
+    body: '{"values":[{"id":"1f63e719a65cad47a0a272d3d6eef05f4da427bb","displayId":"1f63e719a65","author":{"name":"Tomás
+      Senart","emailAddress":"tsenart@gmail.com"},"authorTimestamp":1563286282000,"committer":{"name":"Tomás
+      Senart","emailAddress":"tsenart@gmail.com"},"committerTimestamp":1563286282000,"message":"make
+      make make","parents":[{"id":"7b71906bf3b3ec81a4d013b7f59ceb34b3c4105b","displayId":"7b71906bf3b"}]},{"id":"7b71906bf3b3ec81a4d013b7f59ceb34b3c4105b","displayId":"7b71906bf3b","author":{"name":"Tomás
+      Senart","emailAddress":"tsenart@gmail.com"},"authorTimestamp":1563286246000,"committer":{"name":"Tomás
+      Senart","emailAddress":"tsenart@gmail.com"},"committerTimestamp":1563286246000,"message":"Remove
+      dump.go","parents":[{"id":"0f5577eaf11a136541b8c667273b6bc5eba51a8b","displayId":"0f5577eaf11"}]}],"size":2,"isLastPage":true,"start":0,"limit":1000,"nextPageStart":null}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 13 Feb 2020 12:11:56 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x731x4928713x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - 1eypsm1
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/build-status/1.0/commits/1f63e719a65cad47a0a272d3d6eef05f4da427bb?limit=1000
+    method: GET
+  response:
+    body: '{"size":1,"limit":100,"isLastPage":true,"values":[{"state":"INPROGRESS","key":"thekey","name":"thename","url":"http://example.com","description":"the
+      description","dateAdded":1581595091775}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 13 Feb 2020 12:11:56 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x731x4928714x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - j8l528
       X-Auserid:
       - "1"
       X-Ausername:
@@ -128,7 +213,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 16 Dec 2019 14:42:01 GMT
+      - Thu, 13 Feb 2020 12:11:56 GMT
       Pragma:
       - no-cache
       Server:
@@ -136,11 +221,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1JRK3O7x882x198240x0'
+      - '@1JRK3O7x731x4928715x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - olo6td
+      - 1a2a7iv
       X-Auserid:
       - "1"
       X-Ausername:
