@@ -39,7 +39,6 @@ import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
-import { pluralize } from '../../../../../shared/src/util/strings'
 import { CampaignUpdateDiff } from './CampaignUpdateDiff'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 

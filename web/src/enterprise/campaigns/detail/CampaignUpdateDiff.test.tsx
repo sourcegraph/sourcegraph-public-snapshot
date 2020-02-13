@@ -15,8 +15,13 @@ describe('CampaignUpdateDiff', () => {
                         isLightTheme={true}
                         history={history}
                         location={location}
-                        campaign={{ id: 'somecampaign' }}
-                        campaignPlan={{ id: 'someothercampaign' }}
+                        campaign={{
+                            id: 'somecampaign',
+                            publishedAt: null,
+                            changesets: { totalCount: 1 },
+                            changesetPlans: { totalCount: 1 },
+                        }}
+                        campaignPlan={{ id: 'someothercampaign', changesetPlans: { totalCount: 1 } }}
                         _queryChangesets={() =>
                             of({
                                 nodes: [{ __typename: 'ExternalChangeset', repository: { id: 'match1' } }],
