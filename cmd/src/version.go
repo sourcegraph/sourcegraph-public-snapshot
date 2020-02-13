@@ -18,7 +18,7 @@ func init() {
 	usage := `
 Examples:
 
-  Get the src-cli version and the Sourcegraph instance's version:
+  Get the src-cli version and the Sourcegraph instance's recommended version:
 
     	$ src version
 `
