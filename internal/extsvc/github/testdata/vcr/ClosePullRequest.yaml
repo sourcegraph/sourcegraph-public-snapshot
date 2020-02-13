@@ -4,11 +4,12 @@ interactions:
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
       label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
-      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  status
-      {\n    state\n  }\n  committer {\n    avatarUrl\n    email\n    name\n    user
-      {\n      ...actor\n    }\n  }\n}\n\nfragment prCommit on PullRequestCommit {\n  commit
-      {\n    ...commit\n  }\n}\n\nfragment review on PullRequestReview {\n  databaseId\n  author
-      {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
+      basicCommit on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      10){\n    nodes {\n      id\n      status\n      conclusion\n    }\n  }\n  committedDate\n}\n\nfragment
+      prCommit on PullRequestCommit {\n  commit {\n    ...basicCommit\n  }\n}\n\nfragment
+      review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
       {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
@@ -42,19 +43,20 @@ interactions:
       {\n          ...actor\n        }\n        createdAt\n      }\n      ... on LabeledEvent
       {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
       on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
-      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit{\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
+      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit
+      {\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
       {\n  closePullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"pullRequestId":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5"}}}'
     form: {}
     headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
     body: '{"data":{"closePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5","title":"comby
-      test","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/29","number":29,"createdAt":"2019-11-14T16:18:25Z","updatedAt":"2020-01-08T09:33:38Z","headRefOid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"sourcegraph/campaign-17","baseRefName":"master","author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"participants":{"nodes":[{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","message":"comby
-      test","messageHeadline":"comby test","committedDate":"2019-11-14T16:18:20Z","pushedDate":"2019-11-14T16:18:24Z","url":"https://github.com/sourcegraph/automation-testing/commit/fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"committer":{"avatarUrl":"https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"support@sourcegraph.com","name":"sourcegraph-committer","user":null}}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","message":"comby
-      test","messageHeadline":"comby test","committedDate":"2019-11-14T16:18:20Z","pushedDate":"2019-11-14T16:18:24Z","url":"https://github.com/sourcegraph/automation-testing/commit/fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"committer":{"avatarUrl":"https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"support@sourcegraph.com","name":"sourcegraph-committer","user":null}}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:01Z","url":"https://github.com/sourcegraph/automation-testing/pull/29#event-2855919824"}]}}}}}'
+      test","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/29","number":29,"createdAt":"2019-11-14T16:18:25Z","updatedAt":"2020-01-08T09:33:38Z","headRefOid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"sourcegraph/campaign-17","baseRefName":"master","author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"participants":{"nodes":[{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDU=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDk=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-14T16:18:20Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDU=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDk=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-14T16:18:20Z"}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:01Z","url":"https://github.com/sourcegraph/automation-testing/pull/29#event-2855919824"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -69,7 +71,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 05 Feb 2020 15:11:31 GMT
+      - Wed, 12 Feb 2020 10:47:48 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -79,7 +81,7 @@ interactions:
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
       Vary:
-      - Accept-Encoding
+      - Accept-Encoding, Accept
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -87,17 +89,17 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v4; format=json
+      - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - F486:15283:53083F:65F34E:5E3ADB22
+      - 3BC3:0B66:18A42BA:1DD8DB6:5E43D7D3
       X-Oauth-Scopes:
       - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4814"
+      - "4937"
       X-Ratelimit-Reset:
-      - "1580916215"
+      - "1581508039"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -106,11 +108,12 @@ interactions:
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
       label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
-      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  status
-      {\n    state\n  }\n  committer {\n    avatarUrl\n    email\n    name\n    user
-      {\n      ...actor\n    }\n  }\n}\n\nfragment prCommit on PullRequestCommit {\n  commit
-      {\n    ...commit\n  }\n}\n\nfragment review on PullRequestReview {\n  databaseId\n  author
-      {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
+      basicCommit on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      10){\n    nodes {\n      id\n      status\n      conclusion\n    }\n  }\n  committedDate\n}\n\nfragment
+      prCommit on PullRequestCommit {\n  commit {\n    ...basicCommit\n  }\n}\n\nfragment
+      review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
       {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
@@ -144,19 +147,20 @@ interactions:
       {\n          ...actor\n        }\n        createdAt\n      }\n      ... on LabeledEvent
       {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
       on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
-      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit{\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
+      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit
+      {\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
       {\n  closePullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"pullRequestId":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5"}}}'
     form: {}
     headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
     body: '{"data":{"closePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5","title":"comby
-      test","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/29","number":29,"createdAt":"2019-11-14T16:18:25Z","updatedAt":"2020-01-08T09:33:38Z","headRefOid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"sourcegraph/campaign-17","baseRefName":"master","author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"participants":{"nodes":[{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","message":"comby
-      test","messageHeadline":"comby test","committedDate":"2019-11-14T16:18:20Z","pushedDate":"2019-11-14T16:18:24Z","url":"https://github.com/sourcegraph/automation-testing/commit/fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"committer":{"avatarUrl":"https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"support@sourcegraph.com","name":"sourcegraph-committer","user":null}}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","message":"comby
-      test","messageHeadline":"comby test","committedDate":"2019-11-14T16:18:20Z","pushedDate":"2019-11-14T16:18:24Z","url":"https://github.com/sourcegraph/automation-testing/commit/fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"committer":{"avatarUrl":"https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"support@sourcegraph.com","name":"sourcegraph-committer","user":null}}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:01Z","url":"https://github.com/sourcegraph/automation-testing/pull/29#event-2855919824"}]}}}}}'
+      test","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/29","number":29,"createdAt":"2019-11-14T16:18:25Z","updatedAt":"2020-01-08T09:33:38Z","headRefOid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"sourcegraph/campaign-17","baseRefName":"master","author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"participants":{"nodes":[{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDU=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDk=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-14T16:18:20Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"fe4605a6811c0d62a78ec150332bbdbe34ddd6cc","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDU=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDk=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-14T16:18:20Z"}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:01Z","url":"https://github.com/sourcegraph/automation-testing/pull/29#event-2855919824"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -171,7 +175,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 05 Feb 2020 15:11:31 GMT
+      - Wed, 12 Feb 2020 10:47:48 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -181,7 +185,7 @@ interactions:
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
       Vary:
-      - Accept-Encoding
+      - Accept-Encoding, Accept
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -189,17 +193,17 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v4; format=json
+      - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - F486:15283:5309A9:65F4CC:5E3ADB23
+      - 3BC3:0B66:18A439A:1DD8EAF:5E43D7D4
       X-Oauth-Scopes:
       - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4811"
+      - "4934"
       X-Ratelimit-Reset:
-      - "1580916215"
+      - "1581508040"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK

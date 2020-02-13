@@ -622,6 +622,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 	var latestCommitTime time.Time
 	var latestOID string
 	statusPerContext := make(map[string]*ChangesetCheckState)
+	statusPerCheckSuite := make(map[string]*ChangesetCheckState)
 
 	if len(pr.Commits.Nodes) > 0 {
 		// We only request the most recent commit
@@ -631,6 +632,9 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 		// Calc status per context for the most recent synced commit
 		for _, c := range commit.Commit.Status.Contexts {
 			statusPerContext[c.Context] = parseGithubCheckState(c.State)
+		}
+		for _, c := range commit.Commit.CheckSuites.Nodes {
+			statusPerCheckSuite[c.ID] = parseGithubCheckSuiteState(c.Status, c.Conclusion)
 		}
 	}
 
@@ -651,6 +655,10 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 					delete(statusPerContext, k)
 				}
 			}
+		case *github.CheckSuite:
+			if m.ReceivedAt.After(lastSynced) {
+				statusPerCheckSuite[m.ID] = parseGithubCheckSuiteState(m.Status, m.Conclusion)
+			}
 		}
 	}
 
@@ -669,6 +677,9 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 	finalStates := make([]*ChangesetCheckState, 0, len(statusPerContext))
 	for k := range statusPerContext {
 		finalStates = append(finalStates, statusPerContext[k])
+	}
+	for k := range statusPerCheckSuite {
+		finalStates = append(finalStates, statusPerCheckSuite[k])
 	}
 	return combineCheckStates(finalStates)
 }
@@ -715,6 +726,28 @@ func parseGithubCheckState(s string) *ChangesetCheckState {
 		state = ChangesetCheckStatePassed
 	default:
 		return nil
+	}
+	return &state
+}
+
+func parseGithubCheckSuiteState(status, conclusion string) *ChangesetCheckState {
+	var state ChangesetCheckState
+	switch status {
+	case "IN_PROGRESS", "QUEUED", "REQUESTED":
+		state = ChangesetCheckStatePending
+		return &state
+	}
+	if status != "COMPLETED" {
+		// Unknown status
+		return nil
+	}
+	switch conclusion {
+	case "SUCCESS", "NEUTRAL":
+		state = ChangesetCheckStatePassed
+	case "ACTION_REQUIRED":
+		state = ChangesetCheckStatePending
+	case "CANCELLED", "FAILURE", "TIMED_OUT":
+		state = ChangesetCheckStateFailed
 	}
 	return &state
 }
@@ -901,6 +934,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = e.CreatedAt
 	case *github.CommitStatus:
 		t = e.ReceivedAt
+	case *github.CheckSuite:
+		return e.ReceivedAt
 	case *bitbucketserver.Activity:
 		t = unixMilliToTime(int64(e.CreatedDate))
 	}
@@ -1284,6 +1319,8 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitHubLabeled
 	case *github.CommitStatus:
 		return ChangesetEventKindCommitStatus
+	case *github.CheckSuite:
+		return ChangesetEventKindCheckSuite
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
 	default:
@@ -1331,6 +1368,8 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 			return &github.LabelEvent{Removed: true}, nil
 		case ChangesetEventKindCommitStatus:
 			return new(github.CommitStatus), nil
+		case ChangesetEventKindCheckSuite:
+			return new(github.CheckSuite), nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
@@ -1359,6 +1398,7 @@ const (
 	ChangesetEventKindGitHubLabeled              ChangesetEventKind = "github:labeled"
 	ChangesetEventKindGitHubUnlabeled            ChangesetEventKind = "github:unlabeled"
 	ChangesetEventKindCommitStatus               ChangesetEventKind = "github:commit_status"
+	ChangesetEventKindCheckSuite                 ChangesetEventKind = "github:check_suite"
 
 	ChangesetEventKindBitbucketServerApproved   ChangesetEventKind = "bitbucketserver:approved"
 	ChangesetEventKindBitbucketServerUnapproved ChangesetEventKind = "bitbucketserver:unapproved"

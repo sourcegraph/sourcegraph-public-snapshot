@@ -245,6 +245,19 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		}
 
 		ours = h.commitStatusEvent(e)
+
+	case *gh.CheckSuiteEvent:
+		if e.CheckSuite == nil {
+			return
+		}
+		cs := e.GetCheckSuite()
+		for _, pr := range cs.PullRequests {
+			n := pr.GetNumber()
+			if n != 0 {
+				prs = append(prs, int64(n))
+			}
+		}
+		ours = h.checkSuiteEvent(cs)
 	}
 
 	return
@@ -477,6 +490,15 @@ func (*GitHubWebhook) commitStatusEvent(e *gh.StatusEvent) *github.CommitStatus 
 		SHA:        e.GetSHA(),
 		State:      e.GetState(),
 		Context:    e.GetContext(),
+		ReceivedAt: time.Now(),
+	}
+}
+
+func (*GitHubWebhook) checkSuiteEvent(cs *gh.CheckSuite) *github.CheckSuite {
+	return &github.CheckSuite{
+		ID:         cs.GetNodeID(),
+		Status:     cs.GetStatus(),
+		Conclusion: cs.GetConclusion(),
 		ReceivedAt: time.Now(),
 	}
 }

@@ -96,10 +96,6 @@
        "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
        "MessageHeadline": "Fix disableExtension flag for native integrations",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
-       "Status": {
-        "State": "SUCCESS",
-        "Contexts": null
-       },
        "Committer": {
         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
         "Email": "loic@sourcegraph.com",
@@ -136,10 +132,6 @@
        "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
        "MessageHeadline": "Fix disableExtension flag for native integrations",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
-       "Status": {
-        "State": "SUCCESS",
-        "Contexts": null
-       },
        "Committer": {
         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
         "Email": "loic@sourcegraph.com",
@@ -161,25 +153,14 @@
      "Item": {
       "Commit": {
        "OID": "21d1cd99699e36ab5e2b9be1cc663691d47193ef",
-       "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
-       "MessageHeadline": "Fix disableExtension flag for native integrations",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/21d1cd99699e36ab5e2b9be1cc663691d47193ef",
+       "CheckSuites": {
+        "Nodes": []
+       },
        "Status": {
         "State": "",
         "Contexts": null
        },
-       "Committer": {
-        "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-        "Email": "loic@sourcegraph.com",
-        "Name": "Loïc Guychard",
-        "User": {
-         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-         "Login": "lguychard",
-         "URL": "https://github.com/lguychard"
-        }
-       },
-       "CommittedDate": "2019-09-13T09:13:12Z",
-       "PushedDate": "0001-01-01T00:00:00Z"
+       "CommittedDate": "2019-09-13T09:13:12Z"
       }
      }
     },
@@ -188,25 +169,46 @@
      "Item": {
       "Commit": {
        "OID": "30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
-       "Message": "No need to explicitly remove the subscription",
-       "MessageHeadline": "No need to explicitly remove the subscription",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODA=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODE=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODI=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "SUCCESS",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDU0MzIx",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #42783 passed (15 minutes, 53 seconds)",
+          "State": "SUCCESS"
+         },
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDUzMTQ0",
+          "Context": "percy/Sourcegraph",
+          "Description": "Visual review automatically approved, no visual changes found.",
+          "State": "SUCCESS"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-        "Email": "loic@sourcegraph.com",
-        "Name": "Loïc Guychard",
-        "User": {
-         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-         "Login": "lguychard",
-         "URL": "https://github.com/lguychard"
-        }
-       },
-       "CommittedDate": "2019-09-13T09:13:12Z",
-       "PushedDate": "2019-09-13T09:13:20Z"
+       "CommittedDate": "2019-09-13T09:13:12Z"
       }
      }
     },
@@ -243,10 +245,6 @@
        "Message": "Fix disableExtension flag for native integrations (#5550)\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
        "MessageHeadline": "Fix disableExtension flag for native integrations (#5550)",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/f66b0addcbeb51d29350f3abc2af7ffb238af48a",
-       "Status": {
-        "State": "SUCCESS",
-        "Contexts": null
-       },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/19864447?v=4",
         "Email": "noreply@github.com",
@@ -276,25 +274,46 @@
      {
       "Commit": {
        "OID": "30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
-       "Message": "No need to explicitly remove the subscription",
-       "MessageHeadline": "No need to explicitly remove the subscription",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODA=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODE=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODI=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "SUCCESS",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDU0MzIx",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #42783 passed (15 minutes, 53 seconds)",
+          "State": "SUCCESS"
+         },
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDUzMTQ0",
+          "Context": "percy/Sourcegraph",
+          "Description": "Visual review automatically approved, no visual changes found.",
+          "State": "SUCCESS"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-        "Email": "loic@sourcegraph.com",
-        "Name": "Loïc Guychard",
-        "User": {
-         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-         "Login": "lguychard",
-         "URL": "https://github.com/lguychard"
-        }
-       },
-       "CommittedDate": "2019-09-13T09:13:12Z",
-       "PushedDate": "2019-09-13T09:13:20Z"
+       "CommittedDate": "2019-09-13T09:13:12Z"
       }
      }
     ]
@@ -339,25 +358,14 @@
      "Item": {
       "Commit": {
        "OID": "39241a13a52fe1a15fbeb723bdf212689fa5d7d4",
-       "Message": "-- added uniqueness-option",
-       "MessageHeadline": "-- added uniqueness-option",
-       "URL": "https://github.com/tsenart/vegeta/commit/39241a13a52fe1a15fbeb723bdf212689fa5d7d4",
+       "CheckSuites": {
+        "Nodes": []
+       },
        "Status": {
         "State": "",
         "Contexts": null
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
-        "Email": "hpbuniat@gmail.com",
-        "Name": "Hans-Peter Buniat",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
-         "Login": "hpbuniat",
-         "URL": "https://github.com/hpbuniat"
-        }
-       },
-       "CommittedDate": "2014-03-02T02:33:49Z",
-       "PushedDate": "0001-01-01T00:00:00Z"
+       "CommittedDate": "2014-03-02T02:33:49Z"
       }
      }
     },
@@ -366,25 +374,14 @@
      "Item": {
       "Commit": {
        "OID": "95f1eb69cc7a0729b1f8b555443b4d4ab0cb42c9",
-       "Message": "added headers-option to report",
-       "MessageHeadline": "added headers-option to report",
-       "URL": "https://github.com/tsenart/vegeta/commit/95f1eb69cc7a0729b1f8b555443b4d4ab0cb42c9",
+       "CheckSuites": {
+        "Nodes": []
+       },
        "Status": {
         "State": "",
         "Contexts": null
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
-        "Email": "hpbuniat@gmail.com",
-        "Name": "Hans-Peter Buniat",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
-         "Login": "hpbuniat",
-         "URL": "https://github.com/hpbuniat"
-        }
-       },
-       "CommittedDate": "2014-03-03T18:03:54Z",
-       "PushedDate": "0001-01-01T00:00:00Z"
+       "CommittedDate": "2014-03-03T18:03:54Z"
       }
      }
     },
@@ -393,25 +390,14 @@
      "Item": {
       "Commit": {
        "OID": "dc9f13131bbf79c58b067094f71020a6254ba548",
-       "Message": "updated readme",
-       "MessageHeadline": "updated readme",
-       "URL": "https://github.com/tsenart/vegeta/commit/dc9f13131bbf79c58b067094f71020a6254ba548",
+       "CheckSuites": {
+        "Nodes": []
+       },
        "Status": {
         "State": "",
         "Contexts": null
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
-        "Email": "hpbuniat@gmail.com",
-        "Name": "Hans-Peter Buniat",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
-         "Login": "hpbuniat",
-         "URL": "https://github.com/hpbuniat"
-        }
-       },
-       "CommittedDate": "2014-03-03T18:06:25Z",
-       "PushedDate": "0001-01-01T00:00:00Z"
+       "CommittedDate": "2014-03-03T18:06:25Z"
       }
      }
     },
@@ -487,25 +473,14 @@
      {
       "Commit": {
        "OID": "dc9f13131bbf79c58b067094f71020a6254ba548",
-       "Message": "updated readme",
-       "MessageHeadline": "updated readme",
-       "URL": "https://github.com/tsenart/vegeta/commit/dc9f13131bbf79c58b067094f71020a6254ba548",
+       "CheckSuites": {
+        "Nodes": []
+       },
        "Status": {
         "State": "",
         "Contexts": null
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
-        "Email": "hpbuniat@gmail.com",
-        "Name": "Hans-Peter Buniat",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
-         "Login": "hpbuniat",
-         "URL": "https://github.com/hpbuniat"
-        }
-       },
-       "CommittedDate": "2014-03-03T18:06:25Z",
-       "PushedDate": "2014-03-03T18:06:36Z"
+       "CommittedDate": "2014-03-03T18:06:25Z"
       }
      }
     ]
@@ -646,10 +621,6 @@
        "Message": "a8n: Fix CreateChangesetEvent query",
        "MessageHeadline": "a8n: Fix CreateChangesetEvent query",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/0830ebfae3fa8f6405d30c1d0bb6dbdfba514e3f",
-       "Status": {
-        "State": "FAILURE",
-        "Contexts": null
-       },
        "Committer": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
         "Email": "tsenart@gmail.com",
@@ -758,25 +729,14 @@
      "Item": {
       "Commit": {
        "OID": "841fb15a8edeef3b4894e52fc8e07e597889fd45",
-       "Message": "migrations: Create changeset_events table",
-       "MessageHeadline": "migrations: Create changeset_events table",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/841fb15a8edeef3b4894e52fc8e07e597889fd45",
+       "CheckSuites": {
+        "Nodes": []
+       },
        "Status": {
         "State": "",
         "Contexts": null
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-        "Email": "tsenart@gmail.com",
-        "Name": "Tomás Senart",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-         "Login": "tsenart",
-         "URL": "https://github.com/tsenart"
-        }
-       },
-       "CommittedDate": "2019-10-04T09:03:40Z",
-       "PushedDate": "0001-01-01T00:00:00Z"
+       "CommittedDate": "2019-10-04T09:03:40Z"
       }
      }
     },
@@ -785,25 +745,14 @@
      "Item": {
       "Commit": {
        "OID": "70f88ad3e92fa14707eaa9c5c597e4256a6d1c68",
-       "Message": "a8n: Introduce CreateChangesetEvents in Store",
-       "MessageHeadline": "a8n: Introduce CreateChangesetEvents in Store",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/70f88ad3e92fa14707eaa9c5c597e4256a6d1c68",
+       "CheckSuites": {
+        "Nodes": []
+       },
        "Status": {
         "State": "",
         "Contexts": null
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-        "Email": "tsenart@gmail.com",
-        "Name": "Tomás Senart",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-         "Login": "tsenart",
-         "URL": "https://github.com/tsenart"
-        }
-       },
-       "CommittedDate": "2019-10-04T09:03:40Z",
-       "PushedDate": "0001-01-01T00:00:00Z"
+       "CommittedDate": "2019-10-04T09:03:40Z"
       }
      }
     },
@@ -812,25 +761,40 @@
      "Item": {
       "Commit": {
        "OID": "71993940833d0d14b02a4fe90bfbb4fdd1601d31",
-       "Message": "a8n: Fix CreateChangesetEvent query",
-       "MessageHeadline": "a8n: Fix CreateChangesetEvent query",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/71993940833d0d14b02a4fe90bfbb4fdd1601d31",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTEyNDM1NTU=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTEyNDM1NTY=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTEyNDM1NTc=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODA1NDM1MTU2",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44262 failed (7 minutes)",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-        "Email": "tsenart@gmail.com",
-        "Name": "Tomás Senart",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-         "Login": "tsenart",
-         "URL": "https://github.com/tsenart"
-        }
-       },
-       "CommittedDate": "2019-10-04T09:03:40Z",
-       "PushedDate": "2019-10-04T09:03:59Z"
+       "CommittedDate": "2019-10-04T09:03:40Z"
       }
      }
     },
@@ -839,25 +803,40 @@
      "Item": {
       "Commit": {
        "OID": "13057d82a110b44aba4ce1796a91bc51cc52fc85",
-       "Message": "WIP: Split GitHub timeline items into ChangesetEvents",
-       "MessageHeadline": "WIP: Split GitHub timeline items into ChangesetEvents",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/13057d82a110b44aba4ce1796a91bc51cc52fc85",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTE0ODU2NDY=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTE0ODU2NDg=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTE0ODU2NTA=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODA2NjYwNDM0",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44274 failed (8 minutes, 24 seconds)",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-04T12:12:08Z",
-       "PushedDate": "2019-10-04T12:12:30Z"
+       "CommittedDate": "2019-10-04T12:12:08Z"
       }
      }
     },
@@ -866,25 +845,40 @@
      "Item": {
       "Commit": {
        "OID": "729d8df692d0fa981207a656bdc36ecbcd6969ab",
-       "Message": "WIP",
-       "MessageHeadline": "WIP",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/729d8df692d0fa981207a656bdc36ecbcd6969ab",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTE3NDA1NTI=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTE3NDA1NTQ=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTE3NDA1NTY=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODA4MDcyNzI0",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44283 failed (6 minutes, 33 seconds)",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-        "Email": "tsenart@gmail.com",
-        "Name": "Tomás Senart",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-         "Login": "tsenart",
-         "URL": "https://github.com/tsenart"
-        }
-       },
-       "CommittedDate": "2019-10-04T14:56:38Z",
-       "PushedDate": "2019-10-04T14:57:55Z"
+       "CommittedDate": "2019-10-04T14:56:38Z"
       }
      }
     },
@@ -893,25 +887,40 @@
      "Item": {
       "Commit": {
        "OID": "dcdecd1f3e16b197d3ebbec9f8dbcb33fb582b99",
-       "Message": "Fix tests",
-       "MessageHeadline": "Fix tests",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/dcdecd1f3e16b197d3ebbec9f8dbcb33fb582b99",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTE3NTkyMDg=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTE3NTkyMDk=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTE3NTkyMTA=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODA4MTg0NjI1",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44284 failed (7 minutes, 45 seconds)",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-        "Email": "tsenart@gmail.com",
-        "Name": "Tomás Senart",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-         "Login": "tsenart",
-         "URL": "https://github.com/tsenart"
-        }
-       },
-       "CommittedDate": "2019-10-04T15:08:26Z",
-       "PushedDate": "2019-10-04T15:08:34Z"
+       "CommittedDate": "2019-10-04T15:08:26Z"
       }
      }
     },
@@ -940,25 +949,40 @@
      "Item": {
       "Commit": {
        "OID": "30a5f5e3d9cbc35d634ff051d550054f99b6fbb1",
-       "Message": "Merge remote-tracking branch 'origin/master' into a8n/changeset-events",
-       "MessageHeadline": "Merge remote-tracking branch 'origin/master' into a8n/changeset-events",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/30a5f5e3d9cbc35d634ff051d550054f99b6fbb1",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQxMTk0MDI=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQxMTk0MDM=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQxMTk0MDQ=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE3NzE3Njkx",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44405 failed (8 minutes, 28 seconds)",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-        "Email": "tsenart@gmail.com",
-        "Name": "Tomás Senart",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-         "Login": "tsenart",
-         "URL": "https://github.com/tsenart"
-        }
-       },
-       "CommittedDate": "2019-10-07T07:59:15Z",
-       "PushedDate": "2019-10-07T07:59:24Z"
+       "CommittedDate": "2019-10-07T07:59:15Z"
       }
      }
     },
@@ -987,25 +1011,40 @@
      "Item": {
       "Commit": {
        "OID": "233b4a6d0a201c9d739c77587f91dc1e9432882f",
-       "Message": "a8n: UpsertChangesetEvents in Store",
-       "MessageHeadline": "a8n: UpsertChangesetEvents in Store",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/233b4a6d0a201c9d739c77587f91dc1e9432882f",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQxMzAyNDQ=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQxMzAyNDY=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQxMzAyNDc=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE3NzcyMjIy",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44406 failed (7 minutes, 57 seconds)",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-        "Email": "tsenart@gmail.com",
-        "Name": "Tomás Senart",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-         "Login": "tsenart",
-         "URL": "https://github.com/tsenart"
-        }
-       },
-       "CommittedDate": "2019-10-07T08:08:09Z",
-       "PushedDate": "2019-10-07T08:08:28Z"
+       "CommittedDate": "2019-10-07T08:08:09Z"
       }
      }
     },
@@ -1014,25 +1053,40 @@
      "Item": {
       "Commit": {
        "OID": "dc19de9ee127a3f299b2865029815a29674166e0",
-       "Message": "WIP",
-       "MessageHeadline": "WIP",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/dc19de9ee127a3f299b2865029815a29674166e0",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQxNzIxNzc=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQxNzIxNzg=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQxNzIxNzk=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE4MDA3Mzg5",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44407 failed (7 minutes, 45 seconds)",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-        "Email": "tsenart@gmail.com",
-        "Name": "Tomás Senart",
-        "User": {
-         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-         "Login": "tsenart",
-         "URL": "https://github.com/tsenart"
-        }
-       },
-       "CommittedDate": "2019-10-07T08:43:13Z",
-       "PushedDate": "2019-10-07T08:43:24Z"
+       "CommittedDate": "2019-10-07T08:43:13Z"
       }
      }
     },
@@ -1041,25 +1095,40 @@
      "Item": {
       "Commit": {
        "OID": "145a6540a49f1053b4e421801101e425b1eeae1f",
-       "Message": "Manually go generate code for a8n.Store to list changeset events",
-       "MessageHeadline": "Manually go generate code for a8n.Store to list changeset events",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/145a6540a49f1053b4e421801101e425b1eeae1f",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQyMDc2OTg=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQyMDc3MDE=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQyMDc3MDI=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE4MjEzMDc2",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44416 failed (8 minutes, 17 seconds)",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T09:08:40Z",
-       "PushedDate": "2019-10-07T09:10:07Z"
+       "CommittedDate": "2019-10-07T09:08:40Z"
       }
      }
     },
@@ -1068,25 +1137,14 @@
      "Item": {
       "Commit": {
        "OID": "5c46ac67d1327418ca2d0714078b5a33ebb18827",
-       "Message": "Recreate db/schema.md",
-       "MessageHeadline": "Recreate db/schema.md",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/5c46ac67d1327418ca2d0714078b5a33ebb18827",
+       "CheckSuites": {
+        "Nodes": []
+       },
        "Status": {
         "State": "",
         "Contexts": null
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T09:21:17Z",
-       "PushedDate": "0001-01-01T00:00:00Z"
+       "CommittedDate": "2019-10-07T09:21:17Z"
       }
      }
     },
@@ -1095,25 +1153,14 @@
      "Item": {
       "Commit": {
        "OID": "e78e5adabe6233d20b49a3f62aeee79639924911",
-       "Message": "a8n: Add CountChangesetEvents to Store",
-       "MessageHeadline": "a8n: Add CountChangesetEvents to Store",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/e78e5adabe6233d20b49a3f62aeee79639924911",
+       "CheckSuites": {
+        "Nodes": []
+       },
        "Status": {
         "State": "",
         "Contexts": null
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T11:52:35Z",
-       "PushedDate": "0001-01-01T00:00:00Z"
+       "CommittedDate": "2019-10-07T11:52:35Z"
       }
      }
     },
@@ -1122,25 +1169,40 @@
      "Item": {
       "Commit": {
        "OID": "ea79747711c7f513e2e0713f9d70ad912253b3a9",
-       "Message": "a8n: Add minimal ChangesetEvent to GraphQL API",
-       "MessageHeadline": "a8n: Add minimal ChangesetEvent to GraphQL API",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/ea79747711c7f513e2e0713f9d70ad912253b3a9",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0MTY0NDU=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0MTY0NDg=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0MTY0NTA=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NDIwMTk5",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44434 failed (9 minutes, 18 seconds)",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T11:57:11Z",
-       "PushedDate": "2019-10-07T11:57:32Z"
+       "CommittedDate": "2019-10-07T11:57:11Z"
       }
      }
     },
@@ -1149,25 +1211,40 @@
      "Item": {
       "Commit": {
        "OID": "112254ea81448199d549f057495c779e75a7d923",
-       "Message": "a8n: Query ChangesetEvents in GraphQL test",
-       "MessageHeadline": "a8n: Query ChangesetEvents in GraphQL test",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/112254ea81448199d549f057495c779e75a7d923",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NTQ3Njc=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NTQ3NzA=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NTQ3NzI=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NTkzNjE1",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44440 canceled by Thorsten Ball",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T12:27:05Z",
-       "PushedDate": "2019-10-07T12:27:12Z"
+       "CommittedDate": "2019-10-07T12:27:05Z"
       }
      }
     },
@@ -1194,25 +1271,40 @@
      "Item": {
       "Commit": {
        "OID": "d0144535fb3207a38678ac7e436529e53768ad8f",
-       "Message": "Undo previous change to GitHubSource tests",
-       "MessageHeadline": "Undo previous change to GitHubSource tests",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NjA1NzU=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NjA1NzY=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NjA1Nzg=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjE1MDYx",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44441 canceled by Thorsten Ball",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T12:31:07Z",
-       "PushedDate": "2019-10-07T12:31:21Z"
+       "CommittedDate": "2019-10-07T12:31:07Z"
       }
      }
     },
@@ -1221,25 +1313,40 @@
      "Item": {
       "Commit": {
        "OID": "d0af06004d731758a2536eff67864881f065a4c9",
-       "Message": "a8n: Simplify test",
-       "MessageHeadline": "a8n: Simplify test",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0af06004d731758a2536eff67864881f065a4c9",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NjQ2MjQ=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NjQ2MjU=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NjQ2MjY=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjMxMDM0",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44442 canceled by Thorsten Ball",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T12:34:11Z",
-       "PushedDate": "2019-10-07T12:34:21Z"
+       "CommittedDate": "2019-10-07T12:34:11Z"
       }
      }
     },
@@ -1248,25 +1355,40 @@
      "Item": {
       "Commit": {
        "OID": "6a641d57ec46818664e3434fd37bc3e1373ac45f",
-       "Message": "fixup! Fix indentation",
-       "MessageHeadline": "fixup! Fix indentation",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/6a641d57ec46818664e3434fd37bc3e1373ac45f",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NjcwODc=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NjcwODg=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NjcwOTA=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjM5MTQ5",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44443 canceled by Thorsten Ball",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T12:36:09Z",
-       "PushedDate": "2019-10-07T12:36:15Z"
+       "CommittedDate": "2019-10-07T12:36:09Z"
       }
      }
     },
@@ -1290,10 +1412,6 @@
        "Message": "Undo previous change to GitHubSource tests",
        "MessageHeadline": "Undo previous change to GitHubSource tests",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f",
-       "Status": {
-        "State": "FAILURE",
-        "Contexts": null
-       },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
         "Email": "mrnugget@gmail.com",
@@ -1330,10 +1448,6 @@
        "Message": "Undo previous change to GitHubSource tests",
        "MessageHeadline": "Undo previous change to GitHubSource tests",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/d0144535fb3207a38678ac7e436529e53768ad8f",
-       "Status": {
-        "State": "FAILURE",
-        "Contexts": null
-       },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
         "Email": "mrnugget@gmail.com",
@@ -1355,20 +1469,40 @@
      "Item": {
       "Commit": {
        "OID": "a66ffd259cf340088918663ad670f973d53b51af",
-       "Message": "Update enterprise/pkg/a8n/store.go",
-       "MessageHeadline": "Update enterprise/pkg/a8n/store.go",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/a66ffd259cf340088918663ad670f973d53b51af",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0Njg0NjM=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0Njg0NjQ=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0Njg0NjU=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjQwMTk4",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44444 canceled by Thorsten Ball",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/19864447?v=4",
-        "Email": "noreply@github.com",
-        "Name": "GitHub"
-       },
-       "CommittedDate": "2019-10-07T12:37:16Z",
-       "PushedDate": "2019-10-07T12:37:17Z"
+       "CommittedDate": "2019-10-07T12:37:16Z"
       }
      }
     },
@@ -1377,20 +1511,40 @@
      "Item": {
       "Commit": {
        "OID": "39d32f6a3c3d467fd7bf3f8c729b63b362966682",
-       "Message": "Update enterprise/pkg/a8n/store.go",
-       "MessageHeadline": "Update enterprise/pkg/a8n/store.go",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/39d32f6a3c3d467fd7bf3f8c729b63b362966682",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0Njg3NDE=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0Njg3NDI=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0Njg3NDM=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NjU1NDY2",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44445 canceled by Thorsten Ball",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/19864447?v=4",
-        "Email": "noreply@github.com",
-        "Name": "GitHub"
-       },
-       "CommittedDate": "2019-10-07T12:37:29Z",
-       "PushedDate": "2019-10-07T12:37:30Z"
+       "CommittedDate": "2019-10-07T12:37:29Z"
       }
      }
     },
@@ -1399,25 +1553,40 @@
      "Item": {
       "Commit": {
        "OID": "701963b67b97e85e10d101065015ae0cf9d0a7c9",
-       "Message": "fixup! Fix indentation",
-       "MessageHeadline": "fixup! Fix indentation",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NzE0NjY=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NzE0Njg=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0NzE0NzE=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "FAILURE",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5NzE4NjQ4",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44446 failed (8 minutes, 13 seconds)",
+          "State": "FAILURE"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T12:39:26Z",
-       "PushedDate": "2019-10-07T12:39:32Z"
+       "CommittedDate": "2019-10-07T12:39:26Z"
       }
      }
     },
@@ -1454,10 +1623,6 @@
        "Message": "fixup! Fix indentation",
        "MessageHeadline": "fixup! Fix indentation",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9",
-       "Status": {
-        "State": "FAILURE",
-        "Contexts": null
-       },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
         "Email": "mrnugget@gmail.com",
@@ -1494,10 +1659,6 @@
        "Message": "fixup! Fix indentation",
        "MessageHeadline": "fixup! Fix indentation",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/701963b67b97e85e10d101065015ae0cf9d0a7c9",
-       "Status": {
-        "State": "FAILURE",
-        "Contexts": null
-       },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
         "Email": "mrnugget@gmail.com",
@@ -1519,25 +1680,46 @@
      "Item": {
       "Commit": {
        "OID": "9780015346b79568f04925a03f6ec6cdbc0ae9be",
-       "Message": "fixup! Remove unused method",
-       "MessageHeadline": "fixup! Remove unused method",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/9780015346b79568f04925a03f6ec6cdbc0ae9be",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0ODc3Mzg=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0ODc3Mzk=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0ODc3NDA=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "SUCCESS",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5ODMyMTUz",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44448 passed (10 minutes, 17 seconds)",
+          "State": "SUCCESS"
+         },
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5ODMwMjA2",
+          "Context": "percy/Sourcegraph",
+          "Description": "Visual review automatically approved, no visual changes found.",
+          "State": "SUCCESS"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T12:50:59Z",
-       "PushedDate": "2019-10-07T12:51:18Z"
+       "CommittedDate": "2019-10-07T12:50:59Z"
       }
      }
     },
@@ -1574,10 +1756,6 @@
        "Message": "a8n: Persist GitHub ChangesetEvents to database (#5834)\n\n* migrations: Create changeset_events table\r\n\r\n* a8n: Introduce CreateChangesetEvents in Store\r\n\r\n* a8n: Fix CreateChangesetEvent query\r\n\r\n* WIP: Split GitHub timeline items into ChangesetEvents\r\n\r\n* WIP\r\n\r\n* Fix tests\r\n\r\n* a8n: UpsertChangesetEvents in Store\r\n\r\n* WIP\r\n\r\n* Manually go generate code for a8n.Store to list changeset events\r\n\r\n* Recreate db/schema.md\r\n\r\n* a8n: Add CountChangesetEvents to Store\r\n\r\n* a8n: Add minimal ChangesetEvent to GraphQL API\r\n\r\n* a8n: Query ChangesetEvents in GraphQL test\r\n\r\n* Undo previous change to GitHubSource tests\r\n\r\n* a8n: Simplify test\r\n\r\n* fixup! Fix indentation\r\n\r\n* Update enterprise/pkg/a8n/store.go\r\n\r\n* Update enterprise/pkg/a8n/store.go\r\n\r\n* fixup! Fix indentation\r\n\r\n* fixup! Remove unused method",
        "MessageHeadline": "a8n: Persist GitHub ChangesetEvents to database (#5834)",
        "URL": "https://github.com/sourcegraph/sourcegraph/commit/705c515f173ec33bf343d5b3ea8e9cd24c10abf7",
-       "Status": {
-        "State": "SUCCESS",
-        "Contexts": null
-       },
        "Committer": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
         "Email": "mrnugget@gmail.com",
@@ -1660,25 +1838,46 @@
      {
       "Commit": {
        "OID": "9780015346b79568f04925a03f6ec6cdbc0ae9be",
-       "Message": "fixup! Remove unused method",
-       "MessageHeadline": "fixup! Remove unused method",
-       "URL": "https://github.com/sourcegraph/sourcegraph/commit/9780015346b79568f04925a03f6ec6cdbc0ae9be",
+       "CheckSuites": {
+        "Nodes": [
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0ODc3Mzg=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0ODc3Mzk=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         },
+         {
+          "ID": "MDEwOkNoZWNrU3VpdGUyNTQ0ODc3NDA=",
+          "Status": "QUEUED",
+          "Conclusion": "",
+          "ReceivedAt": "0001-01-01T00:00:00Z"
+         }
+        ]
+       },
        "Status": {
         "State": "SUCCESS",
-        "Contexts": null
+        "Contexts": [
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5ODMyMTUz",
+          "Context": "buildkite/sourcegraph",
+          "Description": "Build #44448 passed (10 minutes, 17 seconds)",
+          "State": "SUCCESS"
+         },
+         {
+          "ID": "MDEzOlN0YXR1c0NvbnRleHQ3ODE5ODMwMjA2",
+          "Context": "percy/Sourcegraph",
+          "Description": "Visual review automatically approved, no visual changes found.",
+          "State": "SUCCESS"
+         }
+        ]
        },
-       "Committer": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Email": "mrnugget@gmail.com",
-        "Name": "Thorsten Ball",
-        "User": {
-         "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-         "Login": "mrnugget",
-         "URL": "https://github.com/mrnugget"
-        }
-       },
-       "CommittedDate": "2019-10-07T12:50:59Z",
-       "PushedDate": "2019-10-07T12:51:18Z"
+       "CommittedDate": "2019-10-07T12:50:59Z"
       }
      }
     ]

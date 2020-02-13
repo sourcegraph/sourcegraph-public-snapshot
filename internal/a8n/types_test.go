@@ -120,12 +120,14 @@ func TestChangesetEvents(t *testing.T) {
 		}
 
 		commit := &github.PullRequestCommit{
-			Commit: github.Commit{
-				OID:             "123",
-				Message:         "Test Commit",
-				MessageHeadline: "",
-				URL:             "",
-				Status:          github.Status{},
+			Commit: struct {
+				OID           string
+				CheckSuites   struct{ Nodes []github.CheckSuite }
+				Status        github.Status
+				CommittedDate time.Time
+			}{
+				OID:    "123",
+				Status: github.Status{},
 			},
 		}
 

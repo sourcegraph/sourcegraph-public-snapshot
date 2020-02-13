@@ -4,11 +4,12 @@ interactions:
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
       label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
-      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  status
-      {\n    state\n  }\n  committer {\n    avatarUrl\n    email\n    name\n    user
-      {\n      ...actor\n    }\n  }\n}\n\nfragment prCommit on PullRequestCommit {\n  commit
-      {\n    ...commit\n  }\n}\n\nfragment review on PullRequestReview {\n  databaseId\n  author
-      {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
+      basicCommit on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      10){\n    nodes {\n      id\n      status\n      conclusion\n    }\n  }\n  committedDate\n}\n\nfragment
+      prCommit on PullRequestCommit {\n  commit {\n    ...basicCommit\n  }\n}\n\nfragment
+      review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
       {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
@@ -42,22 +43,21 @@ interactions:
       {\n          ...actor\n        }\n        createdAt\n      }\n      ... on LabeledEvent
       {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
       on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
-      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit{\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tCreatePullRequest($input:CreatePullRequestInput!)
+      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit
+      {\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tCreatePullRequest($input:CreatePullRequestInput!)
       {\n  createPullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"repositoryId":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","baseRefName":"master","headRefName":"test-pr-6","title":"This
       is a test PR","body":"This is the description of the test PR"}}}'
     form: {}
     headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzcxNDI4MDc1","title":"This
-      is a test PR","body":"This is the description of the test PR","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/145","number":145,"createdAt":"2020-02-05T15:14:47Z","updatedAt":"2020-02-05T15:14:47Z","headRefOid":"05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","baseRefOid":"3b79a5d479d2af9cfe91e0aad4e9dddca7278150","headRefName":"test-pr-6","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","message":"Add
-      foobar.md file","messageHeadline":"Add foobar.md file","committedDate":"2019-11-12T12:57:33Z","pushedDate":"2019-11-12T13:00:07Z","url":"https://github.com/sourcegraph/automation-testing/commit/05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","status":null,"committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","email":"mrnugget@gmail.com","name":"Thorsten
-      Ball","user":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}}}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","message":"Add
-      foobar.md file","messageHeadline":"Add foobar.md file","committedDate":"2019-11-12T12:57:33Z","pushedDate":"2019-11-12T13:00:07Z","url":"https://github.com/sourcegraph/automation-testing/commit/05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","status":null,"committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","email":"mrnugget@gmail.com","name":"Thorsten
-      Ball","user":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}}}}]}}}}}'
+    body: '{"data":{"createPullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0Mzc0MjM3ODIz","title":"This
+      is a test PR","body":"This is the description of the test PR","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/159","number":159,"createdAt":"2020-02-12T10:50:03Z","updatedAt":"2020-02-12T10:50:03Z","headRefOid":"05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","baseRefOid":"3b79a5d479d2af9cfe91e0aad4e9dddca7278150","headRefName":"test-pr-6","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzM=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzY=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-12T12:57:33Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzM=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzY=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-12T12:57:33Z"}}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -72,7 +72,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 05 Feb 2020 15:14:48 GMT
+      - Wed, 12 Feb 2020 10:50:04 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -82,7 +82,7 @@ interactions:
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
       Vary:
-      - Accept-Encoding
+      - Accept-Encoding, Accept
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -90,9 +90,9 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v4; format=json
+      - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - F707:224A6:5511AF:67E862:5E3ADBE6
+      - 40B3:4040B:103876A:1383A4C:5E43D85A
       X-Oauth-Scopes:
       - read:org, repo
       X-Xss-Protection:
