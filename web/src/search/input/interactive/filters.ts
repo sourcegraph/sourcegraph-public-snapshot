@@ -59,7 +59,7 @@ export const finiteFilters: Record<
             { value: 'commit' },
             { value: 'diff' },
             { value: 'repo' },
-            { displayValue: 'filenames', value: 'path' },
+            { value: 'path' },
             { value: 'symbols' },
         ].map(
             assign({
