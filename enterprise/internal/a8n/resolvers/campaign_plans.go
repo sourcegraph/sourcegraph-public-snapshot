@@ -159,7 +159,7 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.Ca
 
 		cs, _, err := r.store.ListChangesetJobs(ctx, ee.ListChangesetJobsOpts{
 			CampaignPlanID: r.opts.CampaignPlanID,
-			Limit:          len(r.jobs),
+			Limit:          -1,
 		})
 		if err != nil {
 			r.err = err
