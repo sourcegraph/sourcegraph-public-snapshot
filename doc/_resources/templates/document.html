@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.11.4"}} {{$previousReleaseVersion := "3.11"}} {{$currentReleaseRevspec := "v3.12.5"}} {{$currentReleaseVersion := "3.12"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.11.4"}} {{$previousReleaseVersion := "3.11"}} {{$currentReleaseRevspec := "v3.12.7"}} {{$currentReleaseVersion := "3.12"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -47,8 +47,9 @@
                 </span>
             </nav>
             <div id="content-nav" class="content-nav">
-                <form class="search-form form-inline mobile-search large-hidden medium-hidden">
-                    <input name="search" class="nav-search form-control" type="search" placeholder="Search docs..." spellcheck="false">
+                <form class="search-form form-inline mobile-search large-hidden medium-hidden" method="get" action="/search">
+                    <input name="q" class="nav-search form-control" type="search" placeholder="Search docs..." spellcheck="false">
+                    <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
                     <button class="btn btn-primary nav-search-button ml-2" type="submit">Search</button>
                 </form>
                 <ul class="content-nav-section expandable">

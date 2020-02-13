@@ -38,7 +38,7 @@ export const SearchModeToggle: React.FunctionComponent<Props> = props => {
                 <DropdownItem
                     active={!props.interactiveSearchMode}
                     onClick={props.interactiveSearchMode ? props.toggleSearchMode : undefined}
-                    className="e2e-search-mode-text-mode"
+                    className="e2e-search-mode-toggle__plain-text-mode"
                 >
                     <KeyboardIcon className="icon-inline"></KeyboardIcon>
                     <span className="ml-1">Plain text mode</span>

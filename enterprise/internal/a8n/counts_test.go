@@ -1125,6 +1125,56 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(0), Total: 2, Closed: 2},
 			},
 		},
+		{
+			codehosts: "github",
+			name:      "single changeset with changes-requested then reviewevent by same person with dismissed state",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []Event{
+				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(1, daysAgo(0), "user1", "DISMISSED"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
+			codehosts: "github",
+			name:      "single changeset with changes-requested then dismissed event by same person with dismissed state",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []Event{
+				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(1, daysAgo(0), "user2", "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
+			codehosts: "github",
+			name:      "single changeset with approval by one person, changes-requested by another, then dismissal of changes-requested",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(2)),
+			},
+			start: daysAgo(2),
+			events: []Event{
+				ghReview(1, daysAgo(2), "user1", "APPROVED"),
+				ghReview(1, daysAgo(1), "user2", "CHANGES_REQUESTED"),
+				ghReviewDismissed(1, daysAgo(0), "user3", "user2"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -1188,6 +1238,22 @@ func ghReview(id int64, t time.Time, login, state string) *a8n.ChangesetEvent {
 			State:     state,
 			Author: github.Actor{
 				Login: login,
+			},
+		},
+	}
+}
+
+func ghReviewDismissed(id int64, t time.Time, login, reviewer string) *a8n.ChangesetEvent {
+	return &a8n.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        a8n.ChangesetEventKindGitHubReviewDismissed,
+		Metadata: &github.ReviewDismissedEvent{
+			CreatedAt: t,
+			Actor:     github.Actor{Login: login},
+			Review: github.PullRequestReview{
+				Author: github.Actor{
+					Login: reviewer,
+				},
 			},
 		},
 	}

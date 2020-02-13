@@ -255,9 +255,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.subscriptions.add(
             from(this.platformContext.settings).subscribe(settingsCascade => {
                 if (!parseSearchURLPatternType(window.location.search)) {
-                    // When the web app mounts, if there is no patternType parameter in the URL,
-                    // set the search pattern type to the default based on settings, if it is set.
-                    // Otherwise, default to literal.
+                    // When the web app mounts, if the current page does not have a patternType URL
+                    // parameter, set the search pattern type to the defaultPatternType from settings
+                    // (if it is set), otherwise default to literal.
+                    //
+                    // For search result URLs that have no patternType= query parameter,
+                    // the `SearchResults` component will append &patternType=regexp
+                    // to the URL to ensure legacy search links continue to work.
                     const defaultPatternType =
                         settingsCascade.final &&
                         !isErrorLike(settingsCascade.final) &&

@@ -53,14 +53,13 @@ func LogEvent(ctx context.Context, args Event) error {
 }
 
 type bigQueryEvent struct {
-	EventName       string          `json:"name"`
-	AnonymousUserID string          `json:"anonymous_user_id"`
-	UserID          int             `json:"user_id"`
-	URL             string          `json:"url"`
-	Source          string          `json:"source"`
-	Argument        json.RawMessage `json:"argument,omitempty"`
-	Timestamp       string          `json:"timestamp"`
-	Version         string          `json:"version"`
+	EventName       string `json:"name"`
+	AnonymousUserID string `json:"anonymous_user_id"`
+	UserID          int    `json:"user_id"`
+	URL             string `json:"url"`
+	Source          string `json:"source"`
+	Timestamp       string `json:"timestamp"`
+	Version         string `json:"version"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -77,7 +76,6 @@ func publishSourcegraphDotComEvent(args Event) error {
 		AnonymousUserID: args.UserCookieID,
 		URL:             args.URL,
 		Source:          args.Source,
-		Argument:        args.Argument,
 		Timestamp:       time.Now().UTC().Format(time.RFC3339),
 		Version:         version.Version(),
 	})

@@ -815,6 +815,8 @@ github.com/sourcegraph/zoekt v0.0.0-20191204145050-b470e5f5cf39 h1:AS1W6pTjtrWna
 github.com/sourcegraph/zoekt v0.0.0-20191204145050-b470e5f5cf39/go.mod h1:H8z9wvHGyu+MiKyVKkJza8B+SWZispxX23A692cJAno=
 github.com/sourcegraph/zoekt v0.0.0-20200127193502-ca66753430ac h1:5B85g3vLIoOBFMV0bozYJsNQjrzM5+jps3wYeCTFn/4=
 github.com/sourcegraph/zoekt v0.0.0-20200127193502-ca66753430ac/go.mod h1:H8z9wvHGyu+MiKyVKkJza8B+SWZispxX23A692cJAno=
+github.com/sourcegraph/zoekt v0.0.0-20200211121734-6a6bb2fa654d h1:3nA26HCOZ3xi+cNe1Kwg0YszSlsbtcOMULBLLw1N7AY=
+github.com/sourcegraph/zoekt v0.0.0-20200211121734-6a6bb2fa654d/go.mod h1:H8z9wvHGyu+MiKyVKkJza8B+SWZispxX23A692cJAno=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.2.2 h1:5jhuqJyZCZf2JRofRvN/nIFgIWNzPa3/Vz8mYylgbWc=

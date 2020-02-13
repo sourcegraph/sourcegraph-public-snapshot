@@ -2701,7 +2701,15 @@ interface File2 {
     # The URLs to this file on external services.
     externalURLs: [ExternalLink!]!
     # Highlight the file.
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        # If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        # 2000 bytes is enabled. This may produce a significant amount of HTML
+        # which some browsers (such as Chrome, but not Firefox) may have trouble
+        # rendering efficiently.
+        highlightLongLines: Boolean = false
+    ): HighlightedFile!
 }
 
 # File is temporarily preserved for backcompat with browser extension search API client code.
@@ -2748,7 +2756,7 @@ type GitBlob implements TreeEntry & File2 {
     # Blame the blob.
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Highlight the blob contents.
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!, highlightLongLines: Boolean = false): HighlightedFile!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # Symbols defined in this blob.

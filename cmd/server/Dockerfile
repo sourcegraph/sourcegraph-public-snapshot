@@ -17,7 +17,7 @@ RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctag
 
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS lsif-builder
 
-RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.16.3-r0
+RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.19.0-r0
 RUN npm install -g yarn@1.17.3
 
 COPY lsif/package.json lsif/tsconfig.json lsif/yarn.lock /lsif/

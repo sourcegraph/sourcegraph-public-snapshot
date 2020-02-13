@@ -8,6 +8,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -129,6 +130,49 @@ func foo(real string) {}
 
 	if got != want {
 		t.Fatalf("got file matches %v, want %v", got, want)
+	}
+}
+
+func TestRecordMetrics(t *testing.T) {
+	cases := []struct {
+		name            string
+		matcher         string
+		includePatterns *[]string
+		want            string
+	}{
+		{
+			name:            "Empty values",
+			matcher:         "",
+			includePatterns: &[]string{},
+			want:            "inferred:.generic",
+		},
+		{
+			name:            "Include patterns no extension",
+			matcher:         "",
+			includePatterns: &[]string{"foo", "bar.go"},
+			want:            "inferred:.generic",
+		},
+		{
+			name:            "Include patterns first extension",
+			matcher:         "",
+			includePatterns: &[]string{"foo.c", "bar.go"},
+			want:            "inferred:.c",
+		},
+		{
+			name:            "Non-empty matcher",
+			matcher:         ".xml",
+			includePatterns: &[]string{"foo.c", "bar.go"},
+			want:            ".xml",
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := languageMetric(tt.matcher, tt.includePatterns)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }
 
