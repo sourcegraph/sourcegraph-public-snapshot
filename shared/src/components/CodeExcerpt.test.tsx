@@ -130,7 +130,7 @@ describe('CodeExcerpt', () => {
     })
 
     it('displays the correct number of lines, with no highlight matches on the context lines', () => {
-        const fetchHighlightedFileLines = sinon.spy(ctx => of(HL_FILE))
+        const fetchHighlightedFileLines = sinon.spy(ctx => of(HIGHLIGHTED_FILE_LINES_LONG))
         const highlightRanges = [
             { line: 0, character: 0, highlightLength: 1 },
             { line: 1, character: 0, highlightLength: 1 },
