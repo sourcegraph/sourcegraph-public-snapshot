@@ -74,6 +74,9 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                 changeset.__typename === 'ExternalChangeset' &&
                 !changesetPlans.nodes.some(changesetPlan => changesetPlan.repository.id === changeset.repository.id)
         )
+        const newDraftCount = !campaign.publishedAt
+            ? changed.length - (campaign.changesets.totalCount - deleted.length) + added.length
+            : 0
         return (
             <>
                 <h3 className="mt-3">Preview of changes</h3>
@@ -86,11 +89,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                 {campaign.publishedAt
                     ? changed.length - deleted.length + campaign.publishedAt
                     : campaign.changesets.totalCount - deleted.length}{' '}
-                published,{' '}
-                {!campaign.publishedAt
-                    ? changed.length - (campaign.changesets.totalCount - deleted.length) + added.length
-                    : 0}{' '}
-                drafts):
+                published, {newDraftCount} {pluralize('draft', newDraftCount)}):
                 <TabsWithLocalStorageViewStatePersistence
                     storageKey="campaignUpdateDiffTabs"
                     className={classNames(className)}
