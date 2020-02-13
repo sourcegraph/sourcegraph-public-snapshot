@@ -8,8 +8,10 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 )
 
@@ -47,7 +49,7 @@ Examples:
 		namespaceFlag   = flagSet.String("namespace", "", "ID of the namespace under which to create the campaign. The namespace can be the GraphQL ID of a Sourcegraph user or organisation. If not specified, the ID of the authenticated user is queried and used. (Required)")
 		planIDFlag      = flagSet.String("plan", "", "ID of campaign plan the campaign should turn into changesets. If no plan is specified, a campaign is created to which changesets can be added manually.")
 		draftFlag       = flagSet.Bool("draft", false, "Create the campaign as a draft (which won't create pull requests on code hosts)")
-		branchFlag      = flagSet.String("branch", "", "Name of the branch that will be created in each repository on the code host. Required when 'plan' is specified.")
+		branchFlag      = flagSet.String("branch", "", "Name of the branch that will be created in each repository on the code host. Required for Sourcegraph >= 3.13 when 'plan' is specified.")
 
 		changesetsFlag = flagSet.Int("changesets", 1000, "Returns the first n changesets per campaign.")
 
@@ -84,8 +86,20 @@ Examples:
 			return &usageError{errors.New("campaign description cannot be blank")}
 		}
 
-		if *planIDFlag != "" && *branchFlag == "" {
-			return &usageError{errors.New("branch cannot be blank for campaigns with a plan")}
+		if *planIDFlag != "" {
+			// We only need to check for -branch if the Sourcegraph version is >= 3.13
+			version, err := getSourcegraphVersion()
+			if err != nil {
+				return err
+			}
+			needsBranch, err := sourcegraphVersionCheck(version, ">= 3.13", "2020-02-13")
+			if err != nil {
+				return err
+			}
+
+			if needsBranch && *branchFlag == "" {
+				return &usageError{errors.New("branch cannot be blank for campaigns with a plan")}
+			}
 		}
 
 		var namespace string
@@ -259,4 +273,52 @@ func openInEditor(file string) error {
 	}
 
 	return cmd.Run()
+}
+
+const sourcegraphVersionQuery = `query SourcegraphVersion {
+  site {
+    productVersion
+  }
+}
+`
+
+func getSourcegraphVersion() (string, error) {
+	var sourcegraphVersion struct {
+		Site struct {
+			ProductVersion string
+		}
+	}
+
+	err := (&apiRequest{
+		query:  sourcegraphVersionQuery,
+		result: &sourcegraphVersion,
+	}).do()
+	if err != nil {
+		return "", err
+	}
+
+	return sourcegraphVersion.Site.ProductVersion, nil
+}
+
+func sourcegraphVersionCheck(version, constraint, minDate string) (bool, error) {
+	if version == "dev" {
+		return true, nil
+	}
+
+	buildDate := regexp.MustCompile(`^\d+_(\d{4}-\d{2}-\d{2})_[a-z0-9]{7}$`)
+	matches := buildDate.FindStringSubmatch(version)
+	if len(matches) > 1 {
+		return matches[1] >= minDate, nil
+	}
+
+	c, err := semver.NewConstraint(constraint)
+	if err != nil {
+		return false, nil
+	}
+
+	v, err := semver.NewVersion(version)
+	if err != nil {
+		return false, err
+	}
+	return c.Check(v), nil
 }

@@ -3,6 +3,7 @@ module github.com/sourcegraph/src-cli
 go 1.13
 
 require (
+	github.com/Masterminds/semver v1.5.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.9.0
 	github.com/gogo/protobuf v1.3.1 // indirect
