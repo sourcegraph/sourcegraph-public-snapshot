@@ -5,6 +5,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 ## [Install Sourcegraph](install/index.md)
 
 - [Install Sourcegraph with Docker](install/docker/index.md)
+- [Install Sourcegraph with Docker Compose](install/docker-compose/index.md)
 - [Install Sourcegraph on a cluster](install/cluster.md)
   
 ## Management, deployment, and configuration
