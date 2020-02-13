@@ -1,3 +1,4 @@
+import { uniq } from 'lodash'
 import * as sharedMetrics from '../database/metrics'
 import * as pgModels from '../models/pg'
 import { getCommitsNear, getHead } from '../gitserver/gitserver'
@@ -6,6 +7,7 @@ import { logAndTraceCall, TracingContext } from '../tracing'
 import { instrumentQuery, instrumentQueryOrTransaction, withInstrumentedTransaction } from '../database/postgres'
 import { TableInserter } from '../database/inserter'
 import { visibleDumps, ancestorLineage, bidirectionalLineage } from '../models/queries'
+import { isDefined } from '../util'
 
 /**
  * The insertion metrics for Postgres.
@@ -156,15 +158,11 @@ export class DumpManager {
             return withInstrumentedTransaction(this.connection, async entityManager => {
                 const results: { dump_id: number }[] = await entityManager.query(query, [repositoryId, commit, file])
                 const dumpIds = results.map(({ dump_id }) => dump_id)
-
-                // Deduplicate the ids while maintaining their original order. We keep a
-                // map as the marker for what entries we've seen. This runs in time linear
-                // to the result set.
-                const seen = new Map<number, boolean>()
-                const uniqueDumpIds = dumpIds.filter(dumpId => (seen.has(dumpId) ? false : seen.set(dumpId, true)))
-                if (uniqueDumpIds.length === 0) {
+                if (dumpIds.length === 0) {
                     return []
                 }
+
+                const uniqueDumpIds = uniq(dumpIds)
 
                 const dumps = await entityManager
                     .getRepository(pgModels.LsifDump)
@@ -173,12 +171,8 @@ export class DumpManager {
                     .where('id IN (:...ids)', { ids: uniqueDumpIds })
                     .getMany()
 
-                // Ensure models are ordered the same way as the results of the query above.
-                // So that we don't have a linear scan of the list on each comparison, we
-                // stash the relative index of each id in a map for fast lookup.
-                const indexes = new Map(uniqueDumpIds.map((id, i) => [id, i]))
-                dumps.sort((a, b) => (indexes.get(a.id) || 0) - (indexes.get(b.id) || 0))
-                return dumps
+                const dumpByID = new Map(dumps.map(dump => [dump.id, dump]))
+                return uniqueDumpIds.map(id => dumpByID.get(id)).filter(isDefined)
             })
         })
     }
