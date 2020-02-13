@@ -13,7 +13,6 @@ import (
 
 	// Register driver
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
