@@ -10,7 +10,7 @@ import { parseISO, isBefore, addMinutes } from 'date-fns'
 interface Props {
     campaign:
         | (Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
-              changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
+              changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
           })
         | Pick<GQL.ICampaignPlan, '__typename'>
 
