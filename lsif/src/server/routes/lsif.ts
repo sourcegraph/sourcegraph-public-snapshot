@@ -71,6 +71,7 @@ export function createLsifRouter(
         root?: string
         blocking?: boolean
         maxWait?: number
+        indexerName?: string
     }
 
     router.post(
@@ -81,17 +82,26 @@ export function createLsifRouter(
             validation.validateOptionalString('root'),
             validation.validateOptionalBoolean('blocking'),
             validation.validateOptionalInt('maxWait'),
+            validation.validateOptionalString('indexerName'),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repositoryId, commit, root: rootRaw, blocking, maxWait }: UploadQueryArgs = req.query
+                const {
+                    repositoryId,
+                    commit,
+                    root: rootRaw,
+                    blocking,
+                    maxWait,
+                    indexerName,
+                }: UploadQueryArgs = req.query
+
                 const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repositoryId, commit, root })
                 const filename = nodepath.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
                 await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
 
-                const indexer = await findIndexer(filename)
+                const indexer = indexerName || (await findIndexer(filename))
                 if (!indexer) {
                     throw new Error('Could not find tool type in metadata vertex at the start of the dump.')
                 }
