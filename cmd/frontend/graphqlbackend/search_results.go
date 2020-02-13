@@ -694,6 +694,7 @@ type getPatternInfoOptions struct {
 	// to allow users to jump to files by just typing their name.
 	forceFileSearch         bool
 	performStructuralSearch bool
+	performLiteralSearch    bool
 
 	fileMatchLimit int32
 }
@@ -716,11 +717,19 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 func processSearchPattern(q *query.Query, opts *getPatternInfoOptions) (string, bool, bool) {
 	var pattern string
 	var pieces []string
+	var contentFieldSet bool
 	isRegExp := false
 	isStructuralPat := false
+
+	patternValues := q.Values(query.FieldDefault)
+	if overridePattern := q.Values(query.FieldContent); len(overridePattern) > 0 {
+		patternValues = overridePattern
+		contentFieldSet = true
+	}
+
 	if opts.performStructuralSearch {
 		isStructuralPat = true
-		for _, v := range q.Values(query.FieldDefault) {
+		for _, v := range patternValues {
 			var piece string
 			switch {
 			case v.String != nil:
@@ -736,12 +745,17 @@ func processSearchPattern(q *query.Query, opts *getPatternInfoOptions) (string, 
 		pattern = strings.Join(pieces, " ")
 	} else if !opts.forceFileSearch {
 		isRegExp = true
-		for _, v := range q.Values(query.FieldDefault) {
-			// Treat quoted strings as literal strings to match, not regexps.
+		for _, v := range patternValues {
 			var piece string
 			switch {
 			case v.String != nil:
-				piece = regexp.QuoteMeta(*v.String)
+				if contentFieldSet && !opts.performLiteralSearch {
+					piece = *v.String
+				} else {
+					// Treat quoted strings as literal
+					// strings to match, not regexps.
+					piece = regexp.QuoteMeta(*v.String)
+				}
 			case v.Regexp != nil:
 				piece = v.Regexp.String()
 			}
@@ -997,6 +1011,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if r.patternType == SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 		forceOnlyResultType = "file"
+	}
+	if r.patternType == SearchTypeLiteral {
+		options = &getPatternInfoOptions{performLiteralSearch: true}
 	}
 	p, err := r.getPatternInfo(options)
 

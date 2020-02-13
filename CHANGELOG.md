@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added a setting `auth.minPasswordLength`, which when set, causes a minimum password length to be enforced when users sign up or change passwords. [#7521](https://github.com/sourcegraph/sourcegraph/issues/7521)
 - GitHub labels associated with Automation campaigns are now displayed. [#8115](https://github.com/sourcegraph/sourcegraph/pull/8115)
 - When creating a campaign Automation users can now specify the branch name that will be used on code host. This is also a breaking change for users of the GraphQL API since the `branch` attribute is now required in `CreateCampaignInput` when a `plan` is also specified. [#7646](https://github.com/sourcegraph/sourcegraph/issues/7646)
+- **Search** Added an optional `content:` parameter for specifying a search pattern. This parameter overrides any other search patterns in a query. Useful for unambiguously specifying what to search for when search strings clash with other query syntax. [#6490](https://github.com/sourcegraph/sourcegraph/issues/6490)
 
 ### Changed
 
