@@ -119,7 +119,7 @@ func TestIsValidUpgrade(t *testing.T) {
 			if got := IsValidUpgrade(previous, latest); got != tc.want {
 				t.Errorf(
 					"IsValidUpgrade(previous: %s, latest: %s) = %t, want %t",
-					tc.latest,
+					tc.previous,
 					tc.latest,
 					got,
 					tc.want,
