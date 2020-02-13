@@ -65,13 +65,17 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
       </small>
     </p>
     <React.Fragment>
-      <button
-        className="btn btn-primary"
-        disabled={false}
-        type="submit"
+      <div
+        className="mt-3"
       >
-        Create
-      </button>
+        <button
+          className="btn btn-primary"
+          disabled={false}
+          type="submit"
+        >
+          Create
+        </button>
+      </div>
     </React.Fragment>
   </Form>
 </React.Fragment>
@@ -139,21 +143,56 @@ Array [
         </a>
       </small>
     </p>
-    <button
-      className="btn btn-secondary mr-1"
-      disabled={false}
-      onClick={[Function]}
-      type="submit"
+    <div
+      className="form-group mt-3"
     >
-      Create draft
-    </button>
-    <button
-      className="btn btn-primary"
-      disabled={false}
-      type="submit"
+      <label>
+        Branch name
+         
+        <small>
+          <svg
+            className="mdi-icon icon-inline"
+            data-tooltip="If a branch with the given name already exists, a fallback name will be created by appending a count. Example: \\"my-branch-name\\" becomes \\"my-branch-name-1\\"."
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+            />
+          </svg>
+        </small>
+      </label>
+      <input
+        className="form-control"
+        disabled={false}
+        onChange={[Function]}
+        placeholder="my-awesome-campaign"
+        required={true}
+        type="text"
+        value=""
+      />
+    </div>
+    <div
+      className="mt-3"
     >
-      Create
-    </button>
+      <button
+        className="btn btn-secondary mr-1"
+        disabled={false}
+        onClick={[Function]}
+        type="submit"
+      >
+        Create draft
+      </button>
+      <button
+        className="btn btn-primary"
+        disabled={false}
+        type="submit"
+      >
+        Create
+      </button>
+    </div>
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <CampaignTabs
@@ -353,6 +392,7 @@ Array [
         "author": Object {
           "username": "alice",
         },
+        "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesetPlans": Object {
           "nodes": Array [],
@@ -10803,6 +10843,7 @@ Array [
         "author": Object {
           "username": "alice",
         },
+        "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesetPlans": Object {
           "nodes": Array [],
@@ -21377,6 +21418,7 @@ Array [
         "author": Object {
           "username": "alice",
         },
+        "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesetPlans": Object {
           "nodes": Array [],

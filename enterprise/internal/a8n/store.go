@@ -108,6 +108,7 @@ RETURNING j.id,
   j.campaign_id,
   j.campaign_job_id,
   j.changeset_id,
+  j.branch,
   j.error,
   j.started_at,
   j.finished_at,
@@ -1015,6 +1016,7 @@ var createCampaignQueryFmtstr = `
 INSERT INTO campaigns (
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1024,11 +1026,12 @@ INSERT INTO campaigns (
   campaign_plan_id,
   closed_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1057,6 +1060,7 @@ func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		createCampaignQueryFmtstr,
 		c.Name,
 		c.Description,
+		c.Branch,
 		c.AuthorID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
@@ -1115,6 +1119,7 @@ UPDATE campaigns
 SET (
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1122,12 +1127,13 @@ SET (
   changeset_ids,
   campaign_plan_id,
   closed_at
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1150,6 +1156,7 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		updateCampaignQueryFmtstr,
 		c.Name,
 		c.Description,
+		c.Branch,
 		c.AuthorID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
@@ -1251,6 +1258,7 @@ SELECT
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1318,6 +1326,7 @@ SELECT
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -2118,18 +2127,20 @@ INSERT INTO changeset_jobs (
   campaign_id,
   campaign_job_id,
   changeset_id,
+  branch,
   error,
   started_at,
   finished_at,
   created_at,
   updated_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_id,
   campaign_job_id,
   changeset_id,
+  branch,
   error,
   started_at,
   finished_at,
@@ -2151,6 +2162,7 @@ func (s *Store) createChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error
 		c.CampaignID,
 		c.CampaignJobID,
 		nullInt64Column(c.ChangesetID),
+		c.Branch,
 		nullStringColumn(c.Error),
 		nullTimeColumn(c.StartedAt),
 		nullTimeColumn(c.FinishedAt),
@@ -2179,17 +2191,19 @@ SET (
   campaign_id,
   campaign_job_id,
   changeset_id,
+  branch,
   error,
   started_at,
   finished_at,
   updated_at
-) = (%s, %s, %s, %s, %s, %s, %s)
+) = (%s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
   campaign_id,
   campaign_job_id,
   changeset_id,
+  branch,
   error,
   started_at,
   finished_at,
@@ -2205,6 +2219,7 @@ func (s *Store) updateChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error
 		c.CampaignID,
 		c.CampaignJobID,
 		nullInt64Column(c.ChangesetID),
+		c.Branch,
 		nullStringColumn(c.Error),
 		nullTimeColumn(c.StartedAt),
 		nullTimeColumn(c.FinishedAt),
@@ -2326,6 +2341,7 @@ SELECT
   campaign_id,
   campaign_job_id,
   changeset_id,
+  branch,
   error,
   started_at,
   finished_at,
@@ -2399,6 +2415,7 @@ SELECT
   changeset_jobs.campaign_id,
   changeset_jobs.campaign_job_id,
   changeset_jobs.changeset_id,
+  changeset_jobs.branch,
   changeset_jobs.error,
   changeset_jobs.started_at,
   changeset_jobs.finished_at,
@@ -2635,6 +2652,7 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&c.ID,
 		&c.Name,
 		&c.Description,
+		&dbutil.NullString{S: &c.Branch},
 		&c.AuthorID,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
@@ -2681,6 +2699,7 @@ func scanChangesetJob(c *a8n.ChangesetJob, s scanner) error {
 		&c.CampaignID,
 		&c.CampaignJobID,
 		&dbutil.NullInt64{N: &c.ChangesetID},
+		&c.Branch,
 		&dbutil.NullString{S: &c.Error},
 		&dbutil.NullTime{Time: &c.StartedAt},
 		&dbutil.NullTime{Time: &c.FinishedAt},

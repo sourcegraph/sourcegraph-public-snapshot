@@ -1,3 +1,4 @@
+import slugify from 'slugify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
@@ -38,6 +39,7 @@ import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 interface Campaign
     extends Pick<
@@ -48,6 +50,7 @@ interface Campaign
         | 'description'
         | 'author'
         | 'changesetCountsOverTime'
+        | 'branch'
         | 'createdAt'
         | 'updatedAt'
         | 'publishedAt'
@@ -95,6 +98,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
+    const [branch, setBranch] = useState<string | null>(null)
 
     // For errors during fetching
     const triggerError = useError()
@@ -207,6 +211,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
 
+    const specifyingBranchAllowed =
+        campaign &&
+        (campaign.__typename === 'CampaignPlan' ||
+            (!campaign.publishedAt &&
+                campaign.changesets.totalCount === 0 &&
+                campaign.status.state !== GQL.BackgroundProcessState.PROCESSING))
+
     const onDraft: React.FormEventHandler = async event => {
         event.preventDefault()
         setMode('saving')
@@ -216,6 +227,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 description,
                 namespace: authenticatedUser.id,
                 plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
+                branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
                 draft: true,
             })
             unblockHistoryRef.current()
@@ -247,7 +259,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setMode('saving')
         try {
             if (campaignID) {
-                setCampaign(await updateCampaign({ id: campaignID, name, description }))
+                setCampaign(
+                    await updateCampaign({
+                        id: campaignID,
+                        name,
+                        description,
+                        branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
+                    })
+                )
                 unblockHistoryRef.current()
             } else {
                 const createdCampaign = await createCampaign({
@@ -255,6 +274,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     description,
                     namespace: authenticatedUser.id,
                     plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
+                    branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
                 })
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
@@ -273,9 +293,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         event.preventDefault()
         unblockHistoryRef.current = history.block(discardChangesMessage)
         {
-            const { name, description } = campaign as Campaign
+            const { name, description, branch } = campaign as Campaign
             setName(name)
             setDescription(description)
+            setBranch(branch)
             setMode('editing')
         }
     }
@@ -511,25 +532,51 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </small>
                     </p>
                 )}
-                {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
+                {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && (
                     <>
-                        {campaign && (
+                        {specifyingBranchAllowed && (
+                            <div className="form-group mt-3">
+                                <label>
+                                    Branch name{' '}
+                                    <small>
+                                        <InformationOutlineIcon
+                                            className="icon-inline"
+                                            data-tooltip={
+                                                'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
+                                            }
+                                        />
+                                    </small>
+                                </label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    onChange={event => setBranch(event.target.value)}
+                                    placeholder="my-awesome-campaign"
+                                    value={branch !== null ? branch : slugify(name)}
+                                    required={true}
+                                    disabled={mode === 'saving'}
+                                />
+                            </div>
+                        )}
+                        <div className="mt-3">
+                            {campaign && (
+                                <button
+                                    type="submit"
+                                    className="btn btn-secondary mr-1"
+                                    onClick={onDraft}
+                                    disabled={mode !== 'editing'}
+                                >
+                                    Create draft
+                                </button>
+                            )}
                             <button
                                 type="submit"
-                                className="btn btn-secondary mr-1"
-                                onClick={onDraft}
-                                disabled={mode !== 'editing'}
+                                className="btn btn-primary"
+                                disabled={mode !== 'editing' || campaign?.changesetPlans.totalCount === 0}
                             >
-                                Create draft
+                                Create
                             </button>
-                        )}
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={mode !== 'editing' || campaign?.changesetPlans.totalCount === 0}
-                        >
-                            Create
-                        </button>
+                        </div>
                     </>
                 )}
             </Form>

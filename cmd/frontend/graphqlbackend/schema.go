@@ -432,6 +432,11 @@ input CreateCampaignInput {
     # The description of the campaign as Markdown.
     description: String!
 
+    # The name of the branch that will be created for each changeset on the codehost if the plan attribute is specified.
+    # If a branch with the given name already exists a fallback name will be created by adding a count to the end of the branch name until the name doesn't exist. Example: "my-branch-name" becomes "my-branch-name-1".
+    # This is required if the plan attribute is specified.
+    branch: String
+
     # An optional reference to a completed campaign plan that was previewed before this mutation.
     # If null, existing changesets can be added manually.
     # If set, no changesets can be added manually, they will be created by Sourcegraph
@@ -454,6 +459,9 @@ input UpdateCampaignInput {
 
     # The updated name of the campaign (if non-null).
     name: String
+
+    # The branch name. This is not allowed if the campaign or any individual changesets have already been published.
+    branch: String
 
     # The updated description of the campaign as Markdown (if non-null).
     description: String
@@ -547,6 +555,9 @@ type Campaign implements Node {
 
     # The description as Markdown.
     description: String!
+
+    # The branch of the changesets created by a campaign plan.
+    branch: String
 
     # The user who authored the campaign.
     author: User!
