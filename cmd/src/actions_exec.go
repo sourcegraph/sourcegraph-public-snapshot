@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -424,6 +425,15 @@ type ActionRepo struct {
 }
 
 func actionRepos(ctx context.Context, verbose bool, scopeQuery string) ([]ActionRepo, error) {
+	hasCount, err := regexp.MatchString(`count:\d+`, scopeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	if !hasCount {
+		scopeQuery = scopeQuery + " count:999999"
+	}
+
 	query := `
 query ActionRepos($query: String!) {
 	search(query: $query, version: V2) {
@@ -463,10 +473,11 @@ query ActionRepos($query: String!) {
 			}
 		}
 	}
+
 	if err := (&apiRequest{
 		query: query,
 		vars: map[string]interface{}{
-			"query": scopeQuery + " count:999999", // TODO!(sqs)
+			"query": scopeQuery,
 		},
 		result: &result,
 	}).do(); err != nil {
