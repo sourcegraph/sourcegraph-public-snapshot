@@ -58,7 +58,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             setPublishError(undefined)
             setIsLoading(true)
             await _publishChangeset(node.id)
-            campaignUpdates?.next()
+            if (campaignUpdates) {
+                campaignUpdates.next()
+            }
         } catch (error) {
             setPublishError(asError(error))
         } finally {
