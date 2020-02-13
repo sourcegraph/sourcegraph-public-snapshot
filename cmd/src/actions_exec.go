@@ -349,45 +349,51 @@ Format of the action JSON files:
 func prepareAction(ctx context.Context, action Action) error {
 	// Build any Docker images.
 	for i, step := range action.Steps {
-		if step.Type == "docker" && step.Dockerfile != "" {
-			if step.Image != "" {
+		if step.Type == "docker" {
+			if step.Dockerfile == "" && step.Image == "" {
+				return fmt.Errorf("docker run step has to specify either 'image' or 'dockerfile'")
+			}
+
+			if step.Dockerfile != "" && step.Image != "" {
 				return fmt.Errorf("docker run step may specify either image (%q) or dockerfile, not both", step.Image)
 			}
 
-			iidFile, err := ioutil.TempFile("", "src-actions-exec-image-id")
-			if err != nil {
-				return err
-			}
-			defer os.Remove(iidFile.Name())
+			if step.Dockerfile != "" {
+				iidFile, err := ioutil.TempFile("", "src-actions-exec-image-id")
+				if err != nil {
+					return err
+				}
+				defer os.Remove(iidFile.Name())
 
-			if *verbose {
-				log.Printf("# Building Docker container for step %d...", i)
+				if *verbose {
+					log.Printf("# Building Docker container for step %d...", i)
+				}
+
+				cmd := exec.CommandContext(ctx, "docker", "build", "--iidfile", iidFile.Name(), "-")
+				cmd.Stdin = strings.NewReader(step.Dockerfile)
+				verboseCmdOutput(cmd)
+				if err := cmd.Run(); err != nil {
+					return errors.Wrap(err, "build docker image")
+				}
+				if *verbose {
+					log.Printf("# Done building Docker container for step %d.", i)
+				}
+
+				iid, err := ioutil.ReadFile(iidFile.Name())
+				if err != nil {
+					return err
+				}
+				step.Image = string(iid)
 			}
 
-			cmd := exec.CommandContext(ctx, "docker", "build", "--iidfile", iidFile.Name(), "-")
-			cmd.Stdin = strings.NewReader(step.Dockerfile)
-			verboseCmdOutput(cmd)
-			if err := cmd.Run(); err != nil {
-				return errors.Wrap(err, "build docker image")
-			}
-			if *verbose {
-				log.Printf("# Done building Docker container for step %d.", i)
-			}
-
-			iid, err := ioutil.ReadFile(iidFile.Name())
-			if err != nil {
-				return err
-			}
-			step.Image = string(iid)
-		}
-
-		// Set digests for Docker images so we don't cache action runs in 2 different images with
-		// the same tag.
-		if step.Type == "docker" && step.Image != "" {
-			var err error
-			step.imageContentDigest, err = getDockerImageContentDigest(ctx, step.Image)
-			if err != nil {
-				return errors.Wrap(err, "Failed to get Docker image content digest")
+			// Set digests for Docker images so we don't cache action runs in 2 different images with
+			// the same tag.
+			if step.Image != "" {
+				var err error
+				step.imageContentDigest, err = getDockerImageContentDigest(ctx, step.Image)
+				if err != nil {
+					return errors.Wrap(err, "Failed to get Docker image content digest")
+				}
 			}
 		}
 	}
