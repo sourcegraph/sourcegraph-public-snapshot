@@ -26,15 +26,15 @@ Examples:
 
   Upload an LSIF dump:
 
-    	$ src lsif upload -repo=FOO -commit=BAR -file=data.lsif
+    	$ src lsif upload -repo=FOO -commit=BAR -file=dump.lsif
 
   Upload an LSIF dump for a subproject:
 
-    	$ src lsif upload -repo=FOO -commit=BAR -file=data.lsif -root=cmd/
+    	$ src lsif upload -repo=FOO -commit=BAR -file=dump.lsif -root=cmd/
 
   Upload an LSIF dump when lsifEnforceAuth is enabled:
 
-    	$ src lsif upload -repo=FOO -commit=BAR -file=data.lsif -github-token=BAZ
+    	$ src lsif upload -repo=FOO -commit=BAR -file=dump.lsif -github-token=BAZ
 `
 
 	flagSet := flag.NewFlagSet("upload", flag.ExitOnError)
