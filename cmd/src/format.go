@@ -101,7 +101,7 @@ func parseTemplate(text string) (*template.Template, error) {
 			fmt.Fprintln(&buf, color.HiGreenString("✔  Campaign plan saved."), "To preview and run the campaign (and create branches and changesets):")
 			fmt.Fprintln(&buf)
 			fmt.Fprintln(&buf, " ", color.HiCyanString("▶ Web:"), campaignPlan.PreviewURL, color.HiBlackString("or"))
-			cliCommand := fmt.Sprintf("src campaigns create -plan=%s", campaignPlan.ID)
+			cliCommand := fmt.Sprintf("src campaigns create -plan=%s -branch=DESIRED-BRANCH-NAME", campaignPlan.ID)
 			fmt.Fprintln(&buf, " ", color.HiCyanString("▶ CLI:"), cliCommand)
 			return buf.String()
 		},
