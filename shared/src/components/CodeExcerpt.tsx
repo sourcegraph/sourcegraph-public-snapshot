@@ -129,7 +129,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         // The highest line number of all highlights in this excerpt.
         const lastHighlightLineNumber = Math.max(...highlightRangeLines)
 
-        // If the highest highlight line number is greater than the line number of the last line number of the subsetMatches,
+        // If the highest highlight line number is greater than the last line number of the subsetMatches,
         // then we know that there's at least one highlight in the context lines.
         const contextLineHasHighlight = lastHighlightLineNumber > this.props.lastSubsetMatchLineNumber
 
