@@ -53,9 +53,9 @@ export const finiteFilters: Record<
         ),
     },
     type: {
-        default: 'code',
+        default: '',
         values: [
-            { value: 'code' },
+            { displayValue: 'code', value: '' },
             { value: 'commit' },
             { value: 'diff' },
             { value: 'repo' },
