@@ -8,114 +8,111 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 
 ## Deploy to EC2
 
-1. Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
-1. Select the **Amazon Linux 2 AMI (HVM), SSD Volume Type**.
-1. Select an appropriate instance size (we recommend `t2.2xlarge` or larger, depending on team size and number of repositories/languages enabled), then **Next: Configure Instance Details**
-1. Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
-1. Add the following user data (as text) in the **Advanced Details** section:
+* Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
+* Select the **Amazon Linux 2 AMI (HVM), SSD Volume Type**.
+* Select an appropriate instance size (we recommend `t2.2xlarge` or larger, depending on team size and number of repositories/languages enabled), then **Next: Configure Instance Details**
+* Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
+* Add the following user data (as text) in the **Advanced Details** section:
 
-    ```bash
-    #!/usr/bin/env bash
+```bash
+#!/usr/bin/env bash
 
-    set -euxo pipefail
+set -euxo pipefail
 
-    EBS_VOLUME_DEVICE_NAME='/dev/sdb'
-    DOCKER_DATA_ROOT='/mnt/docker-data'
+EBS_VOLUME_DEVICE_NAME='/dev/sdb'
+DOCKER_DATA_ROOT='/mnt/docker-data'
 
-    DOCKER_COMPOSE_VERSION='1.25.3'
-    SOURCEGRAPH_VERSION='v3.12.5'
-    DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
+DOCKER_COMPOSE_VERSION='1.25.3'
+SOURCEGRAPH_VERSION='v3.12.5'
+DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
 
-    # Install git
-    yum update -y
-    yum install git -y
+# Install git
+yum update -y
+yum install git -y
 
-    # Clone Docker Compose definition
-    git clone "https://github.com/sourcegraph/deploy-sourcegraph-docker.git" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
-    cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
-    git checkout "${SOURCEGRAPH_VERSION}"
+# Clone Docker Compose definition
+git clone "https://github.com/sourcegraph/deploy-sourcegraph-docker.git" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
+cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
+git checkout "${SOURCEGRAPH_VERSION}"
 
-    # Format (if necessary) and mount EBS volume
-    device_fs=$(lsblk "${EBS_VOLUME_DEVICE_NAME}" --noheadings --output fsType)
-    if [ "${device_fs}" == "" ] ## only format the volume if it isn't already formatted
-    then
-      mkfs -t xfs "${EBS_VOLUME_DEVICE_NAME}"
-    fi
-    mkdir -p "${DOCKER_DATA_ROOT}"
-    mount "${EBS_VOLUME_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
+# Format (if necessary) and mount EBS volume
+device_fs=$(lsblk "${EBS_VOLUME_DEVICE_NAME}" --noheadings --output fsType)
+if [ "${device_fs}" == "" ] ## only format the volume if it isn't already formatted
+then
+  mkfs -t xfs "${EBS_VOLUME_DEVICE_NAME}"
+fi
+mkdir -p "${DOCKER_DATA_ROOT}"
+mount "${EBS_VOLUME_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
 
-    # Mount EBS volume on reboots
-    EBS_UUID=$(blkid -s UUID -o value "${EBS_VOLUME_DEVICE_NAME}")
-    echo "UUID=${EBS_UUID}  ${DOCKER_DATA_ROOT}  xfs  defaults,nofail  0  2" >> '/etc/fstab'
-    umount "${DOCKER_DATA_ROOT}"
-    mount -a
+# Mount EBS volume on reboots
+EBS_UUID=$(blkid -s UUID -o value "${EBS_VOLUME_DEVICE_NAME}")
+echo "UUID=${EBS_UUID}  ${DOCKER_DATA_ROOT}  xfs  defaults,nofail  0  2" >> '/etc/fstab'
+umount "${DOCKER_DATA_ROOT}"
+mount -a
 
-    # Install, configure, and enable Docker
-    yum update -y
-    amazon-linux-extras install docker
-    systemctl enable --now docker
-    sed -i -e 's/1024/10240/g' /etc/sysconfig/docker
-    sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
-    usermod -a -G docker ec2-user
+# Install, configure, and enable Docker
+yum update -y
+amazon-linux-extras install docker
+systemctl enable --now docker
+sed -i -e 's/1024/10240/g' /etc/sysconfig/docker
+sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
+usermod -a -G docker ec2-user
 
-    # Install jq for scripting
-    yum install -y jq
+# Install jq for scripting
+yum install -y jq
 
-    # Edit Docker storage directory to mounted volume
-    DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
+# Edit Docker storage directory to mounted volume
+DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
 
-    ## initialize the config file with empty json if it doesn't exist
-    if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]
-    then
-      mkdir -p $(dirname "${DOCKER_DAEMON_CONFIG_FILE}")
-      echo '{}' > "${DOCKER_DAEMON_CONFIG_FILE}"
-    fi
+## initialize the config file with empty json if it doesn't exist
+if [ ! -f "${DOCKER_DAEMON_CONFIG_FILE}" ]
+then
+  mkdir -p $(dirname "${DOCKER_DAEMON_CONFIG_FILE}")
+  echo '{}' > "${DOCKER_DAEMON_CONFIG_FILE}"
+fi
 
-    ## update Docker's 'data-root' to point to our mounted disk
-    tmp_config=$(mktemp)
-    trap "rm -f ${tmp_config}" EXIT
-    cat "${DOCKER_DAEMON_CONFIG_FILE}" | jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' > "${tmp_config}"
-    cat "${tmp_config}" > "${DOCKER_DAEMON_CONFIG_FILE}"
+## update Docker's 'data-root' to point to our mounted disk
+tmp_config=$(mktemp)
+trap "rm -f ${tmp_config}" EXIT
+cat "${DOCKER_DAEMON_CONFIG_FILE}" | jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' > "${tmp_config}"
+cat "${tmp_config}" > "${DOCKER_DAEMON_CONFIG_FILE}"
 
-    ## finally, restart Docker daemon to pick up our changes
-    systemctl restart --now docker
+## finally, restart Docker daemon to pick up our changes
+systemctl restart --now docker
 
-    # Install Docker Compose
-    curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    chmod +x /usr/local/bin/docker-compose
-    curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose" -o /etc/bash_completion.d/docker-compose
+# Install Docker Compose
+curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+curl -L "https://raw.githubusercontent.com/docker/compose/${DOCKER_COMPOSE_VERSION}/contrib/completion/bash/docker-compose" -o /etc/bash_completion.d/docker-compose
 
-    # Run Sourcegraph. Restart the containers upon reboot.
-    cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
-    docker-compose up -d
-    ```
+# Run Sourcegraph. Restart the containers upon reboot.
+cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"/docker-compose
+docker-compose up -d
+```
 
-1. Select **Next: Add Storage**
-1. Click "Add New Volume" and add an additional volume (for storing Docker data) with the following settings:
-    * **Volume Type** (left-most column): EBS
-    * **Device**: `/dev/sdb`
-    * **Size (GiB)**: `250` GB minimum *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid [resizing your volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) later on.)*
-    * **Volume Type**: General Purpose SSD (gp2)
-    * **Delete on Termination**: Leave this setting unchecked
+* Select **Next: Add Storage**
+* Click "Add New Volume" and add an additional volume (for storing Docker data) with the following settings:
 
-1. Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
+  * **Volume Type** (left-most column): EBS
+  * **Device**: `/dev/sdb`
+  * **Size (GiB)**: `250` GB minimum *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid [resizing your volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) later on.)*
+  * **Volume Type**: General Purpose SSD (gp2)
+  * **Delete on Termination**: Leave this setting unchecked
 
-    * Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
-    * Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration))
+* Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
 
-1. Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and viewing the logs:
+  * Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
+  * Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration))
 
-    * Following the status of the user data script that you provided earlier:
+* Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and using the following diagnostic commands:
 
-      ```bash
-      tail -f /var/log/cloud-init-output.log
-      ```
+```bash
+# Follow the status of the user data script you provided earlier
+tail -f /var/log/cloud-init-output.log
 
-    * (Once the user data script completes) monitoring the health of the `sourcegraph-frontend` container:
-
-      ```bash
-      docker ps --filter="name=sourcegraph-frontend-0"
-      ```
+# (Once the user data script completes) monitor the health of the "sourcegraph-frontend" container
+docker ps --filter="name=sourcegraph-frontend-0"
+```
 
 ---
 
