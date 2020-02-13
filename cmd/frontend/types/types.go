@@ -157,8 +157,9 @@ type CodeIntelUsagePeriod struct {
 }
 
 type CodeIntelEventCategoryStatistics struct {
-	Precise *CodeIntelEventStatistics
-	Fuzzy   *CodeIntelEventStatistics
+	LSIF   *CodeIntelEventStatistics
+	LSP    *CodeIntelEventStatistics
+	Search *CodeIntelEventStatistics
 }
 
 type CodeIntelEventStatistics struct {
