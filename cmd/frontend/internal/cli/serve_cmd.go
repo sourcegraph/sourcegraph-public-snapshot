@@ -92,6 +92,10 @@ func InitDB() error {
 	migrate := true
 
 	for {
+		// We need this loop so that we handle the missing versions table,
+		// which would be added by running the migrations. Once we detect that
+		// it's missing, we run the migrations and try to update the version again.
+
 		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
 		if err != nil && !dbutil.IsPostgresError(err, "undefined_table") {
 			return err
