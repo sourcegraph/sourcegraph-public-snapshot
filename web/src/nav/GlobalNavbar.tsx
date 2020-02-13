@@ -27,9 +27,6 @@ import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/ut
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
 import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
-import { matchPath } from 'react-router'
-import { routes } from '../routes'
-import { enterpriseRoutes } from '../enterprise/routes'
 
 interface Props
     extends SettingsCascadeProps,
