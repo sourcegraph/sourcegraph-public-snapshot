@@ -727,7 +727,7 @@ fragment commit on Commit {
   }
 }
 
-fragment basicCommit on Commit {
+fragment commitWithChecks on Commit {
   oid
   status {
     state
@@ -750,7 +750,7 @@ fragment basicCommit on Commit {
 
 fragment prCommit on PullRequestCommit {
   commit {
-    ...basicCommit
+    ...commitWithChecks
   }
 }
 
