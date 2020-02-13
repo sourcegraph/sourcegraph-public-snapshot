@@ -85,12 +85,21 @@ WHERE version = %s`
 
 // IsValidUpgrade returns true if the given previous and
 // latest versions comply with our documented upgrade policy.
+// All roll-backs or downgrades are supported.
 //
 // https://docs.sourcegraph.com/#upgrading-sourcegraph
 func IsValidUpgrade(previous, latest *semver.Version) bool {
-	return previous == nil || previous.Equal(latest) ||
-		(previous.Major() == latest.Major() &&
-			previous.Minor() == latest.Minor()-1) ||
-		(latest.Major() == previous.Major()+1 &&
-			latest.Minor() == 0)
+	switch {
+	case previous == nil:
+		return true
+	case previous.Major() > latest.Major():
+		return true
+	case previous.Major() == latest.Major():
+		return previous.Minor() >= latest.Minor() ||
+			previous.Minor() == latest.Minor()-1
+	case previous.Major() == latest.Major()-1:
+		return latest.Minor() == 0
+	default:
+		return false
+	}
 }

@@ -32,6 +32,7 @@ func TestUpdateServiceVersion(t *testing.T) {
 			Previous: semver.MustParse("1.0.0"),
 			Latest:   semver.MustParse("2.1.0"),
 		}},
+		{"0.3.0", nil}, // rollback
 	} {
 		have := UpdateServiceVersion(ctx, "service", tc.version)
 		want := tc.err
@@ -70,6 +71,16 @@ func TestIsValidUpgrade(t *testing.T) {
 		latest:   "v3.13.1",
 		want:     true,
 	}, {
+		name:     "one patch version up",
+		previous: "v3.12.4",
+		latest:   "v3.12.5",
+		want:     true,
+	}, {
+		name:     "two patch versions up",
+		previous: "v3.12.4",
+		latest:   "v3.12.6",
+		want:     true,
+	}, {
 		name:     "one major version up",
 		previous: "v3.13.1",
 		latest:   "v4.0.0",
@@ -84,6 +95,21 @@ func TestIsValidUpgrade(t *testing.T) {
 		previous: "v3.9.4",
 		latest:   "v4.1.0",
 		want:     false,
+	}, {
+		name:     "major rollback",
+		previous: "v4.1.0",
+		latest:   "v3.9.4",
+		want:     true,
+	}, {
+		name:     "minor rollback",
+		previous: "v4.1.0",
+		latest:   "v4.0.4",
+		want:     true,
+	}, {
+		name:     "patch rollback",
+		previous: "v4.1.4",
+		latest:   "v4.1.3",
+		want:     true,
 	},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
