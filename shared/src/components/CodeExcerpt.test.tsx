@@ -28,6 +28,7 @@ import {
     HIGHLIGHTED_FILE_LINES,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
+    HIGHLIGHTED_FILE_LINES_LONG,
 } from '../util/searchTestHelpers'
 
 describe('CodeExcerpt', () => {
@@ -126,5 +127,60 @@ describe('CodeExcerpt', () => {
         )
         sinon.assert.calledOnce(fetchHighlightedFileLines)
         sinon.assert.calledWithMatch(fetchHighlightedFileLines, { disableTimeout: false })
+    })
+
+    it('displays the correct number of lines, with no highlight matches on the context lines', () => {
+        const fetchHighlightedFileLines = sinon.spy(ctx => of(HL_FILE))
+        const highlightRanges = [
+            { line: 0, character: 0, highlightLength: 1 },
+            { line: 1, character: 0, highlightLength: 1 },
+            { line: 2, character: 0, highlightLength: 1 },
+            { line: 4, character: 0, highlightLength: 1 },
+            { line: 7, character: 0, highlightLength: 1 },
+            { line: 10, character: 0, highlightLength: 1 },
+            { line: 11, character: 0, highlightLength: 1 },
+            { line: 16, character: 0, highlightLength: 1 },
+            { line: 17, character: 0, highlightLength: 1 },
+            { line: 19, character: 0, highlightLength: 1 },
+        ]
+        const { container } = render(
+            <CodeExcerpt
+                {...defaultProps}
+                context={2}
+                lastSubsetMatchLineNumber={20}
+                highlightRanges={highlightRanges}
+                fetchHighlightedFileLines={fetchHighlightedFileLines}
+            />
+        )
+        const rows = container.querySelectorAll('tr')
+        expect(rows.length).toBe(22)
+    })
+
+    it('displays the correct number of lines, with matches on the context line', () => {
+        const fetchHighlightedFileLines = sinon.spy(ctx => of(HIGHLIGHTED_FILE_LINES_LONG))
+        const highlightRanges = [
+            { line: 0, character: 0, highlightLength: 1 },
+            { line: 1, character: 0, highlightLength: 1 },
+            { line: 2, character: 0, highlightLength: 1 },
+            { line: 4, character: 0, highlightLength: 1 },
+            { line: 7, character: 0, highlightLength: 1 },
+            { line: 10, character: 0, highlightLength: 1 },
+            { line: 11, character: 0, highlightLength: 1 },
+            { line: 16, character: 0, highlightLength: 1 },
+            { line: 17, character: 0, highlightLength: 1 },
+            { line: 19, character: 0, highlightLength: 1 },
+            { line: 20, character: 0, highlightLength: 1 },
+        ]
+        const { container } = render(
+            <CodeExcerpt
+                {...defaultProps}
+                context={2}
+                lastSubsetMatchLineNumber={19}
+                highlightRanges={highlightRanges}
+                fetchHighlightedFileLines={fetchHighlightedFileLines}
+            />
+        )
+        const rows = container.querySelectorAll('tr')
+        expect(rows.length).toBe(22)
     })
 })
