@@ -1301,7 +1301,9 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	}
 
 	var cmd *exec.Cmd
-	if useRefspecOverrides() {
+	if useCustomFetch() {
+		cmd = customFetchCmd(ctx)
+	} else if useRefspecOverrides() {
 		cmd = refspecOverridesFetchCmd(ctx, url)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
