@@ -542,7 +542,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         <InformationOutlineIcon
                                             className="icon-inline"
                                             data-tooltip={
-                                                'If a branch with the given name already exists, a fallback name will be created by adding a count to the end. Example: "my-branch-name" becomes "my-branch-name-1".'
+                                                'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
                                             }
                                         />
                                     </small>
