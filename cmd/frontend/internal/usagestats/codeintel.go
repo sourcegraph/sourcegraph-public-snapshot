@@ -74,7 +74,7 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 	}
 
 	activityPeriods := []*types.CodeIntelUsagePeriod{}
-	for i := 0; i <= periods; i++ {
+	for i := 0; i < periods; i++ {
 		activityPeriods = append(activityPeriods, &usagePeriod{
 			Hover:       newEventCategory(),
 			Definitions: newEventCategory(),
