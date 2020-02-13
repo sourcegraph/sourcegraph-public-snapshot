@@ -107,6 +107,9 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.location !== this.props.location) {
             if (!this.props.isSearchRelatedPage) {
+                // On a non-search related page or non-repo page, we clear the query in
+                // the main query input and interactive mode UI to avoid misleading users
+                // that the query is relevant in any way on those pages.
                 this.props.onNavbarQueryChange({ query: '', cursorPosition: 0 })
                 this.props.onFiltersInQueryChange({})
             }
