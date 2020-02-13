@@ -234,7 +234,14 @@ func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheck
 	if err != nil {
 		return nil, err
 	}
-	return a8n.ComputeCheckState(r.Changeset, events), nil
+	state, err := a8n.ComputeCheckState(r.Changeset, events), nil
+	if err != nil {
+		return nil, err
+	}
+	if state == a8n.ChangesetCheckStateUnknown {
+		return nil, nil
+	}
+	return &state, nil
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
