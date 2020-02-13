@@ -183,6 +183,8 @@ type BitbucketServerConnection struct {
 	//
 	// For Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the "token" field).
 	Password string `json:"password,omitempty"`
+	// Plugin description: Configuration for Bitbucket Server Sourcegraph plugin
+	Plugin *BitbucketServerPlugin `json:"plugin,omitempty"`
 	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
 	Repos []string `json:"repos,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server repository.
@@ -207,8 +209,6 @@ type BitbucketServerConnection struct {
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding "token" or "password" field.
 	Username string `json:"username"`
-	// Webhooks description: Configuration for Bitbucket Server Sourcegraph plugin webhooks
-	Webhooks *Webhooks `json:"webhooks,omitempty"`
 }
 
 // BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
@@ -242,6 +242,19 @@ type BitbucketServerOAuth struct {
 	ConsumerKey string `json:"consumerKey"`
 	// SigningKey description: Base64 encoding of the OAuth PEM encoded RSA private key used to generate the public key specified when creating the Bitbucket Server Application Link with incoming authentication.
 	SigningKey string `json:"signingKey"`
+}
+
+// BitbucketServerPlugin description: Configuration for Bitbucket Server Sourcegraph plugin
+type BitbucketServerPlugin struct {
+	// FastPerm description: Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.
+	FastPerm string                         `json:"fastPerm,omitempty"`
+	Webhooks *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
+}
+type BitbucketServerPluginWebhooks struct {
+	// Automation description: Toggle automation webhooks
+	Automation string `json:"automation"`
+	// Secret description: Secret for authenticating incoming webhook payloads
+	Secret string `json:"secret"`
 }
 type BitbucketServerUsernameIdentity struct {
 	Type string `json:"type"`
@@ -342,8 +355,6 @@ type ExcludedGitoliteRepo struct {
 type ExperimentalFeatures struct {
 	// Automation description: Enables the experimental code automation features.
 	Automation string `json:"automation,omitempty"`
-	// BitbucketServerFastPerm description: Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. This requires the installation of the Bitbucket Server Sourcegraph plugin. Warning: there may be performance degradation under significant load.
-	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// Discussions description: Enables the code discussions experiment.
@@ -972,10 +983,4 @@ type TlsExternal struct {
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
-}
-
-// Webhooks description: Configuration for Bitbucket Server Sourcegraph plugin webhooks
-type Webhooks struct {
-	// Secret description: Secret for authenticating incoming webhook payloads
-	Secret string `json:"secret,omitempty"`
 }

@@ -64,14 +64,34 @@ const BitbucketServerSchemaJSON = `{
       "pattern": "^-----BEGIN CERTIFICATE-----\n",
       "examples": ["-----BEGIN CERTIFICATE-----\n..."]
     },
-    "webhooks": {
-      "description": "Configuration for Bitbucket Server Sourcegraph plugin webhooks",
+    "plugin": {
+      "title": "BitbucketServerPlugin",
+      "description": "Configuration for Bitbucket Server Sourcegraph plugin",
       "type": "object",
       "properties": {
-        "secret": {
-          "description": "Secret for authenticating incoming webhook payloads",
+        "webhooks": {
+          "title": "BitbucketServerPluginWebhooks",
+          "type": "object",
+          "required": ["secret", "automation"],
+          "properties": {
+            "secret": {
+              "description": "Secret for authenticating incoming webhook payloads",
+              "type": "string",
+              "minLength": 1
+            },
+            "automation": {
+              "description": "Toggle automation webhooks",
+              "type": "string",
+              "enum": ["enabled", "disabled"],
+              "default": "disabled"
+            }
+          }
+        },
+        "fastPerm": {
+          "description": "Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.",
           "type": "string",
-          "minLength": 1
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         }
       }
     },
