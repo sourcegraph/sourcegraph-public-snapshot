@@ -188,7 +188,17 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 
 		err = s.client.LoadPullRequestActivities(ctx, pr)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "loading pr activities")
+		}
+
+		err = s.client.LoadPullRequestCommits(ctx, pr)
+		if err != nil {
+			return errors.Wrap(err, "loading pr commits")
+		}
+
+		err = s.client.LoadPullRequestBuildStatuses(ctx, pr)
+		if err != nil {
+			return errors.Wrap(err, "loading pr build status")
 		}
 
 		cs[i].Changeset.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)

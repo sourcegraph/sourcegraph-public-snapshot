@@ -421,7 +421,7 @@ func TestCampaigns(t *testing.T) {
 				...cs
 			}
 		}
-	`, string(in)))
+	`, in))
 
 	{
 		want := []Changeset{
@@ -437,7 +437,7 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "github",
 				},
 				ReviewState: "APPROVED",
-				CheckState:  "PASSED",
+				CheckState:  "PENDING",
 				Events: ChangesetEventConnection{
 					TotalCount: 57,
 				},
@@ -483,7 +483,7 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "bitbucketServer",
 				},
 				ReviewState: "PENDING",
-				CheckState:  "", // TODO(ryanslade): Update once bitbucket support added
+				CheckState:  "PENDING",
 				Events: ChangesetEventConnection{
 					TotalCount: 9,
 				},

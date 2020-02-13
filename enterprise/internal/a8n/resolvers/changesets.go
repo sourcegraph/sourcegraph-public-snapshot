@@ -230,13 +230,18 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 }
 
 func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheckState, error) {
-	// TODO: Support BitBucket
-	// TODO: Support webhooks for BitBucket
 	events, err := r.computeEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return a8n.ComputeCheckState(r.Changeset, events), nil
+	state, err := a8n.ComputeCheckState(r.Changeset, events), nil
+	if err != nil {
+		return nil, err
+	}
+	if state == a8n.ChangesetCheckStateUnknown {
+		return nil, nil
+	}
+	return &state, nil
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {

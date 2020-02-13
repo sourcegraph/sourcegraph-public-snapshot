@@ -14,7 +14,7 @@ interactions:
     method: GET
   response:
     body: '{"id":41288708,"node_id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","name":"sourcegraph","full_name":"sourcegraph/sourcegraph","private":false,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/sourcegraph","description":"Universal
-      code search and navigation tool (self-hosted)","fork":false,"url":"https://api.github.com/repos/sourcegraph/sourcegraph","forks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/forks","keys_url":"https://api.github.com/repos/sourcegraph/sourcegraph/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/sourcegraph/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/teams","hooks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/events","assignees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/tags","blobs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/sourcegraph/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/sourcegraph/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscription","commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/sourcegraph/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/sourcegraph/merges","archive_url":"https://api.github.com/repos/sourcegraph/sourcegraph/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/sourcegraph/downloads","issues_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/sourcegraph/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/sourcegraph/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/sourcegraph/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/sourcegraph/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/sourcegraph/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/deployments","created_at":"2015-08-24T07:27:28Z","updated_at":"2020-02-07T12:28:19Z","pushed_at":"2020-02-07T12:28:16Z","git_url":"git://github.com/sourcegraph/sourcegraph.git","ssh_url":"git@github.com:sourcegraph/sourcegraph.git","clone_url":"https://github.com/sourcegraph/sourcegraph.git","svn_url":"https://github.com/sourcegraph/sourcegraph","homepage":"https://sourcegraph.com","size":351226,"stargazers_count":3133,"watchers_count":3133,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":287,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1109,"license":{"key":"other","name":"Other","spdx_id":"NOASSERTION","url":null,"node_id":"MDc6TGljZW5zZTA="},"topics":["code-intelligence","code-search","open-source","repo-type-main","sourcegraph"],"forks":287,"open_issues":1109,"watchers":3133,"default_branch":"master","permissions":{"admin":true,"push":true,"pull":true},"temp_clone_token":"","allow_squash_merge":true,"allow_merge_commit":false,"allow_rebase_merge":true,"delete_branch_on_merge":true,"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"network_count":287,"subscribers_count":79}'
+      code search and navigation tool (self-hosted)","fork":false,"url":"https://api.github.com/repos/sourcegraph/sourcegraph","forks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/forks","keys_url":"https://api.github.com/repos/sourcegraph/sourcegraph/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/sourcegraph/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/teams","hooks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/events","assignees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/tags","blobs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/sourcegraph/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/sourcegraph/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscription","commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/sourcegraph/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/sourcegraph/merges","archive_url":"https://api.github.com/repos/sourcegraph/sourcegraph/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/sourcegraph/downloads","issues_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/sourcegraph/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/sourcegraph/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/sourcegraph/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/sourcegraph/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/sourcegraph/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/deployments","created_at":"2015-08-24T07:27:28Z","updated_at":"2020-02-13T10:51:23Z","pushed_at":"2020-02-13T10:51:21Z","git_url":"git://github.com/sourcegraph/sourcegraph.git","ssh_url":"git@github.com:sourcegraph/sourcegraph.git","clone_url":"https://github.com/sourcegraph/sourcegraph.git","svn_url":"https://github.com/sourcegraph/sourcegraph","homepage":"https://sourcegraph.com","size":351602,"stargazers_count":3156,"watchers_count":3156,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":289,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1122,"license":{"key":"other","name":"Other","spdx_id":"NOASSERTION","url":null,"node_id":"MDc6TGljZW5zZTA="},"topics":["code-intelligence","code-search","open-source","repo-type-main","sourcegraph"],"forks":289,"open_issues":1122,"watchers":3156,"default_branch":"master","permissions":{"admin":true,"push":true,"pull":true},"temp_clone_token":"","allow_squash_merge":true,"allow_merge_commit":false,"allow_rebase_merge":true,"delete_branch_on_merge":true,"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"network_count":289,"subscribers_count":80}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -29,11 +29,11 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 07 Feb 2020 12:31:52 GMT
+      - Thu, 13 Feb 2020 11:59:11 GMT
       Etag:
-      - W/"a475be162a359a04fe47426422176705"
+      - W/"f3d1b9ed06f13cc0ef02b8aed4c16523"
       Last-Modified:
-      - Fri, 07 Feb 2020 12:28:19 GMT
+      - Thu, 13 Feb 2020 10:51:23 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -44,7 +44,7 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding
+      - Accept-Encoding, Accept, X-Requested-With
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -55,15 +55,15 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json,
         github.machine-man-preview; format=json
       X-Github-Request-Id:
-      - EA26:15EB7:182F94A:1D09FFC:5E3D58B8
+      - 7C2B:3AE1:2A58E48:3354485:5E453A0F
       X-Oauth-Scopes:
       - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4993"
+      - "4995"
       X-Ratelimit-Reset:
-      - "1581079250"
+      - "1581597775"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -86,7 +86,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 07 Feb 2020 12:31:53 GMT
+      - Thu, 13 Feb 2020 11:59:11 GMT
       Pragma:
       - no-cache
       Server:
@@ -94,11 +94,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1JRK3O7x751x4833345x0'
+      - '@1JRK3O7x719x4928365x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - 1bq5yf6
+      - 1dyvohu
       X-Auserid:
       - "1"
       X-Ausername:
@@ -125,7 +125,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 07 Feb 2020 12:31:53 GMT
+      - Thu, 13 Feb 2020 11:59:11 GMT
       Pragma:
       - no-cache
       Server:
@@ -133,11 +133,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1JRK3O7x751x4833346x0'
+      - '@1JRK3O7x719x4928366x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - 17ud28r
+      - 185flyc
       X-Auserid:
       - "1"
       X-Ausername:
@@ -150,10 +150,11 @@ interactions:
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
       label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
-      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  status
-      {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  committer
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
       {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
-      prCommit on PullRequestCommit {\n  commit {\n    ...commit\n  }\n}\n\nfragment
+      commitWithChecks on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      10){\n    nodes {\n      id\n      status\n      conclusion\n    }\n  }\n  committedDate\n}\n\nfragment
+      prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
@@ -194,6 +195,8 @@ interactions:
       { ...pr }\n}\n}","variables":null}'
     form: {}
     headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
@@ -204,110 +207,58 @@ interactions:
       the filter bar by rendering the extension filter as filter chips inside the
       filter bar.\r\nWIP for https://github.com/sourcegraph/sourcegraph/issues/962\r\n\r\n>
       This PR updates the CHANGELOG.md file to describe any user-facing changes.\r\n.\r\n","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/999","number":999,"createdAt":"2018-11-14T22:07:45Z","updatedAt":"2020-01-31T14:19:43Z","headRefOid":"7db302f07955e41d50e656d5faebefb4d87bce8a","baseRefOid":"fa3815ba9ddd49db9111c5e9691e16d27e8f1f60","headRefName":"vo/add-type-issue-filter","baseRefName":"master","author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"participants":{"nodes":[{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"},{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"}]},"labels":{"nodes":[{"name":"extensions","color":"3e2f91","description":"Sourcegraph
-      extensions","id":"MDU6TGFiZWwxMDMwNjkwMTY3"}]},"commits":{"nodes":[{"commit":{"oid":"7db302f07955e41d50e656d5faebefb4d87bce8a","message":"merge
-      master","messageHeadline":"merge master","committedDate":"2018-12-04T07:52:11Z","pushedDate":"2018-12-04T07:52:26Z","url":"https://github.com/sourcegraph/sourcegraph/commit/7db302f07955e41d50e656d5faebefb4d87bce8a","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk2Njg0Mjc3","context":"GolangCI","state":"SUCCESS","description":"No
+      extensions","id":"MDU6TGFiZWwxMDMwNjkwMTY3"}]},"commits":{"nodes":[{"commit":{"oid":"7db302f07955e41d50e656d5faebefb4d87bce8a","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk2Njg0Mjc3","context":"GolangCI","state":"SUCCESS","description":"No
       issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk2NjkzNTI5","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24743 passed (4 minutes, 35 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestReview","databaseId":175130382,"author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-175130382","createdAt":"2018-11-14T23:31:46Z","updatedAt":"2018-11-14T23:31:50Z","commit":{"oid":"2e3f122f736f5b7a52eaa6578048ab5cc30968f3","message":"add
+      #24743 passed (4 minutes, 35 seconds)"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzNTEzMDI4NQ==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-12-04T07:52:11Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestReview","databaseId":175130382,"author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-175130382","createdAt":"2018-11-14T23:31:46Z","updatedAt":"2018-11-14T23:31:50Z","commit":{"oid":"2e3f122f736f5b7a52eaa6578048ab5cc30968f3","message":"add
       extension filter to filter bar","messageHeadline":"add extension filter to filter
-      bar","committedDate":"2018-11-14T22:05:18Z","pushedDate":"2018-11-14T22:05:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/2e3f122f736f5b7a52eaa6578048ab5cc30968f3","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODA2NzgxMDI0","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
-      #23608 canceled by Vanesa Ortiz"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODA1NjI1NDI1","context":"cla-bot","state":"SUCCESS","description":"Contributor
-      has signed the CLA"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
+      bar","committedDate":"2018-11-14T22:05:18Z","pushedDate":"2018-11-14T22:05:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/2e3f122f736f5b7a52eaa6578048ab5cc30968f3","committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
       Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"IssueComment","databaseId":439217700,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"authorAssociation":"MEMBER","body":"I’m
       extending `contributions.ts` with a SearchFilters like @sqs suggested. I’m wondering
       though: We currently have `contributions.ts`, ActionsContainer etc. in an `actions`
       folder. Would SearchFilters be a new type of `action` or should it be considered
       sth separate? I’m also creating a SearchFiltersContainer, which would then also
       be located under `actions`?","createdAt":"2018-11-15T22:44:50Z","editor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"url":"https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-439217700","updatedAt":"2018-11-15T22:45:03Z","includesCreatedEdit":true,"publishedAt":"2018-11-15T22:44:50Z"},{"__typename":"IssueComment","databaseId":439218986,"author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"},"authorAssociation":"MEMBER","body":"It
-      would make sense to rename the directory but no need to handle that here. ","createdAt":"2018-11-15T22:49:54Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-439218986","updatedAt":"2018-11-15T22:49:54Z","includesCreatedEdit":false,"publishedAt":"2018-11-15T22:49:54Z"},{"__typename":"PullRequestCommit","commit":{"oid":"ad8e8dc77a35aa1da3aba1ef1ca2f6c7394e4e9b","message":"add
-      extension filter to filter bar","messageHeadline":"add extension filter to filter
-      bar","committedDate":"2018-11-21T01:09:55Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/ad8e8dc77a35aa1da3aba1ef1ca2f6c7394e4e9b","status":null,"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"ce86001a5826dbcf5be4daf5769becc9dd16562f","message":"fix
-      build","messageHeadline":"fix build","committedDate":"2018-11-21T01:12:59Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/ce86001a5826dbcf5be4daf5769becc9dd16562f","status":null,"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"48e5fe7ad09f9e0ef354929ee99db67b88a5bc36","message":"add
-      SearchFilters contribution","messageHeadline":"add SearchFilters contribution","committedDate":"2018-11-21T01:20:39Z","pushedDate":"2018-11-21T01:24:08Z","url":"https://github.com/sourcegraph/sourcegraph/commit/48e5fe7ad09f9e0ef354929ee99db67b88a5bc36","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODM1MTUxODU4","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
-      #24032 failed (6 minutes, 6 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestReview","databaseId":177045661,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-177045661","createdAt":"2018-11-21T01:30:28Z","updatedAt":"2018-11-21T01:30:29Z","commit":{"oid":"48e5fe7ad09f9e0ef354929ee99db67b88a5bc36","message":"add
-      SearchFilters contribution","messageHeadline":"add SearchFilters contribution","committedDate":"2018-11-21T01:20:39Z","pushedDate":"2018-11-21T01:24:08Z","url":"https://github.com/sourcegraph/sourcegraph/commit/48e5fe7ad09f9e0ef354929ee99db67b88a5bc36","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODM1MTUxODU4","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
-      #24032 failed (6 minutes, 6 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
+      would make sense to rename the directory but no need to handle that here. ","createdAt":"2018-11-15T22:49:54Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-439218986","updatedAt":"2018-11-15T22:49:54Z","includesCreatedEdit":false,"publishedAt":"2018-11-15T22:49:54Z"},{"__typename":"PullRequestCommit","commit":{"oid":"ad8e8dc77a35aa1da3aba1ef1ca2f6c7394e4e9b","status":null,"checkSuites":{"nodes":[]},"committedDate":"2018-11-21T01:09:55Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"ce86001a5826dbcf5be4daf5769becc9dd16562f","status":null,"checkSuites":{"nodes":[]},"committedDate":"2018-11-21T01:12:59Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"48e5fe7ad09f9e0ef354929ee99db67b88a5bc36","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODM1MTUxODU4","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
+      #24032 failed (6 minutes, 6 seconds)"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY2MDI5OA==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-21T01:20:39Z"}},{"__typename":"PullRequestReview","databaseId":177045661,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-177045661","createdAt":"2018-11-21T01:30:28Z","updatedAt":"2018-11-21T01:30:29Z","commit":{"oid":"48e5fe7ad09f9e0ef354929ee99db67b88a5bc36","message":"add
+      SearchFilters contribution","messageHeadline":"add SearchFilters contribution","committedDate":"2018-11-21T01:20:39Z","pushedDate":"2018-11-21T01:24:08Z","url":"https://github.com/sourcegraph/sourcegraph/commit/48e5fe7ad09f9e0ef354929ee99db67b88a5bc36","committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
       Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":177045724,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-177045724","createdAt":"2018-11-21T01:30:52Z","updatedAt":"2018-11-21T01:30:52Z","commit":{"oid":"48e5fe7ad09f9e0ef354929ee99db67b88a5bc36","message":"add
-      SearchFilters contribution","messageHeadline":"add SearchFilters contribution","committedDate":"2018-11-21T01:20:39Z","pushedDate":"2018-11-21T01:24:08Z","url":"https://github.com/sourcegraph/sourcegraph/commit/48e5fe7ad09f9e0ef354929ee99db67b88a5bc36","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODM1MTUxODU4","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
-      #24032 failed (6 minutes, 6 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"de33ba52145bbd427a09e66b4c19a586cf42f57c","message":"remove
-      extends","messageHeadline":"remove extends","committedDate":"2018-11-21T01:35:14Z","pushedDate":"2018-11-21T01:35:24Z","url":"https://github.com/sourcegraph/sourcegraph/commit/de33ba52145bbd427a09e66b4c19a586cf42f57c","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODM1MTg3NDYz","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
-      #24034 failed (5 minutes, 41 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"eb93ee7545ca576ae8ad2057f24a4202a0698bd1","message":"merge
-      from master","messageHeadline":"merge from master","committedDate":"2018-11-22T00:36:23Z","pushedDate":"2018-11-22T00:36:35Z","url":"https://github.com/sourcegraph/sourcegraph/commit/eb93ee7545ca576ae8ad2057f24a4202a0698bd1","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODQxMjA0Mzky","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
+      SearchFilters contribution","messageHeadline":"add SearchFilters contribution","committedDate":"2018-11-21T01:20:39Z","pushedDate":"2018-11-21T01:24:08Z","url":"https://github.com/sourcegraph/sourcegraph/commit/48e5fe7ad09f9e0ef354929ee99db67b88a5bc36","committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
+      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"de33ba52145bbd427a09e66b4c19a586cf42f57c","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODM1MTg3NDYz","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
+      #24034 failed (5 minutes, 41 seconds)"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY2MjczNA==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-21T01:35:14Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"eb93ee7545ca576ae8ad2057f24a4202a0698bd1","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODQxMjA0Mzky","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
       #24150 failed (5 minutes, 15 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODQxMTk1MzE0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestReview","databaseId":177471689,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-177471689","createdAt":"2018-11-22T00:39:22Z","updatedAt":"2018-11-22T00:39:23Z","commit":{"oid":"eb93ee7545ca576ae8ad2057f24a4202a0698bd1","message":"merge
-      from master","messageHeadline":"merge from master","committedDate":"2018-11-22T00:36:23Z","pushedDate":"2018-11-22T00:36:35Z","url":"https://github.com/sourcegraph/sourcegraph/commit/eb93ee7545ca576ae8ad2057f24a4202a0698bd1","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODQxMjA0Mzky","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
-      #24150 failed (5 minutes, 15 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODQxMTk1MzE0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
+      issues found!"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMTA4MTg4Mg==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-22T00:36:23Z"}},{"__typename":"PullRequestReview","databaseId":177471689,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-177471689","createdAt":"2018-11-22T00:39:22Z","updatedAt":"2018-11-22T00:39:23Z","commit":{"oid":"eb93ee7545ca576ae8ad2057f24a4202a0698bd1","message":"merge
+      from master","messageHeadline":"merge from master","committedDate":"2018-11-22T00:36:23Z","pushedDate":"2018-11-22T00:36:35Z","url":"https://github.com/sourcegraph/sourcegraph/commit/eb93ee7545ca576ae8ad2057f24a4202a0698bd1","committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
       Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":177471734,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-177471734","createdAt":"2018-11-22T00:39:40Z","updatedAt":"2018-11-22T00:39:41Z","commit":{"oid":"eb93ee7545ca576ae8ad2057f24a4202a0698bd1","message":"merge
-      from master","messageHeadline":"merge from master","committedDate":"2018-11-22T00:36:23Z","pushedDate":"2018-11-22T00:36:35Z","url":"https://github.com/sourcegraph/sourcegraph/commit/eb93ee7545ca576ae8ad2057f24a4202a0698bd1","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODQxMjA0Mzky","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
-      #24150 failed (5 minutes, 15 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODQxMTk1MzE0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
+      from master","messageHeadline":"merge from master","committedDate":"2018-11-22T00:36:23Z","pushedDate":"2018-11-22T00:36:35Z","url":"https://github.com/sourcegraph/sourcegraph/commit/eb93ee7545ca576ae8ad2057f24a4202a0698bd1","committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
       Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":177471899,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-177471899","createdAt":"2018-11-22T00:40:52Z","updatedAt":"2018-11-22T00:40:52Z","commit":{"oid":"eb93ee7545ca576ae8ad2057f24a4202a0698bd1","message":"merge
-      from master","messageHeadline":"merge from master","committedDate":"2018-11-22T00:36:23Z","pushedDate":"2018-11-22T00:36:35Z","url":"https://github.com/sourcegraph/sourcegraph/commit/eb93ee7545ca576ae8ad2057f24a4202a0698bd1","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODQxMjA0Mzky","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
-      #24150 failed (5 minutes, 15 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODQxMTk1MzE0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"ff06ce9c1489d59f4389a6a9f82fc59411675437","message":"merge
-      master","messageHeadline":"merge master","committedDate":"2018-11-27T20:46:46Z","pushedDate":"2018-11-27T20:46:58Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ff06ce9c1489d59f4389a6a9f82fc59411675437","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY0MjEzNTMw","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
+      from master","messageHeadline":"merge from master","committedDate":"2018-11-22T00:36:23Z","pushedDate":"2018-11-22T00:36:35Z","url":"https://github.com/sourcegraph/sourcegraph/commit/eb93ee7545ca576ae8ad2057f24a4202a0698bd1","committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
+      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"ff06ce9c1489d59f4389a6a9f82fc59411675437","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY0MjEzNTMw","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
       #24303 failed (8 minutes, 10 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY0MTczMzA0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"523cfc63b451fb3eb28dfc8120d3eaece58bc947","message":"move
-      SearchFiltersProps into SearchFiltersContainer.tsx and ActionProps into ActionContainer.tsx","messageHeadline":"move
-      SearchFiltersProps into SearchFiltersContainer.tsx and ActionPro…","committedDate":"2018-11-28T02:14:30Z","pushedDate":"2018-11-28T02:14:39Z","url":"https://github.com/sourcegraph/sourcegraph/commit/523cfc63b451fb3eb28dfc8120d3eaece58bc947","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY1ODY0MTk0","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
+      issues found!"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMjc5NDIyNw==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-27T20:46:46Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"523cfc63b451fb3eb28dfc8120d3eaece58bc947","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY1ODY0MTk0","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
       #24321 failed (7 minutes, 30 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY1ODQwMzI5","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"ed461017a425958e02598078325e85db98232cf4","message":"pass
-      in platformContext","messageHeadline":"pass in platformContext","committedDate":"2018-11-28T02:54:32Z","pushedDate":"2018-11-28T02:54:42Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ed461017a425958e02598078325e85db98232cf4","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY1OTY4ODA2","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
+      issues found!"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMjg5ODU3Nw==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-28T02:14:30Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"ed461017a425958e02598078325e85db98232cf4","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY1OTY4ODA2","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
       #24325 failed (5 minutes, 14 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY1OTU5MDc0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"a817d56efded8cebc3480aba0700906208e848c4","message":"fix
-      import link, remove platformContext","messageHeadline":"fix import link, remove
-      platformContext","committedDate":"2018-11-28T03:03:32Z","pushedDate":"2018-11-28T03:03:39Z","url":"https://github.com/sourcegraph/sourcegraph/commit/a817d56efded8cebc3480aba0700906208e848c4","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY1OTk1MTEz","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
+      issues found!"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMjkwODE2OQ==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-28T02:54:32Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"a817d56efded8cebc3480aba0700906208e848c4","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY1OTk1MTEz","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
       #24326 failed (5 minutes, 20 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY1OTg0NjM1","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"ae9a267c62bd9ed0bf22fa2f126f655275326975","message":"delete
-      SearchFiltersContainer duplicate","messageHeadline":"delete SearchFiltersContainer
-      duplicate","committedDate":"2018-11-28T06:20:29Z","pushedDate":"2018-11-28T06:20:36Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ae9a267c62bd9ed0bf22fa2f126f655275326975","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY2NDg0Nzk1","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
+      issues found!"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMjkxMDA4Ng==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-28T03:03:32Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"ae9a267c62bd9ed0bf22fa2f126f655275326975","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY2NDg0Nzk1","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
       #24332 failed (5 minutes, 22 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODY2NDc1MTMx","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"9ba9eed4aecc4424b2f5efb940cbaff60a697d00","message":"Merge
-      branch ''master'' into vo/add-type-issue-filter","messageHeadline":"Merge branch
-      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-28T18:47:58Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/9ba9eed4aecc4424b2f5efb940cbaff60a697d00","status":null,"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"5ba93634942a43ceb56984602b632c9962773a96","message":"update
-      CHANGELOG","messageHeadline":"update CHANGELOG","committedDate":"2018-11-28T18:51:43Z","pushedDate":"2018-11-28T18:51:53Z","url":"https://github.com/sourcegraph/sourcegraph/commit/5ba93634942a43ceb56984602b632c9962773a96","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODcwNDc2MDY4","context":"GolangCI","state":"SUCCESS","description":"No
+      issues found!"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMjk0NzE1OA==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-28T06:20:29Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"9ba9eed4aecc4424b2f5efb940cbaff60a697d00","status":null,"checkSuites":{"nodes":[]},"committedDate":"2018-11-28T18:47:58Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"5ba93634942a43ceb56984602b632c9962773a96","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODcwNDc2MDY4","context":"GolangCI","state":"SUCCESS","description":"No
       issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODcwNDk3ODE1","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24409 passed (5 minutes, 1 second)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"2aa21d284923959c9790df2475410e8a590af753","message":"update
-      docs and add search filters to the contributions schema","messageHeadline":"update
-      docs and add search filters to the contributions schema","committedDate":"2018-11-30T00:20:30Z","pushedDate":"2018-11-30T00:20:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/2aa21d284923959c9790df2475410e8a590af753","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODc5Mzg4Njky","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
+      #24409 passed (5 minutes, 1 second)"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMzI0MjgyNA==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-28T18:51:43Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"2aa21d284923959c9790df2475410e8a590af753","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODc5Mzg4Njky","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
       #24527 failed (5 minutes, 9 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODc5MzA2ODQ5","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"5efbd22c639506179037a0eec6f96fcea3a22c53","message":"Merge
-      branch ''master'' into vo/add-type-issue-filter","messageHeadline":"Merge branch
-      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T00:46:06Z","pushedDate":"2018-11-30T00:46:26Z","url":"https://github.com/sourcegraph/sourcegraph/commit/5efbd22c639506179037a0eec6f96fcea3a22c53","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODc5NDI4NDMz","context":"GolangCI","state":"SUCCESS","description":"No
+      issues found!"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMzg2MDQ2MA==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-30T00:20:30Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"5efbd22c639506179037a0eec6f96fcea3a22c53","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODc5NDI4NDMz","context":"GolangCI","state":"SUCCESS","description":"No
       issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODc5NDQ0NjQ1","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24528 passed (5 minutes, 21 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"requestedReviewer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"},"requestedTeam":{},"createdAt":"2018-11-30T00:53:50Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"requestedReviewer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"requestedTeam":{},"createdAt":"2018-11-30T00:53:50Z"},{"__typename":"PullRequestReview","databaseId":180115279,"author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"},"authorAssociation":"MEMBER","body":"LGTM
+      #24528 passed (5 minutes, 21 seconds)"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMzg2NzIzMg==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-30T00:46:06Z"}},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"requestedReviewer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"},"requestedTeam":{},"createdAt":"2018-11-30T00:53:50Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"requestedReviewer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"requestedTeam":{},"createdAt":"2018-11-30T00:53:50Z"},{"__typename":"PullRequestReview","databaseId":180115279,"author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"},"authorAssociation":"MEMBER","body":"LGTM
       :+1: \r\n\r\nThere is a merge conflict with the soon-to-be-merged #1120. If
       you can merge this PR soon so it''s merged before #1120, that would be best.
       (I see there is still 1 outstanding comment by @slimsag athttps://github.com/sourcegraph/sourcegraph/pull/999/files#r235574622.)
       Otherwise, if I merge #1120 before you merge this, I will rebase this PR on
       top of master to address the conflicts.","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-180115279","createdAt":"2018-11-30T04:02:45Z","updatedAt":"2018-11-30T04:04:36Z","commit":{"oid":"5efbd22c639506179037a0eec6f96fcea3a22c53","message":"Merge
       branch ''master'' into vo/add-type-issue-filter","messageHeadline":"Merge branch
-      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T00:46:06Z","pushedDate":"2018-11-30T00:46:26Z","url":"https://github.com/sourcegraph/sourcegraph/commit/5efbd22c639506179037a0eec6f96fcea3a22c53","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODc5NDI4NDMz","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODc5NDQ0NjQ1","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24528 passed (5 minutes, 21 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"ac535a56ff14a4226dc3a9875d639b06ff274536","message":"Merge
-      branch ''master'' into vo/add-type-issue-filter","messageHeadline":"Merge branch
-      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDM2Nzg0","context":"GolangCI","state":"SUCCESS","description":"No
+      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T00:46:06Z","pushedDate":"2018-11-30T00:46:26Z","url":"https://github.com/sourcegraph/sourcegraph/commit/5efbd22c639506179037a0eec6f96fcea3a22c53","committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
+      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"ac535a56ff14a4226dc3a9875d639b06ff274536","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDM2Nzg0","context":"GolangCI","state":"SUCCESS","description":"No
       issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDU3NTUz","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24542 passed (8 minutes, 2 seconds)"}]},"committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
-      Slack","user":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"}}}},{"__typename":"IssueComment","databaseId":443106403,"author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"},"authorAssociation":"MEMBER","body":"@vanesa
+      #24542 passed (8 minutes, 2 seconds)"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMzkzODMwMA==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-11-30T06:34:46Z"}},{"__typename":"IssueComment","databaseId":443106403,"author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"},"authorAssociation":"MEMBER","body":"@vanesa
       \tI just pushed a commit ac535a56ff14a4226dc3a9875d639b06ff274536 to this branch,
       which merges in master (and incorporates #1120). Please take a look to ensure
       I didn''t break anything in the merge.","createdAt":"2018-11-30T06:35:35Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443106403","updatedAt":"2018-11-30T06:35:35Z","includesCreatedEdit":false,"publishedAt":"2018-11-30T06:35:35Z"},{"__typename":"IssueComment","databaseId":443313134,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"authorAssociation":"MEMBER","body":"Here''s
@@ -321,75 +272,43 @@ interactions:
       for sentence case over title case. (Can’t find this comment on the GitHub mobile
       interface anymore so quoting the email.)","createdAt":"2018-12-03T18:59:10Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443827703","updatedAt":"2018-12-03T18:59:10Z","includesCreatedEdit":false,"publishedAt":"2018-12-03T18:59:10Z"},{"__typename":"PullRequestReview","databaseId":180953049,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-180953049","createdAt":"2018-12-03T20:00:17Z","updatedAt":"2018-12-03T20:00:17Z","commit":{"oid":"ac535a56ff14a4226dc3a9875d639b06ff274536","message":"Merge
       branch ''master'' into vo/add-type-issue-filter","messageHeadline":"Merge branch
-      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDM2Nzg0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDU3NTUz","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24542 passed (8 minutes, 2 seconds)"}]},"committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
+      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":180954885,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-180954885","createdAt":"2018-12-03T20:04:34Z","updatedAt":"2018-12-03T20:04:35Z","commit":{"oid":"ac535a56ff14a4226dc3a9875d639b06ff274536","message":"Merge
       branch ''master'' into vo/add-type-issue-filter","messageHeadline":"Merge branch
-      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDM2Nzg0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDU3NTUz","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24542 passed (8 minutes, 2 seconds)"}]},"committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
+      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":180955113,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-180955113","createdAt":"2018-12-03T20:05:11Z","updatedAt":"2018-12-03T20:05:11Z","commit":{"oid":"ac535a56ff14a4226dc3a9875d639b06ff274536","message":"Merge
       branch ''master'' into vo/add-type-issue-filter","messageHeadline":"Merge branch
-      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDM2Nzg0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDU3NTUz","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24542 passed (8 minutes, 2 seconds)"}]},"committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
+      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":180955348,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-180955348","createdAt":"2018-12-03T20:05:47Z","updatedAt":"2018-12-03T20:05:47Z","commit":{"oid":"ac535a56ff14a4226dc3a9875d639b06ff274536","message":"Merge
       branch ''master'' into vo/add-type-issue-filter","messageHeadline":"Merge branch
-      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDM2Nzg0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDU3NTUz","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24542 passed (8 minutes, 2 seconds)"}]},"committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
+      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":180955758,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-180955758","createdAt":"2018-12-03T20:06:57Z","updatedAt":"2018-12-03T20:06:58Z","commit":{"oid":"ac535a56ff14a4226dc3a9875d639b06ff274536","message":"Merge
       branch ''master'' into vo/add-type-issue-filter","messageHeadline":"Merge branch
-      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDM2Nzg0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODgwNDU3NTUz","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24542 passed (8 minutes, 2 seconds)"}]},"committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
+      ''master'' into vo/add-type-issue-filter","committedDate":"2018-11-30T06:34:46Z","pushedDate":"2018-11-30T06:35:00Z","url":"https://github.com/sourcegraph/sourcegraph/commit/ac535a56ff14a4226dc3a9875d639b06ff274536","committer":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","email":"qslack@qslack.com","name":"Quinn
       Slack","user":{"avatarUrl":"https://avatars0.githubusercontent.com/u/1976?v=4","login":"sqs","url":"https://github.com/sqs"}}},"includesCreatedEdit":false},{"__typename":"IssueComment","databaseId":443851982,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"Left
       some inline comments, but aside from those LGTM. I''ll re-review once you address
-      them","createdAt":"2018-12-03T20:07:58Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443851982","updatedAt":"2018-12-03T20:07:58Z","includesCreatedEdit":false,"publishedAt":"2018-12-03T20:07:58Z"},{"__typename":"PullRequestCommit","commit":{"oid":"84b0efdf68760bb7b5f604b15a3cf0075768164e","message":"Merge
-      branch ''master'' into vo/add-type-issue-filter","messageHeadline":"Merge branch
-      ''master'' into vo/add-type-issue-filter","committedDate":"2018-12-03T20:19:19Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/84b0efdf68760bb7b5f604b15a3cf0075768164e","status":null,"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"1f40316857bea2b37cb797dc4ad94ac476254bc4","message":"use
-      unique key for filter chips, set contributions state in each container, edit
-      docs","messageHeadline":"use unique key for filter chips, set contributions
-      state in each cont…","committedDate":"2018-12-03T20:35:54Z","pushedDate":"2018-12-03T20:36:06Z","url":"https://github.com/sourcegraph/sourcegraph/commit/1f40316857bea2b37cb797dc4ad94ac476254bc4","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0MDYyNTU4","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
+      them","createdAt":"2018-12-03T20:07:58Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443851982","updatedAt":"2018-12-03T20:07:58Z","includesCreatedEdit":false,"publishedAt":"2018-12-03T20:07:58Z"},{"__typename":"PullRequestCommit","commit":{"oid":"84b0efdf68760bb7b5f604b15a3cf0075768164e","status":null,"checkSuites":{"nodes":[]},"committedDate":"2018-12-03T20:19:19Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"1f40316857bea2b37cb797dc4ad94ac476254bc4","status":{"state":"FAILURE","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0MDYyNTU4","context":"buildkite/sourcegraph","state":"FAILURE","description":"Build
       #24701 failed (4 minutes, 51 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0MDQ1MTk5","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"725229b6e618eedeebe0c0d280afcdfddd777327","message":"switch
-      ContributionsState with ActionsContainerState","messageHeadline":"switch ContributionsState
-      with ActionsContainerState","committedDate":"2018-12-03T20:41:32Z","pushedDate":"2018-12-03T20:41:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/725229b6e618eedeebe0c0d280afcdfddd777327","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0MDc1NzI0","context":"GolangCI","state":"SUCCESS","description":"No
+      issues found!"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzNDk1MjQ1Nw==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-12-03T20:35:54Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"725229b6e618eedeebe0c0d280afcdfddd777327","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0MDc1NzI0","context":"GolangCI","state":"SUCCESS","description":"No
       issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0MTAzNjky","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24702 passed (6 minutes, 5 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestReview","databaseId":180975476,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-180975476","createdAt":"2018-12-03T20:57:17Z","updatedAt":"2018-12-03T20:57:18Z","commit":{"oid":"725229b6e618eedeebe0c0d280afcdfddd777327","message":"switch
+      #24702 passed (6 minutes, 5 seconds)"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzNDk1NDY0OQ==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-12-03T20:41:32Z"}},{"__typename":"PullRequestReview","databaseId":180975476,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-180975476","createdAt":"2018-12-03T20:57:17Z","updatedAt":"2018-12-03T20:57:18Z","commit":{"oid":"725229b6e618eedeebe0c0d280afcdfddd777327","message":"switch
       ContributionsState with ActionsContainerState","messageHeadline":"switch ContributionsState
-      with ActionsContainerState","committedDate":"2018-12-03T20:41:32Z","pushedDate":"2018-12-03T20:41:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/725229b6e618eedeebe0c0d280afcdfddd777327","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0MDc1NzI0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0MTAzNjky","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24702 passed (6 minutes, 5 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
+      with ActionsContainerState","committedDate":"2018-12-03T20:41:32Z","pushedDate":"2018-12-03T20:41:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/725229b6e618eedeebe0c0d280afcdfddd777327","committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
       Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":180976437,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"LGTM
       once my last comment is addressed","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-180976437","createdAt":"2018-12-03T20:59:28Z","updatedAt":"2018-12-03T20:59:28Z","commit":{"oid":"725229b6e618eedeebe0c0d280afcdfddd777327","message":"switch
       ContributionsState with ActionsContainerState","messageHeadline":"switch ContributionsState
-      with ActionsContainerState","committedDate":"2018-12-03T20:41:32Z","pushedDate":"2018-12-03T20:41:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/725229b6e618eedeebe0c0d280afcdfddd777327","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0MDc1NzI0","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0MTAzNjky","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24702 passed (6 minutes, 5 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"273293d8f40281db8ef56abe253f7715a5ca1b2d","message":"convert
-      ContributionsState to ActionsState","messageHeadline":"convert ContributionsState
-      to ActionsState","committedDate":"2018-12-03T23:07:31Z","pushedDate":"2018-12-03T23:07:40Z","url":"https://github.com/sourcegraph/sourcegraph/commit/273293d8f40281db8ef56abe253f7715a5ca1b2d","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0OTc0MTky","context":"GolangCI","state":"SUCCESS","description":"No
+      with ActionsContainerState","committedDate":"2018-12-03T20:41:32Z","pushedDate":"2018-12-03T20:41:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/725229b6e618eedeebe0c0d280afcdfddd777327","committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
+      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"273293d8f40281db8ef56abe253f7715a5ca1b2d","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0OTc0MTky","context":"GolangCI","state":"SUCCESS","description":"No
       issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0OTk0Nzg1","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24708 passed (6 minutes, 6 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"PullRequestReview","databaseId":181046456,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"LGTM","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-181046456","createdAt":"2018-12-04T00:35:05Z","updatedAt":"2018-12-04T00:35:05Z","commit":{"oid":"273293d8f40281db8ef56abe253f7715a5ca1b2d","message":"convert
+      #24708 passed (6 minutes, 6 seconds)"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzNTAxMjE0Nw==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-12-03T23:07:31Z"}},{"__typename":"PullRequestReview","databaseId":181046456,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/3173176?v=4","login":"slimsag","url":"https://github.com/slimsag"},"authorAssociation":"MEMBER","body":"LGTM","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/999#pullrequestreview-181046456","createdAt":"2018-12-04T00:35:05Z","updatedAt":"2018-12-04T00:35:05Z","commit":{"oid":"273293d8f40281db8ef56abe253f7715a5ca1b2d","message":"convert
       ContributionsState to ActionsState","messageHeadline":"convert ContributionsState
-      to ActionsState","committedDate":"2018-12-03T23:07:31Z","pushedDate":"2018-12-03T23:07:40Z","url":"https://github.com/sourcegraph/sourcegraph/commit/273293d8f40281db8ef56abe253f7715a5ca1b2d","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0OTc0MTky","context":"GolangCI","state":"SUCCESS","description":"No
-      issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk0OTk0Nzg1","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24708 passed (6 minutes, 6 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"7db302f07955e41d50e656d5faebefb4d87bce8a","message":"merge
-      master","messageHeadline":"merge master","committedDate":"2018-12-04T07:52:11Z","pushedDate":"2018-12-04T07:52:26Z","url":"https://github.com/sourcegraph/sourcegraph/commit/7db302f07955e41d50e656d5faebefb4d87bce8a","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk2Njg0Mjc3","context":"GolangCI","state":"SUCCESS","description":"No
+      to ActionsState","committedDate":"2018-12-03T23:07:31Z","pushedDate":"2018-12-03T23:07:40Z","url":"https://github.com/sourcegraph/sourcegraph/commit/273293d8f40281db8ef56abe253f7715a5ca1b2d","committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
+      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"7db302f07955e41d50e656d5faebefb4d87bce8a","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk2Njg0Mjc3","context":"GolangCI","state":"SUCCESS","description":"No
       issues found!"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk2NjkzNTI5","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24743 passed (4 minutes, 35 seconds)"}]},"committer":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","email":"vanesa@sourcegraph.com","name":"Vanesa
-      Ortiz","user":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"}}}},{"__typename":"MergedEvent","actor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"mergeRefName":"master","url":"https://github.com/sourcegraph/sourcegraph/pull/999#event-2003548247","commit":{"oid":"23a5556c7e25aaab1f1529cee4efb90fe6fe3a30","message":"add
+      #24743 passed (4 minutes, 35 seconds)"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzNTEzMDI4NQ==","status":"QUEUED","conclusion":null}]},"committedDate":"2018-12-04T07:52:11Z"}},{"__typename":"MergedEvent","actor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"mergeRefName":"master","url":"https://github.com/sourcegraph/sourcegraph/pull/999#event-2003548247","commit":{"oid":"23a5556c7e25aaab1f1529cee4efb90fe6fe3a30","message":"add
       extension filter to filter bar (#999)\n\n* add search filters contributions
       to the extension api","messageHeadline":"add extension filter to filter bar
-      (#999)","committedDate":"2018-12-04T08:10:02Z","pushedDate":"2018-12-04T08:10:09Z","url":"https://github.com/sourcegraph/sourcegraph/commit/23a5556c7e25aaab1f1529cee4efb90fe6fe3a30","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ1ODk2Nzc5NzE5","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
-      #24745 passed (11 minutes, 27 seconds)"}]},"committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}},"createdAt":"2018-12-04T08:10:03Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"createdAt":"2018-12-04T08:10:03Z","url":"https://github.com/sourcegraph/sourcegraph/pull/999#event-2003548253"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T10:22:36Z"},{"__typename":"UnlabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T10:24:32Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T11:18:25Z"},{"__typename":"UnlabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T11:22:34Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T11:26:21Z"},{"__typename":"UnlabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T11:32:42Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T11:35:16Z"},{"__typename":"UnlabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T14:18:03Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T14:19:06Z"},{"__typename":"UnlabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T14:19:43Z"}]}}}}}'
+      (#999)","committedDate":"2018-12-04T08:10:02Z","pushedDate":"2018-12-04T08:10:09Z","url":"https://github.com/sourcegraph/sourcegraph/commit/23a5556c7e25aaab1f1529cee4efb90fe6fe3a30","committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}},"createdAt":"2018-12-04T08:10:03Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/9110008?v=4","login":"vanesa","url":"https://github.com/vanesa"},"createdAt":"2018-12-04T08:10:03Z","url":"https://github.com/sourcegraph/sourcegraph/pull/999#event-2003548253"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T10:22:36Z"},{"__typename":"UnlabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T10:24:32Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T11:18:25Z"},{"__typename":"UnlabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T11:22:34Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T11:26:21Z"},{"__typename":"UnlabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T11:32:42Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T11:35:16Z"},{"__typename":"UnlabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T14:18:03Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T14:19:06Z"},{"__typename":"UnlabeledEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"label":{"name":"debugging","color":"6745bc","description":"","id":"MDU6TGFiZWwxNTUyNzczNzE0"},"createdAt":"2020-01-31T14:19:43Z"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -404,7 +323,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 07 Feb 2020 12:31:56 GMT
+      - Thu, 13 Feb 2020 11:59:12 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -414,7 +333,7 @@ interactions:
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
       Vary:
-      - Accept-Encoding
+      - Accept-Encoding, Accept, X-Requested-With
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -422,17 +341,17 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v4; format=json
+      - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - EA2A:15EB6:FE253A:1305B39:5E3D58BA
+      - 536D:3ADA:604835:7329F2:5E453A10
       X-Oauth-Scopes:
       - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4810"
+      - "4982"
       X-Ratelimit-Reset:
-      - "1581079254"
+      - "1581597776"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -458,7 +377,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 07 Feb 2020 12:31:56 GMT
+      - Thu, 13 Feb 2020 11:59:13 GMT
       Pragma:
       - no-cache
       Server:
@@ -466,11 +385,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1JRK3O7x751x4833347x0'
+      - '@1JRK3O7x719x4928367x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - 1uxjdq1
+      - 1m8kmer
       X-Auserid:
       - "1"
       X-Ausername:
@@ -525,7 +444,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 07 Feb 2020 12:31:56 GMT
+      - Thu, 13 Feb 2020 11:59:13 GMT
       Pragma:
       - no-cache
       Server:
@@ -533,11 +452,96 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1JRK3O7x751x4833348x0'
+      - '@1JRK3O7x719x4928368x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - w8fs5d
+      - 19mqrjg
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/2/commits?limit=1000
+    method: GET
+  response:
+    body: '{"values":[{"id":"1f63e719a65cad47a0a272d3d6eef05f4da427bb","displayId":"1f63e719a65","author":{"name":"Tomás
+      Senart","emailAddress":"tsenart@gmail.com"},"authorTimestamp":1563286282000,"committer":{"name":"Tomás
+      Senart","emailAddress":"tsenart@gmail.com"},"committerTimestamp":1563286282000,"message":"make
+      make make","parents":[{"id":"7b71906bf3b3ec81a4d013b7f59ceb34b3c4105b","displayId":"7b71906bf3b"}]},{"id":"7b71906bf3b3ec81a4d013b7f59ceb34b3c4105b","displayId":"7b71906bf3b","author":{"name":"Tomás
+      Senart","emailAddress":"tsenart@gmail.com"},"authorTimestamp":1563286246000,"committer":{"name":"Tomás
+      Senart","emailAddress":"tsenart@gmail.com"},"committerTimestamp":1563286246000,"message":"Remove
+      dump.go","parents":[{"id":"0f5577eaf11a136541b8c667273b6bc5eba51a8b","displayId":"0f5577eaf11"}]}],"size":2,"isLastPage":true,"start":0,"limit":1000,"nextPageStart":null}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 13 Feb 2020 11:59:13 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x719x4928369x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - w1kexb
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/build-status/1.0/commits/1f63e719a65cad47a0a272d3d6eef05f4da427bb?limit=1000
+    method: GET
+  response:
+    body: '{"size":1,"limit":100,"isLastPage":true,"values":[{"state":"INPROGRESS","key":"thekey","name":"thename","url":"http://example.com","description":"the
+      description","dateAdded":1581595091775}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 13 Feb 2020 11:59:13 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x719x4928370x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - ef44ne
       X-Auserid:
       - "1"
       X-Ausername:
