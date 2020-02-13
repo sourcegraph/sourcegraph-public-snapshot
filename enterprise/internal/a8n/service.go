@@ -171,6 +171,10 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 		return err
 	}
 
+	if c.CampaignPlanID != 0 && c.Branch == "" {
+		return ErrCampaignBranchBlank
+	}
+
 	if c.CampaignPlanID == 0 || draft {
 		return nil
 	}
@@ -292,15 +296,25 @@ func RunChangesetJob(
 	// branches and new changesets.
 	// We should probably persist the `headRefName` on `ChangesetJob` and keep
 	// it stable across retries and only set it the first time.
-	headRefName := fmt.Sprintf("sourcegraph/%s-%d", "campaign", c.CreatedAt.Unix())
 
-	_, err = gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	branch := c.Branch
+	ensureUniqueRef := true
+	if job.Branch != "" {
+		// If job.Branch is set that means this method has already been
+		// executed for the given job. In that case, we want to use job.Branch
+		// as the ref, since we created it, and not fallback to another ref.
+		branch = job.Branch
+		ensureUniqueRef = false
+	}
+
+	ref, err := gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
 		BaseCommit: campaignJob.Rev,
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 		// will fail with "corrupt patch at line <N>" where N is the last line.
 		Patch:     campaignJob.Diff + "\n",
-		TargetRef: headRefName,
+		TargetRef: branch,
+		UniqueRef: ensureUniqueRef,
 		CommitInfo: protocol.PatchCommitInfo{
 			Message:     c.Name,
 			AuthorName:  "Sourcegraph Bot",
@@ -315,6 +329,10 @@ func RunChangesetJob(
 		GitApplyArgs: []string{"-p0", "--unidiff-zero"},
 		Push:         true,
 	})
+	if job.Branch != "" && job.Branch != ref {
+		return fmt.Errorf("ref %q doesn't match ChangesetJob's branch %q", ref, job.Branch)
+	}
+	job.Branch = ref
 
 	if err != nil {
 		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
@@ -377,7 +395,7 @@ func RunChangesetJob(
 		Title:   c.Name,
 		Body:    body,
 		BaseRef: baseRef,
-		HeadRef: git.EnsureRefPrefix(headRefName),
+		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,
 		Changeset: &a8n.Changeset{
 			RepoID:      repo.ID,
@@ -720,12 +738,21 @@ type UpdateCampaignArgs struct {
 	Campaign    int64
 	Name        *string
 	Description *string
+	Branch      *string
 	Plan        *int64
 }
 
 // ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
+
+// ErrCampaignBranchBlank is returned by CreateCampaign if the specified Campaign's
+// branch is blank. This is only enforced when creating published campaigns with a plan.
+var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
+
+// ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
+// attempt to change the branch of a published campaign with a plan (or a campaign with individually published changesets).
+var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch cannot be changed")
 
 // UpdateCampaign updates the Campaign with the given arguments.
 func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *a8n.Campaign, detachedChangesets []*a8n.Changeset, err error) {
@@ -748,7 +775,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, errors.Wrap(err, "getting campaign")
 	}
 
-	var updateAttributes, updatePlanID bool
+	var updateAttributes, updatePlanID, updateBranch bool
 
 	if args.Name != nil && campaign.Name != *args.Name {
 		if *args.Name == "" {
@@ -770,7 +797,16 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		updatePlanID = true
 	}
 
-	if !updateAttributes && !updatePlanID {
+	if args.Branch != nil && campaign.Branch != *args.Branch {
+		if *args.Branch == "" {
+			return nil, nil, ErrCampaignBranchBlank
+		}
+
+		campaign.Branch = *args.Branch
+		updateBranch = true
+	}
+
+	if !updateAttributes && !updatePlanID && !updateBranch {
 		return campaign, nil, nil
 	}
 
@@ -778,6 +814,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	if err != nil {
 		return nil, nil, err
 	}
+
 	if status.Processing() {
 		return nil, nil, ErrUpdateProcessingCampaign
 	}
@@ -787,6 +824,12 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, err
 	}
 	partiallyPublished := !published && status.Total != 0
+
+	if campaign.CampaignPlanID != 0 && updateBranch {
+		if published || partiallyPublished {
+			return nil, nil, ErrPublishedCampaignBranchChange
+		}
+	}
 
 	if !published && !partiallyPublished {
 		// If the campaign hasn't been published yet and no Changesets have
@@ -811,7 +854,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	for _, c := range diff.Update {
 		err := tx.UpdateChangesetJob(ctx, c)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, errors.Wrap(err, "updating changeset job")
 		}
 	}
 
@@ -853,7 +896,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	if err = tx.UpdateChangesets(ctx, changesets...); err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "updating changesets")
 	}
 
 	return campaign, changesets, tx.UpdateCampaign(ctx, campaign)

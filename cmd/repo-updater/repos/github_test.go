@@ -74,7 +74,8 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "GithubSource_CreateChangeset_" + tc.name
+
+		tc.name = "GithubSource_CreateChangeset_" + strings.Replace(tc.name, " ", "_", -1)
 
 		t.Run(tc.name, func(t *testing.T) {
 			// The GithubSource uses the github.Client under the hood, which

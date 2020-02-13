@@ -77,6 +77,7 @@ describe('CampaignDetails', () => {
                     changesetPlans: { nodes: [] as GQL.IChangesetPlan[], totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     viewerCanAdminister,
+                    branch: 'awesome-branch',
                     status: {
                         completedCount: 3,
                         pendingCount: 3,

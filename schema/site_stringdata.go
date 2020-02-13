@@ -146,6 +146,12 @@ const SiteSchemaJSON = `{
       "default": false,
       "group": "Security"
     },
+    "disableNonCriticalTelemetry": {
+      "description": "Disable aggregated event counts from being sent to Sourcegraph.com via pings.",
+      "type": "boolean",
+      "default": false,
+      "group": "Misc."
+    },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
@@ -180,13 +186,13 @@ const SiteSchemaJSON = `{
       "group": "External services"
     },
     "githubClientID": {
-      "description": "Client ID for GitHub.",
+      "description": "Client ID for GitHub. (DEPRECATED)",
       "type": "string",
       "group": "Internal",
       "hide": true
     },
     "githubClientSecret": {
-      "description": "Client secret for GitHub.",
+      "description": "Client secret for GitHub. (DEPRECATED)",
       "type": "string",
       "group": "Internal",
       "hide": true

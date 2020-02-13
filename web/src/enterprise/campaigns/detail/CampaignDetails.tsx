@@ -1,3 +1,4 @@
+import slugify from 'slugify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useState, useEffect, useRef, useMemo } from 'react'
@@ -40,6 +41,7 @@ import { CampaignTabs } from './CampaignTabs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { CampaignUpdateDiff } from './CampaignUpdateDiff'
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 interface Campaign
     extends Pick<
@@ -50,6 +52,7 @@ interface Campaign
         | 'description'
         | 'author'
         | 'changesetCountsOverTime'
+        | 'branch'
         | 'createdAt'
         | 'updatedAt'
         | 'publishedAt'
@@ -97,6 +100,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
+    const [branch, setBranch] = useState<string | null>(null)
 
     // For errors during fetching
     const triggerError = useError()
@@ -219,6 +223,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return <HeroPage icon={AlertCircleIcon} title="Plan not found" />
     }
 
+    const specifyingBranchAllowed =
+        campaignPlan ||
+        (campaign &&
+            !campaign.publishedAt &&
+                campaign.changesets.totalCount === 0 &&
+                campaign.status.state !== GQL.BackgroundProcessState.PROCESSING)
+
     const onDraft: React.FormEventHandler = async event => {
         event.preventDefault()
         setMode('saving')
@@ -228,6 +239,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 description,
                 namespace: authenticatedUser.id,
                 plan: campaignPlan ? campaignPlan.id : undefined,
+                branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
                 draft: true,
             })
             unblockHistoryRef.current()
@@ -264,6 +276,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     name,
                     description,
                     plan: planID ?? undefined,
+                    branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
                 })
                 setCampaign(newCampaign)
                 setName(newCampaign.name)
@@ -276,6 +289,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     description,
                     namespace: authenticatedUser.id,
                     plan: campaignPlan ? campaignPlan.id : undefined,
+                    branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
                 })
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
@@ -531,27 +545,52 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </p>
                 )}
                 {!updateMode ? (
-                    (!campaign || campaignPlan) &&
-                    mode === 'editing' && (
+                    (!campaign || campaignPlan) && (
                         <>
-                            {campaignPlan && (
+                            {specifyingBranchAllowed && (
+                                <div className="form-group mt-3">
+                                    <label>
+                                        Branch name{' '}
+                                        <small>
+                                            <InformationOutlineIcon
+                                                className="icon-inline"
+                                                data-tooltip={
+                                                    'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
+                                                }
+                                            />
+                                        </small>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        onChange={event => setBranch(event.target.value)}
+                                        placeholder="my-awesome-campaign"
+                                        value={branch !== null ? branch : slugify(name)}
+                                        required={true}
+                                        disabled={mode === 'saving'}
+                                    />
+                                </div>
+                            )}
+                            <div className="mt-3">
+                                {campaignPlan && (
+                                    <button
+                                        type="submit"
+                                        className="btn btn-secondary mr-1"
+                                        // todo: doesn't trigger form validation
+                                        onClick={onDraft}
+                                        disabled={mode !== 'editing'}
+                                    >
+                                        Create draft
+                                    </button>
+                                )}
                                 <button
                                     type="submit"
-                                    className="btn btn-secondary mr-1"
-                                    // todo: doesn't trigger form validation
-                                    onClick={onDraft}
-                                    disabled={mode !== 'editing'}
+                                    className="btn btn-primary"
+                                    disabled={mode !== 'editing' || campaignPlan?.changesetPlans.totalCount === 0}
                                 >
-                                    Create draft
+                                    Create
                                 </button>
-                            )}
-                            <button
-                                type="submit"
-                                className="btn btn-primary"
-                                disabled={mode !== 'editing' || campaignPlan?.changesetPlans.totalCount === 0}
-                            >
-                                Create
-                            </button>
+                            </div>
                         </>
                     )
                 ) : (

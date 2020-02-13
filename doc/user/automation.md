@@ -349,7 +349,7 @@ src actions scope-query -f eslint-fix-typescript.action.json
 If that list looks good, we're ready to execute the action:
 
 ```sh
-src actions scope-query -timeout 15m -f eslint-fix-typescript.action.json | src campaign plan create-from-patches
+src actions exec -timeout 15m -f eslint-fix-typescript.action.json | src campaign plan create-from-patches
 ```
 
 > **Note**: we're giving the action a generous timeout of 15 minutes per repository, since it needs to download and install all dependencies. With a still-empty caching directory that might take a few minutes.

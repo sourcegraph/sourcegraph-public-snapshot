@@ -28,7 +28,7 @@ Full-Time Teammate. Internal abbreviation used to refer to full-time staff here.
 
 ### [GitHub](https://github.com/)
 
-Large public source repository. SourceGraph has a number of useful integrations with GitHub, also we use it for issue tracking and pull requests for many of our projects. You will need to be added to the `sourcegraph/ftts` team to get access to the internal repositories. Note that you can change notification settings, and probably should; the defaults are incredibly spammy. (Unwatch all repositories, watch issues only when pinged or participating.)
+Large public source repository. Sourcegraph has a number of useful integrations with GitHub, also we use it for issue tracking and pull requests for many of our projects. You will need to be added to the `sourcegraph/ftts` team to get access to the internal repositories. Note that you can change notification settings, and probably should; the defaults are incredibly spammy. (Unwatch all repositories, watch issues only when pinged or participating.)
 
 Also used to refer to the Sourcegraph integration for GitHub, available as browser extensions for Chrome and Firefox.
 

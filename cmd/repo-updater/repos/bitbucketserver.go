@@ -191,6 +191,7 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 			return err
 		}
 
+		cs[i].Changeset.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
 		cs[i].Changeset.Metadata = pr
 	}
 

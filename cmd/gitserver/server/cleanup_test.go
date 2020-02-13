@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"testing/quick"
 	"time"
 
 	"github.com/pkg/errors"
@@ -606,5 +607,15 @@ func Test_findMountPoint(t *testing.T) {
 				t.Errorf("findMountPoint() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestJitterDuration(t *testing.T) {
+	f := func(key string) bool {
+		d := jitterDuration(key, repoTTLGC/4)
+		return 0 <= d && d < repoTTLGC/4
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
 	}
 }
