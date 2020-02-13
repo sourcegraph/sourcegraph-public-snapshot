@@ -87,7 +87,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                 {campaignPlan.changesetPlans.totalCount}{' '}
                 {pluralize('changeset', campaignPlan.changesetPlans.totalCount)} (
                 {campaign.publishedAt
-                    ? changed.length - deleted.length + campaign.publishedAt
+                    ? changed.length - deleted.length + added.length
                     : campaign.changesets.totalCount - deleted.length}{' '}
                 published, {newDraftCount} {pluralize('draft', newDraftCount)}):
                 <TabsWithLocalStorageViewStatePersistence
@@ -168,8 +168,8 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
         )
     }
     return (
-        <p>
+        <span>
             <LoadingSpinner className={classNames('icon-inline', className)} /> Loading diff
-        </p>
+        </span>
     )
 }

@@ -1,7 +1,7 @@
 import slugify from 'slugify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -41,6 +41,7 @@ import { CampaignTabs } from './CampaignTabs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
 import { CampaignUpdateDiff } from './CampaignUpdateDiff'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
+import { CampaignUpdateSelection } from './CampaignUpdateSelection'
 
 interface Campaign
     extends Pick<
@@ -164,24 +165,24 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // To report errors from saving or deleting
     const [alertError, setAlertError] = useState<Error>()
 
-    // To unblock the history after leaving edit mode
-    const unblockHistoryRef = useRef<H.UnregisterCallback>(noop)
-    useEffect(() => {
-        if (!campaignID) {
-            unblockHistoryRef.current()
-            unblockHistoryRef.current = history.block('Do you want to discard this campaign?')
-        }
-        // Note: the current() method gets dynamically reassigned,
-        // therefor we can't return it directly.
-        return () => unblockHistoryRef.current()
-    }, [campaignID, history])
-
     const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
     useEffect(() => {
         if (planID) {
             setMode('editing')
         }
     }, [planID])
+
+    // To unblock the history after leaving edit mode
+    const unblockHistoryRef = useRef<H.UnregisterCallback>(noop)
+    useEffect(() => {
+        if (!campaignID && planID === null) {
+            unblockHistoryRef.current()
+            unblockHistoryRef.current = history.block('Do you want to discard this campaign?')
+        }
+        // Note: the current() method gets dynamically reassigned,
+        // therefor we can't return it directly.
+        return () => unblockHistoryRef.current()
+    }, [campaignID, history, planID])
 
     const updateMode = campaignID && planID
     const previewCampaignPlans = useMemo(() => new Subject<GQL.ID>(), [])
@@ -204,6 +205,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         )
     )
 
+    const selectCampaign = useCallback<(campaign: Pick<GQL.ICampaign, 'id'>) => void>(
+        campaign => history.push(`/campaigns/${campaign.id}?plan=${planID}`),
+        [history, planID]
+    )
+
     // Campaign is loading
     if ((campaignID && campaign === undefined) || (planID && campaignPlan === undefined)) {
         return (
@@ -220,6 +226,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // Plan was not found
     if (campaignPlan === null) {
         return <HeroPage icon={AlertCircleIcon} title="Plan not found" />
+    }
+
+    // plan is specified, but campaign not yet, so we have to choose
+    if (history.location.pathname.includes('/campaigns/update') && campaignID === undefined && planID !== null) {
+        return <CampaignUpdateSelection history={history} location={location} onSelect={selectCampaign} />
     }
 
     const specifyingBranchAllowed =
