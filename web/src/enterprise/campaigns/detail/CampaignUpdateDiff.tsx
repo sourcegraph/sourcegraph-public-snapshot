@@ -10,10 +10,17 @@ import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/
 import classNames from 'classnames'
 import { Connection } from '../../../components/FilteredConnection'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { pluralize } from '../../../../../shared/src/util/strings'
 
 interface Props extends ThemeProps {
-    campaign: Pick<GQL.ICampaign, 'id'>
-    campaignPlan: Pick<GQL.ICampaignPlan, 'id'>
+    campaign: Pick<GQL.ICampaign, 'id' | 'publishedAt'> & {
+        changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+    } & {
+        changesetPlans: Pick<GQL.ICampaign['changesetPlans'], 'totalCount'>
+    }
+    campaignPlan: Pick<GQL.ICampaignPlan, 'id'> & {
+        changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'totalCount'>
+    }
     history: H.History
     location: H.Location
     className?: string
@@ -68,79 +75,97 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                 !changesetPlans.nodes.some(changesetPlan => changesetPlan.repository.id === changeset.repository.id)
         )
         return (
-            <TabsWithLocalStorageViewStatePersistence
-                storageKey="campaignUpdateDiffTabs"
-                className={classNames(className)}
-                tabs={[
-                    {
-                        id: 'added',
-                        label: (
-                            <span>
-                                New changesets <span className="badge badge-secondary badge-pill">{added.length}</span>
-                            </span>
-                        ),
-                    },
-                    {
-                        id: 'changed',
-                        label: (
-                            <span>
-                                Updated changesets{' '}
-                                <span className="badge badge-secondary badge-pill">{changed.length}</span>
-                            </span>
-                        ),
-                    },
-                    {
-                        id: 'deleted',
-                        label: (
-                            <span>
-                                Closed changesets{' '}
-                                <span className="badge badge-secondary badge-pill">{deleted.length}</span>
-                            </span>
-                        ),
-                    },
-                ]}
-                tabClassName="tab-bar__tab--h5like"
-            >
-                <div key="added" className="pt-3">
-                    {added.map(changeset => (
-                        <ChangesetNode
-                            enablePublishing={false}
-                            history={history}
-                            location={location}
-                            node={changeset}
-                            isLightTheme={isLightTheme}
-                            key={changeset.id}
-                        />
-                    ))}
-                    {added.length === 0 && <span className="text-muted">No changesets</span>}
-                </div>
-                <div key="changed" className="pt-3">
-                    {changed.map(changeset => (
-                        <ChangesetNode
-                            enablePublishing={false}
-                            history={history}
-                            location={location}
-                            node={changeset}
-                            isLightTheme={isLightTheme}
-                            key={changeset.id}
-                        />
-                    ))}
-                    {changed.length === 0 && <span className="text-muted">No changesets</span>}
-                </div>
-                <div key="deleted" className="pt-3">
-                    {deleted.map(changeset => (
-                        <ChangesetNode
-                            enablePublishing={false}
-                            history={history}
-                            location={location}
-                            node={changeset}
-                            isLightTheme={isLightTheme}
-                            key={changeset.id}
-                        />
-                    ))}
-                    {deleted.length === 0 && <span className="text-muted">No changesets</span>}
-                </div>
-            </TabsWithLocalStorageViewStatePersistence>
+            <>
+                <h3 className="mt-3">Preview of changes</h3>
+                Campaign currently has {campaign.changesets.totalCount + campaign.changesetPlans.totalCount}{' '}
+                {pluralize('changeset', campaign.changesets.totalCount + campaign.changesetPlans.totalCount)} (
+                {campaign.changesets.totalCount} published, {campaign.changesetPlans.totalCount}{' '}
+                {pluralize('draft', campaign.changesetPlans.totalCount)}), after update it will have{' '}
+                {campaignPlan.changesetPlans.totalCount}{' '}
+                {pluralize('changeset', campaignPlan.changesetPlans.totalCount)} (
+                {campaign.publishedAt
+                    ? changed.length - deleted.length + campaign.publishedAt
+                    : campaign.changesets.totalCount - deleted.length}{' '}
+                published,{' '}
+                {!campaign.publishedAt
+                    ? changed.length - (campaign.changesets.totalCount - deleted.length) + added.length
+                    : 0}{' '}
+                drafts):
+                <TabsWithLocalStorageViewStatePersistence
+                    storageKey="campaignUpdateDiffTabs"
+                    className={classNames(className)}
+                    tabs={[
+                        {
+                            id: 'added',
+                            label: (
+                                <span>
+                                    To be created{' '}
+                                    <span className="badge badge-secondary badge-pill">{added.length}</span>
+                                </span>
+                            ),
+                        },
+                        {
+                            id: 'changed',
+                            label: (
+                                <span>
+                                    To be updated{' '}
+                                    <span className="badge badge-secondary badge-pill">{changed.length}</span>
+                                </span>
+                            ),
+                        },
+                        {
+                            id: 'deleted',
+                            label: (
+                                <span>
+                                    To be closed{' '}
+                                    <span className="badge badge-secondary badge-pill">{deleted.length}</span>
+                                </span>
+                            ),
+                        },
+                    ]}
+                    tabClassName="tab-bar__tab--h5like"
+                >
+                    <div key="added" className="pt-3">
+                        {added.map(changeset => (
+                            <ChangesetNode
+                                enablePublishing={false}
+                                history={history}
+                                location={location}
+                                node={changeset}
+                                isLightTheme={isLightTheme}
+                                key={changeset.id}
+                            />
+                        ))}
+                        {added.length === 0 && <span className="text-muted">No changesets</span>}
+                    </div>
+                    <div key="changed" className="pt-3">
+                        {changed.map(changeset => (
+                            <ChangesetNode
+                                enablePublishing={false}
+                                history={history}
+                                location={location}
+                                node={changeset}
+                                isLightTheme={isLightTheme}
+                                key={changeset.id}
+                            />
+                        ))}
+                        {changed.length === 0 && <span className="text-muted">No changesets</span>}
+                    </div>
+                    <div key="deleted" className="pt-3">
+                        {deleted.map(changeset => (
+                            <ChangesetNode
+                                enablePublishing={false}
+                                history={history}
+                                location={location}
+                                node={changeset}
+                                isLightTheme={isLightTheme}
+                                key={changeset.id}
+                            />
+                        ))}
+                        {deleted.length === 0 && <span className="text-muted">No changesets</span>}
+                    </div>
+                </TabsWithLocalStorageViewStatePersistence>
+            </>
         )
     }
     return (

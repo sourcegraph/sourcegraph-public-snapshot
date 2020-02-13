@@ -227,8 +227,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         campaignPlan ||
         (campaign &&
             !campaign.publishedAt &&
-                campaign.changesets.totalCount === 0 &&
-                campaign.status.state !== GQL.BackgroundProcessState.PROCESSING)
+            campaign.changesets.totalCount === 0 &&
+            campaign.status.state !== GQL.BackgroundProcessState.PROCESSING)
 
     const onDraft: React.FormEventHandler = async event => {
         event.preventDefault()
@@ -544,6 +544,22 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </small>
                     </p>
                 )}
+                {campaign && campaignPlan && (
+                    <>
+                        <CampaignUpdateDiff
+                            campaign={campaign}
+                            campaignPlan={campaignPlan}
+                            history={history}
+                            location={location}
+                            isLightTheme={isLightTheme}
+                            className="my-3"
+                        />
+                        <div className="alert alert-info mt-3">
+                            <AlertCircleIcon className="icon-inline" /> You are updating an existing campaign. By
+                            clicking 'Update', all already published changesets will be updated on the codehost.
+                        </div>
+                    </>
+                )}
                 {!updateMode ? (
                     (!campaign || campaignPlan) && (
                         <>
@@ -618,31 +634,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         onPublish={onPublish}
                         onRetry={onRetry}
                     />
-
-                    {campaign && campaignPlan && (
-                        <>
-                            <div className="alert alert-info mt-3">
-                                <AlertCircleIcon className="icon-inline" /> You are changing an existing campaign. By
-                                clicking 'Update', all below changes are performed.
-                            </div>
-                            <h3 className="mt-3">Changes overview</h3>
-                            Old campaign was {campaign.changesets.totalCount + campaign.changesetPlans.totalCount}{' '}
-                            {pluralize(
-                                'changeset',
-                                campaign.changesets.totalCount + campaign.changesetPlans.totalCount
-                            )}
-                            , now {campaignPlan.changesetPlans.totalCount}{' '}
-                            {pluralize('changeset', campaignPlan.changesetPlans.totalCount)}
-                            <CampaignUpdateDiff
-                                campaign={campaign}
-                                campaignPlan={campaignPlan}
-                                history={history}
-                                location={location}
-                                isLightTheme={isLightTheme}
-                                className="mt-3"
-                            />
-                        </>
-                    )}
 
                     {campaign && !updateMode && (
                         <>
