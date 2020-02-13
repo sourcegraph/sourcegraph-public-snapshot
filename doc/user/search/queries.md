@@ -27,7 +27,7 @@ This section documents the available search pattern syntax and interpretation in
 
 ### Literal search (default)
 
-Literal search interprets search patterns literally to simplify searching for words or punctuation. 
+Literal search interprets search patterns literally to simplify searching for words or punctuation.
 
 | Search pattern syntax | Description |
 | --- | --- | 
@@ -70,6 +70,7 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 | **repogroup:group-name** <br> _alias: g_ | Only include results from the named group of repositories (defined by the server admin). Same as using a repo: keyword that matches all of the group's repositories. Use repo: unless you know that the group exists. | |
 | **file:regexp-pattern** <br> _alias: f_ | Only include results in files whose full path matches the regexp. | [`file:\.js$ httptest`](https://sourcegraph.com/search?q=file:%5C.js%24+httptest) <br> [`file:internal/ httptest`](https://sourcegraph.com/search?q=file:internal/+httptest) |
 | **-file:regexp-pattern** <br> _alias: -f_ | Exclude results from files whose full path matches the regexp. | [`file:\.js$ -file:test http`](https://sourcegraph.com/search?q=file:%5C.js%24+-file:test+http) |
+| **content:"pattern" | Explicitly override the [search pattern](#search-pattern-syntax). Useful for explicitly delineating the pattern to search for if it clashes with other parts of the query. | [`repo:sourcegraph "repo:sourcegraph"`](https://sourcegraph.com/search?q=repo:sourcegraph+content:"repo:sourcegraph"&patternType=literal) |
 | **lang:language-name** <br> _alias: l_ | Only include results from files in the specified programming language. | [`lang:typescript encoding`](https://sourcegraph.com/search?q=lang:typescript+encoding) |
 | **-lang:language-name** <br> _alias: -l_ | Exclude results from files in the specified programming language. | [`-lang:typescript encoding`](https://sourcegraph.com/search?q=-lang:typescript+encoding) |
 | **type:symbol** | Perform a symbol search. | [`type:symbol path`](https://sourcegraph.com/search?q=type:symbol+path)  ||

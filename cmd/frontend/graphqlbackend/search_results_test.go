@@ -441,6 +441,61 @@ func TestOrderedFuzzyRegexp(t *testing.T) {
 	}
 }
 
+func TestProcessSearchPattern(t *testing.T) {
+	cases := []struct {
+		Name    string
+		Pattern string
+		Opts    *getPatternInfoOptions
+		Want    string
+	}{
+		{
+			Name:    "Regexp, no content field",
+			Pattern: `search me`,
+			Opts:    &getPatternInfoOptions{},
+			Want:    "(search).*?(me)",
+		},
+		{
+			Name:    "Regexp with content field",
+			Pattern: `content:search`,
+			Opts:    &getPatternInfoOptions{},
+			Want:    "search",
+		},
+		{
+			Name:    "Regexp with quoted content field",
+			Pattern: `content:"search me"`,
+			Opts:    &getPatternInfoOptions{},
+			Want:    "search me",
+		},
+		{
+			Name:    "Regexp with content field ignores default pattern",
+			Pattern: `content:"search me" ignored`,
+			Opts:    &getPatternInfoOptions{},
+			Want:    "search me",
+		},
+		{
+			Name:    "Literal with quoted content field means double quotes are not part of the pattern",
+			Pattern: `content:"content:"`,
+			Opts:    &getPatternInfoOptions{performLiteralSearch: true},
+			Want:    "content:",
+		},
+		{
+			Name:    "Literal with quoted content field containing quotes",
+			Pattern: `content:"\"content:\""`,
+			Opts:    &getPatternInfoOptions{performLiteralSearch: true},
+			Want:    "\"content:\"",
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			q, _ := query.ParseAndCheck(tt.Pattern)
+			got, _, _ := processSearchPattern(q, tt.Opts)
+			if got != tt.Want {
+				t.Fatalf("got %s\nwant %s", got, tt.Want)
+			}
+		})
+	}
+}
+
 func TestSearchResolver_getPatternInfo(t *testing.T) {
 	normalize := func(p *search.TextPatternInfo) {
 		if len(p.IncludePatterns) == 0 {
