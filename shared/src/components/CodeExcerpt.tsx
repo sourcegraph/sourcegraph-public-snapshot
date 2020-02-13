@@ -145,8 +145,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         // Of the matches in this excerpt, pick the one with the highest line number + lines of context.
         // Don't add the context value to calculate the last line if the last highlight match is the highlight range + contextLines
         const lastLine = contextLineHasHighlight
-            ? Math.max(...this.props.highlightRanges.map(r => r.line)) + numberOfcontextLinesToShow
-            : Math.max(...this.props.highlightRanges.map(r => r.line)) + contextLines
+            ? Math.max(...highlightRangeLines) + numberOfcontextLinesToShow
+            : Math.max(...highlightRangeLines) + contextLines
         // If there are lines, take the minimum of lastLine and the number of lines in the file,
         // so we don't try to display a line index beyond the maximum line number in the file.
         return blobLines ? Math.min(lastLine, blobLines.length) : lastLine

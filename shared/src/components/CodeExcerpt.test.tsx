@@ -59,6 +59,7 @@ describe('CodeExcerpt', () => {
                 {...defaultProps}
                 context={5}
                 highlightRanges={[{ line: 4, character: 1, highlightLength: 2 }]}
+                lastSubsetMatchLineNumber={4}
             />
         )
         expect(container.querySelectorAll('.code-excerpt tr').length).toBe(10)
