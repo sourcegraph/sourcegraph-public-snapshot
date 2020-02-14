@@ -69,6 +69,7 @@ export function assignIndexer(connection: Connection, ctx: TracingContext): Prom
 const extensionsToIndexer = new Map([
     ['.go', 'lsif-go'],
     ['.ts', 'lsif-node'],
+    ['.h', 'lsif-cpp'],
     ['.c', 'lsif-cpp'],
     ['.cpp', 'lsif-cpp'],
     ['.h', 'lsif-cpp'],
