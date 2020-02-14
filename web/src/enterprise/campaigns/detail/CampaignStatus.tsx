@@ -84,7 +84,7 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
             {status.state === GQL.BackgroundProcessState.ERRORED && (
                 <>
                     <AlertCircleIcon className="icon-inline text-danger mr-1" />
-                    Creation errored
+                    Error creating campaign
                 </>
             )}
             {status.errors.map((error, i) => (

@@ -6,7 +6,7 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
     <Memo(AlertCircleIcon)
       className="icon-inline text-danger mr-1"
     />
-    Creation errored
+    Error creating campaign
   </React.Fragment>
   <ErrorAlert
     className="mt-3"
@@ -170,7 +170,7 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
     <Memo(AlertCircleIcon)
       className="icon-inline text-danger mr-1"
     />
-    Creation errored
+    Error creating campaign
   </React.Fragment>
   <ErrorAlert
     className="mt-3"

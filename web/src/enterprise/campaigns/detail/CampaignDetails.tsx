@@ -662,9 +662,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     {!updateMode && (
                         <>
                             <h3 className="mt-3">Changesets</h3>
-                            {(campaignPlan || campaign)!.changesetPlans.totalCount +
-                                (campaign ? campaign.changesets.totalCount : 0) >
-                            0 ? (
+                            {(campaign?.changesets.totalCount ?? 0) +
+                            (campaignPlan || campaign)!.changesetPlans.totalCount ? (
                                 <CampaignTabs
                                     campaign={(campaignPlan || campaign)!}
                                     changesetUpdates={changesetUpdates}

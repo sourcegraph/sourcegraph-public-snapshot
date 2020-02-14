@@ -14,13 +14,13 @@ interface Props {
 }
 
 /**
- * A list of a campaign's changesets changed over a new plan
+ * A list of a campaign's to choose from for an update
  */
 export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ history, location, onSelect }) => (
     <>
         <PageTitle title="Update campaign" />
-        <h1>Update campaign</h1>
-        <p>Select the campaign to update from the list of campaigns below:</p>
+        <h1>Select campaign to update</h1>
+        <p>Choose a campaign to update from the list below to preview which changes will be made to the code hosts:</p>
         <FilteredConnection<
             Pick<
                 GQL.ICampaign,
@@ -32,7 +32,7 @@ export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ histor
             location={location}
             nodeComponent={CampaignNode}
             nodeComponentProps={{
-                selection: { buttonLabel: 'Select', enabled: true, onSelect },
+                selection: { buttonLabel: 'Preview', enabled: true, onSelect },
             }}
             queryConnection={queryCampaigns}
             useURLQuery={false}
