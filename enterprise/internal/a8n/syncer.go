@@ -22,13 +22,11 @@ type ChangesetSyncer struct {
 // Sync refreshes the metadata of all changesets and updates them in the
 // database
 func (s *ChangesetSyncer) Sync(ctx context.Context) error {
-	log15.Info("Fetching changesets")
 	cs, err := s.listAllNonDeletedChangesets(ctx)
 	if err != nil {
 		log15.Error("ChangesetSyncer.listAllNonDeletedChangesets", "error", err)
 		return err
 	}
-	log15.Info("Found changesets", "count", len(cs))
 
 	if err := s.SyncChangesets(ctx, cs...); err != nil {
 		log15.Error("ChangesetSyncer", "error", err)
