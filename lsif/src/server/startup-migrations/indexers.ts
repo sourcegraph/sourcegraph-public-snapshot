@@ -67,14 +67,14 @@ export function assignIndexer(connection: Connection, ctx: TracingContext): Prom
 }
 
 const extensionsToIndexer = new Map([
-    ['.go', 'lsif-go'],
-    ['.ts', 'lsif-node'],
-    ['.h', 'lsif-cpp'],
     ['.c', 'lsif-cpp'],
     ['.cpp', 'lsif-cpp'],
+    ['.dart', 'lsif-dart'],
+    ['.go', 'lsif-go'],
+    ['.h', 'lsif-cpp'],
     ['.h', 'lsif-cpp'],
     ['.java', 'lsif-java'],
-    ['.dart', 'lsif-dart'],
+    ['.ts', 'lsif-node'],
 ])
 
 function determineIndexer(paths: string[]): string | undefined {
