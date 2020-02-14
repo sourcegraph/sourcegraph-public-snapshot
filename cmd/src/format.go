@@ -95,7 +95,7 @@ func parseTemplate(text string) (*template.Template, error) {
 		"renderResult":                      searchTemplateFuncs["renderResult"],
 
 		// `src campaign plans create-from-patches`
-		"friendlyCampaignPlanCreatedMessage": func(campaignPlan CampaignPlan) string {
+		"friendlyCampaignPlanCreatedMessage": func(campaignPlan CampaignPlan, supportsUpdate bool) string {
 			var buf bytes.Buffer
 			fmt.Fprintln(&buf)
 			fmt.Fprintln(&buf, color.HiGreenString("✔  Campaign plan saved."), "\n\nTo preview and run the campaign (and create branches and changesets):")
@@ -104,8 +104,24 @@ func parseTemplate(text string) (*template.Template, error) {
 			cliCommand := fmt.Sprintf("src campaigns create -plan=%s -branch=DESIRED-BRANCH-NAME", campaignPlan.ID)
 			fmt.Fprintln(&buf, " ", color.HiCyanString("▶ CLI:"), cliCommand)
 
-			fmt.Fprintln(&buf, "\nTo update an existing campaign using this campaign plan:")
-			fmt.Fprintln(&buf, "\n ", color.HiCyanString("▶ Web:"), strings.Replace(campaignPlan.PreviewURL, "/new", "/update", 1))
+			// Hacky to do this in a formatting helper, but better than
+			// globally querying the version and only using it here for now.
+			version, err := getSourcegraphVersion()
+			if err != nil {
+				// We ignore the error and return what we have
+				return buf.String()
+			}
+
+			supportsUpdatingPlan, err := sourcegraphVersionCheck(version, ">= 3.13", "2020-02-14")
+			if err != nil {
+				return buf.String()
+			}
+
+			if supportsUpdatingPlan {
+				fmt.Fprintln(&buf, "\nTo update an existing campaign using this campaign plan:")
+				fmt.Fprintln(&buf, "\n ", color.HiCyanString("▶ Web:"), strings.Replace(campaignPlan.PreviewURL, "/new", "/update", 1))
+			}
+
 			return buf.String()
 		},
 
