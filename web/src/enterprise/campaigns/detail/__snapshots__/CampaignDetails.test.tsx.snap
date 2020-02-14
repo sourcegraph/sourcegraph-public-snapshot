@@ -21264,7 +21264,7 @@ Array [
       >
         <button
           className="btn btn-secondary mr-1"
-          disabled={false}
+          disabled={true}
           id="e2e-campaign-edit"
           onClick={[Function]}
           type="button"
@@ -21276,7 +21276,7 @@ Array [
         >
           <summary>
             <span
-              className="btn btn-secondary mr-1 dropdown-toggle disabled"
+              className="btn dropdown-toggle btn-secondary mr-1 disabled"
               data-tooltip="Cannot close while campaign is being created"
               onClick={[Function]}
             >
@@ -21317,7 +21317,7 @@ Array [
                   </label>
                 </div>
                 <button
-                  className="btn mr-1 btn-secondary"
+                  className="btn mr-1 btn-secondary mr-1"
                   disabled={true}
                   onClick={[Function]}
                   type="button"
@@ -21333,7 +21333,7 @@ Array [
         >
           <summary>
             <span
-              className="btn btn-danger dropdown-toggle disabled"
+              className="btn dropdown-toggle btn-danger disabled"
               data-tooltip="Cannot delete while campaign is being created"
               onClick={[Function]}
             >

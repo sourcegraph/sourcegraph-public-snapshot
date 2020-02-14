@@ -82,10 +82,10 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                 )
             )}
             {status.state === GQL.BackgroundProcessState.ERRORED && (
-                <>
+                <div>
                     <AlertCircleIcon className="icon-inline text-danger mr-1" />
                     Error creating campaign
-                </>
+                </div>
             )}
             {status.errors.map((error, i) => (
                 // There is no other suitable key, so:
