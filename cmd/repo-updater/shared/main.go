@@ -31,6 +31,8 @@ import (
 
 const port = "3182"
 
+// DependencyCallback is a function that allows external code to be triggered when dependencies
+// created in Main are ready for use.
 type DependencyCallback func(db *sql.DB, store repos.Store, cf *httpcli.Factory)
 
 func Main(callback DependencyCallback) {

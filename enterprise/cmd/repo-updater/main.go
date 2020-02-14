@@ -43,7 +43,7 @@ func dependencyCallback(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory) 
 				if err != nil {
 					log15.Error("Syncing Changesets", "err", err)
 				}
-				time.Sleep(1 * time.Minute)
+				time.Sleep(2 * time.Minute)
 			}
 		}()
 
