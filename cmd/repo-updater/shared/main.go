@@ -31,11 +31,11 @@ import (
 
 const port = "3182"
 
-// DependencyCallback is a function that allows external code to be triggered when dependencies
+// EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type DependencyCallback func(db *sql.DB, store repos.Store, cf *httpcli.Factory)
+type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory)
 
-func Main(callback DependencyCallback) {
+func Main(enterpriseInit EnterpriseInit) {
 	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
 
 	ctx := context.Background()
@@ -98,8 +98,8 @@ func Main(callback DependencyCallback) {
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	// All dependencies ready
-	if callback != nil {
-		callback(db, store, cf)
+	if enterpriseInit != nil {
+		enterpriseInit(db, store, cf)
 	}
 
 	var src repos.Sourcer

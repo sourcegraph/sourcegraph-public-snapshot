@@ -21,12 +21,12 @@ func main() {
 	if debug {
 		log.Println("enterprise edition")
 	}
-	shared.Main(dependencyCallback)
+	shared.Main(enterpriseInit)
 }
 
 var cbOnce sync.Once
 
-func dependencyCallback(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory) {
+func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory) {
 	cbOnce.Do(func() {
 		ctx := context.Background()
 		a8nStore := a8n.NewStore(db)
