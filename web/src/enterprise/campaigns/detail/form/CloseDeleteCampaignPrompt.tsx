@@ -49,7 +49,7 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
             <details className="campaign-prompt__details" ref={detailsMenuRef}>
                 <summary>
                     <span
-                        className={classNames(`btn ${buttonClassName} dropdown-toggle`, disabled && 'disabled')}
+                        className={classNames('btn dropdown-toggle', buttonClassName, disabled && 'disabled')}
                         onClick={event => disabled && event.preventDefault()}
                         data-tooltip={disabled ? disabledTooltip : undefined}
                     >
