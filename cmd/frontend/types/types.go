@@ -114,18 +114,18 @@ type UserUsageStatistics struct {
 	LastCodeHostIntegrationTime *time.Time
 }
 
-// NOTE: DO NOT change the names or fields of this struct without making a
-// symmetric change to the updatecheck handler. This struct is marshalled
-// and sent to BigQuery, which requires the input match its schema exactly.
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type SiteUsageStatistics struct {
 	DAUs []*SiteActivityPeriod
 	WAUs []*SiteActivityPeriod
 	MAUs []*SiteActivityPeriod
 }
 
-// NOTE: DO NOT change the names or fields of this struct without making a
-// symmetric change to the updatecheck handler. This struct is marshalled
-// and sent to BigQuery, which requires the input match its schema exactly.
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type SiteActivityPeriod struct {
 	StartTime            time.Time
 	UserCount            int32
@@ -135,9 +135,9 @@ type SiteActivityPeriod struct {
 	Stages               *Stages
 }
 
-// NOTE: DO NOT change the names or fields of this struct without making a
-// symmetric change to the updatecheck handler. This struct is marshalled
-// and sent to BigQuery, which requires the input match its schema exactly.
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type Stages struct {
 	Manage    int32 `json:"mng"`
 	Plan      int32 `json:"plan"`
@@ -152,25 +152,25 @@ type Stages struct {
 	Automate  int32 `json:"auto"`
 }
 
-// NOTE: DO NOT change the names or fields of this struct without making a
-// symmetric change to the updatecheck handler. This struct is marshalled
-// and sent to BigQuery, which requires the input match its schema exactly.
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type AutomationUsageStatistics struct {
 	CampaignsCount int
 }
 
-// NOTE: DO NOT change the names or fields of this struct without making a
-// symmetric change to the updatecheck handler. This struct is marshalled
-// and sent to BigQuery, which requires the input match its schema exactly.
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type CodeIntelUsageStatistics struct {
 	Daily   []*CodeIntelUsagePeriod
 	Weekly  []*CodeIntelUsagePeriod
 	Monthly []*CodeIntelUsagePeriod
 }
 
-// NOTE: DO NOT change the names or fields of this struct without making a
-// symmetric change to the updatecheck handler. This struct is marshalled
-// and sent to BigQuery, which requires the input match its schema exactly.
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type CodeIntelUsagePeriod struct {
 	StartTime   time.Time
 	Hover       *CodeIntelEventCategoryStatistics
@@ -178,26 +178,26 @@ type CodeIntelUsagePeriod struct {
 	References  *CodeIntelEventCategoryStatistics
 }
 
-// NOTE: DO NOT change the names or fields of this struct without making a
-// symmetric change to the updatecheck handler. This struct is marshalled
-// and sent to BigQuery, which requires the input match its schema exactly.
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type CodeIntelEventCategoryStatistics struct {
 	Precise *CodeIntelEventStatistics
 	Fuzzy   *CodeIntelEventStatistics
 }
 
-// NOTE: DO NOT change the names or fields of this struct without making a
-// symmetric change to the updatecheck handler. This struct is marshalled
-// and sent to BigQuery, which requires the input match its schema exactly.
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type CodeIntelEventStatistics struct {
 	UsersCount     int32
 	EventsCount    *int32
 	EventLatencies *CodeIntelEventLatencies
 }
 
-// NOTE: DO NOT change the names or fields of this struct without making a
-// symmetric change to the updatecheck handler. This struct is marshalled
-// and sent to BigQuery, which requires the input match its schema exactly.
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type CodeIntelEventLatencies struct {
 	P50 float64
 	P90 float64
