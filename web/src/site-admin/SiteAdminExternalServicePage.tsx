@@ -114,7 +114,11 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         if (externalService && externalService.kind === GQL.ExternalServiceKind.GITHUB) {
             const parsedConfig = parseJSONC(externalService.config)
             // we have no way of finding out whether a externalservice of kind GITHUB is GitHub.com or GitHub enterprise, so we need to guess based on the url
-            if (!parsedConfig.url.match(/^https:\/\/github\.com/)) {
+            if (
+                parsedConfig?.url &&
+                typeof parsedConfig.url === 'string' &&
+                !parsedConfig.url.match(/^https:\/\/github\.com/)
+            ) {
                 externalServiceCategory = codeHostExternalServices.ghe
             }
         }
