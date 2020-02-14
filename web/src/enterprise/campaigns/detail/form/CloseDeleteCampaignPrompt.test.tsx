@@ -7,13 +7,13 @@ describe('CloseDeleteCampaignPrompt', () => {
         expect(
             createRenderer().render(
                 <CloseDeleteCampaignPrompt
-                    summary={<span className="btn btn-secondary dropdown-toggle">Close</span>}
+                    disabled={false}
+                    disabledTooltip="Cannot delete while campaign is processing..."
                     message={<p>message</p>}
                     changesetsCount={2}
                     buttonText="Delete"
                     onButtonClick={() => undefined}
                     buttonClassName="btn-danger"
-                    buttonDisabled={false}
                 />
             )
         ).toMatchSnapshot())
