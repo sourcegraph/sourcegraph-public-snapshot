@@ -79,4 +79,5 @@ export const FilterTypesToProseNames: Record<FilterTypes, string> = {
     message: 'Commit message contains',
     author: 'Commit author',
     type: 'Type',
+    content: 'Content',
 }
