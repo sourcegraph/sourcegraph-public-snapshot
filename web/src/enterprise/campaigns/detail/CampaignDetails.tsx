@@ -382,7 +382,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const author = campaign ? campaign.author : authenticatedUser
 
     const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
-    const disableCloseDelete =  mode === 'deleting' || mode === 'closing' || campaignProcessing
+    const disableModifyingCampaign = mode === 'deleting' || mode === 'closing' || campaignProcessing
 
     return (
         <>
@@ -438,13 +438,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             id="e2e-campaign-edit"
                                             className="btn btn-secondary mr-1"
                                             onClick={onEdit}
-                                            disabled={mode === 'deleting' || mode === 'closing'}
+                                            disabled={disableModifyingCampaign}
                                         >
                                             Edit
                                         </button>
                                         {!campaign.closedAt && (
                                             <CloseDeleteCampaignPrompt
-                                                disabled={ disableCloseDelete }
+                                                disabled={disableModifyingCampaign}
                                                 disabledTooltip="Cannot close while campaign is being created"
                                                 message={
                                                     <p>
@@ -458,7 +458,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             />
                                         )}
                                         <CloseDeleteCampaignPrompt
-                                            disabled={disableCloseDelete}
+                                            disabled={disableModifyingCampaign}
                                             disabledTooltip="Cannot delete while campaign is being created"
                                             message={
                                                 <p>
