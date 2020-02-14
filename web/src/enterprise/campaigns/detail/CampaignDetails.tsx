@@ -7,7 +7,6 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { CampaignsIcon } from '../icons'
 import { noop } from 'lodash'
 import { Form } from '../../../components/Form'
 import {
@@ -29,19 +28,16 @@ import { Subject, of, merge, Observable } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { Link } from '../../../../../shared/src/components/Link'
 import { switchMap, tap, takeWhile, repeatWhen, delay, catchError, startWith } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import classNames from 'classnames'
-import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
-import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
 import { CampaignUpdateDiff } from './CampaignUpdateDiff'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { CampaignUpdateSelection } from './CampaignUpdateSelection'
+import { CampaignActionsBar } from './CampaignActionsBar'
 
 interface Campaign
     extends Pick<
@@ -381,100 +377,19 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign ? campaign.author : authenticatedUser
 
-    const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
-    const disableModifyingCampaign = mode === 'deleting' || mode === 'closing' || campaignProcessing
-
     return (
         <>
             <PageTitle title={campaign ? campaign.name : 'New campaign'} />
             <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form position-relative">
-                <div className="d-flex mb-2">
-                    <h2 className="m-0">
-                        <CampaignsIcon
-                            className={classNames(
-                                'icon-inline mr-2',
-                                campaign && !campaign.closedAt
-                                    ? 'text-success'
-                                    : campaignID
-                                    ? 'text-danger'
-                                    : 'text-muted'
-                            )}
-                        />
-                        <span>
-                            <Link to="/campaigns">Campaigns</Link>
-                        </span>
-                        <span className="text-muted d-inline-block mx-2">/</span>
-                        {mode === 'editing' || mode === 'saving' ? (
-                            <CampaignTitleField
-                                className="w-auto d-inline-block e2e-campaign-title"
-                                value={name}
-                                onChange={setName}
-                                disabled={mode === 'saving'}
-                            />
-                        ) : (
-                            <span>{campaign?.name}</span>
-                        )}
-                    </h2>
-                    <span className="flex-grow-1 d-flex justify-content-end align-items-center">
-                        {(mode === 'saving' || mode === 'deleting' || mode === 'closing') && (
-                            <LoadingSpinner className="mr-2" />
-                        )}
-                        {campaign &&
-                            !campaignPlan &&
-                            (mode === 'editing' || mode === 'saving' ? (
-                                <>
-                                    <button type="submit" className="btn btn-primary mr-1" disabled={mode === 'saving'}>
-                                        Save
-                                    </button>
-                                    <button type="reset" className="btn btn-secondary" disabled={mode === 'saving'}>
-                                        Cancel
-                                    </button>
-                                </>
-                            ) : (
-                                campaign.viewerCanAdminister && (
-                                    <>
-                                        <button
-                                            type="button"
-                                            id="e2e-campaign-edit"
-                                            className="btn btn-secondary mr-1"
-                                            onClick={onEdit}
-                                            disabled={disableModifyingCampaign}
-                                        >
-                                            Edit
-                                        </button>
-                                        {!campaign.closedAt && (
-                                            <CloseDeleteCampaignPrompt
-                                                disabled={disableModifyingCampaign}
-                                                disabledTooltip="Cannot close while campaign is being created"
-                                                message={
-                                                    <p>
-                                                        Close campaign <strong>{campaign.name}</strong>?
-                                                    </p>
-                                                }
-                                                changesetsCount={campaign.changesets.totalCount}
-                                                buttonText="Close"
-                                                onButtonClick={onClose}
-                                                buttonClassName="btn-secondary mr-1"
-                                            />
-                                        )}
-                                        <CloseDeleteCampaignPrompt
-                                            disabled={disableModifyingCampaign}
-                                            disabledTooltip="Cannot delete while campaign is being created"
-                                            message={
-                                                <p>
-                                                    Delete campaign <strong>{campaign.name}</strong>?
-                                                </p>
-                                            }
-                                            changesetsCount={campaign.changesets.totalCount}
-                                            buttonText="Delete"
-                                            onButtonClick={onDelete}
-                                            buttonClassName="btn-danger"
-                                        />
-                                    </>
-                                )
-                            ))}
-                    </span>
-                </div>
+                <CampaignActionsBar
+                    previewingCampaignPlan={!!campaignPlan}
+                    mode={mode}
+                    campaign={campaign}
+                    onEdit={onEdit}
+                    onClose={onClose}
+                    onDelete={onDelete}
+                    onNameChange={setName}
+                />
                 {alertError && <ErrorAlert error={alertError} />}
                 <div className="card">
                     {campaign && (
