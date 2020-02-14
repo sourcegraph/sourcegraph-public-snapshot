@@ -19,6 +19,7 @@ interface Props {
     onClose: (closeChangesets: boolean) => Promise<void>
     onDelete: (closeChangesets: boolean) => Promise<void>
     onEdit: React.MouseEventHandler
+    name: string
     onNameChange: React.Dispatch<React.SetStateAction<string>>
 }
 
@@ -29,6 +30,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     onClose,
     onDelete,
     onEdit,
+    name,
     onNameChange,
 }) => {
     const showActionButtons = campaign && !previewingCampaignPlan && campaign.viewerCanAdminister
@@ -54,7 +56,8 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                 {editingCampaign ? (
                     <CampaignTitleField
                         className="w-auto d-inline-block e2e-campaign-title"
-                        value={campaign?.name}
+                        value={name}
+                        onChange={onNameChange}
                         disabled={mode === 'saving'}
                     />
                 ) : (

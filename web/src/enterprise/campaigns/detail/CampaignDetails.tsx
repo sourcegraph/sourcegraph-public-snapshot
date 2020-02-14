@@ -388,6 +388,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     onEdit={onEdit}
                     onClose={onClose}
                     onDelete={onDelete}
+                    name={name}
                     onNameChange={setName}
                 />
                 {alertError && <ErrorAlert error={alertError} />}
