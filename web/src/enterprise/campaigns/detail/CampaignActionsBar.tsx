@@ -54,8 +54,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                 {editingCampaign ? (
                     <CampaignTitleField
                         className="w-auto d-inline-block e2e-campaign-title"
-                        value={name}
-                        onChange={onNameChange}
+                        value={campaign?.name}
                         disabled={mode === 'saving'}
                     />
                 ) : (
