@@ -50,7 +50,7 @@ Short overview:
 1. _Optional_: See repositories the action would run over: `src actions scope-query -f action.json`
 1. Create a set of patches by executing the action over repositories: `src actions exec -f action.json > patches.json`
 1. Save the patches in Sourcegraph by creating a campaign plan based on these patches: `src campaign plan create-from-patches < patches.json`
-1. Create a campaign from the campaign plan: `src campaigns create -plan=<plan-ID-returned-by-previous-command>`
+1. Create a campaign from the campaign plan: `src campaigns create -branch=<branch-name> -plan=<plan-ID-returned-by-previous-command>`
 
 Read on for the longer version.
 
@@ -150,19 +150,20 @@ If you're happy with the campaign plan and its patches, it's time to create chan
 
 ```
 $ src campaigns create -name='My campaign name' \
-   -desc='My first CLI-created campaign'
-   -plan=Q2FtcGFpZ25QbGFuOjg=
+   -desc='My first CLI-created campaign' \
+   -plan=Q2FtcGFpZ25QbGFuOjg= \
+   -branch=my-first-campaign
 ```
+
+This will create a campaign on the Sourcegraph instance and asychronously create a pull request for each patch on the code hosts on which the repositories are hosted. Check progress by opening the campaign on your Sourcegraph instance.
+
+The `-branch` flag specifies the branch name that will be used for the pull requests. If a branch with that name already exists in a repository a fallback will be generated for the repository by appending a counter at the end of the name, e.g.: `my-first-campaign-1`.
 
 If you have `$EDITOR` configured you can use the configured editor to edit the name and Markdown description of the campaign:
 
 ```
-$ src campaigns create -plan=Q2FtcGFpZ25QbGFuOjg=
+$ src campaigns create -plan=Q2FtcGFpZ25QbGFuOjg= -branch=my-first-campaign
 ```
-
-The `src campaigns create` command will create a campaign on the Sourcegraph instance and asychronously create a pull request for each patch on the code hosts on which the repositories are hosted.
-
-Check progress by opening the campaign on your Sourcegraph instance.
 
 ## Example: Add a GitHub action to upload LSIF data to Sourcegraph
 
