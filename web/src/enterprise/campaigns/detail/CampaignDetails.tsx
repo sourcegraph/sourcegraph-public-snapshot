@@ -234,7 +234,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     const specifyingBranchAllowed =
-        campaignPlan ||
+        (!campaign && campaignPlan) ||
         (campaign &&
             !campaign.publishedAt &&
             campaign.changesets.totalCount === 0 &&
