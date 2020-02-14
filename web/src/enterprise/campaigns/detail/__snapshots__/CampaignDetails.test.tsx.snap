@@ -52,7 +52,7 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
       />
     </div>
     <p
-      className="ml-1 mb-0"
+      className="ml-1"
     >
       <small>
         <a
@@ -131,7 +131,7 @@ Array [
       />
     </div>
     <p
-      className="ml-1 mb-0"
+      className="ml-1"
     >
       <small>
         <a
@@ -195,6 +195,11 @@ Array [
     </div>
   </form>,
   "CampaignStatus(state=PROCESSING)",
+  <h3
+    className="mt-3"
+  >
+    Changesets
+  </h3>,
   <CampaignTabs
     campaign={
       Object {
@@ -363,7 +368,7 @@ Array [
       />
     </div>
     <p
-      className="ml-1 mb-0"
+      className="ml-1"
     >
       <small>
         <a
@@ -377,7 +382,9 @@ Array [
     </p>
   </form>,
   "CampaignStatus(state=PROCESSING)",
-  <h3>
+  <h3
+    className="mt-3"
+  >
     Progress
   </h3>,
   <div
@@ -385,6 +392,11 @@ Array [
   >
     Burndown chart will be shown when there is more than 1 day of data.
   </div>,
+  <h3
+    className="mt-3"
+  >
+    Changesets
+  </h3>,
   <CampaignTabs
     campaign={
       Object {
@@ -10828,7 +10840,9 @@ Array [
     </div>
   </form>,
   "CampaignStatus(state=PROCESSING)",
-  <h3>
+  <h3
+    className="mt-3"
+  >
     Progress
   </h3>,
   <div
@@ -10836,6 +10850,11 @@ Array [
   >
     Burndown chart will be shown when there is more than 1 day of data.
   </div>,
+  <h3
+    className="mt-3"
+  >
+    Changesets
+  </h3>,
   <CampaignTabs
     campaign={
       Object {
@@ -21403,7 +21422,9 @@ Array [
     </div>
   </form>,
   "CampaignStatus(state=PROCESSING)",
-  <h3>
+  <h3
+    className="mt-3"
+  >
     Progress
   </h3>,
   <div
@@ -21411,6 +21432,11 @@ Array [
   >
     Burndown chart will be shown when there is more than 1 day of data.
   </div>,
+  <h3
+    className="mt-3"
+  >
+    Changesets
+  </h3>,
   <CampaignTabs
     campaign={
       Object {

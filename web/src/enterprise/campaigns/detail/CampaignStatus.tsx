@@ -10,7 +10,7 @@ import { parseISO, isBefore, addMinutes } from 'date-fns'
 interface Props {
     campaign:
         | (Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
-              changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
+              changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
           })
         | Pick<GQL.ICampaignPlan, '__typename'>
 
@@ -73,26 +73,27 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                 </div>
             ) : (
                 status.pendingCount + status.completedCount > 0 &&
-                status.state !== GQL.BackgroundProcessState.PROCESSING &&
+                status.state === GQL.BackgroundProcessState.COMPLETED &&
                 !creationCompletedLongAgo && (
                     <div className="d-flex my-3">
-                        {status.state === GQL.BackgroundProcessState.COMPLETED && (
-                            <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />
-                        )}
-                        {status.state === GQL.BackgroundProcessState.ERRORED && (
-                            <AlertCircleIcon className="icon-inline text-danger mr-1" />
-                        )}{' '}
-                        {campaign.__typename === 'Campaign' ? 'Creation' : 'Preview'} {status.state.toLocaleLowerCase()}
+                        <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />{' '}
+                        {campaign.__typename === 'Campaign' ? 'Creation' : 'Preview'} completed
                     </div>
                 )
+            )}
+            {status.state === GQL.BackgroundProcessState.ERRORED && (
+                <>
+                    <AlertCircleIcon className="icon-inline text-danger mr-1" />
+                    Error creating campaign
+                </>
             )}
             {status.errors.map((error, i) => (
                 // There is no other suitable key, so:
                 // eslint-disable-next-line react/no-array-index-key
                 <ErrorAlert error={error} className="mt-3" key={i} />
             ))}
-            {status.state === GQL.BackgroundProcessState.ERRORED &&
-                campaign?.__typename === 'Campaign' &&
+            {campaign.__typename === 'Campaign' &&
+                status.state === GQL.BackgroundProcessState.ERRORED &&
                 !campaign.closedAt &&
                 campaign.viewerCanAdminister && (
                     <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>

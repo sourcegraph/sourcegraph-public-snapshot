@@ -1,7 +1,7 @@
 import slugify from 'slugify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -30,7 +30,7 @@ import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { Link } from '../../../../../shared/src/components/Link'
-import { switchMap, tap, takeWhile, repeatWhen, delay } from 'rxjs/operators'
+import { switchMap, tap, takeWhile, repeatWhen, delay, catchError, startWith } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import classNames from 'classnames'
 import { CampaignTitleField } from './form/CampaignTitleField'
@@ -39,7 +39,9 @@ import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
+import { CampaignUpdateDiff } from './CampaignUpdateDiff'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
+import { CampaignUpdateSelection } from './CampaignUpdateSelection'
 
 interface Campaign
     extends Pick<
@@ -103,15 +105,17 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // For errors during fetching
     const triggerError = useError()
 
+    /** Retrigger campaign fetching */
     const campaignUpdates = useMemo(() => new Subject<void>(), [])
+    /** Retrigger changeset fetching */
     const changesetUpdates = useMemo(() => new Subject<void>(), [])
 
-    // Fetch campaign if ID was given
-    const [campaign, setCampaign] = useState<Campaign | CampaignPlan | null>()
+    const [campaign, setCampaign] = useState<Campaign | null>()
     useEffect(() => {
         if (!campaignID) {
             return
         }
+        // Fetch campaign if ID was given
         const subscription = merge(of(undefined), campaignUpdates)
             .pipe(
                 switchMap(
@@ -143,6 +147,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
+                    if (fetchedCampaign) {
+                        setName(fetchedCampaign.name)
+                        setDescription(fetchedCampaign.description)
+                    }
                     changesetUpdates.next()
                 },
                 error: triggerError,
@@ -157,66 +165,80 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // To report errors from saving or deleting
     const [alertError, setAlertError] = useState<Error>()
 
+    const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
+    useEffect(() => {
+        if (planID) {
+            setMode('editing')
+        }
+    }, [planID])
+
     // To unblock the history after leaving edit mode
     const unblockHistoryRef = useRef<H.UnregisterCallback>(noop)
     useEffect(() => {
-        if (!campaignID) {
+        if (!campaignID && planID === null) {
             unblockHistoryRef.current()
             unblockHistoryRef.current = history.block('Do you want to discard this campaign?')
         }
         // Note: the current() method gets dynamically reassigned,
         // therefor we can't return it directly.
         return () => unblockHistoryRef.current()
-    }, [campaignID, history])
+    }, [campaignID, history, planID])
 
+    const updateMode = campaignID && planID
     const previewCampaignPlans = useMemo(() => new Subject<GQL.ID>(), [])
-    const nextPreviewCampaignPlan = useCallback(previewCampaignPlans.next.bind(previewCampaignPlans), [
-        previewCampaignPlans,
-    ])
-    useObservable(
+    const campaignPlan = useObservable(
         useMemo(
             () =>
-                previewCampaignPlans.pipe(
-                    tap(() => {
-                        setAlertError(undefined)
-                        setCampaign(undefined)
-                    }),
+                (planID ? previewCampaignPlans.pipe(startWith(planID)) : previewCampaignPlans).pipe(
                     switchMap(plan => _fetchCampaignPlanById(plan)),
-                    tap(campaign => {
-                        setCampaign(campaign)
-                        if (campaign && campaign.changesetPlans.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
+                    tap(campaignPlan => {
+                        if (campaignPlan && campaignPlan.changesetPlans.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
                             changesetUpdates.next()
                         }
+                    }),
+                    catchError(error => {
+                        setAlertError(asError(error))
+                        return []
                     })
                 ),
-            [previewCampaignPlans, changesetUpdates, _fetchCampaignPlanById]
+            [previewCampaignPlans, planID, _fetchCampaignPlanById, changesetUpdates]
         )
     )
 
-    const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
-    useEffect(() => {
-        if (planID) {
-            nextPreviewCampaignPlan(planID)
-        }
-    }, [nextPreviewCampaignPlan, planID])
+    const selectCampaign = useCallback<(campaign: Pick<GQL.ICampaign, 'id'>) => void>(
+        campaign => history.push(`/campaigns/${campaign.id}?plan=${planID}`),
+        [history, planID]
+    )
 
-    if (campaign === undefined && campaignID) {
+    // Campaign is loading
+    if ((campaignID && campaign === undefined) || (planID && campaignPlan === undefined)) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="icon-inline mx-auto my-4" />
             </div>
         )
     }
+    // Campaign was not found
+    // todo: never truthy - node resolver returns error, not null
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
+    // Plan was not found
+    if (campaignPlan === null) {
+        return <HeroPage icon={AlertCircleIcon} title="Plan not found" />
+    }
+
+    // plan is specified, but campaign not yet, so we have to choose
+    if (history.location.pathname.includes('/campaigns/update') && campaignID === undefined && planID !== null) {
+        return <CampaignUpdateSelection history={history} location={location} onSelect={selectCampaign} />
+    }
 
     const specifyingBranchAllowed =
-        campaign &&
-        (campaign.__typename === 'CampaignPlan' ||
-            (!campaign.publishedAt &&
-                campaign.changesets.totalCount === 0 &&
-                campaign.status.state !== GQL.BackgroundProcessState.PROCESSING))
+        campaignPlan ||
+        (campaign &&
+            !campaign.publishedAt &&
+            campaign.changesets.totalCount === 0 &&
+            campaign.status.state !== GQL.BackgroundProcessState.PROCESSING)
 
     const onDraft: React.FormEventHandler = async event => {
         event.preventDefault()
@@ -226,7 +248,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 name,
                 description,
                 namespace: authenticatedUser.id,
-                plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
+                plan: campaignPlan ? campaignPlan.id : undefined,
                 branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
                 draft: true,
             })
@@ -259,21 +281,24 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setMode('saving')
         try {
             if (campaignID) {
-                setCampaign(
-                    await updateCampaign({
-                        id: campaignID,
-                        name,
-                        description,
-                        branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
-                    })
-                )
+                const newCampaign = await updateCampaign({
+                    id: campaignID,
+                    name,
+                    description,
+                    plan: planID ?? undefined,
+                    branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
+                })
+                setCampaign(newCampaign)
+                setName(newCampaign.name)
+                setDescription(newCampaign.description)
                 unblockHistoryRef.current()
+                history.push(`/campaigns/${newCampaign.id}`)
             } else {
                 const createdCampaign = await createCampaign({
                     name,
                     description,
                     namespace: authenticatedUser.id,
-                    plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
+                    plan: campaignPlan ? campaignPlan.id : undefined,
                     branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
                 })
                 unblockHistoryRef.current()
@@ -281,6 +306,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             }
             setMode('viewing')
             setAlertError(undefined)
+            campaignUpdates.next()
         } catch (err) {
             setMode('editing')
             setAlertError(asError(err))
@@ -292,13 +318,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const onEdit: React.MouseEventHandler = event => {
         event.preventDefault()
         unblockHistoryRef.current = history.block(discardChangesMessage)
-        {
-            const { name, description, branch } = campaign as Campaign
-            setName(name)
-            setDescription(description)
-            setBranch(branch)
-            setMode('editing')
-        }
+        setMode('editing')
+        setAlertError(undefined)
     }
 
     const onCancel: React.FormEventHandler = event => {
@@ -307,6 +328,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             return
         }
         unblockHistoryRef.current()
+        // clear query params
+        history.replace(location.pathname)
         setMode('viewing')
         setAlertError(undefined)
     }
@@ -356,18 +379,18 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         changesetUpdates.next()
     }
 
-    const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
+    const author = campaign ? campaign.author : authenticatedUser
 
     return (
         <>
-            <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New campaign'} />
+            <PageTitle title={campaign ? campaign.name : 'New campaign'} />
             <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form position-relative">
                 <div className="d-flex mb-2">
                     <h2 className="m-0">
                         <CampaignsIcon
                             className={classNames(
                                 'icon-inline mr-2',
-                                campaign && campaign.__typename === 'Campaign' && !campaign.closedAt
+                                campaign && !campaign.closedAt
                                     ? 'text-success'
                                     : campaignID
                                     ? 'text-danger'
@@ -386,7 +409,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 disabled={mode === 'saving'}
                             />
                         ) : (
-                            <span>{campaign && campaign.__typename === 'Campaign' && campaign.name}</span>
+                            <span>{campaign?.name}</span>
                         )}
                     </h2>
                     <span className="flex-grow-1 d-flex justify-content-end align-items-center">
@@ -394,7 +417,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             <LoadingSpinner className="mr-2" />
                         )}
                         {campaign &&
-                            campaign.__typename === 'Campaign' &&
+                            !campaignPlan &&
                             (mode === 'editing' || mode === 'saving' ? (
                                 <>
                                     <button type="submit" className="btn btn-primary mr-1" disabled={mode === 'saving'}>
@@ -500,7 +523,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 </div>
                 {alertError && <ErrorAlert error={alertError} />}
                 <div className="card">
-                    {campaign && campaign.__typename === 'Campaign' && (
+                    {campaign && (
                         <div className="card-header">
                             <strong>
                                 <UserAvatar user={author} className="icon-inline" /> {author.username}
@@ -515,8 +538,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             disabled={mode === 'saving'}
                         />
                     ) : (
-                        campaign &&
-                        campaign.__typename === 'Campaign' && (
+                        campaign && (
                             <div className="card-body">
                                 <Markdown dangerousInnerHTML={renderMarkdown(campaign.description)}></Markdown>
                             </div>
@@ -524,7 +546,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     )}
                 </div>
                 {mode === 'editing' && (
-                    <p className="ml-1 mb-0">
+                    <p className="ml-1">
                         <small>
                             <a rel="noopener noreferrer" target="_blank" href="/help/user/markdown">
                                 Markdown supported
@@ -532,68 +554,100 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </small>
                     </p>
                 )}
-                {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && (
+                {campaign && campaignPlan && (
                     <>
-                        {specifyingBranchAllowed && (
-                            <div className="form-group mt-3">
-                                <label>
-                                    Branch name{' '}
-                                    <small>
-                                        <InformationOutlineIcon
-                                            className="icon-inline"
-                                            data-tooltip={
-                                                'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
-                                            }
-                                        />
-                                    </small>
-                                </label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    onChange={event => setBranch(event.target.value)}
-                                    placeholder="my-awesome-campaign"
-                                    value={branch !== null ? branch : slugify(name)}
-                                    required={true}
-                                    disabled={mode === 'saving'}
-                                />
-                            </div>
-                        )}
-                        <div className="mt-3">
-                            {campaign && (
+                        <CampaignUpdateDiff
+                            campaign={campaign}
+                            campaignPlan={campaignPlan}
+                            history={history}
+                            location={location}
+                            isLightTheme={isLightTheme}
+                            className="my-3"
+                        />
+                        <div className="alert alert-info mt-3">
+                            <AlertCircleIcon className="icon-inline" /> You are updating an existing campaign. By
+                            clicking 'Update', all already published changesets will be updated on the codehost.
+                        </div>
+                    </>
+                )}
+                {!updateMode ? (
+                    (!campaign || campaignPlan) && (
+                        <>
+                            {specifyingBranchAllowed && (
+                                <div className="form-group mt-3">
+                                    <label>
+                                        Branch name{' '}
+                                        <small>
+                                            <InformationOutlineIcon
+                                                className="icon-inline"
+                                                data-tooltip={
+                                                    'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
+                                                }
+                                            />
+                                        </small>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        onChange={event => setBranch(event.target.value)}
+                                        placeholder="my-awesome-campaign"
+                                        value={branch !== null ? branch : slugify(name)}
+                                        required={true}
+                                        disabled={mode === 'saving'}
+                                    />
+                                </div>
+                            )}
+                            <div className="mt-3">
+                                {campaignPlan && (
+                                    <button
+                                        type="submit"
+                                        className="btn btn-secondary mr-1"
+                                        // todo: doesn't trigger form validation
+                                        onClick={onDraft}
+                                        disabled={mode !== 'editing'}
+                                    >
+                                        Create draft
+                                    </button>
+                                )}
                                 <button
                                     type="submit"
-                                    className="btn btn-secondary mr-1"
-                                    onClick={onDraft}
-                                    disabled={mode !== 'editing'}
+                                    className="btn btn-primary"
+                                    disabled={mode !== 'editing' || campaignPlan?.changesetPlans.totalCount === 0}
                                 >
-                                    Create draft
+                                    Create
                                 </button>
-                            )}
-                            <button
-                                type="submit"
-                                className="btn btn-primary"
-                                disabled={mode !== 'editing' || campaign?.changesetPlans.totalCount === 0}
-                            >
-                                Create
-                            </button>
-                        </div>
+                            </div>
+                        </>
+                    )
+                ) : (
+                    <>
+                        <button type="reset" className="btn btn-secondary mr-1" onClick={onCancel}>
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={mode !== 'editing' || campaignPlan?.changesetPlans.totalCount === 0}
+                        >
+                            Update
+                        </button>
                     </>
                 )}
             </Form>
 
             {/* is already created or a plan is available */}
-            {campaign && (
+            {(campaign || campaignPlan) && (
                 <>
                     <CampaignStatus
-                        campaign={campaign}
-                        status={campaign.status}
+                        campaign={(campaignPlan || campaign)!}
+                        status={(campaignPlan || campaign)!.status}
                         onPublish={onPublish}
                         onRetry={onRetry}
                     />
 
-                    {campaign.__typename === 'Campaign' && (
+                    {campaign && !updateMode && (
                         <>
-                            <h3>Progress</h3>
+                            <h3 className="mt-3">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
                                 history={history}
@@ -605,23 +659,27 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )}
 
-                    {campaign.changesetPlans.totalCount +
-                        (campaign.__typename === 'Campaign' ? campaign.changesets.totalCount : 0) >
-                    0 ? (
-                        <CampaignTabs
-                            campaign={campaign}
-                            changesetUpdates={changesetUpdates}
-                            campaignUpdates={campaignUpdates}
-                            persistLines={campaign.__typename === 'Campaign'}
-                            history={history}
-                            location={location}
-                            className="mt-3"
-                            isLightTheme={isLightTheme}
-                        />
-                    ) : (
-                        campaign.status.state !== GQL.BackgroundProcessState.PROCESSING && (
-                            <p className="mt-3 text-muted">No changesets</p>
-                        )
+                    {!updateMode && (
+                        <>
+                            <h3 className="mt-3">Changesets</h3>
+                            {(campaign?.changesets.totalCount ?? 0) +
+                            (campaignPlan || campaign)!.changesetPlans.totalCount ? (
+                                <CampaignTabs
+                                    campaign={(campaignPlan || campaign)!}
+                                    changesetUpdates={changesetUpdates}
+                                    campaignUpdates={campaignUpdates}
+                                    persistLines={!!campaign}
+                                    history={history}
+                                    location={location}
+                                    className="mt-3"
+                                    isLightTheme={isLightTheme}
+                                />
+                            ) : (
+                                (campaignPlan || campaign)!.status.state !== GQL.BackgroundProcessState.PROCESSING && (
+                                    <p className="mt-3 text-muted">No changesets</p>
+                                )
+                            )}
+                        </>
                     )}
                 </>
             )}
