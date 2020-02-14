@@ -256,7 +256,6 @@ type pingPayload struct {
 	EverSearched         string           `json:"ever_searched"`
 	EverFindRefs         string           `json:"ever_find_refs"`
 	Timestamp            string           `json:"timestamp"`
-	AutomationUsage      *json.RawMessage `json:"automation_usage"`
 }
 
 func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
@@ -286,7 +285,6 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 		EverSearched:         strconv.FormatBool(pr.EverSearched),
 		EverFindRefs:         strconv.FormatBool(pr.EverFindRefs),
 		Timestamp:            time.Now().UTC().Format(time.RFC3339),
-		AutomationUsage:      pr.AutomationUsage,
 	})
 	if err != nil {
 		log15.Warn("logPing.Marshal: failed to Marshal payload", "error", err)
