@@ -91,7 +91,7 @@ Examples:
 		}
 		fmt.Println("File: " + *fileFlag)
 
-		if rootFlag == nil || *rootFlag == "" {
+		if rootFlag == nil {
 			checkError := func(err error) {
 				if err != nil {
 					fmt.Println(err)
