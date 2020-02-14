@@ -132,7 +132,9 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     Creation completed
+     
+    Creation
+     completed
   </div>
 </React.Fragment>
 `;
@@ -159,7 +161,9 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     Creation completed
+     
+    Creation
+     completed
   </div>
 </React.Fragment>
 `;
@@ -310,7 +314,9 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     Creation completed
+     
+    Creation
+     completed
   </div>
 </React.Fragment>
 `;
@@ -344,7 +350,9 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     Creation completed
+     
+    Creation
+     completed
   </div>
 </React.Fragment>
 `;
