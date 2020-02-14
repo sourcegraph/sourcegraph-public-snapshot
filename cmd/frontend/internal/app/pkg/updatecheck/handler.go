@@ -160,13 +160,13 @@ type pingRequest struct {
 	HasExtURL            bool             `json:"hasExtURL"`
 	UniqueUsers          int32            `json:"u"`
 	Activity             *json.RawMessage `json:"act"`
+	AutomationUsage      *json.RawMessage `json:"automationUsage"`
 	CodeIntelUsage       *json.RawMessage `json:"codeIntelUsage"`
 	InitialAdminEmail    string           `json:"initAdmin"`
 	TotalUsers           int32            `json:"totalUsers"`
 	HasRepos             bool             `json:"repos"`
 	EverSearched         bool             `json:"searched"`
 	EverFindRefs         bool             `json:"refs"`
-	AutomationUsage      *json.RawMessage `json:"automationUsage"`
 }
 
 // readPingRequest reads the ping request payload from the request. If the
@@ -245,6 +245,8 @@ type pingPayload struct {
 	HasUpdate            string           `json:"has_update"`
 	UniqueUsersToday     string           `json:"unique_users_today"`
 	SiteActivity         *json.RawMessage `json:"site_activity"`
+	CodeIntelUsage       *json.RawMessage `json:"code_intel_usage"`
+	AutomationUsage      *json.RawMessage `json:"automation_usage"`
 	InstallerEmail       string           `json:"installer_email"`
 	AuthProviders        string           `json:"auth_providers"`
 	ExtServices          string           `json:"ext_services"`
@@ -274,6 +276,8 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 		HasUpdate:            strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:     strconv.FormatInt(int64(pr.UniqueUsers), 10),
 		SiteActivity:         pr.Activity,
+		AutomationUsage:      pr.AutomationUsage,
+		CodeIntelUsage:       pr.CodeIntelUsage,
 		InstallerEmail:       pr.InitialAdminEmail,
 		AuthProviders:        strings.Join(pr.AuthProviders, ","),
 		ExtServices:          strings.Join(pr.ExternalServices, ","),
