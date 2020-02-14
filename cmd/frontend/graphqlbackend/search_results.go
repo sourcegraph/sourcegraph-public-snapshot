@@ -694,6 +694,7 @@ type getPatternInfoOptions struct {
 	// to allow users to jump to files by just typing their name.
 	forceFileSearch         bool
 	performStructuralSearch bool
+	performLiteralSearch    bool
 
 	fileMatchLimit int32
 }
@@ -711,44 +712,59 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	return getPatternInfo(r.query, opts)
 }
 
-// getPatternInfo gets the search pattern info for q
-func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
-	var patternsToCombine []string
+// processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
+// as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
+func processSearchPattern(q *query.Query, opts *getPatternInfoOptions) (string, bool, bool) {
+	var pattern string
+	var pieces []string
+	var contentFieldSet bool
 	isRegExp := false
 	isStructuralPat := false
+
+	patternValues := q.Values(query.FieldDefault)
+	if overridePattern := q.Values(query.FieldContent); len(overridePattern) > 0 {
+		patternValues = overridePattern
+		contentFieldSet = true
+	}
+
 	if opts.performStructuralSearch {
 		isStructuralPat = true
-		for _, v := range q.Values(query.FieldDefault) {
-			var pattern string
+		for _, v := range patternValues {
+			var piece string
 			switch {
 			case v.String != nil:
-				pattern = *v.String
+				piece = *v.String
 			case v.Regexp != nil:
-				pattern = v.Regexp.String()
+				piece = v.Regexp.String()
 			}
-			if pattern == "" {
+			if piece == "" {
 				continue
 			}
-			patternsToCombine = append(patternsToCombine, pattern)
+			pieces = append(pieces, piece)
 		}
-		p := strings.Join(patternsToCombine, " ")
-		patternsToCombine = []string{p}
+		pattern = strings.Join(pieces, " ")
 	} else if !opts.forceFileSearch {
 		isRegExp = true
-		for _, v := range q.Values(query.FieldDefault) {
-			// Treat quoted strings as literal strings to match, not regexps.
-			var pattern string
+		for _, v := range patternValues {
+			var piece string
 			switch {
 			case v.String != nil:
-				pattern = regexp.QuoteMeta(*v.String)
+				if contentFieldSet && !opts.performLiteralSearch {
+					piece = *v.String
+				} else {
+					// Treat quoted strings as literal
+					// strings to match, not regexps.
+					piece = regexp.QuoteMeta(*v.String)
+				}
 			case v.Regexp != nil:
-				pattern = v.Regexp.String()
+				piece = v.Regexp.String()
 			}
-			if pattern == "" {
+			if piece == "" {
 				continue
 			}
-			patternsToCombine = append(patternsToCombine, pattern)
+			pieces = append(pieces, piece)
 		}
+		pattern = orderedFuzzyRegexp(pieces)
 	} else {
 		// TODO: We must have some pattern that always matches here, or else
 		// cmd/searcher/search/matcher.go:97 would cause a nil regexp panic
@@ -756,8 +772,15 @@ func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPa
 		// is here. Would this code path go away when we switch fully to
 		// indexed search @keegan? This workaround is OK for now though.
 		isRegExp = true
-		patternsToCombine = append(patternsToCombine, ".")
+		pattern = "."
 	}
+
+	return pattern, isRegExp, isStructuralPat
+}
+
+// getPatternInfo gets the search pattern info for q
+func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
+	pattern, isRegExp, isStructuralPat := processSearchPattern(q, opts)
 
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := q.RegexpPatterns(query.FieldFile)
@@ -789,7 +812,7 @@ func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPa
 		IsStructuralPat:              isStructuralPat,
 		IsCaseSensitive:              q.IsCaseSensitive(),
 		FileMatchLimit:               opts.fileMatchLimit,
-		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
+		Pattern:                      pattern,
 		IncludePatterns:              includePatterns,
 		FilePatternsReposMustInclude: filePatternsReposMustInclude,
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
@@ -988,6 +1011,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if r.patternType == SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 		forceOnlyResultType = "file"
+	}
+	if r.patternType == SearchTypeLiteral {
+		options = &getPatternInfoOptions{performLiteralSearch: true}
 	}
 	p, err := r.getPatternInfo(options)
 
@@ -1350,16 +1376,16 @@ func sortResults(r []SearchResultResolver) {
 	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
 }
 
-// regexpPatternMatchingExprsInOrder returns a regexp that matches lines that contain
-// non-overlapping matches for each pattern in order.
-func regexpPatternMatchingExprsInOrder(patterns []string) string {
-	if len(patterns) == 0 {
+// orderedFuzzyRegexp interpolate a lazy 'match everything' regexp pattern
+// to achieve an ordered fuzzy regexp match.
+func orderedFuzzyRegexp(pieces []string) string {
+	if len(pieces) == 0 {
 		return ""
 	}
-	if len(patterns) == 1 {
-		return patterns[0]
+	if len(pieces) == 1 {
+		return pieces[0]
 	}
-	return "(" + strings.Join(patterns, ").*?(") + ")" // "?" makes it prefer shorter matches
+	return "(" + strings.Join(pieces, ").*?(") + ")"
 }
 
 // Validates usage of the `repohasfile` filter

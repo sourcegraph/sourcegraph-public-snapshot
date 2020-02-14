@@ -310,6 +310,10 @@ func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars m
 	if err != nil {
 		return err
 	}
+
+	// Enable Checks API
+	// https://developer.github.com/v4/previews/#checks
+	req.Header.Add("Accept", "application/vnd.github.antiope-preview+json")
 	var respBody struct {
 		Data   json.RawMessage `json:"data"`
 		Errors graphqlErrors   `json:"errors"`

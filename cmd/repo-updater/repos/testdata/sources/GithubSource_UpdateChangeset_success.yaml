@@ -4,11 +4,12 @@ interactions:
 - request:
     body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
       label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
-      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  status
-      {\n    state\n  }\n  committer {\n    avatarUrl\n    email\n    name\n    user
-      {\n      ...actor\n    }\n  }\n}\n\nfragment prCommit on PullRequestCommit {\n  commit
-      {\n    ...commit\n  }\n}\n\nfragment review on PullRequestReview {\n  databaseId\n  author
-      {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
+      basicCommit on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      10){\n    nodes {\n      id\n      status\n      conclusion\n    }\n  }\n  committedDate\n}\n\nfragment
+      prCommit on PullRequestCommit {\n  commit {\n    ...basicCommit\n  }\n}\n\nfragment
+      review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
       {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
@@ -42,23 +43,24 @@ interactions:
       {\n          ...actor\n        }\n        createdAt\n      }\n      ... on LabeledEvent
       {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
       on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
-      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit{\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tUpdatePullRequest($input:UpdatePullRequestInput!)
+      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit
+      {\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tUpdatePullRequest($input:UpdatePullRequestInput!)
       {\n  updatePullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"pullRequestId":"MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0","baseRefName":"master","title":"This
       is a new title","body":"This is a new body"}}}'
     form: {}
     headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
     body: '{"data":{"updatePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0","title":"This
-      is a new title","body":"This is a new body","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/91","number":91,"createdAt":"2020-01-08T15:59:11Z","updatedAt":"2020-02-05T15:14:53Z","headRefOid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-1578499147","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[{"name":"enhancement","color":"a2eeef","description":"New
+      is a new title","body":"This is a new body","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/91","number":91,"createdAt":"2020-01-08T15:59:11Z","updatedAt":"2020-02-12T10:50:08Z","headRefOid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-1578499147","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[{"name":"enhancement","color":"a2eeef","description":"New
       feature or request","id":"MDU6TGFiZWwxNjcxNTU2OTI5"},{"name":"good first issue","color":"7057ff","description":"Good
       for newcomers","id":"MDU6TGFiZWwxNjcxNTU2OTMw"},{"name":"help wanted","color":"008672","description":"Extra
-      attention is needed","id":"MDU6TGFiZWwxNjcxNTU2OTMx"}]},"commits":{"nodes":[{"commit":{"oid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","message":"AMAZING
-      NAME!","messageHeadline":"AMAZING NAME!","committedDate":"2020-01-08T15:59:07Z","pushedDate":"2020-01-08T16:00:34Z","url":"https://github.com/sourcegraph/automation-testing/commit/2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","status":null,"committer":{"avatarUrl":"https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"support@sourcegraph.com","name":"sourcegraph-committer","user":null}}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","message":"AMAZING
-      NAME!","messageHeadline":"AMAZING NAME!","committedDate":"2020-01-08T15:59:07Z","pushedDate":"2020-01-08T16:00:34Z","url":"https://github.com/sourcegraph/automation-testing/commit/2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","status":null,"committer":{"avatarUrl":"https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"support@sourcegraph.com","name":"sourcegraph-committer","user":null}}},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"boring
+      attention is needed","id":"MDU6TGFiZWwxNjcxNTU2OTMx"}]},"commits":{"nodes":[{"commit":{"oid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzOTAzMDI4MzY=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzOTAzMDI4Mzc=","status":"QUEUED","conclusion":null}]},"committedDate":"2020-01-08T15:59:07Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"2ee6f96506c75f1851a6d6be8f4b11e6bd3fd6a1","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzOTAzMDI4MzY=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzOTAzMDI4Mzc=","status":"QUEUED","conclusion":null}]},"committedDate":"2020-01-08T15:59:07Z"}},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"boring
       title","currentTitle":"AMAZING NAME!","createdAt":"2020-01-08T16:00:35Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"AMAZING
       NAME!","currentTitle":"This is a new title","createdAt":"2020-01-08T16:24:43Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"label":{"name":"enhancement","color":"a2eeef","description":"New
       feature or request","id":"MDU6TGFiZWwxNjcxNTU2OTI5"},"createdAt":"2020-02-01T22:33:58Z"},{"__typename":"LabeledEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"label":{"name":"good
@@ -78,7 +80,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 05 Feb 2020 15:14:53 GMT
+      - Wed, 12 Feb 2020 10:50:08 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -88,7 +90,7 @@ interactions:
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
       Vary:
-      - Accept-Encoding
+      - Accept-Encoding, Accept
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -96,9 +98,9 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v4; format=json
+      - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - F716:15283:549A6C:67E6D4:5E3ADBEC
+      - 5B19:36836:17E2DCD:1CEE3EC:5E43D85F
       X-Oauth-Scopes:
       - read:org, repo
       X-Xss-Protection:

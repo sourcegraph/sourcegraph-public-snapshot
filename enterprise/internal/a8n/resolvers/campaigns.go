@@ -91,6 +91,13 @@ func (r *campaignResolver) Description() string {
 	return r.Campaign.Description
 }
 
+func (r *campaignResolver) Branch() *string {
+	if r.Campaign.Branch == "" {
+		return nil
+	}
+	return &r.Campaign.Branch
+}
+
 func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	return graphqlbackend.UserByIDInt32(ctx, r.AuthorID)
 }

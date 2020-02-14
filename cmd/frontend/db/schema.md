@@ -91,6 +91,7 @@ Referenced by:
  changeset_ids     | jsonb                    | not null default '{}'::jsonb
  campaign_plan_id  | integer                  | 
  closed_at         | timestamp with time zone | 
+ branch            | text                     | 
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
     "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
@@ -149,6 +150,7 @@ Foreign-key constraints:
  updated_at      | timestamp with time zone | not null default now()
  started_at      | timestamp with time zone | 
  finished_at     | timestamp with time zone | 
+ branch          | text                     | 
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, campaign_job_id)

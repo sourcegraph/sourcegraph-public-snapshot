@@ -30,20 +30,27 @@
     "Item": {
      "Commit": {
       "OID": "fe4605a6811c0d62a78ec150332bbdbe34ddd6cc",
-      "Message": "comby test",
-      "MessageHeadline": "comby test",
-      "URL": "https://github.com/sourcegraph/automation-testing/commit/fe4605a6811c0d62a78ec150332bbdbe34ddd6cc",
+      "CheckSuites": {
+       "Nodes": [
+        {
+         "ID": "MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDU=",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z"
+        },
+        {
+         "ID": "MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDk=",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z"
+        }
+       ]
+      },
       "Status": {
        "State": "",
        "Contexts": null
       },
-      "Committer": {
-       "AvatarURL": "https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67",
-       "Email": "support@sourcegraph.com",
-       "Name": "sourcegraph-committer"
-      },
-      "CommittedDate": "2019-11-14T16:18:20Z",
-      "PushedDate": "2019-11-14T16:18:24Z"
+      "CommittedDate": "2019-11-14T16:18:20Z"
      }
     }
    },
@@ -65,20 +72,27 @@
     {
      "Commit": {
       "OID": "fe4605a6811c0d62a78ec150332bbdbe34ddd6cc",
-      "Message": "comby test",
-      "MessageHeadline": "comby test",
-      "URL": "https://github.com/sourcegraph/automation-testing/commit/fe4605a6811c0d62a78ec150332bbdbe34ddd6cc",
+      "CheckSuites": {
+       "Nodes": [
+        {
+         "ID": "MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDU=",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z"
+        },
+        {
+         "ID": "MDEwOkNoZWNrU3VpdGUzMTEyMjk4MDk=",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z"
+        }
+       ]
+      },
       "Status": {
        "State": "",
        "Contexts": null
       },
-      "Committer": {
-       "AvatarURL": "https://camo.githubusercontent.com/97f6ffc1c0b03232b87028c819835b02845716d7/68747470733a2f2f302e67726176617461722e636f6d2f6176617461722f30643331613261376238376230333666386532626332623138663165356436393f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67",
-       "Email": "support@sourcegraph.com",
-       "Name": "sourcegraph-committer"
-      },
-      "CommittedDate": "2019-11-14T16:18:20Z",
-      "PushedDate": "2019-11-14T16:18:24Z"
+      "CommittedDate": "2019-11-14T16:18:20Z"
      }
     }
    ]

@@ -120,12 +120,14 @@ func TestChangesetEvents(t *testing.T) {
 		}
 
 		commit := &github.PullRequestCommit{
-			Commit: github.Commit{
-				OID:             "123",
-				Message:         "Test Commit",
-				MessageHeadline: "",
-				URL:             "",
-				Status:          github.Status{},
+			Commit: struct {
+				OID           string
+				CheckSuites   struct{ Nodes []github.CheckSuite }
+				Status        github.Status
+				CommittedDate time.Time
+			}{
+				OID:    "123",
+				Status: github.Status{},
 			},
 		}
 
@@ -436,9 +438,6 @@ func TestComputeGithubCheckState(t *testing.T) {
 		}
 		return ce
 	}
-	pState := func(s ChangesetCheckState) *ChangesetCheckState {
-		return &s
-	}
 
 	lastSynced := now.Add(-1 * time.Minute)
 	pr := &github.PullRequest{}
@@ -446,33 +445,33 @@ func TestComputeGithubCheckState(t *testing.T) {
 	tests := []struct {
 		name   string
 		events []*ChangesetEvent
-		want   *ChangesetCheckState
+		want   ChangesetCheckState
 	}{
 		{
 			name:   "empty slice",
 			events: nil,
-			want:   nil,
+			want:   ChangesetCheckStateUnknown,
 		},
 		{
 			name: "single success",
 			events: []*ChangesetEvent{
 				testEvent(1, "ctx1", "SUCCESS"),
 			},
-			want: pState(ChangesetCheckStatePassed),
+			want: ChangesetCheckStatePassed,
 		},
 		{
 			name: "single pending",
 			events: []*ChangesetEvent{
 				testEvent(1, "ctx1", "PENDING"),
 			},
-			want: pState(ChangesetCheckStatePending),
+			want: ChangesetCheckStatePending,
 		},
 		{
 			name: "single error",
 			events: []*ChangesetEvent{
 				testEvent(1, "ctx1", "ERROR"),
 			},
-			want: pState(ChangesetCheckStateFailed),
+			want: ChangesetCheckStateFailed,
 		},
 		{
 			name: "pending + error",
@@ -480,7 +479,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 				testEvent(1, "ctx1", "PENDING"),
 				testEvent(1, "ctx2", "ERROR"),
 			},
-			want: pState(ChangesetCheckStatePending),
+			want: ChangesetCheckStatePending,
 		},
 		{
 			name: "pending + success",
@@ -488,7 +487,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 				testEvent(1, "ctx1", "PENDING"),
 				testEvent(1, "ctx2", "SUCCESS"),
 			},
-			want: pState(ChangesetCheckStatePending),
+			want: ChangesetCheckStatePending,
 		},
 		{
 			name: "success + error",
@@ -496,7 +495,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 				testEvent(1, "ctx1", "SUCCESS"),
 				testEvent(1, "ctx2", "ERROR"),
 			},
-			want: pState(ChangesetCheckStateFailed),
+			want: ChangesetCheckStateFailed,
 		},
 		{
 			name: "success x2",
@@ -504,7 +503,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 				testEvent(1, "ctx1", "SUCCESS"),
 				testEvent(1, "ctx2", "SUCCESS"),
 			},
-			want: pState(ChangesetCheckStatePassed),
+			want: ChangesetCheckStatePassed,
 		},
 		{
 			name: "later events have precedence",
@@ -512,7 +511,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 				testEvent(1, "ctx1", "PENDING"),
 				testEvent(1, "ctx1", "SUCCESS"),
 			},
-			want: pState(ChangesetCheckStatePassed),
+			want: ChangesetCheckStatePassed,
 		},
 	}
 

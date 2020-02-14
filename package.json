@@ -263,6 +263,7 @@
     "rxjs": "^6.5.3",
     "sanitize-html": "^1.21.1",
     "semver": "^7.1.2",
+    "slugify": "^1.3.6",
     "sourcegraph": "link:packages/sourcegraph-extension-api",
     "string-score": "^1.0.1",
     "symbol-observable": "^1.2.0",

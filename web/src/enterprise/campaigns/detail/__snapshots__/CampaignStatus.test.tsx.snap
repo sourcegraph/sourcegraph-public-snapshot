@@ -2,17 +2,12 @@
 
 exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
 <React.Fragment>
-  <div
-    className="d-flex my-3"
-  >
+  <React.Fragment>
     <Memo(AlertCircleIcon)
       className="icon-inline text-danger mr-1"
     />
-     
-    Creation
-     
-    errored
-  </div>
+    Error creating campaign
+  </React.Fragment>
   <ErrorAlert
     className="mt-3"
     error="a"
@@ -139,8 +134,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
     />
      
     Creation
-     
-    completed
+     completed
   </div>
 </React.Fragment>
 `;
@@ -169,25 +163,19 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
     />
      
     Creation
-     
-    completed
+     completed
   </div>
 </React.Fragment>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
 <React.Fragment>
-  <div
-    className="d-flex my-3"
-  >
+  <React.Fragment>
     <Memo(AlertCircleIcon)
       className="icon-inline text-danger mr-1"
     />
-     
-    Creation
-     
-    errored
-  </div>
+    Error creating campaign
+  </React.Fragment>
   <ErrorAlert
     className="mt-3"
     error="a"
@@ -328,8 +316,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
     />
      
     Creation
-     
-    completed
+     completed
   </div>
 </React.Fragment>
 `;
@@ -365,8 +352,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
     />
      
     Creation
-     
-    completed
+     completed
   </div>
 </React.Fragment>
 `;

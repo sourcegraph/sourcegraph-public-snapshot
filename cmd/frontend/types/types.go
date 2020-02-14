@@ -182,8 +182,9 @@ type CodeIntelUsagePeriod struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CodeIntelEventCategoryStatistics struct {
-	Precise *CodeIntelEventStatistics
-	Fuzzy   *CodeIntelEventStatistics
+	LSIF   *CodeIntelEventStatistics
+	LSP    *CodeIntelEventStatistics
+	Search *CodeIntelEventStatistics
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
