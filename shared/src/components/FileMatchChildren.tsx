@@ -38,28 +38,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         // Enabled if true or null
         props.settingsCascade.final.experimentalFeatures.showBadgeAttachments !== false
 
-    const showItems = props.items
-        .sort((a, b) => {
-            if (a.line < b.line) {
-                return -1
-            }
-            if (a.line === b.line) {
-                if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
-                    return -1
-                }
-                if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
-                    return 0
-                }
-                return 1
-            }
-            return 1
-        })
-        .filter((item, i) => props.allMatches || i < props.subsetMatches)
-
-    if (NO_SEARCH_HIGHLIGHTING) {
-        return <CodeExcerpt2 urlWithoutPosition={props.result.file.url} items={showItems} onSelect={props.onSelect} />
-    }
-
     // The number of lines of context to show before and after each match.
     let context = 1
 
@@ -73,6 +51,40 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
             context = contextLinesSetting
         }
+    }
+
+    const sortedItems = props.items.sort((a, b) => {
+        if (a.line < b.line) {
+            return -1
+        }
+        if (a.line === b.line) {
+            if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
+                return -1
+            }
+            if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
+                return 0
+            }
+            return 1
+        }
+        return 1
+    })
+
+    // This checks the highest line number amongst the number of matches
+    // that we want to show in a collapsed result preview.
+    const highestLineNumberWithinSubsetMatches =
+        sortedItems.length > 0
+            ? sortedItems.length > props.subsetMatches
+                ? sortedItems[props.subsetMatches - 1].line
+                : sortedItems[sortedItems.length - 1].line
+            : 0
+
+    const showItems = sortedItems.filter(
+        (item, i) =>
+            props.allMatches || i < props.subsetMatches || item.line <= highestLineNumberWithinSubsetMatches + context
+    )
+
+    if (NO_SEARCH_HIGHLIGHTING) {
+        return <CodeExcerpt2 urlWithoutPosition={props.result.file.url} items={showItems} onSelect={props.onSelect} />
     }
 
     const groupsOfItems = mergeContext(
@@ -120,6 +132,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                 repoName={props.result.repository.name}
                                 commitID={props.result.file.commit.oid}
                                 filePath={props.result.file.path}
+                                lastSubsetMatchLineNumber={highestLineNumberWithinSubsetMatches}
                                 context={context}
                                 highlightRanges={items}
                                 className="file-match-children__item-code-excerpt"

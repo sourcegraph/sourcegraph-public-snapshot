@@ -74,7 +74,7 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 	}
 
 	activityPeriods := []*types.CodeIntelUsagePeriod{}
-	for i := 0; i <= periods; i++ {
+	for i := 0; i < periods; i++ {
 		activityPeriods = append(activityPeriods, &usagePeriod{
 			Hover:       newEventCategory(),
 			Definitions: newEventCategory(),
@@ -83,12 +83,15 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 	}
 
 	eventStatisticByName := map[string]func(p *usagePeriod) *eventStatistics{
-		"codeintel.hover.precise":       func(p *usagePeriod) *eventStatistics { return p.Hover.Precise },
-		"codeintel.hover.fuzzy":         func(p *usagePeriod) *eventStatistics { return p.Hover.Fuzzy },
-		"codeintel.definitions.precise": func(p *usagePeriod) *eventStatistics { return p.Definitions.Precise },
-		"codeintel.definitions.fuzzy":   func(p *usagePeriod) *eventStatistics { return p.Definitions.Fuzzy },
-		"codeintel.references.precise":  func(p *usagePeriod) *eventStatistics { return p.References.Precise },
-		"codeintel.references.fuzzy":    func(p *usagePeriod) *eventStatistics { return p.References.Fuzzy },
+		"codeintel.lsifHover":         func(p *usagePeriod) *eventStatistics { return p.Hover.LSIF },
+		"codeintel.lspHover":          func(p *usagePeriod) *eventStatistics { return p.Hover.LSP },
+		"codeintel.searchHover":       func(p *usagePeriod) *eventStatistics { return p.Hover.Search },
+		"codeintel.lsifDefinitions":   func(p *usagePeriod) *eventStatistics { return p.Definitions.LSIF },
+		"codeintel.lspDefinitions":    func(p *usagePeriod) *eventStatistics { return p.Definitions.LSP },
+		"codeintel.searchDefinitions": func(p *usagePeriod) *eventStatistics { return p.Definitions.Search },
+		"codeintel.lsifReferences":    func(p *usagePeriod) *eventStatistics { return p.References.LSIF },
+		"codeintel.lspReferences":     func(p *usagePeriod) *eventStatistics { return p.References.LSP },
+		"codeintel.searchReferences":  func(p *usagePeriod) *eventStatistics { return p.References.Search },
 	}
 
 	for eventName, getEventStatistic := range eventStatisticByName {
@@ -141,7 +144,8 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 
 func newEventCategory() *eventCategoryStatistics {
 	return &eventCategoryStatistics{
-		Precise: &eventStatistics{EventLatencies: &eventLatencies{}},
-		Fuzzy:   &eventStatistics{EventLatencies: &eventLatencies{}},
+		LSIF:   &eventStatistics{EventLatencies: &eventLatencies{}},
+		LSP:    &eventStatistics{EventLatencies: &eventLatencies{}},
+		Search: &eventStatistics{EventLatencies: &eventLatencies{}},
 	}
 }

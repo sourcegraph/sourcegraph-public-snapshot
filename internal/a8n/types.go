@@ -209,6 +209,7 @@ const (
 type ChangesetCheckState string
 
 const (
+	ChangesetCheckStateUnknown ChangesetCheckState = "UNKNOWN"
 	ChangesetCheckStatePending ChangesetCheckState = "PENDING"
 	ChangesetCheckStatePassed  ChangesetCheckState = "PASSED"
 	ChangesetCheckStateFailed  ChangesetCheckState = "FAILED"
@@ -607,25 +608,46 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 
 // ComputeCheckState computes the overall check state based on the current synced check state
 // and any webhook events that have arrived after the most recent sync
-func ComputeCheckState(c *Changeset, events []*ChangesetEvent) *ChangesetCheckState {
+func ComputeCheckState(c *Changeset, events []*ChangesetEvent) ChangesetCheckState {
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return computeGitHubCheckState(c.UpdatedAt, m, events)
 
 	case *bitbucketserver.PullRequest:
-		// TODO
+		return computeBitbucketBuildStatus(m)
 	}
 
-	return nil
+	return ChangesetCheckStateUnknown
 }
 
-func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*ChangesetEvent) *ChangesetCheckState {
+func computeBitbucketBuildStatus(pr *bitbucketserver.PullRequest) ChangesetCheckState {
+	var states []ChangesetCheckState
+	for _, status := range pr.BuildStatuses {
+		states = append(states, parseBitbucketBuildState(status.State))
+	}
+	return combineCheckStates(states)
+}
+
+func parseBitbucketBuildState(s string) ChangesetCheckState {
+	switch s {
+	case "FAILED":
+		return ChangesetCheckStateFailed
+	case "INPROGRESS":
+		return ChangesetCheckStatePending
+	case "SUCCESSFUL":
+		return ChangesetCheckStatePassed
+	default:
+		return ChangesetCheckStateUnknown
+	}
+}
+
+func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*ChangesetEvent) ChangesetCheckState {
 	// We should only consider the latest commit. This could be from a sync or a webhook that
 	// has occurred later
 	var latestCommitTime time.Time
 	var latestOID string
-	statusPerContext := make(map[string]*ChangesetCheckState)
-	statusPerCheckSuite := make(map[string]*ChangesetCheckState)
+	statusPerContext := make(map[string]ChangesetCheckState)
+	statusPerCheckSuite := make(map[string]ChangesetCheckState)
 
 	if len(pr.Commits.Nodes) > 0 {
 		// We only request the most recent commit
@@ -677,7 +699,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 			statusPerContext[s.Context] = parseGithubCheckState(s.State)
 		}
 	}
-	finalStates := make([]*ChangesetCheckState, 0, len(statusPerContext))
+	finalStates := make([]ChangesetCheckState, 0, len(statusPerContext))
 	for k := range statusPerContext {
 		finalStates = append(finalStates, statusPerContext[k])
 	}
@@ -691,68 +713,63 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 // pending takes highest priority
 // followed by error
 // success return only if all successful
-func combineCheckStates(states []*ChangesetCheckState) *ChangesetCheckState {
+func combineCheckStates(states []ChangesetCheckState) ChangesetCheckState {
 	if len(states) == 0 {
-		return nil
+		return ChangesetCheckStateUnknown
 	}
 	stateMap := make(map[ChangesetCheckState]bool)
 	for _, s := range states {
-		if s != nil {
-			stateMap[*s] = true
-		}
+		stateMap[s] = true
 	}
 
-	state := ChangesetCheckStatePending
 	switch {
+	case stateMap[ChangesetCheckStateUnknown]:
+		// If are pending, overall is Pending
+		return ChangesetCheckStateUnknown
 	case stateMap[ChangesetCheckStatePending]:
 		// If are pending, overall is Pending
-		state = ChangesetCheckStatePending
+		return ChangesetCheckStatePending
 	case stateMap[ChangesetCheckStateFailed]:
 		// If no pending, but have errors then overall is Failed
-		state = ChangesetCheckStateFailed
+		return ChangesetCheckStateFailed
 	case stateMap[ChangesetCheckStatePassed]:
 		// No pending or errors then overall is Passed
-		state = ChangesetCheckStatePassed
+		return ChangesetCheckStatePassed
 	}
 
-	return &state
+	return ChangesetCheckStateUnknown
 }
 
-func parseGithubCheckState(s string) *ChangesetCheckState {
-	var state ChangesetCheckState
+func parseGithubCheckState(s string) ChangesetCheckState {
 	switch s {
 	case "ERROR", "FAILURE":
-		state = ChangesetCheckStateFailed
+		return ChangesetCheckStateFailed
 	case "EXPECTED", "PENDING":
-		state = ChangesetCheckStatePending
+		return ChangesetCheckStatePending
 	case "SUCCESS":
-		state = ChangesetCheckStatePassed
+		return ChangesetCheckStatePassed
 	default:
-		return nil
+		return ChangesetCheckStateUnknown
 	}
-	return &state
 }
 
-func parseGithubCheckSuiteState(status, conclusion string) *ChangesetCheckState {
-	var state ChangesetCheckState
+func parseGithubCheckSuiteState(status, conclusion string) ChangesetCheckState {
 	switch status {
 	case "IN_PROGRESS", "QUEUED", "REQUESTED":
-		state = ChangesetCheckStatePending
-		return &state
+		return ChangesetCheckStatePending
 	}
 	if status != "COMPLETED" {
-		// Unknown status
-		return nil
+		return ChangesetCheckStateUnknown
 	}
 	switch conclusion {
 	case "SUCCESS", "NEUTRAL":
-		state = ChangesetCheckStatePassed
+		return ChangesetCheckStatePassed
 	case "ACTION_REQUIRED":
-		state = ChangesetCheckStatePending
+		return ChangesetCheckStatePending
 	case "CANCELLED", "FAILURE", "TIMED_OUT":
-		state = ChangesetCheckStateFailed
+		return ChangesetCheckStateFailed
 	}
-	return &state
+	return ChangesetCheckStateUnknown
 }
 
 // UpdateLabelsSince returns the set of current labels based the starting set of labels and looking at events

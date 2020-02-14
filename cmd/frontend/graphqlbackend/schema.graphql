@@ -3912,10 +3912,12 @@ type CodeIntelUsagePeriod {
 
 # Statistics about aparticular family of code intel features in a given timestan.
 type CodeIntelEventCategoryStatistics {
-    # Recent precise event statistics.
-    precise: CodeIntelEventStatistics!
-    # Recent fuzzy event statistics.
-    fuzzy: CodeIntelEventStatistics!
+    # Recent LSIF-based code intel event statistics.
+    lsif: CodeIntelEventStatistics!
+    # Recent LSP-based code intel event statistics.
+    lsp: CodeIntelEventStatistics!
+    # Recent search-based code intel event statistics.
+    search: CodeIntelEventStatistics!
 }
 
 # Statistics about a particular code intel feature in a given timespan.
