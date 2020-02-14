@@ -2,8 +2,6 @@ package a8n
 
 import (
 	"context"
-	"database/sql"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -19,22 +17,6 @@ type ChangesetSyncer struct {
 	Store       *Store
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
-}
-
-func (c *ChangesetSyncer) Init(s *sql.DB, rs repos.Store, f *httpcli.Factory) {
-	c.Store = NewStore(s)
-	c.ReposStore = rs
-	c.HTTPFactory = f
-
-	go func() {
-		ticker := time.NewTicker(1 * time.Minute)
-		for range ticker.C {
-			err := c.Sync(context.Background())
-			if err != nil {
-				log15.Error("Syncing changesets", "err", err)
-			}
-		}
-	}()
 }
 
 // Sync refreshes the metadata of all changesets and updates them in the
