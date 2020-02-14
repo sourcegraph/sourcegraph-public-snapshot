@@ -2,12 +2,12 @@
 
 exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
 <React.Fragment>
-  <React.Fragment>
+  <div>
     <Memo(AlertCircleIcon)
       className="icon-inline text-danger mr-1"
     />
     Error creating campaign
-  </React.Fragment>
+  </div>
   <ErrorAlert
     className="mt-3"
     error="a"
@@ -170,12 +170,12 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
 
 exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
 <React.Fragment>
-  <React.Fragment>
+  <div>
     <Memo(AlertCircleIcon)
       className="icon-inline text-danger mr-1"
     />
     Error creating campaign
-  </React.Fragment>
+  </div>
   <ErrorAlert
     className="mt-3"
     error="a"
