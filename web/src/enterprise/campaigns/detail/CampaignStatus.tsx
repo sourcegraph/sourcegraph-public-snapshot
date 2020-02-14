@@ -76,8 +76,8 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                 status.state === GQL.BackgroundProcessState.COMPLETED &&
                 !creationCompletedLongAgo && (
                     <div className="d-flex my-3">
-                        <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" /> Creation
-                        completed
+                        <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />{' '}
+                        {campaign.__typename === 'Campaign' ? 'Creation' : 'Preview'} completed
                     </div>
                 )
             )}
