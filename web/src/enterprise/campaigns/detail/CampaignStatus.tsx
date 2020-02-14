@@ -67,21 +67,20 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                     )}
                 </>
             )}
-            {campaign.__typename === 'Campaign' &&
-                (campaign.closedAt ? (
+            {campaign.__typename === 'Campaign' && campaign.closedAt ? (
+                <div className="d-flex my-3">
+                    <WarningIcon className="icon-inline text-warning mr-1" /> Campaign is closed
+                </div>
+            ) : (
+                status.pendingCount + status.completedCount > 0 &&
+                status.state === GQL.BackgroundProcessState.COMPLETED &&
+                !creationCompletedLongAgo && (
                     <div className="d-flex my-3">
-                        <WarningIcon className="icon-inline text-warning mr-1" /> Campaign is closed
+                        <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" /> Creation
+                        completed
                     </div>
-                ) : (
-                    status.pendingCount + status.completedCount > 0 &&
-                    status.state === GQL.BackgroundProcessState.COMPLETED &&
-                    !creationCompletedLongAgo && (
-                        <div className="d-flex my-3">
-                            <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" /> Creation
-                            completed
-                        </div>
-                    )
-                ))}
+                )
+            )}
             {status.state === GQL.BackgroundProcessState.ERRORED && (
                 <>
                     <AlertCircleIcon className="icon-inline text-danger mr-1" />
