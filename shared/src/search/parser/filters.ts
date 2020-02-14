@@ -127,6 +127,10 @@ export const FILTERS: readonly FilterDefinition[] = [
         aliases: ['before'],
         description: 'Commits made before a certain date',
     },
+    {
+        aliases: ['message'],
+        description: 'Commits with messages matching a certain string',
+    },
 ]
 
 /**
