@@ -1300,8 +1300,12 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		}
 	}
 
+	configRemoteOpts := true
 	var cmd *exec.Cmd
-	if useRefspecOverrides() {
+	if useCustomFetch() {
+		cmd = customFetchCmd(ctx)
+		configRemoteOpts = false
+	} else if useRefspecOverrides() {
 		cmd = refspecOverridesFetchCmd(ctx, url)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
@@ -1314,7 +1318,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	if output, err := runWithRemoteOpts(ctx, cmd, nil); err != nil {
+	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to update")
 	}
