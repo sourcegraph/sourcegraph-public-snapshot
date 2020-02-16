@@ -35,7 +35,7 @@ func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]st
 }
 
 func domainPath(urlVal string) (string, error) {
-	gitUrl, err := url.Parse(urlVal)
+	gitURL, err := url.Parse(urlVal)
 	if err != nil {
 		return "", err
 	}
