@@ -139,7 +139,8 @@ const SiteSchemaJSON = `{
               },
               "fetch": {
                 "description": "Git fetch command",
-                "type": "string"
+                "type": "string",
+                "minLength": 1
               }
             }
           }

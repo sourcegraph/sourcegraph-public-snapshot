@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -30,33 +30,28 @@ func TestCustomGitFetch(t *testing.T) {
 			Fetch:      "echo normal two",
 		},
 		{
-			DomainPath: "git@github.com:foo/faulty",
+			DomainPath: "github.com/foo/faulty",
 			Fetch:      "",
 		},
 	}
 
 	tests := []struct {
-		Url            string
-		ExpectedCustom bool
-		ExpectedArgs   []string
+		url          string
+		expectedArgs []string
 	}{
 		{
-			Url:            "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/normal/one",
-			ExpectedCustom: true,
-			ExpectedArgs:   []string{"echo", "normal", "one"},
+			url:          "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/normal/one",
+			expectedArgs: []string{"echo", "normal", "one"},
 		},
 		{
-			Url:            "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/normal/two",
-			ExpectedCustom: true,
-			ExpectedArgs:   []string{"echo", "normal", "two"},
+			url:          "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/normal/two",
+			expectedArgs: []string{"echo", "normal", "two"},
 		},
 		{
-			Url:            "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/faulty",
-			ExpectedCustom: false,
+			url: "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/faulty",
 		},
 		{
-			Url:            "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116dgit@github.com/bar/notthere",
-			ExpectedCustom: false,
+			url: "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116dgit@github.com/bar/notthere",
 		},
 	}
 
@@ -65,21 +60,14 @@ func TestCustomGitFetch(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		customCmd := customFetchCmd(context.Background(), test.Url)
+		customCmd := customFetchCmd(context.Background(), test.url)
+		var args []string
+		if customCmd != nil {
+			args = customCmd.Args
+		}
 
-		if test.ExpectedCustom {
-			if customCmd == nil {
-				t.Errorf("expected custom command for url %s", test.Url)
-			} else {
-				if !reflect.DeepEqual(customCmd.Args, test.ExpectedArgs) {
-					t.Errorf("expected custom command args %v for url %s, got %v", test.ExpectedArgs, test.Url,
-						customCmd.Args)
-				}
-			}
-		} else {
-			if customCmd != nil {
-				t.Errorf("expected no custom command for url %s, got %s", test.Url, customCmd.Path)
-			}
+		if diff := cmp.Diff(test.expectedArgs, args); diff != "" {
+			t.Errorf("URL %q: %v", test.url, diff)
 		}
 	}
 }

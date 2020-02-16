@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var customGitFetch = conf.Cached(func() interface{} {
@@ -23,31 +24,27 @@ func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]st
 	cgm := map[string][]string{}
 	for _, mapping := range c {
 		parts := strings.Fields(mapping.Fetch)
-
-		// TODO(uwedeportivo): can we enforce in the schema that fetch command is not empty ? otherwise log ?
-		if len(parts) > 0 {
-			cgm[mapping.DomainPath] = parts
-		}
+		cgm[mapping.DomainPath] = parts
 	}
 
 	return cgm
 }
 
 func extractDomainPath(cloneURL string) (string, error) {
-	gitURL, err := url.Parse(urlVal)
+	gitURL, err := url.Parse(cloneURL)
 	if err != nil {
 		return "", err
 	}
 
-	return path.Join(gitUrl.Host, gitUrl.Path), nil
+	return path.Join(gitURL.Host, gitURL.Path), nil
 }
 
 func customFetchCmd(ctx context.Context, urlVal string) *exec.Cmd {
 	cgm := customGitFetch().(map[string][]string)
 
-	dp, err := domainPath(urlVal)
+	dp, err := extractDomainPath(urlVal)
 	if err != nil {
-		// TODO(uwedeportivo): log here ?
+		log15.Error("failed to extract domain and path from %s", urlVal)
 		return nil
 	}
 
