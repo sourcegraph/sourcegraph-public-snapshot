@@ -41,7 +41,7 @@ func extractDomainPath(cloneURL string) (string, error) {
 func customFetchCmd(ctx context.Context, urlVal string) *exec.Cmd {
 	dp, err := extractDomainPath(urlVal)
 	if err != nil {
-		log15.Error("failed to extract domain and path from %s: %v", urlVal, err)
+		log15.Error("failed to extract domain and path", "url", urlVal, "err", err)
 		return nil
 	}
 
