@@ -44,7 +44,7 @@ func customFetchCmd(ctx context.Context, urlVal string) *exec.Cmd {
 
 	dp, err := extractDomainPath(urlVal)
 	if err != nil {
-		log15.Error("failed to extract domain and path from %s", urlVal)
+		log15.Error("failed to extract domain and path from %s: %v", urlVal, err)
 		return nil
 	}
 
