@@ -34,7 +34,7 @@ func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]st
 	return cgm
 }
 
-func domainPath(urlVal string) (string, error) {
+func extractDomainPath(cloneURL string) (string, error) {
 	gitURL, err := url.Parse(urlVal)
 	if err != nil {
 		return "", err
