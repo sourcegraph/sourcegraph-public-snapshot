@@ -14,7 +14,6 @@ func TestEmptyCustomGitFetch(t *testing.T) {
 	}
 
 	customCmd := customFetchCmd(context.Background(), "git@github.com:sourcegraph/sourcegraph.git")
-
 	if customCmd != nil {
 		t.Errorf("expected nil custom cmd for empty configuration, got %+v", customCmd)
 	}
