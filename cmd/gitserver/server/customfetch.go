@@ -53,7 +53,6 @@ func customFetchCmd(ctx context.Context, urlVal string) *exec.Cmd {
 	}
 
 	cmdParts := cgm[dp]
-
 	if len(cmdParts) == 0 {
 		return nil
 	}
