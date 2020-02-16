@@ -2,19 +2,60 @@ package server
 
 import (
 	"context"
+	"net/url"
 	"os/exec"
+	"path"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var customFetch = strings.Fields(env.Get("SRC_GITSERVER_CUSTOM_FETCH", "",
-	"EXPERIMENTAL: custom fetch command for unorthodox repo setups."))
+var customGitFetch = conf.Cached(func() interface{} {
+	return buildCustomFetchMappings(conf.Get().ExperimentalFeatures.CustomGitFetch)
+})
 
-func useCustomFetch() bool {
-	return len(customFetch) > 0
+func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]string {
+	if c == nil {
+		return map[string][]string{}
+	}
+
+	cgm := map[string][]string{}
+
+	for _, mapping := range c {
+		parts := strings.Fields(mapping.Fetch)
+
+		// TODO(uwedeportivo): can we enforce in the schema that fetch command is not empty ? otherwise log ?
+		if len(parts) > 0 {
+			cgm[mapping.DomainPath] = parts
+		}
+	}
+
+	return cgm
 }
 
-func customFetchCmd(ctx context.Context) *exec.Cmd {
-	return exec.CommandContext(ctx, customFetch[0], customFetch[1:]...)
+func domainPath(urlVal string) (string, error) {
+	gitUrl, err := url.Parse(urlVal)
+	if err != nil {
+		return "", err
+	}
+
+	return path.Join(gitUrl.Host, gitUrl.Path), nil
+}
+
+func customFetchCmd(ctx context.Context, urlVal string) *exec.Cmd {
+	cgm := customGitFetch().(map[string][]string)
+
+	dp, err := domainPath(urlVal)
+	if err != nil {
+		// TODO(uwedeportivo): log here ?
+		return nil
+	}
+
+	cmdParts := cgm[dp]
+
+	if len(cmdParts) == 0 {
+		return nil
+	}
+	return exec.CommandContext(ctx, cmdParts[0], cmdParts[1:]...)
 }
