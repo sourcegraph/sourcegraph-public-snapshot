@@ -21,7 +21,6 @@ func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]st
 	}
 
 	cgm := map[string][]string{}
-
 	for _, mapping := range c {
 		parts := strings.Fields(mapping.Fetch)
 
