@@ -23,8 +23,7 @@ func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]st
 
 	cgm := map[string][]string{}
 	for _, mapping := range c {
-		parts := strings.Fields(mapping.Fetch)
-		cgm[mapping.DomainPath] = parts
+		cgm[mapping.DomainPath] = strings.Fields(mapping.Fetch)
 	}
 
 	return cgm
@@ -40,14 +39,13 @@ func extractDomainPath(cloneURL string) (string, error) {
 }
 
 func customFetchCmd(ctx context.Context, urlVal string) *exec.Cmd {
-	cgm := customGitFetch().(map[string][]string)
-
 	dp, err := extractDomainPath(urlVal)
 	if err != nil {
 		log15.Error("failed to extract domain and path from %s: %v", urlVal, err)
 		return nil
 	}
 
+	cgm := customGitFetch().(map[string][]string)
 	cmdParts := cgm[dp]
 	if len(cmdParts) == 0 {
 		return nil
