@@ -9,6 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
+func init() {
+	dbtesting.DBNameSuffix = "backendtestdb"
+}
+
 func TestUpdateServiceVersion(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
