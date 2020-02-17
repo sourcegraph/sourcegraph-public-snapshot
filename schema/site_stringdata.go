@@ -143,7 +143,19 @@ const SiteSchemaJSON = `{
                 "minLength": 1
               }
             }
-          }
+          },
+          "examples": [
+            [
+              {
+                "domainPath": "somecodehost.com/path/to/repo",
+                "fetch": "customgitbinary someflag"
+              },
+              {
+                "domainPath": "somecodehost.com/path/to/anotherrepo",
+                "fetch": "customgitbinary someflag anotherflag"
+              }
+            ]
+          ]
         }
       },
       "group": "Experimental",
