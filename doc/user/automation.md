@@ -171,7 +171,7 @@ A campaign can be created as a draft either by adding the `-draft` flag to the `
 
 #### Updating a campaign
 
-There is also the option of applying the campaign plan to an existing campaign. Following the creation of the campaign plan, an URL will be printed that will guide you to the web interface. 
+There is also the option of applying a new campaign plan to an existing campaign. Following the creation of the campaign plan with the `src campaign plan create-from-patches` command, an URL will be printed that will guide you to the web interface that allows you to change an existing campaign's campaign plan.
 
 On this page, click "Preview" for the campaign that will be updated. From there, the delta of existing and new changesets will be displayed. Click "Update" to finalize these proposed changes.
 
