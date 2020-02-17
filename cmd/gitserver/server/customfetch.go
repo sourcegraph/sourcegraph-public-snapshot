@@ -39,13 +39,16 @@ func extractDomainPath(cloneURL string) (string, error) {
 }
 
 func customFetchCmd(ctx context.Context, urlVal string) *exec.Cmd {
+	cgm := customGitFetch().(map[string][]string)
+	if len(cgm) == 0 {
+		return nil
+	}
+
 	dp, err := extractDomainPath(urlVal)
 	if err != nil {
 		log15.Error("failed to extract domain and path", "url", urlVal, "err", err)
 		return nil
 	}
-
-	cgm := customGitFetch().(map[string][]string)
 	cmdParts := cgm[dp]
 	if len(cmdParts) == 0 {
 		return nil
