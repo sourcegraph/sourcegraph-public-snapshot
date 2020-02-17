@@ -16,9 +16,10 @@ import (
 // Regexp is a wrapper around regexp.Regexp, where the underlying regexp will be
 // compiled the first time it is needed.
 type Regexp struct {
-	str  string
-	once sync.Once
-	rx   *regexp.Regexp
+	str   string
+	posix bool
+	once  sync.Once
+	rx    *regexp.Regexp
 }
 
 func (r *Regexp) re() *regexp.Regexp {
@@ -27,7 +28,11 @@ func (r *Regexp) re() *regexp.Regexp {
 }
 
 func (r *Regexp) build() {
-	r.rx = regexp.MustCompile(r.str)
+	if r.posix {
+		r.rx = regexp.MustCompilePOSIX(r.str)
+	} else {
+		r.rx = regexp.MustCompile(r.str)
+	}
 	r.str = ""
 }
 
@@ -98,6 +103,18 @@ var inTest = len(os.Args) > 0 && strings.HasSuffix(strings.TrimSuffix(os.Args[0]
 // happen immediately.
 func New(str string) *Regexp {
 	lr := &Regexp{str: str}
+	if inTest {
+		// In tests, always compile the regexps early.
+		lr.re()
+	}
+	return lr
+}
+
+// NewPOSIX creates a new lazy regexp, delaying the compiling work until it is
+// first needed. If the code is being run as part of tests, the regexp
+// compiling will happen immediately.
+func NewPOSIX(str string) *Regexp {
+	lr := &Regexp{str: str, posix: true}
 	if inTest {
 		// In tests, always compile the regexps early.
 		lr.re()

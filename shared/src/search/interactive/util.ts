@@ -35,6 +35,7 @@ export enum FilterTypes {
     after = 'after',
     author = 'author',
     message = 'message',
+    content = 'content',
 }
 
 export const filterTypeKeys: FilterTypes[] = Object.keys(FilterTypes) as FilterTypes[]

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	// Register driver
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -170,6 +170,11 @@ func (stdoutLogger) Printf(format string, v ...interface{}) {
 }
 func (logger stdoutLogger) Verbose() bool {
 	return true
+}
+
+func IsPostgresError(err error, codename string) bool {
+	e, ok := errors.Cause(err).(*pq.Error)
+	return ok && e.Code.Name() == codename
 }
 
 // NullTime represents a time.Time that may be null. nullTime implements the

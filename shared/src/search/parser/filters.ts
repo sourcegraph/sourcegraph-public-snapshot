@@ -128,6 +128,11 @@ export const FILTERS: readonly FilterDefinition[] = [
         description: 'Commits made before a certain date',
     },
     {
+        aliases: ['content'],
+        description:
+            'Explicitly overrides the search pattern. Used for explicitly delineating the search pattern to search for in case of clashes.',
+    },
+    {
         aliases: ['message'],
         description: 'Commits with messages matching a certain string',
     },

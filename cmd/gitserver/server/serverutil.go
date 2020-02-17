@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -105,10 +104,16 @@ var tlsExternal = conf.Cached(func() interface{} {
 	}
 })
 
+func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
+	return runWith(ctx, cmd, true, progress)
+}
+
 // runWithRemoteOpts runs the command after applying the remote options.
 // If progress is not nil, all output is written to it in a separate goroutine.
-func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+	if configRemoteOpts {
+		configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+	}
 
 	var b interface {
 		Bytes() []byte
@@ -615,19 +620,4 @@ func bestEffortWalk(root string, walkFn func(path string, info os.FileInfo) erro
 
 		return walkFn(path, info)
 	})
-}
-
-func logErrors(printf func(format string, v ...interface{}), repo api.RepoName, stderr []byte) {
-	for len(stderr) > 0 {
-		advance, line, err := bufio.ScanLines(stderr, true)
-		if err != nil {
-			// bufio.ScanLines should never return an error (go1.13)
-			panic("bufio.ScanLines returned an error: " + err.Error())
-		}
-		stderr = stderr[advance:]
-
-		if bytes.HasPrefix(line, []byte("error: ")) {
-			printf("%s %s\n", repo, line)
-		}
-	}
 }

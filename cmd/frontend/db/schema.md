@@ -971,3 +971,15 @@ Referenced by:
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
 ```
+
+# Table "public.versions"
+```
+   Column   |           Type           |       Modifiers        
+------------+--------------------------+------------------------
+ service    | text                     | not null
+ version    | text                     | not null
+ updated_at | timestamp with time zone | not null default now()
+Indexes:
+    "versions_pkey" PRIMARY KEY, btree (service)
+
+```
