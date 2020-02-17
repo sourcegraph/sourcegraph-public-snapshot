@@ -205,6 +205,45 @@ type CodeIntelEventLatencies struct {
 	P99 float64
 }
 
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type SearchLatencyStatistics struct {
+	Daily   []*SearchLatencyPeriod
+	Weekly  []*SearchLatencyPeriod
+	Monthly []*SearchLatencyPeriod
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type SearchLatencyPeriod struct {
+	StartTime time.Time
+	Latencies *SearchTypeLatency
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type SearchTypeLatency struct {
+	Literal    *SearchLatency
+	Regexp     *SearchLatency
+	Structural *SearchLatency
+	File       *SearchLatency
+	Repo       *SearchLatency
+	Diff       *SearchLatency
+	Commit     *SearchLatency
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type SearchLatency struct {
+	P50 float64
+	P90 float64
+	P99 float64
+}
+
 type SurveyResponse struct {
 	ID        int32
 	UserID    *int32
@@ -225,35 +264,4 @@ type Event struct {
 	Source          string
 	Version         string
 	Timestamp       time.Time
-}
-
-type AutomationUsageStatistics struct {
-	CampaignsCount int
-}
-
-type SearchLatencyStatistics struct {
-	Daily   []*SearchLatencyPeriod
-	Weekly  []*SearchLatencyPeriod
-	Monthly []*SearchLatencyPeriod
-}
-
-type SearchLatencyPeriod struct {
-	StartTime time.Time
-	Latencies *SearchTypeLatency
-}
-
-type SearchTypeLatency struct {
-	Literal    *SearchLatency
-	Regexp     *SearchLatency
-	Structural *SearchLatency
-	File       *SearchLatency
-	Repo       *SearchLatency
-	Diff       *SearchLatency
-	Commit     *SearchLatency
-}
-
-type SearchLatency struct {
-	P50 float64
-	P90 float64
-	P99 float64
 }
