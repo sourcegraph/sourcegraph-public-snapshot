@@ -117,6 +117,40 @@
               }
             }
           }
+        },
+        "customGitFetch": {
+          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.",
+          "type": "array",
+          "items": {
+            "title": "CustomGitFetchMapping",
+            "description": "Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["domainPath", "fetch"],
+            "properties": {
+              "domainPath": {
+                "description": "Git clone URL domain/path",
+                "type": "string"
+              },
+              "fetch": {
+                "description": "Git fetch command",
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "examples": [
+            [
+              {
+                "domainPath": "somecodehost.com/path/to/repo",
+                "fetch": "customgitbinary someflag"
+              },
+              {
+                "domainPath": "somecodehost.com/path/to/anotherrepo",
+                "fetch": "customgitbinary someflag anotherflag"
+              }
+            ]
+          ]
         }
       },
       "group": "Experimental",

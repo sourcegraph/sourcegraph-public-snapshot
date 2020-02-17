@@ -64,8 +64,9 @@ func TestCleanupExpired(t *testing.T) {
 	repoGCNew := path.Join(root, "repo-gc-new", ".git")
 	repoGCOld := path.Join(root, "repo-gc-old", ".git")
 	repoBoom := path.Join(root, "repo-boom", ".git")
+	repoCorrupt := path.Join(root, "repo-corrupt", ".git")
 	remote := path.Join(root, "remote", ".git")
-	for _, path := range []string{repoNew, repoOld, repoGCNew, repoGCOld, repoBoom, remote} {
+	for _, path := range []string{repoNew, repoOld, repoGCNew, repoGCOld, repoBoom, repoCorrupt, remote} {
 		cmd := exec.Command("git", "--bare", "init", path)
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
@@ -102,9 +103,10 @@ func TestCleanupExpired(t *testing.T) {
 	writeFile(t, filepath.Join(repoGCOld, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 
 	for path, delta := range map[string]time.Duration{
-		repoOld:   2 * repoTTL,
-		repoGCOld: 2 * repoTTLGC,
-		repoBoom:  2 * repoTTL,
+		repoOld:     2 * repoTTL,
+		repoGCOld:   2 * repoTTLGC,
+		repoBoom:    2 * repoTTL,
+		repoCorrupt: repoTTLGC / 2, // should only trigger corrupt, not old
 	} {
 		ts := time.Now().Add(-delta)
 		if err := setRecloneTime(GitDir(path), ts); err != nil {
@@ -114,12 +116,16 @@ func TestCleanupExpired(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	if err := gitConfigSet(GitDir(repoCorrupt), "sourcegraph.maybeCorruptRepo", "1"); err != nil {
+		t.Fatal(err)
+	}
 
 	now := time.Now()
 	repoNewTime := modTime(repoNew)
 	repoOldTime := modTime(repoOld)
 	repoGCNewTime := modTime(repoGCNew)
 	repoGCOldTime := modTime(repoGCOld)
+	repoCorruptTime := modTime(repoBoom)
 	repoBoomTime := modTime(repoBoom)
 	repoBoomRecloneTime := recloneTime(repoBoom)
 
@@ -141,6 +147,9 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	if !repoGCOldTime.Before(modTime(repoGCOld)) {
 		t.Error("expected repoGCOld to be recloned during clean up")
+	}
+	if !repoCorruptTime.Before(modTime(repoCorrupt)) {
+		t.Error("expected repoCorrupt to be recloned during clean up")
 	}
 
 	// repos that fail to clone need to have recloneTime updated
@@ -607,6 +616,34 @@ func Test_findMountPoint(t *testing.T) {
 				t.Errorf("findMountPoint() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestMaybeCorruptStderrRe(t *testing.T) {
+	bad := []string{
+		"error: packfile .git/objects/pack/pack-a.pack does not match index",
+		"error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda\n",
+		`error: short SHA1 1325 is ambiguous
+error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
+		`unrelated
+error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
+		"\n\nerror: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda",
+	}
+	good := []string{
+		"",
+		"error: short SHA1 1325 is ambiguous",
+		"error: object 156639577dd2ea91cdd53b25352648387d985743 is a blob, not a commit",
+		"error: object 45043b3ff0440f4d7937f8c68f8fb2881759edef is a tree, not a commit",
+	}
+	for _, stderr := range bad {
+		if !maybeCorruptStderrRe.MatchString(stderr) {
+			t.Errorf("should contain corrupt line:\n%s", stderr)
+		}
+	}
+	for _, stderr := range good {
+		if maybeCorruptStderrRe.MatchString(stderr) {
+			t.Errorf("should not contain corrupt line:\n%s", stderr)
+		}
 	}
 }
 

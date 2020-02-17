@@ -90,6 +90,10 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 value: 'message:',
                 description: 'commit message contents',
             },
+            {
+                value: 'content:',
+                description: 'override the search pattern',
+            },
         ].map(
             assign({
                 type: SuggestionTypes.filters,
@@ -186,5 +190,8 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         values: [{ value: '"1 week ago"' }, { value: '"1 day ago"' }, { value: '"last thursday"' }].map(
             assign({ type: SuggestionTypes.after })
         ),
+    },
+    content: {
+        values: [],
     },
 }
