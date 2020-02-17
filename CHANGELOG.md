@@ -9,7 +9,17 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## 3.13.0 (unreleased)
+## Unreleased
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.13.0
 
 ### Added
 
