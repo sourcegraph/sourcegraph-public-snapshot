@@ -26,6 +26,8 @@ type Provider struct {
 	pageSize int // Page size to use in paginated requests.
 	store    *store
 
+	// fastPerm enables fetching permissions from the alternative roaring
+	// bitmap endpoint provided by the plugin
 	fastPerm bool
 }
 
