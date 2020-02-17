@@ -17,6 +17,6 @@ func GetAutomationUsageStatistics(ctx context.Context) (*types.AutomationUsageSt
 	}
 
 	return &types.AutomationUsageStatistics{
-		CampaignsCount: count,
+		CampaignsCount: int32(count),
 	}, nil
 }
