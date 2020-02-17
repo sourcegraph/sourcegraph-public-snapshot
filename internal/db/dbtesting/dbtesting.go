@@ -141,9 +141,5 @@ func initTest(nameSuffix string) error {
 		}
 	}
 
-	if err := dbconn.ConnectToDB("dbname=" + dbname); err != nil {
-		return err
-	}
-
-	return dbconn.MigrateDB(dbconn.Global, "dbname="+dbname)
+	return dbconn.ConnectToDB("dbname=" + dbname)
 }

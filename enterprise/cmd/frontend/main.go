@@ -39,8 +39,8 @@ func main() {
 	initLSIFEndpoints()
 
 	// Connect to the database.
-	if err := shared.InitDB(); err != nil {
-		log.Fatalf("FATAL: %v", err)
+	if err := dbconn.ConnectToDB(""); err != nil {
+		log.Fatal(err)
 	}
 	initAuthz(dbconn.Global)
 
