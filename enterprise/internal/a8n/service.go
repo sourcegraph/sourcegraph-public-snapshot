@@ -843,6 +843,10 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	// we don't update the CampaignPlan, we don't need to rewire ChangesetJobs,
 	// but only update name/description if they changed.
 	if !updatePlanID && updateAttributes {
+		err := tx.UpdateCampaign(ctx, campaign)
+		if err != nil {
+			return campaign, nil, err
+		}
 		return campaign, nil, tx.ResetChangesetJobs(ctx, campaign.ID)
 	}
 

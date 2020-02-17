@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/tmpfriend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
@@ -28,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/confdb"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/processrestart"
@@ -79,15 +81,46 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 	return &url.URL{Scheme: "http", Host: hostPort}
 }
 
+// InitDB initializes the global database connection and sets the
+// version of the frontend in our versions table.
+func InitDB() error {
+	if err := dbconn.ConnectToDB(""); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	migrate := true
+
+	for {
+		// We need this loop so that we handle the missing versions table,
+		// which would be added by running the migrations. Once we detect that
+		// it's missing, we run the migrations and try to update the version again.
+
+		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
+		if err != nil && !dbutil.IsPostgresError(err, "undefined_table") {
+			return err
+		}
+
+		if !migrate {
+			return nil
+		}
+
+		if err := dbconn.MigrateDB(dbconn.Global, ""); err != nil {
+			return err
+		}
+
+		migrate = false
+	}
+}
+
 // Main is the main entrypoint for the frontend server program.
 func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
 	if dbconn.Global == nil {
-		// Connect to the database and start the configuration server.
-		if err := dbconn.ConnectToDB(""); err != nil {
-			log.Fatal(err)
+		if err := InitDB(); err != nil {
+			log.Fatalf("ERROR: %v", err)
 		}
 	}
 

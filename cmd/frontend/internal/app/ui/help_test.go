@@ -19,7 +19,7 @@ func TestServeHelp(t *testing.T) {
 		}
 		{
 			orig := version.Version()
-			version.Mock("dev")
+			version.Mock("0.0.0+dev")
 			defer version.Mock(orig) // reset
 		}
 

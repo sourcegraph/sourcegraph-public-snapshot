@@ -105,10 +105,16 @@ var tlsExternal = conf.Cached(func() interface{} {
 	}
 })
 
+func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
+	return runWith(ctx, cmd, true, progress)
+}
+
 // runWithRemoteOpts runs the command after applying the remote options.
 // If progress is not nil, all output is written to it in a separate goroutine.
-func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+	if configRemoteOpts {
+		configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+	}
 
 	var b interface {
 		Bytes() []byte

@@ -195,3 +195,7 @@ type Event struct {
 	Version         string
 	Timestamp       time.Time
 }
+
+type AutomationUsageStatistics struct {
+	CampaignsCount int
+}

@@ -659,13 +659,20 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			}
 			if tt.updateDescription {
 				newDescription := "new campaign description"
-				args.Name = &newDescription
+				args.Description = &newDescription
 			}
 			if tt.updatePlan {
 				args.Plan = &newPlan.ID
 			}
 
-			updatedCampaign, detachedChangesets, err := svc.UpdateCampaign(ctx, args)
+			// We ignore the returned campaign here and load it from the
+			// database again to make sure the changes are persisted
+			_, detachedChangesets, err := svc.UpdateCampaign(ctx, args)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			updatedCampaign, err := store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
 			if err != nil {
 				t.Fatal(err)
 			}
