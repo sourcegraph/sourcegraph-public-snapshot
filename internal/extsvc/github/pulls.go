@@ -53,7 +53,8 @@ type CheckSuite struct {
 	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
 	Conclusion string
 	ReceivedAt time.Time
-	CheckRuns  struct{ Nodes []CheckRun }
+	// When the suite was received via a webhook
+	CheckRuns struct{ Nodes []CheckRun }
 }
 
 func (c *CheckSuite) Key() string {
@@ -68,6 +69,7 @@ type CheckRun struct {
 	Status string
 	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
 	Conclusion string
+	// When the run was received via a webhook
 	ReceivedAt time.Time
 }
 
