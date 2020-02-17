@@ -683,10 +683,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
 
+	stderr := stderrBuf.String()
+	checkMaybeCorruptRepo(req.Repo, dir, stderr)
+
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
-	w.Header().Set("X-Exec-Stderr", stderrBuf.String())
+	w.Header().Set("X-Exec-Stderr", stderr)
 }
 
 // setGitAttributes writes our global gitattributes to
