@@ -18,6 +18,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -90,6 +92,11 @@ func (s *Server) cleanupRepos() {
 		// Add a jitter to spread out recloning of repos cloned at the same
 		// time.
 		var reason string
+		if maybeCorrupt, _ := gitConfigGet(dir, "sourcegraph.maybeCorruptRepo"); maybeCorrupt != "" {
+			reason = "maybeCorrupt"
+			// unset flag to stop constantly recloning if it fails.
+			_ = gitConfigUnset(dir, "sourcegraph.maybeCorruptRepo")
+		}
 		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
 			reason = "old"
 		}
@@ -638,6 +645,28 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
+// maybeCorruptStderrRe matches stderr lines from git which indicate there
+// might be repository corruption.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
+// context.
+var maybeCorruptStderrRe = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
+
+func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
+	if !maybeCorruptStderrRe.MatchString(stderr) {
+		return
+	}
+
+	log15.Warn("marking repo for recloning due to stderr output indicating repo corruption", "repo", repo, "stderr", stderr)
+
+	// We set a flag in the config for the cleanup janitor job to fix. The
+	// janitor runs every minute.
+	err := gitConfigSet(dir, "sourcegraph.maybeCorruptRepo", strconv.FormatInt(time.Now().Unix(), 10))
+	if err != nil {
+		log15.Error("failed to set maybeCorruptRepo config", repo, "repo", "error", err)
+	}
+}
+
 func gitConfigGet(dir GitDir, key string) (string, error) {
 	cmd := exec.Command("git", "config", "--get", key)
 	cmd.Dir = string(dir)
@@ -658,6 +687,20 @@ func gitConfigSet(dir GitDir, key, value string) error {
 	err := cmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to set git config %s", key)
+	}
+	return nil
+}
+
+func gitConfigUnset(dir GitDir, key string) error {
+	cmd := exec.Command("git", "config", "--unset-all", key)
+	cmd.Dir = string(dir)
+	err := cmd.Run()
+	if err != nil {
+		// Exit code 5 means the key is not set.
+		if ee, ok := err.(*exec.ExitError); ok && ee.Sys().(syscall.WaitStatus).ExitStatus() == 5 {
+			return nil
+		}
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to unset git config %s", key)
 	}
 	return nil
 }
