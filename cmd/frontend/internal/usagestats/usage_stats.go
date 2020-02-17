@@ -27,7 +27,7 @@ func GetByUserID(ctx context.Context, userID int32) (*types.UserUsageStatistics,
 	if err != nil {
 		return nil, err
 	}
-	searchQueries, err := db.EventLogs.CountByUserIDAndEventName(ctx, userID, "SearchSubmitted")
+	searchQueries, err := db.EventLogs.CountByUserIDAndEventName(ctx, userID, "SearchResultsQueried")
 	if err != nil {
 		return nil, err
 	}
