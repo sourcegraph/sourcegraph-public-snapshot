@@ -27,7 +27,8 @@ type Provider struct {
 	store    *store
 
 	// fastPerm enables fetching permissions from the alternative roaring
-	// bitmap endpoint provided by the plugin
+	// bitmap endpoint provided by the Bitbucket Server Sourcegraph plugin:
+	// https://github.com/sourcegraph/bitbucket-server-plugin
 	fastPerm bool
 }
 

@@ -589,7 +589,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 			continue
 		}
 
-		if secret := bbs.Secret(con); secret != "" {
+		if secret := con.WebhookSecret(); secret != "" {
 			secrets = append(secrets, []byte(secret))
 		}
 	}

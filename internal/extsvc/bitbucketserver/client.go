@@ -95,18 +95,6 @@ func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
 	}
 }
 
-// Secret returns the webhook secret from a BBS config
-func Secret(c *schema.BitbucketServerConnection) string {
-	switch {
-	case c.Plugin != nil && c.Plugin.Webhooks != nil:
-		return c.Plugin.Webhooks.Secret
-	case c.Webhooks != nil:
-		return c.Webhooks.Secret
-	default:
-		return ""
-	}
-}
-
 // NewClientWithConfig returns an authenticated Bitbucket Server API client with
 // the provided configuration.
 func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
@@ -128,7 +116,7 @@ func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
 			return nil, err
 		}
 	}
-	client.WebhookSecret = Secret(c)
+	client.WebhookSecret = c.WebhookSecret()
 	return client, nil
 }
 
