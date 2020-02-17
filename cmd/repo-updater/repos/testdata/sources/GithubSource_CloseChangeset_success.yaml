@@ -6,9 +6,10 @@ interactions:
       label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
       on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
       {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
-      basicCommit on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
-      10){\n    nodes {\n      id\n      status\n      conclusion\n    }\n  }\n  committedDate\n}\n\nfragment
-      prCommit on PullRequestCommit {\n  commit {\n    ...basicCommit\n  }\n}\n\nfragment
+      commitWithChecks on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      10){\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
+      10){\n        nodes{\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
+      prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
       {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
@@ -56,7 +57,7 @@ interactions:
     method: POST
   response:
     body: '{"data":{"closePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0","title":"this
-      will be closed","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/44","number":44,"createdAt":"2019-12-05T16:15:20Z","updatedAt":"2019-12-06T13:27:44Z","headRefOid":"aea278c24726ee43fb7754a5259a4e1453bb7f47","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-38","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"aea278c24726ee43fb7754a5259a4e1453bb7f47","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDg5NzQ2OTY=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMDg5NzQ2OTg=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-13T14:24:24Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"aea278c24726ee43fb7754a5259a4e1453bb7f47","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDg5NzQ2OTY=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMDg5NzQ2OTg=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-13T14:24:24Z"}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-06T13:27:11Z","url":"https://github.com/sourcegraph/automation-testing/pull/44#event-2861364892"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-06T13:27:39Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-06T13:27:44Z","url":"https://github.com/sourcegraph/automation-testing/pull/44#event-2861366616"}]}}}}}'
+      will be closed","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/44","number":44,"createdAt":"2019-12-05T16:15:20Z","updatedAt":"2019-12-06T13:27:44Z","headRefOid":"aea278c24726ee43fb7754a5259a4e1453bb7f47","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-38","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"aea278c24726ee43fb7754a5259a4e1453bb7f47","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDg5NzQ2OTY=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUzMDg5NzQ2OTg=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2019-11-13T14:24:24Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"aea278c24726ee43fb7754a5259a4e1453bb7f47","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDg5NzQ2OTY=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUzMDg5NzQ2OTg=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2019-11-13T14:24:24Z"}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-06T13:27:11Z","url":"https://github.com/sourcegraph/automation-testing/pull/44#event-2861364892"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-06T13:27:39Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-06T13:27:44Z","url":"https://github.com/sourcegraph/automation-testing/pull/44#event-2861366616"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -71,7 +72,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 12 Feb 2020 10:50:07 GMT
+      - Mon, 17 Feb 2020 12:18:01 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -81,7 +82,7 @@ interactions:
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
       Vary:
-      - Accept-Encoding, Accept
+      - Accept-Encoding, Accept, X-Requested-With
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -91,7 +92,7 @@ interactions:
       X-Github-Media-Type:
       - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - 4BC3:E1BB:1F0F989:258A211:5E43D85E
+      - DC58:D85D:5FDCE:7C31A:5E4A8478
       X-Oauth-Scopes:
       - read:org, repo
       X-Xss-Protection:
