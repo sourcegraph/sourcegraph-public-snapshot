@@ -44,6 +44,7 @@ func TestUpdateServiceVersion(t *testing.T) {
 		t.Logf("version = %q", tc.version)
 	}
 }
+
 func TestIsValidUpgrade(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
