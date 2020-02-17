@@ -116,7 +116,6 @@ func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
 			return nil, err
 		}
 	}
-	client.WebhookSecret = c.WebhookSecret()
 	return client, nil
 }
 

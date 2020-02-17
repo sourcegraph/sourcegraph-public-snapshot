@@ -528,7 +528,8 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				continue
 			}
 
-			if client.WebhookSecret == "" {
+			secret := con.WebhookSecret()
+			if secret == "" {
 				continue
 			}
 
@@ -538,7 +539,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				Scope:    "global",
 				Events:   []string{"pr"},
 				Endpoint: endpoint,
-				Secret:   client.WebhookSecret,
+				Secret:   secret,
 			}
 
 			err = client.UpsertWebhook(context.Background(), wh)
