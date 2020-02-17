@@ -175,6 +175,8 @@ There is also the option of applying a new campaign plan to an existing campaign
 
 On this page, click "Preview" for the campaign that will be updated. From there, the delta of existing and new changesets will be displayed. Click "Update" to finalize these proposed changes.
 
+Edits to the name and description of a changeset can also be made on the web interface. These changes are then reflected natively onto the changesets created on the code hosts. The branch of a draft campaign with a plan can also be edited. However, this mutation is not allowed if the campaign tracks any published changesets.
+
 ## Example: Add a GitHub action to upload LSIF data to Sourcegraph
 
 Our goal for this campaign is to add a GitHub Action that generates and uploads LSIF data to Sourcegraph by adding a `.github/workflows/lsif.yml` file to each repository that doesn't have it yet.
