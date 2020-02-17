@@ -6,12 +6,13 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
+import { CampaignUIMode } from './CampaignDetails'
 
 interface Props {
-    mode: string
+    mode: CampaignUIMode
     previewingCampaignPlan: boolean
 
-    campaign?: Pick<GQL.ICampaign, '__typename' | 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
+    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
         status: Pick<GQL.ICampaign['status'], 'state'>
     }

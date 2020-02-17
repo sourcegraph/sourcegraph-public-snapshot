@@ -39,6 +39,8 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { CampaignUpdateSelection } from './CampaignUpdateSelection'
 import { CampaignActionsBar } from './CampaignActionsBar'
 
+export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
+
 interface Campaign
     extends Pick<
         GQL.ICampaign,
@@ -154,9 +156,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById])
 
-    const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'>(
-        campaignID ? 'viewing' : 'editing'
-    )
+    const [mode, setMode] = useState<CampaignUIMode>(campaignID ? 'viewing' : 'editing')
 
     // To report errors from saving or deleting
     const [alertError, setAlertError] = useState<Error>()
