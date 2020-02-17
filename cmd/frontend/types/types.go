@@ -199,3 +199,30 @@ type Event struct {
 type AutomationUsageStatistics struct {
 	CampaignsCount int
 }
+
+type SearchLatencyStatistics struct {
+	Daily   []*SearchLatencyPeriod
+	Weekly  []*SearchLatencyPeriod
+	Monthly []*SearchLatencyPeriod
+}
+
+type SearchLatencyPeriod struct {
+	StartTime time.Time
+	Latencies *SearchTypeLatency
+}
+
+type SearchTypeLatency struct {
+	Literal    *SearchLatency
+	Regexp     *SearchLatency
+	Structural *SearchLatency
+	File       *SearchLatency
+	Repo       *SearchLatency
+	Diff       *SearchLatency
+	Commit     *SearchLatency
+}
+
+type SearchLatency struct {
+	P50 float64
+	P90 float64
+	P99 float64
+}
