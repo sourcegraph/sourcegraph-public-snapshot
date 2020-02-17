@@ -598,7 +598,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 
 // setRecloneTime sets the time a repository is cloned.
 func setRecloneTime(dir GitDir, now time.Time) error {
-	cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
+	cmd := exec.Command("git", "config", "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	cmd.Dir = string(dir)
 	if _, err := cmd.Output(); err != nil {
 		return errors.Wrap(wrapCmdError(cmd, err), "failed to update recloneTimestamp")

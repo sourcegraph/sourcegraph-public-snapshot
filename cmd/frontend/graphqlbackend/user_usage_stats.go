@@ -21,7 +21,7 @@ func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatistic
 		}
 	}
 
-	stats, err := usagestats.GetByUserID(ctx, r.user.ID)
+	stats, err := usagestatsdeprecated.GetByUserID(r.user.ID)
 	if err != nil {
 		return nil, err
 	}
