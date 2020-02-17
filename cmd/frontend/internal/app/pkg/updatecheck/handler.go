@@ -246,8 +246,8 @@ type pingPayload struct {
 	HasUpdate            string           `json:"has_update"`
 	UniqueUsersToday     string           `json:"unique_users_today"`
 	SiteActivity         *json.RawMessage `json:"site_activity"`
-	CodeIntelUsage       *json.RawMessage `json:"code_intel_usage"`
 	AutomationUsage      *json.RawMessage `json:"automation_usage"`
+	CodeIntelUsage       *json.RawMessage `json:"code_intel_usage"`
 	SearchUsage          *json.RawMessage `json:"search_usage"`
 	InstallerEmail       string           `json:"installer_email"`
 	AuthProviders        string           `json:"auth_providers"`
