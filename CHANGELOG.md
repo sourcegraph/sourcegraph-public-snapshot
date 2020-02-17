@@ -13,6 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Experimental: Added new field `experimentalFeatures.customGitFetch` that allows defining custom git fetch commands for code hosts and repositories with special settings.
 - Experimental: the search query input now provides syntax highlighting, hover tooltips, and diagnostics on filters in search queries. Requires the global settings value `{ "experimentalFeatures": { "smartSearchField": true } }`.
 - Added a setting `search.hideSuggestions`, which when set to `true`, will hide search suggestions in the search bar.
 - An experimental tool [src-expose](https://docs.sourcegraph.com/admin/external_service/other#experimental-src-expose) to import code from any code host.
