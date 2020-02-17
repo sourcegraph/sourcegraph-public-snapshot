@@ -65,9 +65,6 @@ type Client struct {
 	// version 5.4 and older). If both Token and Username/Password are specified, Token is used.
 	Username, Password string
 
-	// The secret used to create and authenticate plugin webhooks
-	WebhookSecret string
-
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
 	RateLimit *rate.Limiter

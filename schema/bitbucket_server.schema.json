@@ -87,7 +87,7 @@
             }
           }
         },
-        "fastPerm": {
+        "permissions": {
           "description": "Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.",
           "type": "string",
           "enum": ["enabled", "disabled"],

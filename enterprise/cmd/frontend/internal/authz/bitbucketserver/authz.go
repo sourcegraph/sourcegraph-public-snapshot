@@ -24,7 +24,7 @@ func NewAuthzProviders(
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		fastPerm := conf.BitbucketServerFastPerm() || (c.Plugin != nil && c.Plugin.FastPerm == "enabled")
+		fastPerm := conf.BitbucketServerFastPerm() || (c.Plugin != nil && c.Plugin.Permissions == "enabled")
 		p, err := newAuthzProvider(db, c.Authorization, c.Url, c.Username, fastPerm)
 		if err != nil {
 			problems = append(problems, err.Error())

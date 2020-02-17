@@ -248,9 +248,9 @@ type BitbucketServerOAuth struct {
 
 // BitbucketServerPlugin description: Configuration for Bitbucket Server Sourcegraph plugin
 type BitbucketServerPlugin struct {
-	// FastPerm description: Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.
-	FastPerm string                         `json:"fastPerm,omitempty"`
-	Webhooks *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
+	// Permissions description: Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.
+	Permissions string                         `json:"permissions,omitempty"`
+	Webhooks    *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
 }
 type BitbucketServerPluginWebhooks struct {
 	// Secret description: Secret for authenticating incoming webhook payloads
