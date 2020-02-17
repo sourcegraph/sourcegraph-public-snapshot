@@ -50,7 +50,7 @@ type CheckSuite struct {
 	ID string
 	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
 	Status string
-	// On of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
+	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
 	Conclusion string
 	ReceivedAt time.Time
 	CheckRuns  struct{ Nodes []CheckRun }
@@ -66,7 +66,7 @@ type CheckRun struct {
 	ID string
 	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
 	Status string
-	// On of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
+	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
 	Conclusion string
 	ReceivedAt time.Time
 }
