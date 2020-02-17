@@ -209,6 +209,8 @@ type BitbucketServerConnection struct {
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding "token" or "password" field.
 	Username string `json:"username"`
+	// Webhooks description: DEPRECATED: Switch to "plugin.webhooks"
+	Webhooks *Webhooks `json:"webhooks,omitempty"`
 }
 
 // BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
@@ -251,8 +253,6 @@ type BitbucketServerPlugin struct {
 	Webhooks *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
 }
 type BitbucketServerPluginWebhooks struct {
-	// Automation description: Toggle automation webhooks
-	Automation string `json:"automation"`
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`
 }
@@ -355,6 +355,8 @@ type ExcludedGitoliteRepo struct {
 type ExperimentalFeatures struct {
 	// Automation description: Enables the experimental code automation features.
 	Automation string `json:"automation,omitempty"`
+	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
+	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// Discussions description: Enables the code discussions experiment.
@@ -983,4 +985,10 @@ type TlsExternal struct {
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
+}
+
+// Webhooks description: DEPRECATED: Switch to "plugin.webhooks"
+type Webhooks struct {
+	// Secret description: Secret for authenticating incoming webhook payloads
+	Secret string `json:"secret,omitempty"`
 }

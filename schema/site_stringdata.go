@@ -90,6 +90,12 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "bitbucketServerFastPerm": {
+          "description": "DEPRECATED: Configure in Bitbucket Server config.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "searchMultipleRevisionsPerRepository": {
           "description": "Enables searching multiple revisions of the same repository (using ` + "`" + `repo:myrepo@branch1:branch2` + "`" + `).",
           "type": "boolean",

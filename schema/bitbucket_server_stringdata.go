@@ -64,6 +64,17 @@ const BitbucketServerSchemaJSON = `{
       "pattern": "^-----BEGIN CERTIFICATE-----\n",
       "examples": ["-----BEGIN CERTIFICATE-----\n..."]
     },
+    "webhooks": {
+      "description": "DEPRECATED: Switch to \"plugin.webhooks\"",
+      "type": "object",
+      "properties": {
+        "secret": {
+          "description": "Secret for authenticating incoming webhook payloads",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "plugin": {
       "title": "BitbucketServerPlugin",
       "description": "Configuration for Bitbucket Server Sourcegraph plugin",
@@ -72,18 +83,12 @@ const BitbucketServerSchemaJSON = `{
         "webhooks": {
           "title": "BitbucketServerPluginWebhooks",
           "type": "object",
-          "required": ["secret", "automation"],
+          "required": ["secret"],
           "properties": {
             "secret": {
               "description": "Secret for authenticating incoming webhook payloads",
               "type": "string",
               "minLength": 1
-            },
-            "automation": {
-              "description": "Toggle automation webhooks",
-              "type": "string",
-              "enum": ["enabled", "disabled"],
-              "default": "disabled"
             }
           }
         },

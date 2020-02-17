@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -23,7 +24,7 @@ func NewAuthzProviders(
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		fastPerm := c.Plugin != nil && c.Plugin.FastPerm == "enabled"
+		fastPerm := conf.BitbucketServerFastPerm() || (c.Plugin != nil && c.Plugin.FastPerm == "enabled")
 		p, err := newAuthzProvider(db, c.Authorization, c.Url, c.Username, fastPerm)
 		if err != nil {
 			problems = append(problems, err.Error())

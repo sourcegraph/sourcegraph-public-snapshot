@@ -65,6 +65,9 @@ type Client struct {
 	// version 5.4 and older). If both Token and Username/Password are specified, Token is used.
 	Username, Password string
 
+	// The secret used to create and authenticate plugin webhooks
+	WebhookSecret string
+
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
 	RateLimit *rate.Limiter
@@ -92,6 +95,18 @@ func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
 	}
 }
 
+// Secret returns the webhook secret from a BBS config
+func Secret(c *schema.BitbucketServerConnection) string {
+	switch {
+	case c.Plugin != nil && c.Plugin.Webhooks != nil:
+		return c.Plugin.Webhooks.Secret
+	case c.Webhooks != nil:
+		return c.Webhooks.Secret
+	default:
+		return ""
+	}
+}
+
 // NewClientWithConfig returns an authenticated Bitbucket Server API client with
 // the provided configuration.
 func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
@@ -113,6 +128,7 @@ func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
 			return nil, err
 		}
 	}
+	client.WebhookSecret = Secret(c)
 	return client, nil
 }
 
