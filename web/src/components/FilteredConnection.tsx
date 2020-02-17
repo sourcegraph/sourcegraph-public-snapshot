@@ -99,8 +99,7 @@ interface ConnectionDisplayProps {
 /**
  * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
  *
- * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
- * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
+ * @template N The node type of the GraphQL connection, such as GQL.IRepository (if the connection is GQL.IRepositoryConnection)
  * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
  */
 interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
@@ -329,6 +328,9 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
 
     /** Called when the queryConnection Observable emits. */
     onUpdate?: (value: C | ErrorLike | undefined) => void
+
+    /** Don't show a loader on a refreshing table when a delay of 250ms on the request has passed */
+    noShowLoaderOnSlowLoad?: boolean
 }
 
 /**
@@ -548,7 +550,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 share()
                             )
 
-                        return (shouldRefresh
+                        return (shouldRefresh && this.props.noShowLoaderOnSlowLoad !== true
                             ? merge(
                                   result,
                                   of({ connectionOrError: undefined, loading: true }).pipe(
@@ -629,7 +631,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         if (this.props.updates) {
             this.subscriptions.add(
-                this.props.updates.subscribe(c => {
+                this.props.updates.subscribe(() => {
                     this.setState({ loading: true }, () => refreshRequests.next({ forceRefresh: true }))
                 })
             )

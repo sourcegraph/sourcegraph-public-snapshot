@@ -50,10 +50,10 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
 }) => {
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            campaign && campaign.__typename === 'CampaignPlan'
+            campaign.__typename === 'CampaignPlan'
                 ? queryChangesetPlans(campaign.id, args)
                 : queryChangesets(campaign.id, args),
-        [campaign]
+        [campaign.id, campaign.__typename]
     )
 
     const changesets = useMemo(
