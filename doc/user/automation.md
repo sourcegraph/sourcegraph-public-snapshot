@@ -167,7 +167,7 @@ $ src campaigns create -plan=Q2FtcGFpZ25QbGFuOjg= -branch=my-first-campaign
 
 ##### Drafting
 
-The `-draft` flag can be added to the campaign create command to enable draft mode. No changesets will be created until the campaign is published or the changeset is individually published. This can be done in the campaign web interface.
+A campaign can be created as a draft either by adding the `-draft` flag to the `src campaign create` command or by selecting `Create draft` in the web UI. When a campaign is a draft, no changesets will be created until the campaign is published or the changeset is individually published. This can be done in the campaign web interface.
 
 #### Updating a campaign
 
