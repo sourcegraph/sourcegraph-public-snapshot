@@ -33,6 +33,13 @@ func TestUpdateServiceVersion(t *testing.T) {
 			Latest:   semver.MustParse("2.1.0"),
 		}},
 		{"0.3.0", nil}, // rollback
+		{"non-semantic-version-is-always-valid", nil},
+		{"1.0.0", nil}, // back to semantic version is allowed
+		{"2.1.0", &UpgradeError{
+			Service:  "service",
+			Previous: semver.MustParse("1.0.0"),
+			Latest:   semver.MustParse("2.1.0"),
+		}}, // upgrade policy violation returns
 	} {
 		have := UpdateServiceVersion(ctx, "service", tc.version)
 		want := tc.err
@@ -60,6 +67,11 @@ func TestIsValidUpgrade(t *testing.T) {
 		name:     "no previous version",
 		previous: "",
 		latest:   "v3.13.0",
+		want:     true,
+	}, {
+		name:     "no latest version",
+		previous: "v3.13.0",
+		latest:   "",
 		want:     true,
 	}, {
 		name:     "same version",

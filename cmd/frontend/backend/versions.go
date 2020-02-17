@@ -36,27 +36,17 @@ func (e UpgradeError) Error() string {
 // service. It enforces our documented upgrade policy.
 // https://docs.sourcegraph.com/#upgrading-sourcegraph
 func UpdateServiceVersion(ctx context.Context, service, version string) error {
-	latest, err := semver.NewVersion(version)
-	if err != nil {
-		return err
-	}
-
 	return dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) (err error) {
-		var v string
+		var prev string
 
 		q := sqlf.Sprintf(getVersionQuery, service)
 		row := tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err = row.Scan(&v); err != nil && err != sql.ErrNoRows {
+		if err = row.Scan(&prev); err != nil && err != sql.ErrNoRows {
 			return err
 		}
 
-		var previous *semver.Version
-		if v != "" {
-			previous, err = semver.NewVersion(v)
-			if err != nil {
-				return err
-			}
-		}
+		latest, _ := semver.NewVersion(version)
+		previous, _ := semver.NewVersion(prev)
 
 		if !IsValidUpgrade(previous, latest) {
 			return &UpgradeError{Service: service, Previous: previous, Latest: latest}
@@ -65,10 +55,11 @@ func UpdateServiceVersion(ctx context.Context, service, version string) error {
 		q = sqlf.Sprintf(
 			upsertVersionQuery,
 			service,
-			versionString(latest),
-			versionString(previous),
+			version,
 			time.Now().UTC(),
+			prev,
 		)
+
 		_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		return err
 	})
@@ -81,14 +72,7 @@ INSERT INTO versions (service, version, updated_at)
 VALUES (%s, %s, %s) ON CONFLICT (service) DO
 UPDATE SET (version, updated_at) =
 	(excluded.version, excluded.updated_at)
-WHERE version = %s`
-
-func versionString(v *semver.Version) string {
-	if v == nil {
-		return ""
-	}
-	return v.String()
-}
+WHERE versions.version = %s`
 
 // IsValidUpgrade returns true if the given previous and
 // latest versions comply with our documented upgrade policy.
@@ -97,7 +81,7 @@ func versionString(v *semver.Version) string {
 // https://docs.sourcegraph.com/#upgrading-sourcegraph
 func IsValidUpgrade(previous, latest *semver.Version) bool {
 	switch {
-	case previous == nil:
+	case previous == nil || latest == nil:
 		return true
 	case previous.Major() > latest.Major():
 		return true
