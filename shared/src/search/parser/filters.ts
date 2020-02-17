@@ -132,6 +132,10 @@ export const FILTERS: readonly FilterDefinition[] = [
         description:
             'Explicitly overrides the search pattern. Used for explicitly delineating the search pattern to search for in case of clashes.',
     },
+    {
+        aliases: ['message'],
+        description: 'Commits with messages matching a certain string',
+    },
 ]
 
 /**

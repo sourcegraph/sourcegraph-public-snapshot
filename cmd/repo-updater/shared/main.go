@@ -31,7 +31,11 @@ import (
 
 const port = "3182"
 
-func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
+// EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
+// created in Main are ready for use.
+type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory)
+
+func Main(enterpriseInit EnterpriseInit) {
 	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
 
 	ctx := context.Background()
@@ -68,10 +72,6 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
 
-	if dbInitHook != nil {
-		go dbInitHook(db)
-	}
-
 	var store repos.Store
 	{
 		m := repos.NewStoreMetrics()
@@ -96,6 +96,12 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 	}
 
 	cf := httpcli.NewExternalHTTPClientFactory()
+
+	// All dependencies ready
+	if enterpriseInit != nil {
+		enterpriseInit(db, store, cf)
+	}
+
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()
@@ -172,10 +178,6 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 		DisableStreaming: !streamingSyncer,
 		Logger:           log15.Root(),
 		Now:              clock,
-	}
-
-	if newPreSync != nil {
-		syncer.PreSync = newPreSync(db, store, cf)
 	}
 
 	if envvar.SourcegraphDotComMode() {

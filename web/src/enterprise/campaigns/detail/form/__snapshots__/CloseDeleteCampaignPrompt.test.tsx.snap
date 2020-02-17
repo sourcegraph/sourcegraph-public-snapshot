@@ -7,9 +7,10 @@ exports[`CloseDeleteCampaignPrompt renders 1`] = `
   >
     <summary>
       <span
-        className="btn btn-secondary dropdown-toggle"
+        className="btn dropdown-toggle btn-danger"
+        onClick={[Function]}
       >
-        Close
+        Delete
       </span>
     </summary>
     <div

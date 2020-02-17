@@ -24,7 +24,7 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                 exact={true}
             />
             <Route
-                path={`${match.url}/new`}
+                path={`${match.url}/(new|update)`}
                 render={props => <CampaignDetails {...outerProps} {...props} />}
                 exact={true}
             />

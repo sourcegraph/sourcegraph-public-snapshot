@@ -3,13 +3,12 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { Observable } from 'rxjs'
-import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 
-export const queryCampaigns = ({ first }: FilteredConnectionQueryArgs): Observable<GQL.ICampaignConnection> =>
+export const queryCampaigns = ({ first, state }: GQL.ICampaignsOnQueryArguments): Observable<GQL.ICampaignConnection> =>
     queryGraphQL(
         gql`
-            query Campaigns($first: Int) {
-                campaigns(first: $first) {
+            query Campaigns($first: Int, $state: CampaignState) {
+                campaigns(first: $first, state: $state) {
                     nodes {
                         id
                         name
@@ -31,7 +30,7 @@ export const queryCampaigns = ({ first }: FilteredConnectionQueryArgs): Observab
                 }
             }
         `,
-        { first }
+        { first, state }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.campaigns)
