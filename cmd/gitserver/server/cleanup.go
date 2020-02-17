@@ -18,6 +18,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -90,6 +92,11 @@ func (s *Server) cleanupRepos() {
 		// Add a jitter to spread out recloning of repos cloned at the same
 		// time.
 		var reason string
+		if maybeCorrupt, _ := gitConfigGet(dir, "sourcegraph.maybeCorruptRepo"); maybeCorrupt != "" {
+			reason = "maybeCorrupt"
+			// unset flag to stop constantly recloning if it fails.
+			_ = gitConfigUnset(dir, "sourcegraph.maybeCorruptRepo")
+		}
 		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
 			reason = "old"
 		}
@@ -598,10 +605,9 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 
 // setRecloneTime sets the time a repository is cloned.
 func setRecloneTime(dir GitDir, now time.Time) error {
-	cmd := exec.Command("git", "config", "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
-	cmd.Dir = string(dir)
-	if _, err := cmd.Output(); err != nil {
-		return errors.Wrap(wrapCmdError(cmd, err), "failed to update recloneTimestamp")
+	err := gitConfigSet(dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
+	if err != nil {
+		return errors.Wrap(err, "failed to update recloneTimestamp")
 	}
 	return nil
 }
@@ -618,18 +624,15 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 		return now, setRecloneTime(dir, now)
 	}
 
-	cmd := exec.Command("git", "config", "--get", "sourcegraph.recloneTimestamp")
-	cmd.Dir = string(dir)
-	out, err := cmd.Output()
+	value, err := gitConfigGet(dir, "sourcegraph.recloneTimestamp")
 	if err != nil {
-		// Exit code 1 means the key is not set.
-		if ee, ok := err.(*exec.ExitError); ok && ee.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
-			return update()
-		}
-		return time.Unix(0, 0), errors.Wrap(wrapCmdError(cmd, err), "failed to determine clone timestamp")
+		return time.Unix(0, 0), errors.Wrap(err, "failed to determine clone timestamp")
+	}
+	if value == "" {
+		return update()
 	}
 
-	sec, err := strconv.ParseInt(strings.TrimSpace(string(out)), 10, 0)
+	sec, err := strconv.ParseInt(strings.TrimSpace(value), 10, 0)
 	if err != nil {
 		// If the value is bad update it to the current time
 		now, err2 := update()
@@ -640,6 +643,66 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	}
 
 	return time.Unix(sec, 0), nil
+}
+
+// maybeCorruptStderrRe matches stderr lines from git which indicate there
+// might be repository corruption.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
+// context.
+var maybeCorruptStderrRe = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
+
+func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
+	if !maybeCorruptStderrRe.MatchString(stderr) {
+		return
+	}
+
+	log15.Warn("marking repo for recloning due to stderr output indicating repo corruption", "repo", repo, "stderr", stderr)
+
+	// We set a flag in the config for the cleanup janitor job to fix. The
+	// janitor runs every minute.
+	err := gitConfigSet(dir, "sourcegraph.maybeCorruptRepo", strconv.FormatInt(time.Now().Unix(), 10))
+	if err != nil {
+		log15.Error("failed to set maybeCorruptRepo config", repo, "repo", "error", err)
+	}
+}
+
+func gitConfigGet(dir GitDir, key string) (string, error) {
+	cmd := exec.Command("git", "config", "--get", key)
+	cmd.Dir = string(dir)
+	out, err := cmd.Output()
+	if err != nil {
+		// Exit code 1 means the key is not set.
+		if ee, ok := err.(*exec.ExitError); ok && ee.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
+			return "", nil
+		}
+		return "", errors.Wrapf(wrapCmdError(cmd, err), "failed to get git config %s", key)
+	}
+	return string(out), nil
+}
+
+func gitConfigSet(dir GitDir, key, value string) error {
+	cmd := exec.Command("git", "config", key, value)
+	cmd.Dir = string(dir)
+	err := cmd.Run()
+	if err != nil {
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to set git config %s", key)
+	}
+	return nil
+}
+
+func gitConfigUnset(dir GitDir, key string) error {
+	cmd := exec.Command("git", "config", "--unset-all", key)
+	cmd.Dir = string(dir)
+	err := cmd.Run()
+	if err != nil {
+		// Exit code 5 means the key is not set.
+		if ee, ok := err.(*exec.ExitError); ok && ee.Sys().(syscall.WaitStatus).ExitStatus() == 5 {
+			return nil
+		}
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to unset git config %s", key)
+	}
+	return nil
 }
 
 // jitterDuration returns a duration between [0, d) based on key. This is like
