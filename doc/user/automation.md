@@ -167,13 +167,13 @@ $ src campaigns create -plan=Q2FtcGFpZ25QbGFuOjg= -branch=my-first-campaign
 
 ##### Drafting
 
-The `-draft` flag can be added to the campaign create command.  
+The `-draft` flag can be added to the campaign create command to enable draft mode. No changesets will be created until the campaign is published or the changeset is individually published. This can be done in the campaign web interface.
 
 #### Updating a campaign
 
 There is also the option of applying the campaign plan to an existing campaign. Following the creation of the campaign plan, an URL will be printed that will guide you to the web interface. 
 
-On this page, click "Preview" for the campaign that will be updated. From there, the delta of existing and new changesets will be displayed. Click "Update" to finalize these changes.
+On this page, click "Preview" for the campaign that will be updated. From there, the delta of existing and new changesets will be displayed. Click "Update" to finalize these proposed changes.
 
 ## Example: Add a GitHub action to upload LSIF data to Sourcegraph
 
