@@ -1293,8 +1293,8 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 
 	configRemoteOpts := true
 	var cmd *exec.Cmd
-	if useCustomFetch() {
-		cmd = customFetchCmd(ctx)
+	if customCmd := customFetchCmd(ctx, url); customCmd != nil {
+		cmd = customCmd
 		configRemoteOpts = false
 	} else if useRefspecOverrides() {
 		cmd = refspecOverridesFetchCmd(ctx, url)
