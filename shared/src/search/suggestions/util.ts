@@ -18,6 +18,7 @@ export enum SuggestionTypes {
     after = 'after',
     author = 'author',
     message = 'message',
+    content = 'content',
 }
 
 export const suggestionTypeKeys: SuggestionTypes[] = Object.keys(SuggestionTypes) as SuggestionTypes[]

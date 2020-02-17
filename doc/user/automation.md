@@ -165,6 +165,18 @@ If you have `$EDITOR` configured you can use the configured editor to edit the n
 $ src campaigns create -plan=Q2FtcGFpZ25QbGFuOjg= -branch=my-first-campaign
 ```
 
+##### Drafting
+
+A campaign can be created as a draft either by adding the `-draft` flag to the `src campaign create` command or by selecting `Create draft` in the web UI. When a campaign is a draft, no changesets will be created until the campaign is published or the changeset is individually published. This can be done in the campaign web interface.
+
+#### Updating a campaign
+
+There is also the option of applying a new campaign plan to an existing campaign. Following the creation of the campaign plan with the `src campaign plan create-from-patches` command, an URL will be printed that will guide you to the web interface that allows you to change an existing campaign's campaign plan.
+
+On this page, click "Preview" for the campaign that will be updated. From there, the delta of existing and new changesets will be displayed. Click "Update" to finalize these proposed changes.
+
+Edits to the name and description of a campaign can also be made on the web interface. These changes are then reflected in the changesets by updating them the code hosts. The branch of a draft campaign with a plan can also be edited, but only as long as the campaign doesn't contain any published changesets.
+
 ## Example: Add a GitHub action to upload LSIF data to Sourcegraph
 
 Our goal for this campaign is to add a GitHub Action that generates and uploads LSIF data to Sourcegraph by adding a `.github/workflows/lsif.yml` file to each repository that doesn't have it yet.
