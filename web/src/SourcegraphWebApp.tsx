@@ -55,6 +55,8 @@ import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
+import { generateFiltersQuery } from '../../shared/src/util/url'
+import { NotificationType } from '../../shared/src/api/client/services/notifications'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -136,6 +138,14 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether to display the MonacoQueryInput search field.
      */
     smartSearchField: boolean
+}
+
+const notificationClassNames = {
+    [NotificationType.Log]: 'alert alert-secondary',
+    [NotificationType.Success]: 'alert alert-success',
+    [NotificationType.Info]: 'alert alert-info',
+    [NotificationType.Warning]: 'alert alert-warning',
+    [NotificationType.Error]: 'alert alert-error',
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -245,9 +255,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.subscriptions.add(
             from(this.platformContext.settings).subscribe(settingsCascade => {
                 if (!parseSearchURLPatternType(window.location.search)) {
-                    // When the web app mounts, if there is no patternType parameter in the URL,
-                    // set the search pattern type to the default based on settings, if it is set.
-                    // Otherwise, default to literal.
+                    // When the web app mounts, if the current page does not have a patternType URL
+                    // parameter, set the search pattern type to the defaultPatternType from settings
+                    // (if it is set), otherwise default to literal.
+                    //
+                    // For search result URLs that have no patternType= query parameter,
+                    // the `SearchResults` component will append &patternType=regexp
+                    // to the URL to ensure legacy search links continue to work.
                     const defaultPatternType =
                         settingsCascade.final &&
                         !isErrorLike(settingsCascade.final) &&
@@ -264,7 +278,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             from(this.platformContext.settings).subscribe(settingsCascade => {
                 if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
                     const { splitSearchModes, smartSearchField } = settingsCascade.final.experimentalFeatures || {}
-                    this.setState({ splitSearchModes, smartSearchField })
+                    this.setState({ splitSearchModes: splitSearchModes !== false, smartSearchField })
                 }
             })
         )
@@ -297,9 +311,19 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     private toggleSearchMode = (event: React.MouseEvent<HTMLAnchorElement>): void => {
         event.preventDefault()
         localStorage.setItem(SEARCH_MODE_KEY, this.state.interactiveSearchMode ? 'omni' : 'interactive')
-        this.setState(state => ({
-            interactiveSearchMode: !state.interactiveSearchMode,
-        }))
+        if (this.state.interactiveSearchMode) {
+            const queries = [this.state.navbarSearchQueryState.query, generateFiltersQuery(this.state.filtersInQuery)]
+            const newQuery = queries.filter(query => query.length > 0).join(' ')
+
+            this.setState(state => ({
+                interactiveSearchMode: !state.interactiveSearchMode,
+                navbarSearchQueryState: { query: newQuery, cursorPosition: newQuery.length },
+            }))
+        } else {
+            this.setState(state => ({
+                interactiveSearchMode: !state.interactiveSearchMode,
+            }))
+        }
     }
 
     public render(): React.ReactFragment | null {
@@ -353,7 +377,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                         window.context.experimentalFeatures.automation === 'enabled' &&
                                         !window.context.sourcegraphDotComMode &&
                                         !!authenticatedUser &&
-                                        authenticatedUser.siteAdmin
+                                        (authenticatedUser.siteAdmin ||
+                                            !!window.context.site['automation.readAccess.enabled'])
                                     }
                                     // Theme
                                     isLightTheme={this.isLightTheme()}
@@ -385,7 +410,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         {/* eslint-enable react/jsx-no-bind */}
                     </BrowserRouter>
                     <Tooltip key={1} />
-                    <Notifications key={2} extensionsController={this.extensionsController} />
+                    <Notifications
+                        key={2}
+                        extensionsController={this.extensionsController}
+                        notificationClassNames={notificationClassNames}
+                    />
                 </ShortcutProvider>
             </ErrorBoundary>
         )

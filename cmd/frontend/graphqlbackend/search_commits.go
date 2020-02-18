@@ -265,7 +265,7 @@ func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (resul
 		if !op.Diff {
 			var patString string
 			if len(op.ExtraMessageValues) > 0 {
-				patString = regexpPatternMatchingExprsInOrder(op.ExtraMessageValues)
+				patString = orderedFuzzyRegexp(op.ExtraMessageValues)
 				if !op.Query.IsCaseSensitive() {
 					patString = "(?i:" + patString + ")"
 				}
@@ -579,7 +579,9 @@ func expandUsernamesToEmails(ctx context.Context, values []string) (expandedValu
 		} else if err != nil {
 			return nil, err
 		}
-		emails, err := db.UserEmails.ListByUser(ctx, user.ID)
+		emails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+			UserID: user.ID,
+		})
 		if err != nil {
 			return nil, err
 		}

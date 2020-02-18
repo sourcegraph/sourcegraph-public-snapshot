@@ -83,11 +83,9 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             Upload for commit{' '}
                             {uploadOrError.projectRoot
                                 ? uploadOrError.projectRoot.commit.abbreviatedOID
-                                : uploadOrError.inputCommit.substring(0, 7)}
-                            {uploadOrError.inputRoot !== '' &&
-                                ` rooted at ${
-                                    uploadOrError.projectRoot ? uploadOrError.projectRoot.path : uploadOrError.inputRoot
-                                }`}
+                                : uploadOrError.inputCommit.substring(0, 7)}{' '}
+                            indexed by {uploadOrError.inputIndexer} rooted at{' '}
+                            {uploadOrError.projectRoot?.path || uploadOrError.inputRoot || '/'}
                         </h2>
                     </div>
 
@@ -156,7 +154,25 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             </tr>
 
                             <tr>
-                                <td>Queued</td>
+                                <td>Indexer</td>
+                                <td>{uploadOrError.inputIndexer}</td>
+                            </tr>
+
+                            <tr>
+                                <td>Is latest for repo</td>
+                                <td>
+                                    {uploadOrError.finishedAt ? (
+                                        <span className="e2e-is-latest-for-repo">
+                                            {uploadOrError.isLatestForRepo ? 'yes' : 'no'}
+                                        </span>
+                                    ) : (
+                                        <span className="text-muted">Upload has not yet completed.</span>
+                                    )}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>Uploaded</td>
                                 <td>
                                     <Timestamp date={uploadOrError.uploadedAt} noAbout={true} />
                                 </td>

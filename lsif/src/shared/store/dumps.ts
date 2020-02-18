@@ -1,12 +1,13 @@
+import { uniq } from 'lodash'
 import * as sharedMetrics from '../database/metrics'
 import * as pgModels from '../models/pg'
 import { getCommitsNear, getHead } from '../gitserver/gitserver'
 import { Brackets, Connection, EntityManager } from 'typeorm'
-import { dbFilename, tryDeleteFile } from '../paths'
 import { logAndTraceCall, TracingContext } from '../tracing'
 import { instrumentQuery, instrumentQueryOrTransaction, withInstrumentedTransaction } from '../database/postgres'
 import { TableInserter } from '../database/inserter'
-import { visibleDumps, lineageWithDumps, ancestorLineage, bidirectionalLineage } from '../models/queries'
+import { visibleDumps, ancestorLineage, bidirectionalLineage } from '../models/queries'
+import { isDefined } from '../util'
 
 /**
  * The insertion metrics for Postgres.
@@ -24,9 +25,8 @@ export class DumpManager {
      * Create a new `DumpManager` backed by the given database connection.
      *
      * @param connection The Postgres connection.
-     * @param storageRoot The path where SQLite databases are stored.
      */
-    constructor(private connection: Connection, private storageRoot: string) {}
+    constructor(private connection: Connection) {}
 
     /**
      * Find the dump for the given repository and commit.
@@ -117,19 +117,21 @@ export class DumpManager {
      * Return the dump 'closest' to the given target commit (a direct descendant or ancestor of
      * the target commit). If no closest commit can be determined, this method returns undefined.
      *
+     * This method returns dumps ordered by commit distance (nearest first).
+     *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
      * @param file One of the files in the dump.
      * @param ctx The tracing context.
      * @param frontendUrl The url of the frontend internal API.
      */
-    public async findClosestDump(
+    public async findClosestDumps(
         repositoryId: number,
         commit: string,
         file: string,
         ctx: TracingContext = {},
         frontendUrl?: string
-    ): Promise<pgModels.LsifDump | undefined> {
+    ): Promise<pgModels.LsifDump[]> {
         // Request updated commit data from gitserver if this commit isn't already
         // tracked. This will pull back ancestors for this commit up to a certain
         // (configurable) depth and insert them into the database. This populates
@@ -146,20 +148,31 @@ export class DumpManager {
             const query = `
                 WITH
                 ${bidirectionalLineage()},
-                ${lineageWithDumps()}
+                ${visibleDumps()}
 
                 SELECT d.dump_id FROM lineage_with_dumps d
-                WHERE $3 LIKE (d.root || '%')
-                ORDER BY d.n LIMIT 1
+                WHERE $3 LIKE (d.root || '%') AND d.dump_id IN (SELECT * FROM visible_ids)
+                ORDER BY d.n
             `
 
             return withInstrumentedTransaction(this.connection, async entityManager => {
                 const results: { dump_id: number }[] = await entityManager.query(query, [repositoryId, commit, file])
-                if (results.length > 0) {
-                    return entityManager.getRepository(pgModels.LsifDump).findOne(results[0].dump_id)
+                const dumpIds = results.map(({ dump_id }) => dump_id)
+                if (dumpIds.length === 0) {
+                    return []
                 }
 
-                return undefined
+                const uniqueDumpIds = uniq(dumpIds)
+
+                const dumps = await entityManager
+                    .getRepository(pgModels.LsifDump)
+                    .createQueryBuilder()
+                    .select()
+                    .where('id IN (:...ids)', { ids: uniqueDumpIds })
+                    .getMany()
+
+                const dumpByID = new Map(dumps.map(dump => [dump.id, dump]))
+                return uniqueDumpIds.map(id => dumpByID.get(id)).filter(isDefined)
             })
         })
     }
@@ -169,9 +182,9 @@ export class DumpManager {
      * `visible_at_tip` flags. Unset the flag for each invisible dump for this repository.
      * This will traverse all ancestor commits but not descendants, as the given commit
      * is assumed to be the tip of the default branch. For each dump that is filtered out
-     * of the set of results, there must be a dump with a smaller depth from the given commit
-     * that has a root that overlaps with the filtered dump. The other such dump is
-     * necessarily a dump associated with a closer commit for the same root.
+     * of the set of results, there must be a dump with a smaller depth from the given
+     * commit that has a root that overlaps with the filtered dump. The other such dump
+     * is necessarily a dump associated with a closer commit for the same root.
      *
      * @param repositoryId The repository identifier.
      * @param commit The head of the default branch.
@@ -305,12 +318,13 @@ export class DumpManager {
     }
 
     /**
-     * Delete existing dumps from the same repo@commit that overlap with the current root
-     * (where the existing root is a prefix of the current root, or vice versa).
+     * Delete existing dumps from the same repo@commit and indexer that overlap with the
+     * current root (where the existing root is a prefix of the current root, or vice versa).
      *
      * @param repositoryId The repository identifier.
      * @param commit The commit.
-     * @param root The root of all files that are in this dump.
+     * @param root The root of all files that are in the dump.
+     * @param indexer The indexer used to produce the dump.
      * @param ctx The tracing context.
      * @param entityManager The EntityManager to use as part of a transaction.
      */
@@ -318,6 +332,7 @@ export class DumpManager {
         repositoryId: number,
         commit: string,
         root: string,
+        indexer: string | undefined,
         ctx: TracingContext = {},
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<void> {
@@ -327,7 +342,7 @@ export class DumpManager {
                     .getRepository(pgModels.LsifUpload)
                     .createQueryBuilder()
                     .delete()
-                    .where({ repositoryId, commit, state: 'completed' })
+                    .where({ repositoryId, commit, indexer, state: 'completed' })
                     .andWhere(
                         new Brackets(qb =>
                             qb.where(":root LIKE (root || '%')", { root }).orWhere("root LIKE (:root || '%')", { root })
@@ -349,15 +364,11 @@ export class DumpManager {
         dump: pgModels.LsifDump,
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<void> {
-        // Delete the SQLite file on disk (ignore errors if the file doesn't exist)
-        const path = dbFilename(this.storageRoot, dump.id)
-        await tryDeleteFile(path)
-
-        // Delete the dump record. Do this AFTER the file is deleted because the retention
-        // policy scans the database for deletion candidates, and we don't want to get into
-        // the situation where the row is gone and the file is there. In this case, we don't
-        // have any process to tell us that the file is okay to delete and will be orphaned
-        // on disk forever.
+        // Do not delete the file on disk directly in case we are part of a larger transaction.
+        // We can afford to wait for the cleanup task to determine that the file is orphaned
+        // when it cannot find a matching row in the database. For more context, see the
+        // `removeDeadDumps` function performed at the start of the `purgeOldDumps` task that
+        // is run on a schedule in the server context.
 
         await entityManager.getRepository(pgModels.LsifDump).delete(dump.id)
     }

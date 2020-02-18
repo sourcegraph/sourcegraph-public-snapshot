@@ -44,6 +44,8 @@ export function registerHighlightContributions(): void {
     registerLanguage('yaml', require('highlight.js/lib/languages/yaml'))
     registerLanguage('kotlin', require('highlight.js/lib/languages/kotlin'))
     registerLanguage('dart', require('highlight.js/lib/languages/dart'))
+    registerLanguage('perl', require('highlight.js/lib/languages/perl'))
+    registerLanguage('scala', require('highlight.js/lib/languages/scala'))
     /* eslint-enable @typescript-eslint/no-require-imports */
     /* eslint-enable @typescript-eslint/no-var-requires */
 }

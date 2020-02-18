@@ -32,5 +32,9 @@ COPY --from=builder /dashboards/*.json /sg_config_grafana/provisioning/dashboard
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana entry.sh /
 
+USER root
+# hadolint ignore=DL3018
+RUN apk add --no-cache curl
+
 USER grafana
 ENTRYPOINT ["/entry.sh"]

@@ -39,6 +39,10 @@ func (r *lsifUploadResolver) InputRoot() string {
 	return r.lsifUpload.Root
 }
 
+func (r *lsifUploadResolver) InputIndexer() string {
+	return r.lsifUpload.Indexer
+}
+
 func (r *lsifUploadResolver) State() string {
 	return strings.ToUpper(r.lsifUpload.State)
 }

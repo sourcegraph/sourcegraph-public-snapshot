@@ -6,6 +6,7 @@ import {
     IFileDiff,
     IPreviewFileDiff,
     ChangesetState,
+    ChangesetCheckState,
 } from '../../../../../../shared/src/graphql/schema'
 import React, { useState } from 'react'
 import {
@@ -14,6 +15,9 @@ import {
     changesetStageLabels,
     changesetStatusColorClasses,
     changesetStateIcons,
+    changesetCheckStateIcons,
+    changesetCheckStateColors,
+    changesetCheckStateTooltips,
 } from './presentation'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
@@ -28,10 +32,11 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Subject } from 'rxjs'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import { asError } from '../../../../../../shared/src/util/errors'
+import { ChangesetLabel } from './ChangesetLabel'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
-    campaignUpdates: Subject<void>
+    campaignUpdates?: Subject<void>
     history: H.History
     location: H.Location
     /** Shows the publish button for ChangesetPlans */
@@ -53,7 +58,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             setPublishError(undefined)
             setIsLoading(true)
             await _publishChangeset(node.id)
-            campaignUpdates.next()
+            if (campaignUpdates) {
+                campaignUpdates.next()
+            }
         } catch (error) {
             setPublishError(asError(error))
         } finally {
@@ -70,6 +77,10 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         node.__typename === 'ExternalChangeset'
             ? changesetReviewStateIcons[node.reviewState]
             : changesetReviewStateIcons[ChangesetReviewState.PENDING]
+    const ChangesetCheckStateIcon =
+        node.__typename === 'ExternalChangeset' && node.checkState
+            ? changesetCheckStateIcons[node.checkState]
+            : changesetCheckStateIcons[ChangesetCheckState.PENDING]
     const changesetState = node.__typename === 'ExternalChangeset' ? node.state : ChangesetState.OPEN
     const changesetNodeRow = (
         <div className="d-flex align-items-center m-1">
@@ -91,7 +102,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     />
                 </div>
             )}
-            <div className="campaign-node__content flex-fill">
+            <div className="changeset-node__content flex-fill">
                 <h3 className="m-0">
                     <Link to={node.repository.url} className="text-muted" target="_blank" rel="noopener noreferrer">
                         {node.repository.name}
@@ -114,6 +125,13 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             >
                                 {node.title}
                             </LinkOrSpan>
+                            {node.labels.length > 0 && (
+                                <span className="ml-2">
+                                    {node.labels.map(label => (
+                                        <ChangesetLabel label={label} key={label.text} />
+                                    ))}
+                                </span>
+                            )}
                         </>
                     )}
                 </h3>
@@ -129,6 +147,14 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <DiffStat {...fileDiffs.diffStat} expandedCounts={true}></DiffStat>
                 </span>
             )}
+            <span className="ml-1 changeset-node__check-status d-flex justify-content-end">
+                {node.__typename === 'ExternalChangeset' && node.checkState && (
+                    <ChangesetCheckStateIcon
+                        className={changesetCheckStateColors[node.checkState]}
+                        data-tooltip={changesetCheckStateTooltips[node.checkState]}
+                    />
+                )}
+            </span>
             {enablePublishing && node.__typename === 'ChangesetPlan' && !node.publicationEnqueued && (
                 <>
                     {publishError && <ErrorIcon data-tooltip={publishError.message} className="ml-2" />}
@@ -148,7 +174,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         <li className="list-group-item e2e-changeset-node">
             {fileDiffNodes ? (
                 <Collapsible
-                    titleClassName="campaign-node__content flex-fill"
+                    titleClassName="changeset-node__content flex-fill"
                     title={changesetNodeRow}
                     wholeTitleClickable={false}
                 >
@@ -165,7 +191,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     ))}
                 </Collapsible>
             ) : (
-                <div className="campaign-node__content flex-fill">{changesetNodeRow}</div>
+                <div className="changeset-node__content changeset-node__content--no-collapse flex-fill">
+                    {changesetNodeRow}
+                </div>
             )}
         </li>
     )

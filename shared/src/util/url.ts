@@ -1,14 +1,9 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
-import {
-    FiltersToTypeAndValue,
-    filterTypeKeys,
-    negatedFilters,
-    NegatedFilters,
-    isNegatableFilter,
-} from '../search/interactive/util'
+import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
+import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 
 export interface RepoSpec {
     /**
@@ -536,32 +531,34 @@ export function buildSearchURLQuery(
     caseSensitive: boolean,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
-    let searchParams = new URLSearchParams()
+    const searchParams = new URLSearchParams()
+    let fullQuery = query
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        searchParams = interactiveBuildSearchURLQuery(filtersInQuery)
+        fullQuery = [fullQuery, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
     }
 
-    const patternTypeInQuery = parsePatternTypeFromQuery(query)
+    const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-        const newQuery = query.replace(patternTypeRegexp, '')
+        const newQuery = fullQuery.replace(
+            query.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
+            ''
+        )
         searchParams.set('q', newQuery)
-        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
-        query = newQuery
+        searchParams.set('patternType', patternTypeInQuery.value)
+        fullQuery = newQuery
     } else {
-        searchParams.set('q', query)
+        searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternType)
     }
 
-    const caseInQuery = parseCaseSensitivityFromQuery(query)
+    const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
     if (caseInQuery) {
-        const caseRegexp = /\bcase:(?<type>yes|no)\b/i
-        const newQuery = query.replace(caseRegexp, '')
+        const newQuery = fullQuery.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
         searchParams.set('q', newQuery)
 
-        if (caseInQuery === 'yes') {
-            searchParams.set('case', caseInQuery)
+        if (caseInQuery.value === 'yes') {
+            searchParams.set('case', caseInQuery.value)
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
             // queries breaking when only `repo:` filters are specified.
@@ -570,9 +567,9 @@ export function buildSearchURLQuery(
             searchParams.delete('case')
         }
 
-        query = newQuery
+        fullQuery = newQuery
     } else {
-        searchParams.set('q', query)
+        searchParams.set('q', fullQuery)
         if (caseSensitive) {
             searchParams.set('case', 'yes')
         } else {
@@ -591,45 +588,51 @@ export function buildSearchURLQuery(
 }
 
 /**
- * Builds a URL query for a given interactive mode query (without leading `?`).
- * Returns a URLSearchParams object containing the filters and values in the
- * search query.
+ * Creates the raw string representation of the filters currently in the query in interactive mode.
  *
- * @param filtersInQuery the map representing the filters added to the query
+ * @param filtersInQuery the map representing the filters currently in an interactive mode query.
  */
-export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
-    const searchParams = new URLSearchParams()
-
-    for (const searchType of [...filterTypeKeys, ...negatedFilters]) {
-        for (const [, filterValue] of Object.entries(filtersInQuery)) {
-            if (filterValue.type === searchType) {
-                if (filterValue.negated) {
-                    if (isNegatableFilter(searchType)) {
-                        searchParams.append(NegatedFilters[searchType], filterValue.value)
-                    }
-                    continue
-                }
-                searchParams.append(searchType, filterValue.value)
-            }
-        }
-    }
-
-    return searchParams
+export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
+    const fieldKeys = Object.keys(filtersInQuery)
+    return fieldKeys
+        .filter(key => filtersInQuery[key].value.trim().length > 0)
+        .map(key => `${filtersInQuery[key].negated ? '-' : ''}${filtersInQuery[key].type}:${filtersInQuery[key].value}`)
+        .join(' ')
 }
 
-function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
-    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
-    const matches = query.match(patternTypeRegexp)
-    if (matches?.groups?.type) {
-        return matches.groups.type as SearchPatternType
+function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (
+                token.type === 'filter' &&
+                token.filterType.token.value.toLowerCase() === 'patterntype' &&
+                token.filterValue
+            ) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
     }
 
     return undefined
 }
 
-function parseCaseSensitivityFromQuery(query: string): string | undefined {
-    const caseRegexp = /\bcase:(?<option>yes|no)\b/i
-    const matches = query.match(caseRegexp)
-
-    return matches?.groups?.option
+function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (token.type === 'filter' && token.filterType.token.value.toLowerCase() === 'case' && token.filterValue) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
+    }
+    return undefined
 }

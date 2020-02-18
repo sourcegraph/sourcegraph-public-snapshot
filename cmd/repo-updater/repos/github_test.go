@@ -61,8 +61,8 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			cs: &Changeset{
 				Title:     "This is a test PR",
 				Body:      "This is the description of the test PR",
-				HeadRef:   "heads/refs/always-open-pr",
-				BaseRef:   "heads/refs/master",
+				HeadRef:   "refs/heads/always-open-pr",
+				BaseRef:   "refs/heads/master",
 				Repo:      repo,
 				Changeset: &a8n.Changeset{},
 			},
@@ -74,7 +74,8 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "GithubSource_CreateChangeset_" + tc.name
+
+		tc.name = "GithubSource_CreateChangeset_" + strings.Replace(tc.name, " ", "_", -1)
 
 		t.Run(tc.name, func(t *testing.T) {
 			// The GithubSource uses the github.Client under the hood, which

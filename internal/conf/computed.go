@@ -211,6 +211,13 @@ func SymbolIndexEnabled() bool {
 	return enabled
 }
 
+func AutomationReadAccessEnabled() bool {
+	if v := Get().AutomationReadAccessEnabled; v != nil {
+		return *v
+	}
+	return false
+}
+
 func UsingExternalURL() bool {
 	url := Get().ExternalURL
 	return !(url == "" || strings.HasPrefix(url, "http://localhost") || strings.HasPrefix(url, "https://localhost") || strings.HasPrefix(url, "http://127.0.0.1") || strings.HasPrefix(url, "https://127.0.0.1")) // CI:LOCALHOST_OK
@@ -293,4 +300,14 @@ func ExperimentalFeatures() schema.ExperimentalFeatures {
 		return schema.ExperimentalFeatures{}
 	}
 	return *val
+}
+
+// AuthMinPasswordLength returns the value of minimum password length requirement.
+// If not set, it returns the default value 12.
+func AuthMinPasswordLength() int {
+	val := Get().AuthMinPasswordLength
+	if val <= 0 {
+		return 12
+	}
+	return val
 }

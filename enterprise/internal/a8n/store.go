@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -107,6 +108,7 @@ RETURNING j.id,
   j.campaign_id,
   j.campaign_job_id,
   j.changeset_id,
+  j.branch,
   j.error,
   j.started_at,
   j.finished_at,
@@ -313,6 +315,7 @@ WITH batch AS (
       campaign_ids          jsonb,
       external_id           text,
       external_service_type text,
+      external_branch       text,
       external_deleted_at   timestamptz
     )
   )
@@ -331,6 +334,7 @@ changed AS (
     campaign_ids,
     external_id,
     external_service_type,
+    external_branch,
 	external_deleted_at
   )
   SELECT
@@ -341,6 +345,7 @@ changed AS (
     campaign_ids,
     external_id,
     external_service_type,
+    external_branch,
 	external_deleted_at
   FROM batch
   ON CONFLICT ON CONSTRAINT
@@ -360,6 +365,7 @@ SELECT
   COALESCE(changed.campaign_ids, existing.campaign_ids) AS campaign_ids,
   COALESCE(changed.external_id, existing.external_id) AS external_id,
   COALESCE(changed.external_service_type, existing.external_service_type) AS external_service_type,
+  COALESCE(changed.external_branch, existing.external_branch) AS external_branch,
   COALESCE(changed.external_deleted_at, existing.external_deleted_at) AS external_deleted_at
 FROM changed
 RIGHT JOIN batch ON batch.repo_id = changed.repo_id
@@ -386,13 +392,14 @@ func (s *Store) createChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, error) {
 	type record struct {
 		ID                  int64           `json:"id"`
-		RepoID              int32           `json:"repo_id"`
+		RepoID              api.RepoID      `json:"repo_id"`
 		CreatedAt           time.Time       `json:"created_at"`
 		UpdatedAt           time.Time       `json:"updated_at"`
 		Metadata            json.RawMessage `json:"metadata"`
 		CampaignIDs         json.RawMessage `json:"campaign_ids"`
 		ExternalID          string          `json:"external_id"`
 		ExternalServiceType string          `json:"external_service_type"`
+		ExternalBranch      string          `json:"external_branch"`
 		ExternalDeletedAt   *time.Time      `json:"external_deleted_at"`
 	}
 
@@ -418,6 +425,7 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 			CampaignIDs:         campaignIDs,
 			ExternalID:          c.ExternalID,
 			ExternalServiceType: c.ExternalServiceType,
+			ExternalBranch:      c.ExternalBranch,
 			ExternalDeletedAt:   nullTimeColumn(c.ExternalDeletedAt),
 		})
 	}
@@ -505,6 +513,7 @@ SELECT
   campaign_ids,
   external_id,
   external_service_type,
+  external_branch,
   external_deleted_at
 FROM changesets
 WHERE %s
@@ -574,6 +583,7 @@ SELECT
   campaign_ids,
   external_id,
   external_service_type,
+  external_branch,
   external_deleted_at
 FROM changesets
 WHERE %s
@@ -648,6 +658,7 @@ changed AS (
     campaign_ids          = batch.campaign_ids,
     external_id           = batch.external_id,
     external_service_type = batch.external_service_type,
+    external_branch       = batch.external_branch,
 	external_deleted_at   = batch.external_deleted_at
   FROM batch
   WHERE changesets.id = batch.id
@@ -665,6 +676,7 @@ SELECT
   changed.campaign_ids,
   changed.external_id,
   changed.external_service_type,
+  changed.external_branch,
   changed.external_deleted_at
 FROM changed
 LEFT JOIN batch ON batch.repo_id = changed.repo_id
@@ -1004,6 +1016,7 @@ var createCampaignQueryFmtstr = `
 INSERT INTO campaigns (
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1011,14 +1024,14 @@ INSERT INTO campaigns (
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1026,8 +1039,7 @@ RETURNING
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 `
 
 func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -1048,6 +1060,7 @@ func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		createCampaignQueryFmtstr,
 		c.Name,
 		c.Description,
+		c.Branch,
 		c.AuthorID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
@@ -1056,7 +1069,6 @@ func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		changesetIDs,
 		nullInt64Column(c.CampaignPlanID),
 		nullTimeColumn(c.ClosedAt),
-		nullTimeColumn(c.PublishedAt),
 	), nil
 }
 
@@ -1107,20 +1119,21 @@ UPDATE campaigns
 SET (
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 ) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1128,8 +1141,7 @@ RETURNING
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 `
 
 func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -1144,6 +1156,7 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		updateCampaignQueryFmtstr,
 		c.Name,
 		c.Description,
+		c.Branch,
 		c.AuthorID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
@@ -1151,7 +1164,6 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		changesetIDs,
 		nullInt64Column(c.CampaignPlanID),
 		nullTimeColumn(c.ClosedAt),
-		nullTimeColumn(c.PublishedAt),
 		c.ID,
 	), nil
 }
@@ -1176,6 +1188,7 @@ DELETE FROM campaigns WHERE id = %s
 // counting campaigns.
 type CountCampaignsOpts struct {
 	ChangesetID int64
+	State       a8n.CampaignState
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -1198,6 +1211,13 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ChangesetID != 0 {
 		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
+	}
+
+	switch opts.State {
+	case a8n.CampaignStateOpen:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
+	case a8n.CampaignStateClosed:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
 	if len(preds) == 0 {
@@ -1238,6 +1258,7 @@ SELECT
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1245,8 +1266,7 @@ SELECT
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 FROM campaigns
 WHERE %s
 LIMIT 1
@@ -1275,6 +1295,7 @@ type ListCampaignsOpts struct {
 	ChangesetID int64
 	Cursor      int64
 	Limit       int
+	State       a8n.CampaignState
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -1305,6 +1326,7 @@ SELECT
   id,
   name,
   description,
+  branch,
   author_id,
   namespace_user_id,
   namespace_org_id,
@@ -1312,8 +1334,7 @@ SELECT
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at,
-  published_at
+  closed_at
 FROM campaigns
 WHERE %s
 ORDER BY id ASC
@@ -1332,6 +1353,13 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 
 	if opts.ChangesetID != 0 {
 		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
+	}
+
+	switch opts.State {
+	case a8n.CampaignStateOpen:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
+	case a8n.CampaignStateClosed:
+		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
 	return sqlf.Sprintf(
@@ -1361,16 +1389,18 @@ INSERT INTO campaign_plans (
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 )
-VALUES (%s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_type,
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 `
 
 func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
@@ -1394,6 +1424,7 @@ func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		nullTimeColumn(c.CanceledAt),
 		c.CreatedAt,
 		c.UpdatedAt,
+		c.UserID,
 	), nil
 }
 
@@ -1417,8 +1448,9 @@ SET (
   campaign_type,
   arguments,
   canceled_at,
-  updated_at
-) = (%s, %s, %s, %s)
+  updated_at,
+  user_id
+) = (%s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1426,7 +1458,8 @@ RETURNING
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 `
 
 func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
@@ -1443,6 +1476,7 @@ func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		arguments,
 		nullTimeColumn(c.CanceledAt),
 		c.UpdatedAt,
+		c.UserID,
 		c.ID,
 	), nil
 }
@@ -1553,7 +1587,8 @@ SELECT
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 FROM campaign_plans
 WHERE %s
 LIMIT 1
@@ -1676,7 +1711,8 @@ SELECT
   arguments,
   canceled_at,
   created_at,
-  updated_at
+  updated_at,
+  user_id
 FROM campaign_plans
 WHERE %s
 ORDER BY id ASC
@@ -2091,18 +2127,20 @@ INSERT INTO changeset_jobs (
   campaign_id,
   campaign_job_id,
   changeset_id,
+  branch,
   error,
   started_at,
   finished_at,
   created_at,
   updated_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_id,
   campaign_job_id,
   changeset_id,
+  branch,
   error,
   started_at,
   finished_at,
@@ -2124,6 +2162,7 @@ func (s *Store) createChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error
 		c.CampaignID,
 		c.CampaignJobID,
 		nullInt64Column(c.ChangesetID),
+		c.Branch,
 		nullStringColumn(c.Error),
 		nullTimeColumn(c.StartedAt),
 		nullTimeColumn(c.FinishedAt),
@@ -2152,17 +2191,19 @@ SET (
   campaign_id,
   campaign_job_id,
   changeset_id,
+  branch,
   error,
   started_at,
   finished_at,
   updated_at
-) = (%s, %s, %s, %s, %s, %s, %s)
+) = (%s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
   campaign_id,
   campaign_job_id,
   changeset_id,
+  branch,
   error,
   started_at,
   finished_at,
@@ -2178,6 +2219,7 @@ func (s *Store) updateChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error
 		c.CampaignID,
 		c.CampaignJobID,
 		nullInt64Column(c.ChangesetID),
+		c.Branch,
 		nullStringColumn(c.Error),
 		nullTimeColumn(c.StartedAt),
 		nullTimeColumn(c.FinishedAt),
@@ -2299,6 +2341,7 @@ SELECT
   campaign_id,
   campaign_job_id,
   changeset_id,
+  branch,
   error,
   started_at,
   finished_at,
@@ -2372,6 +2415,7 @@ SELECT
   changeset_jobs.campaign_id,
   changeset_jobs.campaign_job_id,
   changeset_jobs.changeset_id,
+  changeset_jobs.branch,
   changeset_jobs.error,
   changeset_jobs.started_at,
   changeset_jobs.finished_at,
@@ -2463,6 +2507,40 @@ SET
 WHERE %s
 `
 
+// GetGithubExternalIDForRefs allows us to find the external id for GitHub pull requests based on
+// a slice of head refs. We need this in order to match incoming status webhooks to pull requests as
+// the only information they provide is the remote branch
+func (s *Store) GetGithubExternalIDForRefs(ctx context.Context, refs []string) ([]string, error) {
+	queryFmtString := `
+SELECT external_id FROM changesets
+WHERE external_service_type = 'github'
+AND external_branch IN (%s)
+ORDER BY id ASC
+`
+	inClause := make([]*sqlf.Query, 0, len(refs))
+	for _, ref := range refs {
+		if ref == "" {
+			continue
+		}
+		inClause = append(inClause, sqlf.Sprintf("%s", ref))
+	}
+	q := sqlf.Sprintf(queryFmtString, sqlf.Join(inClause, ","))
+	ids := make([]string, 0, len(refs))
+	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var s string
+		err = sc.Scan(&s)
+		if err != nil {
+			return 0, 0, err
+		}
+		ids = append(ids, s)
+		return 0, 1, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	_, _, err := s.query(ctx, q, sc)
 	return err
@@ -2518,6 +2596,7 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
 		&t.ExternalID,
 		&t.ExternalServiceType,
+		&t.ExternalBranch,
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 	)
 	if err != nil {
@@ -2573,6 +2652,7 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&c.ID,
 		&c.Name,
 		&c.Description,
+		&dbutil.NullString{S: &c.Branch},
 		&c.AuthorID,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
@@ -2581,7 +2661,6 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
 		&dbutil.NullInt64{N: &c.CampaignPlanID},
 		&dbutil.NullTime{Time: &c.ClosedAt},
-		&dbutil.NullTime{Time: &c.PublishedAt},
 	)
 }
 
@@ -2593,6 +2672,7 @@ func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
 		&dbutil.NullTime{Time: &c.CanceledAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
+		&c.UserID,
 	)
 }
 
@@ -2619,6 +2699,7 @@ func scanChangesetJob(c *a8n.ChangesetJob, s scanner) error {
 		&c.CampaignID,
 		&c.CampaignJobID,
 		&dbutil.NullInt64{N: &c.ChangesetID},
+		&c.Branch,
 		&dbutil.NullString{S: &c.Error},
 		&dbutil.NullTime{Time: &c.StartedAt},
 		&dbutil.NullTime{Time: &c.FinishedAt},

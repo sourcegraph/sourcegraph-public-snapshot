@@ -19,14 +19,15 @@ func (r signatureResolver) Date() string {
 	return r.date.Format(time.RFC3339)
 }
 
-func toSignatureResolver(sig *git.Signature) *signatureResolver {
+func toSignatureResolver(sig *git.Signature, includeUserInfo bool) *signatureResolver {
 	if sig == nil {
 		return nil
 	}
 	return &signatureResolver{
 		person: &personResolver{
-			name:  sig.Name,
-			email: sig.Email,
+			name:            sig.Name,
+			email:           sig.Email,
+			includeUserInfo: includeUserInfo,
 		},
 		date: sig.Date,
 	}

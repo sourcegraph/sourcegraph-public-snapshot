@@ -187,7 +187,7 @@ func asString(v *searchquerytypes.Value) string {
 	case v.Regexp != nil:
 		return v.Regexp.String()
 	default:
-		panic("unable to get value as string")
+		return "<unable to get searchquerytypes.Value as string>"
 	}
 }
 

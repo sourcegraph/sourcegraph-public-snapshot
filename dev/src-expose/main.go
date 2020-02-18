@@ -27,20 +27,13 @@ func (e *usageError) Error() string {
 	return e.Msg
 }
 
-func explain(s *Snapshotter, addr string) string {
-	var dirs []string
-	for _, d := range s.Dirs {
-		dirs = append(dirs, "- "+d.Dir)
-	}
-
+func explainAddr(addr string) string {
 	_, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		port = "3434"
 	}
 
-	return fmt.Sprintf(`Periodically syncing directories as git repositories to %s.
-%s
-Serving the repositories at http://%s.
+	return fmt.Sprintf(`Serving the repositories at http://%s.
 
 FIRST RUN NOTE: If src-expose has not yet been setup on Sourcegraph, then you
 need to configure Sourcegraph to sync with src-expose. Paste the following
@@ -53,7 +46,16 @@ configuration as an Other External Service in Sourcegraph:
     "url": "http://host.docker.internal:%s",
     "repos": ["src-expose"] // This may change in versions later than 3.9
   }
-`, s.Destination, strings.Join(dirs, "\n"), addr, addr, port, port)
+`, addr, addr, port, port)
+}
+
+func explainSnapshotter(s *Snapshotter) string {
+	var dirs []string
+	for _, d := range s.Dirs {
+		dirs = append(dirs, "- "+d.Dir)
+	}
+
+	return fmt.Sprintf("Periodically syncing directories as git repositories to %s.\n%s\n", s.Destination, strings.Join(dirs, "\n"))
 }
 
 func usageErrorOutput(cmd *ffcli.Command, cmdPath string, err error) string {
@@ -226,7 +228,8 @@ See https://github.com/sourcegraph/sourcegraph/tree/master/dev/src-expose/exampl
 			}
 
 			if !*globalQuiet {
-				fmt.Println(explain(s, *globalAddr))
+				fmt.Println(explainSnapshotter(s))
+				fmt.Println(explainAddr(*globalAddr))
 			}
 
 			go func() {

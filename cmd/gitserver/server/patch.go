@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -53,9 +54,28 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	ref := req.TargetRef
-	if req.Push {
-		ref = ensureRefPrefix(ref)
+
+	var (
+		remoteURL string
+		err       error
+	)
+	remoteURL, err = repoRemoteURL(ctx, GitDir(repoGitDir))
+	if err != nil {
+		log15.Error("Failed to get remote URL", "ref", ref, "err", err)
+		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
+		return http.StatusInternalServerError, resp
 	}
+
+	redactor := newURLRedactor(remoteURL)
+	defer func() {
+		if resp.Error != nil {
+			resp.Error.Command = redactor.redact(resp.Error.Command)
+			resp.Error.CombinedOutput = redactor.redact(resp.Error.CombinedOutput)
+			if resp.Error.Err != nil {
+				resp.Error.Err = errors.New(redactor.redact(resp.Error.Err.Error()))
+			}
+		}
+	}()
 
 	// Ensure tmp directory exists
 	tmpRepoDir, err := s.tempDir("patch-repo-")
@@ -81,6 +101,30 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			log15.Info("command ran successfully", "prefix", prefix, "command", argsToString(cmd.Args), "duration", time.Since(t), "output", string(out))
 		}
 		return out, err
+	}
+
+	if req.UniqueRef {
+		refs, err := repoRemoteRefs(ctx, remoteURL, ref)
+		if err != nil {
+			log15.Error("Failed to get remote refs", "ref", ref, "err", err)
+			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
+			return http.StatusInternalServerError, resp
+		}
+
+		retry := 1
+		tmp := ref
+		for {
+			if _, ok := refs[tmp]; !ok {
+				break
+			}
+			tmp = ref + "-" + strconv.Itoa(retry)
+			retry++
+		}
+		ref = tmp
+	}
+
+	if req.Push {
+		ref = ensureRefPrefix(ref)
 	}
 
 	tmpGitPathEnv := "GIT_DIR=" + filepath.Join(tmpRepoDir, ".git")
@@ -198,13 +242,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if req.Push {
-		remoteURL, err := repoRemoteURL(ctx, GitDir(repoGitDir))
-		if err != nil {
-			log15.Error("Failed to get remote URL", "ref", ref, "commit", cmtHash, "err", err)
-			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
-			return http.StatusInternalServerError, resp
-		}
-
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL, fmt.Sprintf("%s:%s", cmtHash, ref))
 		cmd.Dir = repoGitDir
 
@@ -214,6 +251,8 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		}
 	}
 
+	resp.Rev = "refs/" + strings.TrimPrefix(ref, "refs/")
+
 	cmd = exec.CommandContext(ctx, "git", "update-ref", "--", ref, cmtHash)
 	cmd.Dir = repoGitDir
 
@@ -221,8 +260,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		log15.Error("Failed to create ref for commit.", "ref", ref, "commit", cmtHash, "output", string(out))
 		return http.StatusInternalServerError, resp
 	}
-
-	resp.Rev = "refs/" + strings.TrimPrefix(ref, "refs/")
 
 	return http.StatusOK, resp
 }

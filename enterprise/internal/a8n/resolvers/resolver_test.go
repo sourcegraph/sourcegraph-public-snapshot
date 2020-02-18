@@ -362,6 +362,7 @@ func TestCampaigns(t *testing.T) {
 			ServiceType string
 		}
 		ReviewState string
+		CheckState  string
 		Events      ChangesetEventConnection
 		Head        GitRef
 		Base        GitRef
@@ -408,6 +409,7 @@ func TestCampaigns(t *testing.T) {
 				serviceType
 			}
 			reviewState
+			checkState
 			events(first: 100) {
 				totalCount
 			}
@@ -419,7 +421,7 @@ func TestCampaigns(t *testing.T) {
 				...cs
 			}
 		}
-	`, string(in)))
+	`, in))
 
 	{
 		want := []Changeset{
@@ -435,8 +437,9 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "github",
 				},
 				ReviewState: "APPROVED",
+				CheckState:  "PENDING",
 				Events: ChangesetEventConnection{
-					TotalCount: 26,
+					TotalCount: 57,
 				},
 				Head: GitRef{
 					Name:        "refs/heads/vo/add-type-issue-filter",
@@ -480,6 +483,7 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "bitbucketServer",
 				},
 				ReviewState: "PENDING",
+				CheckState:  "PENDING",
 				Events: ChangesetEventConnection{
 					TotalCount: 9,
 				},
@@ -523,9 +527,8 @@ func TestCampaigns(t *testing.T) {
 			c.ID = ""
 			have = append(have, c)
 		}
-
-		if !reflect.DeepEqual(have, want) {
-			t.Fatal(cmp.Diff(have, want))
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatal(diff)
 		}
 	}
 
@@ -777,13 +780,13 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	changesets := []*a8n.Changeset{
 		{
-			RepoID:              int32(githubRepo.ID),
+			RepoID:              githubRepo.ID,
 			ExternalID:          "5834",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			CampaignIDs:         []int64{campaign.ID},
 		},
 		{
-			RepoID:              int32(githubRepo.ID),
+			RepoID:              githubRepo.ID,
 			ExternalID:          "5849",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			CampaignIDs:         []int64{campaign.ID},
@@ -949,11 +952,9 @@ type Status struct {
 }
 
 type CampaignPlan struct {
-	ID           string
-	CampaignType string `json:"type"`
-	Arguments    string
-	Status       Status
-	Changesets   struct {
+	ID         string
+	Status     Status
+	Changesets struct {
 		Nodes []ChangesetPlan
 	}
 	PreviewURL string
@@ -961,6 +962,12 @@ type CampaignPlan struct {
 
 func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
+
+	dbtesting.SetupGlobalTestDB(t)
+
+	user := createTestUser(ctx, t)
+	act := actor.FromUser(user.ID)
+	ctx = actor.WithActor(ctx, act)
 
 	t.Run("invalid patch", func(t *testing.T) {
 		args := graphqlbackend.CreateCampaignPlanFromPatchesArgs{
@@ -987,7 +994,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			t.Skip()
 		}
 
-		dbtesting.SetupGlobalTestDB(t)
 		rcache.SetupForTest(t)
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
@@ -1042,8 +1048,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
         createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "master", patch: %q}]) {
           ... on CampaignPlan {
             id
-            type
-            arguments
             status {
               completedCount
               pendingCount
@@ -1097,13 +1101,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testDiff, 1))
 
 		result := response.CreateCampaignPlanFromPatches
-		if have, want := result.CampaignType, "patch"; have != want {
-			t.Fatalf("have CampaignType %q, want %q", have, want)
-		}
-
-		if have, want := result.Arguments, ""; have != want {
-			t.Fatalf("have Arguments %q, want %q", have, want)
-		}
 
 		wantStatus := Status{
 			State:          "COMPLETED",
@@ -1187,9 +1184,11 @@ func TestCampaignPlanResolver(t *testing.T) {
 
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
+	user := createTestUser(ctx, t)
 	plan := &a8n.CampaignPlan{
-		CampaignType: "COMBY",
-		Arguments:    `{"scopeQuery": "file:README.md"}`,
+		CampaignType: "patch",
+		Arguments:    "{}",
+		UserID:       user.ID,
 	}
 	err := store.CreateCampaignPlan(ctx, plan)
 	if err != nil {
@@ -1202,7 +1201,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 			CampaignPlanID: plan.ID,
 			StartedAt:      now,
 			FinishedAt:     now,
-			RepoID:         int32(repo.ID),
+			RepoID:         repo.ID,
 			Rev:            testingRev,
 			BaseRef:        "master",
 			Diff:           testDiff,
@@ -1232,8 +1231,6 @@ func TestCampaignPlanResolver(t *testing.T) {
         node(id: %q) {
           ... on CampaignPlan {
             id
-            type
-            arguments
             status {
               completedCount
               pendingCount
@@ -1284,14 +1281,6 @@ func TestCampaignPlanResolver(t *testing.T) {
         }
       }
 	`, marshalCampaignPlanID(plan.ID), len(jobs)))
-
-	if have, want := response.Node.CampaignType, plan.CampaignType; have != want {
-		t.Fatalf("have CampaignType %q, want %q", have, want)
-	}
-
-	if have, want := response.Node.Arguments, plan.Arguments; have != want {
-		t.Fatalf("have Arguments %q, want %q", have, want)
-	}
 
 	wantStatus := Status{
 		State:          "COMPLETED",
@@ -1469,4 +1458,22 @@ func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.Bitbu
 	}
 
 	return repos
+}
+
+var testUser = db.NewUser{
+	Email:                "test@sourcegraph.com",
+	Username:             "test",
+	DisplayName:          "Test",
+	Password:             "test",
+	EmailIsVerified:      true,
+	FailIfNotInitialUser: false,
+}
+
+func createTestUser(ctx context.Context, t *testing.T) *types.User {
+	t.Helper()
+	user, err := db.Users.Create(ctx, testUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return user
 }

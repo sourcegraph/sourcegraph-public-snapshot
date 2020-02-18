@@ -1,6 +1,8 @@
 package authz
 
 import (
+	"fmt"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 )
@@ -58,3 +60,33 @@ const (
 	ProviderBitbucketServer ProviderType = bitbucketserver.ServiceType
 	ProviderSourcegraph     ProviderType = "sourcegraph"
 )
+
+// RepoPermsSort sorts a slice of RepoPerms to guarantee a stable ordering.
+type RepoPermsSort []RepoPerms
+
+func (s RepoPermsSort) Len() int      { return len(s) }
+func (s RepoPermsSort) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s RepoPermsSort) Less(i, j int) bool {
+	if s[i].Repo.ID != s[j].Repo.ID {
+		return s[i].Repo.ID < s[j].Repo.ID
+	}
+	if s[i].Repo.ExternalRepo.ID != s[j].Repo.ExternalRepo.ID {
+		return s[i].Repo.ExternalRepo.ID < s[j].Repo.ExternalRepo.ID
+	}
+	return s[i].Repo.Name < s[j].Repo.Name
+}
+
+// ErrStalePermissions is returned by LoadPermissions when the stored
+// permissions are stale (e.g. the first time a user needs them and they haven't
+// been fetched yet). Callers should pass this error up to the user and show a
+// more friendly prompt message in the UI.
+type ErrStalePermissions struct {
+	UserID int32
+	Perm   Perms
+	Type   PermType
+}
+
+// Error implements the error interface.
+func (e ErrStalePermissions) Error() string {
+	return fmt.Sprintf("%s:%s permissions for user=%d are stale and being updated", e.Perm, e.Type, e.UserID)
+}

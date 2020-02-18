@@ -17,6 +17,7 @@ import {
     resolveSingleFileDiffFileInfo,
 } from './file_info'
 import { isCommitsView, isCompareView, isPullRequestView, isSingleFileView } from './scrape'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 
 /**
  * Gets or creates the toolbar mount for allcode views.
@@ -190,12 +191,21 @@ export const checkIsBitbucket = (): boolean =>
 
 const iconClassName = 'aui-icon'
 
+const notificationClassNames = {
+    [NotificationType.Log]: 'aui-message aui-message-info',
+    [NotificationType.Success]: 'aui-message aui-message-success',
+    [NotificationType.Info]: 'aui-message aui-message-info',
+    [NotificationType.Warning]: 'aui-message aui-message-warning',
+    [NotificationType.Error]: 'aui-message aui-message-error',
+}
+
 export const bitbucketServerCodeHost: CodeHost = {
     type: 'bitbucket-server',
     name: 'Bitbucket Server',
     check: checkIsBitbucket,
     codeViewResolvers: [codeViewResolver],
     getCommandPaletteMount,
+    notificationClassNames,
     commandPaletteClassProps: {
         buttonClassName:
             'command-list-popover-button--bitbucket-server aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
@@ -224,8 +234,8 @@ export const bitbucketServerCodeHost: CodeHost = {
         className: 'aui-dialog',
         actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
         closeButtonClassName: 'aui-button',
-        infoAlertClassName: 'aui-message',
-        errorAlertClassName: 'aui-message aui-message-error',
+        infoAlertClassName: notificationClassNames[NotificationType.Info],
+        errorAlertClassName: notificationClassNames[NotificationType.Error],
         iconClassName,
     },
     getViewContextOnSourcegraphMount,

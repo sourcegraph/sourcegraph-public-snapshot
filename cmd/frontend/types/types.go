@@ -77,6 +77,7 @@ type User struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	SiteAdmin   bool
+	BuiltinAuth bool
 	Tags        []string
 }
 
@@ -142,6 +143,37 @@ type Stages struct {
 	Automate  int32 `json:"auto"`
 }
 
+type CodeIntelUsageStatistics struct {
+	Daily   []*CodeIntelUsagePeriod
+	Weekly  []*CodeIntelUsagePeriod
+	Monthly []*CodeIntelUsagePeriod
+}
+
+type CodeIntelUsagePeriod struct {
+	StartTime   time.Time
+	Hover       *CodeIntelEventCategoryStatistics
+	Definitions *CodeIntelEventCategoryStatistics
+	References  *CodeIntelEventCategoryStatistics
+}
+
+type CodeIntelEventCategoryStatistics struct {
+	LSIF   *CodeIntelEventStatistics
+	LSP    *CodeIntelEventStatistics
+	Search *CodeIntelEventStatistics
+}
+
+type CodeIntelEventStatistics struct {
+	UsersCount     int32
+	EventsCount    *int32
+	EventLatencies *CodeIntelEventLatencies
+}
+
+type CodeIntelEventLatencies struct {
+	P50 float64
+	P90 float64
+	P99 float64
+}
+
 type SurveyResponse struct {
 	ID        int32
 	UserID    *int32
@@ -150,4 +182,48 @@ type SurveyResponse struct {
 	Reason    *string
 	Better    *string
 	CreatedAt time.Time
+}
+
+type Event struct {
+	ID              int32
+	Name            string
+	URL             string
+	UserID          *int32
+	AnonymousUserID string
+	Argument        string
+	Source          string
+	Version         string
+	Timestamp       time.Time
+}
+
+type AutomationUsageStatistics struct {
+	CampaignsCount int
+}
+
+type SearchLatencyStatistics struct {
+	Daily   []*SearchLatencyPeriod
+	Weekly  []*SearchLatencyPeriod
+	Monthly []*SearchLatencyPeriod
+}
+
+type SearchLatencyPeriod struct {
+	StartTime time.Time
+	Latencies *SearchTypeLatency
+}
+
+type SearchTypeLatency struct {
+	Literal    *SearchLatency
+	Regexp     *SearchLatency
+	Structural *SearchLatency
+	File       *SearchLatency
+	Repo       *SearchLatency
+	Diff       *SearchLatency
+	Commit     *SearchLatency
+	Symbol     *SearchLatency
+}
+
+type SearchLatency struct {
+	P50 float64
+	P90 float64
+	P99 float64
 }

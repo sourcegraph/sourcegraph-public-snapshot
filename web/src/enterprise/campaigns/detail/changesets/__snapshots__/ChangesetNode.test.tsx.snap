@@ -3,7 +3,7 @@
 exports[`ChangesetNode renders a changesetplan with publishing disabled 1`] = `
 Object {
   "children": <div
-    className="campaign-node__content flex-fill"
+    className="changeset-node__content changeset-node__content--no-collapse flex-fill"
   >
     <div
       className="d-flex align-items-center m-1"
@@ -17,7 +17,7 @@ Object {
         />
       </div>
       <div
-        className="campaign-node__content flex-fill"
+        className="changeset-node__content flex-fill"
       >
         <h3
           className="m-0"
@@ -47,6 +47,9 @@ Object {
           expandedCounts={true}
         />
       </span>
+      <span
+        className="ml-1 changeset-node__check-status d-flex justify-content-end"
+      />
     </div>
   </div>,
   "className": "list-group-item e2e-changeset-node",
@@ -56,7 +59,7 @@ Object {
 exports[`ChangesetNode renders a changesetplan with publishing enabled 1`] = `
 Object {
   "children": <div
-    className="campaign-node__content flex-fill"
+    className="changeset-node__content changeset-node__content--no-collapse flex-fill"
   >
     <div
       className="d-flex align-items-center m-1"
@@ -70,7 +73,7 @@ Object {
         />
       </div>
       <div
-        className="campaign-node__content flex-fill"
+        className="changeset-node__content flex-fill"
       >
         <h3
           className="m-0"
@@ -105,6 +108,9 @@ Object {
           expandedCounts={true}
         />
       </span>
+      <span
+        className="ml-1 changeset-node__check-status d-flex justify-content-end"
+      />
       <React.Fragment>
         <button
           className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
@@ -145,7 +151,7 @@ Object {
           />
         </div>
         <div
-          className="campaign-node__content flex-fill"
+          className="changeset-node__content flex-fill"
         >
           <h3
             className="m-0"
@@ -171,6 +177,20 @@ Object {
               >
                 Remove lodash
               </LinkOrSpan>
+              <span
+                className="ml-2"
+              >
+                <ChangesetLabel
+                  label={
+                    Object {
+                      "__typename": "ChangesetLabel",
+                      "color": "93ba13",
+                      "description": "Something is broken",
+                      "text": "bug",
+                    }
+                  }
+                />
+              </span>
             </React.Fragment>
           </h3>
           <Markdown
@@ -189,9 +209,17 @@ Object {
             expandedCounts={true}
           />
         </span>
+        <span
+          className="ml-1 changeset-node__check-status d-flex justify-content-end"
+        >
+          <Memo(ErrorIcon)
+            className="text-danger"
+            data-tooltip="Some checks failed"
+          />
+        </span>
       </div>
     }
-    titleClassName="campaign-node__content flex-fill"
+    titleClassName="changeset-node__content flex-fill"
     wholeTitleClickable={false}
   >
     <FileDiffNode

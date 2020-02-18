@@ -2,8 +2,7 @@
 
 This tutorial shows you how to deploy Sourcegraph to a single EC2 instance on AWS.
 
-* If you're just starting out, we recommend [running Sourcegraph locally](index.md). It takes only a few minutes and lets you try out all of the features.
-* If you need scalability and high-availability beyond what a single-server deployment can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), instead.
+> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to chose a deployment type that suits your needs.
 
 ---
 
@@ -34,7 +33,7 @@ This tutorial shows you how to deploy Sourcegraph to a single EC2 instance on AW
    - usermod -a -G docker ec2-user
 
    # Install and run Sourcegraph. Restart the container upon subsequent reboots
-   - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7080 --publish 127.0.0.1:3370:3370 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.12.0' ]
+   - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7080 --publish 127.0.0.1:3370:3370 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.12.7' ]
    ```
 
 - Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:

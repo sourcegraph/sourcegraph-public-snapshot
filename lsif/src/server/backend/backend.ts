@@ -10,6 +10,7 @@ import { isEqual, uniqWith } from 'lodash'
 import { mustGet } from '../../shared/maps'
 import { DumpManager } from '../../shared/store/dumps'
 import { DependencyManager } from '../../shared/store/dependencies'
+import { isDefined } from '../../shared/util'
 
 /**
  * Context describing the current request for paginated results.
@@ -78,7 +79,7 @@ export interface ReferencePaginationCursor {
  * Converts a file in the repository to the corresponding file in the
  * database.
  *
- * @param root The root of the dump.
+ * @param root The root of all files in the dump.
  * @param path The path within the dump.
  */
 const pathToDatabase = (root: string, path: string): string => (path.startsWith(root) ? path.slice(root.length) : path)
@@ -86,7 +87,7 @@ const pathToDatabase = (root: string, path: string): string => (path.startsWith(
 /**
  * Converts a location in a dump to the corresponding location in the repository.
  *
- * @param root The root of the dump.
+ * @param root The root of all files in the dump.
  * @param location The original location.
  */
 const locationFromDatabase = (root: string, { dump, path, range }: InternalLocation): InternalLocation => ({
@@ -124,22 +125,15 @@ export class Backend {
      * @param repositoryId The repository identifier.
      * @param commit The commit.
      * @param path The path of the document.
-     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
      * @param ctx The tracing context.
      */
     public async exists(
         repositoryId: number,
         commit: string,
         path: string,
-        dumpId?: number,
         ctx: TracingContext = {}
-    ): Promise<pgModels.LsifDump | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
-        if (!closestDatabaseAndDump) {
-            return undefined
-        }
-        const { database, dump } = closestDatabaseAndDump
-        return (await database.exists(pathToDatabase(dump.root, path))) ? dump : undefined
+    ): Promise<pgModels.LsifDump[]> {
+        return (await this.findClosestDatabases(repositoryId, commit, path, ctx)).map(({ dump }) => dump)
     }
 
     /**
@@ -212,7 +206,7 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDatabaseAndDump = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -253,7 +247,7 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ dump: pgModels.LsifDump; locations: InternalLocation[] } | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDatabaseAndDump = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -351,7 +345,7 @@ export class Backend {
             return { dump, locations: [] }
         }
 
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDatabaseAndDump = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -734,38 +728,86 @@ export class Backend {
     }
 
     /**
-     * Create a database instance for the given repository at the commit closest to the target
-     * commit for which we have LSIF data. Also returns the dump instance backing the database.
-     * Returns an undefined database and dump if no such dump can be found. Will also return a
-     * tracing context tagged with the closest commit found. This new tracing context should
-     * be used in all downstream requests so that the original commit and the effective commit
-     * are both known.
+     * Create a database instance for the dump identifier. This identifier should have ben retrieved
+     * from a call to the `exists` route, which would have this identifier from `findClosestDatabase`.
+     * Also returns the dump instance backing the database. Returns an undefined database and dump if
+     * no such dump can be found. Will also return a tracing context tagged with the closest commit
+     * found. This new tracing context should be used in all downstream requests so that the original
+     * commit and the effective commit are both known.
+     *
+     * If no dumpId is supplied, the first database from `findClosestDatabase` is used. Note that this
+     * functionality does not happen in the application and only in tests, as an uploadId is a required
+     * parameter on all routes into the API.
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
-     * @param file One of the files in the dump.
-     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
+     * @param path One of the files in the dump.
+     * @param dumpId The identifier of the dump to load.
      * @param ctx The tracing context.
      */
-    private async loadClosestDatabase(
+    private async closestDatabase(
         repositoryId: number,
         commit: string,
-        file: string,
+        path: string,
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ database: Database; dump: pgModels.LsifDump; ctx: TracingContext } | undefined> {
-        // Determine the closest commit that we actually have LSIF data for. If the commit is
-        // not tracked, then commit data is requested from gitserver and insert the ancestors
-        // data for this commit.
-        const dump = await (dumpId
-            ? this.dumpManager.getDumpById(dumpId)
-            : this.dumpManager.findClosestDump(repositoryId, commit, file, ctx, this.frontendUrl))
-
-        if (dump) {
-            return { database: this.createDatabase(dump), dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
+        if (!dumpId) {
+            const databases = await this.findClosestDatabases(repositoryId, commit, path)
+            return databases.length > 0 ? databases[0] : undefined
         }
 
-        return undefined
+        const dump = await this.dumpManager.getDumpById(dumpId)
+        if (!dump) {
+            return undefined
+        }
+
+        return { database: this.createDatabase(dump), dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
+    }
+
+    /**
+     * Create a set of database instances for the given repository at the closest commits to the
+     * target commit. This method returns only databases that contain the given file. Also returns
+     * the dump instance backing the database. Returns an undefined database and dump if no such
+     * dump can be found. Will also return a tracing context tagged with the closest commit found.
+     * This new tracing context should be used in all downstream requests so that the original
+     * commit and the effective commit are both known.
+     *
+     * This method returns databases ordered by commit distance (nearest first).
+     *
+     * @param repositoryId The repository identifier.
+     * @param commit The target commit.
+     * @param path One of the files in the dump.
+     * @param ctx The tracing context
+     */
+    private async findClosestDatabases(
+        repositoryId: number,
+        commit: string,
+        path: string,
+        ctx: TracingContext = {}
+    ): Promise<{ database: Database; dump: pgModels.LsifDump; ctx: TracingContext }[]> {
+        // Find all closest dumps. Each database is guaranteed to have a root that is a
+        // prefix of the given path, but does not guarantee that the path actually exists
+        // in that dump.
+
+        const closestDumps = await this.dumpManager.findClosestDumps(repositoryId, commit, path, ctx, this.frontendUrl)
+
+        // Concurrently ensure that each database contains the target file. If it does
+        // not contain data for that file, return undefined and filter it from the list
+        // before returning.
+
+        return (
+            await Promise.all(
+                closestDumps.map(async dump => {
+                    const database = this.createDatabase(dump)
+                    const taggedCtx = addTags(ctx, { closestCommit: dump.commit })
+
+                    return (await database.exists(pathToDatabase(dump.root, path), taggedCtx))
+                        ? { database, dump, ctx: taggedCtx }
+                        : undefined
+                })
+            )
+        ).filter(isDefined)
     }
 
     /**

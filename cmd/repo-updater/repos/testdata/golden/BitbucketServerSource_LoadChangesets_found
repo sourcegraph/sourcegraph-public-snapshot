@@ -341,6 +341,51 @@
      },
      "action": "OPENED"
     }
+   ],
+   "commits": [
+    {
+     "id": "1f63e719a65cad47a0a272d3d6eef05f4da427bb",
+     "displayId": "1f63e719a65",
+     "authorTimestamp": 1563286282000,
+     "committer": {
+      "name": "Tomás Senart",
+      "emailAddress": "tsenart@gmail.com"
+     },
+     "committerTimestamp": 1563286282000,
+     "message": "make make make",
+     "parents": [
+      {
+       "id": "7b71906bf3b3ec81a4d013b7f59ceb34b3c4105b",
+       "displayId": "7b71906bf3b"
+      }
+     ]
+    },
+    {
+     "id": "7b71906bf3b3ec81a4d013b7f59ceb34b3c4105b",
+     "displayId": "7b71906bf3b",
+     "authorTimestamp": 1563286246000,
+     "committer": {
+      "name": "Tomás Senart",
+      "emailAddress": "tsenart@gmail.com"
+     },
+     "committerTimestamp": 1563286246000,
+     "message": "Remove dump.go",
+     "parents": [
+      {
+       "id": "0f5577eaf11a136541b8c667273b6bc5eba51a8b",
+       "displayId": "0f5577eaf11"
+      }
+     ]
+    }
+   ],
+   "buildstatuses": [
+    {
+     "state": "INPROGRESS",
+     "key": "thekey",
+     "name": "thename",
+     "url": "http://example.com",
+     "description": "the description"
+    }
    ]
   },
   {
@@ -475,6 +520,25 @@
       "type": "NORMAL"
      },
      "action": "OPENED"
+    }
+   ],
+   "commits": [
+    {
+     "id": "db6f6959b162f5501f43898e1d44c03de5de6202",
+     "displayId": "db6f6959b16",
+     "authorTimestamp": 1560936940000,
+     "committer": {
+      "name": "Tomás Senart",
+      "emailAddress": "tsenart@gmail.com"
+     },
+     "committerTimestamp": 1560936940000,
+     "message": "Encode comment is fun!",
+     "parents": [
+      {
+       "id": "0f5577eaf11a136541b8c667273b6bc5eba51a8b",
+       "displayId": "0f5577eaf11"
+      }
+     ]
     }
    ]
   }

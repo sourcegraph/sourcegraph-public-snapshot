@@ -1,6 +1,12 @@
 .changeset-node {
     &__content {
+        &--no-collapse {
+            margin-left: $collapsible-expand-btn-width;
+        }
         flex: 1;
         min-width: 0;
+    }
+    &__check-status {
+        width: 2rem;
     }
 }

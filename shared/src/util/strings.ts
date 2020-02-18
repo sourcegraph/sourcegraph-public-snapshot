@@ -17,7 +17,7 @@ export function count(str: string, ...patterns: RegExp[]): number {
     return n
 }
 
-export function numberWithCommas(x: any): string {
+export function numberWithCommas(x: string | number): string {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
@@ -38,4 +38,12 @@ export function sanitizeClass(value: string): string {
  */
 export function dedupeWhitespace(value: string): string {
     return value.replace(/\s+/g, ' ')
+}
+
+/**
+ * Checkes whether a given string is quoted.
+ * @param value string to check against
+ */
+export function isQuoted(value: string): boolean {
+    return value.startsWith('"') && value.endsWith('"') && value !== '"'
 }

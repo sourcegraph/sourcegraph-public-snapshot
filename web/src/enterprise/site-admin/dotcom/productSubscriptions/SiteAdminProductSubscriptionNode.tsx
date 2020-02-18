@@ -2,8 +2,10 @@ import * as React from 'react'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
 import { gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { Timestamp } from '../../../../components/time/Timestamp'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
+import { ProductLicenseTags } from '../../../productSubscription/ProductLicenseTags'
 
 export const siteAdminProductSubscriptionFragment = gql`
     fragment ProductSubscriptionFields on ProductSubscription {
@@ -13,6 +15,10 @@ export const siteAdminProductSubscriptionFragment = gql`
             id
             username
             displayName
+            emails {
+                email
+                isPrimary
+            }
         }
         invoiceItem {
             plan {
@@ -42,8 +48,10 @@ export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent<{ n
     <thead>
         <tr>
             <th>ID</th>
-            <th>Plan</th>
             <th>Customer</th>
+            <th>Plan</th>
+            <th>Expiration</th>
+            <th>Tags</th>
         </tr>
     </thead>
 )
@@ -65,11 +73,37 @@ export class SiteAdminProductSubscriptionNode extends React.PureComponent<SiteAd
                         {this.props.node.name}
                     </LinkOrSpan>
                 </td>
+                <td className="w-100">
+                    <AccountName account={this.props.node.account} />
+                    {this.props.node.account && (
+                        <div>
+                            <small>
+                                {this.props.node.account.emails
+                                    .filter(email => email.isPrimary)
+                                    .map(({ email }) => email)
+                                    .join(', ')}
+                            </small>
+                        </div>
+                    )}
+                </td>
                 <td className="text-nowrap">
                     <ProductSubscriptionLabel productSubscription={this.props.node} className="mr-3" />
                 </td>
+                <td className="text-nowrap">
+                    {this.props.node.activeLicense?.info ? (
+                        <Timestamp date={this.props.node.activeLicense.info.expiresAt} />
+                    ) : (
+                        <span className="text-muted font-italic">None</span>
+                    )}
+                </td>
                 <td className="w-100">
-                    <AccountName account={this.props.node.account} />
+                    {this.props.node.activeLicense &&
+                    this.props.node.activeLicense.info &&
+                    this.props.node.activeLicense.info.tags.length > 0 ? (
+                        <ProductLicenseTags tags={this.props.node.activeLicense.info.tags} />
+                    ) : (
+                        <span className="text-muted font-italic">None</span>
+                    )}
                 </td>
             </tr>
         )

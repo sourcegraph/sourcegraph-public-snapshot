@@ -17,7 +17,7 @@ interface SignInPageProps {
 
 export class SignInPage extends React.Component<SignInPageProps> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SignIn', {}, false)
+        eventLogger.logViewEvent('SignIn', false)
     }
 
     public render(): JSX.Element | null {

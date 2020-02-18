@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/google/go-cmp/cmp"
+	//"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -66,10 +66,12 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 
 	wantCommit := GitCommitResolver{
-		repo:   &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
-		oid:    "c1",
-		author: *toSignatureResolver(&gitSignatureWithDate),
+		repo:            &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+		oid:             "c1",
+		author:          *toSignatureResolver(&gitSignatureWithDate, true),
+		includeUserInfo: true,
 	}
+	wantCommit.once.Do(func() {}) // mark as done
 
 	if want := []*commitSearchResultResolver{
 		{
@@ -82,7 +84,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 			matches:     []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
 		},
 	}; !reflect.DeepEqual(results, want) {
-		t.Errorf("results\ngot  %v\nwant %v\ndiff: %v", results, want, cmp.Diff(results, want))
+		t.Errorf("results\ngot  %v\nwant %v", results, want)
 	}
 	if limitHit {
 		t.Error("limitHit")
@@ -107,9 +109,9 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 		}
 		return &types.User{ID: 123}, nil
 	}
-	db.Mocks.UserEmails.ListByUser = func(id int32) ([]*db.UserEmail, error) {
-		if want := int32(123); id != want {
-			t.Errorf("got %v, want %v", id, want)
+	db.Mocks.UserEmails.ListByUser = func(_ context.Context, opt db.UserEmailsListOptions) ([]*db.UserEmail, error) {
+		if want := int32(123); opt.UserID != want {
+			t.Errorf("got %v, want %v", opt.UserID, want)
 		}
 		t := time.Now()
 		return []*db.UserEmail{

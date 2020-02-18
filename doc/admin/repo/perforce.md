@@ -6,6 +6,10 @@ Screenshot of using Sourcegraph for code navigation in a Perforce repository:
 
 ![Viewing a Perforce repository on Sourcegraph](https://storage.googleapis.com/sourcegraph-assets/git-p4-example.png)
 
+## src-expose
+
+We have an experimental alternative for importing Perforce code into Sourcegraph: [src-expose](../external_service/other.md#experimental-src-expose).
+
 ## Instructions
 
 ### Prerequisites

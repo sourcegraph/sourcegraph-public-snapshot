@@ -1,8 +1,11 @@
 package a8n
 
 import (
+	"sort"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -116,6 +119,18 @@ func TestChangesetEvents(t *testing.T) {
 			CreatedAt: now,
 		}
 
+		commit := &github.PullRequestCommit{
+			Commit: struct {
+				OID           string
+				CheckSuites   struct{ Nodes []github.CheckSuite }
+				Status        github.Status
+				CommittedDate time.Time
+			}{
+				OID:    "123",
+				Status: github.Status{},
+			},
+		}
+
 		cases = append(cases, testCase{"github",
 			Changeset{
 				ID: 23,
@@ -130,6 +145,7 @@ func TestChangesetEvents(t *testing.T) {
 							Comments: reviewComments[2:],
 						}},
 						{Type: "ClosedEvent", Item: closedEvent},
+						{Type: "PullRequestCommit", Item: commit},
 					},
 				},
 			},
@@ -163,6 +179,11 @@ func TestChangesetEvents(t *testing.T) {
 				Kind:        ChangesetEventKindGitHubClosed,
 				Key:         closedEvent.Key(),
 				Metadata:    closedEvent,
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubCommit,
+				Key:         commit.Key(),
+				Metadata:    commit,
 			}},
 		})
 	}
@@ -261,6 +282,21 @@ func TestChangesetEventsReviewState(t *testing.T) {
 		}
 	}
 
+	ghReviewDismissed := func(t time.Time, login, reviewer string) *ChangesetEvent {
+		return &ChangesetEvent{
+			Kind: ChangesetEventKindGitHubReviewDismissed,
+			Metadata: &github.ReviewDismissedEvent{
+				CreatedAt: t,
+				Actor:     github.Actor{Login: login},
+				Review: github.PullRequestReview{
+					Author: github.Actor{
+						Login: reviewer,
+					},
+				},
+			},
+		}
+	}
+
 	tests := []struct {
 		events ChangesetEvents
 		want   ChangesetReviewState
@@ -336,16 +372,246 @@ func TestChangesetEventsReviewState(t *testing.T) {
 			},
 			want: ChangesetReviewStateApproved,
 		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(0), "user2", "user1"),
+			},
+			want: ChangesetReviewStatePending,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(1), "user2", "user1"),
+				ghReview(daysAgo(0), "user1", "CHANGES_REQUESTED"),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(1), "user2", "user1"),
+				ghReview(daysAgo(0), "user3", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(0), "user1", "DISMISSED"),
+			},
+			want: ChangesetReviewStatePending,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(1), "user1", "DISMISSED"),
+				ghReview(daysAgo(0), "user3", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
 	}
 
-	for _, tc := range tests {
+	for i, tc := range tests {
 		have, err := tc.events.ReviewState()
 		if err != nil {
 			t.Fatalf("got error: %s", err)
 		}
 
 		if have, want := have, tc.want; have != want {
-			t.Errorf("wrong reviewstate. have=%s, want=%s", have, want)
+			t.Errorf("%d: wrong reviewstate. have=%s, want=%s", i, have, want)
 		}
+	}
+}
+
+func TestComputeGithubCheckState(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	testEvent := func(minutesSinceSync int, context, state string) *ChangesetEvent {
+		commit := &github.CommitStatus{
+			Context:    context,
+			State:      state,
+			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
+		}
+		ce := &ChangesetEvent{
+			Kind:     ChangesetEventKindCommitStatus,
+			Metadata: commit,
+		}
+		return ce
+	}
+
+	lastSynced := now.Add(-1 * time.Minute)
+	pr := &github.PullRequest{}
+
+	tests := []struct {
+		name   string
+		events []*ChangesetEvent
+		want   ChangesetCheckState
+	}{
+		{
+			name:   "empty slice",
+			events: nil,
+			want:   ChangesetCheckStateUnknown,
+		},
+		{
+			name: "single success",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "SUCCESS"),
+			},
+			want: ChangesetCheckStatePassed,
+		},
+		{
+			name: "single pending",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+			},
+			want: ChangesetCheckStatePending,
+		},
+		{
+			name: "single error",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "ERROR"),
+			},
+			want: ChangesetCheckStateFailed,
+		},
+		{
+			name: "pending + error",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+				testEvent(1, "ctx2", "ERROR"),
+			},
+			want: ChangesetCheckStatePending,
+		},
+		{
+			name: "pending + success",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+				testEvent(1, "ctx2", "SUCCESS"),
+			},
+			want: ChangesetCheckStatePending,
+		},
+		{
+			name: "success + error",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "SUCCESS"),
+				testEvent(1, "ctx2", "ERROR"),
+			},
+			want: ChangesetCheckStateFailed,
+		},
+		{
+			name: "success x2",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "SUCCESS"),
+				testEvent(1, "ctx2", "SUCCESS"),
+			},
+			want: ChangesetCheckStatePassed,
+		},
+		{
+			name: "later events have precedence",
+			events: []*ChangesetEvent{
+				testEvent(1, "ctx1", "PENDING"),
+				testEvent(1, "ctx1", "SUCCESS"),
+			},
+			want: ChangesetCheckStatePassed,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := computeGitHubCheckState(lastSynced, pr, tc.events)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatalf(diff)
+			}
+		})
+	}
+}
+
+func TestChangesetEventsLabels(t *testing.T) {
+	now := time.Now()
+	labelEvent := func(name string, kind ChangesetEventKind, when time.Time) *ChangesetEvent {
+		removed := kind == ChangesetEventKindGitHubUnlabeled
+		return &ChangesetEvent{
+			Kind:      kind,
+			UpdatedAt: when,
+			Metadata: &github.LabelEvent{
+				Actor: github.Actor{},
+				Label: github.Label{
+					Name: name,
+				},
+				CreatedAt: when,
+				Removed:   removed,
+			},
+		}
+	}
+	changeset := func(names []string, updated time.Time) *Changeset {
+		meta := &github.PullRequest{}
+		for _, name := range names {
+			meta.Labels.Nodes = append(meta.Labels.Nodes, github.Label{
+				Name: name,
+			})
+		}
+		return &Changeset{
+			UpdatedAt: updated,
+			Metadata:  meta,
+		}
+	}
+	labels := func(names ...string) []ChangesetLabel {
+		var ls []ChangesetLabel
+		for _, name := range names {
+			ls = append(ls, ChangesetLabel{Name: name})
+		}
+		return ls
+	}
+
+	tests := []struct {
+		name      string
+		changeset *Changeset
+		events    ChangesetEvents
+		want      []ChangesetLabel
+	}{
+		{
+			name: "zero values",
+		},
+		{
+			name:      "no events",
+			changeset: changeset([]string{"label1"}, time.Time{}),
+			events:    ChangesetEvents{},
+			want:      labels("label1"),
+		},
+		{
+			name:      "remove event",
+			changeset: changeset([]string{"label1"}, time.Time{}),
+			events: ChangesetEvents{
+				labelEvent("label1", ChangesetEventKindGitHubUnlabeled, now),
+			},
+			want: []ChangesetLabel{},
+		},
+		{
+			name:      "add event",
+			changeset: changeset([]string{"label1"}, time.Time{}),
+			events: ChangesetEvents{
+				labelEvent("label2", ChangesetEventKindGitHubLabeled, now),
+			},
+			want: labels("label1", "label2"),
+		},
+		{
+			name:      "old add event",
+			changeset: changeset([]string{"label1"}, now.Add(5*time.Minute)),
+			events: ChangesetEvents{
+				labelEvent("label2", ChangesetEventKindGitHubLabeled, now),
+			},
+			want: labels("label1"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			have := tc.events.UpdateLabelsSince(tc.changeset)
+			want := tc.want
+			sort.Slice(have, func(i, j int) bool { return have[i].Name < have[j].Name })
+			sort.Slice(want, func(i, j int) bool { return want[i].Name < want[j].Name })
+			if diff := cmp.Diff(have, want, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }

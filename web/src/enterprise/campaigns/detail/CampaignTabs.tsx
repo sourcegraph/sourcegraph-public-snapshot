@@ -11,8 +11,13 @@ import { Subject } from 'rxjs'
 
 interface Props extends ThemeProps {
     campaign:
-        | Pick<GQL.ICampaign, '__typename' | 'id' | 'changesets' | 'changesetPlans'>
-        | Pick<GQL.ICampaignPlan, '__typename' | 'id' | 'changesets'>
+        | (Pick<GQL.ICampaign, '__typename' | 'id'> & {
+              changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
+              changesetPlans: Pick<GQL.ICampaign['changesetPlans'], 'nodes' | 'totalCount'>
+          })
+        | (Pick<GQL.ICampaignPlan, '__typename' | 'id'> & {
+              changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes' | 'totalCount'>
+          })
     persistLines: boolean
     campaignUpdates: Subject<void>
     changesetUpdates: Subject<void>
@@ -55,7 +60,7 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
         () =>
             campaign.__typename === 'Campaign'
                 ? [...campaign.changesets.nodes, ...campaign.changesetPlans.nodes]
-                : campaign.changesets.nodes,
+                : campaign.changesetPlans.nodes,
         [campaign]
     )
     const totalAdditions = useMemo(() => sumDiffStat(changesets, 'added'), [changesets])
@@ -81,8 +86,8 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                         <span className="e2e-campaign-changesets-tab">
                             Changesets{' '}
                             <span className="badge badge-secondary badge-pill">
-                                {campaign.changesets.totalCount +
-                                    (campaign.__typename === 'Campaign' ? campaign.changesetPlans.totalCount : 0)}
+                                {campaign.changesetPlans.totalCount +
+                                    (campaign.__typename === 'Campaign' ? campaign.changesets.totalCount : 0)}
                             </span>
                         </span>
                     ),

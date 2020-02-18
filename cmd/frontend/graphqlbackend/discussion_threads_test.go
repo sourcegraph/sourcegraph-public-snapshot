@@ -26,7 +26,7 @@ func TestDiscussionThread_Get(t *testing.T) {
 	t.Run("by ID", func(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
-				Schema: mustParseGraphQLSchema(t, nil),
+				Schema: mustParseGraphQLSchema(t),
 				Query: `
                                 query ($id: ID!) {
                                         node(id: $id) {
@@ -169,7 +169,7 @@ func TestDiscussionsMutations_UpdateThread(t *testing.T) {
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Context: backend.WithAuthzBypass(context.Background()),
-			Schema:  mustParseGraphQLSchema(t, nil),
+			Schema:  mustParseGraphQLSchema(t),
 			Query: `
                                 mutation($title: String!) {
                                         discussions {

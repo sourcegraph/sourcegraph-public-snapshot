@@ -45,12 +45,14 @@ export function fetchLsifUploads({
                                 projectRoot {
                                     commit {
                                         abbreviatedOID
+                                        url
                                     }
                                     path
                                     url
                                 }
                                 inputCommit
                                 inputRoot
+                                inputIndexer
                                 uploadedAt
                                 startedAt
                                 finishedAt
@@ -108,6 +110,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                         }
                         inputCommit
                         inputRoot
+                        inputIndexer
                         state
                         failure {
                             summary
@@ -115,6 +118,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                         uploadedAt
                         startedAt
                         finishedAt
+                        isLatestForRepo
                     }
                 }
             }

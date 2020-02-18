@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -31,8 +30,17 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"type", "field", "error"})
 
+var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "graphql",
+	Name:      "code_intel_search_seconds",
+	Help:      "Code intel search latencies in seconds.",
+	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+}, []string{"exact", "error"})
+
 func init() {
 	prometheus.MustRegister(graphqlFieldHistogram)
+	prometheus.MustRegister(codeIntelSearchHistogram)
 }
 
 type prometheusTracer struct {
@@ -80,19 +88,39 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	traceCtx, finish := trace.OpenTracingTracer{}.TraceField(ctx, label, typeName, fieldName, trivial, args)
 	start := time.Now()
 	return traceCtx, func(err *gqlerrors.QueryError) {
-		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, strconv.FormatBool(err != nil)).Observe(time.Since(start).Seconds())
+		isErrStr := strconv.FormatBool(err != nil)
+		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, isErrStr).Observe(time.Since(start).Seconds())
+
+		origin := sgtrace.RequestOrigin(ctx)
+		if origin != "unknown" && (fieldName == "search" || fieldName == "lsif") {
+			isExact := strconv.FormatBool(fieldName == "lsif")
+			codeIntelSearchHistogram.WithLabelValues(isExact, isErrStr).Observe(time.Since(start).Seconds())
+		}
 		finish(err)
 	}
 }
 
 func NewSchema(a8n A8NResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
-	EnterpriseResolvers.a8nResolver = a8n
-	EnterpriseResolvers.codeIntelResolver = codeIntel
-	EnterpriseResolvers.authzResolver = authz
+	resolver := &schemaResolver{
+		A8NResolver:       defaultA8NResolver{},
+		AuthzResolver:     defaultAuthzResolver{},
+		CodeIntelResolver: defaultCodeIntelResolver{},
+	}
+	if a8n != nil {
+		resolver.A8NResolver = a8n
+	}
+	if codeIntel != nil {
+		EnterpriseResolvers.codeIntelResolver = codeIntel
+		resolver.CodeIntelResolver = codeIntel
+	}
+	if authz != nil {
+		EnterpriseResolvers.authzResolver = authz
+		resolver.AuthzResolver = authz
+	}
 
 	return graphql.ParseSchema(
 		Schema,
-		&schemaResolver{},
+		resolver,
 		graphql.Tracer(prometheusTracer{}),
 	)
 }
@@ -225,15 +253,21 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
-type schemaResolver struct{}
+type schemaResolver struct {
+	A8NResolver
+	AuthzResolver
+	CodeIntelResolver
+}
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	a8nResolver       A8NResolver
 	codeIntelResolver CodeIntelResolver
 	authzResolver     AuthzResolver
-}{}
+}{
+	codeIntelResolver: defaultCodeIntelResolver{},
+	authzResolver:     defaultAuthzResolver{},
+}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
@@ -253,25 +287,13 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
 	case "Campaign":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.CampaignByID(ctx, id)
+		return r.CampaignByID(ctx, id)
 	case "CampaignPlan":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.CampaignPlanByID(ctx, id)
+		return r.CampaignPlanByID(ctx, id)
 	case "ExternalChangeset":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.ChangesetByID(ctx, id)
+		return r.ChangesetByID(ctx, id)
 	case "ChangesetPlan":
-		if EnterpriseResolvers.a8nResolver == nil {
-			return nil, a8nOnlyInEnterprise
-		}
-		return EnterpriseResolvers.a8nResolver.ChangesetPlanByID(ctx, id)
+		return r.ChangesetPlanByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
@@ -309,10 +331,7 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	case "Site":
 		return siteByGQLID(ctx, id)
 	case "LSIFUpload":
-		if EnterpriseResolvers.codeIntelResolver == nil {
-			return nil, codeIntelOnlyInEnterprise
-		}
-		return EnterpriseResolvers.codeIntelResolver.LSIFUploadByID(ctx, id)
+		return r.LSIFUploadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}
@@ -324,11 +343,50 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
 }) (*RepositoryResolver, error) {
+	// Deprecated query by "URI"
+	if args.URI != nil && args.Name == nil {
+		args.Name = args.URI
+	}
+	resolver, err := r.RepositoryRedirect(ctx, &struct {
+		Name     *string
+		CloneURL *string
+	}{args.Name, args.CloneURL})
+	if err != nil {
+		return nil, err
+	}
+	if resolver == nil {
+		return nil, errors.New("repository not found")
+	}
+	return resolver.repo, nil
+}
+
+type RedirectResolver struct {
+	url string
+}
+
+func (r *RedirectResolver) URL() string {
+	return r.url
+}
+
+type repositoryRedirect struct {
+	repo     *RepositoryResolver
+	redirect *RedirectResolver
+}
+
+func (r *repositoryRedirect) ToRepository() (*RepositoryResolver, bool) {
+	return r.repo, r.repo != nil
+}
+
+func (r *repositoryRedirect) ToRedirect() (*RedirectResolver, bool) {
+	return r.redirect, r.redirect != nil
+}
+
+func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
+	Name     *string
+	CloneURL *string
+}) (*repositoryRedirect, error) {
 	var name api.RepoName
-	if args.URI != nil {
-		// Deprecated query by "URI"
-		name = api.RepoName(*args.URI)
-	} else if args.Name != nil {
+	if args.Name != nil {
 		// Query by name
 		name = api.RepoName(*args.Name)
 	} else if args.CloneURL != nil {
@@ -343,20 +401,20 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 			return nil, nil
 		}
 	} else {
-		return nil, errors.New("Neither name nor cloneURL given")
+		return nil, errors.New("neither name nor cloneURL given")
 	}
 
 	repo, err := backend.Repos.GetByName(ctx, name)
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
-			return &RepositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
+			return &repositoryRedirect{redirect: &RedirectResolver{url: err.RedirectURL}}, nil
 		}
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &RepositoryResolver{repo: repo}, nil
+	return &repositoryRedirect{repo: &RepositoryResolver{repo: repo}}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
