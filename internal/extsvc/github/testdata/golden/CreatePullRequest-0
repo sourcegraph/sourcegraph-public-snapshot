@@ -1,14 +1,14 @@
 {
-  "ID": "MDExOlB1bGxSZXF1ZXN0Mzc0MjM2Njgz",
+  "ID": "MDExOlB1bGxSZXF1ZXN0Mzc2MTA0Mzc2",
   "Title": "This is a test PR, feel free to ignore",
   "Body": "I'm opening this PR to test something. Please ignore.",
   "State": "OPEN",
-  "URL": "https://github.com/sourcegraph/automation-testing/pull/158",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/168",
   "HeadRefOid": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
   "BaseRefOid": "3b79a5d479d2af9cfe91e0aad4e9dddca7278150",
   "HeadRefName": "test-pr-3",
   "BaseRefName": "master",
-  "Number": 158,
+  "Number": 168,
   "Author": {
    "AvatarURL": "https://avatars3.githubusercontent.com/u/25610?v=4",
    "Login": "ryanslade",
@@ -41,13 +41,19 @@
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzM=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzY=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         }
        ]
       },
@@ -71,13 +77,19 @@
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzM=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzY=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         }
        ]
       },
@@ -90,6 +102,6 @@
     }
    ]
   },
-  "CreatedAt": "2020-02-12T10:47:46Z",
-  "UpdatedAt": "2020-02-12T10:47:46Z"
+  "CreatedAt": "2020-02-17T12:13:03Z",
+  "UpdatedAt": "2020-02-17T12:13:03Z"
  }
