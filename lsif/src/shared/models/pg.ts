@@ -44,10 +44,16 @@ export class LsifUpload {
     public commit!: string
 
     /**
-     *  The path at which this LSIF dump is mounted.
+     * The root of all files in the dump.
      */
     @Column('text')
     public root!: string
+
+    /**
+     * The type of indexer used to produce the dump.
+     */
+    @Column('text')
+    public indexer!: string
 
     /**
      * The temporary file the upload data is stored. As the file is deleted after

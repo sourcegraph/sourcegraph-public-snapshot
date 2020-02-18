@@ -58,6 +58,12 @@ paths:
           required: false
           schema:
             type: number
+        - name: indexerName
+          in: query
+          description: The name of the indexer that generated the payload. This is required only if there is no tool info supplied in the payload's metadata vertex.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Processed (synchronously)
@@ -173,7 +179,7 @@ paths:
         - name: uploadId
           in: query
           description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
-          required: false
+          required: true
           schema:
             type: number
       responses:
@@ -224,7 +230,7 @@ paths:
         - name: uploadId
           in: query
           description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
-          required: false
+          required: true
           schema:
             type: number
         - name: limit
@@ -293,7 +299,7 @@ paths:
         - name: uploadId
           in: query
           description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
-          required: false
+          required: true
           schema:
             type: number
       responses:

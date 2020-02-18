@@ -12,7 +12,7 @@ import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { mustGet } from '../../shared/maps'
 import { Package, SymbolReferences } from '../../shared/store/dependencies'
 import { readEnvInt } from '../../shared/settings'
-import { readGzippedJsonElementsFromFile } from './input'
+import { readGzippedJsonElementsFromFile } from '../../shared/input'
 import { TableInserter } from '../../shared/database/inserter'
 
 /**
