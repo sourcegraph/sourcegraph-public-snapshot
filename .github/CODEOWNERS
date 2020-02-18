@@ -49,7 +49,7 @@
 /internal/processrestart @slimsag @keegancsmith
 /internal/honey @keegancsmith
 /internal/ratelimit @beyang
-/internal/registry @chrismwendt
+/internal/registry @sourcegraph/web
 /internal/slack @slimsag
 /internal/prefixsuffixsaver @beyang
 /internal/gosrc @beyang
