@@ -25,7 +25,12 @@ export const AddFilterDropdown: React.FunctionComponent<Props> = ({ onAddNewFilt
                 Add filter…
             </option>
             {filterTypeKeys
-                .filter(filter => !defaultFilterTypes.includes(filter) && filter !== FilterTypes.case)
+                .filter(
+                    filter =>
+                        !defaultFilterTypes.includes(filter) &&
+                        filter !== FilterTypes.case &&
+                        filter !== FilterTypes.patterntype
+                )
                 .map(filter => (
                     <option key={filter} value={filter} className={`e2e-filter-dropdown-option-${filter}`}>
                         {FilterTypesToProseNames[filter]}

@@ -157,8 +157,9 @@ type CodeIntelUsagePeriod struct {
 }
 
 type CodeIntelEventCategoryStatistics struct {
-	Precise *CodeIntelEventStatistics
-	Fuzzy   *CodeIntelEventStatistics
+	LSIF   *CodeIntelEventStatistics
+	LSP    *CodeIntelEventStatistics
+	Search *CodeIntelEventStatistics
 }
 
 type CodeIntelEventStatistics struct {
@@ -193,4 +194,36 @@ type Event struct {
 	Source          string
 	Version         string
 	Timestamp       time.Time
+}
+
+type AutomationUsageStatistics struct {
+	CampaignsCount int
+}
+
+type SearchLatencyStatistics struct {
+	Daily   []*SearchLatencyPeriod
+	Weekly  []*SearchLatencyPeriod
+	Monthly []*SearchLatencyPeriod
+}
+
+type SearchLatencyPeriod struct {
+	StartTime time.Time
+	Latencies *SearchTypeLatency
+}
+
+type SearchTypeLatency struct {
+	Literal    *SearchLatency
+	Regexp     *SearchLatency
+	Structural *SearchLatency
+	File       *SearchLatency
+	Repo       *SearchLatency
+	Diff       *SearchLatency
+	Commit     *SearchLatency
+	Symbol     *SearchLatency
+}
+
+type SearchLatency struct {
+	P50 float64
+	P90 float64
+	P99 float64
 }

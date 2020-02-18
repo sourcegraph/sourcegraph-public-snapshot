@@ -63,7 +63,7 @@ func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), "SearchSubmitted", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
+	err := logLocalEvent(context.Background(), "SearchResultsQueried", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

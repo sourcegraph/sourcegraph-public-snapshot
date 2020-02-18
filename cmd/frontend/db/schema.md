@@ -91,6 +91,7 @@ Referenced by:
  changeset_ids     | jsonb                    | not null default '{}'::jsonb
  campaign_plan_id  | integer                  | 
  closed_at         | timestamp with time zone | 
+ branch            | text                     | 
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
     "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
@@ -149,6 +150,7 @@ Foreign-key constraints:
  updated_at      | timestamp with time zone | not null default now()
  started_at      | timestamp with time zone | 
  finished_at     | timestamp with time zone | 
+ branch          | text                     | 
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, campaign_job_id)
@@ -339,7 +341,6 @@ Check constraints:
     "event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
     "event_logs_check_name_not_empty" CHECK (name <> ''::text)
     "event_logs_check_source_not_empty" CHECK (source <> ''::text)
-    "event_logs_check_url_not_empty" CHECK (url <> ''::text)
     "event_logs_check_version_not_empty" CHECK (version <> ''::text)
 
 ```
@@ -968,5 +969,17 @@ Referenced by:
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+
+```
+
+# Table "public.versions"
+```
+   Column   |           Type           |       Modifiers        
+------------+--------------------------+------------------------
+ service    | text                     | not null
+ version    | text                     | not null
+ updated_at | timestamp with time zone | not null default now()
+Indexes:
+    "versions_pkey" PRIMARY KEY, btree (service)
 
 ```

@@ -39,3 +39,11 @@ export function sanitizeClass(value: string): string {
 export function dedupeWhitespace(value: string): string {
     return value.replace(/\s+/g, ' ')
 }
+
+/**
+ * Checkes whether a given string is quoted.
+ * @param value string to check against
+ */
+export function isQuoted(value: string): boolean {
+    return value.startsWith('"') && value.endsWith('"') && value !== '"'
+}

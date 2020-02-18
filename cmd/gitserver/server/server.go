@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -116,10 +115,6 @@ type Server struct {
 
 	// DiskSizer tells how much disk is free and how large the disk is.
 	DiskSizer DiskSizer
-
-	// TODO(keegancsmith) remove! Temporary logging to understand errors in
-	// production. https://github.com/sourcegraph/sourcegraph/issues/6676
-	StderrErrorLog *log.Logger
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -688,14 +683,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
 
-	if s.StderrErrorLog != nil {
-		logErrors(s.StderrErrorLog.Printf, req.Repo, stderrBuf.Bytes())
-	}
+	stderr := stderrBuf.String()
+	checkMaybeCorruptRepo(req.Repo, dir, stderr)
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
-	w.Header().Set("X-Exec-Stderr", stderrBuf.String())
+	w.Header().Set("X-Exec-Stderr", stderr)
 }
 
 // setGitAttributes writes our global gitattributes to
@@ -733,11 +727,12 @@ type cloneOptions struct {
 }
 
 // cloneRepo issues a git clone command for the given repo. It is
-// non-blocking.
+// non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, opts *cloneOptions) (string, error) {
 	if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return "This will never finish cloning", nil
 	}
+	redactor := newURLRedactor(url)
 
 	dir := s.dir(repo)
 
@@ -758,7 +753,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 	}
 	defer cancel()
 	if err := s.isCloneable(ctx, url); err != nil {
-		return "", fmt.Errorf("error cloning repo: repo %s (%s) not cloneable: %s", repo, url, err)
+		return "", fmt.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactor.redact(err.Error()))
 	}
 
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
@@ -827,7 +822,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 
 		pr, pw := io.Pipe()
 		defer pw.Close()
-		go readCloneProgress(url, lock, pr)
+		go readCloneProgress(redactor, lock, pr)
 
 		if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
 			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
@@ -888,10 +883,9 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(url string, lock *RepositoryLock, pr io.Reader) {
+func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader) {
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
-	redactor := newURLRedactor(url)
 	for scan.Scan() {
 		progress := scan.Text()
 
@@ -1300,8 +1294,12 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		}
 	}
 
+	configRemoteOpts := true
 	var cmd *exec.Cmd
-	if useRefspecOverrides() {
+	if customCmd := customFetchCmd(ctx, url); customCmd != nil {
+		cmd = customCmd
+		configRemoteOpts = false
+	} else if useRefspecOverrides() {
 		cmd = refspecOverridesFetchCmd(ctx, url)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
@@ -1314,7 +1312,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	if output, err := runWithRemoteOpts(ctx, cmd, nil); err != nil {
+	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to update")
 	}

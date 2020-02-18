@@ -42,6 +42,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c := &a8n.Campaign{
 						Name:           fmt.Sprintf("Upgrade ES-Lint %d", i),
 						Description:    "All the Javascripts are belong to us",
+						Branch:         "upgrade-es-lint",
 						AuthorID:       23,
 						ChangesetIDs:   []int64{int64(i) + 1},
 						CampaignPlanID: 42 + int64(i),
@@ -1876,6 +1877,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignID:    int64(i + 1),
 						CampaignJobID: int64(i + 1),
 						ChangesetID:   int64(i + 1),
+						Branch:        "test-branch",
 						Error:         "only set on error",
 						StartedAt:     now,
 						FinishedAt:    now,
@@ -2085,6 +2087,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					now = now.Add(time.Second)
 					c.StartedAt = now.Add(1 * time.Second)
 					c.FinishedAt = now.Add(1 * time.Second)
+					c.Branch = "upgrade-es-lint"
 					c.Error = "updated-error"
 
 					want := c

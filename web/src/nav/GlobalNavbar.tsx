@@ -47,6 +47,7 @@ interface Props
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
+    isSearchRelatedPage: boolean
     showCampaigns: boolean
 
     /**
@@ -104,6 +105,16 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props): void {
+        if (prevProps.location !== this.props.location) {
+            if (!this.props.isSearchRelatedPage) {
+                // On a non-search related page or non-repo page, we clear the query in
+                // the main query input and interactive mode UI to avoid misleading users
+                // that the query is relevant in any way on those pages.
+                this.props.onNavbarQueryChange({ query: '', cursorPosition: 0 })
+                this.props.onFiltersInQueryChange({})
+            }
+        }
+
         if (prevProps.location.search !== this.props.location.search) {
             const query = parseSearchURLQuery(this.props.location.search || '')
             if (query) {
@@ -183,6 +194,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                     authRequired={this.state.authRequired}
                                     navbarSearchState={this.props.navbarSearchQueryState}
                                     onNavbarQueryChange={this.props.onNavbarQueryChange}
+                                    lowProfile={!this.props.isSearchRelatedPage}
                                 />
                             )
                         ) : (

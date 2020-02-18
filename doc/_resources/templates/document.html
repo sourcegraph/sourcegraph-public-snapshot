@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.11.4"}} {{$previousReleaseVersion := "3.11"}} {{$currentReleaseRevspec := "v3.12.5"}} {{$currentReleaseVersion := "3.12"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.11.4"}} {{$previousReleaseVersion := "3.11"}} {{$currentReleaseRevspec := "v3.12.7"}} {{$currentReleaseVersion := "3.12"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -117,6 +117,14 @@
                                             <li><a href="/admin/install/docker/aws">Install Sourcegraph with Docker on AWS</a></li>
                                             <li><a href="/admin/install/docker/digitalocean">Install Sourcegraph with Docker on DigitalOcean</a></li>
                                             <li><a href="/admin/install/docker/google_cloud">Install Sourcegraph with Docker on Google Cloud</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/admin/install/docker">Install Sourcegraph with Docker Compose</a></li>
+                                    <li class="content-nav-no-hover" data-sub-section-item="Install Sourcegraph with Docker Compose" )>
+                                        <ul>
+                                            <li><a href="/admin/install/docker-compose/aws">Install Sourcegraph with Docker Compose on AWS</a></li>
+                                            <li><a href="/admin/install/docker-compose/digitalocean">Install Sourcegraph with Docker Compose on DigitalOcean</a></li>
+                                            <li><a href="/admin/install/docker-compose/google_cloud">Install Sourcegraph with Docker Compose on Google Cloud</a></li>
                                         </ul>
                                     </li>
                                     <li><a href="/admin/install/cluster">Installing Sourcegraph on a cluster</a></li>

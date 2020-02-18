@@ -2,32 +2,10 @@ import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/ut
 import { Suggestion } from '../Suggestion'
 import { assign } from 'lodash/fp'
 import { FilterTypes } from '../../../../../shared/src/search/interactive/util'
+import { resolveFilter } from '../../../../../shared/src/search/parser/filters'
 
 /** FilterTypes which have a finite number of valid options. */
 export type FiniteFilterTypes = FilterTypes.archived | FilterTypes.fork | FilterTypes.type
-
-export function isTextFilter(filter: FilterTypes): boolean {
-    const validTextFilters = [
-        'repo',
-        'repogroup',
-        'repohasfile',
-        'repohascommitafter',
-        'file',
-        'lang',
-        'count',
-        'timeout',
-        'before',
-        'after',
-        'message',
-        'author',
-        '-repo',
-        '-repohasfile',
-        '-file',
-        '-lang',
-    ]
-
-    return validTextFilters.includes(filter)
-}
 
 export const finiteFilters: Record<
     FiniteFilterTypes,
@@ -53,9 +31,9 @@ export const finiteFilters: Record<
         ),
     },
     type: {
-        default: 'code',
+        default: '',
         values: [
-            { value: 'code' },
+            { displayValue: 'code', value: '' },
             { value: 'commit' },
             { value: 'diff' },
             { value: 'repo' },
@@ -70,7 +48,11 @@ export const finiteFilters: Record<
 }
 
 export const isFiniteFilter = (filter: FilterTypes): filter is FiniteFilterTypes =>
-    ['archived', 'fork', 'type'].includes(filter)
+    !!resolveFilter(filter) && ['fork', 'archived', 'type'].includes(filter)
+
+export function isTextFilter(filter: FilterTypes): boolean {
+    return !!resolveFilter(filter) && !isFiniteFilter(filter)
+}
 
 /**
  * Some filter types should have their suggestions searched without influence
@@ -97,4 +79,6 @@ export const FilterTypesToProseNames: Record<FilterTypes, string> = {
     message: 'Commit message contains',
     author: 'Commit author',
     type: 'Type',
+    content: 'Content',
+    patterntype: 'Pattern type',
 }

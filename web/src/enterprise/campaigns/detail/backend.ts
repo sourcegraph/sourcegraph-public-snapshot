@@ -290,6 +290,7 @@ export const queryChangesets = (
                                     color
                                 }
                                 repository {
+                                    id
                                     name
                                     url
                                 }

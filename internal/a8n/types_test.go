@@ -120,12 +120,14 @@ func TestChangesetEvents(t *testing.T) {
 		}
 
 		commit := &github.PullRequestCommit{
-			Commit: github.Commit{
-				OID:             "123",
-				Message:         "Test Commit",
-				MessageHeadline: "",
-				URL:             "",
-				Status:          github.Status{},
+			Commit: struct {
+				OID           string
+				CheckSuites   struct{ Nodes []github.CheckSuite }
+				Status        github.Status
+				CommittedDate time.Time
+			}{
+				OID:    "123",
+				Status: github.Status{},
 			},
 		}
 
@@ -280,6 +282,21 @@ func TestChangesetEventsReviewState(t *testing.T) {
 		}
 	}
 
+	ghReviewDismissed := func(t time.Time, login, reviewer string) *ChangesetEvent {
+		return &ChangesetEvent{
+			Kind: ChangesetEventKindGitHubReviewDismissed,
+			Metadata: &github.ReviewDismissedEvent{
+				CreatedAt: t,
+				Actor:     github.Actor{Login: login},
+				Review: github.PullRequestReview{
+					Author: github.Actor{
+						Login: reviewer,
+					},
+				},
+			},
+		}
+	}
+
 	tests := []struct {
 		events ChangesetEvents
 		want   ChangesetReviewState
@@ -355,16 +372,54 @@ func TestChangesetEventsReviewState(t *testing.T) {
 			},
 			want: ChangesetReviewStateApproved,
 		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(0), "user2", "user1"),
+			},
+			want: ChangesetReviewStatePending,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(1), "user2", "user1"),
+				ghReview(daysAgo(0), "user1", "CHANGES_REQUESTED"),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReviewDismissed(daysAgo(1), "user2", "user1"),
+				ghReview(daysAgo(0), "user3", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(0), "user1", "DISMISSED"),
+			},
+			want: ChangesetReviewStatePending,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(1), "user1", "DISMISSED"),
+				ghReview(daysAgo(0), "user3", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
 	}
 
-	for _, tc := range tests {
+	for i, tc := range tests {
 		have, err := tc.events.ReviewState()
 		if err != nil {
 			t.Fatalf("got error: %s", err)
 		}
 
 		if have, want := have, tc.want; have != want {
-			t.Errorf("wrong reviewstate. have=%s, want=%s", have, want)
+			t.Errorf("%d: wrong reviewstate. have=%s, want=%s", i, have, want)
 		}
 	}
 }
@@ -383,9 +438,6 @@ func TestComputeGithubCheckState(t *testing.T) {
 		}
 		return ce
 	}
-	pState := func(s ChangesetCheckState) *ChangesetCheckState {
-		return &s
-	}
 
 	lastSynced := now.Add(-1 * time.Minute)
 	pr := &github.PullRequest{}
@@ -393,33 +445,33 @@ func TestComputeGithubCheckState(t *testing.T) {
 	tests := []struct {
 		name   string
 		events []*ChangesetEvent
-		want   *ChangesetCheckState
+		want   ChangesetCheckState
 	}{
 		{
 			name:   "empty slice",
 			events: nil,
-			want:   nil,
+			want:   ChangesetCheckStateUnknown,
 		},
 		{
 			name: "single success",
 			events: []*ChangesetEvent{
 				testEvent(1, "ctx1", "SUCCESS"),
 			},
-			want: pState(ChangesetCheckStatePassed),
+			want: ChangesetCheckStatePassed,
 		},
 		{
 			name: "single pending",
 			events: []*ChangesetEvent{
 				testEvent(1, "ctx1", "PENDING"),
 			},
-			want: pState(ChangesetCheckStatePending),
+			want: ChangesetCheckStatePending,
 		},
 		{
 			name: "single error",
 			events: []*ChangesetEvent{
 				testEvent(1, "ctx1", "ERROR"),
 			},
-			want: pState(ChangesetCheckStateFailed),
+			want: ChangesetCheckStateFailed,
 		},
 		{
 			name: "pending + error",
@@ -427,7 +479,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 				testEvent(1, "ctx1", "PENDING"),
 				testEvent(1, "ctx2", "ERROR"),
 			},
-			want: pState(ChangesetCheckStatePending),
+			want: ChangesetCheckStatePending,
 		},
 		{
 			name: "pending + success",
@@ -435,7 +487,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 				testEvent(1, "ctx1", "PENDING"),
 				testEvent(1, "ctx2", "SUCCESS"),
 			},
-			want: pState(ChangesetCheckStatePending),
+			want: ChangesetCheckStatePending,
 		},
 		{
 			name: "success + error",
@@ -443,7 +495,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 				testEvent(1, "ctx1", "SUCCESS"),
 				testEvent(1, "ctx2", "ERROR"),
 			},
-			want: pState(ChangesetCheckStateFailed),
+			want: ChangesetCheckStateFailed,
 		},
 		{
 			name: "success x2",
@@ -451,7 +503,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 				testEvent(1, "ctx1", "SUCCESS"),
 				testEvent(1, "ctx2", "SUCCESS"),
 			},
-			want: pState(ChangesetCheckStatePassed),
+			want: ChangesetCheckStatePassed,
 		},
 		{
 			name: "later events have precedence",
@@ -459,7 +511,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 				testEvent(1, "ctx1", "PENDING"),
 				testEvent(1, "ctx1", "SUCCESS"),
 			},
-			want: pState(ChangesetCheckStatePassed),
+			want: ChangesetCheckStatePassed,
 		},
 	}
 

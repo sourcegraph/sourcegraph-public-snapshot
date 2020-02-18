@@ -23,6 +23,7 @@ A menu is an existing part of the user interface (of Sourcegraph or any other in
 * `directory/page`: A section on all pages showing a directory listing. Sometimes known as a "tree page" on code hosts.
 * `global/nav`: The global navigation bar, shown at the top of every page.
 * `panel/toolbar`: The toolbar on the panel, which is used to show references, definitions, commit history, and other information related to a file or a token/position in a file.
+* `search/results/toolbar`: The toolbar on search results pages.
 * `help`: The help menu or page.
 
 The set of available menus is defined in the `menus` property in [`extension.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/schema/extension.schema.json).

@@ -36,7 +36,7 @@ import { ChangesetLabel } from './ChangesetLabel'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
-    campaignUpdates: Subject<void>
+    campaignUpdates?: Subject<void>
     history: H.History
     location: H.Location
     /** Shows the publish button for ChangesetPlans */
@@ -58,7 +58,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             setPublishError(undefined)
             setIsLoading(true)
             await _publishChangeset(node.id)
-            campaignUpdates.next()
+            if (campaignUpdates) {
+                campaignUpdates.next()
+            }
         } catch (error) {
             setPublishError(asError(error))
         } finally {

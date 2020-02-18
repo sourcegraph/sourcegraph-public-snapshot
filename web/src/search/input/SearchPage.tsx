@@ -96,6 +96,7 @@ export class SearchPage extends React.Component<Props, State> {
                                 navbarSearchState={this.state.userQueryState}
                                 onNavbarQueryChange={this.onUserQueryChange}
                                 toggleSearchMode={this.props.toggleSearchMode}
+                                lowProfile={false}
                             />
                         ) : (
                             <>

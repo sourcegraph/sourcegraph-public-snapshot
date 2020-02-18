@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"database/sql"
 	"sort"
 	"strconv"
 	"strings"
@@ -12,23 +11,15 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"gopkg.in/inconshreveable/log15.v2"
 )
-
-// NewPreSync takes in dependencies used by the Syncer and returns a function
-// that can then be set on the Syncer as a PreSync.
-type NewPreSync func(*sql.DB, Store, *httpcli.Factory) func(context.Context) error
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	Store   Store
 	Sourcer Sourcer
-
-	// PreSync is called before this Syncer's Sync method.
-	PreSync func(context.Context) error
 
 	// DisableStreaming if true will prevent the syncer from streaming in new
 	// sourced repositories into the store.
@@ -108,12 +99,6 @@ func (s *Syncer) TriggerSync() {
 
 // Sync synchronizes the repositories.
 func (s *Syncer) Sync(ctx context.Context) (err error) {
-	if s.PreSync != nil {
-		if err := s.PreSync(ctx); err != nil && s.Logger != nil {
-			s.Logger.Error("PreSync", "error", err)
-		}
-	}
-
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.Sync", "")

@@ -34,7 +34,7 @@ Sourcegraph has the following dependencies:
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v11 or higher)
 - [Redis](http://redis.io/) (v5.0.7 or higher)
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
-- [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
+- [NGINX](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 - [SQLite](https://www.sqlite.org/index.html) tools
 - [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
@@ -52,7 +52,7 @@ The following are two recommendations for installing these dependencies:
     brew cask install docker
     ```
 
-3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, nginx, golang-migrate, Comby, and SQLite tools with the following command:
+3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, and SQLite tools with the following command:
 
     ```bash
     brew install go nvm yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross

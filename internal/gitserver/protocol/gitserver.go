@@ -142,6 +142,8 @@ type CreateCommitFromPatchRequest struct {
 	Patch string
 	// TargetRef is the ref that will be created for this patch
 	TargetRef string
+	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+	UniqueRef bool
 	// CommitInfo is the information that will be used when creating the commit from a patch
 	CommitInfo PatchCommitInfo
 	// Push specifies whether the target ref will be pushed to the code host

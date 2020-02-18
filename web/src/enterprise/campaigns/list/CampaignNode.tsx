@@ -9,11 +9,17 @@ import { changesetStateIcons, changesetStatusColorClasses } from '../detail/chan
 import formatDistance from 'date-fns/formatDistance'
 import parseISO from 'date-fns/parseISO'
 
-interface Props {
+export interface CampaignNodeProps {
     node: Pick<
         GQL.ICampaign,
         'id' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt'
     >
+    /** Renders a selection button next to the campaign, used to select a campaign for update */
+    selection?: {
+        enabled: boolean
+        buttonLabel: string
+        onSelect: (campaign: Pick<GQL.ICampaign, 'id'>) => void
+    }
     /** Used for testing purposes. Sets the current date */
     now?: Date
 }
@@ -21,7 +27,7 @@ interface Props {
 /**
  * An item in the list of campaigns.
  */
-export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new Date() }) => {
+export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({ node, selection, now = new Date() }) => {
     const campaignIconClass = node.closedAt ? 'text-danger' : 'text-success'
     const OpenChangesetIcon = changesetStateIcons[GQL.ChangesetState.OPEN]
     const MergedChangesetIcon = changesetStateIcons[GQL.ChangesetState.MERGED]
@@ -62,6 +68,11 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new D
                     {changesetCountByState(GQL.ChangesetState.MERGED)}{' '}
                     <MergedChangesetIcon className={`text-${changesetStatusColorClasses.MERGED} ml-1`} />
                 </div>
+                {selection?.enabled && (
+                    <button type="button" className="btn btn-secondary ml-3" onClick={() => selection.onSelect(node)}>
+                        {selection.buttonLabel}
+                    </button>
+                )}
             </div>
         </li>
     )

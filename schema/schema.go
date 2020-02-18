@@ -284,6 +284,14 @@ type CloneURLToRepositoryName struct {
 	To string `json:"to"`
 }
 
+// CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
+type CustomGitFetchMapping struct {
+	// DomainPath description: Git clone URL domain/path
+	DomainPath string `json:"domainPath"`
+	// Fetch description: Git fetch command
+	Fetch string `json:"fetch"`
+}
+
 // DebugLog description: Turns on debug logging for specific debugging scenarios.
 type DebugLog struct {
 	// ExtsvcGitlab description: Log GitLab API requests.
@@ -344,6 +352,8 @@ type ExperimentalFeatures struct {
 	Automation string `json:"automation,omitempty"`
 	// BitbucketServerFastPerm description: Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. This requires the installation of the Bitbucket Server Sourcegraph plugin. Warning: there may be performance degradation under significant load.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
+	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.
+	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// Discussions description: Enables the code discussions experiment.
@@ -884,6 +894,8 @@ type SiteConfiguration struct {
 	DisableAutoGitUpdates bool `json:"disableAutoGitUpdates,omitempty"`
 	// DisableBuiltInSearches description: Whether built-in searches should be hidden on the Searches page.
 	DisableBuiltInSearches bool `json:"disableBuiltInSearches,omitempty"`
+	// DisableNonCriticalTelemetry description: Disable aggregated event counts from being sent to Sourcegraph.com via pings.
+	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
 	// Discussions description: Configures Sourcegraph code discussions.

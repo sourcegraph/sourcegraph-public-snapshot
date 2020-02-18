@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -20,30 +21,41 @@ func main() {
 	if debug {
 		log.Println("enterprise edition")
 	}
+	shared.Main(enterpriseInit)
+}
 
-	newPreSync := func(db *sql.DB, rs repos.Store, cf *httpcli.Factory) func(context.Context) error {
-		syncer := &a8n.ChangesetSyncer{
-			Store:       a8n.NewStore(db),
-			ReposStore:  rs,
-			HTTPFactory: cf,
-		}
+var cbOnce sync.Once
 
-		return syncer.Sync
-	}
-
-	dbInitHook := func(db *sql.DB) {
+func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory) {
+	cbOnce.Do(func() {
 		ctx := context.Background()
-		store := a8n.NewStore(db)
+		a8nStore := a8n.NewStore(db)
 
-		for {
-			err := store.DeleteExpiredCampaignPlans(ctx)
-			if err != nil {
-				log15.Error("DeleteExpiredCampaignPlans", "error", err)
+		// Set up syncer
+		go func() {
+			syncer := &a8n.ChangesetSyncer{
+				Store:       a8nStore,
+				ReposStore:  repoStore,
+				HTTPFactory: cf,
 			}
+			for {
+				err := syncer.Sync(ctx)
+				if err != nil {
+					log15.Error("Syncing Changesets", "err", err)
+				}
+				time.Sleep(2 * time.Minute)
+			}
+		}()
 
-			time.Sleep(2 * time.Minute)
-		}
-	}
-
-	shared.Main(newPreSync, dbInitHook)
+		// Set up expired campaign deletion
+		go func() {
+			for {
+				err := a8nStore.DeleteExpiredCampaignPlans(ctx)
+				if err != nil {
+					log15.Error("DeleteExpiredCampaignPlans", "error", err)
+				}
+				time.Sleep(2 * time.Minute)
+			}
+		}()
+	})
 }
