@@ -219,6 +219,7 @@ type SearchTypeLatency struct {
 	Repo       *SearchLatency
 	Diff       *SearchLatency
 	Commit     *SearchLatency
+	Symbol     *SearchLatency
 }
 
 type SearchLatency struct {
