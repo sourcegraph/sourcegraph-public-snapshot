@@ -16,7 +16,7 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 	RepoID api.RepoID
 	Commit string
 	Path   string
-}) (*lsif.LSIFUpload, error) {
+}) ([]*lsif.LSIFUpload, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
 	query.Set("commit", args.Commit)
@@ -28,7 +28,7 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 	}
 
 	payload := struct {
-		Upload *lsif.LSIFUpload `json:"upload"`
+		Uploads []*lsif.LSIFUpload `json:"uploads"`
 	}{}
 
 	_, err := c.do(ctx, req, &payload)
@@ -36,7 +36,7 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	return payload.Upload, nil
+	return payload.Uploads, nil
 }
 
 func (c *Client) Upload(ctx context.Context, args *struct {

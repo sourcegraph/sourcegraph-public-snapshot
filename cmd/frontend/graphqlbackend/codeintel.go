@@ -81,7 +81,6 @@ type LSIFUploadConnectionResolver interface {
 }
 
 type LSIFQueryResolver interface {
-	Commit(ctx context.Context) (*GitCommitResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)

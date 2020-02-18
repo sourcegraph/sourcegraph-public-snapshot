@@ -149,11 +149,7 @@ export function createLsifRouter(
                 const { repositoryId, commit, path }: ExistsQueryArgs = req.query
                 const ctx = createTracingContext(req, { repositoryId, commit })
                 const uploads = await backend.exists(repositoryId, commit, path, ctx)
-
-                // TODO(#8384): Multiple dumps to the GraphQL API. Punting on this for now as
-                // it may cause a non-trivial change in the API shape that may also
-                // affect basic-code-intel.
-                res.json({ upload: uploads[0] })
+                res.json({ uploads })
             }
         )
     )
