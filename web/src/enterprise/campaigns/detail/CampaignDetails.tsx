@@ -1,7 +1,7 @@
 import slugify from 'slugify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback, ChangeEvent } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -98,7 +98,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
-    const [branch, setBranch] = useState<string | null>(null)
+    const [branch, setBranch] = useState<string>('')
+    const [branchModified, setBranchModified] = useState<boolean>(false)
 
     // For errors during fetching
     const triggerError = useError()
@@ -245,7 +246,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 description,
                 namespace: authenticatedUser.id,
                 plan: campaignPlan ? campaignPlan.id : undefined,
-                branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
+                branch: specifyingBranchAllowed ? branch : undefined,
                 draft: true,
             })
             unblockHistoryRef.current()
@@ -282,7 +283,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     name,
                     description,
                     plan: planID ?? undefined,
-                    branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
+                    branch: specifyingBranchAllowed ? branch : undefined,
                 })
                 setCampaign(newCampaign)
                 setName(newCampaign.name)
@@ -295,7 +296,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     description,
                     namespace: authenticatedUser.id,
                     plan: campaignPlan ? campaignPlan.id : undefined,
-                    branch: specifyingBranchAllowed ? branch ?? slugify(name) : undefined,
+                    branch: specifyingBranchAllowed ? branch : undefined,
                 })
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
@@ -377,6 +378,18 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign ? campaign.author : authenticatedUser
 
+    const onNameChange = (newName: string): void => {
+        if (!branchModified) {
+            setBranch(slugify(newName, { lower: true }))
+        }
+        setName(newName)
+    }
+
+    const onBranchChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        setBranch(event.target.value)
+        setBranchModified(true)
+    }
+
     return (
         <>
             <PageTitle title={campaign ? campaign.name : 'New campaign'} />
@@ -389,7 +402,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     onClose={onClose}
                     onDelete={onDelete}
                     name={name}
-                    onNameChange={setName}
+                    onNameChange={onNameChange}
                 />
                 {alertError && <ErrorAlert error={alertError} />}
                 <div className="card">
@@ -459,9 +472,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     <input
                                         type="text"
                                         className="form-control"
-                                        onChange={event => setBranch(event.target.value)}
+                                        onChange={onBranchChange}
                                         placeholder="my-awesome-campaign"
-                                        value={branch !== null ? branch : slugify(name)}
+                                        value={branch}
                                         required={true}
                                         disabled={mode === 'saving'}
                                     />

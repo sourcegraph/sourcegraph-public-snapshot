@@ -21,7 +21,7 @@ interface Props {
     onDelete: (closeChangesets: boolean) => Promise<void>
     onEdit: React.MouseEventHandler
     name: string
-    onNameChange: React.Dispatch<React.SetStateAction<string>>
+    onNameChange: (newName: string) => void
 }
 
 export const CampaignActionsBar: React.FunctionComponent<Props> = ({
