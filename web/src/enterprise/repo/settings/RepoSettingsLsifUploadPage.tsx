@@ -50,11 +50,9 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             Upload for commit{' '}
                             {uploadOrError.projectRoot
                                 ? uploadOrError.projectRoot.commit.abbreviatedOID
-                                : uploadOrError.inputCommit.substring(0, 7)}
-                            {uploadOrError.inputRoot !== '' &&
-                                ` rooted at ${
-                                    uploadOrError.projectRoot ? uploadOrError.projectRoot.path : uploadOrError.inputRoot
-                                }`}
+                                : uploadOrError.inputCommit.substring(0, 7)}{' '}
+                            indexed by {uploadOrError.inputIndexer} rooted at{' '}
+                            {uploadOrError.projectRoot?.path || uploadOrError.inputRoot || '/'}
                         </h2>
                     </div>
 
@@ -120,6 +118,11 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                                         uploadOrError.inputRoot || '/'
                                     )}
                                 </td>
+                            </tr>
+
+                            <tr>
+                                <td>Indexer</td>
+                                <td>{uploadOrError.inputIndexer}</td>
                             </tr>
 
                             <tr>

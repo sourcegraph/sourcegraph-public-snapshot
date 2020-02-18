@@ -4262,6 +4262,9 @@ type LSIFUpload implements Node {
     # The original root supplied at upload time.
     inputRoot: String!
 
+    # The original indexer name supplied at upload time.
+    inputIndexer: String!
+
     # The upload's current state.
     state: LSIFUploadState!
 

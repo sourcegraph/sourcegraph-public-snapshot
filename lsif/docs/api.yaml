@@ -514,6 +514,9 @@ components:
         root:
           type: string
           description: The root argument given on upload.
+        indexer:
+          type: string
+          description: The name of the indexer given on upload.
         filename:
           type: string
           description: The filename where the upload was stored before conversion.
