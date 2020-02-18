@@ -29,11 +29,6 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty"`,
 		},
 		{
-			name:  "EmptyURL",
-			event: &Event{Name: "test_event", UserID: 1, Source: "WEB"},
-			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_url_not_empty"`,
-		},
-		{
 			name:  "InvalidUser",
 			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB"},
 			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_has_user"`,

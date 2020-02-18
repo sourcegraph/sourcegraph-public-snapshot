@@ -68,6 +68,8 @@
 // 1528395649_add_campaign_branch.up.sql (820B)
 // 1528395650_add_versions_table.down.sql (48B)
 // 1528395650_add_versions_table.up.sql (159B)
+// 1528395651_event_logs_remove_empty_url_check.down.sql (113B)
+// 1528395651_event_logs_remove_empty_url_check.up.sql (88B)
 
 package migrations
 
@@ -1496,6 +1498,46 @@ func _1528395650_add_versions_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395651_event_logs_remove_empty_url_checkDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\x56\x70\x74\x71\x51\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x41\x92\x89\x4f\xce\x48\x4d\xce\x8e\x2f\x2d\xca\x89\xcf\xcb\x2f\x89\x4f\xcd\x2d\x28\xa9\x54\x70\xf6\x70\x75\xf6\x56\xd0\xd0\x28\x2d\xca\x51\xb0\xb1\x53\x50\x57\xb7\xb2\x2a\x49\xad\x28\xd1\xd4\xb4\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xe6\xfd\x73\x12\x71\x00\x00\x00")
+
+func _1528395651_event_logs_remove_empty_url_checkDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395651_event_logs_remove_empty_url_checkDownSql,
+		"1528395651_event_logs_remove_empty_url_check.down.sql",
+	)
+}
+
+func _1528395651_event_logs_remove_empty_url_checkDownSql() (*asset, error) {
+	bytes, err := _1528395651_event_logs_remove_empty_url_checkDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395651_event_logs_remove_empty_url_check.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa7, 0x9c, 0xcf, 0x62, 0xa1, 0x47, 0x15, 0x51, 0x4b, 0xf, 0x18, 0x29, 0x1a, 0x40, 0xcb, 0x47, 0xc4, 0x1f, 0xf6, 0xde, 0x2f, 0xf1, 0xf0, 0x23, 0x72, 0x8e, 0x5d, 0x8f, 0x5, 0xfb, 0x82, 0xc5}}
+	return a, nil
+}
+
+var __1528395651_event_logs_remove_empty_url_checkUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x41\x92\x8a\x4f\xce\x48\x4d\xce\x8e\x2f\x2d\xca\x89\xcf\xcb\x2f\x89\x4f\xcd\x2d\x28\xa9\xb4\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x6f\xa1\x26\x42\x58\x00\x00\x00")
+
+func _1528395651_event_logs_remove_empty_url_checkUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395651_event_logs_remove_empty_url_checkUpSql,
+		"1528395651_event_logs_remove_empty_url_check.up.sql",
+	)
+}
+
+func _1528395651_event_logs_remove_empty_url_checkUpSql() (*asset, error) {
+	bytes, err := _1528395651_event_logs_remove_empty_url_checkUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395651_event_logs_remove_empty_url_check.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x96, 0xae, 0x80, 0x28, 0x38, 0x20, 0x1, 0xff, 0x75, 0xbb, 0xd7, 0xf0, 0xa7, 0x9f, 0x25, 0xd, 0x17, 0x8e, 0xf, 0x41, 0xc9, 0xc, 0x41, 0x89, 0x50, 0x32, 0xfc, 0xf0, 0x1, 0x11, 0xb0, 0x82}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1655,6 +1697,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395649_add_campaign_branch.up.sql":                            _1528395649_add_campaign_branchUpSql,
 	"1528395650_add_versions_table.down.sql":                           _1528395650_add_versions_tableDownSql,
 	"1528395650_add_versions_table.up.sql":                             _1528395650_add_versions_tableUpSql,
+	"1528395651_event_logs_remove_empty_url_check.down.sql":            _1528395651_event_logs_remove_empty_url_checkDownSql,
+	"1528395651_event_logs_remove_empty_url_check.up.sql":              _1528395651_event_logs_remove_empty_url_checkUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1766,6 +1810,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395649_add_campaign_branch.up.sql":                            {_1528395649_add_campaign_branchUpSql, map[string]*bintree{}},
 	"1528395650_add_versions_table.down.sql":                           {_1528395650_add_versions_tableDownSql, map[string]*bintree{}},
 	"1528395650_add_versions_table.up.sql":                             {_1528395650_add_versions_tableUpSql, map[string]*bintree{}},
+	"1528395651_event_logs_remove_empty_url_check.down.sql":            {_1528395651_event_logs_remove_empty_url_checkDownSql, map[string]*bintree{}},
+	"1528395651_event_logs_remove_empty_url_check.up.sql":              {_1528395651_event_logs_remove_empty_url_checkUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
