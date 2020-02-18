@@ -20,7 +20,7 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 			Alert: searchAlert{
 				title:       "An alert for regex",
 				description: "An alert for regex",
-				patternType: SearchTypeRegex,
+				patternType: query.SearchTypeRegex,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "Some query description",
@@ -35,7 +35,7 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 			Alert: searchAlert{
 				title:       "An alert for structural",
 				description: "An alert for structural",
-				patternType: SearchTypeStructural,
+				patternType: query.SearchTypeStructural,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "Some query description",
