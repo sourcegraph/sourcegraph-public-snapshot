@@ -7,6 +7,7 @@ directly, `go test ./util/textutil`.
 
 ## TypeScript tests (web app and browser extension)
 
+- First run `yarn` in the Sourcegraph root directory if it is a fresh clone.
 - To run all unit tests, run `yarn test` from the root directory.
 - To run unit tests in development (only running the tests related to uncommitted code), run `yarn test --watch`.
   - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true` (and, if you want, `jest.showCoverageOnLoad: true`)
@@ -50,7 +51,7 @@ Retrying the Buildkite step can help determine whether the test is flaky or brok
 
 ### Running locally
 
-To run all e2e tests locally against your dev server, **create a user `test` with password `test`, promote as site admin**, then run:
+To run all e2e tests locally against your dev server, **create a user `test` with password `testtesttest`, promote as site admin**, then run:
 
 ```
 env TEST_USER_PASSWORD=test GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
@@ -70,6 +71,8 @@ You can single-out one test with `test.only`:
 ```
 
 Alternatively, you can use `-g` to filter tests: `env ... test-e2e -g "some test name"`.
+
+Run tests selectively with a command like `yarn run test:regression:search`, which runs the tests for search functionality.
 
 ### Viewing e2e tests live in CI
 

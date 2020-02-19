@@ -20,7 +20,7 @@ const SettingsSchemaJSON = `{
         "splitSearchModes": {
           "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": { "pointer": true }
         },
         "searchStats": {

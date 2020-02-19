@@ -50,12 +50,30 @@ type CheckSuite struct {
 	ID string
 	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
 	Status string
-	// On of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
+	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
 	Conclusion string
 	ReceivedAt time.Time
+	// When the suite was received via a webhook
+	CheckRuns struct{ Nodes []CheckRun }
 }
 
 func (c *CheckSuite) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Status, c.Conclusion, c.ReceivedAt.UnixNano())
+	return strconv.FormatUint(fnv1.HashString64(key), 16)
+}
+
+// CheckRun represents the status of a checkrun
+type CheckRun struct {
+	ID string
+	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
+	Status string
+	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
+	Conclusion string
+	// When the run was received via a webhook
+	ReceivedAt time.Time
+}
+
+func (c *CheckRun) Key() string {
 	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Status, c.Conclusion, c.ReceivedAt.UnixNano())
 	return strconv.FormatUint(fnv1.HashString64(key), 16)
 }
@@ -743,6 +761,13 @@ fragment commitWithChecks on Commit {
       id
       status
       conclusion
+      checkRuns(last: 10){
+        nodes{
+          id
+          status
+          conclusion
+        }
+      }
     }
   }
   committedDate

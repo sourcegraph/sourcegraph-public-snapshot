@@ -51,6 +51,25 @@ export class Database {
     ) {}
 
     /**
+     * Retrieve all document paths from the database.
+     *
+     * @param ctx The tracing context.
+     */
+    public documentPaths(ctx: TracingContext = {}): Promise<string[]> {
+        return this.logAndTraceCall(ctx, 'Fetching document paths', async () => {
+            const paths: { path: string }[] = await this.withConnection(connection =>
+                connection
+                    .getRepository(sqliteModels.DocumentModel)
+                    .createQueryBuilder()
+                    .select('path')
+                    .getRawMany()
+            )
+
+            return paths.map(({ path }) => path)
+        })
+    }
+
+    /**
      * Determine if data exists for a particular document in this database.
      *
      * @param path The path of the document.

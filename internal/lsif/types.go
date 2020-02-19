@@ -12,6 +12,7 @@ type LSIFUpload struct {
 	RepositoryID      api.RepoID `json:"repositoryId"`
 	Commit            string     `json:"commit"`
 	Root              string     `json:"root"`
+	Indexer           string     `json:"indexer"`
 	Filename          string     `json:"filename"`
 	State             string     `json:"state"`
 	UploadedAt        time.Time  `json:"uploadedAt"`

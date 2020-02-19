@@ -60,13 +60,19 @@
          "ID": "MDEwOkNoZWNrU3VpdGUzOTAzMDI4MzY=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzOTAzMDI4Mzc=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         }
        ]
       },
@@ -170,13 +176,19 @@
          "ID": "MDEwOkNoZWNrU3VpdGUzOTAzMDI4MzY=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzOTAzMDI4Mzc=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         }
        ]
       },
@@ -190,5 +202,5 @@
    ]
   },
   "CreatedAt": "2020-01-08T15:59:11Z",
-  "UpdatedAt": "2020-02-12T10:50:08Z"
+  "UpdatedAt": "2020-02-17T12:17:37Z"
  }

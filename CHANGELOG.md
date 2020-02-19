@@ -9,10 +9,21 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## 3.13.0 (unreleased)
+## Unreleased
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.13.0
+
+### Added
+
+- Experimental: Added new field `experimentalFeatures.customGitFetch` that allows defining custom git fetch commands for code hosts and repositories with special settings. [#8435](https://github.com/sourcegraph/sourcegraph/pull/8435)
 - Experimental: the search query input now provides syntax highlighting, hover tooltips, and diagnostics on filters in search queries. Requires the global settings value `{ "experimentalFeatures": { "smartSearchField": true } }`.
 - Added a setting `search.hideSuggestions`, which when set to `true`, will hide search suggestions in the search bar.
 - An experimental tool [src-expose](https://docs.sourcegraph.com/admin/external_service/other#experimental-src-expose) to import code from any code host.
@@ -21,7 +32,8 @@ All notable changes to Sourcegraph are documented in this file.
 - GitHub labels associated with Automation campaigns are now displayed. [#8115](https://github.com/sourcegraph/sourcegraph/pull/8115)
 - When creating a campaign Automation users can now specify the branch name that will be used on code host. This is also a breaking change for users of the GraphQL API since the `branch` attribute is now required in `CreateCampaignInput` when a `plan` is also specified. [#7646](https://github.com/sourcegraph/sourcegraph/issues/7646)
 - Added an optional `content:` parameter for specifying a search pattern. This parameter overrides any other search patterns in a query. Useful for unambiguously specifying what to search for when search strings clash with other query syntax. [#6490](https://github.com/sourcegraph/sourcegraph/issues/6490)
-- Our [upgrade policy](https://docs.sourcegraph.com/#upgrading-sourcegraph) is now enforced by the `sourcegraph-frontend` on startup to prevent admins from mistakenly jumping too many versions. [#8157](https://github.com/sourcegraph/sourcegraph/pulls/8157) [#7702](https://github.com/sourcegraph/sourcegraph/issues/7702)
+- Interactive search mode, which helps users construct queries using UI elements, is now made available to users by default. A dropdown to the left of the search bar allows users to toggle between interactive and plain text modes. The option to use interactive search mode can be disabled by adding `{ "experimentalFeatures": { "splitSearchModes": false } }` in global settings.
+- Our [upgrade policy](https://docs.sourcegraph.com/#upgrading-sourcegraph) is now enforced by the `sourcegraph-frontend` on startup to prevent admins from mistakenly jumping too many versions. [#8157](https://github.com/sourcegraph/sourcegraph/pull/8157) [#7702](https://github.com/sourcegraph/sourcegraph/issues/7702)
 - Repositories with bad object packs or bad objects are automatically repaired. We now detect suspect output of git commands to mark a repository for repair. [#6676](https://github.com/sourcegraph/sourcegraph/issues/6676)
 - Hover tooltips for Scala files now have syntax highlighting. [#8456](https://github.com/sourcegraph/sourcegraph/pull/8456)
 
@@ -39,6 +51,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- The syntax highlighter (syntect-server) no longer fails when run in environments without IPv6 support. [#8463](https://github.com/sourcegraph/sourcegraph/pull/8463)
 - After adding/removing a gitserver replica the admin interface will correctly report that repositories that need to move replicas as cloning. [#7970](https://github.com/sourcegraph/sourcegraph/issues/7970)
 - Show download button for images. [#7924](https://github.com/sourcegraph/sourcegraph/issues/7924)
 - gitserver backoffs trying to re-clone repositories if they fail to clone. In the case of large monorepos that failed this lead to gitserver constantly cloning them and using many resources. [#7804](https://github.com/sourcegraph/sourcegraph/issues/7804)
