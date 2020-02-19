@@ -147,6 +147,7 @@ AND %%s`
 var getBySQLColumns = []string{
 	"id",
 	"name",
+	"private",
 	"external_id",
 	"external_service_type",
 	"external_service_id",
@@ -164,7 +165,7 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 func (s *repos) getReposBySQL(ctx context.Context, authorize, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	columns := getBySQLColumns
 	if minimal {
-		columns = columns[:5]
+		columns = columns[:6]
 	}
 
 	q := sqlf.Sprintf(
@@ -207,6 +208,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		return rows.Scan(
 			&r.ID,
 			&r.Name,
+			&r.Private,
 			&dbutil.NullString{S: &r.ExternalRepo.ID},
 			&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
 			&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
@@ -216,6 +218,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	return rows.Scan(
 		&r.ID,
 		&r.Name,
+		&r.Private,
 		&dbutil.NullString{S: &r.ExternalRepo.ID},
 		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
 		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
