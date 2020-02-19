@@ -128,7 +128,6 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 		},
 		Description: r.Description,
 		Fork:        r.Parent != nil,
-		Private:     r.IsPrivate,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,

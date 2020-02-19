@@ -21,7 +21,7 @@
         ]
       }
     },
-    "public": false,
+    "public": true,
     "links": {
       "clone": [
         {
