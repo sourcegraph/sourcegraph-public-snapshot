@@ -441,3 +441,16 @@ func addQueryRegexpField(query *query.Query, field, pattern string) syntax.Parse
 	}
 	return expr
 }
+
+func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
+	alert := &searchAlert{
+		title:       a.title,
+		description: a.description,
+	}
+	return &SearchResultsResolver{alert: alert}, nil
+}
+
+func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
+	return nil, nil
+}
+func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
