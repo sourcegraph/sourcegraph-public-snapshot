@@ -644,7 +644,7 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Fork, modified = n.Fork, true
 	}
 
-	if r.Private != r.Private {
+	if r.Private != n.Private {
 		r.Private, modified = n.Private, true
 	}
 
