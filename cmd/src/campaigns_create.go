@@ -92,7 +92,7 @@ Examples:
 			if err != nil {
 				return err
 			}
-			needsBranch, err := sourcegraphVersionCheck(version, ">= 3.13", "2020-02-13")
+			needsBranch, err := sourcegraphVersionCheck(version, ">= 3.13-0", "2020-02-13")
 			if err != nil {
 				return err
 			}
