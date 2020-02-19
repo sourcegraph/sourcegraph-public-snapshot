@@ -2,18 +2,19 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ClockOutlineIcon from 'mdi-react/ClockOutlineIcon'
-import React, { FunctionComponent, useEffect, useMemo } from 'react'
+import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { catchError } from 'rxjs/operators'
 import { ErrorAlert } from '../../../components/alerts'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { fetchLsifUpload } from './backend'
+import { fetchLsifUpload, deleteLsifUpload } from './backend'
 import { Link } from '../../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../../components/PageTitle'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, Redirect } from 'react-router'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { useObservable } from '../../../util/useObservable'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 
 interface Props extends RouteComponentProps<{ id: string }> {
     repo: GQL.IRepository
@@ -30,11 +31,43 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
 }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsLsifUpload'))
 
+    const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
+
     const uploadOrError = useObservable(
         useMemo(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
     )
 
-    return (
+    const deleteUpload = async (): Promise<void> => {
+        if (!uploadOrError || isErrorLike(uploadOrError)) {
+            return
+        }
+
+        let description = `commit ${uploadOrError.inputCommit.substring(0, 7)}`
+        if (uploadOrError.inputRoot) {
+            description += ` rooted at ${uploadOrError.inputRoot}`
+        }
+
+        if (!window.confirm(`Delete upload for commit ${description}?`)) {
+            return
+        }
+
+        setDeletionOrError('loading')
+
+        try {
+            await deleteLsifUpload({ id }).toPromise()
+            setDeletionOrError('deleted')
+        } catch (err) {
+            setDeletionOrError(err)
+        }
+    }
+
+    return deletionOrError === 'deleted' ? (
+        <Redirect to=".." />
+    ) : isErrorLike(deletionOrError) ? (
+        <div className="alert alert-danger">
+            <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
+        </div>
+    ) : (
         <div className="site-admin-lsif-upload-page w-100">
             <PageTitle title="LSIF uploads - Admin" />
             {isErrorLike(uploadOrError) ? (
@@ -173,6 +206,29 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             </tr>
                         </tbody>
                     </table>
+
+                    <div className="action-container">
+                        <div className="action-container__row">
+                            <div className="action-container__description">
+                                <h4 className="action-container__title">Delete this upload</h4>
+                                <div>
+                                    Deleting this upload make it immediately unavailable to answer code intelligence
+                                    queries.
+                                </div>
+                            </div>
+                            <div className="action-container__btn-container">
+                                <button
+                                    type="button"
+                                    className="btn btn-danger action-container__btn"
+                                    onClick={deleteUpload}
+                                    disabled={deletionOrError === 'loading'}
+                                    data-tooltip="Delete upload"
+                                >
+                                    <DeleteIcon className="icon-inline" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </>
             )}
         </div>
