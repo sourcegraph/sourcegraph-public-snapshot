@@ -90,6 +90,10 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	if err != nil {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
+	err = query.Validate(q, searchType)
+	if err != nil {
+		return searchAlert{title: "Invalid Query", description: capFirst(err.Error())}, nil
+	}
 
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo

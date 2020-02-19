@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
@@ -129,6 +130,38 @@ func TestQuery_StringValues(t *testing.T) {
 			query.StringValues("r")
 		})
 	})
+}
+
+func TestQuery_Validate(t *testing.T) {
+	cases := []struct {
+		Name       string
+		Query      string
+		SearchType SearchType
+		Want       string
+	}{
+		{
+			Name:       `Structural search validates`,
+			Query:      `patterntype:structural ":[_]"`,
+			SearchType: SearchTypeStructural,
+			Want:       `the parameter "case:" is not valid for structural search`,
+		},
+		{
+			Name:       `Structural search incompatible with "case:"`,
+			Query:      `patterntype:structural case:yes ":[_]"`,
+			SearchType: SearchTypeStructural,
+			Want:       `the parameter "case:" is not valid for structural search, matching is always case-sensitive`,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			q, _ := ParseAndCheck(tt.Query)
+			if got := Validate(q, tt.SearchType); got != nil {
+				if diff := cmp.Diff(got.Error(), tt.Want); diff != "" {
+					t.Error(diff)
+				}
+			}
+		})
+	}
 }
 
 func TestQuery_CaseInsensitiveFields(t *testing.T) {
