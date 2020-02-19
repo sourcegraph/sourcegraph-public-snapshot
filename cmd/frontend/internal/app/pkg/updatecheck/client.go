@@ -104,12 +104,12 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (*json.RawMessage, err
 	return &message, nil
 }
 
-func getAndMarshalAutomationUsageJSON(ctx context.Context) (*json.RawMessage, error) {
-	automationUsage, err := usagestats.GetAutomationUsageStatistics(ctx)
+func getAndMarshalCampaignsUsageJSON(ctx context.Context) (*json.RawMessage, error) {
+	usage, err := usagestats.GetCampaignsUsageStatistics(ctx)
 	if err != nil {
 		return nil, err
 	}
-	contents, err := json.Marshal(automationUsage)
+	contents, err := json.Marshal(usage)
 	if err != nil {
 		return nil, err
 	}
@@ -169,9 +169,9 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
-	automationUsage, err := getAndMarshalAutomationUsageJSON(ctx)
+	campaignsUsage, err := getAndMarshalCampaignsUsageJSON(ctx)
 	if err != nil {
-		logFunc("getAndMarshalAutomationUsageJSON failed", "error", err)
+		logFunc("getAndMarshalCampaignsUsageJSON failed", "error", err)
 	}
 
 	contents, err := json.Marshal(&pingRequest{
@@ -190,7 +190,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		HasRepos:             hasRepos,
 		EverSearched:         hasRepos && searchOccurred, // Searches only count if repos have been added.
 		EverFindRefs:         findRefsOccurred,
-		AutomationUsage:      automationUsage,
+		AutomationUsage:      campaignsUsage,
 	})
 	if err != nil {
 		return nil, err

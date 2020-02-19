@@ -378,7 +378,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                         !window.context.sourcegraphDotComMode &&
                                         !!authenticatedUser &&
                                         (authenticatedUser.siteAdmin ||
-                                            !!window.context.site['automation.readAccess.enabled'])
+                                            !!window.context.site['campaigns.readAccess.enabled'])
                                     }
                                     // Theme
                                     isLightTheme={this.isLightTheme()}

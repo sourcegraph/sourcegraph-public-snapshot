@@ -1,14 +1,14 @@
-# Automation
+# Campaigns
 
-> Automation is currently available in private beta for select enterprise customers.
+> Campaigns are currently available in private beta for select enterprise customers.
 
-[Sourcegraph automation](https://about.sourcegraph.com/product/automation) allows large-scale code changes across many repositories and different code hosts.
+[Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) lets you make large-scale code changes across many repositories and different code hosts.
 
 **Important**: If you're on Sourcegraph 3.12 or older, you might also want to look at the old documentation: "[Automation documentation for Sourcegraph 3.12](https://docs.sourcegraph.com/@3.12/user/automation)"
 
 ## Configuration
 
-In order to use the Automation preview, a site-admin of your Sourcegraph instance must enable it in the site configuration settings e.g. `sourcegraph.example.com/site-admin/configuration`
+In order to use code campaigns, a site-admin of your Sourcegraph instance must enable it in the site configuration settings e.g. `sourcegraph.example.com/site-admin/configuration`
 
 ```json
 {
@@ -18,20 +18,20 @@ In order to use the Automation preview, a site-admin of your Sourcegraph instanc
 }
 ```
 
-Without any further configuration Automation is **only be accessible to site-admins.** If you want to grant read-only access to non-site-admins, use the following site configuration setting:
+Without any further configuration, campaigns are **only accessible to site-admins.** If you want to grant read-only access to non-site-admins, use the following site configuration setting:
 
 ```json
 {
-  "automation.readAccess.enabled": true
+  "campaigns.readAccess.enabled": true
 }
 ```
 
 ## Usage
 
-There are two types of Automation campaigns:
+There are two types of campaigns:
 
 - Manual campaigns to which you can manually add changesets (pull requests) and track their progress.
-- Campaigns created from a set of patches. With the `src` CLI tool you can not only create the campaign from an existing set of patches, but you can also _generate the patches_ for a number of repositories.
+- Campaigns created from a set of patches. With the `src` CLI tool, you can not only create the campaign from an existing set of patches, but you can also _generate the patches_ for a number of repositories.
 
 ### Creating a manual campaign
 
@@ -416,6 +416,6 @@ This uses `/cache` as the `YARN_CACHE_FOLDER` and `NPM_CONFIG_CACHE` folder. It 
 
 Subsequent action steps that use this preamble in their `Dockerfile` will run faster because they can leverage the cache folder.
 
-## Note for Automation developers
+## Note for developers
 
-If you are looking to run automation on a larger scale in the local dev environment, follow the [guide on automation development](../dev/automation_development.md).
+If you are looking to use campaigns in your local dev environment, follow the [guide on campaigns development](../dev/campaigns_development.md).

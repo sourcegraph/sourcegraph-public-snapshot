@@ -14,7 +14,7 @@ import (
 )
 
 // SupportedExternalServices are the external service types currently supported
-// by Automation features. Repos that are associated with external services
+// by the campaigns feature. Repos that are associated with external services
 // whose type is not in this list will simply be filtered out from the search
 // results.
 var SupportedExternalServices = map[string]struct{}{
@@ -23,7 +23,7 @@ var SupportedExternalServices = map[string]struct{}{
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
-// Automation features, based on the external service type.
+// the campaigns feature, based on the external service type.
 func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	_, ok := SupportedExternalServices[spec.ServiceType]
 	return ok
