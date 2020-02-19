@@ -67,7 +67,7 @@ func (c *Client) DeleteUpload(ctx context.Context, args *struct {
 		method: "DELETE",
 	}
 
-	if _, err := c.do(ctx, req, nil); IsNotFound(err) {
+	if _, err := c.do(ctx, req, nil); !IsNotFound(err) {
 		return err
 	}
 

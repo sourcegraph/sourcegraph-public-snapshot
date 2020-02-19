@@ -102,6 +102,13 @@ export class GenericCache<K, V> {
     ) {}
 
     /**
+     * Remove all values from the cache.
+     */
+    public async flush(): Promise<void> {
+        await Promise.all(Array.from(this.cache.keys()).map(key => this.bustKey(key)))
+    }
+
+    /**
      * Check if `key` exists in the cache. If it does not, create a value
      * from `factory`. Once the cache value resolves, invoke `callback` and
      * return its value. This method acts as a lock around the cache entry

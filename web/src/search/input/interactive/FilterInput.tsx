@@ -67,7 +67,7 @@ interface Props {
     /**
      * The search filter type, as available in {@link SuggstionTypes}
      */
-    filterType: FilterTypes
+    filterType: Exclude<FilterTypes, FilterTypes.patterntype>
 
     /**
      * Whether or not this FilterInput is currently editable.

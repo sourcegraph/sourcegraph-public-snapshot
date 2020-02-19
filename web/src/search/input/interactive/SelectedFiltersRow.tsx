@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { FilterInput } from './FilterInput'
 import { QueryState } from '../../helpers'
-import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue, FilterTypes } from '../../../../../shared/src/search/interactive/util'
 
 interface Props {
     /**
@@ -69,7 +69,7 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
                             <FilterInput
                                 key={field}
                                 mapKey={field}
-                                filterType={filtersInQuery[field].type}
+                                filterType={filtersInQuery[field].type as Exclude<FilterTypes, FilterTypes.patterntype>}
                                 value={filtersInQuery[field].value}
                                 editable={filtersInQuery[field].editable}
                                 negated={filtersInQuery[field].negated}

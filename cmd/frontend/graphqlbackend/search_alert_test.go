@@ -39,11 +39,11 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "Some query description",
-						query:       "repo:github.com/sourcegraph/sourcegraph patterntype:structural",
+						query:       "repo:github.com/sourcegraph/sourcegraph",
 					},
 				},
 			},
-			Want: "repo:github.com/sourcegraph/sourcegraph patterntype:structural",
+			Want: "repo:github.com/sourcegraph/sourcegraph patternType:structural",
 		},
 	}
 

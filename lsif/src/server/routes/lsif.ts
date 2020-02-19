@@ -16,6 +16,8 @@ import { Span, Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
 import { extractLimitOffset } from '../pagination/limit-offset'
 import { UploadManager } from '../../shared/store/uploads'
+import { readGzippedJsonElementsFromFile } from '../../shared/input'
+import * as lsif from 'lsif-protocol'
 
 const pipeline = promisify(_pipeline)
 
@@ -69,6 +71,7 @@ export function createLsifRouter(
         root?: string
         blocking?: boolean
         maxWait?: number
+        indexerName?: string
     }
 
     router.post(
@@ -79,18 +82,36 @@ export function createLsifRouter(
             validation.validateOptionalString('root'),
             validation.validateOptionalBoolean('blocking'),
             validation.validateOptionalInt('maxWait'),
+            validation.validateOptionalString('indexerName'),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repositoryId, commit, root: rootRaw, blocking, maxWait }: UploadQueryArgs = req.query
+                const {
+                    repositoryId,
+                    commit,
+                    root: rootRaw,
+                    blocking,
+                    maxWait,
+                    indexerName,
+                }: UploadQueryArgs = req.query
+
                 const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repositoryId, commit, root })
                 const filename = nodepath.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
                 await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
 
+                const indexer = indexerName || (await findIndexer(filename))
+                if (!indexer) {
+                    throw new Error('Could not find tool type in metadata vertex at the start of the dump.')
+                }
+
                 // Add upload record
-                const upload = await uploadManager.enqueue({ repositoryId, commit, root, filename }, tracer, ctx.span)
+                const upload = await uploadManager.enqueue(
+                    { repositoryId, commit, root, filename, indexer },
+                    tracer,
+                    ctx.span
+                )
 
                 if (blocking) {
                     logger.debug('Blocking on upload conversion', { repositoryId, commit, root })
@@ -127,8 +148,12 @@ export function createLsifRouter(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repositoryId, commit, path }: ExistsQueryArgs = req.query
                 const ctx = createTracingContext(req, { repositoryId, commit })
-                const upload = await backend.exists(repositoryId, commit, path, undefined, ctx)
-                res.json({ upload })
+                const uploads = await backend.exists(repositoryId, commit, path, ctx)
+
+                // TODO(#8384): Multiple dumps to the GraphQL API. Punting on this for now as
+                // it may cause a non-trivial change in the API shape that may also
+                // affect basic-code-intel.
+                res.json({ upload: uploads[0] })
             }
         )
     )
@@ -150,7 +175,7 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
             validation.validateInt('character'),
-            validation.validateOptionalInt('uploadId'),
+            validation.validateInt('uploadId'),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
@@ -194,7 +219,7 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
             validation.validateInt('character'),
-            validation.validateOptionalInt('uploadId'),
+            validation.validateInt('uploadId'),
             validation.validateLimit,
             validation.validateCursor<ReferencePaginationCursor>(),
         ]),
@@ -243,7 +268,7 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
             validation.validateInt('character'),
-            validation.validateOptionalInt('uploadId'),
+            validation.validateInt('uploadId'),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
@@ -261,4 +286,21 @@ export function createLsifRouter(
     )
 
     return router
+}
+
+/**
+ * Read and decode the first entry of the dump. If the entry exists, encodes a metadata vertex,
+ * and contains a tool info name field, return the contents of that field; otherwise undefined.
+ *
+ * @param filename The filename to read.
+ */
+async function findIndexer(filename: string): Promise<string | undefined> {
+    for await (const element of readGzippedJsonElementsFromFile(filename) as AsyncIterable<lsif.Vertex | lsif.Edge>) {
+        if (element.type === lsif.ElementTypes.vertex && element.label === lsif.VertexLabels.metaData) {
+            return element.toolInfo?.name
+        }
+        break
+    }
+
+    return undefined
 }

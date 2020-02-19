@@ -45,9 +45,6 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 			case query.SearchTypeLiteral:
 				proposedQuery.query = proposedQuery.query + " patternType:literal"
 			case query.SearchTypeStructural:
-				// Don't append patternType:structural, it is not erased from the query like
-				// patterntype:regexp and patterntype:literal.
-				// TODO(RVT): Making this consistent requires a change on the UI side.
 			default:
 				panic("unreachable")
 			}

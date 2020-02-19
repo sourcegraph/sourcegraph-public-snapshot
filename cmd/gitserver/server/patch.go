@@ -66,6 +66,17 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusInternalServerError, resp
 	}
 
+	redactor := newURLRedactor(remoteURL)
+	defer func() {
+		if resp.Error != nil {
+			resp.Error.Command = redactor.redact(resp.Error.Command)
+			resp.Error.CombinedOutput = redactor.redact(resp.Error.CombinedOutput)
+			if resp.Error.Err != nil {
+				resp.Error.Err = errors.New(redactor.redact(resp.Error.Err.Error()))
+			}
+		}
+	}()
+
 	// Ensure tmp directory exists
 	tmpRepoDir, err := s.tempDir("patch-repo-")
 	if err != nil {
