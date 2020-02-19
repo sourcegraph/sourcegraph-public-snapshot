@@ -266,7 +266,8 @@ describe('Search regression test suite', () => {
         })
         test('Single repository, case-sensitive search.', async () => {
             await driver.page.goto(
-                config.sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/adjust/go-wrk%24+String+case:yes'
+                config.sourcegraphBaseUrl +
+                    '/search?q=String+repo:%5Egithub.com/adjust/go-wrk%24+&patternType=regexp&case=yes'
             )
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
         })
@@ -286,7 +287,7 @@ describe('Search regression test suite', () => {
             // The string `var ExecutionEnvironment = require('ExecutionEnvironment');` occurs 10 times on this old branch, but 0 times in current master.
             await driver.page.goto(
                 config.sourcegraphBaseUrl +
-                    '/search?q=repo:%5Egithub%5C.com/facebook/react%24%400.3-stable+"var+ExecutionEnvironment+%3D+require%28%27ExecutionEnvironment%27%29%3B"'
+                    '/search?q="var+ExecutionEnvironment+%3D+require%28%27ExecutionEnvironment%27%29%3B"+repo:%5Egithub%5C.com/facebook/react%24%400.3-stable&patternType=regexp'
             )
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 10)
         })
