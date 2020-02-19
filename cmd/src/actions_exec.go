@@ -314,7 +314,7 @@ Format of the action JSON files:
 		})
 
 		if *verbose {
-			log.Printf("# Querying %s for repositories matching %q...", cfg.Endpoint, action.ScopeQuery)
+			log.Printf("# Querying %s for repositories matching '%s'...", cfg.Endpoint, action.ScopeQuery)
 		}
 
 		// Query repos over which to run action

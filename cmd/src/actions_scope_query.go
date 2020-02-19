@@ -58,6 +58,10 @@ Examples:
 
 		ctx := context.Background()
 
+		if *verbose {
+			log.Printf("# scopeQuery in action definition: %s\n", action.ScopeQuery)
+		}
+
 		repos, err := actionRepos(ctx, *verbose, action.ScopeQuery)
 		if err != nil {
 			return err
