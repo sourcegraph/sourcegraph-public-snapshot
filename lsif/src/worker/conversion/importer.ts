@@ -14,6 +14,7 @@ import { Package, SymbolReferences } from '../../shared/store/dependencies'
 import { readEnvInt } from '../../shared/settings'
 import { readGzippedJsonElementsFromFile } from '../../shared/input'
 import { TableInserter } from '../../shared/database/inserter'
+import { createSilentLogger } from '../../shared/logging'
 
 /**
  * The insertion metrics for the database.
@@ -54,15 +55,15 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 export async function convertLsif(
     path: string,
     database: string,
-    ctx: TracingContext = {}
+    { logger = createSilentLogger(), span }: TracingContext = {}
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    const connection = await createSqliteConnection(database, sqliteModels.entities)
+    const connection = await createSqliteConnection(database, sqliteModels.entities, logger)
 
     try {
         await connection.query('PRAGMA synchronous = OFF')
         await connection.query('PRAGMA journal_mode = OFF')
 
-        return await connection.transaction(entityManager => importLsif(entityManager, path, ctx))
+        return await connection.transaction(entityManager => importLsif(entityManager, path, { logger, span }))
     } finally {
         await connection.close()
     }

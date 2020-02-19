@@ -11,6 +11,8 @@ import { instrument } from '../../shared/metrics'
 import { isEqual, uniqWith } from 'lodash'
 import { logSpan, TracingContext, logAndTraceCall, addTags } from '../../shared/tracing'
 import { mustGet } from '../../shared/maps'
+import { Logger } from 'winston'
+import { createSilentLogger } from '../../shared/logging'
 
 /**
  * A location with the dump that contains it.
@@ -56,13 +58,15 @@ export class Database {
      * @param ctx The tracing context.
      */
     public documentPaths(ctx: TracingContext = {}): Promise<string[]> {
-        return this.logAndTraceCall(ctx, 'Fetching document paths', async () => {
-            const paths: { path: string }[] = await this.withConnection(connection =>
-                connection
-                    .getRepository(sqliteModels.DocumentModel)
-                    .createQueryBuilder()
-                    .select('path')
-                    .getRawMany()
+        return this.logAndTraceCall(ctx, 'Fetching document paths', async ctx => {
+            const paths: { path: string }[] = await this.withConnection(
+                connection =>
+                    connection
+                        .getRepository(sqliteModels.DocumentModel)
+                        .createQueryBuilder()
+                        .select('path')
+                        .getRawMany(),
+                ctx.logger
             )
 
             return paths.map(({ path }) => path)
@@ -240,13 +244,15 @@ export class Database {
         ctx: TracingContext
     ): Promise<InternalLocation[]> {
         return this.logAndTraceCall(ctx, 'Fetching moniker results', async ctx => {
-            const results = await this.withConnection(connection =>
-                connection.getRepository<sqliteModels.DefinitionModel | sqliteModels.ReferenceModel>(model).find({
-                    where: {
-                        scheme: moniker.scheme,
-                        identifier: moniker.identifier,
-                    },
-                })
+            const results = await this.withConnection(
+                connection =>
+                    connection.getRepository<sqliteModels.DefinitionModel | sqliteModels.ReferenceModel>(model).find({
+                        where: {
+                            scheme: moniker.scheme,
+                            identifier: moniker.identifier,
+                        },
+                    }),
+                ctx.logger
             )
 
             this.logSpan(ctx, 'symbol_results', { moniker, symbol: results })
@@ -310,11 +316,16 @@ export class Database {
      * method is cached across all database instances.
      *
      * @param path The path of the document.
+     * @param ctx The tracing context.
      */
-    private async getDocumentByPath(path: string): Promise<sqliteModels.DocumentData | undefined> {
+    private async getDocumentByPath(
+        path: string,
+        ctx: TracingContext = {}
+    ): Promise<sqliteModels.DocumentData | undefined> {
         const factory = async (): Promise<cache.EncodedJsonCacheValue<sqliteModels.DocumentData>> => {
-            const document = await this.withConnection(connection =>
-                connection.getRepository(sqliteModels.DocumentModel).findOneOrFail(path)
+            const document = await this.withConnection(
+                connection => connection.getRepository(sqliteModels.DocumentModel).findOneOrFail(path),
+                ctx.logger
             )
 
             return {
@@ -359,16 +370,19 @@ export class Database {
      * Return a parsed result chunk that contains the given identifier.
      *
      * @param id An identifier contained in the result chunk.
+     * @param ctx The tracing context.
      */
     private async getResultChunkByResultId(
-        id: sqliteModels.DefinitionReferenceResultId
+        id: sqliteModels.DefinitionReferenceResultId,
+        ctx: TracingContext = {}
     ): Promise<sqliteModels.ResultChunkData> {
         // Find the result chunk index this id belongs to
         const index = hashKey(id, await this.getNumResultChunks())
 
         const factory = async (): Promise<cache.EncodedJsonCacheValue<sqliteModels.ResultChunkData>> => {
-            const resultChunk = await this.withConnection(connection =>
-                connection.getRepository(sqliteModels.ResultChunkModel).findOneOrFail(index)
+            const resultChunk = await this.withConnection(
+                connection => connection.getRepository(sqliteModels.ResultChunkModel).findOneOrFail(index),
+                ctx.logger
             )
 
             return {
@@ -384,16 +398,19 @@ export class Database {
 
     /**
      * Get the `numResultChunks` value from this database's metadata row.
+     *
+     * @param ctx The tracing context.
      */
-    private async getNumResultChunks(): Promise<number> {
+    private async getNumResultChunks(ctx: TracingContext = {}): Promise<number> {
         const numResultChunks = Database.numResultChunks.get(this.databasePath)
         if (numResultChunks !== undefined) {
             return numResultChunks
         }
 
         // Not in the shared map, need to query it
-        const meta = await this.withConnection(connection =>
-            connection.getRepository(sqliteModels.MetaModel).findOneOrFail(1)
+        const meta = await this.withConnection(
+            connection => connection.getRepository(sqliteModels.MetaModel).findOneOrFail(1),
+            ctx.logger
         )
         Database.numResultChunks.set(this.databasePath, meta.numResultChunks)
         return meta.numResultChunks
@@ -404,9 +421,13 @@ export class Database {
      * cache or created on cache miss.
      *
      * @param callback The function invoke with the SQLite connection.
+     * @param logger The logger instance.
      */
-    private withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return this.connectionCache.withConnection(this.databasePath, sqliteModels.entities, connection =>
+    private withConnection<T>(
+        callback: (connection: Connection) => Promise<T>,
+        logger: Logger = createSilentLogger()
+    ): Promise<T> {
+        return this.connectionCache.withConnection(this.databasePath, sqliteModels.entities, logger, connection =>
             instrument(metrics.databaseQueryDurationHistogram, metrics.databaseQueryErrorsCounter, () =>
                 callback(connection)
             )

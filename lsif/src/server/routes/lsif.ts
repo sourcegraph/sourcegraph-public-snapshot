@@ -80,9 +80,9 @@ export function createLsifRouter(
             validation.validateInt('repositoryId'),
             validation.validateNonEmptyString('commit').matches(commitPattern),
             validation.validateOptionalString('root'),
+            validation.validateOptionalString('indexerName'),
             validation.validateOptionalBoolean('blocking'),
             validation.validateOptionalInt('maxWait'),
-            validation.validateOptionalString('indexerName'),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
@@ -90,9 +90,9 @@ export function createLsifRouter(
                     repositoryId,
                     commit,
                     root: rootRaw,
+                    indexerName,
                     blocking,
                     maxWait,
-                    indexerName,
                 }: UploadQueryArgs = req.query
 
                 const root = sanitizeRoot(rootRaw)

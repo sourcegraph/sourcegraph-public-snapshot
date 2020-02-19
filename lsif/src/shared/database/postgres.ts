@@ -8,6 +8,7 @@ import { Logger } from 'winston'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from '../settings'
 import { TlsOptions } from 'tls'
+import { DatabaseLogger } from './logger'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -89,7 +90,7 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
     return pRetry(
         () => {
             logger.debug('Connecting to Postgres')
-            return connectPostgres(connectionOptions, '')
+            return connectPostgres(connectionOptions, '', logger)
         },
         {
             factor: 1,
@@ -105,16 +106,18 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
  *
  * @param connectionOptions The connection options.
  * @param suffix The database suffix (used for testing).
+ * @param logger The logger instance
  */
 export function connectPostgres(
     connectionOptions: PostgresConnectionCredentialsOptions,
-    suffix: string
+    suffix: string,
+    logger: Logger
 ): Promise<Connection> {
     return _createConnection({
         type: 'postgres',
         name: `lsif${suffix}`,
         entities: pgModels.entities,
-        logging: ['warn', 'error'],
+        logger: new DatabaseLogger(logger),
         maxQueryExecutionTime: 1000,
         ...connectionOptions,
     })
