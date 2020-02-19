@@ -919,7 +919,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
-			alert := r.alertForStalePermissions(ctx)
+			alert := alertForStalePermissions()
 			return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
 		return nil, nil, nil, err
@@ -1337,11 +1337,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	if len(missingRepoRevs) > 0 {
-		alert = r.alertForMissingRepoRevs(missingRepoRevs)
+		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
 	}
 
 	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
-		alert, err = r.alertForQuotesInQueryInLiteralMode(ctx)
+		alert = alertForQuotesInQueryInLiteralMode(r.query)
 	}
 
 	// If we have some results, only log the error instead of returning it,
