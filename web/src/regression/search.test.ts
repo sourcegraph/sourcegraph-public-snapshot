@@ -266,7 +266,8 @@ describe('Search regression test suite', () => {
         })
         test('Single repository, case-sensitive search.', async () => {
             await driver.page.goto(
-                config.sourcegraphBaseUrl + '/search?q=String+repo:%5Egithub.com/adjust/go-wrk%24+&patternType=regexp&case=yes'
+                config.sourcegraphBaseUrl +
+                    '/search?q=String+repo:%5Egithub.com/adjust/go-wrk%24+&patternType=regexp&case=yes'
             )
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
         })
