@@ -45,6 +45,7 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 			case query.SearchTypeLiteral:
 				proposedQuery.query = proposedQuery.query + " patternType:literal"
 			case query.SearchTypeStructural:
+				proposedQuery.query = proposedQuery.query + " patternType:structural"
 			default:
 				panic("unreachable")
 			}
