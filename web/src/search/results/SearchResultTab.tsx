@@ -36,14 +36,21 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     const q = toggleSearchType(fullQuery, type)
     const builtURLQuery = buildSearchURLQuery(q, patternType, caseSensitive)
 
-    const currentQuery = parseSearchURLQuery(location.search) || ""
+    const currentQuery = parseSearchURLQuery(location.search) || ''
     const parsedQuery = parseSearchQuery(currentQuery)
     let typeInQuery: SearchType = null
 
-    if (parsedQuery.type === "success") {
+    if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {
-            if (member.token.type === "filter" && member.token.filterType.token.value === "type" && member.token.filterValue)  {
-                typeInQuery = member.token.filterValue.token.type === "literal" ? member.token.filterValue.token.value as SearchType : member.token.filterValue.token.quotedValue as SearchType
+            if (
+                member.token.type === 'filter' &&
+                member.token.filterType.token.value === 'type' &&
+                member.token.filterValue
+            ) {
+                typeInQuery =
+                    member.token.filterValue.token.type === 'literal'
+                        ? (member.token.filterValue.token.value as SearchType)
+                        : (member.token.filterValue.token.quotedValue as SearchType)
             }
         }
     }
