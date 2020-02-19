@@ -109,9 +109,6 @@ type configuredRepo2 struct {
 	Name api.RepoName
 }
 
-// sourceRepoMap is the set of repositories associated with a specific configuration source.
-type sourceRepoMap map[api.RepoName]*configuredRepo2
-
 // notifyChanBuffer controls the buffer size of notification channels.
 // It is important that this value is 1 so that we can perform lossless
 // non-blocking sends.
