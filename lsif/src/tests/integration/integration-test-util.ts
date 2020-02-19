@@ -15,6 +15,7 @@ import { userInfo } from 'os'
 import { InternalLocation } from '../../server/backend/database'
 import { DumpManager } from '../../shared/store/dumps'
 import { DependencyManager } from '../../shared/store/dependencies'
+import { createSilentLogger } from '../../shared/logging'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.
@@ -93,7 +94,11 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     try {
         // Run migrations then connect to database
         await child_process.exec(migrateCommand, { env })
-        connection = await connectPostgres({ host, port, username, password, database, ssl: false }, suffix)
+        connection = await connectPostgres(
+            { host, port, username, password, database, ssl: false },
+            suffix,
+            createSilentLogger()
+        )
         return { connection, cleanup }
     } catch (error) {
         // We made a database but can't use it - try to clean up

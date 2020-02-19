@@ -4,6 +4,7 @@ import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
 import { createSqliteConnection } from '../../shared/database/sqlite'
+import { Logger } from 'winston'
 
 /**
  * A wrapper around a cache value promise.
@@ -331,6 +332,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      *
      * @param database The database filename.
      * @param entities The set of entities to create on a new connection.
+     * @param logger The logger instance.
      * @param callback The function invoke with the SQLite connection.
      */
     public withConnection<T>(
@@ -338,9 +340,10 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         // Decorators are not possible type check
         // eslint-disable-next-line @typescript-eslint/ban-types
         entities: Function[],
+        logger: Logger,
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
-        return this.withValue(database, () => createSqliteConnection(database, entities), callback)
+        return this.withValue(database, () => createSqliteConnection(database, entities, logger), callback)
     }
 
     /**
@@ -349,6 +352,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      *
      * @param database The database filename.
      * @param entities The set of entities to create on a new connection.
+     * @param logger The logger instance.
      * @param callback The function invoke with a SQLite transaction connection.
      */
     public withTransactionalEntityManager<T>(
@@ -356,9 +360,10 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         // Decorators are not possible type check
         // eslint-disable-next-line @typescript-eslint/ban-types
         entities: Function[],
+        logger: Logger,
         callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
-        return this.withConnection(database, entities, connection => connection.transaction(callback))
+        return this.withConnection(database, entities, logger, connection => connection.transaction(callback))
     }
 }
 
