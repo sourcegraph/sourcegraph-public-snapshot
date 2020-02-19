@@ -40,17 +40,19 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 }
 
 func (c *Client) Upload(ctx context.Context, args *struct {
-	RepoID   api.RepoID
-	Commit   graphqlbackend.GitObjectID
-	Root     string
-	Blocking *bool
-	MaxWait  *int32
-	Body     io.ReadCloser
+	RepoID      api.RepoID
+	Commit      graphqlbackend.GitObjectID
+	Root        string
+	IndexerName string
+	Blocking    *bool
+	MaxWait     *int32
+	Body        io.ReadCloser
 }) (int64, bool, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
 	query.Set("commit", string(args.Commit))
 	query.Set("root", args.Root)
+	query.Set("indexerName", args.IndexerName)
 	query.SetOptionalBool("blocking", args.Blocking)
 	query.SetOptionalInt32("maxWait", args.MaxWait)
 
