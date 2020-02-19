@@ -3,7 +3,6 @@ package repos
 import (
 	"container/heap"
 	"context"
-	"sort"
 	"sync"
 	"time"
 
@@ -97,10 +96,6 @@ const (
 type updateScheduler struct {
 	mu sync.Mutex
 
-	// sourceRepos stores the last known list of repos from each source
-	// so we can compute which repos have been added/removed/enabled/disabled.
-	sourceRepos map[string]sourceRepoMap
-
 	updateQueue *updateQueue
 	schedule    *schedule
 }
@@ -114,9 +109,6 @@ type configuredRepo2 struct {
 	Name api.RepoName
 }
 
-// sourceRepoMap is the set of repositories associated with a specific configuration source.
-type sourceRepoMap map[api.RepoName]*configuredRepo2
-
 // notifyChanBuffer controls the buffer size of notification channels.
 // It is important that this value is 1 so that we can perform lossless
 // non-blocking sends.
@@ -125,7 +117,6 @@ const notifyChanBuffer = 1
 // newUpdateScheduler returns a new scheduler.
 func NewUpdateScheduler() *updateScheduler {
 	return &updateScheduler{
-		sourceRepos: make(map[string]sourceRepoMap),
 		updateQueue: &updateQueue{
 			index:         make(map[api.RepoID]*repoUpdate),
 			notifyEnqueue: make(chan struct{}, notifyChanBuffer),
@@ -288,38 +279,6 @@ func configuredRepo2FromRepo(r *Repo) *configuredRepo2 {
 	return &repo
 }
 
-// updateSource updates the list of configured repos associated with the given source.
-// This is the source of truth for what repos exist in the schedule.
-func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	log15.Debug("updating configured repos", "source", source, "count", len(newList))
-	if s.sourceRepos[source] == nil {
-		s.sourceRepos[source] = sourceRepoMap{}
-	}
-
-	// Remove repos that don't exist in the new list or are disabled in the new list.
-	oldList := s.sourceRepos[source]
-	for key, repo := range oldList {
-		if _, ok := newList[key]; !ok {
-			s.schedule.remove(repo)
-			updating := false // don't immediately remove repos that are already updating; they will automatically get removed when the update finishes
-			s.updateQueue.remove(repo, updating)
-		}
-	}
-
-	// Schedule enabled repos.
-	for _, updatedRepo := range newList {
-		s.schedule.upsert(updatedRepo)
-		s.updateQueue.enqueue(updatedRepo, priorityLow)
-	}
-
-	s.sourceRepos[source] = newList
-
-	// TODO(keegancsmith) fix this metric, requires setting a source but source contains a secret
-	schedKnownRepos.Set(float64(len(newList)))
-}
-
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
 func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName, url string) {
@@ -341,18 +300,6 @@ func (s *updateScheduler) DebugDump() interface{} {
 	}{
 		SourceRepos: map[string][]configuredRepo2{},
 	}
-
-	s.mu.Lock()
-	for source, v := range s.sourceRepos {
-		data.SourceRepos[source] = make([]configuredRepo2, 0, len(v))
-		for _, repo := range v {
-			data.SourceRepos[source] = append(data.SourceRepos[source], *repo)
-		}
-		sort.Slice(data.SourceRepos[source], func(i, j int) bool {
-			return data.SourceRepos[source][i].Name < data.SourceRepos[source][j].Name
-		})
-	}
-	s.mu.Unlock()
 
 	s.schedule.mu.Lock()
 	schedule := schedule{
