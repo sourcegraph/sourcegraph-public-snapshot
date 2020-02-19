@@ -68,6 +68,10 @@ Add the following to your `docker run` command:
     # restart: always
     ```
 
+### Kubernetes
+
+Update the `PG*` environment variables in the `sourcegraph-frontend` deployment YAML file to point to the external PostgreSQL instance.
+
 ### Version requirements
 
 Please refer to our [Postgres](https://docs.sourcegraph.com/admin/postgres) documentation to learn about version requirements.
