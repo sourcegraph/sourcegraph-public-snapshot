@@ -47,8 +47,8 @@ type ActionStep struct {
 	CacheDirs  []string `json:"cacheDirs,omitempty"`
 	Args       []string `json:"args,omitempty"`
 
-	// imageContentDigest is an internal field that should not be set by users.
-	imageContentDigest string
+	// ImageContentDigest is an internal field that should not be set by users.
+	ImageContentDigest string
 }
 
 type CampaignPlanPatch struct {
@@ -190,6 +190,11 @@ Format of the action JSON files:
 		diffSupportsColor, err = diffSupportsFlag(ctx, "--color")
 		if err != nil {
 			return err
+		}
+
+		err = validateAction(ctx, action)
+		if err != nil {
+			return errors.Wrap(err, "Validation of action failed")
 		}
 
 		// Build Docker images etc.
@@ -346,6 +351,30 @@ Format of the action JSON files:
 	})
 }
 
+func validateAction(ctx context.Context, action Action) error {
+	for _, step := range action.Steps {
+		if step.Type == "docker" {
+			if step.Dockerfile == "" && step.Image == "" {
+				return fmt.Errorf("docker run step has to specify either 'image' or 'dockerfile'")
+			}
+
+			if step.Dockerfile != "" && step.Image != "" {
+				return fmt.Errorf("docker run step may specify either image (%q) or dockerfile, not both", step.Image)
+			}
+
+			if step.ImageContentDigest != "" {
+				return errors.New("setting the ImageContentDigest field of a docker run step is not allowed")
+			}
+		}
+
+		if step.Type == "command" && len(step.Args) < 1 {
+			return errors.New("command run step has to specify 'args'")
+		}
+	}
+
+	return nil
+}
+
 func prepareAction(ctx context.Context, action Action) error {
 	// Build any Docker images.
 	for i, step := range action.Steps {
@@ -390,7 +419,7 @@ func prepareAction(ctx context.Context, action Action) error {
 			// the same tag.
 			if step.Image != "" {
 				var err error
-				step.imageContentDigest, err = getDockerImageContentDigest(ctx, step.Image)
+				step.ImageContentDigest, err = getDockerImageContentDigest(ctx, step.Image)
 				if err != nil {
 					return errors.Wrap(err, "Failed to get Docker image content digest")
 				}
