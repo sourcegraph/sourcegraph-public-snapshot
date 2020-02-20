@@ -927,6 +927,21 @@ func TestDiff(t *testing.T) {
 				},
 			},
 		},
+		// 🚨 SECURITY: Tests to ensure we detect repository visibility changes.
+		{
+			name: "repository visiblity changed",
+			store: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1"), Description: "foo", Private: false},
+			},
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1"), Description: "foo", Private: true},
+			},
+			diff: repos.Diff{
+				Modified: repos.Repos{
+					{Name: "foo", ExternalRepo: eid("1"), Description: "foo", Private: true},
+				},
+			},
+		},
 	}
 
 	for _, tc := range permutedCases {

@@ -2,9 +2,12 @@ package repos
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
@@ -19,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestExampleRepositoryQuerySplit(t *testing.T) {
@@ -436,6 +439,62 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			if tc.assert != nil {
 				tc.assert(t, repo)
 			}
+		})
+	}
+}
+
+func TestGithubSource_makeRepo(t *testing.T) {
+	b, err := ioutil.ReadFile(filepath.Join("testdata", "github-repos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var repos []*github.Repository
+	if err := json.Unmarshal(b, &repos); err != nil {
+		t.Fatal(err)
+	}
+
+	svc := ExternalService{ID: 1, Kind: "GITHUB"}
+
+	tests := []struct {
+		name   string
+		schmea *schema.GitHubConnection
+	}{
+		{
+			name: "simple",
+			schmea: &schema.GitHubConnection{
+				Url: "https://github.com",
+			},
+		}, {
+			name: "ssh",
+			schmea: &schema.GitHubConnection{
+				Url:        "https://github.com",
+				GitURLType: "ssh",
+			},
+		}, {
+			name: "path-pattern",
+			schmea: &schema.GitHubConnection{
+				Url:                   "https://github.com",
+				RepositoryPathPattern: "gh/{nameWithOwner}",
+			},
+		},
+	}
+	for _, test := range tests {
+		test.name = "GithubSource_makeRepo_" + test.name
+		t.Run(test.name, func(t *testing.T) {
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			s, err := newGithubSource(&svc, test.schmea, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got []*Repo
+			for _, r := range repos {
+				got = append(got, s.makeRepo(r))
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
 		})
 	}
 }

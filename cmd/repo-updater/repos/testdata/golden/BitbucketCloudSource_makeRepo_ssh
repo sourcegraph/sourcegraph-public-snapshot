@@ -1,12 +1,13 @@
 [
   {
    "ID": 0,
-   "Name": "bb/sg/go-langserver",
+   "Name": "bitbucket.org/sg/go-langserver",
    "URI": "bitbucket.org/sg/go-langserver",
    "Description": "Go Language Server",
    "Language": "",
    "Fork": false,
    "Archived": false,
+   "Private": true,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
@@ -18,7 +19,7 @@
    "Sources": {
     "extsvc:bitbucketcloud:1": {
      "ID": "extsvc:bitbucketcloud:1",
-     "CloneURL": "https://alice:secret@bitbucket.org/sg/go-langserver.git"
+     "CloneURL": "git@https://bitbucket.org:sg/go-langserver.git"
     }
    },
    "Metadata": {
@@ -49,12 +50,13 @@
   },
   {
    "ID": 0,
-   "Name": "bb/sg/python-langserver",
+   "Name": "bitbucket.org/sg/python-langserver",
    "URI": "bitbucket.org/sg/python-langserver",
    "Description": "Python Language Server",
    "Language": "",
    "Fork": false,
    "Archived": false,
+   "Private": true,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
@@ -66,7 +68,7 @@
    "Sources": {
     "extsvc:bitbucketcloud:1": {
      "ID": "extsvc:bitbucketcloud:1",
-     "CloneURL": "https://alice:secret@bitbucket.org/sg/python-langserver.git"
+     "CloneURL": "git@https://bitbucket.org:sg/python-langserver.git"
     }
    },
    "Metadata": {
@@ -97,12 +99,13 @@
   },
   {
    "ID": 0,
-   "Name": "bb/sg/python-langserver-fork",
+   "Name": "bitbucket.org/sg/python-langserver-fork",
    "URI": "bitbucket.org/sg/python-langserver-fork",
    "Description": "Python Language Server",
    "Language": "",
    "Fork": true,
    "Archived": false,
+   "Private": false,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
@@ -114,7 +117,7 @@
    "Sources": {
     "extsvc:bitbucketcloud:1": {
      "ID": "extsvc:bitbucketcloud:1",
-     "CloneURL": "https://alice:secret@bitbucket.org/sg/python-langserver-fork.git"
+     "CloneURL": "git@https://bitbucket.org:sg/python-langserver-fork.git"
     }
    },
    "Metadata": {
@@ -140,7 +143,7 @@
       }
      }
     },
-    "is_private": true,
+    "is_private": false,
     "links": {
      "clone": [
       {

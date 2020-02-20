@@ -72,6 +72,8 @@
 // 1528395651_event_logs_remove_empty_url_check.up.sql (88B)
 // 1528395652_add_lsif_indexer.down.sql (537B)
 // 1528395652_add_lsif_indexer.up.sql (611B)
+// 1528395653_repo_normalize_visibility_metadata.down.sql (65B)
+// 1528395653_repo_normalize_visibility_metadata.up.sql (925B)
 
 package migrations
 
@@ -1580,6 +1582,46 @@ func _1528395652_add_lsif_indexerUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395653_repo_normalize_visibility_metadataDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x28\xca\x2c\x4b\x2c\x49\xb5\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x13\x76\x29\xa7\x41\x00\x00\x00")
+
+func _1528395653_repo_normalize_visibility_metadataDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395653_repo_normalize_visibility_metadataDownSql,
+		"1528395653_repo_normalize_visibility_metadata.down.sql",
+	)
+}
+
+func _1528395653_repo_normalize_visibility_metadataDownSql() (*asset, error) {
+	bytes, err := _1528395653_repo_normalize_visibility_metadataDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395653_repo_normalize_visibility_metadata.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2f, 0x5a, 0xdc, 0x7, 0x7b, 0x8f, 0xc1, 0x93, 0x0, 0x2b, 0xe2, 0x90, 0x52, 0x59, 0x40, 0xe7, 0x16, 0xd5, 0xa5, 0xd, 0xb2, 0x61, 0x8, 0x44, 0xfd, 0x3c, 0x48, 0xf0, 0x2, 0x32, 0xd3, 0x2c}}
+	return a, nil
+}
+
+var __1528395653_repo_normalize_visibility_metadataUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x53\xd1\x8e\x9b\x30\x10\x7c\xf7\x57\xec\x43\x2a\x5a\xa9\xed\x0f\xa0\x9c\xe4\xc0\xba\x87\xe4\xd8\x91\x6d\xd4\xbe\x45\x90\xb3\x5a\xab\xf4\x40\xc6\x70\xbd\xbf\xaf\x30\x84\xb4\x2a\x95\x7a\xc7\x1b\x03\x33\x3b\xbb\x3b\x7b\xc0\x4f\x85\x48\x09\xa1\xdc\xa0\x02\x43\x0f\x1c\xc1\xdb\xae\x05\x9a\xe7\x90\x49\x5e\x1e\x05\x14\x0c\x84\x34\x80\x5f\x0a\x6d\x34\x74\xde\x8d\x55\xb0\x70\x90\x92\x23\x15\xf1\x93\x28\x39\x87\x1c\x19\x2d\xb9\x01\x46\xb9\xc6\x94\x90\x5c\xc2\x6e\x47\x72\xcc\x38\x55\x48\x00\x00\xc2\xf9\x32\xf8\xbe\xf5\x90\x95\x4a\x4b\x05\x4c\xaa\x88\x4f\x8f\x46\x8e\x99\x01\xfb\x33\x58\xff\x58\x35\xe7\xde\xfa\xd1\x5d\xec\x39\x3c\x77\xf6\x3d\xfc\xb0\xa1\x7a\xa8\x42\x05\x4c\xc9\x63\x34\x98\x2e\x8a\xbe\x7d\x8a\xef\x6f\x7c\xfb\x34\xfd\x3b\xe3\x63\xd5\x40\xdd\xb6\x8d\xad\x1e\x53\x12\x7b\x8c\x30\x93\x6a\xa1\x14\xe2\xe6\x86\x4b\x79\x5a\x7d\x4c\xcc\xfd\xb5\x87\x2b\x58\xb0\x99\xf6\x71\xd3\x1e\xec\x21\xf9\xea\xc2\xb7\xa1\x4e\xc0\xdc\xa3\x58\x69\x37\xbd\x99\xbd\x76\xf1\xe1\xee\x0e\x92\xa2\x3f\xcd\xa3\x4c\x6e\x85\x90\xeb\xff\xaa\xd5\x54\x5b\xb5\x56\xea\x9f\x85\x46\xd7\xbb\xda\x35\x2e\x3c\x27\x13\x7d\x59\xe0\x06\xff\xe6\xd7\xa8\xf2\xb7\xf6\xa3\x33\x91\x43\xc1\x5e\xe8\xb4\x76\xa1\x1e\x2e\xdf\x6d\xd0\xd6\x8f\xd6\xff\x73\x3c\x53\x86\x32\xaa\xcd\xdb\x2d\xfb\xdd\x50\x37\xee\x92\x00\xd5\xd7\xcc\xbd\x7b\xad\x8d\xac\x69\x87\x87\x17\x2d\xc9\xf5\xe7\xee\xef\x2d\x2d\xb3\x58\x81\xf2\x94\x53\xb3\x1c\x8e\x46\xb3\xde\xc8\x3e\x2a\x7f\xbe\x47\x85\x53\xe6\x15\x0a\x03\x92\xad\xc9\x9b\x15\x27\xb5\x29\x82\x29\x41\x91\xef\x76\x29\x21\x99\x3c\x1e\x0b\x93\x92\x5f\x01\x00\x00\xff\xff\xaf\xe7\xad\x20\x9d\x03\x00\x00")
+
+func _1528395653_repo_normalize_visibility_metadataUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395653_repo_normalize_visibility_metadataUpSql,
+		"1528395653_repo_normalize_visibility_metadata.up.sql",
+	)
+}
+
+func _1528395653_repo_normalize_visibility_metadataUpSql() (*asset, error) {
+	bytes, err := _1528395653_repo_normalize_visibility_metadataUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395653_repo_normalize_visibility_metadata.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe0, 0x1e, 0xad, 0x5a, 0xdc, 0x33, 0x22, 0xe9, 0xfa, 0xc8, 0x62, 0xef, 0x4e, 0x68, 0x3b, 0x41, 0x29, 0xf, 0xa6, 0x21, 0x9b, 0x47, 0xf4, 0xbf, 0xec, 0xe7, 0xc1, 0xd5, 0xc3, 0xdd, 0xf3, 0x13}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1743,6 +1785,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395651_event_logs_remove_empty_url_check.up.sql":              _1528395651_event_logs_remove_empty_url_checkUpSql,
 	"1528395652_add_lsif_indexer.down.sql":                             _1528395652_add_lsif_indexerDownSql,
 	"1528395652_add_lsif_indexer.up.sql":                               _1528395652_add_lsif_indexerUpSql,
+	"1528395653_repo_normalize_visibility_metadata.down.sql":           _1528395653_repo_normalize_visibility_metadataDownSql,
+	"1528395653_repo_normalize_visibility_metadata.up.sql":             _1528395653_repo_normalize_visibility_metadataUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1858,6 +1902,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395651_event_logs_remove_empty_url_check.up.sql":              {_1528395651_event_logs_remove_empty_url_checkUpSql, map[string]*bintree{}},
 	"1528395652_add_lsif_indexer.down.sql":                             {_1528395652_add_lsif_indexerDownSql, map[string]*bintree{}},
 	"1528395652_add_lsif_indexer.up.sql":                               {_1528395652_add_lsif_indexerUpSql, map[string]*bintree{}},
+	"1528395653_repo_normalize_visibility_metadata.down.sql":           {_1528395653_repo_normalize_visibility_metadataDownSql, map[string]*bintree{}},
+	"1528395653_repo_normalize_visibility_metadata.up.sql":             {_1528395653_repo_normalize_visibility_metadataUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
