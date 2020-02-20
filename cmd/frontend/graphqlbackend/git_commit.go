@@ -261,12 +261,14 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query *string
 	Path  *string
+	After *string
 }) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
 		revisionRange: string(r.oid),
 		first:         args.ConnectionArgs.First,
 		query:         args.Query,
 		path:          args.Path,
+		after:         args.After,
 		repo:          r.repo,
 	}, nil
 }
