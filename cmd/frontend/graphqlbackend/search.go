@@ -730,7 +730,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 
 // SearchRepos searches for the provided query but only the the unique list of
 // repositories belonging to the search results.
-// It's used by a8n to search.
+// It's used by campaigns to search.
 func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver, error) {
 	queryString := query.ConvertToLiteral(plainQuery)
 

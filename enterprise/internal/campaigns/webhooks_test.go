@@ -1,4 +1,4 @@
-package a8n
+package campaigns
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	gh "github.com/google/go-github/github"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -90,7 +90,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 
 		store := NewStoreWithClock(db, clock)
 
-		campaign := &a8n.Campaign{
+		campaign := &campaigns.Campaign{
 			Name:            "Test campaign",
 			Description:     "Testing THE WEBHOOKS",
 			AuthorID:        userID,
@@ -102,7 +102,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		changesets := []*a8n.Changeset{
+		changesets := []*campaigns.Changeset{
 			{
 				RepoID:              githubRepo.ID,
 				ExternalID:          "16",
@@ -154,11 +154,11 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			IncludesCreatedEdit: true,
 		}
 
-		events := []*a8n.ChangesetEvent{
+		events := []*campaigns.ChangesetEvent{
 			{
 				ID:          7,
 				ChangesetID: changesets[0].ID,
-				Kind:        a8n.ChangesetEventKindGitHubCommented,
+				Kind:        campaigns.ChangesetEventKindGitHubCommented,
 				Key:         "540540777",
 				CreatedAt:   now,
 				UpdatedAt:   now,
@@ -174,14 +174,14 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			secret string
 			event  event
 			code   int
-			want   []*a8n.ChangesetEvent
+			want   []*campaigns.ChangesetEvent
 		}{
 			{
 				name:   "unauthorized",
 				secret: "wrong-secret",
 				event:  fs["issue_comment-edited"],
 				code:   http.StatusUnauthorized,
-				want:   []*a8n.ChangesetEvent{},
+				want:   []*campaigns.ChangesetEvent{},
 			},
 			{
 				name:   "non-existent-changeset",
@@ -196,7 +196,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 					return event{name: e.name, event: &clone}
 				}(),
 				code: http.StatusOK,
-				want: []*a8n.ChangesetEvent{},
+				want: []*campaigns.ChangesetEvent{},
 			},
 			{
 				name:   "non-existent-changeset-event",
@@ -218,12 +218,12 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 					return event{name: e.name, event: &clone}
 				}(),
 				code: http.StatusOK,
-				want: func() []*a8n.ChangesetEvent {
+				want: func() []*campaigns.ChangesetEvent {
 					m := issueComment
 					m.Body = "Foo bar"
 					e := events[0].Clone()
 					e.Metadata = &m
-					return []*a8n.ChangesetEvent{e}
+					return []*campaigns.ChangesetEvent{e}
 				}(),
 			},
 		} {

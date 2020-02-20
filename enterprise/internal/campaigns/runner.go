@@ -1,4 +1,4 @@
-package a8n
+package campaigns
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -25,7 +25,7 @@ func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, git
 		log15.Error("Parsing max worker count failed. Falling back to default.", "default", defaultWorkerCount, "err", err)
 		workerCount = defaultWorkerCount
 	}
-	process := func(ctx context.Context, s *Store, job a8n.ChangesetJob) error {
+	process := func(ctx context.Context, s *Store, job campaigns.ChangesetJob) error {
 		c, err := s.GetCampaign(ctx, GetCampaignOpts{
 			ID: job.CampaignID,
 		})

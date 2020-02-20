@@ -15,8 +15,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -56,7 +56,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				HeadRef:   "refs/heads/test-pr-6",
 				BaseRef:   "refs/heads/master",
 				Repo:      repo,
-				Changeset: &a8n.Changeset{},
+				Changeset: &campaigns.Changeset{},
 			},
 		},
 		{
@@ -67,7 +67,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				HeadRef:   "refs/heads/always-open-pr",
 				BaseRef:   "refs/heads/master",
 				Repo:      repo,
-				Changeset: &a8n.Changeset{},
+				Changeset: &campaigns.Changeset{},
 			},
 			// If PR already exists we'll just return it, no error
 			err:    "",
@@ -142,7 +142,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 		{
 			name: "success",
 			cs: &Changeset{
-				Changeset: &a8n.Changeset{
+				Changeset: &campaigns.Changeset{
 					Metadata: &github.PullRequest{
 						ID: "MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0",
 					},
@@ -212,7 +212,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 				Title:   "This is a new title",
 				Body:    "This is a new body",
 				BaseRef: "refs/heads/master",
-				Changeset: &a8n.Changeset{
+				Changeset: &campaigns.Changeset{
 					Metadata: &github.PullRequest{
 						ID: "MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0",
 					},
@@ -281,15 +281,15 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 			cs: []*Changeset{
 				{
 					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-					Changeset: &a8n.Changeset{ExternalID: "5550"},
+					Changeset: &campaigns.Changeset{ExternalID: "5550"},
 				},
 				{
 					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "tsenart/vegeta"}},
-					Changeset: &a8n.Changeset{ExternalID: "50"},
+					Changeset: &campaigns.Changeset{ExternalID: "50"},
 				},
 				{
 					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-					Changeset: &a8n.Changeset{ExternalID: "5834"},
+					Changeset: &campaigns.Changeset{ExternalID: "5834"},
 				},
 			},
 		},

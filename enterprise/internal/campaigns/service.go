@@ -1,4 +1,4 @@
-package a8n
+package campaigns
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -75,7 +75,7 @@ var defaultRepoResolveRevision = func(ctx context.Context, repo *repos.Repo, rev
 // specification).
 //
 // If resolveRevision is nil, a default implementation is used.
-func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a8n.CampaignPlanPatch, userID int32) (*a8n.CampaignPlan, error) {
+func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []campaigns.CampaignPlanPatch, userID int32) (*campaigns.CampaignPlan, error) {
 	if userID == 0 {
 		return nil, backend.ErrNotAuthenticated
 	}
@@ -100,7 +100,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 	}
 	defer tx.Done(&err)
 
-	plan := &a8n.CampaignPlan{
+	plan := &campaigns.CampaignPlan{
 		CampaignType: campaignTypePatch,
 		Arguments:    "", // intentionally empty to avoid needless duplication with CampaignJob diffs
 		UserID:       userID,
@@ -116,7 +116,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 		if repo == nil {
 			return nil, fmt.Errorf("repository ID %d not found", patch.Repo)
 		}
-		if !a8n.IsRepoSupported(&repo.ExternalRepo) {
+		if !campaigns.IsRepoSupported(&repo.ExternalRepo) {
 			continue
 		}
 
@@ -125,7 +125,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 			return nil, errors.Wrapf(err, "repository %q", repo.Name)
 		}
 
-		job := &a8n.CampaignJob{
+		job := &campaigns.CampaignJob{
 			CampaignPlanID: plan.ID,
 			RepoID:         patch.Repo,
 			BaseRef:        patch.BaseRevision,
@@ -146,7 +146,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 // Campaign and the Campaign is not created as a draft, it calls
 // CreateChangesetJobs inside the same transaction in which it creates the
 // Campaign.
-func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft bool) error {
+func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, draft bool) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
 	defer func() {
@@ -187,7 +187,7 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 // (finished) CampaignJobs.
 var ErrNoCampaignJobs = errors.New("cannot create or update a Campaign without any changesets")
 
-func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *a8n.Campaign) error {
+func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *campaigns.Campaign) error {
 	if c.CampaignPlanID == 0 {
 		return errors.New("cannot create changesets for campaign with no campaign plan")
 	}
@@ -208,7 +208,7 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 	}
 
 	for _, job := range jobs {
-		changesetJob := &a8n.ChangesetJob{
+		changesetJob := &campaigns.ChangesetJob{
 			CampaignID:    c.ID,
 			CampaignJobID: job.ID,
 		}
@@ -229,8 +229,8 @@ func RunChangesetJob(
 	store *Store,
 	gitClient GitserverClient,
 	cf *httpcli.Factory,
-	c *a8n.Campaign,
-	job *a8n.ChangesetJob,
+	c *campaigns.Campaign,
+	job *campaigns.ChangesetJob,
 ) (err error) {
 	// Store should already have an open transaction but ensure here anyway
 	store, err = store.Transact(ctx)
@@ -397,7 +397,7 @@ func RunChangesetJob(
 		BaseRef: baseRef,
 		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,
-		Changeset: &a8n.Changeset{
+		Changeset: &campaigns.Changeset{
 			RepoID:      repo.ID,
 			CampaignIDs: []int64{job.CampaignID},
 		},
@@ -466,7 +466,7 @@ func RunChangesetJob(
 var ErrCloseProcessingCampaign = errors.New("cannot delete a Campaign while changesets are being created on codehosts")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
-func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *a8n.Campaign, err error) {
+func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
 	tr, ctx := trace.New(ctx, "service.CloseCampaign", traceTitle)
 	defer func() {
@@ -536,7 +536,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 // PublishCampaign publishes the Campaign with the given ID
 // by turning the CampaignJobs attached to the CampaignPlan of
 // the Campaign into ChangesetJobs and enqueuing them
-func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.Campaign, err error) {
+func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *campaigns.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", id)
 	tr, ctx := trace.New(ctx, "service.PublishCampaign", traceTitle)
 	defer func() {
@@ -573,7 +573,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 		tr.Finish()
 	}()
 
-	transaction := func() (cs []*a8n.Changeset, err error) {
+	transaction := func() (cs []*campaigns.Changeset, err error) {
 		tx, err := s.store.Transact(ctx)
 		if err != nil {
 			return nil, err
@@ -632,14 +632,14 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 }
 
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
-func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) (err error) {
-	cs = selectChangesets(cs, func(c *a8n.Changeset) bool {
+func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Changeset) (err error) {
+	cs = selectChangesets(cs, func(c *campaigns.Changeset) bool {
 		s, err := c.State()
 		if err != nil {
 			log15.Warn("could not determine changeset state", "err", err)
 			return false
 		}
-		return s == a8n.ChangesetStateOpen
+		return s == campaigns.ChangesetStateOpen
 	})
 
 	if len(cs) == 0 {
@@ -676,7 +676,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) 
 	// Changeset often produces a ChangesetEvent on the codehost and if we were
 	// to close the Changesets and not update the events (which is what
 	// SyncChangesetsWithSources does) our burndown chart will be outdated
-	// until the next run of a8n.Syncer.
+	// until the next run of campaigns.Syncer.
 	return syncer.SyncChangesetsWithSources(ctx, bySource)
 }
 
@@ -718,7 +718,7 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, campaign
 		// Already exists
 		return nil
 	}
-	changesetJob := &a8n.ChangesetJob{
+	changesetJob := &campaigns.ChangesetJob{
 		CampaignID:    campaign.ID,
 		CampaignJobID: job.ID,
 	}
@@ -755,7 +755,7 @@ var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch cannot be changed")
 
 // UpdateCampaign updates the Campaign with the given arguments.
-func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *a8n.Campaign, detachedChangesets []*a8n.Changeset, err error) {
+func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *campaigns.Campaign, detachedChangesets []*campaigns.Changeset, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", args.Campaign)
 	tr, ctx := trace.New(ctx, "service.UpdateCampaign", traceTitle)
 	defer func() {
@@ -919,22 +919,22 @@ func campaignPublished(ctx context.Context, store *Store, campaign int64) (bool,
 }
 
 type campaignUpdateDiff struct {
-	Delete []*a8n.ChangesetJob
-	Update []*a8n.ChangesetJob
-	Create []*a8n.ChangesetJob
+	Delete []*campaigns.ChangesetJob
+	Update []*campaigns.ChangesetJob
+	Create []*campaigns.ChangesetJob
 }
 
 // repoJobs is a triplet of jobs that are associated with the same repository.
 type repoJobs struct {
-	changesetJob   *a8n.ChangesetJob
-	campaignJob    *a8n.CampaignJob
-	newCampaignJob *a8n.CampaignJob
+	changesetJob   *campaigns.ChangesetJob
+	campaignJob    *campaigns.CampaignJob
+	newCampaignJob *campaigns.CampaignJob
 }
 
 func computeCampaignUpdateDiff(
 	ctx context.Context,
 	tx *Store,
-	campaign *a8n.Campaign,
+	campaign *campaigns.Campaign,
 	oldPlanID int64,
 	updateAttributes bool,
 ) (*campaignUpdateDiff, error) {
@@ -990,7 +990,7 @@ func computeCampaignUpdateDiff(
 		} else {
 			// If we have new CampaignJobs that don't match an existing
 			// ChangesetJob we need to create new ChangesetJobs.
-			diff.Create = append(diff.Create, &a8n.ChangesetJob{
+			diff.Create = append(diff.Create, &campaigns.ChangesetJob{
 				CampaignID:    campaign.ID,
 				CampaignJobID: j.ID,
 			})
@@ -1027,14 +1027,14 @@ func computeCampaignUpdateDiff(
 
 // campaignJobsDiffer returns true if the CampaignJobs differ in a way that
 // requires updating the Changeset on the codehost.
-func campaignJobsDiffer(a, b *a8n.CampaignJob) bool {
+func campaignJobsDiffer(a, b *campaigns.CampaignJob) bool {
 	return a.Diff != b.Diff ||
 		a.Rev != b.Rev ||
 		a.BaseRef != b.BaseRef ||
 		a.Description != b.Description
 }
 
-func selectChangesets(cs []*a8n.Changeset, predicate func(*a8n.Changeset) bool) []*a8n.Changeset {
+func selectChangesets(cs []*campaigns.Changeset, predicate func(*campaigns.Changeset) bool) []*campaigns.Changeset {
 	i := 0
 	for _, c := range cs {
 		if predicate(c) {
@@ -1077,10 +1077,10 @@ func isOutdated(c *repos.Changeset) (bool, error) {
 	return false, nil
 }
 
-func mergeByRepoID(chs []*a8n.ChangesetJob, cas []*a8n.CampaignJob) (map[api.RepoID]*repoJobs, error) {
+func mergeByRepoID(chs []*campaigns.ChangesetJob, cas []*campaigns.CampaignJob) (map[api.RepoID]*repoJobs, error) {
 	jobs := make(map[api.RepoID]*repoJobs, len(chs))
 
-	byID := make(map[int64]*a8n.CampaignJob, len(cas))
+	byID := make(map[int64]*campaigns.CampaignJob, len(cas))
 	for _, j := range cas {
 		byID[j.ID] = j
 	}

@@ -1,4 +1,4 @@
-package a8n
+package campaigns
 
 import (
 	"context"
@@ -12,14 +12,14 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
-// Store exposes methods to read and write a8n domain models
+// Store exposes methods to read and write campaigns domain models
 // from persistent storage.
 type Store struct {
 	db  dbutil.DB
@@ -69,14 +69,14 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 // the job. All operations on the job should be done using the supplied store as they will run in a transaction.
 // Returning an error will roll back the transaction.
 // NOTE: It should not be called from within an existing transaction
-func (s *Store) ProcessPendingChangesetJobs(ctx context.Context, process func(ctx context.Context, s *Store, job a8n.ChangesetJob) error) (didRun bool, err error) {
+func (s *Store) ProcessPendingChangesetJobs(ctx context.Context, process func(ctx context.Context, s *Store, job campaigns.ChangesetJob) error) (didRun bool, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "starting transaction")
 	}
 	defer tx.Done(&err)
 	q := sqlf.Sprintf(getPendingChangesetJobQuery)
-	var job a8n.ChangesetJob
+	var job campaigns.ChangesetJob
 	_, count, err := tx.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanChangesetJob(&job, sc)
 		if err != nil {
@@ -121,14 +121,14 @@ RETURNING j.id,
 // All operations on the job should be done using the supplied store as they will run in a transaction.
 // Returning an error will roll back the transaction.
 // NOTE: It should not be called from within an existing transaction
-func (s *Store) ProcessPendingCampaignJob(ctx context.Context, process func(ctx context.Context, s *Store, job a8n.CampaignJob) error) (didRun bool, err error) {
+func (s *Store) ProcessPendingCampaignJob(ctx context.Context, process func(ctx context.Context, s *Store, job campaigns.CampaignJob) error) (didRun bool, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "starting transaction")
 	}
 	defer tx.Done(&err)
 	q := sqlf.Sprintf(getPendingCampaignJobQuery)
-	var job a8n.CampaignJob
+	var job campaigns.CampaignJob
 	_, count, err := tx.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaignJob(&job, sc)
 		if err != nil {
@@ -191,7 +191,7 @@ func (s *Store) Done(errs ...*error) {
 
 var NoTransactionError = errors.New("Not in a transaction")
 
-var lockNamespace = int32(fnv1.HashString32("a8n"))
+var lockNamespace = int32(fnv1.HashString32("campaigns"))
 
 // TryAcquireAdvisoryLock will attempt to acquire an advisory lock using key
 // and is non blocking. If a lock is acquired, "true, nil" will be returned.
@@ -240,7 +240,7 @@ func lockQuery(key string) *sqlf.Query {
 }
 
 const lockQueryFmtStr = `
--- source: enterprise/internal/a8n/store/store.go:TryAcquireAdvisoryLock
+-- source: enterprise/internal/campaigns/store/store.go:TryAcquireAdvisoryLock
 SELECT pg_try_advisory_xact_lock(%s, %s)
 `
 
@@ -263,7 +263,7 @@ func (e AlreadyExistError) Error() string {
 // Changesets with the same RepoID and ExternalID already exists in the
 // database, it overwrites the fields of the affected changeset pointers with
 // the values contained in the database and returns an AlreadyExistError.
-func (s *Store) CreateChangesets(ctx context.Context, cs ...*a8n.Changeset) error {
+func (s *Store) CreateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error {
 	q, err := s.createChangesetsQuery(cs)
 	if err != nil {
 		return err
@@ -324,7 +324,7 @@ WITH batch AS (
 `
 
 var createChangesetsQueryFmtstr = changesetBatchQueryPrefix + `,
--- source: internal/a8n/store.go:CreateChangesets
+-- source: enterprise/internal/campaigns/store.go:CreateChangesets
 changed AS (
   INSERT INTO changesets (
     repo_id,
@@ -375,7 +375,7 @@ AND existing.external_id = batch.external_id
 ORDER BY batch.ordinality
 `
 
-func (s *Store) createChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) {
+func (s *Store) createChangesetsQuery(cs []*campaigns.Changeset) (*sqlf.Query, error) {
 	now := s.now()
 	for _, c := range cs {
 		if c.CreatedAt.IsZero() {
@@ -389,7 +389,7 @@ func (s *Store) createChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 	return batchChangesetsQuery(createChangesetsQueryFmtstr, cs)
 }
 
-func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, error) {
+func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query, error) {
 	type record struct {
 		ID                  int64           `json:"id"`
 		RepoID              api.RepoID      `json:"repo_id"`
@@ -454,7 +454,7 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 }
 
 var countChangesetsQueryFmtstr = `
--- source: internal/a8n/store.go:CountChangesets
+-- source: enterprise/internal/campaigns/store.go:CountChangesets
 SELECT COUNT(id)
 FROM changesets
 WHERE %s
@@ -484,10 +484,10 @@ type GetChangesetOpts struct {
 var ErrNoResults = errors.New("no results")
 
 // GetChangeset gets a changeset matching the given options.
-func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*a8n.Changeset, error) {
+func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*campaigns.Changeset, error) {
 	q := getChangesetQuery(&opts)
 
-	var c a8n.Changeset
+	var c campaigns.Changeset
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanChangeset(&c, sc)
 	})
@@ -503,7 +503,7 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*a8n.C
 }
 
 var getChangesetsQueryFmtstr = `
--- source: internal/a8n/store.go:GetChangeset
+-- source: enterprise/internal/campaigns/store.go:GetChangeset
 SELECT
   id,
   repo_id,
@@ -551,12 +551,12 @@ type ListChangesetsOpts struct {
 }
 
 // ListChangesets lists Changesets with the given filters.
-func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs []*a8n.Changeset, next int64, err error) {
+func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs []*campaigns.Changeset, next int64, err error) {
 	q := listChangesetsQuery(&opts)
 
-	cs = make([]*a8n.Changeset, 0, opts.Limit)
+	cs = make([]*campaigns.Changeset, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c a8n.Changeset
+		var c campaigns.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
 			return 0, 0, err
 		}
@@ -573,7 +573,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 }
 
 var listChangesetsQueryFmtstr = `
--- source: internal/a8n/store.go:ListChangesets
+-- source: enterprise/internal/campaigns/store.go:ListChangesets
 SELECT
   id,
   repo_id,
@@ -632,7 +632,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 }
 
 // UpdateChangesets updates the given Changesets.
-func (s *Store) UpdateChangesets(ctx context.Context, cs ...*a8n.Changeset) error {
+func (s *Store) UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error {
 	q, err := s.updateChangesetsQuery(cs)
 	if err != nil {
 		return err
@@ -647,7 +647,7 @@ func (s *Store) UpdateChangesets(ctx context.Context, cs ...*a8n.Changeset) erro
 }
 
 const updateChangesetsQueryFmtstr = changesetBatchQueryPrefix + `,
--- source: internal/a8n/store.go:UpdateChangesets
+-- source: enterprise/internal/campaigns/store.go:UpdateChangesets
 changed AS (
   UPDATE changesets
   SET
@@ -684,7 +684,7 @@ AND batch.external_id = changed.external_id
 ORDER BY batch.ordinality
 `
 
-func (s *Store) updateChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) {
+func (s *Store) updateChangesetsQuery(cs []*campaigns.Changeset) (*sqlf.Query, error) {
 	now := s.now()
 	for _, c := range cs {
 		c.UpdatedAt = now
@@ -696,15 +696,15 @@ func (s *Store) updateChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 type GetChangesetEventOpts struct {
 	ID          int64
 	ChangesetID int64
-	Kind        a8n.ChangesetEventKind
+	Kind        campaigns.ChangesetEventKind
 	Key         string
 }
 
 // GetChangesetEvent gets a changeset matching the given options.
-func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpts) (*a8n.ChangesetEvent, error) {
+func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpts) (*campaigns.ChangesetEvent, error) {
 	q := getChangesetEventQuery(&opts)
 
-	var c a8n.ChangesetEvent
+	var c campaigns.ChangesetEvent
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanChangesetEvent(&c, sc)
 	})
@@ -720,7 +720,7 @@ func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpt
 }
 
 var getChangesetEventsQueryFmtstr = `
--- source: internal/a8n/store.go:GetChangesetEvent
+-- source: enterprise/internal/campaigns/store.go:GetChangesetEvent
 SELECT
     id,
     changeset_id,
@@ -764,12 +764,12 @@ type ListChangesetEventsOpts struct {
 }
 
 // ListChangesetEvents lists ChangesetEvents with the given filters.
-func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEventsOpts) (cs []*a8n.ChangesetEvent, next int64, err error) {
+func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEventsOpts) (cs []*campaigns.ChangesetEvent, next int64, err error) {
 	q := listChangesetEventsQuery(&opts)
 
-	cs = make([]*a8n.ChangesetEvent, 0, opts.Limit)
+	cs = make([]*campaigns.ChangesetEvent, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c a8n.ChangesetEvent
+		var c campaigns.ChangesetEvent
 		if err = scanChangesetEvent(&c, sc); err != nil {
 			return 0, 0, err
 		}
@@ -786,7 +786,7 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 }
 
 var listChangesetEventsQueryFmtstr = `
--- source: internal/a8n/store.go:ListChangesetEvents
+-- source: enterprise/internal/campaigns/store.go:ListChangesetEvents
 SELECT
     id,
     changeset_id,
@@ -848,7 +848,7 @@ func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEve
 }
 
 var countChangesetEventsQueryFmtstr = `
--- source: internal/a8n/store.go:CountChangesetEvents
+-- source: enterprise/internal/campaigns/store.go:CountChangesetEvents
 SELECT COUNT(id)
 FROM changeset_events
 WHERE %s
@@ -868,7 +868,7 @@ func countChangesetEventsQuery(opts *CountChangesetEventsOpts) *sqlf.Query {
 }
 
 // UpsertChangesetEvents creates or updates the given ChangesetEvents.
-func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetEvent) (err error) {
+func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) (err error) {
 	q, err := s.upsertChangesetEventsQuery(cs)
 	if err != nil {
 		return err
@@ -918,7 +918,7 @@ ORDER BY batch.ordinality
 `
 
 var upsertChangesetEventsQueryFmtstr = changesetEventsBatchQueryPrefix + `,
--- source: internal/a8n/store.go:UpsertChangesetEvents
+-- source: enterprise/internal/campaigns/store.go:UpsertChangesetEvents
 changed AS (
   INSERT INTO changeset_events (
     changeset_id,
@@ -946,7 +946,7 @@ changed AS (
 )
 ` + batchChangesetEventsQuerySuffix
 
-func (s *Store) upsertChangesetEventsQuery(es []*a8n.ChangesetEvent) (*sqlf.Query, error) {
+func (s *Store) upsertChangesetEventsQuery(es []*campaigns.ChangesetEvent) (*sqlf.Query, error) {
 	now := s.now()
 	for _, e := range es {
 		if e.CreatedAt.IsZero() {
@@ -960,7 +960,7 @@ func (s *Store) upsertChangesetEventsQuery(es []*a8n.ChangesetEvent) (*sqlf.Quer
 	return batchChangesetEventsQuery(upsertChangesetEventsQueryFmtstr, es)
 }
 
-func batchChangesetEventsQuery(fmtstr string, es []*a8n.ChangesetEvent) (*sqlf.Query, error) {
+func batchChangesetEventsQuery(fmtstr string, es []*campaigns.ChangesetEvent) (*sqlf.Query, error) {
 	type record struct {
 		ID          int64           `json:"id"`
 		ChangesetID int64           `json:"changeset_id"`
@@ -999,7 +999,7 @@ func batchChangesetEventsQuery(fmtstr string, es []*a8n.ChangesetEvent) (*sqlf.Q
 }
 
 // CreateCampaign creates the given Campaign.
-func (s *Store) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
+func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	q, err := s.createCampaignQuery(c)
 	if err != nil {
 		return err
@@ -1012,7 +1012,7 @@ func (s *Store) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 }
 
 var createCampaignQueryFmtstr = `
--- source: internal/a8n/store.go:CreateCampaign
+-- source: enterprise/internal/campaigns/store.go:CreateCampaign
 INSERT INTO campaigns (
   name,
   description,
@@ -1042,7 +1042,7 @@ RETURNING
   closed_at
 `
 
-func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
+func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
 	changesetIDs, err := jsonSetColumn(c.ChangesetIDs)
 	if err != nil {
 		return nil, err
@@ -1101,7 +1101,7 @@ func nullStringColumn(s string) *string {
 }
 
 // UpdateCampaign updates the given Campaign.
-func (s *Store) UpdateCampaign(ctx context.Context, c *a8n.Campaign) error {
+func (s *Store) UpdateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	q, err := s.updateCampaignQuery(c)
 	if err != nil {
 		return err
@@ -1114,7 +1114,7 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *a8n.Campaign) error {
 }
 
 var updateCampaignQueryFmtstr = `
--- source: internal/a8n/store.go:UpdateCampaign
+-- source: enterprise/internal/campaigns/store.go:UpdateCampaign
 UPDATE campaigns
 SET (
   name,
@@ -1144,7 +1144,7 @@ RETURNING
   closed_at
 `
 
-func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
+func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
 	changesetIDs, err := jsonSetColumn(c.ChangesetIDs)
 	if err != nil {
 		return nil, err
@@ -1180,7 +1180,7 @@ func (s *Store) DeleteCampaign(ctx context.Context, id int64) error {
 }
 
 var deleteCampaignQueryFmtstr = `
--- source: internal/a8n/store.go:DeleteCampaign
+-- source: enterprise/internal/campaigns/store.go:DeleteCampaign
 DELETE FROM campaigns WHERE id = %s
 `
 
@@ -1188,7 +1188,7 @@ DELETE FROM campaigns WHERE id = %s
 // counting campaigns.
 type CountCampaignsOpts struct {
 	ChangesetID int64
-	State       a8n.CampaignState
+	State       campaigns.CampaignState
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -1201,7 +1201,7 @@ func (s *Store) CountCampaigns(ctx context.Context, opts CountCampaignsOpts) (co
 }
 
 var countCampaignsQueryFmtstr = `
--- source: internal/a8n/store.go:CountCampaigns
+-- source: enterprise/internal/campaigns/store.go:CountCampaigns
 SELECT COUNT(id)
 FROM campaigns
 WHERE %s
@@ -1214,9 +1214,9 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	}
 
 	switch opts.State {
-	case a8n.CampaignStateOpen:
+	case campaigns.CampaignStateOpen:
 		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
-	case a8n.CampaignStateClosed:
+	case campaigns.CampaignStateClosed:
 		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
@@ -1234,10 +1234,10 @@ type GetCampaignOpts struct {
 }
 
 // GetCampaign gets a campaign matching the given options.
-func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*a8n.Campaign, error) {
+func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaigns.Campaign, error) {
 	q := getCampaignQuery(&opts)
 
-	var c a8n.Campaign
+	var c campaigns.Campaign
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanCampaign(&c, sc)
 	})
@@ -1253,7 +1253,7 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*a8n.Cam
 }
 
 var getCampaignsQueryFmtstr = `
--- source: internal/a8n/store.go:GetCampaign
+-- source: enterprise/internal/campaigns/store.go:GetCampaign
 SELECT
   id,
   name,
@@ -1295,16 +1295,16 @@ type ListCampaignsOpts struct {
 	ChangesetID int64
 	Cursor      int64
 	Limit       int
-	State       a8n.CampaignState
+	State       campaigns.CampaignState
 }
 
 // ListCampaigns lists Campaigns with the given filters.
-func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*a8n.Campaign, next int64, err error) {
+func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*campaigns.Campaign, next int64, err error) {
 	q := listCampaignsQuery(&opts)
 
-	cs = make([]*a8n.Campaign, 0, opts.Limit)
+	cs = make([]*campaigns.Campaign, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c a8n.Campaign
+		var c campaigns.Campaign
 		if err = scanCampaign(&c, sc); err != nil {
 			return 0, 0, err
 		}
@@ -1321,7 +1321,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 }
 
 var listCampaignsQueryFmtstr = `
--- source: internal/a8n/store.go:ListCampaigns
+-- source: enterprise/internal/campaigns/store.go:ListCampaigns
 SELECT
   id,
   name,
@@ -1356,9 +1356,9 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 
 	switch opts.State {
-	case a8n.CampaignStateOpen:
+	case campaigns.CampaignStateOpen:
 		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
-	case a8n.CampaignStateClosed:
+	case campaigns.CampaignStateClosed:
 		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
@@ -1370,7 +1370,7 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 }
 
 // CreateCampaignPlan creates the given CampaignPlan.
-func (s *Store) CreateCampaignPlan(ctx context.Context, c *a8n.CampaignPlan) error {
+func (s *Store) CreateCampaignPlan(ctx context.Context, c *campaigns.CampaignPlan) error {
 	q, err := s.createCampaignPlanQuery(c)
 	if err != nil {
 		return err
@@ -1383,7 +1383,7 @@ func (s *Store) CreateCampaignPlan(ctx context.Context, c *a8n.CampaignPlan) err
 }
 
 var createCampaignPlanQueryFmtstr = `
--- source: internal/a8n/store.go:CreateCampaignPlan
+-- source: enterprise/internal/campaigns/store.go:CreateCampaignPlan
 INSERT INTO campaign_plans (
   campaign_type,
   arguments,
@@ -1403,7 +1403,7 @@ RETURNING
   user_id
 `
 
-func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
+func (s *Store) createCampaignPlanQuery(c *campaigns.CampaignPlan) (*sqlf.Query, error) {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -1429,7 +1429,7 @@ func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 }
 
 // UpdateCampaignPlan updates the given CampaignPlan.
-func (s *Store) UpdateCampaignPlan(ctx context.Context, c *a8n.CampaignPlan) error {
+func (s *Store) UpdateCampaignPlan(ctx context.Context, c *campaigns.CampaignPlan) error {
 	q, err := s.updateCampaignPlanQuery(c)
 	if err != nil {
 		return err
@@ -1442,7 +1442,7 @@ func (s *Store) UpdateCampaignPlan(ctx context.Context, c *a8n.CampaignPlan) err
 }
 
 var updateCampaignPlanQueryFmtstr = `
--- source: internal/a8n/store.go:UpdateCampaignPlan
+-- source: enterprise/internal/campaigns/store.go:UpdateCampaignPlan
 UPDATE campaign_plans
 SET (
   campaign_type,
@@ -1462,7 +1462,7 @@ RETURNING
   user_id
 `
 
-func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
+func (s *Store) updateCampaignPlanQuery(c *campaigns.CampaignPlan) (*sqlf.Query, error) {
 	c.UpdatedAt = s.now()
 
 	arguments, err := metadataColumn(c.Arguments)
@@ -1493,7 +1493,7 @@ func (s *Store) DeleteCampaignPlan(ctx context.Context, id int64) error {
 }
 
 var deleteCampaignPlanQueryFmtstr = `
--- source: internal/a8n/store.go:DeleteCampaignPlan
+-- source: enterprise/internal/campaigns/store.go:DeleteCampaignPlan
 DELETE FROM campaign_plans WHERE id = %s
 `
 
@@ -1513,7 +1513,7 @@ func (s *Store) DeleteExpiredCampaignPlans(ctx context.Context) error {
 }
 
 var deleteExpiredCampaignPlansQueryFmtstr = `
--- source: internal/a8n/store.go:DeleteExpiredCampaignPlans
+-- source: enterprise/internal/campaigns/store.go:DeleteExpiredCampaignPlans
 DELETE FROM
   campaign_plans
 WHERE
@@ -1550,7 +1550,7 @@ func (s *Store) CountCampaignPlans(ctx context.Context) (count int64, _ error) {
 }
 
 var countCampaignPlansQueryFmtstr = `
--- source: internal/a8n/store.go:CountCampaignPlans
+-- source: enterprise/internal/campaigns/store.go:CountCampaignPlans
 SELECT COUNT(id)
 FROM campaign_plans
 `
@@ -1561,10 +1561,10 @@ type GetCampaignPlanOpts struct {
 }
 
 // GetCampaignPlan gets a code mod matching the given options.
-func (s *Store) GetCampaignPlan(ctx context.Context, opts GetCampaignPlanOpts) (*a8n.CampaignPlan, error) {
+func (s *Store) GetCampaignPlan(ctx context.Context, opts GetCampaignPlanOpts) (*campaigns.CampaignPlan, error) {
 	q := getCampaignPlanQuery(&opts)
 
-	var c a8n.CampaignPlan
+	var c campaigns.CampaignPlan
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanCampaignPlan(&c, sc)
 	})
@@ -1580,7 +1580,7 @@ func (s *Store) GetCampaignPlan(ctx context.Context, opts GetCampaignPlanOpts) (
 }
 
 var getCampaignPlansQueryFmtstr = `
--- source: internal/a8n/store.go:GetCampaignPlan
+-- source: enterprise/internal/campaigns/store.go:GetCampaignPlan
 SELECT
   id,
   campaign_type,
@@ -1607,8 +1607,8 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 	return sqlf.Sprintf(getCampaignPlansQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// GetCampaignPlanStatus gets the a8n.BackgroundProcessStatus for a CampaignPlan
-func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.BackgroundProcessStatus, error) {
+// GetCampaignPlanStatus gets the campaigns.BackgroundProcessStatus for a CampaignPlan
+func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
 	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
 		getCampaignPlanStatusQueryFmtstr,
 		id,
@@ -1617,7 +1617,7 @@ func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.Backg
 }
 
 var getCampaignPlanStatusQueryFmtstr = `
--- source: internal/a8n/store.go:GetCampaignPlanStatus
+-- source: enterprise/internal/campaigns/store.go:GetCampaignPlanStatus
 SELECT
   (SELECT canceled_at IS NOT NULL FROM campaign_plans WHERE id = %s) AS canceled,
   COUNT(*) AS total,
@@ -1629,16 +1629,16 @@ WHERE %s
 LIMIT 1;
 `
 
-// GetCampaignStatus gets the a8n.BackgroundProcessStatus for a Campaign
-func (s *Store) GetCampaignStatus(ctx context.Context, id int64) (*a8n.BackgroundProcessStatus, error) {
+// GetCampaignStatus gets the campaigns.BackgroundProcessStatus for a Campaign
+func (s *Store) GetCampaignStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
 	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
 		getCampaignStatusQueryFmtstr,
 		sqlf.Sprintf("campaign_id = %s", id),
 	))
 }
 
-func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query) (*a8n.BackgroundProcessStatus, error) {
-	var status a8n.BackgroundProcessStatus
+func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query) (*campaigns.BackgroundProcessStatus, error) {
+	var status campaigns.BackgroundProcessStatus
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanBackgroundProcessStatus(&status, sc)
 	})
@@ -1646,22 +1646,22 @@ func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query)
 		return nil, err
 	}
 
-	status.ProcessState = a8n.BackgroundProcessStateCompleted
+	status.ProcessState = campaigns.BackgroundProcessStateCompleted
 	switch {
 	case status.Canceled:
-		status.ProcessState = a8n.BackgroundProcessStateCanceled
+		status.ProcessState = campaigns.BackgroundProcessStateCanceled
 	case status.Pending > 0:
-		status.ProcessState = a8n.BackgroundProcessStateProcessing
+		status.ProcessState = campaigns.BackgroundProcessStateProcessing
 	case status.Completed == status.Total && len(status.ProcessErrors) == 0:
-		status.ProcessState = a8n.BackgroundProcessStateCompleted
+		status.ProcessState = campaigns.BackgroundProcessStateCompleted
 	case status.Completed == status.Total && len(status.ProcessErrors) != 0:
-		status.ProcessState = a8n.BackgroundProcessStateErrored
+		status.ProcessState = campaigns.BackgroundProcessStateErrored
 	}
 	return &status, nil
 }
 
 var getCampaignStatusQueryFmtstr = `
--- source: internal/a8n/store.go:GetCampaignStatus
+-- source: enterprise/internal/campaigns/store.go:GetCampaignStatus
 SELECT
   -- canceled is here so that this can be used with scanBackgroundProcessStatus
   false AS canceled,
@@ -1682,12 +1682,12 @@ type ListCampaignPlansOpts struct {
 }
 
 // ListCampaignPlans lists CampaignPlans with the given filters.
-func (s *Store) ListCampaignPlans(ctx context.Context, opts ListCampaignPlansOpts) (cs []*a8n.CampaignPlan, next int64, err error) {
+func (s *Store) ListCampaignPlans(ctx context.Context, opts ListCampaignPlansOpts) (cs []*campaigns.CampaignPlan, next int64, err error) {
 	q := listCampaignPlansQuery(&opts)
 
-	cs = make([]*a8n.CampaignPlan, 0, opts.Limit)
+	cs = make([]*campaigns.CampaignPlan, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c a8n.CampaignPlan
+		var c campaigns.CampaignPlan
 		if err = scanCampaignPlan(&c, sc); err != nil {
 			return 0, 0, err
 		}
@@ -1704,7 +1704,7 @@ func (s *Store) ListCampaignPlans(ctx context.Context, opts ListCampaignPlansOpt
 }
 
 var listCampaignPlansQueryFmtstr = `
--- source: internal/a8n/store.go:ListCampaignPlans
+-- source: enterprise/internal/campaigns/store.go:ListCampaignPlans
 SELECT
   id,
   campaign_type,
@@ -1739,7 +1739,7 @@ func listCampaignPlansQuery(opts *ListCampaignPlansOpts) *sqlf.Query {
 // CreateCampaignJob creates the given CampaignJob.
 // Due to a unique constraint in the DB it is safe to call this more than once
 // with the same input. Only one job will be added and the other calls will return an error
-func (s *Store) CreateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error {
+func (s *Store) CreateCampaignJob(ctx context.Context, c *campaigns.CampaignJob) error {
 	q, err := s.createCampaignJobQuery(c)
 	if err != nil {
 		return err
@@ -1752,7 +1752,7 @@ func (s *Store) CreateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error
 }
 
 var createCampaignJobQueryFmtstr = `
--- source: internal/a8n/store.go:CreateCampaignJob
+-- source: enterprise/internal/campaigns/store.go:CreateCampaignJob
 INSERT INTO campaign_jobs (
   campaign_plan_id,
   repo_id,
@@ -1782,7 +1782,7 @@ RETURNING
   updated_at
 `
 
-func (s *Store) createCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) {
+func (s *Store) createCampaignJobQuery(c *campaigns.CampaignJob) (*sqlf.Query, error) {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -1808,7 +1808,7 @@ func (s *Store) createCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) 
 }
 
 // UpdateCampaignJob updates the given CampaignJob.
-func (s *Store) UpdateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error {
+func (s *Store) UpdateCampaignJob(ctx context.Context, c *campaigns.CampaignJob) error {
 	q, err := s.updateCampaignJobQuery(c)
 	if err != nil {
 		return err
@@ -1821,7 +1821,7 @@ func (s *Store) UpdateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error
 }
 
 var updateCampaignJobQueryFmtstr = `
--- source: internal/a8n/store.go:UpdateCampaignJob
+-- source: enterprise/internal/campaigns/store.go:UpdateCampaignJob
 UPDATE campaign_jobs
 SET (
   campaign_plan_id,
@@ -1851,7 +1851,7 @@ RETURNING
   updated_at
 `
 
-func (s *Store) updateCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) {
+func (s *Store) updateCampaignJobQuery(c *campaigns.CampaignJob) (*sqlf.Query, error) {
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
@@ -1882,7 +1882,7 @@ func (s *Store) DeleteCampaignJob(ctx context.Context, id int64) error {
 }
 
 var deleteCampaignJobQueryFmtstr = `
--- source: internal/a8n/store.go:DeleteCampaignJob
+-- source: enterprise/internal/campaigns/store.go:DeleteCampaignJob
 DELETE FROM campaign_jobs WHERE id = %s
 `
 
@@ -1909,7 +1909,7 @@ func (s *Store) CountCampaignJobs(ctx context.Context, opts CountCampaignJobsOpt
 }
 
 var countCampaignJobsQueryFmtstr = `
--- source: internal/a8n/store.go:CountCampaignJobs
+-- source: enterprise/internal/campaigns/store.go:CountCampaignJobs
 SELECT COUNT(id)
 FROM campaign_jobs
 WHERE %s
@@ -1946,10 +1946,10 @@ type GetCampaignJobOpts struct {
 }
 
 // GetCampaignJob gets a code mod matching the given options.
-func (s *Store) GetCampaignJob(ctx context.Context, opts GetCampaignJobOpts) (*a8n.CampaignJob, error) {
+func (s *Store) GetCampaignJob(ctx context.Context, opts GetCampaignJobOpts) (*campaigns.CampaignJob, error) {
 	q := getCampaignJobQuery(&opts)
 
-	var c a8n.CampaignJob
+	var c campaigns.CampaignJob
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanCampaignJob(&c, sc)
 	})
@@ -1965,7 +1965,7 @@ func (s *Store) GetCampaignJob(ctx context.Context, opts GetCampaignJobOpts) (*a
 }
 
 var getCampaignJobsQueryFmtstr = `
--- source: internal/a8n/store.go:GetCampaignJob
+-- source: enterprise/internal/campaigns/store.go:GetCampaignJob
 SELECT
   id,
   campaign_plan_id,
@@ -2013,12 +2013,12 @@ type ListCampaignJobsOpts struct {
 }
 
 // ListCampaignJobs lists CampaignJobs with the given filters.
-func (s *Store) ListCampaignJobs(ctx context.Context, opts ListCampaignJobsOpts) (cs []*a8n.CampaignJob, next int64, err error) {
+func (s *Store) ListCampaignJobs(ctx context.Context, opts ListCampaignJobsOpts) (cs []*campaigns.CampaignJob, next int64, err error) {
 	q := listCampaignJobsQuery(&opts)
 
-	cs = make([]*a8n.CampaignJob, 0, opts.Limit)
+	cs = make([]*campaigns.CampaignJob, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c a8n.CampaignJob
+		var c campaigns.CampaignJob
 		if err = scanCampaignJob(&c, sc); err != nil {
 			return 0, 0, err
 		}
@@ -2035,7 +2035,7 @@ func (s *Store) ListCampaignJobs(ctx context.Context, opts ListCampaignJobsOpts)
 }
 
 var listCampaignJobsQueryFmtstr = `
--- source: internal/a8n/store.go:ListCampaignJobs
+-- source: enterprise/internal/campaigns/store.go:ListCampaignJobs
 SELECT
   id,
   campaign_plan_id,
@@ -2109,7 +2109,7 @@ func onlyUnpublishedInCampaignQuery(campaignID int64) *sqlf.Query {
 }
 
 // CreateChangesetJob creates the given ChangesetJob.
-func (s *Store) CreateChangesetJob(ctx context.Context, c *a8n.ChangesetJob) error {
+func (s *Store) CreateChangesetJob(ctx context.Context, c *campaigns.ChangesetJob) error {
 	q, err := s.createChangesetJobQuery(c)
 	if err != nil {
 		return err
@@ -2122,7 +2122,7 @@ func (s *Store) CreateChangesetJob(ctx context.Context, c *a8n.ChangesetJob) err
 }
 
 var createChangesetJobQueryFmtstr = `
--- source: internal/a8n/store.go:CreateChangesetJob
+-- source: enterprise/internal/campaigns/store.go:CreateChangesetJob
 INSERT INTO changeset_jobs (
   campaign_id,
   campaign_job_id,
@@ -2148,7 +2148,7 @@ RETURNING
   updated_at
 `
 
-func (s *Store) createChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error) {
+func (s *Store) createChangesetJobQuery(c *campaigns.ChangesetJob) (*sqlf.Query, error) {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -2172,7 +2172,7 @@ func (s *Store) createChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error
 }
 
 // UpdateChangesetJob updates the given ChangesetJob.
-func (s *Store) UpdateChangesetJob(ctx context.Context, c *a8n.ChangesetJob) error {
+func (s *Store) UpdateChangesetJob(ctx context.Context, c *campaigns.ChangesetJob) error {
 	q, err := s.updateChangesetJobQuery(c)
 	if err != nil {
 		return err
@@ -2185,7 +2185,7 @@ func (s *Store) UpdateChangesetJob(ctx context.Context, c *a8n.ChangesetJob) err
 }
 
 var updateChangesetJobQueryFmtstr = `
--- source: internal/a8n/store.go:UpdateChangesetJob
+-- source: enterprise/internal/campaigns/store.go:UpdateChangesetJob
 UPDATE changeset_jobs
 SET (
   campaign_id,
@@ -2211,7 +2211,7 @@ RETURNING
   updated_at
 `
 
-func (s *Store) updateChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error) {
+func (s *Store) updateChangesetJobQuery(c *campaigns.ChangesetJob) (*sqlf.Query, error) {
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
@@ -2240,7 +2240,7 @@ func (s *Store) DeleteChangesetJob(ctx context.Context, id int64) error {
 }
 
 var deleteChangesetJobQueryFmtstr = `
--- source: internal/a8n/store.go:DeleteChangesetJob
+-- source: enterprise/internal/campaigns/store.go:DeleteChangesetJob
 DELETE FROM changeset_jobs WHERE id = %s
 `
 
@@ -2260,7 +2260,7 @@ func (s *Store) CountChangesetJobs(ctx context.Context, opts CountChangesetJobsO
 }
 
 var countChangesetJobsQueryFmtstr = `
--- source: internal/a8n/store.go:CountChangesetJobs
+-- source: enterprise/internal/campaigns/store.go:CountChangesetJobs
 SELECT COUNT(id)
 FROM changeset_jobs
 WHERE %s
@@ -2316,10 +2316,10 @@ type GetChangesetJobOpts struct {
 }
 
 // GetChangesetJob gets a ChangesetJob matching the given options.
-func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (*a8n.ChangesetJob, error) {
+func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (*campaigns.ChangesetJob, error) {
 	q := getChangesetJobQuery(&opts)
 
-	var c a8n.ChangesetJob
+	var c campaigns.ChangesetJob
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanChangesetJob(&c, sc)
 	})
@@ -2335,7 +2335,7 @@ func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (
 }
 
 var getChangesetJobsQueryFmtstr = `
--- source: internal/a8n/store.go:GetChangesetJob
+-- source: enterprise/internal/campaigns/store.go:GetChangesetJob
 SELECT
   id,
   campaign_id,
@@ -2387,12 +2387,12 @@ type ListChangesetJobsOpts struct {
 }
 
 // ListChangesetJobs lists ChangesetJobs with the given filters.
-func (s *Store) ListChangesetJobs(ctx context.Context, opts ListChangesetJobsOpts) (cs []*a8n.ChangesetJob, next int64, err error) {
+func (s *Store) ListChangesetJobs(ctx context.Context, opts ListChangesetJobsOpts) (cs []*campaigns.ChangesetJob, next int64, err error) {
 	q := listChangesetJobsQuery(&opts)
 
-	cs = make([]*a8n.ChangesetJob, 0, opts.Limit)
+	cs = make([]*campaigns.ChangesetJob, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c a8n.ChangesetJob
+		var c campaigns.ChangesetJob
 		if err = scanChangesetJob(&c, sc); err != nil {
 			return 0, 0, err
 		}
@@ -2409,7 +2409,7 @@ func (s *Store) ListChangesetJobs(ctx context.Context, opts ListChangesetJobsOpt
 }
 
 var listChangesetJobsQueryFmtstrSelect = `
--- source: internal/a8n/store.go:ListChangesetJobs
+-- source: enterprise/internal/campaigns/store.go:ListChangesetJobs
 SELECT
   changeset_jobs.id,
   changeset_jobs.campaign_id,
@@ -2498,7 +2498,7 @@ func resetChangesetJobsQuery(campaignID int64, onlyErrored bool) *sqlf.Query {
 }
 
 var resetChangesetJobsQueryFmtstr = `
--- source: internal/a8n/store.go:resetChangesetJobsQuery
+-- source: enterprise/internal/campaigns/store.go:resetChangesetJobsQuery
 UPDATE changeset_jobs
 SET
   error = '',
@@ -2584,7 +2584,7 @@ func closeErr(c io.Closer, err *error) {
 	}
 }
 
-func scanChangeset(t *a8n.Changeset, s scanner) error {
+func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	var metadata json.RawMessage
 
 	err := s.Scan(
@@ -2619,7 +2619,7 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 	return nil
 }
 
-func scanChangesetEvent(e *a8n.ChangesetEvent, s scanner) error {
+func scanChangesetEvent(e *campaigns.ChangesetEvent, s scanner) error {
 	var metadata json.RawMessage
 
 	err := s.Scan(
@@ -2635,7 +2635,7 @@ func scanChangesetEvent(e *a8n.ChangesetEvent, s scanner) error {
 		return err
 	}
 
-	e.Metadata, err = a8n.NewChangesetEventMetadata(e.Kind)
+	e.Metadata, err = campaigns.NewChangesetEventMetadata(e.Kind)
 	if err != nil {
 		return err
 	}
@@ -2647,7 +2647,7 @@ func scanChangesetEvent(e *a8n.ChangesetEvent, s scanner) error {
 	return nil
 }
 
-func scanCampaign(c *a8n.Campaign, s scanner) error {
+func scanCampaign(c *campaigns.Campaign, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,
@@ -2664,7 +2664,7 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 	)
 }
 
-func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
+func scanCampaignPlan(c *campaigns.CampaignPlan, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.CampaignType,
@@ -2676,7 +2676,7 @@ func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
 	)
 }
 
-func scanCampaignJob(c *a8n.CampaignJob, s scanner) error {
+func scanCampaignJob(c *campaigns.CampaignJob, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.CampaignPlanID,
@@ -2693,7 +2693,7 @@ func scanCampaignJob(c *a8n.CampaignJob, s scanner) error {
 	)
 }
 
-func scanChangesetJob(c *a8n.ChangesetJob, s scanner) error {
+func scanChangesetJob(c *campaigns.ChangesetJob, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.CampaignID,
@@ -2708,7 +2708,7 @@ func scanChangesetJob(c *a8n.ChangesetJob, s scanner) error {
 	)
 }
 
-func scanBackgroundProcessStatus(b *a8n.BackgroundProcessStatus, s scanner) error {
+func scanBackgroundProcessStatus(b *campaigns.BackgroundProcessStatus, s scanner) error {
 	return s.Scan(
 		&b.Canceled,
 		&b.Total,

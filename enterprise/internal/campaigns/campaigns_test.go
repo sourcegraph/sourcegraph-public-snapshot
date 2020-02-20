@@ -1,4 +1,4 @@
-package a8n
+package campaigns
 
 import (
 	"fmt"

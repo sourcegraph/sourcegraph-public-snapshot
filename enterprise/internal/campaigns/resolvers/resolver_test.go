@@ -25,10 +25,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -40,7 +40,7 @@ import (
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "a8nresolversdb"
+	dbtesting.DBNameSuffix = "campaignsresolversdb"
 }
 
 var update = flag.Bool("update", false, "update testdata")
@@ -766,7 +766,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
-	campaign := &a8n.Campaign{
+	campaign := &campaigns.Campaign{
 		Name:            "Test campaign",
 		Description:     "Testing changeset counts",
 		AuthorID:        u.ID,
@@ -778,7 +778,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changesets := []*a8n.Changeset{
+	changesets := []*campaigns.Changeset{
 		{
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5834",
@@ -1185,7 +1185,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
 	user := createTestUser(ctx, t)
-	plan := &a8n.CampaignPlan{
+	plan := &campaigns.CampaignPlan{
 		CampaignType: "patch",
 		Arguments:    "{}",
 		UserID:       user.ID,
@@ -1195,9 +1195,9 @@ func TestCampaignPlanResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var jobs []*a8n.CampaignJob
+	var jobs []*campaigns.CampaignJob
 	for _, repo := range rs {
-		job := &a8n.CampaignJob{
+		job := &campaigns.CampaignJob{
 			CampaignPlanID: plan.ID,
 			StartedAt:      now,
 			FinishedAt:     now,

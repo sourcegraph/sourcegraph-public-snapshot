@@ -1,4 +1,4 @@
-package a8n
+package campaigns
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -23,7 +23,7 @@ import (
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "a8nenterpriserdb"
+	dbtesting.DBNameSuffix = "campaignsenterpriserdb"
 }
 
 func TestService(t *testing.T) {
@@ -72,7 +72,7 @@ func TestService(t *testing.T) {
 +x
  y
 `
-		patches := []a8n.CampaignPlanPatch{
+		patches := []campaigns.CampaignPlanPatch{
 			{Repo: api.RepoID(rs[0].ID), BaseRevision: "b0", Patch: patch},
 			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
 		}
@@ -93,9 +93,9 @@ func TestService(t *testing.T) {
 		for _, job := range jobs {
 			job.ID = 0 // ignore database ID when checking for expected output
 		}
-		wantJobs := make([]*a8n.CampaignJob, len(patches))
+		wantJobs := make([]*campaigns.CampaignJob, len(patches))
 		for i, patch := range patches {
-			wantJobs[i] = &a8n.CampaignJob{
+			wantJobs[i] = &campaigns.CampaignJob{
 				CampaignPlanID: plan.ID,
 				RepoID:         patch.Repo,
 				BaseRef:        patch.BaseRevision,
@@ -113,7 +113,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaign", func(t *testing.T) {
-		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -128,7 +128,7 @@ func TestService(t *testing.T) {
 			t.Fatal("CreateCampaign did not produce expected error")
 		}
 
-		campaignJobs := make([]*a8n.CampaignJob, 0, len(rs))
+		campaignJobs := make([]*campaigns.CampaignJob, 0, len(rs))
 		for _, repo := range rs {
 			campaignJob := testCampaignJob(plan.ID, repo.ID, now)
 			err := store.CreateCampaignJob(ctx, campaignJob)
@@ -162,7 +162,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignAsDraft", func(t *testing.T) {
-		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -202,7 +202,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateChangesetJobForCampaignJob", func(t *testing.T) {
-		plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -296,7 +296,7 @@ func TestService(t *testing.T) {
 					tc.err = "<nil>"
 				}
 
-				plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+				plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
 				err = store.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -334,7 +334,7 @@ func TestService(t *testing.T) {
 					}
 
 					if tc.process {
-						campaignJobsByID := map[int64]*a8n.CampaignJob{
+						campaignJobsByID := map[int64]*campaigns.CampaignJob{
 							campaignJob.ID: campaignJob,
 						}
 						fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID)
@@ -550,24 +550,24 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
 
 			var (
-				campaign         *a8n.Campaign
-				oldCampaignJobs  []*a8n.CampaignJob
-				newCampaignJobs  []*a8n.CampaignJob
-				campaignJobsByID map[int64]*a8n.CampaignJob
+				campaign         *campaigns.Campaign
+				oldCampaignJobs  []*campaigns.CampaignJob
+				newCampaignJobs  []*campaigns.CampaignJob
+				campaignJobsByID map[int64]*campaigns.CampaignJob
 
-				oldChangesets []*a8n.Changeset
+				oldChangesets []*campaigns.Changeset
 			)
 
 			if tt.campaignIsManual {
 				campaign = testCampaign(user.ID, 0)
 			} else {
-				plan := &a8n.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
+				plan := &campaigns.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
 				err = store.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				campaignJobsByID = make(map[int64]*a8n.CampaignJob)
+				campaignJobsByID = make(map[int64]*campaigns.CampaignJob)
 				for _, repoName := range tt.oldCampaignJobs {
 					repo, ok := reposByName[repoName]
 					if !ok {
@@ -596,7 +596,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			}
 
 			if tt.campaignIsDraft && len(tt.individuallyPublished) != 0 {
-				toPublish := make(map[int64]*a8n.CampaignJob)
+				toPublish := make(map[int64]*campaigns.CampaignJob)
 				for _, name := range tt.individuallyPublished {
 					repo, ok := reposByName[name]
 					if !ok {
@@ -620,7 +620,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			oldTime := now
 			now = now.Add(5 * time.Second)
 
-			newPlan := &a8n.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
+			newPlan := &campaigns.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
 			err = store.CreateCampaignPlan(ctx, newPlan)
 			if err != nil {
 				t.Fatal(err)
@@ -720,7 +720,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				t.Fatalf("wrong number of new ChangesetJobs. want=%d, have=%d", wantChangesetJobLen, len(newChangesetJobs))
 			}
 
-			newChangesetJobsByRepo := map[string]*a8n.ChangesetJob{}
+			newChangesetJobsByRepo := map[string]*campaigns.ChangesetJob{}
 			for _, c := range newChangesetJobs {
 				campaignJob, ok := campaignJobsByID[c.CampaignJobID]
 				if !ok {
@@ -838,12 +838,12 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 func findChangesetJobsByRepoName(
 	t *testing.T,
-	jobsByRepo map[string]*a8n.ChangesetJob,
+	jobsByRepo map[string]*campaigns.ChangesetJob,
 	names repoNames,
-) []*a8n.ChangesetJob {
+) []*campaigns.ChangesetJob {
 	t.Helper()
 
-	var cs []*a8n.ChangesetJob
+	var cs []*campaigns.ChangesetJob
 
 	for _, n := range names {
 		c, ok := jobsByRepo[n]
@@ -868,9 +868,9 @@ func fakeRunChangesetJobs(
 	t *testing.T,
 	store *Store,
 	now time.Time,
-	campaign *a8n.Campaign,
-	campaignJobsByID map[int64]*a8n.CampaignJob,
-) []*a8n.Changeset {
+	campaign *campaigns.Campaign,
+	campaignJobsByID map[int64]*campaigns.CampaignJob,
+) []*campaigns.Changeset {
 	jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
 		CampaignID: campaign.ID,
 		Limit:      -1,
@@ -883,7 +883,7 @@ func fakeRunChangesetJobs(
 		t.Fatalf("wrong number of changeset jobs. want=%d, have=%d", want, have)
 	}
 
-	cs := make([]*a8n.Changeset, 0, len(campaignJobsByID))
+	cs := make([]*campaigns.Changeset, 0, len(campaignJobsByID))
 	for _, changesetJob := range jobs {
 		campaignJob, ok := campaignJobsByID[changesetJob.CampaignJobID]
 		if !ok {
@@ -928,8 +928,8 @@ func createTestUser(ctx context.Context, t *testing.T) *types.User {
 	return user
 }
 
-func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *a8n.CampaignJob {
-	return &a8n.CampaignJob{
+func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *campaigns.CampaignJob {
+	return &campaigns.CampaignJob{
 		CampaignPlanID: plan,
 		RepoID:         api.RepoID(repo),
 		Rev:            "deadbeef",
@@ -940,8 +940,8 @@ func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *a8n.CampaignJob 
 	}
 }
 
-func testCampaign(user int32, plan int64) *a8n.Campaign {
-	c := &a8n.Campaign{
+func testCampaign(user int32, plan int64) *campaigns.Campaign {
+	c := &campaigns.Campaign{
 		Name:            "Testing Campaign",
 		Description:     "Testing Campaign",
 		AuthorID:        user,
@@ -956,8 +956,8 @@ func testCampaign(user int32, plan int64) *a8n.Campaign {
 	return c
 }
 
-func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64) *a8n.Changeset {
-	return &a8n.Changeset{
+func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64) *campaigns.Changeset {
+	return &campaigns.Changeset{
 		RepoID:              repoID,
 		CampaignIDs:         []int64{campaign},
 		ExternalServiceType: "github",

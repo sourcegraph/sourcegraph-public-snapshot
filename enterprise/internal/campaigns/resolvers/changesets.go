@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -29,7 +29,7 @@ type changesetsConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once       sync.Once
-	changesets []*a8n.Changeset
+	changesets []*campaigns.Changeset
 	reposByID  map[api.RepoID]*repos.Repo
 	next       int64
 	err        error
@@ -72,7 +72,7 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Changeset, map[api.RepoID]*repos.Repo, int64, error) {
+func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaigns.Changeset, map[api.RepoID]*repos.Repo, int64, error) {
 	r.once.Do(func() {
 		r.changesets, r.next, r.err = r.store.ListChangesets(ctx, r.opts)
 		if r.err != nil {
@@ -102,7 +102,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Chan
 
 type changesetResolver struct {
 	store *ee.Store
-	*a8n.Changeset
+	*campaigns.Changeset
 	preloadedRepo *repos.Repo
 
 	// cache repo because it's called more than once
@@ -112,7 +112,7 @@ type changesetResolver struct {
 
 	// cache changeset events as they are used more than once
 	eventsOnce sync.Once
-	events     []*a8n.ChangesetEvent
+	events     []*campaigns.ChangesetEvent
 	eventsErr  error
 }
 
@@ -141,7 +141,7 @@ func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.Re
 	return r.repo, r.repoErr
 }
 
-func (r *changesetResolver) computeEvents(ctx context.Context) ([]*a8n.ChangesetEvent, error) {
+func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.ChangesetEvent, error) {
 	r.eventsOnce.Do(func() {
 		opts := ee.ListChangesetEventsOpts{
 			ChangesetIDs: []int64{r.Changeset.ID},
@@ -200,7 +200,7 @@ func (r *changesetResolver) Body() (string, error) {
 	return r.Changeset.Body()
 }
 
-func (r *changesetResolver) State() (a8n.ChangesetState, error) {
+func (r *changesetResolver) State() (campaigns.ChangesetState, error) {
 	return r.Changeset.State()
 }
 
@@ -212,33 +212,33 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetReviewState, error) {
+func (r *changesetResolver) ReviewState(ctx context.Context) (campaigns.ChangesetReviewState, error) {
 	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
 		return r.Changeset.ReviewState()
 	}
 
 	es, err := r.computeEvents(ctx)
 	if err != nil {
-		return a8n.ChangesetReviewStatePending, err
+		return campaigns.ChangesetReviewStatePending, err
 	}
 
 	// Make a copy of events so that we can safely sort it
-	events := make(a8n.ChangesetEvents, len(es))
+	events := make(campaigns.ChangesetEvents, len(es))
 	copy(events, es)
 	sort.Sort(events)
 	return events.ReviewState()
 }
 
-func (r *changesetResolver) CheckState(ctx context.Context) (*a8n.ChangesetCheckState, error) {
+func (r *changesetResolver) CheckState(ctx context.Context) (*campaigns.ChangesetCheckState, error) {
 	events, err := r.computeEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
-	state, err := a8n.ComputeCheckState(r.Changeset, events), nil
+	state, err := campaigns.ComputeCheckState(r.Changeset, events), nil
 	if err != nil {
 		return nil, err
 	}
-	if state == a8n.ChangesetCheckStateUnknown {
+	if state == campaigns.ChangesetCheckStateUnknown {
 		return nil, nil
 	}
 	return &state, nil
@@ -257,7 +257,7 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	events := a8n.ChangesetEvents(es)
+	events := campaigns.ChangesetEvents(es)
 	labels := events.UpdateLabelsSince(r.Changeset)
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
@@ -289,7 +289,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 
 	// Only return diffs for open changesets, otherwise we can't guarantee that
 	// we have the refs on gitserver
-	if s != a8n.ChangesetStateOpen {
+	if s != campaigns.ChangesetStateOpen {
 		return nil, nil
 	}
 
@@ -407,7 +407,7 @@ func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 }
 
 type changesetLabelResolver struct {
-	label a8n.ChangesetLabel
+	label campaigns.ChangesetLabel
 }
 
 func (r *changesetLabelResolver) Text() string {

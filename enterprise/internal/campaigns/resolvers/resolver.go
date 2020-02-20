@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -33,7 +33,7 @@ type Resolver struct {
 }
 
 // NewResolver returns a new Resolver whose store uses the given db
-func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
+func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
 	return &Resolver{store: ee.NewStore(db)}
 }
 
@@ -209,7 +209,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, backend.ErrMustBeSiteAdmin
 	}
 
-	campaign := &a8n.Campaign{
+	campaign := &campaigns.Campaign{
 		Name:        args.Input.Name,
 		Description: args.Input.Description,
 		AuthorID:    user.ID,
@@ -384,7 +384,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 
 	var repoIDs []api.RepoID
 	repoSet := map[api.RepoID]*repos.Repo{}
-	cs := make([]*a8n.Changeset, 0, len(args.Input))
+	cs := make([]*campaigns.Changeset, 0, len(args.Input))
 
 	for _, c := range args.Input {
 		repoID, err := graphqlbackend.UnmarshalRepositoryID(c.Repository)
@@ -397,7 +397,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 			repoIDs = append(repoIDs, repoID)
 		}
 
-		cs = append(cs, &a8n.Changeset{
+		cs = append(cs, &campaigns.Changeset{
 			RepoID:     repoID,
 			ExternalID: c.ExternalID,
 		})
@@ -418,7 +418,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	for _, r := range rs {
-		if !a8n.IsRepoSupported(&r.ExternalRepo) {
+		if !campaigns.IsRepoSupported(&r.ExternalRepo) {
 			err = errors.Errorf(
 				"External service type %s of repository %q is currently not supported for use with campaigns",
 				r.ExternalRepo.ServiceType,
@@ -503,7 +503,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 		return nil, backend.ErrNotAuthenticated
 	}
 
-	patches := make([]a8n.CampaignPlanPatch, len(args.Patches))
+	patches := make([]campaigns.CampaignPlanPatch, len(args.Patches))
 	for i, patch := range args.Patches {
 		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
 		if err != nil {
@@ -522,7 +522,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 			}
 		}
 
-		patches[i] = a8n.CampaignPlanPatch{
+		patches[i] = campaigns.CampaignPlanPatch{
 			Repo:         repo,
 			BaseRevision: patch.BaseRevision,
 			Patch:        patch.Patch,
@@ -617,16 +617,16 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func parseCampaignState(s *string) (a8n.CampaignState, error) {
+func parseCampaignState(s *string) (campaigns.CampaignState, error) {
 	if s == nil {
-		return a8n.CampaignStateAny, nil
+		return campaigns.CampaignStateAny, nil
 	}
 	switch *s {
 	case "OPEN":
-		return a8n.CampaignStateOpen, nil
+		return campaigns.CampaignStateOpen, nil
 	case "CLOSED":
-		return a8n.CampaignStateClosed, nil
+		return campaigns.CampaignStateClosed, nil
 	default:
-		return a8n.CampaignStateAny, fmt.Errorf("unknown state %q", *s)
+		return campaigns.CampaignStateAny, fmt.Errorf("unknown state %q", *s)
 	}
 }

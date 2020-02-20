@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 const campaignPlanIDKind = "CampaignPlan"
@@ -47,7 +47,7 @@ var _ graphqlbackend.CampaignPlanResolver = &campaignPlanResolver{}
 
 type campaignPlanResolver struct {
 	store        *ee.Store
-	campaignPlan *a8n.CampaignPlan
+	campaignPlan *campaigns.CampaignPlan
 }
 
 func (r *campaignPlanResolver) ID() graphql.ID {
@@ -94,9 +94,9 @@ type campaignJobsConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once                         sync.Once
-	jobs                         []*a8n.CampaignJob
+	jobs                         []*campaigns.CampaignJob
 	reposByID                    map[api.RepoID]*repos.Repo
-	changesetJobsByCampaignJobID map[int64]*a8n.ChangesetJob
+	changesetJobsByCampaignJobID map[int64]*campaigns.ChangesetJob
 	next                         int64
 	err                          error
 }
@@ -133,7 +133,7 @@ func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlba
 	return resolvers, nil
 }
 
-func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.CampaignJob, map[api.RepoID]*repos.Repo, map[int64]*a8n.ChangesetJob, int64, error) {
+func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*campaigns.CampaignJob, map[api.RepoID]*repos.Repo, map[int64]*campaigns.ChangesetJob, int64, error) {
 	r.once.Do(func() {
 		r.jobs, r.next, r.err = r.store.ListCampaignJobs(ctx, r.opts)
 		if r.err != nil {
@@ -165,7 +165,7 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.Ca
 			r.err = err
 			return
 		}
-		r.changesetJobsByCampaignJobID = make(map[int64]*a8n.ChangesetJob, len(cs))
+		r.changesetJobsByCampaignJobID = make(map[int64]*campaigns.ChangesetJob, len(cs))
 		for _, c := range cs {
 			r.changesetJobsByCampaignJobID[c.CampaignJobID] = c
 		}
@@ -195,14 +195,14 @@ func (r *campaignJobsConnectionResolver) PageInfo(ctx context.Context) (*graphql
 type campaignJobResolver struct {
 	store *ee.Store
 
-	job           *a8n.CampaignJob
+	job           *campaigns.CampaignJob
 	preloadedRepo *repos.Repo
 
 	// Set if we tried to preload the changesetjob
 	attemptedPreloadChangesetJob bool
 	// This is only set if we tried to preload and found a ChangesetJob. If we
 	// tried preloading, but couldn't find anything, it's nil.
-	preloadedChangesetJob *a8n.ChangesetJob
+	preloadedChangesetJob *campaigns.ChangesetJob
 
 	// cache repo because it's called more than one time
 	once   sync.Once
@@ -276,7 +276,7 @@ func (r *campaignJobResolver) PublicationEnqueued(ctx context.Context) (bool, er
 }
 
 type previewFileDiffConnectionResolver struct {
-	job    *a8n.CampaignJob
+	job    *campaigns.CampaignJob
 	commit *graphqlbackend.GitCommitResolver
 	first  *int32
 

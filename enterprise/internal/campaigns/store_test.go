@@ -1,4 +1,4 @@
-package a8n
+package campaigns
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -35,11 +35,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 		ctx := context.Background()
 
 		t.Run("Campaigns", func(t *testing.T) {
-			campaigns := make([]*a8n.Campaign, 0, 3)
+			campaigns := make([]*cmpgn.Campaign, 0, 3)
 
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(campaigns); i++ {
-					c := &a8n.Campaign{
+					c := &cmpgn.Campaign{
 						Name:           fmt.Sprintf("Upgrade ES-Lint %d", i),
 						Description:    "All the Javascripts are belong to us",
 						Branch:         "upgrade-es-lint",
@@ -175,22 +175,22 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 				filterTests := []struct {
 					name  string
-					state a8n.CampaignState
-					want  []*a8n.Campaign
+					state cmpgn.CampaignState
+					want  []*cmpgn.Campaign
 				}{
 					{
 						name:  "Any",
-						state: a8n.CampaignStateAny,
+						state: cmpgn.CampaignStateAny,
 						want:  campaigns,
 					},
 					{
 						name:  "Closed",
-						state: a8n.CampaignStateClosed,
+						state: cmpgn.CampaignStateClosed,
 						want:  campaigns[1:],
 					},
 					{
 						name:  "Open",
-						state: a8n.CampaignStateOpen,
+						state: cmpgn.CampaignStateOpen,
 						want:  campaigns[0:1],
 					},
 				}
@@ -353,14 +353,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 				Participants: []github.Actor{githubActor},
 				CreatedAt:    now,
 				UpdatedAt:    now,
-				HeadRefName:  "a8n/test",
+				HeadRefName:  "campaigns/test",
 			}
 
-			changesets := make([]*a8n.Changeset, 0, 3)
+			changesets := make([]*cmpgn.Changeset, 0, 3)
 
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(changesets); i++ {
-					th := &a8n.Changeset{
+					th := &cmpgn.Changeset{
 						RepoID:              42,
 						CreatedAt:           now,
 						UpdatedAt:           now,
@@ -368,7 +368,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignIDs:         []int64{int64(i) + 1},
 						ExternalID:          fmt.Sprintf("foobar-%d", i),
 						ExternalServiceType: "github",
-						ExternalBranch:      "a8n/test",
+						ExternalBranch:      "campaigns/test",
 					}
 
 					changesets = append(changesets, th)
@@ -401,7 +401,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("GetGithubExternalIDForRefs", func(t *testing.T) {
-				have, err := s.GetGithubExternalIDForRefs(ctx, []string{"a8n/test"})
+				have, err := s.GetGithubExternalIDForRefs(ctx, []string{"campaigns/test"})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -428,11 +428,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 					ids[i] = c.ID
 				}
 
-				clones := make([]*a8n.Changeset, len(changesets))
+				clones := make([]*cmpgn.Changeset, len(changesets))
 
 				for i, c := range changesets {
 					// Set only the fields on which we have a unique constraint
-					clones[i] = &a8n.Changeset{
+					clones[i] = &cmpgn.Changeset{
 						RepoID:              c.RepoID,
 						ExternalID:          c.ExternalID,
 						ExternalServiceType: c.ExternalServiceType,
@@ -670,8 +670,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("Update", func(t *testing.T) {
-				want := make([]*a8n.Changeset, 0, len(changesets))
-				have := make([]*a8n.Changeset, 0, len(changesets))
+				want := make([]*cmpgn.Changeset, 0, len(changesets))
+				have := make([]*cmpgn.Changeset, 0, len(changesets))
 
 				now = now.Add(time.Second)
 				for _, c := range changesets {
@@ -746,7 +746,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("ChangesetEvents", func(t *testing.T) {
-			events := make([]*a8n.ChangesetEvent, 0, 3)
+			events := make([]*cmpgn.ChangesetEvent, 0, 3)
 
 			issueComment := &github.IssueComment{
 				DatabaseID: 443827703,
@@ -766,9 +766,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("Upsert", func(t *testing.T) {
 				for i := 1; i < cap(events); i++ {
-					e := &a8n.ChangesetEvent{
+					e := &cmpgn.ChangesetEvent{
 						ChangesetID: int64(i),
-						Kind:        a8n.ChangesetEventKindGitHubCommented,
+						Kind:        cmpgn.ChangesetEventKindGitHubCommented,
 						Key:         issueComment.Key(),
 						CreatedAt:   now,
 						Metadata:    issueComment,
@@ -983,11 +983,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("CampaignPlans", func(t *testing.T) {
-			campaignPlans := make([]*a8n.CampaignPlan, 0, 3)
+			campaignPlans := make([]*cmpgn.CampaignPlan, 0, 3)
 
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(campaignPlans); i++ {
-					c := &a8n.CampaignPlan{
+					c := &cmpgn.CampaignPlan{
 						CampaignType: "patch",
 						Arguments:    `{}`,
 						CanceledAt:   now,
@@ -1168,11 +1168,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("CampaignJobs", func(t *testing.T) {
-			campaignJobs := make([]*a8n.CampaignJob, 0, 3)
+			campaignJobs := make([]*cmpgn.CampaignJob, 0, 3)
 
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(campaignJobs); i++ {
-					c := &a8n.CampaignJob{
+					c := &cmpgn.CampaignJob{
 						CampaignPlanID: int64(i + 1),
 						RepoID:         1,
 						Rev:            api.CommitID("deadbeef"),
@@ -1452,7 +1452,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("Listing and Counting OnlyUnpublishedInCampaign", func(t *testing.T) {
 				campaignID := int64(999)
-				changesetJob := &a8n.ChangesetJob{
+				changesetJob := &cmpgn.ChangesetJob{
 					CampaignJobID: campaignJobs[0].ID,
 					CampaignID:    campaignID,
 					ChangesetID:   789,
@@ -1596,13 +1596,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 		t.Run("CampaignPlan BackgroundProcessStatus", func(t *testing.T) {
 			tests := []struct {
 				planCanceledAt time.Time
-				jobs           []*a8n.CampaignJob
-				want           *a8n.BackgroundProcessStatus
+				jobs           []*cmpgn.CampaignJob
+				want           *cmpgn.BackgroundProcessStatus
 			}{
 				{
-					jobs: []*a8n.CampaignJob{}, // no jobs
-					want: &a8n.BackgroundProcessStatus{
-						ProcessState:  a8n.BackgroundProcessStateCompleted,
+					jobs: []*cmpgn.CampaignJob{}, // no jobs
+					want: &cmpgn.BackgroundProcessStatus{
+						ProcessState:  cmpgn.BackgroundProcessStateCompleted,
 						Total:         0,
 						Completed:     0,
 						Pending:       0,
@@ -1610,14 +1610,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 					},
 				},
 				{
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// not started (pending)
 						{},
 						// started (pending)
 						{StartedAt: now},
 					},
-					want: &a8n.BackgroundProcessStatus{
-						ProcessState:  a8n.BackgroundProcessStateProcessing,
+					want: &cmpgn.BackgroundProcessStatus{
+						ProcessState:  cmpgn.BackgroundProcessStateProcessing,
 						Total:         2,
 						Completed:     0,
 						Pending:       2,
@@ -1625,14 +1625,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 					},
 				},
 				{
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// completed, no errors, no diff
 						{StartedAt: now, FinishedAt: now},
 						// completed, no errors, diff
 						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-barfoo"},
 					},
-					want: &a8n.BackgroundProcessStatus{
-						ProcessState:  a8n.BackgroundProcessStateCompleted,
+					want: &cmpgn.BackgroundProcessStatus{
+						ProcessState:  cmpgn.BackgroundProcessStateCompleted,
 						Total:         2,
 						Completed:     2,
 						Pending:       0,
@@ -1640,12 +1640,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 					},
 				},
 				{
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// completed, error
 						{StartedAt: now, FinishedAt: now, Error: "error1"},
 					},
-					want: &a8n.BackgroundProcessStatus{
-						ProcessState:  a8n.BackgroundProcessStateErrored,
+					want: &cmpgn.BackgroundProcessStatus{
+						ProcessState:  cmpgn.BackgroundProcessStateErrored,
 						Total:         1,
 						Completed:     1,
 						Pending:       0,
@@ -1653,7 +1653,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					},
 				},
 				{
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// not started (pending)
 						{},
 						// started (pending)
@@ -1667,8 +1667,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 						// completed, another error
 						{StartedAt: now, FinishedAt: now, Error: "error2"},
 					},
-					want: &a8n.BackgroundProcessStatus{
-						ProcessState:  a8n.BackgroundProcessStateProcessing,
+					want: &cmpgn.BackgroundProcessStatus{
+						ProcessState:  cmpgn.BackgroundProcessStateProcessing,
 						Total:         6,
 						Completed:     4,
 						Pending:       2,
@@ -1677,15 +1677,15 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 				{
 					planCanceledAt: now,
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// not started (pending)
 						{},
 						// started (pending)
 						{StartedAt: now},
 					},
-					want: &a8n.BackgroundProcessStatus{
+					want: &cmpgn.BackgroundProcessStatus{
 						// Instead of "Processing" it's "Canceled"
-						ProcessState:  a8n.BackgroundProcessStateCanceled,
+						ProcessState:  cmpgn.BackgroundProcessStateCanceled,
 						Canceled:      true,
 						Total:         2,
 						Completed:     0,
@@ -1695,13 +1695,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 				{
 					planCanceledAt: now,
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// completed, error
 						{StartedAt: now, FinishedAt: now, Error: "error1"},
 					},
-					want: &a8n.BackgroundProcessStatus{
+					want: &cmpgn.BackgroundProcessStatus{
 						// Instead of "Errored" it's "Canceled"
-						ProcessState:  a8n.BackgroundProcessStateCanceled,
+						ProcessState:  cmpgn.BackgroundProcessStateCanceled,
 						Canceled:      true,
 						Total:         1,
 						Completed:     1,
@@ -1711,13 +1711,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 				{
 					planCanceledAt: now,
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// completed, no errors
 						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-foobar"},
 					},
-					want: &a8n.BackgroundProcessStatus{
+					want: &cmpgn.BackgroundProcessStatus{
 						// Instead of "Completed" it's "Canceled"
-						ProcessState:  a8n.BackgroundProcessStateCanceled,
+						ProcessState:  cmpgn.BackgroundProcessStateCanceled,
 						Canceled:      true,
 						Total:         1,
 						Completed:     1,
@@ -1727,7 +1727,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 			}
 			for _, tc := range tests {
-				plan := &a8n.CampaignPlan{
+				plan := &cmpgn.CampaignPlan{
 					CampaignType: "patch",
 					CanceledAt:   tc.planCanceledAt,
 				}
@@ -1762,13 +1762,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 		t.Run("CampaignPlan DeleteExpired", func(t *testing.T) {
 			tests := []struct {
 				hasCampaign bool
-				jobs        []*a8n.CampaignJob
+				jobs        []*cmpgn.CampaignJob
 				wantDeleted bool
-				want        *a8n.BackgroundProcessStatus
+				want        *cmpgn.BackgroundProcessStatus
 			}{
 				{
 					hasCampaign: false,
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// completed more than 1 hour ago
 						{FinishedAt: now.Add(-61 * time.Minute)},
 					},
@@ -1776,7 +1776,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 				{
 					hasCampaign: false,
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// completed 30 min ago
 						{FinishedAt: now.Add(30 * time.Minute)},
 					},
@@ -1784,7 +1784,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 				{
 					hasCampaign: false,
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// completed more than 1 hour ago
 						{FinishedAt: now.Add(-61 * time.Minute)},
 						// completed 30 min ago
@@ -1794,7 +1794,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 				{
 					hasCampaign: false,
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// completed more than 1 hour ago
 						{FinishedAt: now.Add(-61 * time.Minute)},
 						// not completed
@@ -1804,7 +1804,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 				{
 					hasCampaign: false,
-					jobs: []*a8n.CampaignJob{
+					jobs: []*cmpgn.CampaignJob{
 						// completed more than 1 hour ago
 						{FinishedAt: now.Add(-61 * time.Minute)},
 						// completed more than 2 hours ago
@@ -1815,7 +1815,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 
 			for _, tc := range tests {
-				plan := &a8n.CampaignPlan{CampaignType: "patch", Arguments: `{}`}
+				plan := &cmpgn.CampaignPlan{CampaignType: "patch", Arguments: `{}`}
 
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
@@ -1833,7 +1833,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 
-				// TODO(a8n): Create a Campaign with CampaignPlanID = plan.ID
+				// TODO(campaigns): Create a Campaign with CampaignPlanID = plan.ID
 
 				for i, j := range tc.jobs {
 					j.StartedAt = now.Add(-2 * time.Hour)
@@ -1869,11 +1869,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("ChangesetJobs", func(t *testing.T) {
-			changesetJobs := make([]*a8n.ChangesetJob, 0, 3)
+			changesetJobs := make([]*cmpgn.ChangesetJob, 0, 3)
 
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(changesetJobs); i++ {
-					c := &a8n.ChangesetJob{
+					c := &cmpgn.ChangesetJob{
 						CampaignID:    int64(i + 1),
 						CampaignJobID: int64(i + 1),
 						ChangesetID:   int64(i + 1),
@@ -2040,7 +2040,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 				t.Run("WithCampaignPlanID", func(t *testing.T) {
 					for i := 1; i <= len(changesetJobs); i++ {
-						c := &a8n.Campaign{
+						c := &cmpgn.Campaign{
 							Name:            fmt.Sprintf("Upgrade ES-Lint %d", i),
 							Description:     "All the Javascripts are belong to us",
 							AuthorID:        4567,
@@ -2207,13 +2207,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("BackgroundProcessStatus", func(t *testing.T) {
 				tests := []struct {
-					jobs []*a8n.ChangesetJob
-					want *a8n.BackgroundProcessStatus
+					jobs []*cmpgn.ChangesetJob
+					want *cmpgn.BackgroundProcessStatus
 				}{
 					{
-						jobs: []*a8n.ChangesetJob{}, // no jobs
-						want: &a8n.BackgroundProcessStatus{
-							ProcessState:  a8n.BackgroundProcessStateCompleted,
+						jobs: []*cmpgn.ChangesetJob{}, // no jobs
+						want: &cmpgn.BackgroundProcessStatus{
+							ProcessState:  cmpgn.BackgroundProcessStateCompleted,
 							Total:         0,
 							Completed:     0,
 							Pending:       0,
@@ -2221,14 +2221,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 						},
 					},
 					{
-						jobs: []*a8n.ChangesetJob{
+						jobs: []*cmpgn.ChangesetJob{
 							// not started (pending)
 							{},
 							// started (pending)
 							{StartedAt: now},
 						},
-						want: &a8n.BackgroundProcessStatus{
-							ProcessState:  a8n.BackgroundProcessStateProcessing,
+						want: &cmpgn.BackgroundProcessStatus{
+							ProcessState:  cmpgn.BackgroundProcessStateProcessing,
 							Total:         2,
 							Completed:     0,
 							Pending:       2,
@@ -2236,12 +2236,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 						},
 					},
 					{
-						jobs: []*a8n.ChangesetJob{
+						jobs: []*cmpgn.ChangesetJob{
 							// completed, no errors
 							{StartedAt: now, FinishedAt: now, ChangesetID: 23},
 						},
-						want: &a8n.BackgroundProcessStatus{
-							ProcessState:  a8n.BackgroundProcessStateCompleted,
+						want: &cmpgn.BackgroundProcessStatus{
+							ProcessState:  cmpgn.BackgroundProcessStateCompleted,
 							Total:         1,
 							Completed:     1,
 							Pending:       0,
@@ -2249,12 +2249,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 						},
 					},
 					{
-						jobs: []*a8n.ChangesetJob{
+						jobs: []*cmpgn.ChangesetJob{
 							// completed, error
 							{StartedAt: now, FinishedAt: now, Error: "error1"},
 						},
-						want: &a8n.BackgroundProcessStatus{
-							ProcessState:  a8n.BackgroundProcessStateErrored,
+						want: &cmpgn.BackgroundProcessStatus{
+							ProcessState:  cmpgn.BackgroundProcessStateErrored,
 							Total:         1,
 							Completed:     1,
 							Pending:       0,
@@ -2262,7 +2262,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						},
 					},
 					{
-						jobs: []*a8n.ChangesetJob{
+						jobs: []*cmpgn.ChangesetJob{
 							// not started (pending)
 							{},
 							// started (pending)
@@ -2274,8 +2274,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 							// completed, another error
 							{StartedAt: now, FinishedAt: now, Error: "error2"},
 						},
-						want: &a8n.BackgroundProcessStatus{
-							ProcessState:  a8n.BackgroundProcessStateProcessing,
+						want: &cmpgn.BackgroundProcessStatus{
+							ProcessState:  cmpgn.BackgroundProcessStateProcessing,
 							Total:         5,
 							Completed:     3,
 							Pending:       2,
@@ -2308,7 +2308,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("ResetFailedChangesetJobs", func(t *testing.T) {
 				campaignID := 9999
-				jobs := []*a8n.ChangesetJob{
+				jobs := []*cmpgn.ChangesetJob{
 					// completed, no errors
 					{StartedAt: now, FinishedAt: now, ChangesetID: 23},
 					// completed, error
@@ -2371,7 +2371,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("ResetChangesetJobs", func(t *testing.T) {
 				campaignID := 12345
-				jobs := []*a8n.ChangesetJob{
+				jobs := []*cmpgn.ChangesetJob{
 					// completed, no errors
 					{StartedAt: now, FinishedAt: now, ChangesetID: 12345},
 					// completed, error
@@ -2417,7 +2417,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("GetLatestChangesetJobCreatedAt", func(t *testing.T) {
-				plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+				plan := &cmpgn.CampaignPlan{CampaignType: "test", Arguments: `{}`}
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -2428,7 +2428,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				campaignJob := &a8n.CampaignJob{
+				campaignJob := &cmpgn.CampaignJob{
 					CampaignPlanID: plan.ID,
 					BaseRef:        "x",
 					RepoID:         api.RepoID(123),
@@ -2448,7 +2448,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatalf("publishedAt is not zero: %v", have)
 				}
 
-				changesetJob1 := &a8n.ChangesetJob{
+				changesetJob1 := &cmpgn.ChangesetJob{
 					CampaignID:    campaign.ID,
 					CampaignJobID: campaignJob.ID,
 				}
@@ -2481,7 +2481,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					s = oldStore
 				}()
 				s = NewStoreWithClock(tx, clock)
-				campaignJob = &a8n.CampaignJob{
+				campaignJob = &cmpgn.CampaignJob{
 					CampaignPlanID: plan.ID,
 					BaseRef:        "x",
 					RepoID:         api.RepoID(123),
@@ -2502,7 +2502,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 
 				// Add another changesetjob
-				changesetJob2 := &a8n.ChangesetJob{
+				changesetJob2 := &cmpgn.ChangesetJob{
 					CampaignID:    campaign.ID,
 					CampaignJobID: campaignJob.ID,
 				}
@@ -2557,7 +2557,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			defer done()
 			s := NewStoreWithClock(tx, clock)
 
-			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
+			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
 				return errors.New("rollback")
 			}
 			ran, err := s.ProcessPendingCampaignJob(ctx, process)
@@ -2575,17 +2575,17 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			defer done()
 			s := NewStoreWithClock(tx, clock)
 
-			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
+			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
 				return errors.New("rollback")
 			}
-			plan := &a8n.CampaignPlan{
+			plan := &cmpgn.CampaignPlan{
 				CampaignType: "test",
 			}
 			err := s.CreateCampaignPlan(context.Background(), plan)
 			if err != nil {
 				t.Fatal(err)
 			}
-			job := &a8n.CampaignJob{
+			job := &cmpgn.CampaignJob{
 				ID:             0,
 				CampaignPlanID: plan.ID,
 				RepoID:         repo.ID,
@@ -2614,11 +2614,11 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			user := createTestUser(ctx, t)
 			s := NewStoreWithClock(db, clock)
 
-			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
+			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
 				time.Sleep(100 * time.Millisecond)
 				return errors.New("rollback")
 			}
-			plan := &a8n.CampaignPlan{
+			plan := &cmpgn.CampaignPlan{
 				CampaignType: "test",
 				UserID:       user.ID,
 			}
@@ -2626,7 +2626,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = s.CreateCampaignJob(context.Background(), &a8n.CampaignJob{
+			err = s.CreateCampaignJob(context.Background(), &cmpgn.CampaignJob{
 				ID:             0,
 				CampaignPlanID: plan.ID,
 				RepoID:         repo.ID,

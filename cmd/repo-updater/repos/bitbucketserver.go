@@ -141,7 +141,7 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 }
 
 // CloseChangeset closes the given *Changeset on the code host and updates the
-// Metadata column in the *a8n.Changeset to the newly closed pull request.
+// Metadata column in the *campaigns.Changeset to the newly closed pull request.
 func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
 	if !ok {

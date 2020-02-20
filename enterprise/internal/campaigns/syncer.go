@@ -1,12 +1,12 @@
-package a8n
+package campaigns
 
 import (
 	"context"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -44,7 +44,7 @@ type SourceChangesets struct {
 
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database
-func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changeset) (err error) {
+func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*campaigns.Changeset) (err error) {
 	if len(cs) == 0 {
 		return nil
 	}
@@ -61,8 +61,8 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 // with the given ChangesetSources and updates them in the database.
 func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySource []*SourceChangesets) (err error) {
 	var (
-		events []*a8n.ChangesetEvent
-		cs     []*a8n.Changeset
+		events []*campaigns.ChangesetEvent
+		cs     []*campaigns.Changeset
 	)
 
 	for _, s := range bySource {
@@ -107,9 +107,9 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 }
 
 // GroupChangesetsBySource returns a slice of SourceChangesets in which the
-// given *a8n.Changesets are grouped together as repos.Changesets with the
+// given *campaigns.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
-func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8n.Changeset) ([]*SourceChangesets, error) {
+func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID
 	repoSet := map[api.RepoID]*repos.Repo{}
 
@@ -188,7 +188,7 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8
 	return res, nil
 }
 
-func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all []*a8n.Changeset, err error) {
+func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all []*campaigns.Changeset, err error) {
 	for cursor := int64(-1); cursor != 0; {
 		opts := ListChangesetsOpts{Cursor: cursor, Limit: 1000, WithoutDeleted: true}
 		cs, next, err := s.Store.ListChangesets(ctx, opts)
