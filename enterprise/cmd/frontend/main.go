@@ -114,7 +114,7 @@ func initLicensing() {
 }
 
 func initResolvers() {
-	graphqlbackend.NewA8NResolver = campaignsResolvers.NewResolver
+	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
 	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
 	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
 		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {

@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-// NewA8NResolver will be set by enterprise
-var NewA8NResolver func(*sql.DB) A8NResolver
+// NewCampaignsResolver will be set by enterprise
+var NewCampaignsResolver func(*sql.DB) CampaignsResolver
 
 type AddChangesetsToCampaignArgs struct {
 	Campaign   graphql.ID
@@ -84,7 +84,7 @@ type PublishChangesetArgs struct {
 	ChangesetPlan graphql.ID
 }
 
-type A8NResolver interface {
+type CampaignsResolver interface {
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
 	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
 	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
@@ -109,69 +109,69 @@ type A8NResolver interface {
 
 var campaignsOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
 
-type defaultA8NResolver struct{}
+type defaultCampaignsResolver struct{}
 
-func (defaultA8NResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error) {
+func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error) {
+func (defaultCampaignsResolver) Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
+func (defaultCampaignsResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) PublishCampaign(ctx context.Context, args *PublishCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) PublishCampaign(ctx context.Context, args *PublishCampaignArgs) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error) {
+func (defaultCampaignsResolver) PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error) {
+func (defaultCampaignsResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error) {
+func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExternalChangesetsConnectionResolver, error) {
+func (defaultCampaignsResolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExternalChangesetsConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) CreateCampaignPlanFromPatches(ctx context.Context, args CreateCampaignPlanFromPatchesArgs) (CampaignPlanResolver, error) {
+func (defaultCampaignsResolver) CreateCampaignPlanFromPatches(ctx context.Context, args CreateCampaignPlanFromPatchesArgs) (CampaignPlanResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (CampaignPlanResolver, error) {
+func (defaultCampaignsResolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (CampaignPlanResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultA8NResolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (ChangesetPlanResolver, error) {
+func (defaultCampaignsResolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (ChangesetPlanResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

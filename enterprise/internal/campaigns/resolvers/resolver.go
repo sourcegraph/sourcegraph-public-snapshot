@@ -33,7 +33,7 @@ type Resolver struct {
 }
 
 // NewResolver returns a new Resolver whose store uses the given db
-func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
+func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
 	return &Resolver{store: ee.NewStore(db)}
 }
 

@@ -206,10 +206,10 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	// graphqlbackend.A8NResolver is set by enterprise frontend
-	var campaignsResolver graphqlbackend.A8NResolver
-	if graphqlbackend.NewA8NResolver != nil {
-		campaignsResolver = graphqlbackend.NewA8NResolver(dbconn.Global)
+	// graphqlbackend.CampaignsResolver is set by enterprise frontend
+	var campaignsResolver graphqlbackend.CampaignsResolver
+	if graphqlbackend.NewCampaignsResolver != nil {
+		campaignsResolver = graphqlbackend.NewCampaignsResolver(dbconn.Global)
 	}
 
 	// graphqlbackend.CodeIntelResolver is set by enterprise frontend
