@@ -1204,9 +1204,9 @@ type fakeEvent struct {
 	id   int64
 }
 
-func (e fakeEvent) Timestamp() time.Time         { return e.t }
+func (e fakeEvent) Timestamp() time.Time               { return e.t }
 func (e fakeEvent) Type() campaigns.ChangesetEventKind { return e.kind }
-func (e fakeEvent) Changeset() int64             { return e.id }
+func (e fakeEvent) Changeset() int64                   { return e.id }
 
 func ghChangeset(id int64, t time.Time) *campaigns.Changeset {
 	return &campaigns.Changeset{ID: id, Metadata: &github.PullRequest{CreatedAt: t}}

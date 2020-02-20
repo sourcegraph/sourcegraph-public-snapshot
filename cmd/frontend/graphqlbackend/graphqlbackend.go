@@ -102,7 +102,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 
 func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
-		CampaignsResolver:       defaultCampaignsResolver{},
+		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
 	}
