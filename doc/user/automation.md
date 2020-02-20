@@ -2,7 +2,7 @@
 
 > Campaigns is currently in private beta for select enterprise customers.
 
-[Sourcegraph campaigns](https://about.sourcegraph.com/product/automation) allows large-scale code changes across many repositories and different code hosts.
+[Sourcegraph campaigns](https://about.sourcegraph.com/product/automation) allow large-scale code changes across many repositories and different code hosts.
 
 **Important**: If you're on Sourcegraph 3.12 or older, you might also want to look at the old documentation: "[Campaigns documentation for Sourcegraph 3.12](https://docs.sourcegraph.com/@3.12/user/automation)"
 
@@ -28,7 +28,7 @@ Without any further configuration Automation is **only be accessible to site-adm
 
 ## Creating campaigns
 
-There are two types of Campaigns:
+There are two types of campaigns:
 
 - Manual campaigns to which you can manually add changesets (pull requests) and track their progress.
 - Campaigns created from a set of patches. With the `src` CLI, you can create the campaign from an existing set of patches, and also _generate the patches_ for each repository.
