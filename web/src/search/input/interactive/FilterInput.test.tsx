@@ -31,12 +31,14 @@ const defaultProps = {
 describe('FilterInput', () => {
     afterAll(cleanup)
     let container: HTMLElement
+    let nextFiltersInQuery: FiltersToTypeAndValue
+    let nextValue: string
     beforeEach(() => {
         container = render(<FilterInput {...defaultProps} editable={true} />).container
+        nextFiltersInQuery = {}
+        nextValue = ''
     })
 
-    let nextFiltersInQuery = {}
-    let nextValue = ''
     const filterHandler = (newFiltersInQuery: FiltersToTypeAndValue, value: string) => {
         nextFiltersInQuery = newFiltersInQuery
         nextValue = value
