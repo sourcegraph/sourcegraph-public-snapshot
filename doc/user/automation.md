@@ -56,7 +56,7 @@ Read on detailed steps and documentation.
 
 ## Where to best run campaigns
 
-The patches for a campaign plan are generated on the machine where the `src` CLI is executed, which in turn, downloads zip archives and runs each step against each repository. Therefore, we recommend campaign plans should run (in most cases) on a Linux machine with considerable CPU, RAM, and network bandwidth to reduce the execution time. Putting this machine in the same network as your Sourcegraph instance will also improve performance.
+The patches for a campaign are generated on the machine where the `src` CLI is executed, which in turn, downloads zip archives and runs each step against each repository. For most usecases we recommend that `src` CLI should be run on a Linux machine with considerable CPU, RAM, and network bandwidth to reduce the execution time. Putting this machine in the same network as your Sourcegraph instance will also improve performance.
 
 Another factor affecting execution time is the number of jobs executed in parallel, which is by default, the number of cores on the machine. This can be adjusted using the `-j` parameter.
 
