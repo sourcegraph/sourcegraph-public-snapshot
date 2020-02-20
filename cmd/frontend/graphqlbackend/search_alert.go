@@ -436,7 +436,6 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 		prometheusType:  a.prometheusType,
 		title:           a.title,
 		description:     a.description,
-		patternType:     a.patternType,
 		proposedQueries: a.proposedQueries,
 	}
 	return &SearchResultsResolver{alert: alert}, nil
