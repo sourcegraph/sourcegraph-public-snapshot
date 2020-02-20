@@ -36,7 +36,7 @@ import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
-import { fetchTree } from './backend'
+import { fetchTreeEntries } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { ThemeProps } from '../../../shared/src/theme'
@@ -190,7 +190,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                     ),
                     tap(props => this.logViewEvent(props)),
                     switchMap(props =>
-                        fetchTree({
+                        fetchTreeEntries({
                             repoName: props.repoName,
                             commitID: props.commitID,
                             rev: props.rev,
