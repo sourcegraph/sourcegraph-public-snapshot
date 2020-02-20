@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	rxsyntax "regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
@@ -29,6 +30,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -64,6 +67,72 @@ type SearchImplementer interface {
 	Stats(context.Context) (*searchResultsStats, error)
 }
 
+func alertForParseError(err error, queryString string) *searchAlert {
+	switch e := err.(type) {
+	case *syntax.ParseError:
+		return &searchAlert{
+			prometheusType:  "parse_syntax_error",
+			title:           capFirst(e.Msg),
+			description:     "Quoting the query may help if you want a literal match.",
+			proposedQueries: proposedQuotedQueries(queryString),
+		}
+	}
+	return &searchAlert{
+		prometheusType: "parse_syntax_error",
+		title:          "Query Parse Error",
+		description:    capFirst(err.Error()),
+	}
+}
+
+func alertForTypecheckError(err error, queryString string) *searchAlert {
+	switch e := err.(type) {
+	case *querytypes.TypeError:
+		switch e := e.Err.(type) {
+		case *rxsyntax.Error:
+			return &searchAlert{
+				prometheusType:  "typecheck_regex_syntax_error",
+				title:           capFirst(e.Error()),
+				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
+				proposedQueries: proposedQuotedQueries(queryString),
+			}
+		}
+	}
+	return &searchAlert{
+		prometheusType: "typecheck_error",
+		title:          "Query Typecheck Error",
+		description:    capFirst(err.Error()),
+	}
+}
+
+// processQuery runs the processing pipeline that parses, type checks, and
+// validates search queries. Errors are converted to descriptive alerts or
+// suggestions that surface in the client.
+//
+// TODO(rvantonder): this function should belong to
+// the internal/search/query package, once alerts can be constructed in
+// internal/search.
+func processQuery(queryString string, searchType query.SearchType) (*query.Query, *searchAlert) {
+	parseTree, err := query.Parse(queryString)
+	if err != nil {
+		return nil, alertForParseError(err, queryString)
+	}
+
+	q, err := query.Check(parseTree)
+	if err != nil {
+		return nil, alertForTypecheckError(err, queryString)
+	}
+
+	err = query.Validate(q, searchType)
+	if err != nil {
+		return nil, &searchAlert{
+			title:       "Invalid Query",
+			description: capFirst(err.Error()),
+		}
+	}
+
+	return q, nil
+}
+
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
@@ -71,7 +140,7 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 
 	searchType, err := detectSearchType(args.Version, args.PatternType, args.Query)
 	if err != nil {
-		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
+		return nil, err
 	}
 
 	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
@@ -85,13 +154,9 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		queryString = args.Query
 	}
 
-	q, err := query.ParseAndCheck(queryString)
-	if err != nil {
-		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
-	}
-	err = query.Validate(q, searchType)
-	if err != nil {
-		return searchAlert{title: "Invalid Query", description: capFirst(err.Error())}, nil
+	q, alert := processQuery(queryString, searchType)
+	if alert != nil {
+		return alert, nil
 	}
 
 	// If the request is a paginated one, decode those arguments now.
