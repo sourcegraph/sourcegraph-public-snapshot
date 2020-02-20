@@ -197,7 +197,7 @@ Campaign diffs are intelligently cached based on the `scopeQuery` and defined `s
 Clearing the cache requires either manually emptying the cache directory or using a different one. If no `-cache` flag is passed to `src actions exec`, the default location of the cache is used which can be found for your platform by running:
 
 ```sh
-src actions exec -help 2>&1 | head -n 3
+src actions exec -help
 ```
 
 ## Example campaigns
