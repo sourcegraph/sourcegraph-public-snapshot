@@ -8,18 +8,18 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 type changesetEventsConnectionResolver struct {
 	store     *ee.Store
-	changeset *a8n.Changeset
+	changeset *campaigns.Changeset
 	opts      ee.ListChangesetEventsOpts
 
 	// cache results because they are used by multiple fields
 	once            sync.Once
-	changesetEvents []*a8n.ChangesetEvent
+	changesetEvents []*campaigns.ChangesetEvent
 	next            int64
 	err             error
 }
@@ -50,7 +50,7 @@ func (r *changesetEventsConnectionResolver) PageInfo(ctx context.Context) (*grap
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *changesetEventsConnectionResolver) compute(ctx context.Context) ([]*a8n.ChangesetEvent, int64, error) {
+func (r *changesetEventsConnectionResolver) compute(ctx context.Context) ([]*campaigns.ChangesetEvent, int64, error) {
 	r.once.Do(func() {
 		r.changesetEvents, r.next, r.err = r.store.ListChangesetEvents(ctx, r.opts)
 	})
@@ -59,8 +59,8 @@ func (r *changesetEventsConnectionResolver) compute(ctx context.Context) ([]*a8n
 
 type changesetEventResolver struct {
 	store     *ee.Store
-	changeset *a8n.Changeset
-	*a8n.ChangesetEvent
+	changeset *campaigns.Changeset
+	*campaigns.ChangesetEvent
 }
 
 const changesetEventIDKind = "ChangesetEvent"

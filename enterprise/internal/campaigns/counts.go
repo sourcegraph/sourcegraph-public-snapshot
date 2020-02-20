@@ -1,4 +1,4 @@
-package a8n
+package campaigns
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -25,13 +25,13 @@ type ChangesetCounts struct {
 
 // AddReviewState adds n to the corresponding counter for a given
 // ChangesetReviewState
-func (c *ChangesetCounts) AddReviewState(s a8n.ChangesetReviewState, n int32) {
+func (c *ChangesetCounts) AddReviewState(s campaigns.ChangesetReviewState, n int32) {
 	switch s {
-	case a8n.ChangesetReviewStatePending:
+	case campaigns.ChangesetReviewStatePending:
 		c.OpenPending += n
-	case a8n.ChangesetReviewStateApproved:
+	case campaigns.ChangesetReviewStateApproved:
 		c.OpenApproved += n
-	case a8n.ChangesetReviewStateChangesRequested:
+	case campaigns.ChangesetReviewStateChangesRequested:
 		c.OpenChangesRequested += n
 	}
 }
@@ -53,7 +53,7 @@ func (cc *ChangesetCounts) String() string {
 // for example a review or a merge.
 type Event interface {
 	Timestamp() time.Time
-	Type() a8n.ChangesetEventKind
+	Type() campaigns.ChangesetEventKind
 	Changeset() int64
 }
 
@@ -73,7 +73,7 @@ func (es Events) Less(i, j int) bool {
 // number of ChangesetCounts returned is the number of 1 day intervals between
 // start and end, with each ChangesetCounts representing a point in time at the
 // boundary of each 24h interval.
-func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*ChangesetCounts, error) {
+func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...Event) ([]*ChangesetCounts, error) {
 	ts := generateTimestamps(start, end)
 	counts := make([]*ChangesetCounts, len(ts))
 	for i, t := range ts {
@@ -92,7 +92,7 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 	}
 
 	// Map Events to their Changeset
-	byChangeset := make(map[*a8n.Changeset]Events)
+	byChangeset := make(map[*campaigns.Changeset]Events)
 	for _, c := range cs {
 		byChangeset[c] = byChangesetID[c.ID]
 	}
@@ -143,7 +143,7 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 		// merged)
 		closed = false
 
-		lastReviewByAuthor = map[string]a8n.ChangesetReviewState{}
+		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
 	)
 
 	c.Total++
@@ -165,8 +165,8 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 		currentReviewState := computeReviewState(lastReviewByAuthor)
 
 		switch e.Type() {
-		case a8n.ChangesetEventKindGitHubClosed,
-			a8n.ChangesetEventKindBitbucketServerDeclined:
+		case campaigns.ChangesetEventKindGitHubClosed,
+			campaigns.ChangesetEventKindBitbucketServerDeclined:
 
 			c.Open--
 			c.Closed++
@@ -174,8 +174,8 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 
 			c.AddReviewState(currentReviewState, -1)
 
-		case a8n.ChangesetEventKindGitHubReopened,
-			a8n.ChangesetEventKindBitbucketServerReopened:
+		case campaigns.ChangesetEventKindGitHubReopened,
+			campaigns.ChangesetEventKindBitbucketServerReopened:
 
 			c.Open++
 			c.Closed--
@@ -183,8 +183,8 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 
 			c.AddReviewState(currentReviewState, 1)
 
-		case a8n.ChangesetEventKindGitHubMerged,
-			a8n.ChangesetEventKindBitbucketServerMerged:
+		case campaigns.ChangesetEventKindGitHubMerged,
+			campaigns.ChangesetEventKindBitbucketServerMerged:
 
 			// If it was closed, all "review counts" have been updated by the
 			// closed events and we just need to reverse these two counts
@@ -203,9 +203,9 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			// other events
 			return nil
 
-		case a8n.ChangesetEventKindGitHubReviewed,
-			a8n.ChangesetEventKindBitbucketServerApproved,
-			a8n.ChangesetEventKindBitbucketServerReviewed:
+		case campaigns.ChangesetEventKindGitHubReviewed,
+			campaigns.ChangesetEventKindBitbucketServerApproved,
+			campaigns.ChangesetEventKindBitbucketServerReviewed:
 
 			s, err := reviewState(e)
 			if err != nil {
@@ -213,9 +213,9 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			}
 
 			// We only care about "Approved", "ChangesRequested" or "Dismissed" reviews
-			if s != a8n.ChangesetReviewStateApproved &&
-				s != a8n.ChangesetReviewStateChangesRequested &&
-				s != a8n.ChangesetReviewStateDismissed {
+			if s != campaigns.ChangesetReviewStateApproved &&
+				s != campaigns.ChangesetReviewStateChangesRequested &&
+				s != campaigns.ChangesetReviewStateDismissed {
 				continue
 			}
 
@@ -231,7 +231,7 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			// dismissed review, then recompute overall review state
 			oldReviewState := currentReviewState
 
-			if s == a8n.ChangesetReviewStateDismissed {
+			if s == campaigns.ChangesetReviewStateDismissed {
 				delete(lastReviewByAuthor, author)
 			} else {
 				lastReviewByAuthor[author] = s
@@ -247,8 +247,8 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				c.AddReviewState(newReviewState, 1)
 			}
 
-		case a8n.ChangesetEventKindBitbucketServerUnapproved,
-			a8n.ChangesetEventKindGitHubReviewDismissed:
+		case campaigns.ChangesetEventKindBitbucketServerUnapproved,
+			campaigns.ChangesetEventKindGitHubReviewDismissed:
 			author, err := reviewAuthor(e)
 			if err != nil {
 				return err
@@ -257,17 +257,17 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				continue
 			}
 
-			if e.Type() == a8n.ChangesetEventKindBitbucketServerUnapproved {
+			if e.Type() == campaigns.ChangesetEventKindBitbucketServerUnapproved {
 				// A BitbucketServer Unapproved can only follow a previous Approved by
 				// the same author.
 				lastReview, ok := lastReviewByAuthor[author]
-				if !ok || lastReview != a8n.ChangesetReviewStateApproved {
+				if !ok || lastReview != campaigns.ChangesetReviewStateApproved {
 					log15.Warn("Bitbucket Server Unapproval not following an Approval", "event", e)
 					continue
 				}
 			}
 
-			if e.Type() == a8n.ChangesetEventKindGitHubReviewDismissed {
+			if e.Type() == campaigns.ChangesetEventKindGitHubReviewDismissed {
 				// A GitHub Review Dismissed can only follow a previous review by
 				// the author of the review included in the event.
 				_, ok := lastReviewByAuthor[author]
@@ -312,8 +312,8 @@ func generateTimestamps(start, end time.Time) []time.Time {
 	return ts
 }
 
-func reviewState(e Event) (a8n.ChangesetReviewState, error) {
-	changesetEvent, ok := e.(*a8n.ChangesetEvent)
+func reviewState(e Event) (campaigns.ChangesetReviewState, error) {
+	changesetEvent, ok := e.(*campaigns.ChangesetEvent)
 	if !ok {
 		return "", errors.New("Reviewed event not ChangesetEvent")
 	}
@@ -322,7 +322,7 @@ func reviewState(e Event) (a8n.ChangesetReviewState, error) {
 }
 
 func reviewAuthor(e Event) (string, error) {
-	changesetEvent, ok := e.(*a8n.ChangesetEvent)
+	changesetEvent, ok := e.(*campaigns.ChangesetEvent)
 	if !ok {
 		return "", errors.New("Reviewed event not ChangesetEvent")
 	}
@@ -330,10 +330,10 @@ func reviewAuthor(e Event) (string, error) {
 	return changesetEvent.ReviewAuthor()
 }
 
-func computeReviewState(statesByAuthor map[string]a8n.ChangesetReviewState) a8n.ChangesetReviewState {
-	states := make(map[a8n.ChangesetReviewState]bool)
+func computeReviewState(statesByAuthor map[string]campaigns.ChangesetReviewState) campaigns.ChangesetReviewState {
+	states := make(map[campaigns.ChangesetReviewState]bool)
 	for _, s := range statesByAuthor {
 		states[s] = true
 	}
-	return a8n.SelectReviewState(states)
+	return campaigns.SelectReviewState(states)
 }

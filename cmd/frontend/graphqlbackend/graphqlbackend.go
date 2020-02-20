@@ -100,14 +100,14 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func NewSchema(a8n A8NResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
+func NewSchema(campaigns A8NResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
 		A8NResolver:       defaultA8NResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
 	}
-	if a8n != nil {
-		resolver.A8NResolver = a8n
+	if campaigns != nil {
+		resolver.A8NResolver = campaigns
 	}
 	if codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel

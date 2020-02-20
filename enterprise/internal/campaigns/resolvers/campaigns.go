@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 var _ graphqlbackend.CampaignsConnectionResolver = &campaignsConnectionResolver{}
@@ -23,7 +23,7 @@ type campaignsConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
-	campaigns []*a8n.Campaign
+	campaigns []*campaigns.Campaign
 	next      int64
 	err       error
 }
@@ -54,7 +54,7 @@ func (r *campaignsConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*a8n.Campaign, int64, error) {
+func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*campaigns.Campaign, int64, error) {
 	r.once.Do(func() {
 		r.campaigns, r.next, r.err = r.store.ListCampaigns(ctx, r.opts)
 	})
@@ -65,7 +65,7 @@ var _ graphqlbackend.CampaignResolver = &campaignResolver{}
 
 type campaignResolver struct {
 	store *ee.Store
-	*a8n.Campaign
+	*campaigns.Campaign
 }
 
 const campaignIDKind = "Campaign"

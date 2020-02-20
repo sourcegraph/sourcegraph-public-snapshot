@@ -1,4 +1,4 @@
-package a8n
+package campaigns
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -51,9 +51,9 @@ func (h Webhook) upsertChangesetEvent(
 	}
 
 	now := h.Now()
-	event := &a8n.ChangesetEvent{
+	event := &campaigns.ChangesetEvent{
 		ChangesetID: cs.ID,
-		Kind:        a8n.ChangesetEventKindFor(ev),
+		Kind:        campaigns.ChangesetEventKindFor(ev),
 		Key:         ev.Key(),
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -84,7 +84,7 @@ func (h Webhook) upsertChangesetEvent(
 }
 
 // GitHubWebhook receives GitHub organization webhook events that are
-// relevant to a8n, normalizes those events into ChangesetEvents
+// relevant to campaigns, normalizes those events into ChangesetEvents
 // and upserts them to the database.
 type GitHubWebhook struct {
 	*Webhook
@@ -557,7 +557,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 
 			endpoint := globals.ExternalURL().String() + "/.api/bitbucket-server-webhooks"
 			wh := bbs.Webhook{
-				Name:     "sourcegraph-a8n",
+				Name:     "sourcegraph-campaigns",
 				Scope:    "global",
 				Events:   []string{"pr"},
 				Endpoint: endpoint,

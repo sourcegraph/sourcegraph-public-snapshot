@@ -8,7 +8,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 // NewA8NResolver will be set by enterprise
@@ -107,72 +107,72 @@ type A8NResolver interface {
 	ChangesetPlanByID(ctx context.Context, id graphql.ID) (ChangesetPlanResolver, error)
 }
 
-var a8nOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
+var campaignsOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
 
 type defaultA8NResolver struct{}
 
 func (defaultA8NResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) PublishCampaign(ctx context.Context, args *PublishCampaignArgs) (CampaignResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExternalChangesetsConnectionResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) CreateCampaignPlanFromPatches(ctx context.Context, args CreateCampaignPlanFromPatchesArgs) (CampaignPlanResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (CampaignPlanResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 func (defaultA8NResolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (ChangesetPlanResolver, error) {
-	return nil, a8nOnlyInEnterprise
+	return nil, campaignsOnlyInEnterprise
 }
 
 type ChangesetCountsArgs struct {
@@ -226,10 +226,10 @@ type ExternalChangesetResolver interface {
 	UpdatedAt() DateTime
 	Title() (string, error)
 	Body() (string, error)
-	State() (a8n.ChangesetState, error)
+	State() (campaigns.ChangesetState, error)
 	ExternalURL() (*externallink.Resolver, error)
-	ReviewState(context.Context) (a8n.ChangesetReviewState, error)
-	CheckState(context.Context) (*a8n.ChangesetCheckState, error)
+	ReviewState(context.Context) (campaigns.ChangesetReviewState, error)
+	CheckState(context.Context) (*campaigns.ChangesetCheckState, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
@@ -286,7 +286,7 @@ type BackgroundProcessStatus interface {
 	CompletedCount() int32
 	PendingCount() int32
 
-	State() a8n.BackgroundProcessState
+	State() campaigns.BackgroundProcessState
 
 	Errors() []string
 }
