@@ -478,7 +478,6 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			},
 		},
 	}
-
 	for _, test := range tests {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {

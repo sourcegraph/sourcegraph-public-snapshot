@@ -167,37 +167,38 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cases := map[string]*schema.GitLabConnection{
-		"simple": {
-			Url: "https://gitlab.com",
-		},
-		"ssh": {
-			Url:        "https://gitlab.com",
-			GitURLType: "ssh",
-		},
-		"path-pattern": {
-			Url:                   "https://gitlab.com",
-			RepositoryPathPattern: "gl/{pathWithNamespace}",
-		},
-	}
-
 	svc := ExternalService{ID: 1, Kind: "GITLAB"}
 
-	for name, config := range cases {
-		name = "GitLabSource_makeRepo_" + name
-		t.Run(name, func(t *testing.T) {
-			// The GitLabSource uses the gitlab.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, name)
-			defer save(t)
-
+	tests := []struct {
+		name   string
+		schmea *schema.GitLabConnection
+	}{
+		{
+			name: "simple",
+			schmea: &schema.GitLabConnection{
+				Url: "https://gitlab.com",
+			},
+		}, {
+			name: "ssh",
+			schmea: &schema.GitLabConnection{
+				Url:        "https://gitlab.com",
+				GitURLType: "ssh",
+			},
+		}, {
+			name: "path-pattern",
+			schmea: &schema.GitLabConnection{
+				Url:                   "https://gitlab.com",
+				RepositoryPathPattern: "gl/{pathWithNamespace}",
+			},
+		},
+	}
+	for _, test := range tests {
+		test.name = "GitLabSource_makeRepo_" + test.name
+		t.Run(test.name, func(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGitLabSource(&svc, config, cf)
+			s, err := newGitLabSource(&svc, test.schmea, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -207,7 +208,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 				got = append(got, s.makeRepo(r))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+name, update(name), got)
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
 		})
 	}
 }
