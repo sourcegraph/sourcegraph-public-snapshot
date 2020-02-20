@@ -5,7 +5,7 @@
     "NameWithOwner": "tsenart/vegeta",
     "Description": "HTTP load testing tool and library. It''s over 9000!",
     "URL": "https://github.com/tsenart/vegeta",
-    "IsPrivate": true,
+    "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "ViewerPermission": "READ"
@@ -13,11 +13,11 @@
   {
     "ID": "MDEwOlJlcG9zaXRvcnkxMjA4MDU1Mg==",
     "DatabaseID": 12080552,
-    "NameWithOwner": "sourcegraph/vegeta",
-    "Description": "HTTP load testing tool and library. It''s over 9000!",
-    "URL": "https://github.com/sourcegraph/vegeta",
-    "IsPrivate": false,
-    "IsFork": true,
+    "NameWithOwner": "sourcegraph/secret-vegeta",
+    "Description": "This vegeta is made with secret sauce from Sourcegraph.",
+    "URL": "https://github.com/sourcegraph/secret-vegeta",
+    "IsPrivate": true,
+    "IsFork": false,
     "IsArchived": false,
     "ViewerPermission": "ADMIN"
   }
