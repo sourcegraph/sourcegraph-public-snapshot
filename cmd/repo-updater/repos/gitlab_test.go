@@ -2,7 +2,10 @@ package repos
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -10,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -149,6 +153,61 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			if tc.assert != nil {
 				tc.assert(t, repo)
 			}
+		})
+	}
+}
+
+func TestGitLabSource_makeRepo(t *testing.T) {
+	b, err := ioutil.ReadFile(filepath.Join("testdata", "gitlab-repos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var repos []*gitlab.Project
+	if err := json.Unmarshal(b, &repos); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := map[string]*schema.GitLabConnection{
+		"simple": {
+			Url: "https://gitlab.com",
+		},
+		"ssh": {
+			Url:        "https://gitlab.com",
+			GitURLType: "ssh",
+		},
+		"path-pattern": {
+			Url:                   "https://gitlab.com",
+			RepositoryPathPattern: "gl/{pathWithNamespace}",
+		},
+	}
+
+	svc := ExternalService{ID: 1, Kind: "GITLAB"}
+
+	for name, config := range cases {
+		name = "GitLabSource_makeRepo_" + name
+		t.Run(name, func(t *testing.T) {
+			// The GitLabSource uses the gitlab.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
+			cf, save := newClientFactory(t, name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			s, err := newGitLabSource(&svc, config, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got []*Repo
+			for _, r := range repos {
+				got = append(got, s.makeRepo(r))
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+name, update(name), got)
 		})
 	}
 }
