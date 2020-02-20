@@ -34,7 +34,6 @@ describe('FilterInput', () => {
     let nextFiltersInQuery: FiltersToTypeAndValue
     let nextValue: string
     beforeEach(() => {
-        container = render(<FilterInput {...defaultProps} editable={true} />).container
         nextFiltersInQuery = {}
         nextValue = ''
     })
