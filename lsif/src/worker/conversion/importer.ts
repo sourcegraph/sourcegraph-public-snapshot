@@ -466,6 +466,9 @@ function mergeDocuments(correlator: Correlator): void {
         mergeContains(id, canonicalId, correlator.containsData)
         mergeDefinitionReferences(id, canonicalId, correlator.definitionData)
         mergeDefinitionReferences(id, canonicalId, correlator.referenceData)
+
+        // Discard the document data as a flag to prevent inserting one
+        // of the documents subsumed by the canonical representative.
         correlator.documentPaths.delete(id)
     }
 }
@@ -488,6 +491,8 @@ function mergeContains(
     for (const rangeId of contains) {
         canonicalContains.add(rangeId)
     }
+
+    // Do not keep refs to document id we're removing
     containsData.delete(id)
 }
 
@@ -512,6 +517,7 @@ function mergeDefinitionReferences<K>(
                 value.getOrDefault(canonicalId).push(rangeId)
             }
 
+            // Do not keep refs to document id we're removing
             value.delete(id)
         }
     }
