@@ -1,5 +1,7 @@
 # Campaigns
 
+> The campaigns feature was formerly known as "automation".
+
 > Campaigns are currently available in private beta for select enterprise customers.
 
 [Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) lets you make large-scale code changes across many repositories and different code hosts.
