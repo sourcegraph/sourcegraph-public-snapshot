@@ -74,6 +74,7 @@ const extensionsToIndexer = new Map([
     ['.h', 'lsif-cpp'],
     ['.h', 'lsif-cpp'],
     ['.java', 'lsif-java'],
+    ['.scala', 'lsif-semanticdb'],
     ['.ts', 'lsif-node'],
 ])
 
