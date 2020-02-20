@@ -5,7 +5,7 @@ ALTER TABLE repo ADD COLUMN IF NOT EXISTS private BOOLEAN NOT NULL DEFAULT FALSE
 DO $$
 DECLARE
     t_cursor CURSOR FOR
-        SELECT id, external_service_type, metadata FROM repo;
+        SELECT external_service_type, metadata FROM repo;
     t_row repo%rowtype;
     val boolean;
 BEGIN
@@ -19,9 +19,11 @@ BEGIN
             END IF;
         ELSIF t_row.external_service_type = 'bitbucketServer' THEN
             val = NOT CAST(t_row.metadata ->> 'public' AS BOOLEAN);
+        ELSIF t_row.external_service_type = 'bitbucketCloud' THEN
+            val = t_row.metadata ->> 'is_private';
         END IF;
 
-        UPDATE repo SET private = val WHERE current of t_cursor;
+        UPDATE repo SET private = val WHERE CURRENT OF t_cursor;
     END LOOP;
 END$$;
 

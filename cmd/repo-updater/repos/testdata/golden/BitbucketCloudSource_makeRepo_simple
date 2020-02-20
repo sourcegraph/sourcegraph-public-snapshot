@@ -7,7 +7,7 @@
    "Language": "",
    "Fork": false,
    "Archived": false,
-   "Private": false,
+   "Private": true,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
@@ -56,7 +56,7 @@
    "Language": "",
    "Fork": false,
    "Archived": false,
-   "Private": false,
+   "Private": true,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
@@ -143,7 +143,7 @@
       }
      }
     },
-    "is_private": true,
+    "is_private": false,
     "links": {
      "clone": [
       {
