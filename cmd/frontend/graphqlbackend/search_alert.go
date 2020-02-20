@@ -54,7 +54,7 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	return &a.proposedQueries
 }
 
-func (r *searchResolver) alertForStalePermissions(_ context.Context) *searchAlert {
+func alertForStalePermissions() *searchAlert {
 	return &searchAlert{
 		prometheusType: "no_resolved_repos__stale_permissions",
 		title:          "Permissions syncing in progress",
@@ -62,16 +62,16 @@ func (r *searchResolver) alertForStalePermissions(_ context.Context) *searchAler
 	}
 }
 
-func (r *searchResolver) alertForQuotesInQueryInLiteralMode(_ context.Context) (*searchAlert, error) {
+func alertForQuotesInQueryInLiteralMode(query *query.Query) *searchAlert {
 	return &searchAlert{
 		prometheusType: "no_results__suggest_quotes",
 		title:          "No results. Did you mean to use quotes?",
 		description:    "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
 		proposedQueries: []*searchQueryDescription{{
 			description: "Remove quotes",
-			query:       syntax.ExprString(omitQuotes(r.query)),
+			query:       syntax.ExprString(omitQuotes(query)),
 		}},
-	}, nil
+	}
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
@@ -335,7 +335,7 @@ outer:
 	return alert, nil
 }
 
-func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
+func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
 		if len(missingRepoRevs[0].RevSpecs()) == 1 {
@@ -354,7 +354,7 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.Repos
 		prometheusType: "missing_repo_revs",
 		title:          "Some repositories could not be searched",
 		description:    description,
-		patternType:    r.patternType,
+		patternType:    patternType,
 	}
 }
 
