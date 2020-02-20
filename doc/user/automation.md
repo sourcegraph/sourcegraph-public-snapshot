@@ -64,7 +64,7 @@ To make it simpler for customers, we're [working on remote execution of campaign
 
 ## Defining a campaign action plan
 
-The first thing we need is a definition of an "action". An action contains a list of steps to run commands or Docker containers to produce a patch for each repository returned by the results of the `scopeQuery` search string.
+The first thing we need is a definition of an "action". An action contains a list of steps to run in each repository returned by the results of the `scopeQuery` search string.
 
 There are two types of steps: `docker` and `command`. See `src actions exec -help` for more information.
 
