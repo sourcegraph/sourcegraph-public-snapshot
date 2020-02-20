@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -308,12 +309,7 @@ func unzipToTempDir(ctx context.Context, zipFile, prefix string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	unzipCmd := exec.CommandContext(ctx, "unzip", "-qq", zipFile, "-d", volumeDir)
-	if out, err := unzipCmd.CombinedOutput(); err != nil {
-		os.RemoveAll(volumeDir)
-		return "", fmt.Errorf("unzip failed: %s: %s", err, out)
-	}
-	return volumeDir, nil
+	return volumeDir, unzip(zipFile, volumeDir)
 }
 
 func fetchRepositoryArchive(ctx context.Context, repoName, rev string) (*os.File, error) {
@@ -362,4 +358,59 @@ func repositoryZipArchiveURL(repoName, rev, token string) (*url.URL, error) {
 	}
 	u.Path = path.Join(u.Path, repoName+"@"+rev, "-", "raw")
 	return u, nil
+}
+
+func unzip(zipFile, dest string) error {
+	r, err := zip.OpenReader(zipFile)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	outputBase := filepath.Clean(dest) + string(os.PathSeparator)
+
+	for _, f := range r.File {
+		fpath := filepath.Join(dest, f.Name)
+
+		// Check for ZipSlip. More Info: https://snyk.io/research/zip-slip-vulnerability#go
+		if !strings.HasPrefix(fpath, outputBase) {
+			return fmt.Errorf("%s: illegal file path", fpath)
+		}
+
+		if f.FileInfo().IsDir() {
+			if err := os.MkdirAll(fpath, os.ModePerm); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+			return err
+		}
+
+		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			outFile.Close()
+			return err
+		}
+
+		_, err = io.Copy(outFile, rc)
+		rc.Close()
+		cerr := outFile.Close()
+		// Now we have safely closed everything that needs it, and can check errors
+		if err != nil {
+			return errors.Wrapf(err, "copying %q failed", f.Name)
+		}
+		if cerr != nil {
+			return errors.Wrap(err, "closing output file failed")
+		}
+
+	}
+
+	return nil
 }
