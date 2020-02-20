@@ -1,14 +1,14 @@
-# Automation
+# Campaigns
 
-> Automation is currently available in private beta for select enterprise customers.
+> Campaigns is currently in private beta for select enterprise customers.
 
-[Sourcegraph automation](https://about.sourcegraph.com/product/automation) allows large-scale code changes across many repositories and different code hosts.
+[Sourcegraph campaigns](https://about.sourcegraph.com/product/automation) allows large-scale code changes across many repositories and different code hosts.
 
-**Important**: If you're on Sourcegraph 3.12 or older, you might also want to look at the old documentation: "[Automation documentation for Sourcegraph 3.12](https://docs.sourcegraph.com/@3.12/user/automation)"
+**Important**: If you're on Sourcegraph 3.12 or older, you might also want to look at the old documentation: "[Campaigns documentation for Sourcegraph 3.12](https://docs.sourcegraph.com/@3.12/user/automation)"
 
 ## Configuration
 
-To use the Automation preview, a site-admin of your Sourcegraph instance must enable it in the site configuration settings, e.g. `sourcegraph.example.com/site-admin/configuration`
+To use the Campaigns preview, a site-admin of your Sourcegraph instance must enable it in the site configuration settings, e.g. `sourcegraph.example.com/site-admin/configuration`
 
 ```json
 {
@@ -28,7 +28,7 @@ Without any further configuration Automation is **only be accessible to site-adm
 
 ## Creating campaigns
 
-There are two types of Automation campaigns:
+There are two types of Campaigns:
 
 - Manual campaigns to which you can manually add changesets (pull requests) and track their progress.
 - Campaigns created from a set of patches. With the `src` CLI, you can create the campaign from an existing set of patches, and also _generate the patches_ for each repository.
@@ -443,6 +443,6 @@ This uses `/cache` as the `YARN_CACHE_FOLDER` and `NPM_CONFIG_CACHE` folder. It 
 
 Subsequent action steps that use this preamble in their `Dockerfile` will run faster because they can leverage the cache folder.
 
-## Automation development guide
+## Campaigns development guide
 
-If you are looking to run automation on a larger scale in the local dev environment, follow the [guide on automation development](../dev/automation_development.md).
+If you are looking to run campaigns on a larger scale in the local dev environment, follow the [guide on campaign development](../dev/automation_development.md).
