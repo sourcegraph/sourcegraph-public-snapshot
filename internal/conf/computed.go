@@ -265,11 +265,8 @@ func SearchSymbolsParallelism() int {
 	return val
 }
 
-func BitbucketServerFastPerm() bool {
+func BitbucketServerPluginPerm() bool {
 	val := Get().ExperimentalFeatures.BitbucketServerFastPerm
-	if val == "" {
-		return false
-	}
 	return val == "enabled"
 }
 

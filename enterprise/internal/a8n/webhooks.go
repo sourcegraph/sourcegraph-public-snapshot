@@ -538,8 +538,9 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 
 		for _, e := range es {
 			c, _ := e.Configuration()
+
 			con, ok := c.(*schema.BitbucketServerConnection)
-			if !ok || con.Webhooks == nil {
+			if !ok {
 				continue
 			}
 
@@ -549,13 +550,18 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				continue
 			}
 
+			secret := con.WebhookSecret()
+			if secret == "" {
+				continue
+			}
+
 			endpoint := globals.ExternalURL().String() + "/.api/bitbucket-server-webhooks"
 			wh := bbs.Webhook{
 				Name:     "sourcegraph-a8n",
 				Scope:    "global",
 				Events:   []string{"pr"},
 				Endpoint: endpoint,
-				Secret:   con.Webhooks.Secret,
+				Secret:   secret,
 			}
 
 			err = client.UpsertWebhook(context.Background(), wh)
@@ -601,11 +607,14 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 	var secrets [][]byte
 	for _, e := range es {
 		c, _ := e.Configuration()
-		hook, ok := c.(*schema.BitbucketServerConnection)
-		if !ok || hook.Webhooks == nil {
+		con, ok := c.(*schema.BitbucketServerConnection)
+		if !ok {
 			continue
 		}
-		secrets = append(secrets, []byte(hook.Webhooks.Secret))
+
+		if secret := con.WebhookSecret(); secret != "" {
+			secrets = append(secrets, []byte(secret))
+		}
 	}
 
 	sig := r.Header.Get("X-Hub-Signature")

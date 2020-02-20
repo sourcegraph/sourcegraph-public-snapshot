@@ -91,7 +91,7 @@ const SiteSchemaJSON = `{
           "default": "enabled"
         },
         "bitbucketServerFastPerm": {
-          "description": "Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. This requires the installation of the Bitbucket Server Sourcegraph plugin. Warning: there may be performance degradation under significant load.",
+          "description": "DEPRECATED: Configure in Bitbucket Server config.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
