@@ -18,7 +18,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [Developing the web app](web_app.md)
 - [Developing the GraphQL API](graphql_api.md)
 - [Developing indexed search](zoekt.md)
-- [Developing automation](automation_development.md)
+- [Developing campaigns](campaigns_development.md)
 - [Using PostgreSQL](postgresql.md)
 - [Testing](testing.md)
 - [Go style guide](https://about.sourcegraph.com/handbook/engineering/go_style_guide)

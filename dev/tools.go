@@ -23,9 +23,6 @@ import (
 	// vfsgendev is used for packing static assets into .go files.
 	_ "github.com/shurcooL/vfsgen/cmd/vfsgendev"
 
-	// use to build docs and in local dev env
-	_ "github.com/sourcegraph/docsite/cmd/docsite"
-
 	// used in schema pkg
 	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"
 

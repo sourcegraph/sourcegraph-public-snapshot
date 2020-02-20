@@ -79,7 +79,7 @@ const SiteSchemaJSON = `{
           }
         },
         "automation": {
-          "description": "Enables the experimental code automation features.",
+          "description": "Enables the experimental code change management campaigns feature. NOTE: The automation feature was renamed to campaigns, but this experimental feature flag name was not changed (because the feature flag will go away soon anyway).",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
@@ -162,10 +162,16 @@ const SiteSchemaJSON = `{
       "hide": true
     },
     "automation.readAccess.enabled": {
-      "description": "Enables read-only access to Automation campaigns for non-site-admin users. This is a setting for the experimental feature Automation. These will only have an effect when Automation is enabled under experimentalFeatures",
+      "description": "DEPRECATED: The automation feature was renamed to campaigns. Use ` + "`" + `campaigns.readAccess.enabled` + "`" + ` instead.",
       "type": "boolean",
       "!go": { "pointer": true },
-      "group": "Automation"
+      "group": "Campaigns"
+    },
+    "campaigns.readAccess.enabled": {
+      "description": "Enables read-only access to campaigns for non-site-admin users. This is a setting for the experimental campaigns feature. These will only have an effect when campaigns is enabled with ` + "`" + `{\"experimentalFeatures\": {\"automation\": \"enabled\"}}` + "`" + `.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Campaigns"
     },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
