@@ -7,7 +7,6 @@ import { DisjointSet } from '../../shared/datastructures/disjoint-set'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
 import { Logger } from 'winston'
 import { mustGet, mustGetFromEither } from '../../shared/maps'
-import { TracingContext } from '../../shared/tracing'
 
 /**
  * Identifiers of result set vertices.
@@ -101,11 +100,7 @@ export class Correlator {
      */
     public exportedMonikers = new Set<sqliteModels.MonikerId>()
 
-    private logger: Logger
-
-    constructor({ logger = createSilentLogger() }: TracingContext = {}) {
-        this.logger = logger
-    }
+    constructor(private logger: Logger = createSilentLogger()) {}
 
     /**
      * Process a single vertex or edge.

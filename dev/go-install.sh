@@ -42,7 +42,6 @@ export GOBIN=$PWD/.bin
 export GO111MODULE=on
 
 INSTALL_GO_PKGS="github.com/mattn/goreman \
-github.com/sourcegraph/docsite/cmd/docsite \
 github.com/google/zoekt/cmd/zoekt-archive-index \
 github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
 github.com/google/zoekt/cmd/zoekt-webserver \

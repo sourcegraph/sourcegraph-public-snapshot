@@ -145,7 +145,7 @@ const notificationClassNames = {
     [NotificationType.Success]: 'alert alert-success',
     [NotificationType.Info]: 'alert alert-info',
     [NotificationType.Warning]: 'alert alert-warning',
-    [NotificationType.Error]: 'alert alert-error',
+    [NotificationType.Error]: 'alert alert-danger',
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -378,7 +378,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                         !window.context.sourcegraphDotComMode &&
                                         !!authenticatedUser &&
                                         (authenticatedUser.siteAdmin ||
-                                            !!window.context.site['automation.readAccess.enabled'])
+                                            !!window.context.site['campaigns.readAccess.enabled'])
                                     }
                                     // Theme
                                     isLightTheme={this.isLightTheme()}

@@ -570,6 +570,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 		Description:  r.Description,
 		Fork:         r.Fork,
 		Archived:     r.Archived,
+		Private:      r.Private,
 		VCS:          protocol.VCSInfo{URL: urls[0]},
 		ExternalRepo: r.ExternalRepo,
 	}

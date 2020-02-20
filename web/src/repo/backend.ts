@@ -237,47 +237,22 @@ export const fetchFileExternalLinks = memoizeObservable(
     makeRepoURI
 )
 
-export const fetchTree = memoizeObservable(
+export const fetchTreeEntries = memoizeObservable(
     (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
         queryGraphQL(
             gql`
-                query Tree($repoName: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
+                query TreeEntries(
+                    $repoName: String!
+                    $rev: String!
+                    $commitID: String!
+                    $filePath: String!
+                    $first: Int
+                ) {
                     repository(name: $repoName) {
                         commit(rev: $commitID, inputRevspec: $rev) {
                             tree(path: $filePath) {
                                 isRoot
                                 url
-                                entries(first: $first) {
-                                    name
-                                    path
-                                    isDirectory
-                                    url
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            args
-        ).pipe(
-            map(({ data, errors }) => {
-                if (errors || !data?.repository?.commit?.tree) {
-                    throw createAggregateError(errors)
-                }
-                return data.repository.commit.tree
-            })
-        ),
-    makeRepoURI
-)
-
-export const fetchTreeEntries = memoizeObservable(
-    (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
-        queryGraphQL(
-            gql`
-                query Tree($repoName: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
-                    repository(name: $repoName) {
-                        commit(rev: $commitID, inputRevspec: $rev) {
-                            tree(path: $filePath) {
                                 entries(first: $first, recursiveSingleChild: true) {
                                     name
                                     path
@@ -303,5 +278,5 @@ export const fetchTreeEntries = memoizeObservable(
                 return data.repository.commit.tree
             })
         ),
-    makeRepoURI
+    ({ first, ...args }) => `${makeRepoURI(args)}:first-${first}`
 )

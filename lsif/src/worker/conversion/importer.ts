@@ -84,7 +84,7 @@ export async function importLsif(
     ctx: TracingContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     // Correlate input data into in-memory maps
-    const correlator = new Correlator(ctx)
+    const correlator = new Correlator(ctx.logger)
     await logAndTraceCall(ctx, 'Correlating LSIF data', async () => {
         for await (const element of readGzippedJsonElementsFromFile(path) as AsyncIterable<lsif.Vertex | lsif.Edge>) {
             correlator.insert(element)
@@ -94,6 +94,14 @@ export async function importLsif(
     if (correlator.lsifVersion === undefined) {
         throw new Error('No metadata defined.')
     }
+
+    // Determine if multiple documents are defined with the same URI. This happens in
+    // some indexers (such as lsif-tsc) that index dependent projects into the same
+    // dump as the target project. For each set of documents that share a path, we
+    // choose one document to be the canonical representative and merge the contains,
+    // definition, and reference data into the unique canonical document.
+
+    await logAndTraceCall(ctx, 'Canonicalizing documents', () => mergeDocuments(correlator))
 
     // Determine which reference results are linked together. Determine a canonical
     // reference result for each set so that we can remap all identifiers to the
@@ -435,6 +443,84 @@ function getReferences(correlator: Correlator): SymbolReferences[] {
         package: JSON.parse(key) as Package,
         identifiers,
     }))
+}
+
+/**
+ * Merge the data in the correlator of all documents that share the same path. This
+ * function works by moving the contains, definition, and reference data keyed by a
+ * document with a duplicate path into a canonical document with that path. The first
+ * document inserted for a path is the canonical document for that path. This function
+ * guarantees that duplicate document ids are removed from these maps.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ */
+function mergeDocuments(correlator: Correlator): void {
+    const uriMap = new Map<string, sqliteModels.DocumentId>()
+    for (const [id, path] of correlator.documentPaths.entries()) {
+        const canonicalId = uriMap.get(path)
+        if (canonicalId === undefined) {
+            uriMap.set(path, id)
+            continue
+        }
+
+        mergeContains(id, canonicalId, correlator.containsData)
+        mergeDefinitionReferences(id, canonicalId, correlator.definitionData)
+        mergeDefinitionReferences(id, canonicalId, correlator.referenceData)
+
+        // Discard the document data as a flag to prevent inserting one
+        // of the documents subsumed by the canonical representative.
+        correlator.documentPaths.delete(id)
+    }
+}
+
+/**
+ * Move the contains data for document `id` into the contains data of document
+ * `canonicalId`, then delete the reference to document `id.`
+ *
+ * @param id The id of the document to replace.
+ * @param canonicalId The id of the document to subsume the other.
+ * @param containsData The containment map of the correlator.
+ */
+function mergeContains(
+    id: sqliteModels.DocumentId,
+    canonicalId: sqliteModels.DocumentId,
+    containsData: Map<sqliteModels.DocumentId, Set<lsif.RangeId>>
+): void {
+    const contains = mustGet(containsData, id, 'contains')
+    const canonicalContains = mustGet(containsData, canonicalId, 'contains')
+    for (const rangeId of contains) {
+        canonicalContains.add(rangeId)
+    }
+
+    // Do not keep refs to document id we're removing
+    containsData.delete(id)
+}
+
+/**
+ * Move the definition or reference data for document `id` into the definition or
+ * reference data of document `canonicalId`, then delete the reference to document
+ * `id.`
+ *
+ * @param id The id of the document to replace.
+ * @param canonicalId The id of the document to subsume the other.
+ * @param map The definitions or references map of the correlator.
+ */
+function mergeDefinitionReferences<K>(
+    id: sqliteModels.DocumentId,
+    canonicalId: sqliteModels.DocumentId,
+    map: Map<K, DefaultMap<sqliteModels.DocumentId, lsif.RangeId[]>>
+): void {
+    for (const value of map.values()) {
+        const data = value.get(id)
+        if (data !== undefined) {
+            for (const rangeId of data || []) {
+                value.getOrDefault(canonicalId).push(rangeId)
+            }
+
+            // Do not keep refs to document id we're removing
+            value.delete(id)
+        }
+    }
 }
 
 /**

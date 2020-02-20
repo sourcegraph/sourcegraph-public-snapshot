@@ -183,7 +183,7 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 }
 
 // CloseChangeset closes the given *Changeset on the code host and updates the
-// Metadata column in the *a8n.Changeset to the newly closed pull request.
+// Metadata column in the *campaigns.Changeset to the newly closed pull request.
 func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
@@ -279,6 +279,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 		Description:  r.Description,
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
+		Private:      r.IsPrivate,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,

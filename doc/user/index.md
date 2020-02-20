@@ -32,7 +32,7 @@ All features:
 - [Usage statistics](usage_statistics.md)
 - [User surveys](user_surveys.md)
 - [Color themes](themes.md)
-- [Automation preview](automation.md)
+- [Campaigns](campaigns.md)
 - [Quick links](quick_links.md)
 
 ## What is Sourcegraph?

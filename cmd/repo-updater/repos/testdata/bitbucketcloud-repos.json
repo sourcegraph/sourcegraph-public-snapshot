@@ -53,7 +53,7 @@
     "uuid": "{fceb73c7-cef6-4abe-956d-e471281126be}",
     "full_name": "sg/python-langserver-fork",
     "slug": "python-langserver-fork",
-    "is_private": true,
+    "is_private": false,
     "description": "Python Language Server",
     "links": {
       "clone": [

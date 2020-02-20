@@ -100,14 +100,14 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func NewSchema(a8n A8NResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
+func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
-		A8NResolver:       defaultA8NResolver{},
+		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
 	}
-	if a8n != nil {
-		resolver.A8NResolver = a8n
+	if campaigns != nil {
+		resolver.CampaignsResolver = campaigns
 	}
 	if codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
@@ -254,7 +254,7 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
 type schemaResolver struct {
-	A8NResolver
+	CampaignsResolver
 	AuthzResolver
 	CodeIntelResolver
 }

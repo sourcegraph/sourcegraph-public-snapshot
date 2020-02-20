@@ -528,11 +528,11 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 				prometheusType: "timed_out",
 				title:          "Timed out while searching",
 				description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
-				patternType:    r.patternType,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "query with longer timeout",
 						query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
+						patternType: r.patternType,
 					},
 				},
 			},
@@ -919,7 +919,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
-			alert := r.alertForStalePermissions(ctx)
+			alert := alertForStalePermissions()
 			return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
 		return nil, nil, nil, err
@@ -1337,11 +1337,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	if len(missingRepoRevs) > 0 {
-		alert = r.alertForMissingRepoRevs(missingRepoRevs)
+		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
 	}
 
 	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
-		alert, err = r.alertForQuotesInQueryInLiteralMode(ctx)
+		alert = alertForQuotesInQueryInLiteralMode(r.query)
 	}
 
 	// If we have some results, only log the error instead of returning it,
