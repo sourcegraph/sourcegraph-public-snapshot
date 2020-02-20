@@ -324,7 +324,7 @@ WITH batch AS (
 `
 
 var createChangesetsQueryFmtstr = changesetBatchQueryPrefix + `,
--- source: internal/campaigns/store.go:CreateChangesets
+-- source: enterprise/internal/campaigns/store.go:CreateChangesets
 changed AS (
   INSERT INTO changesets (
     repo_id,
@@ -454,7 +454,7 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 }
 
 var countChangesetsQueryFmtstr = `
--- source: internal/campaigns/store.go:CountChangesets
+-- source: enterprise/internal/campaigns/store.go:CountChangesets
 SELECT COUNT(id)
 FROM changesets
 WHERE %s
@@ -503,7 +503,7 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*campa
 }
 
 var getChangesetsQueryFmtstr = `
--- source: internal/campaigns/store.go:GetChangeset
+-- source: enterprise/internal/campaigns/store.go:GetChangeset
 SELECT
   id,
   repo_id,
@@ -573,7 +573,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 }
 
 var listChangesetsQueryFmtstr = `
--- source: internal/campaigns/store.go:ListChangesets
+-- source: enterprise/internal/campaigns/store.go:ListChangesets
 SELECT
   id,
   repo_id,
@@ -647,7 +647,7 @@ func (s *Store) UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset
 }
 
 const updateChangesetsQueryFmtstr = changesetBatchQueryPrefix + `,
--- source: internal/campaigns/store.go:UpdateChangesets
+-- source: enterprise/internal/campaigns/store.go:UpdateChangesets
 changed AS (
   UPDATE changesets
   SET
@@ -720,7 +720,7 @@ func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpt
 }
 
 var getChangesetEventsQueryFmtstr = `
--- source: internal/campaigns/store.go:GetChangesetEvent
+-- source: enterprise/internal/campaigns/store.go:GetChangesetEvent
 SELECT
     id,
     changeset_id,
@@ -786,7 +786,7 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 }
 
 var listChangesetEventsQueryFmtstr = `
--- source: internal/campaigns/store.go:ListChangesetEvents
+-- source: enterprise/internal/campaigns/store.go:ListChangesetEvents
 SELECT
     id,
     changeset_id,
@@ -848,7 +848,7 @@ func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEve
 }
 
 var countChangesetEventsQueryFmtstr = `
--- source: internal/campaigns/store.go:CountChangesetEvents
+-- source: enterprise/internal/campaigns/store.go:CountChangesetEvents
 SELECT COUNT(id)
 FROM changeset_events
 WHERE %s
@@ -918,7 +918,7 @@ ORDER BY batch.ordinality
 `
 
 var upsertChangesetEventsQueryFmtstr = changesetEventsBatchQueryPrefix + `,
--- source: internal/campaigns/store.go:UpsertChangesetEvents
+-- source: enterprise/internal/campaigns/store.go:UpsertChangesetEvents
 changed AS (
   INSERT INTO changeset_events (
     changeset_id,
@@ -1012,7 +1012,7 @@ func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error
 }
 
 var createCampaignQueryFmtstr = `
--- source: internal/campaigns/store.go:CreateCampaign
+-- source: enterprise/internal/campaigns/store.go:CreateCampaign
 INSERT INTO campaigns (
   name,
   description,
@@ -1114,7 +1114,7 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *campaigns.Campaign) error
 }
 
 var updateCampaignQueryFmtstr = `
--- source: internal/campaigns/store.go:UpdateCampaign
+-- source: enterprise/internal/campaigns/store.go:UpdateCampaign
 UPDATE campaigns
 SET (
   name,
@@ -1180,7 +1180,7 @@ func (s *Store) DeleteCampaign(ctx context.Context, id int64) error {
 }
 
 var deleteCampaignQueryFmtstr = `
--- source: internal/campaigns/store.go:DeleteCampaign
+-- source: enterprise/internal/campaigns/store.go:DeleteCampaign
 DELETE FROM campaigns WHERE id = %s
 `
 
@@ -1201,7 +1201,7 @@ func (s *Store) CountCampaigns(ctx context.Context, opts CountCampaignsOpts) (co
 }
 
 var countCampaignsQueryFmtstr = `
--- source: internal/campaigns/store.go:CountCampaigns
+-- source: enterprise/internal/campaigns/store.go:CountCampaigns
 SELECT COUNT(id)
 FROM campaigns
 WHERE %s
@@ -1253,7 +1253,7 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaig
 }
 
 var getCampaignsQueryFmtstr = `
--- source: internal/campaigns/store.go:GetCampaign
+-- source: enterprise/internal/campaigns/store.go:GetCampaign
 SELECT
   id,
   name,
@@ -1321,7 +1321,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 }
 
 var listCampaignsQueryFmtstr = `
--- source: internal/campaigns/store.go:ListCampaigns
+-- source: enterprise/internal/campaigns/store.go:ListCampaigns
 SELECT
   id,
   name,
@@ -1383,7 +1383,7 @@ func (s *Store) CreateCampaignPlan(ctx context.Context, c *campaigns.CampaignPla
 }
 
 var createCampaignPlanQueryFmtstr = `
--- source: internal/campaigns/store.go:CreateCampaignPlan
+-- source: enterprise/internal/campaigns/store.go:CreateCampaignPlan
 INSERT INTO campaign_plans (
   campaign_type,
   arguments,
@@ -1442,7 +1442,7 @@ func (s *Store) UpdateCampaignPlan(ctx context.Context, c *campaigns.CampaignPla
 }
 
 var updateCampaignPlanQueryFmtstr = `
--- source: internal/campaigns/store.go:UpdateCampaignPlan
+-- source: enterprise/internal/campaigns/store.go:UpdateCampaignPlan
 UPDATE campaign_plans
 SET (
   campaign_type,
@@ -1493,7 +1493,7 @@ func (s *Store) DeleteCampaignPlan(ctx context.Context, id int64) error {
 }
 
 var deleteCampaignPlanQueryFmtstr = `
--- source: internal/campaigns/store.go:DeleteCampaignPlan
+-- source: enterprise/internal/campaigns/store.go:DeleteCampaignPlan
 DELETE FROM campaign_plans WHERE id = %s
 `
 
@@ -1513,7 +1513,7 @@ func (s *Store) DeleteExpiredCampaignPlans(ctx context.Context) error {
 }
 
 var deleteExpiredCampaignPlansQueryFmtstr = `
--- source: internal/campaigns/store.go:DeleteExpiredCampaignPlans
+-- source: enterprise/internal/campaigns/store.go:DeleteExpiredCampaignPlans
 DELETE FROM
   campaign_plans
 WHERE
@@ -1550,7 +1550,7 @@ func (s *Store) CountCampaignPlans(ctx context.Context) (count int64, _ error) {
 }
 
 var countCampaignPlansQueryFmtstr = `
--- source: internal/campaigns/store.go:CountCampaignPlans
+-- source: enterprise/internal/campaigns/store.go:CountCampaignPlans
 SELECT COUNT(id)
 FROM campaign_plans
 `
@@ -1580,7 +1580,7 @@ func (s *Store) GetCampaignPlan(ctx context.Context, opts GetCampaignPlanOpts) (
 }
 
 var getCampaignPlansQueryFmtstr = `
--- source: internal/campaigns/store.go:GetCampaignPlan
+-- source: enterprise/internal/campaigns/store.go:GetCampaignPlan
 SELECT
   id,
   campaign_type,
@@ -1617,7 +1617,7 @@ func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*campaigns
 }
 
 var getCampaignPlanStatusQueryFmtstr = `
--- source: internal/campaigns/store.go:GetCampaignPlanStatus
+-- source: enterprise/internal/campaigns/store.go:GetCampaignPlanStatus
 SELECT
   (SELECT canceled_at IS NOT NULL FROM campaign_plans WHERE id = %s) AS canceled,
   COUNT(*) AS total,
@@ -1661,7 +1661,7 @@ func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query)
 }
 
 var getCampaignStatusQueryFmtstr = `
--- source: internal/campaigns/store.go:GetCampaignStatus
+-- source: enterprise/internal/campaigns/store.go:GetCampaignStatus
 SELECT
   -- canceled is here so that this can be used with scanBackgroundProcessStatus
   false AS canceled,
@@ -1704,7 +1704,7 @@ func (s *Store) ListCampaignPlans(ctx context.Context, opts ListCampaignPlansOpt
 }
 
 var listCampaignPlansQueryFmtstr = `
--- source: internal/campaigns/store.go:ListCampaignPlans
+-- source: enterprise/internal/campaigns/store.go:ListCampaignPlans
 SELECT
   id,
   campaign_type,
@@ -1752,7 +1752,7 @@ func (s *Store) CreateCampaignJob(ctx context.Context, c *campaigns.CampaignJob)
 }
 
 var createCampaignJobQueryFmtstr = `
--- source: internal/campaigns/store.go:CreateCampaignJob
+-- source: enterprise/internal/campaigns/store.go:CreateCampaignJob
 INSERT INTO campaign_jobs (
   campaign_plan_id,
   repo_id,
@@ -1821,7 +1821,7 @@ func (s *Store) UpdateCampaignJob(ctx context.Context, c *campaigns.CampaignJob)
 }
 
 var updateCampaignJobQueryFmtstr = `
--- source: internal/campaigns/store.go:UpdateCampaignJob
+-- source: enterprise/internal/campaigns/store.go:UpdateCampaignJob
 UPDATE campaign_jobs
 SET (
   campaign_plan_id,
@@ -1882,7 +1882,7 @@ func (s *Store) DeleteCampaignJob(ctx context.Context, id int64) error {
 }
 
 var deleteCampaignJobQueryFmtstr = `
--- source: internal/campaigns/store.go:DeleteCampaignJob
+-- source: enterprise/internal/campaigns/store.go:DeleteCampaignJob
 DELETE FROM campaign_jobs WHERE id = %s
 `
 
@@ -1909,7 +1909,7 @@ func (s *Store) CountCampaignJobs(ctx context.Context, opts CountCampaignJobsOpt
 }
 
 var countCampaignJobsQueryFmtstr = `
--- source: internal/campaigns/store.go:CountCampaignJobs
+-- source: enterprise/internal/campaigns/store.go:CountCampaignJobs
 SELECT COUNT(id)
 FROM campaign_jobs
 WHERE %s
@@ -1965,7 +1965,7 @@ func (s *Store) GetCampaignJob(ctx context.Context, opts GetCampaignJobOpts) (*c
 }
 
 var getCampaignJobsQueryFmtstr = `
--- source: internal/campaigns/store.go:GetCampaignJob
+-- source: enterprise/internal/campaigns/store.go:GetCampaignJob
 SELECT
   id,
   campaign_plan_id,
@@ -2035,7 +2035,7 @@ func (s *Store) ListCampaignJobs(ctx context.Context, opts ListCampaignJobsOpts)
 }
 
 var listCampaignJobsQueryFmtstr = `
--- source: internal/campaigns/store.go:ListCampaignJobs
+-- source: enterprise/internal/campaigns/store.go:ListCampaignJobs
 SELECT
   id,
   campaign_plan_id,
@@ -2122,7 +2122,7 @@ func (s *Store) CreateChangesetJob(ctx context.Context, c *campaigns.ChangesetJo
 }
 
 var createChangesetJobQueryFmtstr = `
--- source: internal/campaigns/store.go:CreateChangesetJob
+-- source: enterprise/internal/campaigns/store.go:CreateChangesetJob
 INSERT INTO changeset_jobs (
   campaign_id,
   campaign_job_id,
@@ -2185,7 +2185,7 @@ func (s *Store) UpdateChangesetJob(ctx context.Context, c *campaigns.ChangesetJo
 }
 
 var updateChangesetJobQueryFmtstr = `
--- source: internal/campaigns/store.go:UpdateChangesetJob
+-- source: enterprise/internal/campaigns/store.go:UpdateChangesetJob
 UPDATE changeset_jobs
 SET (
   campaign_id,
@@ -2240,7 +2240,7 @@ func (s *Store) DeleteChangesetJob(ctx context.Context, id int64) error {
 }
 
 var deleteChangesetJobQueryFmtstr = `
--- source: internal/campaigns/store.go:DeleteChangesetJob
+-- source: enterprise/internal/campaigns/store.go:DeleteChangesetJob
 DELETE FROM changeset_jobs WHERE id = %s
 `
 
@@ -2260,7 +2260,7 @@ func (s *Store) CountChangesetJobs(ctx context.Context, opts CountChangesetJobsO
 }
 
 var countChangesetJobsQueryFmtstr = `
--- source: internal/campaigns/store.go:CountChangesetJobs
+-- source: enterprise/internal/campaigns/store.go:CountChangesetJobs
 SELECT COUNT(id)
 FROM changeset_jobs
 WHERE %s
@@ -2335,7 +2335,7 @@ func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (
 }
 
 var getChangesetJobsQueryFmtstr = `
--- source: internal/campaigns/store.go:GetChangesetJob
+-- source: enterprise/internal/campaigns/store.go:GetChangesetJob
 SELECT
   id,
   campaign_id,
@@ -2409,7 +2409,7 @@ func (s *Store) ListChangesetJobs(ctx context.Context, opts ListChangesetJobsOpt
 }
 
 var listChangesetJobsQueryFmtstrSelect = `
--- source: internal/campaigns/store.go:ListChangesetJobs
+-- source: enterprise/internal/campaigns/store.go:ListChangesetJobs
 SELECT
   changeset_jobs.id,
   changeset_jobs.campaign_id,
@@ -2498,7 +2498,7 @@ func resetChangesetJobsQuery(campaignID int64, onlyErrored bool) *sqlf.Query {
 }
 
 var resetChangesetJobsQueryFmtstr = `
--- source: internal/campaigns/store.go:resetChangesetJobsQuery
+-- source: enterprise/internal/campaigns/store.go:resetChangesetJobsQuery
 UPDATE changeset_jobs
 SET
   error = '',
