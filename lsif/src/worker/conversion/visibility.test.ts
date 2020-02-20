@@ -7,9 +7,9 @@ describe('PathVisibilityChecker', () => {
     it('should test path existence in git tree', async () => {
         const children = new Map([
             ['', ['web', 'shared']],
-            ['web', ['foo.ts']],
-            ['web/shared', ['bonk.ts']],
-            ['shared', ['bar.ts', 'baz.ts']],
+            ['web', ['web/foo.ts']],
+            ['web/shared', ['web/shared/bonk.ts']],
+            ['shared', ['shared/bar.ts', 'shared/baz.ts']],
         ])
 
         const pathVisibilityChecker = new PathVisibilityChecker({

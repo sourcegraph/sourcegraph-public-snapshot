@@ -5,7 +5,7 @@ describe('getDirectoryChildren', () => {
     it('should parse response from gitserver', async () => {
         nock('http://frontend')
             .post('/.internal/git/42/exec', { args: ['ls-tree', '--name-only', 'c', '--', 'foo/bar/baz/'] })
-            .reply(200, 'a\nb\nc\nd\ne\n')
+            .reply(200, 'foo/bar/baz/a\nfoo/bar/baz/b\nfoo/bar/baz/c\nfoo/bar/baz/d\nfoo/bar/baz/e\n')
 
         expect(
             await getDirectoryChildren({
@@ -14,7 +14,7 @@ describe('getDirectoryChildren', () => {
                 commit: 'c',
                 dirname: 'foo/bar/baz',
             })
-        ).toEqual(new Set(['a', 'b', 'c', 'd', 'e']))
+        ).toEqual(new Set(['foo/bar/baz/a', 'foo/bar/baz/b', 'foo/bar/baz/c', 'foo/bar/baz/d', 'foo/bar/baz/e']))
     })
 
     it('should handle request for root directory', async () => {

@@ -82,21 +82,15 @@ export class PathVisibilityChecker {
             return true
         }
 
-        // Construct document path and its directory relative to repo root
         const relativePath = path.join(this.root, documentPath)
         const dirname = dirnameWithoutDot(relativePath)
-
-        // Construct root-relative paths of all files contained in the target  directory
-        const basenames = await this.getChildrenFromRoot(dirname)
-        const children = Array.from(basenames).map(basename => path.join(dirname, basename))
-
-        // See if our path is a child of its parent in git
-        return new Set(children).has(relativePath)
+        return (await this.getChildrenFromRoot(dirname)).has(relativePath)
     }
 
     /**
-     * Returns the set of basenames that compose the immediate children of the given
-     * directory. If no frontend url is configured, this method returns an empty set.
+     * Returns the set of root-relative paths that compose the immediate children of the
+     * given directory. If no frontend url is configured or the directory is outside of
+     * the repository root, this method returns an empty set.
      *
      * @param dirname The repo-root-relative directory.
      */
@@ -124,8 +118,9 @@ export class PathVisibilityChecker {
     }
 
     /**
-     * Returns the set of basenames that compose the immediate children of the given
-     * directory. If no frontend url is configured, this method returns an empty set.
+     * Returns the set of root-relative paths that compose the immediate children of the
+     * given directory. If no frontend url is configured, this method returns an empty
+     * set.
      *
      * This method memoizes the results so the children of each directory makes only
      * one request to gitserver per dump conversion.
