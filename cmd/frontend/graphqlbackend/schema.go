@@ -2522,6 +2522,8 @@ type GitCommit implements Node {
         query: String
         # Return commits that affect the path.
         path: String
+        # Return commits more recent than the specified date.
+        after: String
     ): GitCommitConnection!
     # Returns the number of commits that this commit is behind and ahead of revspec.
     behindAhead(revspec: String!): BehindAheadCounts!
