@@ -42,6 +42,7 @@ import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ErrorAlert } from '../components/alerts'
 import { subYears, formatISO } from 'date-fns'
+import { pluralize } from '../../../shared/src/util/strings'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -245,7 +246,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                     <>{totalCount} total commits in this tree.</>
                 ) : (
                     <>
-                        {totalCount} commit{totalCount > 1 ? 's' : ''} in this tree in the past year.
+                        {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
                         <br />
                         <button type="button" className="btn btn-secondary btn-sm mt-1" onClick={this.showOlderCommits}>
                             Show all commits
