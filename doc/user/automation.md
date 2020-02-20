@@ -1,6 +1,6 @@
 # Campaigns
 
-> Campaigns is currently in private beta for select enterprise customers.
+> Campaigns are currently in private beta for select enterprise customers.
 
 [Sourcegraph campaigns](https://about.sourcegraph.com/product/automation) allow large-scale code changes across many repositories and different code hosts.
 
