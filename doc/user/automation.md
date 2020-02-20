@@ -119,7 +119,7 @@ src actions exec -f action.json
 
 This command is going to:
 
-1. Pull the required Docker image if necessary.
+1. Build the required Docker image if necessary.
 1. Download a ZIP archive of the repositories matched by the `"scopeQuery"` from the Sourcegraph instance to a local temporary directory in `/tmp`.
 1. Execute the action for each repository in parallel (the number of parallel jobs can be configured with `-j`, the default is number of cores on the machine), with each step in an action being executed sequentially on the same copy of a repository. If a step in an action is of type `"command"` the command will be executed in the temporary directory that contains the copy of the repository. If the type is `"docker"` then a container will be launched in which the repository is mounted under `/work`.
 1. Produce a diff for each repository between a fresh copy of the repository's contents and directory in which the action ran.
