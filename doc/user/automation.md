@@ -62,7 +62,7 @@ Another factor affecting execution time is the number of jobs executed in parall
 
 To make it simpler for customers, we're [working on remote execution of campaign](https://github.com/sourcegraph/src-cli/pull/128) of campaign actions and would love your feedback.
 
-## Defining a campaign action plan
+## Defining an action
 
 The first thing we need is a definition of an "action". An action contains a list of steps to run in each repository returned by the results of the `scopeQuery` search string.
 
