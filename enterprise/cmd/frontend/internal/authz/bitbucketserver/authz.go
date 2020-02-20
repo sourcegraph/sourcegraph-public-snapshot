@@ -24,8 +24,8 @@ func NewAuthzProviders(
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		fastPerm := conf.BitbucketServerFastPerm() || (c.Plugin != nil && c.Plugin.Permissions == "enabled")
-		p, err := newAuthzProvider(db, c.Authorization, c.Url, c.Username, fastPerm)
+		pluginPerm := conf.BitbucketServerPluginPerm() || (c.Plugin != nil && c.Plugin.Permissions == "enabled")
+		p, err := newAuthzProvider(db, c.Authorization, c.Url, c.Username, pluginPerm)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p != nil {
@@ -46,7 +46,7 @@ func newAuthzProvider(
 	db *sql.DB,
 	a *schema.BitbucketServerAuthorization,
 	instanceURL, username string,
-	fastPerm bool,
+	pluginPerm bool,
 ) (authz.Provider, error) {
 	if a == nil {
 		return nil, nil
@@ -83,7 +83,7 @@ func newAuthzProvider(
 	var p authz.Provider
 	switch idp := a.IdentityProvider; {
 	case idp.Username != nil:
-		p = NewProvider(cli, db, ttl, hardTTL, fastPerm)
+		p = NewProvider(cli, db, ttl, hardTTL, pluginPerm)
 	default:
 		errs = multierror.Append(errs, errors.Errorf("No identityProvider was specified"))
 	}
