@@ -41,7 +41,8 @@ type GitTreeEntryResolver struct {
 	// the root, not the basename.
 	stat os.FileInfo
 
-	isRecursive bool // whether entries is populated recursively (otherwise just current level of hierarchy)
+	isRecursive   bool // whether entries is populated recursively (otherwise just current level of hierarchy)
+	isSingleChild *bool
 }
 
 func NewGitTreeEntryResolver(commit *GitCommitResolver, stat os.FileInfo) *GitTreeEntryResolver {
@@ -208,6 +209,9 @@ func CreateFileInfo(path string, isDir bool) os.FileInfo {
 }
 
 func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeEntryConnectionArgs) (bool, error) {
+	if r.isSingleChild != nil {
+		return r.IsDirectory() && *r.isSingleChild, nil
+	}
 	if !r.IsDirectory() {
 		return false, nil
 	}
