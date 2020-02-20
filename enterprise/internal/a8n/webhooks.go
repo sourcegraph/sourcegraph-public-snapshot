@@ -525,7 +525,7 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	}
 }
 
-// Upsert ensures the creation of the BitbucketServer automation webhook.
+// Upsert ensures the creation of the BitbucketServer campaigns webhook.
 // This happens periodically at the specified interval.
 func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 	for {

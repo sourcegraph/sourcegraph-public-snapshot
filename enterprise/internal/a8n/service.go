@@ -318,7 +318,7 @@ func RunChangesetJob(
 		CommitInfo: protocol.PatchCommitInfo{
 			Message:     c.Name,
 			AuthorName:  "Sourcegraph Bot",
-			AuthorEmail: "automation@sourcegraph.com",
+			AuthorEmail: "campaigns@sourcegraph.com",
 			Date:        job.CreatedAt,
 		},
 		// We use unified diffs, not git diffs, which means they're missing the

@@ -38,7 +38,7 @@ func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
 }
 
 func allowReadAccess(ctx context.Context) error {
-	if readAccess := conf.AutomationReadAccessEnabled(); readAccess {
+	if readAccess := conf.CampaignsReadAccessEnabled(); readAccess {
 		return nil
 	}
 
@@ -420,7 +420,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	for _, r := range rs {
 		if !a8n.IsRepoSupported(&r.ExternalRepo) {
 			err = errors.Errorf(
-				"External service type %s of repository %q is currently not supported in Automation features",
+				"External service type %s of repository %q is currently not supported for use with campaigns",
 				r.ExternalRepo.ServiceType,
 				r.Name,
 			)

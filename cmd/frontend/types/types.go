@@ -199,7 +199,7 @@ type Event struct {
 	Timestamp       time.Time
 }
 
-type AutomationUsageStatistics struct {
+type CampaignsUsageStatistics struct {
 	CampaignsCount int
 }
 
