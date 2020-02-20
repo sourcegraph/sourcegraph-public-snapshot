@@ -202,7 +202,7 @@ src actions exec -help
 
 ## Example campaigns
 
-The following examples demonstrate various campaign types for different languages using both commands and Docker images. They also provide commentary on considerations such as adjusting the duration (`-timeout`) for actions that exceed the 15 minute default limit.
+The following examples demonstrate various types of campaigns for different languages using both commands and Docker images. They also provide commentary on considerations such as adjusting the duration (`-timeout`) for actions that exceed the 15 minute default limit.
 
 ### Adding a GitHub action to upload LSIF data to Sourcegraph
 
