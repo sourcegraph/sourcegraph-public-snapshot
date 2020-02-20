@@ -433,8 +433,11 @@ func addQueryRegexpField(query *query.Query, field, pattern string) syntax.Parse
 
 func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 	alert := &searchAlert{
-		title:       a.title,
-		description: a.description,
+		prometheusType:  a.prometheusType,
+		title:           a.title,
+		description:     a.description,
+		patternType:     a.patternType,
+		proposedQueries: a.proposedQueries,
 	}
 	return &SearchResultsResolver{alert: alert}, nil
 }
