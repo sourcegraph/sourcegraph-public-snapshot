@@ -528,11 +528,11 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 				prometheusType: "timed_out",
 				title:          "Timed out while searching",
 				description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
-				patternType:    r.patternType,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "query with longer timeout",
 						query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
+						patternType: r.patternType,
 					},
 				},
 			},
