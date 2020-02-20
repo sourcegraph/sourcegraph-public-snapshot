@@ -103,7 +103,7 @@ This action will execute on every repository that has `go-` in its name and does
 
 3. The third step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
 
-4. The fourth step pulls the `golang:1.13-alpine` image from Docker hub, starts a container from it and runs `go fix /work/...` in it.
+4. The fourth step starts a Docker container based on the `golang:1.13-alpine` image and runs `go fix /work/...` in it.
 
 As you can see from these examples, the "output" of an action is the modified, local copy of a repository.
 
