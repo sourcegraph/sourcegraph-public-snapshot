@@ -10,7 +10,7 @@ https://sourcegraph.example.com/-/debug/grafana/explore?orgId=1&left=%5B%22now-7
 
 #### 2) Searches ending in errors and timeouts (no results returned)
 
-https://sourcegraph.example.com/-/debug/grafana/explore?orgId=1&left=%5B%22now-7d%22,%22now%22,%22Prometheus%22,%7B%22expr%22:%22sum%20by%20(status)(src_graphql_search_response%7Bstatus!~%5C%22error%7Ctimeout%5C%22%7D)%22,%22context%22:%22explore%22%7D,%7B%22mode%22:%22Metrics%22%7D,%7B%22ui%22:%5Btrue,true,true,%22none%22%5D%7D%5D
+https://sourcegraph.example.com/-/debug/grafana/explore?orgId=1&left=%5B%22now-7d%22,%22now%22,%22Prometheus%22,%7B%22expr%22:%22sum%20by%20(status)(src_graphql_search_response%7Bstatus%3D~%5C%22error%7Ctimeout%5C%22%7D)%22,%22context%22:%22explore%22%7D,%7B%22mode%22:%22Metrics%22%7D,%7B%22ui%22:%5Btrue,true,true,%22none%22%5D%7D%5D
 
 #### 3) Searches ending in partial timeouts (some results returned)
 
