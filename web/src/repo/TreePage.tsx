@@ -231,13 +231,17 @@ export class TreePage extends React.PureComponent<Props, State> {
         const emptyElement = this.state.showOlderCommits ? (
             <>No commits in this tree.</>
         ) : (
-            <>
+            <div className="e2e-tree-page-no-recent-commits">
                 No commits in this tree in the past year.
                 <br />
-                <button type="button" className="btn btn-secondary btn-sm" onClick={this.showOlderCommits}>
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm e2e-tree-page-show-all-commits"
+                    onClick={this.showOlderCommits}
+                >
                     Show all commits
                 </button>
-            </>
+            </div>
         )
 
         const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
