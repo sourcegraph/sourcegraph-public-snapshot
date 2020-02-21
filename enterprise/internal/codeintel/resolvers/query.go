@@ -12,9 +12,11 @@ import (
 )
 
 type lsifQueryResolver struct {
-	repoID  api.RepoID
-	commit  graphqlbackend.GitObjectID
-	path    string
+	repoID api.RepoID
+	// commit is the requested target commit
+	commit graphqlbackend.GitObjectID
+	path   string
+	// uploads are ordered by their commit distance from the target commit
 	uploads []*lsif.LSIFUpload
 }
 
