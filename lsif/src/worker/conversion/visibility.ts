@@ -92,7 +92,7 @@ export class PathVisibilityChecker {
     }
 
     /**
-     * Determine if the given path known by git.
+     * Determine if the given path is known by git.
      *
      * If no frontend url is configured, this method returns true (assumes it's in the tree).
      *
