@@ -5,7 +5,7 @@ import { createSilentLogger } from '../../shared/logging'
 
 /**
  * Determines whether or not a document path within an LSIF upload should be visible
- * within the generated dump. This helps us to prune documents which are not inside of
+ * within the generated dump. This allows us to prune documents which are not inside of
  * the root (which will never be queried from within this dump), and references to paths
  * that do not occur in the git tree at this commit.
  *
@@ -92,7 +92,7 @@ export class PathVisibilityChecker {
     }
 
     /**
-     * Determine if the given path known by git.
+     * Determine if the given path is known by git.
      *
      * If no frontend url is configured, this method returns true (assumes it's in the tree).
      *
@@ -112,7 +112,7 @@ export class PathVisibilityChecker {
     }
 
     /**
-     * Returns the set of root-relative paths that compose the immediate children of the
+     * Returns the set of root-relative paths of the immediate children of the
      * given directory. If no frontend url is configured or the directory is outside of
      * the repository root, this method returns an empty set.
      *
@@ -141,7 +141,7 @@ export class PathVisibilityChecker {
     }
 
     /**
-     * Returns the set of root-relative paths that compose the immediate children of the
+     * Returns the set of root-relative paths of the immediate children of the
      * given directory. If no frontend url is configured, this method returns an empty
      * set.
      *
