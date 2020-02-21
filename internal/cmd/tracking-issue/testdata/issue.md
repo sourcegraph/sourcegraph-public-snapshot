@@ -55,7 +55,7 @@
 @ryanslade: __8.00d__
 
 - [x] a8n: exposed token in the error message if create campaign failed [#8105](https://github.com/sourcegraph/sourcegraph/issues/8105) __?d__ 🐛
-- [x] sourcegraph/security-issues [#60](https://github.com/sourcegraph/security-issues/issues/60) __?d__ 
+- [x] sourcegraph/security-issues [#60](https://github.com/sourcegraph/security-issues/issues/60) __?d__ 🔒
 - [x] Redact GitLab access token from error log message [#8078](https://github.com/sourcegraph/sourcegraph/issues/8078) __?d__ 🐛
 - [x] Add setting to enable read-only mode for automation for all Sourcegraph users [#8013](https://github.com/sourcegraph/sourcegraph/issues/8013) __?d__ [👩](https://app.hubspot.com/contacts/2762526/company/608245740)
 - [x] a8n/auth: Regex search/replace doesn't work in private repos [#7914](https://github.com/sourcegraph/sourcegraph/issues/7914) __1d__ 🐛
@@ -81,13 +81,13 @@
 
 - [x] External services documentation needs to be updated [#8288](https://github.com/sourcegraph/sourcegraph/issues/8288) __0.5d__ 
 - [x] Make read:org permissions optional / dependent upon whether `allowOrgs` is specified [#8163](https://github.com/sourcegraph/sourcegraph/issues/8163) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/768958849)
-- [x] sourcegraph/security-issues [#61](https://github.com/sourcegraph/security-issues/issues/61) __0.5d__ 
+- [x] sourcegraph/security-issues [#61](https://github.com/sourcegraph/security-issues/issues/61) __0.5d__ 🔒
 - [x] Bitbucket Cloud external service doesn't respect custom URLs [#7990](https://github.com/sourcegraph/sourcegraph/issues/7990) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/557475593)
 - [x] authz code logs warnings about Redis returning nil values [#7912](https://github.com/sourcegraph/sourcegraph/issues/7912) __0.5d__ 🐛
 - [x] RFC 40: Move call to the Authz methods into application layer [#7878](https://github.com/sourcegraph/sourcegraph/issues/7878) __1d__ 🧶
-- [x] sourcegraph/security-issues [#55](https://github.com/sourcegraph/security-issues/issues/55) __1d__ 
+- [x] sourcegraph/security-issues [#55](https://github.com/sourcegraph/security-issues/issues/55) __1d__ 🔒
 - [x] RFC 40: Add unit tests for GraphQL APIs [#7748](https://github.com/sourcegraph/sourcegraph/issues/7748) __1d__ 🧶
-- [x] sourcegraph/security-issues [#54](https://github.com/sourcegraph/security-issues/issues/54) __1d__ 
+- [x] sourcegraph/security-issues [#54](https://github.com/sourcegraph/security-issues/issues/54) __1d__ 🔒
 - [x] Enable HTTP Strict Transport Security (HSTS) on sourcegraph.com (and all subdomains) [#7660](https://github.com/sourcegraph/sourcegraph/issues/7660) __0.5d__ 🔒
 - [x] It is not clear how to configure Sourcegraph to just access public repositories [#7587](https://github.com/sourcegraph/sourcegraph/issues/7587) __0.5d__ 🐛
 - [x] Enforce minimum password requirements [#7521](https://github.com/sourcegraph/sourcegraph/issues/7521) __0.5d__ 🔒
@@ -98,5 +98,5 @@
 - [x] postgresql: (Auto)tune DB pool sizes based on max_connections [#3473](https://github.com/sourcegraph/sourcegraph/issues/3473) __3d__ [👩](https://app.hubspot.com/contacts/2762526/company/419771425)
 - [ ] ~Make new pricing tiers reflected in feature access~ [#7927](https://github.com/sourcegraph/sourcegraph/issues/7927) __1d__ 🐛
 - [x] ~RFC 40: Add Prometheus metrics~ [#7827](https://github.com/sourcegraph/sourcegraph/issues/7827) __1d__ 🛠️
-- [x] ~sourcegraph/security-issues~ [#53](https://github.com/sourcegraph/security-issues/issues/53) __?d__ 
+- [x] ~sourcegraph/security-issues~ [#53](https://github.com/sourcegraph/security-issues/issues/53) __?d__ 🔒
 - [ ] ~Auth: explicit session invalidation~ [#1126](https://github.com/sourcegraph/sourcegraph/issues/1126) __2d__ 🔒

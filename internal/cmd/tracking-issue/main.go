@@ -152,30 +152,39 @@ func state(state string) string {
 func categories(issue *Issue) map[string]string {
 	categories := make(map[string]string, len(issue.Labels))
 
+	switch issue.Repository {
+	case "sourcegraph/customer":
+		categories["customer"] = emoji("customer", issue)
+	case "sourcegraph/security-issues":
+		categories["security"] = emoji("security", issue)
+	}
+
 	for _, label := range issue.Labels {
-		var emoji string
-
-		switch label {
-		case "customer":
-			emoji = customer(issue)
-		case "roadmap":
-			emoji = "🛠️"
-		case "debt":
-			emoji = "🧶"
-		case "spike":
-			emoji = "🕵️"
-		case "bug":
-			emoji = "🐛"
-		case "security":
-			emoji = "🔒"
-		}
-
-		if emoji != "" {
+		if emoji := emoji(label, issue); emoji != "" {
 			categories[label] = emoji
 		}
 	}
 
 	return categories
+}
+
+func emoji(category string, issue *Issue) string {
+	switch category {
+	case "customer":
+		return customer(issue)
+	case "roadmap":
+		return "🛠️"
+	case "debt":
+		return "🧶"
+	case "spike":
+		return "🕵️"
+	case "bug":
+		return "🐛"
+	case "security":
+		return "🔒"
+	default:
+		return ""
+	}
 }
 
 func emojis(categories map[string]string) string {
