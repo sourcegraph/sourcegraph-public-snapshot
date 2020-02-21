@@ -310,7 +310,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
     private toggleSearchMode = (event: React.MouseEvent<HTMLAnchorElement>): void => {
         event.preventDefault()
-        localStorage.setItem(SEARCH_MODE_KEY, this.state.interactiveSearchMode ? 'omni' : 'interactive')
+        localStorage.setItem(SEARCH_MODE_KEY, this.state.interactiveSearchMode ? 'plain' : 'interactive')
+
+        eventLogger.log('SearchModeToggled', { mode: this.state.interactiveSearchMode ? 'plain' : 'interactive' })
+
         if (this.state.interactiveSearchMode) {
             const queries = [this.state.navbarSearchQueryState.query, generateFiltersQuery(this.state.filtersInQuery)]
             const newQuery = queries.filter(query => query.length > 0).join(' ')
