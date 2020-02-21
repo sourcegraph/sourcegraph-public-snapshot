@@ -104,6 +104,20 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (*json.RawMessage, err
 	return &message, nil
 }
 
+func getAndMarshalSearchLatencyJSON(ctx context.Context) (*json.RawMessage, error) {
+	days, weeks, months := 2, 1, 1
+	searchLatency, err := usagestats.GetSearchLatencyStatistics(ctx, days, weeks, months)
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(searchLatency)
+	if err != nil {
+		return nil, err
+	}
+	message := json.RawMessage(contents)
+	return &message, nil
+}
+
 func getAndMarshalCampaignsUsageJSON(ctx context.Context) (*json.RawMessage, error) {
 	usage, err := usagestats.GetCampaignsUsageStatistics(ctx)
 	if err != nil {
@@ -161,6 +175,10 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("getAndMarshalCodeIntelUsageJSON failed", "error", err)
 	}
+	searchLatency, err := getAndMarshalSearchLatencyJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalSearchLatencyJSON failed", "error", err)
+	}
 	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
@@ -185,6 +203,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		UniqueUsers:          int32(count),
 		Activity:             act,
 		CodeIntelUsage:       codeIntelUsage,
+		SearchLatency:        searchLatency,
 		InitialAdminEmail:    initAdminEmail,
 		TotalUsers:           int32(totalUsers),
 		HasRepos:             hasRepos,

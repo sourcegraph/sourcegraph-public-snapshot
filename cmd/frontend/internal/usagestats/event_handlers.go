@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // pubSubDotComEventsTopicID is the topic ID of the topic that forwards messages to Sourcegraph.com events' pub/sub subscribers.
@@ -109,5 +110,7 @@ func logLocalEvent(ctx context.Context, name, url string, userID int32, userCook
 		Argument:        argument,
 		Timestamp:       timeNow().UTC(),
 	}
+	v, _ := json.Marshal(info)
+	log15.Info("INSERTION", "info", string(v))
 	return db.EventLogs.Insert(ctx, info)
 }
