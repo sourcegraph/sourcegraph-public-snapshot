@@ -1,6 +1,6 @@
 # Developing campaigns
 
-## What are code campaigns?
+## What are code change campaigns?
 
 Before diving into the technical part of campaigns, make sure to read up on what code campaigns are, what it's not and what we want it to be:
 
@@ -20,20 +20,20 @@ The code campaigns feature introduces a lot of new names, GraphQL queries and mu
 
 | GraphQL type        | Go type              | Database table     | Description |
 | ------------------- | -------------------- | -------------------| ----------- |
-| `Campaign`          | `a8n.Campaign`       | `campaigns`        | A campaign is a collection of changesets on code hosts. The central entity. |
-| `ExternalChangeset` | `a8n.Changeset`      | `changesets`       | Changeset is the unified name for pull requests/merge requests/etc. on code hosts.        |
-| `CampaignPlan`      | `a8n.CampaignPlan`   | `campaign_plans`   | A campaign plan is a collection of changes (think: patches/diffs) that will be applied by running a Campaign. A campaign *has one* campaign plan. |
-| `ChangesetPlan`     | `a8n.CampaignJob`    | `campaign_jobs`    | A *plan* for a changeset. It represents a patch per repository that *can* be a changeset. It belongs to a campaign plan, which has multiple changeset plans, one per repository. |
-| -                   | `a8n.ChangesetJob`   | `changeset_jobs`   | It represents the process of turning a `ChangesetPlan` (GraphQL)/`a8n.CampaignJob` (Go) into a `Changeset` on the code host. It is executed asynchronously in the background when a campaign is created with a campaign plan. |
-| `ChangesetEvent`    | `a8n.ChangesetEvent` | `changeset_events` | A changeset event is an event on a code host, e.g. a comment or a review on a pull request on GitHub. They are created by syncing the changesets from the code host on a regular basis and by accepting webhook events and turning them into changeset events. |
+| `Campaign`          | `campaigns.Campaign`       | `campaigns`        | A campaign is a collection of changesets on code hosts. The central entity. |
+| `ExternalChangeset` | `campaigns.Changeset`      | `changesets`       | Changeset is the unified name for pull requests/merge requests/etc. on code hosts.        |
+| `CampaignPlan`      | `campaigns.CampaignPlan`   | `campaign_plans`   | A campaign plan is a collection of changes (think: patches/diffs) that will be applied by running a Campaign. A campaign *has one* campaign plan. |
+| `ChangesetPlan`     | `campaigns.CampaignJob`    | `campaign_jobs`    | A *plan* for a changeset. It represents a patch per repository that *can* be a changeset. It belongs to a campaign plan, which has multiple changeset plans, one per repository. |
+| -                   | `campaigns.ChangesetJob`   | `changeset_jobs`   | It represents the process of turning a `ChangesetPlan` (GraphQL)/`campaigns.CampaignJob` (Go) into a `Changeset` on the code host. It is executed asynchronously in the background when a campaign is created with a campaign plan. |
+| `ChangesetEvent`    | `campaigns.ChangesetEvent` | `changeset_events` | A changeset event is an event on a code host, e.g. a comment or a review on a pull request on GitHub. They are created by syncing the changesets from the code host on a regular basis and by accepting webhook events and turning them into changeset events. |
 
 ## Diving into the code as a backend developer
 
-1. Read through `./cmd/frontend/graphqlbackend/a8n.go` to get an overview of the campaigns GraphQL API.
-1. Read through `./internal/a8n/types.go` to see all campaigns-related type definitions.
+1. Read through `./cmd/frontend/graphqlbackend/campaigns.go` to get an overview of the campaigns GraphQL API.
+1. Read through `./internal/campaigns/types.go` to see all campaigns-related type definitions.
 1. Compare that with the GraphQL definitions in `./cmd/frontend/graphqlbackend/schema.graphql`.
-1. Start reading through `./enterprise/internal/a8n/resolvers/resolver.go` to see how the main mutation are implemented (look at `createCampaignPlanFromPatches` and `createCampaign` to see how the two main operations are implemented).
-1. Then start from the other end, `enterprise/cmd/repo-updater/main.go`, and see how the enterprise `repo-updater` uses `a8n.Syncer` to sync `Changesets`.
+1. Start reading through `./enterprise/internal/campaigns/resolvers/resolver.go` to see how the main mutation are implemented (look at `createCampaignPlanFromPatches` and `createCampaign` to see how the two main operations are implemented).
+1. Then start from the other end, `enterprise/cmd/repo-updater/main.go`, and see how the enterprise `repo-updater` uses `campaigns.Syncer` to sync `Changesets`.
 
 ## GitHub testing account
 

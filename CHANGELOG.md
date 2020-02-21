@@ -21,6 +21,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Zoekt's watchdog ensures the service is down upto 3 times before exiting. The watchdog would misfire on startup on resource constrained systems, with the retries this should make a false positive far less likely. [#7867](https://github.com/sourcegraph/sourcegraph/issues/7867)
+
 ### Removed
 
 ## 3.13.0
@@ -170,7 +172,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
-- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.12.7` will need to manually modify their `docker run` command to use `sourcegraph/server:3.12.7` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
+- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.13.0` will need to manually modify their `docker run` command to use `sourcegraph/server:3.13.0` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
 
 ## 3.11.1
 
