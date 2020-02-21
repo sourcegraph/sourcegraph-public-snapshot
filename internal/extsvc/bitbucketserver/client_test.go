@@ -718,11 +718,6 @@ func TestClient_LoadPullRequestActivities(t *testing.T) {
 // dependent on the user token supplied. The current golden files are generated
 // from using the account zoom@sourcegraph.com on bitbucket.sgdev.org.
 func TestClient_RepoIDs(t *testing.T) {
-	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
-	if instanceURL == "" {
-		instanceURL = "https://bitbucket.sgdev.org"
-	}
-
 	cli, save := NewTestClient(t, "RepoIDs", *update)
 	defer save()
 
