@@ -5,6 +5,37 @@ import { instrument } from '../metrics'
 import * as metrics from './metrics'
 
 /**
+ * Get the set of children of a directory at a particular commit.
+ *
+ * @param args Parameter bag.
+ */
+export async function getDirectoryChildren({
+    frontendUrl,
+    repositoryId,
+    commit,
+    dirname,
+    ctx = {},
+}: {
+    /** The url of the frontend internal API. */
+    frontendUrl: string
+    /** The repository identifier. */
+    repositoryId: number
+    /** The commit from which the gitserver queries should start. */
+    commit: string
+    /** The repo-root-relative directory. */
+    dirname: string
+    /** The tracing context. */
+    ctx?: TracingContext
+}): Promise<Set<string>> {
+    const args = ['ls-tree', '--name-only', commit]
+    if (dirname !== '') {
+        args.push('--', dirname.endsWith('/') ? dirname : dirname + '/')
+    }
+
+    return new Set(await gitserverExecLines(frontendUrl, repositoryId, args, ctx))
+}
+
+/**
  * Get a list of commits for the given repository with their parent starting at the
  * given commit and returning at most `MAX_COMMITS_PER_UPDATE` commits. The output
  * is a map from commits to a set of parent commits. The set of parents may be empty.

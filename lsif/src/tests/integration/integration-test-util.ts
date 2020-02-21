@@ -16,6 +16,7 @@ import { InternalLocation } from '../../server/backend/database'
 import { DumpManager } from '../../shared/store/dumps'
 import { DependencyManager } from '../../shared/store/dependencies'
 import { createSilentLogger } from '../../shared/logging'
+import { PathExistenceChecker } from '../../worker/conversion/existence'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.
@@ -202,7 +203,8 @@ export async function convertTestData(
     const fullFilename = path.join((await fs.exists('lsif')) ? 'lsif' : '', 'src/tests/integration/data', filename)
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
-    const { packages, references } = await convertLsif(fullFilename, tmp)
+    const pathExistenceChecker = new PathExistenceChecker({ repositoryId, commit, root })
+    const { packages, references } = await convertLsif(fullFilename, tmp, pathExistenceChecker)
     const dump = await insertDump(connection, dumpManager, repositoryId, commit, root, indexer)
     await dependencyManager.addPackagesAndReferences(dump.id, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dump.id))
