@@ -16,6 +16,7 @@ interface BaseFilterDefinition {
     discreteValues?: string[]
     suggestions?: SearchSuggestion['__typename'] | string[]
     default?: string
+    singular?: boolean
 }
 
 interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'description'> {
@@ -56,6 +57,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterTypes.archived]: {
         description: 'Include results from archived repositories.',
+        singular: true,
     },
     [FilterTypes.author]: {
         description: 'The author of a commit',
@@ -67,13 +69,16 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: 'Treat the search pattern as case-sensitive.',
         discreteValues: ['yes', 'no'],
         default: 'no',
+        singular: true,
     },
     [FilterTypes.content]: {
         description:
             'Explicitly overrides the search pattern. Used for explicitly delineating the search pattern to search for in case of clashes.',
+        singular: true,
     },
     [FilterTypes.count]: {
         description: 'Number of results to fetch (integer)',
+        singular: true,
     },
     [FilterTypes.file]: {
         alias: 'f',
@@ -85,6 +90,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterTypes.fork]: {
         discreteValues: ['yes', 'no', 'only'],
         description: 'Include results from forked repositories.',
+        singular: true,
     },
     [FilterTypes.lang]: {
         negatable: true,
@@ -97,6 +103,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterTypes.patterntype]: {
         discreteValues: ['regexp', 'literal', 'structural'],
         description: 'The pattern type (regexp, literal, structural) in use',
+        singular: true,
     },
     [FilterTypes.repo]: {
         alias: 'r',
@@ -107,9 +114,11 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterTypes.repogroup]: {
         description: 'group-name (include results from the named group)',
+        singular: true,
     },
     [FilterTypes.repohascommitafter]: {
         description: '"string specifying time frame" (filter out stale repositories without recent commits)',
+        singular: true,
     },
     [FilterTypes.repohasfile]: {
         negatable: true,
@@ -118,6 +127,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterTypes.timeout]: {
         description: 'Duration before timeout',
+        singular: true,
     },
     [FilterTypes.type]: {
         description: 'Limit results to the specified type.',
@@ -191,3 +201,8 @@ export const validateFilter = (
     }
     return { valid: true }
 }
+
+export const isSingularFilter = (filter: string): boolean =>
+    Object.keys(FILTERS)
+        .filter(key => FILTERS[key as FilterTypes].singular)
+        .includes(filter)

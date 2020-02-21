@@ -22,8 +22,8 @@ import { QueryInput } from '../QueryInput'
 import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
-import { isFiniteFilter } from './filters'
 import { convertPlainTextToInteractiveQuery } from '../helpers'
+import { isSingularFilter } from '../../../../../shared/src/search/parser/filters'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -78,7 +78,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
      */
     private addNewFilter = (filterType: FilterTypes): void => {
         let filterKey: string = uniqueId(filterType)
-        if (isFiniteFilter(filterType)) {
+        if (isSingularFilter(filterType)) {
             filterKey = filterType
             // We only allow finite-option filters to be specified once per query,
             // so we don't need to append a uniqueId.
