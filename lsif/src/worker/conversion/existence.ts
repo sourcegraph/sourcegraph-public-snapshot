@@ -71,7 +71,9 @@ export class PathExistenceChecker {
             this.ctx || {},
             'Warming git directory cache',
             async ({ logger = createSilentLogger() }) => {
-                // TODO - batch requests
+                // TODO - batch requests. Must do this in a separate PR as the frontend
+                // gitserver proxy currently only accepts a single ExecRequest payload.
+                // Tracked in https://github.com/sourcegraph/sourcegraph/issues/8555.
                 for (const documentPath of documentPaths) {
                     await this.isInGitTree(documentPath)
                 }
