@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
@@ -341,4 +342,53 @@ func Test_detectSearchType(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_QuoteSuggestions(t *testing.T) {
+	t.Run("regex error", func(t *testing.T) {
+		raw := "*"
+		_, alert := processQuery(raw, query.SearchTypeRegex)
+		if alert == nil {
+			t.Fatalf(`alert returned from syntax.Parse("%s") is nil`, raw)
+		}
+		if !strings.Contains(strings.ToLower(alert.title), "regexp") {
+			t.Errorf("title is '%s', want it to contain 'regexp'", alert.title)
+		}
+		if !strings.Contains(alert.description, "regular expression") {
+			t.Errorf("description is '%s', want it to contain 'regular expression'", alert.description)
+		}
+	})
+
+	t.Run("type error that is not a regex error should show a suggestion", func(t *testing.T) {
+		raw := "-foobar"
+		_, alert := processQuery(raw, query.SearchTypeRegex)
+		if alert == nil {
+			t.Fatalf(`alert returned from syntax.Parse("%s") is nil`, raw)
+		}
+	})
+
+	t.Run("query parse error", func(t *testing.T) {
+		raw := ":"
+		_, alert := processQuery(raw, query.SearchTypeRegex)
+		if alert == nil {
+			t.Fatalf(`alert returned from syntax.Parse("%s") is nil`, raw)
+		}
+		if strings.Contains(strings.ToLower(alert.title), "regexp") {
+			t.Errorf("title is '%s', want it not to contain 'regexp'", alert.title)
+		}
+		if strings.Contains(alert.description, "regular expression") {
+			t.Errorf("description is '%s', want it not to contain 'regular expression'", alert.description)
+		}
+	})
+
+	t.Run("negated file field with an invalid regex", func(t *testing.T) {
+		raw := "-f:(a"
+		_, alert := processQuery(raw, query.SearchTypeRegex)
+		if alert == nil {
+			t.Fatal("ParseAndCheck failed to detect the invalid regex in the f: field")
+		}
+		if len(alert.proposedQueries) != 1 {
+			t.Fatalf("got %d proposed queries (%v), want exactly 1", len(alert.proposedQueries), alert.proposedQueries)
+		}
+	})
 }

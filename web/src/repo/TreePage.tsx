@@ -36,7 +36,7 @@ import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
-import { fetchTree } from './backend'
+import { fetchTreeEntries } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { ThemeProps } from '../../../shared/src/theme'
@@ -190,7 +190,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                     ),
                     tap(props => this.logViewEvent(props)),
                     switchMap(props =>
-                        fetchTree({
+                        fetchTreeEntries({
                             repoName: props.repoName,
                             commitID: props.commitID,
                             rev: props.rev,
@@ -231,13 +231,17 @@ export class TreePage extends React.PureComponent<Props, State> {
         const emptyElement = this.state.showOlderCommits ? (
             <>No commits in this tree.</>
         ) : (
-            <>
+            <div className="e2e-tree-page-no-recent-commits">
                 No commits in this tree in the past year.
                 <br />
-                <button type="button" className="btn btn-secondary btn-sm" onClick={this.showOlderCommits}>
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm e2e-tree-page-show-all-commits"
+                    onClick={this.showOlderCommits}
+                >
                     Show all commits
                 </button>
-            </>
+            </div>
         )
 
         const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (

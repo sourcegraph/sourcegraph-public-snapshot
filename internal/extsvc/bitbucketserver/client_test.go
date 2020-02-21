@@ -713,6 +713,22 @@ func TestClient_LoadPullRequestActivities(t *testing.T) {
 	}
 }
 
+// NOTE: This test validates that correct repository IDs are returned from the
+// roaring bitmap permissions endpoint. Therefore, the expected results are
+// dependent on the user token supplied. The current golden files are generated
+// from using the account zoom@sourcegraph.com on bitbucket.sgdev.org.
+func TestClient_RepoIDs(t *testing.T) {
+	cli, save := NewTestClient(t, "RepoIDs", *update)
+	defer save()
+
+	ids, err := cli.RepoIDs(context.Background(), "READ")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checkGolden(t, "RepoIDs", ids)
+}
+
 func checkGolden(t *testing.T, name string, got interface{}) {
 	t.Helper()
 

@@ -15,7 +15,7 @@ const notificationClassNames = {
     [NotificationType.Success]: 'alert alert-success',
     [NotificationType.Info]: 'alert alert-info',
     [NotificationType.Warning]: 'alert alert-warning',
-    [NotificationType.Error]: 'alert alert-error',
+    [NotificationType.Error]: 'alert alert-danger',
 }
 
 const onDismiss = action('onDismiss')

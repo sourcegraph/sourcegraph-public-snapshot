@@ -361,7 +361,7 @@ type ExcludedGitoliteRepo struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	// Automation description: Enables the experimental code automation features.
+	// Automation description: Enables the experimental code change management campaigns feature. NOTE: The automation feature was renamed to campaigns, but this experimental feature flag name was not changed (because the feature flag will go away soon anyway).
 	Automation string `json:"automation,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
@@ -893,12 +893,14 @@ type SiteConfiguration struct {
 	AuthSessionExpiry string `json:"auth.sessionExpiry,omitempty"`
 	// AuthUserOrgMap description: Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{"*": ["org1", "org2"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `"*"`.
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
-	// AutomationReadAccessEnabled description: Enables read-only access to Automation campaigns for non-site-admin users. This is a setting for the experimental feature Automation. These will only have an effect when Automation is enabled under experimentalFeatures
+	// AutomationReadAccessEnabled description: DEPRECATED: The automation feature was renamed to campaigns. Use `campaigns.readAccess.enabled` instead.
 	AutomationReadAccessEnabled *bool `json:"automation.readAccess.enabled,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
 	//
 	// Only available in Sourcegraph Enterprise.
 	Branding *Branding `json:"branding,omitempty"`
+	// CampaignsReadAccessEnabled description: Enables read-only access to campaigns for non-site-admin users. This is a setting for the experimental campaigns feature. These will only have an effect when campaigns is enabled with `{"experimentalFeatures": {"automation": "enabled"}}`.
+	CampaignsReadAccessEnabled *bool `json:"campaigns.readAccess.enabled,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.

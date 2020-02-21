@@ -72,6 +72,8 @@
 // 1528395651_event_logs_remove_empty_url_check.up.sql (88B)
 // 1528395652_add_lsif_indexer.down.sql (537B)
 // 1528395652_add_lsif_indexer.up.sql (611B)
+// 1528395653_repo_normalize_visibility_metadata.down.sql (65B)
+// 1528395653_repo_normalize_visibility_metadata.up.sql (1.035kB)
 
 package migrations
 
@@ -1580,6 +1582,46 @@ func _1528395652_add_lsif_indexerUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395653_repo_normalize_visibility_metadataDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x28\xca\x2c\x4b\x2c\x49\xb5\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x13\x76\x29\xa7\x41\x00\x00\x00")
+
+func _1528395653_repo_normalize_visibility_metadataDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395653_repo_normalize_visibility_metadataDownSql,
+		"1528395653_repo_normalize_visibility_metadata.down.sql",
+	)
+}
+
+func _1528395653_repo_normalize_visibility_metadataDownSql() (*asset, error) {
+	bytes, err := _1528395653_repo_normalize_visibility_metadataDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395653_repo_normalize_visibility_metadata.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2f, 0x5a, 0xdc, 0x7, 0x7b, 0x8f, 0xc1, 0x93, 0x0, 0x2b, 0xe2, 0x90, 0x52, 0x59, 0x40, 0xe7, 0x16, 0xd5, 0xa5, 0xd, 0xb2, 0x61, 0x8, 0x44, 0xfd, 0x3c, 0x48, 0xf0, 0x2, 0x32, 0xd3, 0x2c}}
+	return a, nil
+}
+
+var __1528395653_repo_normalize_visibility_metadataUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x53\xdd\x6e\xda\x30\x14\xbe\xf7\x53\x9c\x0b\xa6\xb4\x52\xe1\x01\x9a\x81\x14\x92\x93\x35\x92\xb1\x51\x62\xb4\xdd\x21\x07\x4c\x67\xd5\x60\xe4\x38\x61\x7d\xfb\x29\x3f\x84\x49\x5b\xa7\xb6\xb9\x4a\xbe\xf8\xfb\xf1\xe7\xe3\x25\x7e\xcb\x58\x48\x48\x44\x05\xe6\x20\xa2\x25\x45\x70\xea\x6c\x21\x4a\x12\x88\x39\xdd\xac\x18\x64\x29\x30\x2e\x00\x7f\x64\x85\x28\xe0\xec\x74\x23\xbd\x82\x25\xe7\x14\x23\xd6\xfd\x62\x1b\x4a\x21\xc1\x34\xda\x50\x01\x69\x44\x0b\x0c\x09\x99\x4e\x41\xfd\xf2\x4e\xee\xfc\xc8\x39\x38\x7b\x84\xa3\xf2\x72\x2f\xbd\x9c\x41\x76\x80\x8b\x82\x83\xd4\x06\xbc\x1d\x17\x6b\x0f\xb2\xaa\xea\xa3\x6a\xdf\x74\xd5\xea\x5c\xf9\xde\x82\x6c\xac\xde\x83\x51\xf2\x45\x9f\x9e\x67\x84\x24\x1c\x26\x13\x92\x60\x4c\xa3\x1c\x09\x00\x80\xdf\xee\x6a\x57\x59\x07\xf1\x26\x2f\x78\x0e\x29\xcf\x3b\xbc\x7d\x0a\xa4\x18\x8b\xd6\x4a\xb9\x93\x34\xdb\x4a\xb9\x46\xef\xd4\xd6\xbf\x9e\xd5\xc3\x98\x0c\xd2\x9c\xaf\xba\x1a\xc2\x41\xd1\xd9\x4b\xf7\xfd\xc5\xd9\x4b\xbb\xb6\xc7\x1b\x69\xa0\xb4\xd6\x28\x79\x0a\x49\xd7\x64\x07\xa7\x3c\x1f\x28\x19\xbb\xa5\xa1\x9c\xaf\xc7\x1c\x2d\x73\x7e\x6d\xea\x0a\x66\x69\x4f\x9b\xfd\x33\x1e\xcc\x21\x78\xd6\xfe\x67\x5d\x06\x20\x9e\x90\x8d\xb4\x9b\x5e\xcc\x23\x8a\x45\x8c\x77\x77\xbd\xce\x75\x3f\xd3\xc5\x22\xc8\xaa\x75\x5f\x62\x70\xff\xf8\x38\x84\x7e\x00\xef\x6a\x75\x7f\x4b\x80\xb4\x78\x57\x08\x23\xdf\x0e\xf1\xb7\x75\xa3\x2b\x5d\x6a\xa3\xfd\x6b\x00\x5f\x17\x10\x9c\xeb\xd2\xe8\x5d\xf0\x41\xdb\x52\xfb\xb2\xde\xbd\x28\x5f\x28\xd7\x28\xf7\xa6\xff\xc9\xfa\xff\x16\x31\xb8\xff\xd9\xc2\x41\x9a\xea\xc3\x35\x8c\x79\x62\x63\xeb\xfd\xa7\xce\x44\x57\xdb\xf3\x3b\x0e\x85\x25\x90\xa5\x21\x19\x81\xcd\x3a\x89\xc4\x70\x4d\x0b\x14\xe3\xed\x98\x77\x96\xdf\x9f\x30\xc7\x76\xf6\x73\x64\x02\x78\x3a\x4e\x60\xaf\xd8\xaa\xb5\xa3\x18\x12\x64\xc9\x64\x12\x12\x12\xf3\xd5\x2a\x13\x21\xf9\x1d\x00\x00\xff\xff\xd5\xe2\xc3\xcb\x0b\x04\x00\x00")
+
+func _1528395653_repo_normalize_visibility_metadataUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395653_repo_normalize_visibility_metadataUpSql,
+		"1528395653_repo_normalize_visibility_metadata.up.sql",
+	)
+}
+
+func _1528395653_repo_normalize_visibility_metadataUpSql() (*asset, error) {
+	bytes, err := _1528395653_repo_normalize_visibility_metadataUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395653_repo_normalize_visibility_metadata.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x57, 0x45, 0xb7, 0x74, 0x38, 0x36, 0x2a, 0xb8, 0x19, 0xa2, 0xc3, 0x67, 0xb9, 0xb5, 0x15, 0xc7, 0x77, 0x5c, 0x7b, 0xa2, 0x32, 0x9e, 0x5, 0x80, 0x2f, 0x68, 0x83, 0x64, 0xf7, 0x4c, 0x98, 0xc9}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1743,6 +1785,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395651_event_logs_remove_empty_url_check.up.sql":              _1528395651_event_logs_remove_empty_url_checkUpSql,
 	"1528395652_add_lsif_indexer.down.sql":                             _1528395652_add_lsif_indexerDownSql,
 	"1528395652_add_lsif_indexer.up.sql":                               _1528395652_add_lsif_indexerUpSql,
+	"1528395653_repo_normalize_visibility_metadata.down.sql":           _1528395653_repo_normalize_visibility_metadataDownSql,
+	"1528395653_repo_normalize_visibility_metadata.up.sql":             _1528395653_repo_normalize_visibility_metadataUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1858,6 +1902,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395651_event_logs_remove_empty_url_check.up.sql":              {_1528395651_event_logs_remove_empty_url_checkUpSql, map[string]*bintree{}},
 	"1528395652_add_lsif_indexer.down.sql":                             {_1528395652_add_lsif_indexerDownSql, map[string]*bintree{}},
 	"1528395652_add_lsif_indexer.up.sql":                               {_1528395652_add_lsif_indexerUpSql, map[string]*bintree{}},
+	"1528395653_repo_normalize_visibility_metadata.down.sql":           {_1528395653_repo_normalize_visibility_metadataDownSql, map[string]*bintree{}},
+	"1528395653_repo_normalize_visibility_metadata.up.sql":             {_1528395653_repo_normalize_visibility_metadataUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
