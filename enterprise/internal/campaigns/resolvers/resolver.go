@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -154,7 +155,6 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, err
 	}
-
 	defer tx.Done(&err)
 
 	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
@@ -166,7 +166,7 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 		return nil, errors.New("Changesets can only be added to campaigns that don't create their own changesets")
 	}
 
-	changesets, _, err := tx.ListChangesets(ctx, ee.ListChangesetsOpts{IDs: changesetIDs})
+	changesets, _, err := tx.ListChangesets(ctx, ee.ListChangesetsOpts{IDs: changesetIDs, IncludeUnsynced: true})
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +408,22 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		return nil, err
 	}
 
-	defer tx.Done(&err)
+	defer func() {
+		tx.Done(&err)
+		if err != nil {
+			return
+		}
+		// Make a best effort to enqueue the new changesets for syncing. This needs to happen after the transaction
+		// has been committed otherwise they won't be found
+		ids := make([]int64, len(cs))
+		for i := range ids {
+			ids[i] = cs[i].ID
+		}
+		if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, ids); err != nil {
+			// This is not fatal as the changeset will be picked up by ths syncer eventually
+			log15.Info("Error queueing changeset sync", "err", err)
+		}
+	}()
 
 	store := repos.NewDBStore(tx.DB(), sql.TxOptions{})
 
@@ -448,15 +463,6 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	store = repos.NewDBStore(tx.DB(), sql.TxOptions{})
-	syncer := ee.ChangesetSyncer{
-		ReposStore:  store,
-		Store:       tx,
-		HTTPFactory: r.httpFactory,
-	}
-	if err = syncer.SyncChangesets(ctx, cs...); err != nil {
-		return nil, err
-	}
-
 	csr := make([]graphqlbackend.ExternalChangesetResolver, len(cs))
 	for i := range cs {
 		csr[i] = &changesetResolver{

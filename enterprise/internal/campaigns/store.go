@@ -1,6 +1,7 @@
 package campaigns
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -441,7 +442,8 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 // CountChangesetsOpts captures the query options needed for
 // counting changesets.
 type CountChangesetsOpts struct {
-	CampaignID int64
+	CampaignID      int64
+	IncludeUnsynced bool
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -464,6 +466,10 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.CampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
+	}
+
+	if !opts.IncludeUnsynced {
+		preds = append(preds, sqlf.Sprintf("metadata::text <> '{}'"))
 	}
 
 	if len(preds) == 0 {
@@ -543,11 +549,12 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 // ListChangesetsOpts captures the query options needed for
 // listing changesets.
 type ListChangesetsOpts struct {
-	Cursor         int64
-	Limit          int
-	CampaignID     int64
-	IDs            []int64
-	WithoutDeleted bool
+	Cursor          int64
+	Limit           int
+	CampaignID      int64
+	IDs             []int64
+	WithoutDeleted  bool
+	IncludeUnsynced bool
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -623,6 +630,10 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 
 	if opts.WithoutDeleted {
 		preds = append(preds, sqlf.Sprintf("external_deleted_at IS NULL"))
+	}
+
+	if !opts.IncludeUnsynced {
+		preds = append(preds, sqlf.Sprintf("metadata::text <> '{}'"))
 	}
 
 	return sqlf.Sprintf(
@@ -2601,6 +2612,12 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	// metadata could be empty if we haven't synced yet in which case we should
+	// leave the metadata nil
+	if len(metadata) == 0 || bytes.Equal(metadata, []byte("{}")) {
+		return nil
 	}
 
 	switch t.ExternalServiceType {
