@@ -9,7 +9,7 @@ import { createSilentLogger } from '../../shared/logging'
  * the root (which will never be queried from within this dump), and references to paths
  * that do not occur in the git tree at this commit.
  *
- * This class holds state to efficiently query gitserver for the contents of directories
+ * This class caches results to efficiently query gitserver for the contents of directories
  * so that it neither has to:
  *
  *   - request all files recursively at once (bad for large repos and mono repos), nor
@@ -145,8 +145,8 @@ export class PathVisibilityChecker {
      * given directory. If no frontend url is configured, this method returns an empty
      * set.
      *
-     * This method memoizes the results so the children of each directory makes only
-     * one request to gitserver per dump conversion.
+     * This method memoizes the results so a dump conversion will make only one request
+     * to gitserver per directory.
      *
      * @param dirname The repo-root-relative directory.
      */
