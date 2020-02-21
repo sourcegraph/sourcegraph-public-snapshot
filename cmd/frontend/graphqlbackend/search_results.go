@@ -731,17 +731,9 @@ func processSearchPattern(q *query.Query, opts *getPatternInfoOptions) (string, 
 	if opts.performStructuralSearch {
 		isStructuralPat = true
 		for _, v := range patternValues {
-			var piece string
-			switch {
-			case v.String != nil:
-				piece = *v.String
-			case v.Regexp != nil:
-				piece = v.Regexp.String()
+			if piece := v.ToString(); piece != "" {
+				pieces = append(pieces, piece)
 			}
-			if piece == "" {
-				continue
-			}
-			pieces = append(pieces, piece)
 		}
 		pattern = strings.Join(pieces, " ")
 	} else if !opts.forceFileSearch {
@@ -789,13 +781,13 @@ func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPa
 
 	if opts.forceFileSearch {
 		for _, v := range q.Values(query.FieldDefault) {
-			includePatterns = append(includePatterns, asString(v))
+			includePatterns = append(includePatterns, v.ToString())
 		}
 	}
 
 	var combyRule []string
 	for _, v := range q.Values(query.FieldCombyRule) {
-		combyRule = append(combyRule, asString(v))
+		combyRule = append(combyRule, v.ToString())
 	}
 
 	// Handle lang: and -lang: filters.

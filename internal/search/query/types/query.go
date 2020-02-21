@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
@@ -70,5 +71,18 @@ func (v *Value) Value() interface{} {
 		return *v.Bool
 	default:
 		panic("no value")
+	}
+}
+
+func (v *Value) ToString() string {
+	switch {
+	case v.String != nil:
+		return *v.String
+	case v.Regexp != nil:
+		return v.Regexp.String()
+	case v.Bool != nil:
+		return strconv.FormatBool(*v.Bool)
+	default:
+		return "<unable to get querytypes.Value as string>"
 	}
 }

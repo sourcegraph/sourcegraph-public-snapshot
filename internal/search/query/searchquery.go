@@ -231,7 +231,7 @@ func (q *Query) RegexpPatterns(field string) (values, negatedValues []string) {
 	}
 
 	for _, v := range q.Fields[field] {
-		s := v.Regexp.String()
+		s := v.ToString()
 		if v.Not() {
 			negatedValues = append(negatedValues, s)
 		} else {
