@@ -158,7 +158,7 @@ type Stages struct {
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
-type AutomationUsageStatistics struct {
+type CampaignsUsageStatistics struct {
 	CampaignsCount int32
 }
 

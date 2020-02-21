@@ -164,7 +164,7 @@ type pingRequest struct {
 	HasExtURL            bool            `json:"hasExtURL"`
 	UniqueUsers          int32           `json:"u"`
 	Activity             json.RawMessage `json:"act"`
-	AutomationUsage      json.RawMessage `json:"automationUsage"`
+	CampaignsUsage       json.RawMessage `json:"automationUsage"`
 	CodeIntelUsage       json.RawMessage `json:"codeIntelUsage"`
 	SearchUsage          json.RawMessage `json:"searchUsage"`
 	InitialAdminEmail    string          `json:"initAdmin"`
@@ -248,7 +248,7 @@ type pingPayload struct {
 	HasUpdate            string          `json:"has_update"`
 	UniqueUsersToday     string          `json:"unique_users_today"`
 	SiteActivity         json.RawMessage `json:"site_activity"`
-	AutomationUsage      json.RawMessage `json:"automation_usage"`
+	CampaignsUsage       json.RawMessage `json:"automation_usage"`
 	CodeIntelUsage       json.RawMessage `json:"code_intel_usage"`
 	SearchUsage          json.RawMessage `json:"search_usage"`
 	InstallerEmail       string          `json:"installer_email"`
@@ -311,8 +311,8 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		RemoteSiteID:         pr.ClientSiteID,
 		HasUpdate:            strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:     strconv.FormatInt(int64(pr.UniqueUsers), 10),
-		SiteActivity:         pr.Activity,        // no change in schema
-		AutomationUsage:      pr.AutomationUsage, // no change in schema
+		SiteActivity:         pr.Activity,       // no change in schema
+		CampaignsUsage:       pr.CampaignsUsage, // no change in schema
 		CodeIntelUsage:       codeIntelUsage,
 		SearchUsage:          searchUsage,
 		InstallerEmail:       pr.InitialAdminEmail,
