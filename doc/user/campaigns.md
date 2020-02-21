@@ -6,7 +6,7 @@
 
 [Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) lets you make large-scale code changes across many repositories and different code hosts.
 
-**Important**: If you're on Sourcegraph 3.12 or older, you might also want to look at the old documentation: "[Automation documentation for Sourcegraph 3.12](https://docs.sourcegraph.com/@3.12/user/automation)"
+**Important**: If you're on Sourcegraph 3.12 or older, you might also want to look at the old documentation: "[Campaigns documentation for Sourcegraph 3.12](https://docs.sourcegraph.com/@3.12/user/automation)"
 
 ## Configuration
 
@@ -28,43 +28,49 @@ Without any further configuration, campaigns are **only accessible to site-admin
 }
 ```
 
-## Usage
+## Creating campaigns
 
 There are two types of campaigns:
 
 - Manual campaigns to which you can manually add changesets (pull requests) and track their progress.
 - Campaigns created from a set of patches. With the `src` CLI tool, you can not only create the campaign from an existing set of patches, but you can also _generate the patches_ for a number of repositories.
 
-### Creating a manual campaign
+## Creating a campaign manually
 
 1. Go to `/campaigns` on your Sourcegraph instance and click on the "New campaign" button
 2. Fill in a name for the campaign and a description
 3. Create the campaign
 4. Track changesets by adding them to the campaign through the form on the Campaign page
 
-### Creating a campaign from a set of patches
+## Creating a campaign using the src CLI
 
-**Required**: The [`src` CLI tool](https://github.com/sourcegraph/src-cli). Make sure it is setup to point at your Sourcegraph instance by setting the `SRC_ENDPOINT` environment variable.
+If you have not already, first [install](https://github.com/sourcegraph/src-cli), [set up and configure](https://github.com/sourcegraph/src-cli#setup) the `src` CLI to point to your Sourcegraph instance.
 
-Short overview:
+To create a campaign via the CLI:
 
-1. Create an `action.json` file that contains an action definition.
+1. Create an action JSON file (e.g. `action.json`) that contains an action definition
 1. _Optional_: See repositories the action would run over: `src actions scope-query -f action.json`
 1. Create a set of patches by executing the action over repositories: `src actions exec -f action.json > patches.json`
 1. Save the patches in Sourcegraph by creating a campaign plan based on these patches: `src campaign plan create-from-patches < patches.json`
 1. Create a campaign from the campaign plan: `src campaigns create -branch=<branch-name> -plan=<plan-ID-returned-by-previous-command>`
 
-Read on for the longer version.
+Read on detailed steps and documentation.
 
-> **Note about scalability**: the patches are generated on the machine on which the `src` CLI tool is being run. That means archives of the repositories in a campaign have to be downloaded from your Sourcegraph instance to the local machine. We're working on remote execution of campaign actions. For now feel free to use a bigger machine, possibly closer to your Sourcegraph instance so that downloading archives of repositories is faster, and use the `-j` parameter to tune the number of parallel jobs being executed.
+## Where to best run campaigns
 
-#### Defining an action
+The patches for a campaign are generated on the machine where the `src` CLI is executed, which in turn, downloads zip archives and runs each step against each repository. For most usecases we recommend that `src` CLI should be run on a Linux machine with considerable CPU, RAM, and network bandwidth to reduce the execution time. Putting this machine in the same network as your Sourcegraph instance will also improve performance.
 
-The first thing we need is a definition of an "action". An action is what produces a patch and describes what commands or Docker containers to run over which repositories.
+Another factor affecting execution time is the number of jobs executed in parallel, which is by default the number of cores on the machine. This can be adjusted using the `-j` parameter.
 
-> **Note**: At the moment only two `"type"`s of steps are supported: `"docker"` and `"command"`. See `src actions exec -help` for more information.
+To make it simpler for customers, we're [working on remote execution of campaign](https://github.com/sourcegraph/src-cli/pull/128) of campaign actions and would love your feedback.
 
-Here is an example defintion of an action:
+## Defining an action
+
+The first thing we need is a definition of an "action". An action contains a list of steps to run in each repository returned by the results of the `scopeQuery` search string.
+
+There are two types of steps: `docker` and `command`. See `src actions exec -help` for more information.
+
+Here is an example of a multi-step action definition using the `docker` and `command` types:
 
 ```json
 {
@@ -91,95 +97,116 @@ Here is an example defintion of an action:
 }
 ```
 
-This action runs over every repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
+This action will execute on every repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
 
-The first step, a `"command"` step, creates an `INSTALL.md` file in the root directory of each repository by running `sh` in a temporary copy of each repository. **This is executed on the machine on which `src` is being run.** Note that the first element in `"args"` is the command itself.
+1. The first step (a `command` step) creates an `INSTALL.md` file in the root directory of each repository by running `sh` in a temporary copy of each repository. **This is executed on the machine on which `src` is being run.** Note that the first element in `"args"` is the command itself.
 
-The second step, again a `"command"` step, runs the `sed` command to replace text in the `README.md` file in the root of each repository (the `-i ''` argument is only necessary for BSD versions of `sed` that usually come with macOS). Please note that the executed command is simply `sed` which means its arguments are _not_ expanded, as they would be in a shell. To achieve that, execute the `sed` as part of a shell invocation (using `sh -c` and passing in a single argument, for example, like in the first step).
+2. The second step, again a `"command"` step, runs the `sed` command to replace text in the `README.md` file in the root of each repository (the `-i ''` argument is only necessary for BSD versions of `sed` that usually come with macOS). Please note that the executed command is simply `sed` which means its arguments are _not_ expanded, as they would be in a shell. To achieve that, execute the `sed` as part of a shell invocation (using `sh -c` and passing in a single argument, for example, like in the first step).
 
-The third step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
+3. The third step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
 
-The fourth step pulls the `golang:1.13-alpine` image from Docker hub, starts a container from it and runs `go fix /work/...` in it.
+4. The fourth step starts a Docker container based on the `golang:1.13-alpine` image and runs `go fix /work/...` in it.
 
 As you can see from these examples, the "output" of an action is the modified, local copy of a repository.
 
 Save that definition in a file called `action.json` (or any other name of your choosing).
 
-#### Executing an action to produce patches
+## Executing an action to produce patches
 
-With our action defined we can now execute it:
+With our action file defined, we can now execute it:
 
-```
-$ src actions exec -f action.json
+```sh
+src actions exec -f action.json
 ```
 
 This command is going to:
 
-1. Download or build the required Docker images, if necessary.
-2. Download a ZIP archive of the repositories matched by the `"scopeQuery"` from the Sourcegraph instance to a local temporary directory in `/tmp`.
-3. Execute the action in each repository in parallel (the maximum number of parallel jobs can be configured with `-j`, the default is number of cores on the machine), with each step in an action being executed sequentially on the same copy of a repository. If a step in an action is of type `"command"` the command will be executed in the temporary directory that contains the copy of the repository. If the type is `"docker"` then a container will be launched in which the repository is mounted under `/work`.
-4. Produce a diff for each repository between a fresh copy of the repository's contents and directory in which the action ran.
+1. Build the required Docker image if necessary.
+1. Download a ZIP archive of the repositories matched by the `"scopeQuery"` from the Sourcegraph instance to a local temporary directory in `/tmp`.
+1. Execute the action for each repository in parallel (the number of parallel jobs can be configured with `-j`, the default is number of cores on the machine), with each step in an action being executed sequentially on the same copy of a repository. If a step in an action is of type `"command"` the command will be executed in the temporary directory that contains the copy of the repository. If the type is `"docker"` then a container will be launched in which the repository is mounted under `/work`.
+1. Produce a diff for each repository between a fresh copy of the repository's contents and directory in which the action ran.
 
 The output can either be saved into a file by redirecting it:
 
-```
-$ src actions exec -f action.json > patches.json
+```sh
+src actions exec -f action.json > patches.json
 ```
 
 Or it can be piped straight into the next command we're going to use to save the patches on the Sourcegraph instance:
 
-```
-$ src actions exec -f action.json | src campaign plan create-from-patches
+```sh
+src actions exec -f action.json | src campaign plan create-from-patches
 ```
 
-#### Creating a campaign plan from patches
+## Creating a campaign plan from patches
 
 The next step is to save the set of patches on the Sourcegraph instance so they can be run together as a campaign.
 
-To do that we use the following command:
+To do that, run:
 
+```sh
+src campaign plan create-from-patches < patches.json
 ```
-$ src campaign plan create-from-patches < patches.json
+
+Or, again, pipe the patches directly into it:
+
+```sh
+src actions exec -f action.json | src campaign plan create-from-patches
 ```
 
-Or, again, pipe the patches directly into it.
+Once completed, the output will contain:
 
-When the command successfully ran, it will print a URL with which you can preview the changesets that would be created on the codehosts, or a command for the `src` tool to create a campaign from the campaign plan.
+- The URL to preview the changesets that would be created on the code hosts
+- The command for the `src` SLI to create a campaign from the locally generated campaign plan
 
-#### Creating a campaign
+## Publishing a campaign
 
-If you're happy with the campaign plan and its patches, it's time to create changesets (pull requests) on the code hosts by creating a campaign:
+If you're happy with the campaign plan and its patches, it's time to trigger the creation of changesets (pull requests) on the code host(s) by creating and publishing the campaign:
 
-```
-$ src campaigns create -name='My campaign name' \
+```sh
+src campaigns create -name='My campaign name' \
    -desc='My first CLI-created campaign' \
    -plan=Q2FtcGFpZ25QbGFuOjg= \
    -branch=my-first-campaign
 ```
 
-This will create a campaign on the Sourcegraph instance and asychronously create a pull request for each patch on the code hosts on which the repositories are hosted. Check progress by opening the campaign on your Sourcegraph instance.
+Creating this campaign will asynchronously create a pull request for each repository where a diff has been generated. You can check the progress of campaign completion by viewing the campaign on your Sourcegraph instance.
 
-The `-branch` flag specifies the branch name that will be used for the pull requests. If a branch with that name already exists in a repository a fallback will be generated for the repository by appending a counter at the end of the name, e.g.: `my-first-campaign-1`.
+The `-branch` flag specifies the branch name that will be used for each pull request. If a branch with that name already exists for a repository, a fallback will be generated by appending a counter at the end of the name, e.g.: `my-first-campaign-1`.
 
-If you have `$EDITOR` configured you can use the configured editor to edit the name and Markdown description of the campaign:
+If you have defined the `$EDITOR` environment variable, the configured editor will be used to edit the name and Markdown description of the campaign:
 
+```sh
+src campaigns create -plan=Q2FtcGFpZ25QbGFuOjg= -branch=my-first-campaign
 ```
-$ src campaigns create -plan=Q2FtcGFpZ25QbGFuOjg= -branch=my-first-campaign
+
+## Campaign drafts
+
+A campaign can be created as a draft, either by adding the `-draft` flag to the `src campaign create` command, or by selecting `Create draft` in the web UI. When a campaign is a draft, no changesets will be created until the campaign is published, or each changeset is individually published. This can be done in the Sourcegraph campaign web interface.
+
+## Updating a campaign
+
+You can also apply a new campaign plan for an existing campaign. Following the creation of the campaign plan with the `src campaign plan create-from-patches` command, a URL will be output that will guide you to the web UI to allow you to change an existing campaign's campaign plan.
+
+On this page, click "Preview" for the campaign that will be updated. From there, the delta of existing and new changesets will be displayed. Click "Update" to finalize the proposed changes.
+
+Edits to the name and description of a campaign can also be made in the web UI with the changes reflected in each changeset. The branch name of a draft campaign with a plan can also be edited, but only if the campaign doesn't contain any published changesets.
+
+## Clearing the campaign action cache
+
+Campaign diffs are intelligently cached based on the `scopeQuery` and defined `steps`, but the need to clear the cache to run the steps from scratch may be required.
+
+Clearing the cache requires either manually emptying the cache directory or using a different one. If no `-cache` flag is passed to `src actions exec`, the default location of the cache is used which can be found for your platform by running:
+
+```sh
+src actions exec -help
 ```
 
-##### Drafting
+## Example campaigns
 
-A campaign can be created as a draft either by adding the `-draft` flag to the `src campaign create` command or by selecting `Create draft` in the web UI. When a campaign is a draft, no changesets will be created until the campaign is published or the changeset is individually published. This can be done in the campaign web interface.
+The following examples demonstrate various types of campaigns for different languages using both commands and Docker images. They also provide commentary on considerations such as adjusting the duration (`-timeout`) for actions that exceed the 15 minute default limit.
 
-#### Updating a campaign
-
-There is also the option of applying a new campaign plan to an existing campaign. Following the creation of the campaign plan with the `src campaign plan create-from-patches` command, an URL will be printed that will guide you to the web interface that allows you to change an existing campaign's campaign plan.
-
-On this page, click "Preview" for the campaign that will be updated. From there, the delta of existing and new changesets will be displayed. Click "Update" to finalize these proposed changes.
-
-Edits to the name and description of a campaign can also be made on the web interface. These changes are then reflected in the changesets by updating them the code hosts. The branch of a draft campaign with a plan can also be edited, but only as long as the campaign doesn't contain any published changesets.
-
-## Example: Add a GitHub action to upload LSIF data to Sourcegraph
+### Adding a GitHub action to upload LSIF data to Sourcegraph
 
 Our goal for this campaign is to add a GitHub Action that generates and uploads LSIF data to Sourcegraph by adding a `.github/workflows/lsif.yml` file to each repository that doesn't have it yet.
 
@@ -226,7 +253,7 @@ This is the definition of the GitHub action.
 
 Next we create the `Dockerfile`:
 
-```
+```Dockerfile
 FROM alpine:3
 ADD ./github-action-workflow-golang.yml /tmp/workflows/
 
@@ -245,7 +272,7 @@ Now we're ready to run the campaign:
 1. Run the action and create a campaign plan: `src actions exec -f action.json | src campaign plan create-from-patches`
 1. Follow the printed instructions to create and run the campaign on Sourcegraph
 
-## Example: Refactor Go code with Comby
+### Refactor Go code using Comby
 
 Our goal for this campaign is to simplify Go code by using [Comby](https://comby.dev/) to rewrite calls to `fmt.Sprintf("%d", arg)` with `strconv.Itoa(:[v])`. The semantics are the same, but one more cleanly expresses the intention behind the code.
 
@@ -283,7 +310,7 @@ Now we can execute the action and turn it into a campaign:
 1. Execute the action and create a campaign plan: `src actions exec -f action.json | src campaign plan create-from-patches`
 1. Follow the printed instructions to create and run the campaign on Sourcegraph
 
-## Example: Use ESLint to automatically migrate to a new TypeScript version
+### Using ESLint to automatically migrate to a new TypeScript version
 
 Our goal for this campaign is to convert all TypeScript code synced to our Sourcegraph instance to make use of new TypeScript features. To do this we convert the code, then update the TypeScript version.
 
@@ -291,32 +318,32 @@ To convert the code we install and run ESLint with the desired `typescript-eslin
 
 The first thing we need is a Docker container in which we can freely install and run ESLint. Here is the `Dockerfile`:
 
-```
+```Dockerfile
 FROM node:12-alpine3.10
 CMD package_json_bkup=$(mktemp) && \
-	cp package.json $package_json_bkup && \
-	yarn -s --non-interactive --pure-lockfile --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --no-progress && \
-	yarn add --ignore-workspace-root-test --non-interactive --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --pure-lockfile -D @typescript-eslint/parser @typescript-eslint/eslint-plugin --no-progress eslint && \
-	node_modules/.bin/eslint \
-	--fix \
-	--plugin @typescript-eslint \
-	--parser @typescript-eslint/parser \
-	--parser-options '{"ecmaVersion": 8, "sourceType": "module", "project": "tsconfig.json"}' \
-	--rule '@typescript-eslint/prefer-optional-chain: 2' \
-	--rule '@typescript-eslint/no-unnecessary-type-assertion: 2' \
-	--rule '@typescript-eslint/no-unnecessary-type-arguments: 2' \
-	--rule '@typescript-eslint/no-unnecessary-condition: 2' \
-	--rule '@typescript-eslint/no-unnecessary-type-arguments: 2' \
-	--rule '@typescript-eslint/prefer-includes: 2' \
-	--rule '@typescript-eslint/prefer-readonly: 2' \
-	--rule '@typescript-eslint/prefer-string-starts-ends-with: 2' \
-	--rule '@typescript-eslint/prefer-nullish-coalescing: 2' \
-	--rule '@typescript-eslint/no-non-null-assertion: 2' \
-	'**/*.ts'; \
-	mv $package_json_bkup package.json; \
-	rm -rf node_modules; \
-	yarn upgrade --latest --ignore-workspace-root-test --non-interactive --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --no-progress typescript && \
-	rm -rf node_modules
+  cp package.json $package_json_bkup && \
+  yarn -s --non-interactive --pure-lockfile --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --no-progress && \
+  yarn add --ignore-workspace-root-test --non-interactive --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --pure-lockfile -D @typescript-eslint/parser @typescript-eslint/eslint-plugin --no-progress eslint && \
+  node_modules/.bin/eslint \
+  --fix \
+  --plugin @typescript-eslint \
+  --parser @typescript-eslint/parser \
+  --parser-options '{"ecmaVersion": 8, "sourceType": "module", "project": "tsconfig.json"}' \
+  --rule '@typescript-eslint/prefer-optional-chain: 2' \
+  --rule '@typescript-eslint/no-unnecessary-type-assertion: 2' \
+  --rule '@typescript-eslint/no-unnecessary-type-arguments: 2' \
+  --rule '@typescript-eslint/no-unnecessary-condition: 2' \
+  --rule '@typescript-eslint/no-unnecessary-type-arguments: 2' \
+  --rule '@typescript-eslint/prefer-includes: 2' \
+  --rule '@typescript-eslint/prefer-readonly: 2' \
+  --rule '@typescript-eslint/prefer-string-starts-ends-with: 2' \
+  --rule '@typescript-eslint/prefer-nullish-coalescing: 2' \
+  --rule '@typescript-eslint/no-non-null-assertion: 2' \
+  '**/*.ts'; \
+  mv $package_json_bkup package.json; \
+  rm -rf node_modules; \
+  yarn upgrade --latest --ignore-workspace-root-test --non-interactive --ignore-optional --ignore-scripts --ignore-engines --ignore-platform --no-progress typescript && \
+  rm -rf node_modules
 ```
 
 When turned into an image and run as a container, the instructions in this Dockerfile will do the following:
@@ -371,7 +398,7 @@ src actions exec -timeout 15m -f eslint-fix-typescript.action.json | src campaig
 
 You should now see that the Docker container we built is being executed in a local, temporary copy of each repository. After executing, the diff it generated will be turned into a campaign plan you can preview on our Sourcegraph instance.
 
-## Caching dependencies across multiple steps using `cacheDirs`
+#### Caching dependencies across multiple steps using `cacheDirs`
 
 If you find yourself writing an action definition that relies on a project's dependencies to be installed for every step it can be helpful to cache these dependencies in a directory outside of the repository.
 
