@@ -151,6 +151,18 @@ func TestQuery_Validate(t *testing.T) {
 			SearchType: SearchTypeStructural,
 			Want:       `the parameter "case:" is not valid for structural search, matching is always case-sensitive`,
 		},
+		{
+			Name:       `Structural search incompatible with "type:" on non-empty pattern`,
+			Query:      `patterntype:structural type:repo ":[_]"`,
+			SearchType: SearchTypeStructural,
+			Want:       `the parameter "type:" is not valid for structural search, search is always performed on file content`,
+		},
+		{
+			Name:       `Structural search validates with "type:" on empty pattern`,
+			Query:      `patterntype:structural type:repo"`,
+			SearchType: SearchTypeStructural,
+			Want:       "",
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {

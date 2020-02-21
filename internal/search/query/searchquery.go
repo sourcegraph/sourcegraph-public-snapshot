@@ -3,6 +3,7 @@
 package query
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
@@ -134,6 +135,16 @@ func ParseAndCheck(input string) (*Query, error) {
 	return checkedQuery, err
 }
 
+func processSearchPattern(q *Query) string {
+	var pieces []string
+	for _, v := range q.Values(FieldDefault) {
+		if piece := v.ToString(); piece != "" {
+			pieces = append(pieces, piece)
+		}
+	}
+	return strings.Join(pieces, " ")
+}
+
 type ValidationError struct {
 	Msg string
 }
@@ -147,7 +158,10 @@ func (e *ValidationError) Error() string {
 func Validate(q *Query, searchType SearchType) error {
 	if searchType == SearchTypeStructural {
 		if q.Fields[FieldCase] != nil {
-			return &ValidationError{Msg: `the parameter "case:" is not valid for structural search, matching is always case-sensitive`}
+			return errors.New(`the parameter "case:" is not valid for structural search, matching is always case-sensitive`)
+		}
+		if q.Fields[FieldType] != nil && processSearchPattern(q) != "" {
+			return errors.New(`the parameter "type:" is not valid for structural search, search is always performed on file content`)
 		}
 	}
 	return nil
