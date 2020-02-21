@@ -121,7 +121,7 @@ func title(issue *Issue, milestone string) string {
 	// Cross off issues that were originally planned
 	// for the milestone but are no longer in it.
 	if issue.Milestone != milestone {
-		title = "~" + title + "~"
+		title = "~" + strings.TrimSpace(title) + "~"
 	}
 
 	return title
