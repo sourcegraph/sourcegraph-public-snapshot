@@ -1040,6 +1040,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	p, err := r.getPatternInfo(options)
 
+	// Fallback to literal search for searching repos and files if
+	// the structural search pattern is empty.
+	if r.patternType == query.SearchTypeStructural && p.Pattern == "" {
+		r.patternType = query.SearchTypeLiteral
+		p.IsStructuralPat = false
+		forceOnlyResultType = ""
+	}
+
 	if err != nil {
 		return nil, err
 	}
