@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
@@ -23,15 +25,16 @@ func main() {
 	org := flag.String("org", "sourcegraph", "GitHub organization to list issues from")
 	milestone := flag.String("milestone", "", "GitHub milestone to filter issues by")
 	labels := flag.String("labels", "", "Comma separated list of labels to filter issues by")
+	update := flag.Bool("update", false, "Update GitHub tracking issue in-place")
 
 	flag.Parse()
 
-	if err := run(*token, *org, *milestone, *labels); err != nil {
+	if err := run(*token, *org, *milestone, *labels, *update); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(token, org, milestone, labels string) (err error) {
+func run(token, org, milestone, labels string, update bool) (err error) {
 	if token == "" {
 		return fmt.Errorf("no -token given")
 	}
@@ -56,8 +59,98 @@ func run(token, org, milestone, labels string) (err error) {
 		return err
 	}
 
-	fmt.Print(generate(issues, milestone))
-	return nil
+	tracking, err := trackingIssue(org, milestone, issues)
+	if err != nil {
+		return err
+	}
+
+	work := generate(issues, milestone)
+
+	body, err := patchIssueBody(tracking, work)
+	if err != nil {
+		return err
+	}
+
+	if update && body != tracking.Body {
+		tracking.Body = body
+		err = updateIssue(cli, tracking)
+	}
+
+	fmt.Println(tracking.Body)
+	return err
+}
+
+func trackingIssue(org, milestone string, issues []*Issue) (*Issue, error) {
+	var tracking []*Issue
+	for _, issue := range issues {
+		if isTrackingIssue(issue, org, milestone) {
+			tracking = append(tracking, issue)
+		}
+	}
+
+	switch len(tracking) {
+	case 0:
+		return nil, errors.New("no tracking issue found")
+	case 1:
+		return tracking[0], nil
+	default:
+		return nil, errors.New("more than one tracking issue found")
+	}
+}
+
+func isTrackingIssue(issue *Issue, org, milestone string) bool {
+	return has("tracking", issue.Labels) &&
+		strings.HasPrefix(issue.Repository, org) &&
+		issue.Milestone == milestone
+}
+
+func has(label string, labels []string) bool {
+	for _, l := range labels {
+		if label == l {
+			return true
+		}
+	}
+	return false
+}
+
+func patchIssueBody(issue *Issue, work string) (body string, err error) {
+	const (
+		openingMarker = "<!-- BEGIN PLANNED WORK -->"
+		closingMarker = "<!-- END PLANNED WORK -->"
+	)
+	return patch(issue.Body, work, openingMarker, closingMarker)
+}
+
+func updateIssue(cli *githubv4.Client, issue *Issue) (err error) {
+	var m struct {
+		UpdateIssue struct {
+			Issue struct {
+				UpdatedAt time.Time
+			}
+		} `graphql:"updateIssue(input: $input)"`
+	}
+
+	input := githubv4.UpdateIssueInput{
+		ID:   issue.ID,
+		Body: githubv4.NewString(githubv4.String(issue.Body)),
+	}
+
+	ctx := context.Background()
+	return cli.Mutate(ctx, &m, input, nil)
+}
+
+func patch(s, replacement, opening, closing string) (string, error) {
+	start := strings.Index(s, opening)
+	if start == -1 {
+		return s, errors.New("could not find opening marker in issue body")
+	}
+
+	end := strings.Index(s, closing)
+	if end == -1 {
+		return s, errors.New("could not find closing marker in issue body")
+	}
+
+	return s[:start+len(opening)] + replacement + s[end:], nil
 }
 
 func generate(issues []*Issue, milestone string) string {
@@ -224,6 +317,7 @@ func assignee(assignees []string) string {
 }
 
 type Issue struct {
+	ID         string
 	Title      string
 	Body       string
 	Number     int
@@ -238,6 +332,7 @@ type Issue struct {
 
 func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string, labels []string) (issues []*Issue, _ error) {
 	type issue struct {
+		ID         string
 		Title      string
 		Body       string
 		State      string
@@ -295,6 +390,7 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 			i := n.issue
 
 			issue := &Issue{
+				ID:         i.ID,
 				Title:      i.Title,
 				Body:       i.Body,
 				State:      i.State,
