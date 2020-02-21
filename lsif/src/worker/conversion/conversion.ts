@@ -1,3 +1,4 @@
+import uuid from 'uuid'
 import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
@@ -32,7 +33,7 @@ export async function convertDatabase(
     { logger = createSilentLogger(), span }: TracingContext
 ): Promise<void> {
     const ctx = { logger, span }
-    const tempFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, path.basename(upload.filename))
+    const tempFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, uuid.v4())
 
     try {
         const pathVisibilityChecker = new PathVisibilityChecker({
