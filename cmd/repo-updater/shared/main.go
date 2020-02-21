@@ -33,7 +33,7 @@ const port = "3182"
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory)
+type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory, server *repoupdater.Server)
 
 func Main(enterpriseInit EnterpriseInit) {
 	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
@@ -97,11 +97,6 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	cf := httpcli.NewExternalHTTPClientFactory()
 
-	// All dependencies ready
-	if enterpriseInit != nil {
-		enterpriseInit(db, store, cf)
-	}
-
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()
@@ -111,10 +106,15 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	scheduler := repos.NewUpdateScheduler()
-	server := repoupdater.Server{
+	server := &repoupdater.Server{
 		Store:           store,
 		Scheduler:       scheduler,
 		GitserverClient: gitserver.DefaultClient,
+	}
+
+	// All dependencies ready
+	if enterpriseInit != nil {
+		enterpriseInit(db, store, cf, server)
 	}
 
 	var handler http.Handler
