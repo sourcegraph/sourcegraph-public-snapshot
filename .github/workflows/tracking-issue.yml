@@ -1,0 +1,26 @@
+name: Tracking Issue Syncer
+on:
+  schedule:
+    - cron:  '*/15 * * * *'
+  issues:
+    types:
+    - opened
+    - edited
+    - deleted
+    - closed
+    - reopened
+    - assigned
+    - unassigned
+    - labeled
+    - unlabeled
+    - milestoned
+    - demilestoned
+jobs:
+  core-services:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker://sourcegraph/tracking-issue:latest
+        with:
+          args: -milestone 3.14 -labels team/core-services -update
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
