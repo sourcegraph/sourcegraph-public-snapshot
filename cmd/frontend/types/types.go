@@ -208,37 +208,38 @@ type CodeIntelEventLatencies struct {
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
-type SearchLatencyStatistics struct {
-	Daily   []*SearchLatencyPeriod
-	Weekly  []*SearchLatencyPeriod
-	Monthly []*SearchLatencyPeriod
+type SearchUsageStatistics struct {
+	Daily   []*SearchUsagePeriod
+	Weekly  []*SearchUsagePeriod
+	Monthly []*SearchUsagePeriod
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
-type SearchLatencyPeriod struct {
-	StartTime time.Time
-	Latencies *SearchTypeLatency
+type SearchUsagePeriod struct {
+	StartTime  time.Time
+	Literal    *SearchEventStatistics
+	Regexp     *SearchEventStatistics
+	Structural *SearchEventStatistics
+	File       *SearchEventStatistics
+	Repo       *SearchEventStatistics
+	Diff       *SearchEventStatistics
+	Commit     *SearchEventStatistics
+	Symbol     *SearchEventStatistics
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
-type SearchTypeLatency struct {
-	Literal    *SearchLatency
-	Regexp     *SearchLatency
-	Structural *SearchLatency
-	File       *SearchLatency
-	Repo       *SearchLatency
-	Diff       *SearchLatency
-	Commit     *SearchLatency
+type SearchEventStatistics struct {
+	EventLatencies *SearchEventLatencies
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
-type SearchLatency struct {
+type SearchEventLatencies struct {
 	P50 float64
 	P90 float64
 	P99 float64
