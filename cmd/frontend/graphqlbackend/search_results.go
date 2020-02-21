@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/src-d/enry/v2"
@@ -963,44 +962,6 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 	return resultTypes, alert
 }
 
-// alertOnError filters certain errors from multiErr and converts them into an
-// alert. We support surfacing only one alert at a time, so the last converted error
-// will be surfaced in the alert.
-func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, alert *searchAlert) {
-	if multiErr != nil {
-		for _, err := range multiErr.Errors {
-			if strings.Contains(err.Error(), "Assert_failure zip") {
-				alert = &searchAlert{
-					prometheusType: "structural_search_repo_too_large",
-					title:          "Repository too large for structural search",
-					description:    "One repository is too large to perform structural search. Use the `repo:` filter to run on a specific repository. This is a temporary restriction that will be removed in the future. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/7133",
-				}
-			} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
-				alert = &searchAlert{
-					prometheusType: "structural_search_needs_more_memory",
-					title:          "Structural search needs more memory",
-					description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
-				}
-			} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
-				var msg string
-				if envvar.SourcegraphDotComMode() {
-					msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
-				} else {
-					msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
-				}
-				alert = &searchAlert{
-					prometheusType: "structural_search_on_zero_indexed_repos",
-					title:          "Unindexed repositories with structural search",
-					description:    fmt.Sprintf("Structural search currently only works on indexed repositories. Some of the repositories to search are not indexed, so we can't return results for them. %s", msg),
-				}
-			} else {
-				newMultiErr = multierror.Append(newMultiErr, err)
-			}
-		}
-	}
-	return newMultiErr, alert
-}
-
 // doResults is one of the highest level search functions that handles finding results.
 //
 // If forceOnlyResultType is specified, only results of the given type are returned,
@@ -1331,7 +1292,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
 
-	multiErr, newAlert := alertOnError(multiErr)
+	multiErr, newAlert := alertForStructuralSearch(multiErr)
 	if newAlert != nil {
 		alert = newAlert // takes higher precedence
 	}
