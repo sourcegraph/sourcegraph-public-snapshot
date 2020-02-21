@@ -5,7 +5,7 @@ import { createSilentLogger } from '../../shared/logging'
 
 /**
  * Determines whether or not a document path within an LSIF upload should be visible
- * within the generated dump. This helps us to prune documents which are not inside of
+ * within the generated dump. This allows us to prune documents which are not inside of
  * the root (which will never be queried from within this dump), and references to paths
  * that do not occur in the git tree at this commit.
  *
