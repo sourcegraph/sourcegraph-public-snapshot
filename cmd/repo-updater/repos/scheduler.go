@@ -226,30 +226,45 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 	return limiter
 }
 
-// Update updates the schedule with the given repos.
-func (s *updateScheduler) Update(rs ...*Repo) {
+// UpdateFromDiff updates the scheduled and queued repos from the given sync diff.
+func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	known := 0
-	for _, r := range rs {
+	for _, r := range diff.Deleted {
+		s.remove(r)
+	}
+
+	for _, r := range diff.Added {
+		s.upsert(r, true)
+	}
+	for _, r := range diff.Modified {
+		s.upsert(r, true)
+	}
+
+	known := len(diff.Added) + len(diff.Modified)
+	for _, r := range diff.Unmodified {
 		if r.IsDeleted() {
 			s.remove(r)
-		} else {
-			known++
-			s.upsert(r)
+			continue
 		}
+
+		known++
+		s.upsert(r, false)
 	}
 
 	schedKnownRepos.Set(float64(known))
 }
 
-func (s *updateScheduler) upsert(r *Repo) {
+func (s *updateScheduler) upsert(r *Repo, enqueue bool) {
 	repo := configuredRepo2FromRepo(r)
 
 	updated := s.schedule.upsert(repo)
 	log15.Debug("scheduler.schedule.upserted", "repo", r.Name, "updated", updated)
 
+	if !enqueue {
+		return
+	}
 	updated = s.updateQueue.enqueue(repo, priorityLow)
 	log15.Debug("scheduler.updateQueue.enqueued", "repo", r.Name, "updated", updated)
 }
