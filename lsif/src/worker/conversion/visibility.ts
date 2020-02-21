@@ -112,7 +112,7 @@ export class PathVisibilityChecker {
     }
 
     /**
-     * Returns the set of root-relative paths that compose the immediate children of the
+     * Returns the set of root-relative paths of the immediate children of the
      * given directory. If no frontend url is configured or the directory is outside of
      * the repository root, this method returns an empty set.
      *
