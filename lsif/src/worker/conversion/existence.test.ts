@@ -1,9 +1,9 @@
 import * as sinon from 'sinon'
-import { PathVisibilityChecker, properAncestors } from './visibility'
+import { PathExistenceChecker, properAncestors } from './existence'
 import { getDirectoryChildren } from '../../shared/gitserver/gitserver'
 import { range } from 'lodash'
 
-describe('PathVisibilityChecker', () => {
+describe('PathExistenceChecker', () => {
     it('should test path existence in git tree', async () => {
         const children = new Map([
             ['', ['web', 'shared']],
@@ -12,7 +12,7 @@ describe('PathVisibilityChecker', () => {
             ['shared', ['shared/bar.ts', 'shared/baz.ts']],
         ])
 
-        const pathVisibilityChecker = new PathVisibilityChecker({
+        const pathExistenceChecker = new PathExistenceChecker({
             repositoryId: 42,
             commit: 'c',
             root: 'web',
@@ -21,18 +21,18 @@ describe('PathVisibilityChecker', () => {
         })
 
         // Test within root
-        expect(await pathVisibilityChecker.shouldIncludePath('foo.ts', false)).toBeTruthy()
-        expect(await pathVisibilityChecker.shouldIncludePath('bar.ts', false)).toBeFalsy()
-        expect(await pathVisibilityChecker.shouldIncludePath('shared/bonk.ts', false)).toBeTruthy()
+        expect(await pathExistenceChecker.shouldIncludePath('foo.ts', false)).toBeTruthy()
+        expect(await pathExistenceChecker.shouldIncludePath('bar.ts', false)).toBeFalsy()
+        expect(await pathExistenceChecker.shouldIncludePath('shared/bonk.ts', false)).toBeTruthy()
 
         // Test outside root but within repo
-        expect(await pathVisibilityChecker.shouldIncludePath('../shared/bar.ts', false)).toBeTruthy()
-        expect(await pathVisibilityChecker.shouldIncludePath('../shared/bar.ts', true)).toBeFalsy()
-        expect(await pathVisibilityChecker.shouldIncludePath('../shared/bonk.ts', false)).toBeFalsy()
-        expect(await pathVisibilityChecker.shouldIncludePath('../node_modules/@types/quux.ts', false)).toBeFalsy()
+        expect(await pathExistenceChecker.shouldIncludePath('../shared/bar.ts', false)).toBeTruthy()
+        expect(await pathExistenceChecker.shouldIncludePath('../shared/bar.ts', true)).toBeFalsy()
+        expect(await pathExistenceChecker.shouldIncludePath('../shared/bonk.ts', false)).toBeFalsy()
+        expect(await pathExistenceChecker.shouldIncludePath('../node_modules/@types/quux.ts', false)).toBeFalsy()
 
         // Test outside repo
-        expect(await pathVisibilityChecker.shouldIncludePath('../../node_modules/@types/oops.ts', false)).toBeFalsy()
+        expect(await pathExistenceChecker.shouldIncludePath('../../node_modules/@types/oops.ts', false)).toBeFalsy()
     })
 
     it('should cache directory contents', async () => {
@@ -41,7 +41,7 @@ describe('PathVisibilityChecker', () => {
             Promise.resolve(new Set(children.get(dirname)))
         )
 
-        const pathVisibilityChecker = new PathVisibilityChecker({
+        const pathExistenceChecker = new PathExistenceChecker({
             repositoryId: 42,
             commit: 'c',
             root: '',
@@ -50,8 +50,8 @@ describe('PathVisibilityChecker', () => {
         })
 
         for (let i = 0; i < 100; i++) {
-            expect(await pathVisibilityChecker.shouldIncludePath(`${i}.ts`, false)).toBeTruthy()
-            expect(await pathVisibilityChecker.shouldIncludePath(`${i}.js`, false)).toBeFalsy()
+            expect(await pathExistenceChecker.shouldIncludePath(`${i}.ts`, false)).toBeTruthy()
+            expect(await pathExistenceChecker.shouldIncludePath(`${i}.js`, false)).toBeFalsy()
         }
 
         expect(mockGetDirectoryChildren.callCount).toEqual(1)
@@ -63,7 +63,7 @@ describe('PathVisibilityChecker', () => {
             Promise.resolve(new Set(children.get(dirname)))
         )
 
-        const pathVisibilityChecker = new PathVisibilityChecker({
+        const pathExistenceChecker = new PathExistenceChecker({
             repositoryId: 42,
             commit: 'c',
             root: '',
@@ -73,7 +73,7 @@ describe('PathVisibilityChecker', () => {
 
         for (let i = 0; i < 100; i++) {
             const path = `node_modules/${i}/deeply/nested/lib/file.ts`
-            expect(await pathVisibilityChecker.shouldIncludePath(path, false)).toBeFalsy()
+            expect(await pathExistenceChecker.shouldIncludePath(path, false)).toBeFalsy()
         }
 
         // Should only check children of / and /node_modules

@@ -11,7 +11,7 @@ import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
 import { DumpManager } from '../../shared/store/dumps'
 import { DependencyManager } from '../../shared/store/dependencies'
-import { PathVisibilityChecker } from './visibility'
+import { PathExistenceChecker } from './existence'
 
 /**
  * Convert the LSIF dump input into a SQLite database and populate the dependency tables
@@ -36,7 +36,7 @@ export async function convertDatabase(
     const tempFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, uuid.v4())
 
     try {
-        const pathVisibilityChecker = new PathVisibilityChecker({
+        const pathExistenceChecker = new PathExistenceChecker({
             repositoryId: upload.repositoryId,
             commit: upload.commit,
             root: upload.root,
@@ -45,7 +45,7 @@ export async function convertDatabase(
         })
 
         // Create database in a temp path
-        const { packages, references } = await convertLsif(upload.filename, tempFile, pathVisibilityChecker, ctx)
+        const { packages, references } = await convertLsif(upload.filename, tempFile, pathExistenceChecker, ctx)
 
         // Insert dump and add packages and references to Postgres
         await dependencyManager.addPackagesAndReferences(upload.id, packages, references, ctx, entityManager)

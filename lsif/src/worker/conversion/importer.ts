@@ -15,7 +15,7 @@ import { readEnvInt } from '../../shared/settings'
 import { readGzippedJsonElementsFromFile } from '../../shared/input'
 import { TableInserter } from '../../shared/database/inserter'
 import { createSilentLogger } from '../../shared/logging'
-import { PathVisibilityChecker } from './visibility'
+import { PathExistenceChecker } from './existence'
 
 /**
  * The insertion metrics for the database.
@@ -51,13 +51,13 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  *
  * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
  * @param database The filepath of the database to populate.
- * @param pathVisibilityChecker An object that tracks whether a path is visible within the LSIF dump.
+ * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
  * @param ctx The tracing context.
  */
 export async function convertLsif(
     path: string,
     database: string,
-    pathVisibilityChecker: PathVisibilityChecker,
+    pathExistenceChecker: PathExistenceChecker,
     { logger = createSilentLogger(), span }: TracingContext = {}
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const connection = await createSqliteConnection(database, sqliteModels.entities, logger)
@@ -67,7 +67,7 @@ export async function convertLsif(
         await connection.query('PRAGMA journal_mode = OFF')
 
         return await connection.transaction(entityManager =>
-            importLsif(entityManager, path, pathVisibilityChecker, { logger, span })
+            importLsif(entityManager, path, pathExistenceChecker, { logger, span })
         )
     } finally {
         await connection.close()
@@ -81,13 +81,13 @@ export async function convertLsif(
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
- * @param pathVisibilityChecker An object that tracks whether a path is visible within the LSIF dump.
+ * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
  * @param ctx The tracing context.
  */
 export async function importLsif(
     entityManager: EntityManager,
     path: string,
-    pathVisibilityChecker: PathVisibilityChecker,
+    pathExistenceChecker: PathExistenceChecker,
     ctx: TracingContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     // Correlate input data into in-memory maps
@@ -121,7 +121,7 @@ export async function importLsif(
     // time the total cost of fetching this data from gitserver by doing it all in one
     // place. If we perform the queries lazily, we would need to add the timings for
     // each individual span in the resulting trace.
-    await pathVisibilityChecker.warmCache(Array.from(correlator.documentPaths.values()))
+    await pathExistenceChecker.warmCache(Array.from(correlator.documentPaths.values()))
 
     // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
@@ -145,7 +145,7 @@ export async function importLsif(
             sqliteModels.DocumentModel.BatchSize,
             inserterMetrics
         )
-        await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds, pathVisibilityChecker)
+        await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds, pathExistenceChecker)
         await documentInserter.flush()
     })
 
@@ -157,7 +157,7 @@ export async function importLsif(
             sqliteModels.ResultChunkModel.BatchSize,
             inserterMetrics
         )
-        await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks, pathVisibilityChecker)
+        await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks, pathExistenceChecker)
         await resultChunkInserter.flush()
     })
 
@@ -179,7 +179,7 @@ export async function importLsif(
             correlator,
             definitionInserter,
             referenceInserter,
-            pathVisibilityChecker
+            pathExistenceChecker
         )
         await definitionInserter.flush()
         await referenceInserter.flush()
@@ -195,13 +195,13 @@ export async function importLsif(
  * @param correlator The correlator with all vertices and edges inserted.
  * @param documentInserter The inserter for the documents table.
  * @param canonicalReferenceResultIds A map from reference result identifiers to its canonical identifier.
- * @param pathVisibilityChecker An object that tracks whether a path is visible within the LSIF dump.
+ * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
  */
 async function populateDocumentsTable(
     correlator: Correlator,
     documentInserter: TableInserter<sqliteModels.DocumentModel, new () => sqliteModels.DocumentModel>,
     canonicalReferenceResultIds: Map<sqliteModels.ReferenceResultId, sqliteModels.ReferenceResultId>,
-    pathVisibilityChecker: PathVisibilityChecker
+    pathExistenceChecker: PathExistenceChecker
 ): Promise<void> {
     // Collapse result sets data into the ranges that can reach them. The
     // remainder of this function assumes that we can completely ignore
@@ -221,7 +221,7 @@ async function populateDocumentsTable(
         // as the current text document path and the dump root are compared to determine
         // which dump to open. If the path does not exist in git, it will also never be
         // queried.
-        if (!(await pathVisibilityChecker.shouldIncludePath(documentPath))) {
+        if (!(await pathExistenceChecker.shouldIncludePath(documentPath))) {
             continue
         }
 
@@ -249,13 +249,13 @@ async function populateDocumentsTable(
  * @param correlator The correlator with all vertices and edges inserted.
  * @param resultChunkInserter The inserter for the result chunks table.
  * @param numResultChunks The number of result chunks used to hash compute the result identifier hash.
- * @param pathVisibilityChecker An object that tracks whether a path is visible within the LSIF dump.
+ * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
  */
 async function populateResultChunksTable(
     correlator: Correlator,
     resultChunkInserter: TableInserter<sqliteModels.ResultChunkModel, new () => sqliteModels.ResultChunkModel>,
     numResultChunks: number,
-    pathVisibilityChecker: PathVisibilityChecker
+    pathExistenceChecker: PathExistenceChecker
 ): Promise<void> {
     // Create all the result chunks we'll be populating and inserting up-front. Data will
     // be inserted into result chunks based on hash values (modulo the number of result chunks),
@@ -279,7 +279,7 @@ async function populateResultChunksTable(
                 // with indexers that point to generated files or dependencies that are not
                 // committed (e.g. node_modules). Keeping these in the dump can cause the
                 // UI to redirect to a path that doesn't exist.
-                if (!(await pathVisibilityChecker.shouldIncludePath(documentPath, false))) {
+                if (!(await pathExistenceChecker.shouldIncludePath(documentPath, false))) {
                     continue
                 }
 
@@ -326,13 +326,13 @@ async function populateResultChunksTable(
  * @param correlator The correlator with all vertices and edges inserted.
  * @param definitionInserter The inserter for the definitions table.
  * @param referenceInserter The inserter for the references table.
- * @param pathVisibilityChecker An object that tracks whether a path is visible within the LSIF dump.
+ * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
  */
 async function populateDefinitionsAndReferencesTables(
     correlator: Correlator,
     definitionInserter: TableInserter<sqliteModels.DefinitionModel, new () => sqliteModels.DefinitionModel>,
     referenceInserter: TableInserter<sqliteModels.ReferenceModel, new () => sqliteModels.ReferenceModel>,
-    pathVisibilityChecker: PathVisibilityChecker
+    pathExistenceChecker: PathExistenceChecker
 ): Promise<void> {
     // Determine the set of monikers that are attached to a definition or a
     // reference result. Correlating information in this way has two benefits:
@@ -394,7 +394,7 @@ async function populateDefinitionsAndReferencesTables(
                     // Skip definitions or references that point to a document that are not
                     // present in the dump. Including this would cause a query that always
                     // fails when it cannot resolve the missing document data.
-                    if (!(await pathVisibilityChecker.shouldIncludePath(documentPath))) {
+                    if (!(await pathExistenceChecker.shouldIncludePath(documentPath))) {
                         continue
                     }
 

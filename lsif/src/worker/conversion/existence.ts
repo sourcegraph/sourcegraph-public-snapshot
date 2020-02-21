@@ -15,7 +15,7 @@ import { createSilentLogger } from '../../shared/logging'
  *   - request all files recursively at once (bad for large repos and mono repos), nor
  *   - make a request for every unique path in the index.
  */
-export class PathVisibilityChecker {
+export class PathExistenceChecker {
     private repositoryId: number
     private commit: string
     private root: string
@@ -26,7 +26,7 @@ export class PathVisibilityChecker {
     private numGitserverRequests = 0
 
     /**
-     * Create a new PathVisibilityChecker.
+     * Create a new PathExistenceChecker.
      *
      * @param args Parameter bag.
      */
@@ -60,8 +60,8 @@ export class PathVisibilityChecker {
     }
 
     /**
-     * Warms the git tree cache by determining if each of the supplied paths are
-     * visible in git. This function batches queries to gitserver to minimize the
+     * Warms the git directory cache by determining if each of the supplied paths
+     * exist in git. This function batches queries to gitserver to minimize the
      * number of roundtrips during conversion.
      *
      * @param documentPaths A set of dump root-relative paths.
@@ -69,7 +69,7 @@ export class PathVisibilityChecker {
     public warmCache(documentPaths: string[]): Promise<void> {
         return logAndTraceCall(
             this.ctx || {},
-            'Warming document visibility cache',
+            'Warming git directory cache',
             async ({ logger = createSilentLogger() }) => {
                 // TODO - batch requests
                 for (const documentPath of documentPaths) {
@@ -92,9 +92,8 @@ export class PathVisibilityChecker {
     }
 
     /**
-     * Determine if the given path is known by git.
-     *
-     * If no frontend url is configured, this method returns true (assumes it's in the tree).
+     * Determine if the given path is known by git. If no frontend url is configured,
+     * this method returns true (assumes it's in the tree).
      *
      * @param documentPath The path of the file relative to the dump root.
      */
