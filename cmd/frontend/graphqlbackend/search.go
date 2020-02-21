@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -169,17 +168,6 @@ func detectSearchType(version string, patternType *string, input string) (query.
 	}
 
 	return searchType, nil
-}
-
-func asString(v *searchquerytypes.Value) string {
-	switch {
-	case v.String != nil:
-		return *v.String
-	case v.Regexp != nil:
-		return v.Regexp.String()
-	default:
-		return "<unable to get searchquerytypes.Value as string>"
-	}
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
