@@ -76,9 +76,7 @@ require (
 	github.com/goware/urlx v0.3.1
 	github.com/graph-gophers/graphql-go v0.0.0-20200207002730-8334863f2c8b
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
-	github.com/hashicorp/go-hclog v0.12.0 // indirect
 	github.com/hashicorp/go-multierror v1.0.0
-	github.com/hashicorp/go-retryablehttp v0.6.4 // indirect
 	github.com/honeycombio/libhoney-go v1.12.2
 	github.com/jirfag/go-printf-func-name v0.0.0-20200119135958-7558a9eaa5af // indirect
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
@@ -99,7 +97,6 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20191220065457-5596e0f9c026 // indirect
 	github.com/lightstep/lightstep-tracer-go v0.18.1
-	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mattn/goreman v0.3.5
@@ -191,7 +188,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200214174437-f438357f9b30
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200221094732-2880d988ad51
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
