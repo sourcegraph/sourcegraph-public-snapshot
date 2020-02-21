@@ -20,7 +20,6 @@ type searchAlert struct {
 	prometheusType  string
 	title           string
 	description     string
-	patternType     SearchType
 	proposedQueries []*searchQueryDescription
 }
 
@@ -37,26 +36,10 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	if len(a.proposedQueries) == 0 {
 		return nil
 	}
-	for _, proposedQuery := range a.proposedQueries {
-		if proposedQuery.description != "Remove quotes" {
-			switch a.patternType {
-			case SearchTypeRegex:
-				proposedQuery.query = proposedQuery.query + " patternType:regexp"
-			case SearchTypeLiteral:
-				proposedQuery.query = proposedQuery.query + " patternType:literal"
-			case SearchTypeStructural:
-				// Don't append patternType:structural, it is not erased from the query like
-				// patterntype:regexp and patterntype:literal.
-				// TODO(RVT): Making this consistent requires a change on the UI side.
-			default:
-				panic("unreachable")
-			}
-		}
-	}
 	return &a.proposedQueries
 }
 
-func (r *searchResolver) alertForStalePermissions(_ context.Context) *searchAlert {
+func alertForStalePermissions() *searchAlert {
 	return &searchAlert{
 		prometheusType: "no_resolved_repos__stale_permissions",
 		title:          "Permissions syncing in progress",
@@ -64,16 +47,17 @@ func (r *searchResolver) alertForStalePermissions(_ context.Context) *searchAler
 	}
 }
 
-func (r *searchResolver) alertForQuotesInQueryInLiteralMode(_ context.Context) (*searchAlert, error) {
+func alertForQuotesInQueryInLiteralMode(q *query.Query) *searchAlert {
 	return &searchAlert{
 		prometheusType: "no_results__suggest_quotes",
 		title:          "No results. Did you mean to use quotes?",
 		description:    "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
 		proposedQueries: []*searchQueryDescription{{
 			description: "Remove quotes",
-			query:       syntax.ExprString(omitQuotes(r.query)),
+			query:       syntax.ExprString(omitQuotes(q)),
+			patternType: query.SearchTypeLiteral,
 		}},
-	}, nil
+	}
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
@@ -88,7 +72,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			prometheusType: "no_resolved_repos__no_repositories",
 			title:          "Add repositories or connect repository hosts",
 			description:    "There are no repositories to search. Add an external service connection to your code host.",
-			patternType:    r.patternType,
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
@@ -96,7 +79,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			prometheusType: "no_resolved_repos__repogroup_empty",
 			title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
 			description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
-			patternType:    r.patternType,
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
@@ -104,7 +86,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			prometheusType: "no_resolved_repos__repogroup_none_in_common",
 			title:          "Repository groups have no repositories in common",
 			description:    "No repository exists in all of the specified repository groups.",
-			patternType:    r.patternType,
 		}, nil
 	}
 
@@ -113,7 +94,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 	withoutRepoFields := omitQueryFields(r, query.FieldRepo)
 
 	var a searchAlert
-	a.patternType = r.patternType
 	switch {
 	case len(repoGroupFilters) > 1:
 		// This is a rare case, so don't bother proposing queries.
@@ -132,6 +112,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
 				query:       omitQueryFields(r, query.FieldRepoGroup),
+				patternType: r.patternType,
 			})
 		}
 
@@ -146,12 +127,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       query,
+				patternType: r.patternType,
 			})
 		} else {
 			// Fall back to removing repo filters.
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: "remove repo: filters",
 				query:       withoutRepoFields,
+				patternType: r.patternType,
 			})
 		}
 
@@ -167,12 +150,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
 				query:       omitQueryFields(r, query.FieldRepoGroup),
+				patternType: r.patternType,
 			})
 		}
 
 		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 			description: "remove repo: filters",
 			query:       withoutRepoFields,
+			patternType: r.patternType,
 		})
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
@@ -190,6 +175,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       query,
+				patternType: r.patternType,
 			})
 		}
 
@@ -221,6 +207,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 				a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 					description: "remove repo: filter",
 					query:       withoutRepoFields,
+					patternType: r.patternType,
 				})
 			}
 		}
@@ -233,7 +220,6 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	alert := &searchAlert{
 		prometheusType: "over_repo_limit",
 		title:          "Too many matching repositories",
-		patternType:    r.patternType,
 	}
 
 	if envvar.SourcegraphDotComMode() {
@@ -312,6 +298,7 @@ outer:
 		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 			description: "in repositories under " + repoParent + more,
 			query:       syntax.ExprString(newExpr),
+			patternType: r.patternType,
 		})
 	}
 	if len(alert.proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
@@ -330,6 +317,7 @@ outer:
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
 				query:       syntax.ExprString(newExpr),
+				patternType: r.patternType,
 			})
 		}
 	}
@@ -337,7 +325,7 @@ outer:
 	return alert, nil
 }
 
-func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
+func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
 		if len(missingRepoRevs[0].RevSpecs()) == 1 {
@@ -356,7 +344,6 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.Repos
 		prometheusType: "missing_repo_revs",
 		title:          "Some repositories could not be searched",
 		description:    description,
-		patternType:    r.patternType,
 	}
 }
 
@@ -443,3 +430,18 @@ func addQueryRegexpField(query *query.Query, field, pattern string) syntax.Parse
 	}
 	return expr
 }
+
+func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
+	alert := &searchAlert{
+		prometheusType:  a.prometheusType,
+		title:           a.title,
+		description:     a.description,
+		proposedQueries: a.proposedQueries,
+	}
+	return &SearchResultsResolver{alert: alert}, nil
+}
+
+func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
+	return nil, nil
+}
+func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }

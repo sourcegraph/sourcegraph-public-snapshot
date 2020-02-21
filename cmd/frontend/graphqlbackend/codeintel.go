@@ -61,6 +61,7 @@ type LSIFUploadResolver interface {
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	InputCommit() string
 	InputRoot() string
+	InputIndexer() string
 	State() string
 	UploadedAt() DateTime
 	StartedAt() *DateTime

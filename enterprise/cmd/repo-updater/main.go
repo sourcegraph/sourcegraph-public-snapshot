@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -29,12 +29,12 @@ var cbOnce sync.Once
 func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory) {
 	cbOnce.Do(func() {
 		ctx := context.Background()
-		a8nStore := a8n.NewStore(db)
+		campaignsStore := campaigns.NewStore(db)
 
 		// Set up syncer
 		go func() {
-			syncer := &a8n.ChangesetSyncer{
-				Store:       a8nStore,
+			syncer := &campaigns.ChangesetSyncer{
+				Store:       campaignsStore,
 				ReposStore:  repoStore,
 				HTTPFactory: cf,
 			}
@@ -50,7 +50,7 @@ func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory) {
 		// Set up expired campaign deletion
 		go func() {
 			for {
-				err := a8nStore.DeleteExpiredCampaignPlans(ctx)
+				err := campaignsStore.DeleteExpiredCampaignPlans(ctx)
 				if err != nil {
 					log15.Error("DeleteExpiredCampaignPlans", "error", err)
 				}

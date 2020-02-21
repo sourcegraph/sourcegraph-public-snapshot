@@ -87,6 +87,8 @@ interface ConnectionDisplayProps {
     /** The component displayed when the list of nodes is empty. */
     emptyElement?: JSX.Element
 
+    /** The component displayed when all nodes have been fetched. */
+    totalCountSummaryComponent?: React.ComponentType<{ totalCount: number }>
     /**
      * Set to true when the GraphQL response is expected to emit an `PageInfo.endCursor` value when
      * there is a subsequent page of results. This will request the next page of results and append
@@ -162,6 +164,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
         const HeadComponent = this.props.headComponent
         const FootComponent = this.props.footComponent
+        const TotalCountSummaryComponent = this.props.totalCountSummaryComponent
 
         const hasNextPage = this.props.connection
             ? this.props.connection.pageInfo
@@ -196,7 +199,9 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
             (!this.props.noSummaryIfAllNodesVisible || this.props.connection.nodes.length === 0 || hasNextPage)
         ) {
             if (totalCount !== null && totalCount > 0) {
-                summary = (
+                summary = TotalCountSummaryComponent ? (
+                    <TotalCountSummaryComponent totalCount={totalCount}></TotalCountSummaryComponent>
+                ) : (
                     <p className="filtered-connection__summary">
                         <small>
                             <span>
@@ -786,6 +791,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         onShowMore={this.onClickShowMore}
                         location={this.props.location}
                         emptyElement={this.props.emptyElement}
+                        totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                     />
                 )}
                 {this.state.loading && (

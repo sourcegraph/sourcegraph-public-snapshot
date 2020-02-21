@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -172,9 +172,9 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 	}
 
 	changesets := []*Changeset{
-		{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "2"}},
-		{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "4"}},
-		{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "999"}},
+		{Repo: repo, Changeset: &campaigns.Changeset{ExternalID: "2"}},
+		{Repo: repo, Changeset: &campaigns.Changeset{ExternalID: "4"}},
+		{Repo: repo, Changeset: &campaigns.Changeset{ExternalID: "999"}},
 	}
 
 	testCases := []struct {
@@ -272,7 +272,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 				BaseRef:   "master",
 				HeadRef:   "test-pr-bbs-9",
 				Repo:      repo,
-				Changeset: &a8n.Changeset{},
+				Changeset: &campaigns.Changeset{},
 			},
 		},
 		{
@@ -283,7 +283,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 				BaseRef:   "refs/heads/master",
 				HeadRef:   "refs/heads/test-pr-bbs-10",
 				Repo:      repo,
-				Changeset: &a8n.Changeset{},
+				Changeset: &campaigns.Changeset{},
 			},
 		},
 		{
@@ -294,7 +294,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 				BaseRef:   "refs/heads/master",
 				HeadRef:   "refs/heads/always-open-pr-bbs",
 				Repo:      repo,
-				Changeset: &a8n.Changeset{},
+				Changeset: &campaigns.Changeset{},
 			},
 			// CreateChangeset is idempotent so if the PR already exists
 			// it is not an error
@@ -372,7 +372,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 	}{
 		{
 			name: "success",
-			cs:   &Changeset{Changeset: &a8n.Changeset{Metadata: pr}},
+			cs:   &Changeset{Changeset: &campaigns.Changeset{Metadata: pr}},
 		},
 	}
 
@@ -445,7 +445,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 				Title:     "This is a new title",
 				Body:      "This is a new body",
 				BaseRef:   "refs/heads/master",
-				Changeset: &a8n.Changeset{Metadata: pr},
+				Changeset: &campaigns.Changeset{Metadata: pr},
 			},
 		},
 	}

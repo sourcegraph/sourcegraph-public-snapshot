@@ -211,10 +211,16 @@ func SymbolIndexEnabled() bool {
 	return enabled
 }
 
-func AutomationReadAccessEnabled() bool {
+func CampaignsReadAccessEnabled() bool {
+	if v := Get().CampaignsReadAccessEnabled; v != nil {
+		return *v
+	}
+
+	// DEPRECATED property name.
 	if v := Get().AutomationReadAccessEnabled; v != nil {
 		return *v
 	}
+
 	return false
 }
 
@@ -265,11 +271,8 @@ func SearchSymbolsParallelism() int {
 	return val
 }
 
-func BitbucketServerFastPerm() bool {
+func BitbucketServerPluginPerm() bool {
 	val := Get().ExperimentalFeatures.BitbucketServerFastPerm
-	if val == "" {
-		return false
-	}
 	return val == "enabled"
 }
 

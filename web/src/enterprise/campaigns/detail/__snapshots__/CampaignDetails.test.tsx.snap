@@ -10,38 +10,15 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
     onReset={[Function]}
     onSubmit={[Function]}
   >
-    <div
-      className="d-flex mb-2"
-    >
-      <h2
-        className="m-0"
-      >
-        <CampaignsIcon
-          className="icon-inline mr-2 text-muted"
-        />
-        <span>
-          <AnchorLink
-            to="/campaigns"
-          >
-            Campaigns
-          </AnchorLink>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
-        <CampaignTitleField
-          className="w-auto d-inline-block e2e-campaign-title"
-          disabled={false}
-          onChange={[Function]}
-          value=""
-        />
-      </h2>
-      <span
-        className="flex-grow-1 d-flex justify-content-end align-items-center"
-      />
-    </div>
+    <CampaignActionsBar
+      mode="editing"
+      name=""
+      onClose={[Function]}
+      onDelete={[Function]}
+      onEdit={[Function]}
+      onNameChange={[Function]}
+      previewingCampaignPlan={false}
+    />
     <div
       className="card"
     >

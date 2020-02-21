@@ -197,7 +197,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		HasRepos:             hasRepos,
 		EverSearched:         hasRepos && searchOccurred, // Searches only count if repos have been added.
 		EverFindRefs:         findRefsOccurred,
-		AutomationUsage:      automationUsage,
+		AutomationUsage:      campaignsUsage,
 	})
 	if err != nil {
 		return nil, err

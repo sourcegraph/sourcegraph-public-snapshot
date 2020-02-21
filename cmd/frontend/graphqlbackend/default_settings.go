@@ -29,6 +29,7 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/perl":       true,
 	"sourcegraph/php":        true,
 	"sourcegraph/powershell": true,
+	"sourcegraph/protobuf":   true,
 	"sourcegraph/python":     true,
 	"sourcegraph/r":          true,
 	"sourcegraph/ruby":       true,

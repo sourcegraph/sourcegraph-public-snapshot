@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	rxsyntax "regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
-	"github.com/src-d/enry/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -30,6 +30,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -65,13 +67,71 @@ type SearchImplementer interface {
 	Stats(context.Context) (*searchResultsStats, error)
 }
 
-type SearchType int
+func alertForParseError(err error, queryString string) *searchAlert {
+	switch e := err.(type) {
+	case *syntax.ParseError:
+		return &searchAlert{
+			prometheusType:  "parse_syntax_error",
+			title:           capFirst(e.Msg),
+			description:     "Quoting the query may help if you want a literal match.",
+			proposedQueries: proposedQuotedQueries(queryString),
+		}
+	}
+	return &searchAlert{
+		prometheusType: "parse_syntax_error",
+		title:          "Query Parse Error",
+		description:    capFirst(err.Error()),
+	}
+}
 
-const (
-	SearchTypeRegex SearchType = iota
-	SearchTypeLiteral
-	SearchTypeStructural
-)
+func alertForTypecheckError(err error, queryString string) *searchAlert {
+	switch e := err.(type) {
+	case *querytypes.TypeError:
+		switch e := e.Err.(type) {
+		case *rxsyntax.Error:
+			return &searchAlert{
+				prometheusType:  "typecheck_regex_syntax_error",
+				title:           capFirst(e.Error()),
+				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
+				proposedQueries: proposedQuotedQueries(queryString),
+			}
+		}
+	}
+	return &searchAlert{
+		prometheusType: "typecheck_error",
+		title:          "Query Typecheck Error",
+		description:    capFirst(err.Error()),
+	}
+}
+
+// processQuery runs the processing pipeline that parses, type checks, and
+// validates search queries. Errors are converted to descriptive alerts or
+// suggestions that surface in the client.
+//
+// TODO(rvantonder): this function should belong to
+// the internal/search/query package, once alerts can be constructed in
+// internal/search.
+func processQuery(queryString string, searchType query.SearchType) (*query.Query, *searchAlert) {
+	parseTree, err := query.Parse(queryString)
+	if err != nil {
+		return nil, alertForParseError(err, queryString)
+	}
+
+	q, err := query.Check(parseTree)
+	if err != nil {
+		return nil, alertForTypecheckError(err, queryString)
+	}
+
+	err = query.Validate(q, searchType)
+	if err != nil {
+		return nil, &searchAlert{
+			title:       "Invalid Query",
+			description: capFirst(err.Error()),
+		}
+	}
+
+	return q, nil
+}
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
@@ -80,23 +140,23 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 
 	searchType, err := detectSearchType(args.Version, args.PatternType, args.Query)
 	if err != nil {
-		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
+		return nil, err
 	}
 
-	if searchType == SearchTypeStructural && !conf.StructuralSearchEnabled() {
+	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
 	var queryString string
-	if searchType == SearchTypeLiteral {
+	if searchType == query.SearchTypeLiteral {
 		queryString = query.ConvertToLiteral(args.Query)
 	} else {
 		queryString = args.Query
 	}
 
-	q, err := query.ParseAndCheck(queryString)
-	if err != nil {
-		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
+	q, alert := processQuery(queryString, searchType)
+	if alert != nil {
+		return alert, nil
 	}
 
 	// If the request is a paginated one, decode those arguments now.
@@ -136,25 +196,25 @@ func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
 // patternType parameters passed to the search endpoint (literal search is the
 // default in V2), and the `patternType:` filter in the input query string which
 // overrides the searchType, if present.
-func detectSearchType(version string, patternType *string, input string) (SearchType, error) {
-	var searchType SearchType
+func detectSearchType(version string, patternType *string, input string) (query.SearchType, error) {
+	var searchType query.SearchType
 	if patternType != nil {
 		switch *patternType {
 		case "literal":
-			searchType = SearchTypeLiteral
+			searchType = query.SearchTypeLiteral
 		case "regexp":
-			searchType = SearchTypeRegex
+			searchType = query.SearchTypeRegex
 		case "structural":
-			searchType = SearchTypeStructural
+			searchType = query.SearchTypeStructural
 		default:
 			return -1, fmt.Errorf("unrecognized patternType: %v", patternType)
 		}
 	} else {
 		switch version {
 		case "V1":
-			searchType = SearchTypeRegex
+			searchType = query.SearchTypeRegex
 		case "V2":
-			searchType = SearchTypeLiteral
+			searchType = query.SearchTypeLiteral
 		default:
 			return -1, fmt.Errorf("unrecognized version: %v", version)
 		}
@@ -168,12 +228,12 @@ func detectSearchType(version string, patternType *string, input string) (Search
 	if len(patternFromField) > 1 {
 		extracted := patternFromField[1]
 		if match, _ := regexp.MatchString("regex", extracted); match {
-			searchType = SearchTypeRegex
+			searchType = query.SearchTypeRegex
 		} else if match, _ := regexp.MatchString("literal", extracted); match {
-			searchType = SearchTypeLiteral
+			searchType = query.SearchTypeLiteral
 
 		} else if match, _ := regexp.MatchString("structural", extracted); match {
-			searchType = SearchTypeStructural
+			searchType = query.SearchTypeStructural
 		}
 	}
 
@@ -196,7 +256,7 @@ type searchResolver struct {
 	query         *query.Query          // the parsed search query
 	originalQuery string                // the raw string of the original search query
 	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType   SearchType
+	patternType   query.SearchType
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -735,7 +795,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 
 // SearchRepos searches for the provided query but only the the unique list of
 // repositories belonging to the search results.
-// It's used by a8n to search.
+// It's used by campaigns to search.
 func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver, error) {
 	queryString := query.ConvertToLiteral(plainQuery)
 
@@ -748,7 +808,7 @@ func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver,
 		query:         q,
 		originalQuery: plainQuery,
 		pagination:    nil,
-		patternType:   SearchTypeLiteral,
+		patternType:   query.SearchTypeLiteral,
 		zoekt:         search.Indexed(),
 		searcherURLs:  search.SearcherURLs(),
 	}
@@ -881,36 +941,6 @@ func sortSearchSuggestions(s []*searchSuggestionResolver) {
 		// All else equal, sort alphabetically.
 		return a.label < b.label
 	})
-}
-
-// langIncludeExcludePatterns returns regexps for the include/exclude path patterns given the lang:
-// and -lang: filter values in a search query. For example, a query containing "lang:go" should
-// include files whose paths match /\.go$/.
-func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns, excludePatterns []string, err error) {
-	do := func(values []string, patterns *[]string) error {
-		for _, value := range values {
-			lang, ok := enry.GetLanguageByAlias(value)
-			if !ok {
-				return fmt.Errorf("unknown language: %q", value)
-			}
-			exts := enry.GetLanguageExtensions(lang)
-			extPatterns := make([]string, len(exts))
-			for i, ext := range exts {
-				// Add `\.ext$` pattern to match files with the given extension.
-				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
-			}
-			*patterns = append(*patterns, unionRegExps(extPatterns))
-		}
-		return nil
-	}
-
-	if err := do(values, &includePatterns); err != nil {
-		return nil, nil, err
-	}
-	if err := do(negatedValues, &excludePatterns); err != nil {
-		return nil, nil, err
-	}
-	return includePatterns, excludePatterns, nil
 }
 
 // handleRepoSearchResult handles the limitHit and searchErr returned by a search function,

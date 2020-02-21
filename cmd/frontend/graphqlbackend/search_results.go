@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/src-d/enry/v2"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
@@ -527,11 +528,11 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 				prometheusType: "timed_out",
 				title:          "Timed out while searching",
 				description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
-				patternType:    r.patternType,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "query with longer timeout",
 						query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
+						patternType: r.patternType,
 					},
 				},
 			},
@@ -827,6 +828,36 @@ func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPa
 	return patternInfo, nil
 }
 
+// langIncludeExcludePatterns returns regexps for the include/exclude path patterns given the lang:
+// and -lang: filter values in a search query. For example, a query containing "lang:go" should
+// include files whose paths match /\.go$/.
+func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns, excludePatterns []string, err error) {
+	do := func(values []string, patterns *[]string) error {
+		for _, value := range values {
+			lang, ok := enry.GetLanguageByAlias(value)
+			if !ok {
+				return fmt.Errorf("unknown language: %q", value)
+			}
+			exts := enry.GetLanguageExtensions(lang)
+			extPatterns := make([]string, len(exts))
+			for i, ext := range exts {
+				// Add `\.ext$` pattern to match files with the given extension.
+				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
+			}
+			*patterns = append(*patterns, unionRegExps(extPatterns))
+		}
+		return nil
+	}
+
+	if err := do(values, &includePatterns); err != nil {
+		return nil, nil, err
+	}
+	if err := do(negatedValues, &excludePatterns); err != nil {
+		return nil, nil, err
+	}
+	return includePatterns, excludePatterns, nil
+}
+
 var (
 	// The default timeout to use for queries.
 	defaultTimeout = 10 * time.Second
@@ -888,7 +919,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
-			alert := r.alertForStalePermissions(ctx)
+			alert := alertForStalePermissions()
 			return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
 		return nil, nil, nil, err
@@ -1008,11 +1039,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	options := &getPatternInfoOptions{}
-	if r.patternType == SearchTypeStructural {
+	if r.patternType == query.SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 		forceOnlyResultType = "file"
 	}
-	if r.patternType == SearchTypeLiteral {
+	if r.patternType == query.SearchTypeLiteral {
 		options = &getPatternInfoOptions{performLiteralSearch: true}
 	}
 	p, err := r.getPatternInfo(options)
@@ -1306,11 +1337,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	if len(missingRepoRevs) > 0 {
-		alert = r.alertForMissingRepoRevs(missingRepoRevs)
+		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
 	}
 
-	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == SearchTypeLiteral {
-		alert, err = r.alertForQuotesInQueryInLiteralMode(ctx)
+	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
+		alert = alertForQuotesInQueryInLiteralMode(r.query)
 	}
 
 	// If we have some results, only log the error instead of returning it,

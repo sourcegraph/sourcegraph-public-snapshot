@@ -821,6 +821,8 @@ describe('e2e test suite', () => {
                         waitUntil: 'domcontentloaded',
                     }
                 )
+                await driver.page.waitForSelector('.e2e-tree-page-no-recent-commits')
+                await driver.page.click('.e2e-tree-page-show-all-commits')
                 await driver.page.waitForSelector('.git-commit-node__message', { visible: true })
                 await retry(async () =>
                     expect(

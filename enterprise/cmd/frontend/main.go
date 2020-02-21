@@ -24,8 +24,8 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
-	a8nResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/proxy"
 	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -65,15 +65,15 @@ func main() {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
-	a8nStore := a8n.NewStoreWithClock(dbconn.Global, clock)
+	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
 	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	githubWebhook := a8n.NewGitHubWebhook(a8nStore, repositories, clock)
-	bitbucketServerWebhook := a8n.NewBitbucketServerWebhook(a8nStore, repositories, clock)
+	githubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
+	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(campaignsStore, repositories, clock)
 
 	go bitbucketServerWebhook.Upsert(30 * time.Second)
 
-	go a8n.RunChangesetJobs(ctx, a8nStore, clock, gitserver.DefaultClient, 5*time.Second)
+	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
@@ -114,7 +114,7 @@ func initLicensing() {
 }
 
 func initResolvers() {
-	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
+	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
 	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
 	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
 		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {

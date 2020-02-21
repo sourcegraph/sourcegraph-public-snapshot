@@ -1,8 +1,12 @@
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import {
+    dataOrThrowErrors,
+    gql,
+    createInvalidGraphQLMutationResponseError,
+} from '../../../../../shared/src/graphql/graphql'
 import { map } from 'rxjs/operators'
 import { Observable } from 'rxjs'
-import { queryGraphQL } from '../../../backend/graphql'
+import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
 
 /**
  * Fetch LSIF uploads for a repository.
@@ -41,12 +45,14 @@ export function fetchLsifUploads({
                                 projectRoot {
                                     commit {
                                         abbreviatedOID
+                                        url
                                     }
                                     path
                                     url
                                 }
                                 inputCommit
                                 inputRoot
+                                inputIndexer
                                 uploadedAt
                                 startedAt
                                 finishedAt
@@ -104,6 +110,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                         }
                         inputCommit
                         inputRoot
+                        inputIndexer
                         state
                         failure {
                             summary
@@ -128,6 +135,29 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
             }
 
             return node
+        })
+    )
+}
+
+/**
+ * Delete an LSIF upload by id.
+ */
+export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation DeleteLsifUpload($id: ID!) {
+                deleteLSIFUpload(id: $id) {
+                    alwaysNil
+                }
+            }
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.deleteLSIFUpload) {
+                throw createInvalidGraphQLMutationResponseError('DeleteLsifUpload')
+            }
         })
     )
 }

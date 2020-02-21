@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
-// GetAutomationUsageStatistics returns the current site's automation usage.
+// GetAutomationUsageStatistics returns the current site's campaigns usage.
 func GetAutomationUsageStatistics(ctx context.Context) (*types.AutomationUsageStatistics, error) {
 	const q = "SELECT COUNT(*) FROM campaigns;"
 
