@@ -71,12 +71,16 @@ func run(token, org, milestone, labels string, update bool) (err error) {
 		return err
 	}
 
-	if update && body != tracking.Body {
+	if body != tracking.Body {
 		tracking.Body = body
+	}
+
+	if update {
 		err = updateIssue(cli, tracking)
 	}
 
 	fmt.Println(tracking.Body)
+
 	return err
 }
 
