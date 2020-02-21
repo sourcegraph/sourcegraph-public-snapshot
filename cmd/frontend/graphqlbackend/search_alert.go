@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	rxsyntax "regexp/syntax"
 	"sort"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
 type searchAlert struct {
@@ -37,6 +39,40 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 		return nil
 	}
 	return &a.proposedQueries
+}
+
+// alertForQuery converts errors in the query to search alerts.
+func alertForQuery(queryString string, err error) *searchAlert {
+	switch e := err.(type) {
+	case *syntax.ParseError:
+		return &searchAlert{
+			prometheusType:  "parse_syntax_error",
+			title:           capFirst(e.Msg),
+			description:     "Quoting the query may help if you want a literal match.",
+			proposedQueries: proposedQuotedQueries(queryString),
+		}
+	case *query.ValidationError:
+		return &searchAlert{
+			prometheusType: "validation_error",
+			title:          "Invalid Query",
+			description:    capFirst(e.Msg),
+		}
+	case *querytypes.TypeError:
+		switch e := e.Err.(type) {
+		case *rxsyntax.Error:
+			return &searchAlert{
+				prometheusType:  "typecheck_regex_syntax_error",
+				title:           capFirst(e.Error()),
+				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
+				proposedQueries: proposedQuotedQueries(queryString),
+			}
+		}
+	}
+	return &searchAlert{
+		prometheusType: "generic_invalid_query",
+		title:          "Unable To Process Query",
+		description:    capFirst(err.Error()),
+	}
 }
 
 func alertForStalePermissions() *searchAlert {

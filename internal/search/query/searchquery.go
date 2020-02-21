@@ -3,7 +3,6 @@
 package query
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
@@ -135,6 +134,46 @@ func ParseAndCheck(input string) (*Query, error) {
 	return checkedQuery, err
 }
 
+type ValidationError struct {
+	Msg string
+}
+
+func (e *ValidationError) Error() string {
+	return e.Msg
+}
+
+// Validate validates legal combinations of fields and search patterns of a
+// successfully parsed query.
+func Validate(q *Query, searchType SearchType) error {
+	if searchType == SearchTypeStructural {
+		if q.Fields[FieldCase] != nil {
+			return &ValidationError{Msg: `the parameter "case:" is not valid for structural search, matching is always case-sensitive`}
+		}
+	}
+	return nil
+}
+
+// Process is the top level function for processing raw strings into parsed,
+// typechecked, and validated queries.
+func Process(queryString string, searchType SearchType) (*Query, error) {
+	parseTree, err := Parse(queryString)
+	if err != nil {
+		return nil, err
+	}
+
+	query, err := Check(parseTree)
+	if err != nil {
+		return nil, err
+	}
+
+	err = Validate(query, searchType)
+	if err != nil {
+		return nil, err
+	}
+
+	return query, nil
+}
+
 // parseAndCheck is preserved for testing custom Configs only.
 func parseAndCheck(conf *types.Config, input string) (*Query, error) {
 	parseTree, err := syntax.Parse(input)
@@ -152,17 +191,6 @@ func parseAndCheck(conf *types.Config, input string) (*Query, error) {
 		return nil, err
 	}
 	return &Query{conf: conf, Query: checkedQuery}, nil
-}
-
-// Validate validates legal combinations of fields and search patterns of a
-// successfully parsed query.
-func Validate(q *Query, searchType SearchType) error {
-	if searchType == SearchTypeStructural {
-		if q.Fields[FieldCase] != nil {
-			return errors.New(`the parameter "case:" is not valid for structural search, matching is always case-sensitive`)
-		}
-	}
-	return nil
 }
 
 // BoolValue returns the last boolean value (yes/no) for the field. For example, if the query is
