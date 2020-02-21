@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"log"
 	"net"
 	"net/http"
@@ -30,11 +31,39 @@ func serveRepos(logger *log.Logger, addr, repoDir string) error {
 	return nil
 }
 
+var indexHTML = template.Must(template.New("").Parse(`<html>
+<head><title>src-expose</title></head>
+<body>
+<h2>src-expose</h2>
+<pre>
+{{.Explain}}
+<ul>{{range .Links}}
+<li><a href="{{.}}">{{.}}</a></li>
+{{- end}}
+</ul>
+</pre>
+</body>
+</html>`))
+
 func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server, error) {
 	configureRepos(logger, reposRoot)
 
 	// Start the HTTP server.
 	mux := &http.ServeMux{}
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		err := indexHTML.Execute(w, map[string]interface{}{
+			"Explain": explainAddr(ln.Addr().String()),
+			"Links": []string{
+				"/v1/list-repos",
+				"/repos/",
+			},
+		})
+		if err != nil {
+			log.Println(err)
+		}
+	})
 
 	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
 		type Repo struct {

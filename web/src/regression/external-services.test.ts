@@ -89,9 +89,8 @@ describe('External services GUI', () => {
                     "token": ${JSON.stringify(config.gitHubToken)},
                     "repos": ${JSON.stringify(repoSlugs)},
                     "repositoryQuery": ["none"],
-                    "repos": ["gorilla/mux"],
                     "repositoryPathPattern": "github-prefix/{nameWithOwner}"
-                }`
+                `
                 await driver.replaceText({
                     selector: '#e2e-external-service-form-display-name',
                     newText: externalServiceName,

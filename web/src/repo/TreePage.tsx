@@ -36,11 +36,13 @@ import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
-import { fetchTree } from './backend'
+import { fetchTreeEntries } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ErrorAlert } from '../components/alerts'
+import { subYears, formatISO } from 'date-fns'
+import { pluralize } from '../../../shared/src/util/strings'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -91,14 +93,15 @@ const fetchTreeCommits = memoizeObservable(
         revspec: string
         first?: number
         filePath?: string
+        after?: string
     }): Observable<GQL.IGitCommitConnection> =>
         queryGraphQL(
             gql`
-                query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String) {
+                query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
                     node(id: $repo) {
                         ... on Repository {
                             commit(rev: $revspec) {
-                                ancestors(first: $first, path: $filePath) {
+                                ancestors(first: $first, path: $filePath, after: $after) {
                                     nodes {
                                         ...GitCommitFields
                                     }
@@ -125,7 +128,7 @@ const fetchTreeCommits = memoizeObservable(
                 return repo.commit.ancestors
             })
         ),
-    args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
+    args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}:${args.after}`
 )
 
 interface Props
@@ -156,6 +159,8 @@ interface State {
      * The value of the search query input field.
      */
     queryState: QueryState
+
+    showOlderCommits?: true
 }
 
 export class TreePage extends React.PureComponent<Props, State> {
@@ -185,7 +190,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                     ),
                     tap(props => this.logViewEvent(props)),
                     switchMap(props =>
-                        fetchTree({
+                        fetchTreeEntries({
                             repoName: props.repoName,
                             commitID: props.commitID,
                             rev: props.rev,
@@ -203,7 +208,6 @@ export class TreePage extends React.PureComponent<Props, State> {
                     err => console.error(err)
                 )
         )
-
         this.componentUpdates.next(this.props)
     }
 
@@ -224,6 +228,37 @@ export class TreePage extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const emptyElement = this.state.showOlderCommits ? (
+            <>No commits in this tree.</>
+        ) : (
+            <div className="e2e-tree-page-no-recent-commits">
+                No commits in this tree in the past year.
+                <br />
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm e2e-tree-page-show-all-commits"
+                    onClick={this.showOlderCommits}
+                >
+                    Show all commits
+                </button>
+            </div>
+        )
+
+        const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
+            <div className="mt-2">
+                {this.state.showOlderCommits ? (
+                    <>{totalCount} total commits in this tree.</>
+                ) : (
+                    <>
+                        {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
+                        <br />
+                        <button type="button" className="btn btn-secondary btn-sm mt-1" onClick={this.showOlderCommits}>
+                            Show all commits
+                        </button>
+                    </>
+                )}
+            </div>
+        )
         return (
             <div className="tree-page">
                 <PageTitle title={this.getPageTitle()} />
@@ -354,10 +389,13 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         className: 'list-group-item',
                                         compact: true,
                                     }}
-                                    updateOnChange={`${this.props.repoName}:${this.props.rev}:${this.props.filePath}`}
+                                    updateOnChange={`${this.props.repoName}:${this.props.rev}:${this.props.filePath}:${this.state.showOlderCommits}`}
                                     defaultFirst={7}
                                     useURLQuery={false}
                                     hideSearch={true}
+                                    emptyElement={emptyElement}
+                                    // eslint-disable-next-line react/jsx-no-bind
+                                    totalCountSummaryComponent={TotalCountSummary}
                                 />
                             </div>
                         </>
@@ -388,11 +426,19 @@ export class TreePage extends React.PureComponent<Props, State> {
         return `${repoStr}`
     }
 
-    private queryCommits = (args: { first?: number }): Observable<GQL.IGitCommitConnection> =>
-        fetchTreeCommits({
+    private queryCommits = (args: { first?: number }): Observable<GQL.IGitCommitConnection> => {
+        const after: string | undefined = this.state.showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
+        return fetchTreeCommits({
             ...args,
             repo: this.props.repoID,
             revspec: this.props.rev || '',
             filePath: this.props.filePath,
+            after,
         })
+    }
+
+    private showOlderCommits = (e: React.MouseEvent): void => {
+        e.preventDefault()
+        this.setState({ showOlderCommits: true })
+    }
 }

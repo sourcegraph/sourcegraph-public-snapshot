@@ -62,6 +62,16 @@ If you are keen for more details on what bare Git repositories are, [check out t
 
 The directories should contain just a few files and directories, namely: HEAD, config, description, hooks, info, objects, packed-refs, refs
 
+## Does Sourcegraph support svn?
+
+For Subversion and other non-Git code hosts, the recommended way to make these accessible in
+Sourcegraph is through [`src-expose`](external_service/other.md#experimental-src-expose).
+
+Alternatively, you can use [`git-svn`](https://git-scm.com/docs/git-svn) or
+[`svg2git`](https://github.com/svn-all-fast-export/svn2git) to convert Subversion repositories to
+Git repositories. Unlike `src-expose`, this will preserve commit history, but is generally much
+slower.
+
 ## Troubleshooting
 
 Content moved to a [dedicated troubleshooting page](troubleshooting.md).

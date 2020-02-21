@@ -35,13 +35,19 @@ export enum FilterTypes {
     after = 'after',
     author = 'author',
     message = 'message',
+    content = 'content',
+    patterntype = 'patterntype',
 }
+
+export const isFilterType = (filter: string): filter is FilterTypes => filter in FilterTypes
 
 export const filterTypeKeys: FilterTypes[] = Object.keys(FilterTypes) as FilterTypes[]
 
 export enum NegatedFilters {
     repo = '-repo',
     file = '-file',
+    r = '-r',
+    f = '-f',
     lang = '-lang',
     repohasfile = '-repohasfile',
 }
@@ -61,6 +67,8 @@ export const isNegatedFilter = (filter: string): filter is NegatedFilters =>
 const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
     '-repo': FilterTypes.repo,
     '-file': FilterTypes.file,
+    '-r': FilterTypes.repo,
+    '-f': FilterTypes.file,
     '-lang': FilterTypes.lang,
     '-repohasfile': FilterTypes.repohasfile,
 }

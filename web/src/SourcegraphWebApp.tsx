@@ -145,7 +145,7 @@ const notificationClassNames = {
     [NotificationType.Success]: 'alert alert-success',
     [NotificationType.Info]: 'alert alert-info',
     [NotificationType.Warning]: 'alert alert-warning',
-    [NotificationType.Error]: 'alert alert-error',
+    [NotificationType.Error]: 'alert alert-danger',
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -255,9 +255,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.subscriptions.add(
             from(this.platformContext.settings).subscribe(settingsCascade => {
                 if (!parseSearchURLPatternType(window.location.search)) {
-                    // When the web app mounts, if there is no patternType parameter in the URL,
-                    // set the search pattern type to the default based on settings, if it is set.
-                    // Otherwise, default to literal.
+                    // When the web app mounts, if the current page does not have a patternType URL
+                    // parameter, set the search pattern type to the defaultPatternType from settings
+                    // (if it is set), otherwise default to literal.
+                    //
+                    // For search result URLs that have no patternType= query parameter,
+                    // the `SearchResults` component will append &patternType=regexp
+                    // to the URL to ensure legacy search links continue to work.
                     const defaultPatternType =
                         settingsCascade.final &&
                         !isErrorLike(settingsCascade.final) &&
@@ -274,7 +278,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             from(this.platformContext.settings).subscribe(settingsCascade => {
                 if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
                     const { splitSearchModes, smartSearchField } = settingsCascade.final.experimentalFeatures || {}
-                    this.setState({ splitSearchModes, smartSearchField })
+                    this.setState({ splitSearchModes: splitSearchModes !== false, smartSearchField })
                 }
             })
         )
@@ -377,7 +381,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                         !window.context.sourcegraphDotComMode &&
                                         !!authenticatedUser &&
                                         (authenticatedUser.siteAdmin ||
-                                            !!window.context.site['automation.readAccess.enabled'])
+                                            !!window.context.site['campaigns.readAccess.enabled'])
                                     }
                                     // Theme
                                     isLightTheme={this.isLightTheme()}

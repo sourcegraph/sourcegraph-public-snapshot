@@ -1,0 +1,10 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignUpdateDiff renders 1`] = `
+<span>
+  <div
+    className="loading-spinner icon-inline"
+  />
+   Loading diff
+</span>
+`;

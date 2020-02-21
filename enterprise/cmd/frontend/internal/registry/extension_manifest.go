@@ -35,7 +35,7 @@ func getExtensionManifestWithBundleURL(ctx context.Context, extensionID string, 
 	if release != nil {
 		// Add URL to bundle if necessary.
 		var o map[string]interface{}
-		if err := jsonc.Unmarshal(release.Manifest, &o); err != nil {
+		if err := json.Unmarshal([]byte(release.Manifest), &o); err != nil {
 			return nil, time.Time{}, fmt.Errorf("parsing extension manifest for extension with ID %d (release tag %q): %s", registryExtensionID, releaseTag, err)
 		}
 		if o == nil {

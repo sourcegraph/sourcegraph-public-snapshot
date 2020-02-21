@@ -3,6 +3,7 @@
 package query
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
@@ -23,6 +24,7 @@ const (
 	FieldRepoHasFile        = "repohasfile"
 	FieldRepoHasCommitAfter = "repohascommitafter"
 	FieldPatternType        = "patterntype"
+	FieldContent            = "content"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -56,6 +58,7 @@ var (
 			FieldLang:        {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
 			FieldType:        stringFieldType,
 			FieldPatternType: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldContent:     {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 
 			FieldRepoHasFile:        regexpNegatableFieldType,
 			FieldRepoHasCommitAfter: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
@@ -149,6 +152,17 @@ func parseAndCheck(conf *types.Config, input string) (*Query, error) {
 		return nil, err
 	}
 	return &Query{conf: conf, Query: checkedQuery}, nil
+}
+
+// Validate validates legal combinations of fields and search patterns of a
+// successfully parsed query.
+func Validate(q *Query, searchType SearchType) error {
+	if searchType == SearchTypeStructural {
+		if q.Fields[FieldCase] != nil {
+			return errors.New(`the parameter "case:" is not valid for structural search, matching is always case-sensitive`)
+		}
+	}
+	return nil
 }
 
 // BoolValue returns the last boolean value (yes/no) for the field. For example, if the query is

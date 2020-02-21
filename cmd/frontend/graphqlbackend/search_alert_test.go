@@ -20,11 +20,11 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 			Alert: searchAlert{
 				title:       "An alert for regex",
 				description: "An alert for regex",
-				patternType: SearchTypeRegex,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "Some query description",
 						query:       "repo:github.com/sourcegraph/sourcegraph",
+						patternType: query.SearchTypeRegex,
 					},
 				},
 			},
@@ -35,22 +35,22 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 			Alert: searchAlert{
 				title:       "An alert for structural",
 				description: "An alert for structural",
-				patternType: SearchTypeStructural,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "Some query description",
-						query:       "repo:github.com/sourcegraph/sourcegraph patterntype:structural",
+						query:       "repo:github.com/sourcegraph/sourcegraph",
+						patternType: query.SearchTypeStructural,
 					},
 				},
 			},
-			Want: "repo:github.com/sourcegraph/sourcegraph patterntype:structural",
+			Want: "repo:github.com/sourcegraph/sourcegraph patternType:structural",
 		},
 	}
 
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			got := tt.Alert.ProposedQueries()
-			if !reflect.DeepEqual((*got)[0].query, tt.Want) {
+			if !reflect.DeepEqual((*got)[0].Query(), tt.Want) {
 				t.Errorf("got: %s, want: %s", (*got)[0].query, tt.Want)
 			}
 		})

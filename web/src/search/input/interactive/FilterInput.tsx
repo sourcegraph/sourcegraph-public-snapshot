@@ -28,7 +28,7 @@ import {
     validFilterAndValueBeforeCursor,
     filterStaticSuggestions,
 } from '../../helpers'
-import { dedupeWhitespace } from '../../../../../shared/src/util/strings'
+import { dedupeWhitespace, isQuoted } from '../../../../../shared/src/util/strings'
 import {
     FiltersToTypeAndValue,
     FilterTypes,
@@ -67,7 +67,7 @@ interface Props {
     /**
      * The search filter type, as available in {@link SuggstionTypes}
      */
-    filterType: FilterTypes
+    filterType: Exclude<FilterTypes, FilterTypes.patterntype>
 
     /**
      * Whether or not this FilterInput is currently editable.
@@ -261,6 +261,12 @@ export class FilterInput extends React.Component<Props, State> {
         this.setFiniteFilterDefault.next()
     }
 
+    public componentDidUpdate(prevProps: Props): void {
+        if (isFiniteFilter(this.props.filterType) && this.props.value !== prevProps.value) {
+            this.inputValues.next(this.props.value)
+        }
+    }
+
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
@@ -273,10 +279,17 @@ export class FilterInput extends React.Component<Props, State> {
         e.preventDefault()
         e.stopPropagation()
 
-        if (this.state.inputValue !== '') {
-            // Don't allow empty filters.
+        if (this.state.inputValue !== '' || this.props.filterType === FilterTypes.type) {
+            // Don't allow empty filters, unless it's the type filter.
+            let inputValue = this.state.inputValue
+
+            if (this.props.filterType === FilterTypes.content || this.props.filterType === FilterTypes.message) {
+                // The content and message filters should always be quoted.
+                inputValue = isQuoted(inputValue) ? inputValue : JSON.stringify(inputValue)
+            }
+
             // Update the top-level filtersInQueryMap with the new value for this filter.
-            this.props.onFilterEdited(this.props.mapKey, this.state.inputValue)
+            this.props.onFilterEdited(this.props.mapKey, inputValue)
         }
     }
 
@@ -511,7 +524,7 @@ export class FilterInput extends React.Component<Props, State> {
                                         autoFocus={true}
                                     />
                                     <label htmlFor={val.value} tabIndex={0} className="filter-input__radio-label">
-                                        {startCase(val.value)}
+                                        {val.displayValue ? startCase(val.displayValue) : startCase(val.value)}
                                     </label>
                                 </div>
                             ))}

@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { pluralize } from '../../../../../../shared/src/util/strings'
+import classNames from 'classnames'
 
 interface Props {
-    summary: React.ReactFragment
+    disabled: boolean
+    disabledTooltip: string
     message: React.ReactFragment
 
     changesetsCount: number
@@ -10,7 +12,6 @@ interface Props {
     buttonText: string
     onButtonClick: (closeChangesets: boolean) => void
     buttonClassName?: string
-    buttonDisabled?: boolean
 }
 
 /**
@@ -18,13 +19,13 @@ interface Props {
  * changesets.
  */
 export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
-    summary,
+    disabled,
+    disabledTooltip,
     message,
     changesetsCount,
     buttonText,
     onButtonClick,
     buttonClassName = '',
-    buttonDisabled,
 }) => {
     const detailsMenuRef = React.createRef<HTMLDetailsElement>()
     // Global click event listener, used for detecting interaction with other elements. Closes the menu then.
@@ -46,7 +47,15 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
     return (
         <>
             <details className="campaign-prompt__details" ref={detailsMenuRef}>
-                <summary>{summary}</summary>
+                <summary>
+                    <span
+                        className={classNames('btn dropdown-toggle', buttonClassName, disabled && 'disabled')}
+                        onClick={event => disabled && event.preventDefault()}
+                        data-tooltip={disabled ? disabledTooltip : undefined}
+                    >
+                        {buttonText}
+                    </span>
+                </summary>
                 <div className="position-absolute campaign-prompt__details-menu">
                     <div className="card mt-1">
                         <div className="card-body">
@@ -63,7 +72,7 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
                             </div>
                             <button
                                 type="button"
-                                disabled={buttonDisabled}
+                                disabled={disabled}
                                 className={`btn mr-1 ${buttonClassName}`}
                                 onClick={onClick}
                             >

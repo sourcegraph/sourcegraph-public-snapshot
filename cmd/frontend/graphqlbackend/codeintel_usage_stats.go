@@ -83,12 +83,16 @@ type codeIntelEventCategoryStatisticsResolver struct {
 	CodeIntelEventCategoryStatistics *types.CodeIntelEventCategoryStatistics
 }
 
-func (s *codeIntelEventCategoryStatisticsResolver) Precise() *codeIntelEventStatisticsResolver {
-	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.Precise}
+func (s *codeIntelEventCategoryStatisticsResolver) LSIF() *codeIntelEventStatisticsResolver {
+	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.LSIF}
 }
 
-func (s *codeIntelEventCategoryStatisticsResolver) Fuzzy() *codeIntelEventStatisticsResolver {
-	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.Fuzzy}
+func (s *codeIntelEventCategoryStatisticsResolver) LSP() *codeIntelEventStatisticsResolver {
+	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.LSP}
+}
+
+func (s *codeIntelEventCategoryStatisticsResolver) Search() *codeIntelEventStatisticsResolver {
+	return &codeIntelEventStatisticsResolver{codeIntelEventStatistics: s.CodeIntelEventCategoryStatistics.Search}
 }
 
 type codeIntelEventStatisticsResolver struct {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -44,13 +45,45 @@ type Review struct {
 	SubmittedAt time.Time
 }
 
+// CheckSuite represents the status of a checksuite
+type CheckSuite struct {
+	ID string
+	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
+	Status string
+	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
+	Conclusion string
+	ReceivedAt time.Time
+	// When the suite was received via a webhook
+	CheckRuns struct{ Nodes []CheckRun }
+}
+
+func (c *CheckSuite) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Status, c.Conclusion, c.ReceivedAt.UnixNano())
+	return strconv.FormatUint(fnv1.HashString64(key), 16)
+}
+
+// CheckRun represents the status of a checkrun
+type CheckRun struct {
+	ID string
+	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
+	Status string
+	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
+	Conclusion string
+	// When the run was received via a webhook
+	ReceivedAt time.Time
+}
+
+func (c *CheckRun) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Status, c.Conclusion, c.ReceivedAt.UnixNano())
+	return strconv.FormatUint(fnv1.HashString64(key), 16)
+}
+
 // A Commit in a Repository.
 type Commit struct {
 	OID             string
 	Message         string
 	MessageHeadline string
 	URL             string
-	Status          Status
 	Committer       GitActor
 	CommittedDate   time.Time
 	PushedDate      time.Time
@@ -60,6 +93,20 @@ type Commit struct {
 type Status struct {
 	State    string
 	Contexts []Context
+}
+
+// CommitStatus represents the state of a commit context received
+// via the StatusEvent webhook
+type CommitStatus struct {
+	SHA        string
+	Context    string
+	State      string
+	ReceivedAt time.Time
+}
+
+func (c *CommitStatus) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.SHA, c.State, c.Context, c.ReceivedAt.UnixNano())
+	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
 }
 
 // Context represent the individual commit status context
@@ -198,7 +245,12 @@ type PullRequestReviewThread struct {
 }
 
 type PullRequestCommit struct {
-	Commit Commit
+	Commit struct {
+		OID           string
+		CheckSuites   struct{ Nodes []CheckSuite }
+		Status        Status
+		CommittedDate time.Time
+	}
 }
 
 func (c PullRequestCommit) Key() string {
@@ -683,9 +735,6 @@ fragment commit on Commit {
   committedDate
   pushedDate
   url
-  status {
-    state
-  }
   committer {
     avatarUrl
     email
@@ -696,9 +745,37 @@ fragment commit on Commit {
   }
 }
 
+fragment commitWithChecks on Commit {
+  oid
+  status {
+    state
+    contexts {
+      id
+      context
+      state
+      description
+    }
+  }
+  checkSuites(last: 10){
+    nodes {
+      id
+      status
+      conclusion
+      checkRuns(last: 10){
+        nodes{
+          id
+          status
+          conclusion
+        }
+      }
+    }
+  }
+  committedDate
+}
+
 fragment prCommit on PullRequestCommit {
   commit {
-    ...commit
+    ...commitWithChecks
   }
 }
 
@@ -905,7 +982,7 @@ fragment pr on PullRequest {
         }
         createdAt
       }
-      ... on PullRequestCommit{
+      ... on PullRequestCommit {
         ...prCommit
       }
     }

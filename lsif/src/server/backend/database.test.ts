@@ -119,6 +119,7 @@ describe('mapRangesToInternalLocations', () => {
             repositoryId: 1234,
             commit: 'deadbeef',
             root: '',
+            indexer: '',
             filename: '',
             state: 'completed' as pgModels.LsifUploadState,
             uploadedAt: new Date(),

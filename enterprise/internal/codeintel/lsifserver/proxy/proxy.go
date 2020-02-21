@@ -42,6 +42,7 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 		repoName := q.Get("repository")
 		commit := q.Get("commit")
 		root := q.Get("root")
+		indexerName := q.Get("indexerName")
 		ctx := r.Context()
 
 		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
@@ -57,17 +58,19 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 		}
 
 		uploadID, queued, err := client.DefaultClient.Upload(ctx, &struct {
-			RepoID   api.RepoID
-			Commit   graphqlbackend.GitObjectID
-			Root     string
-			Blocking *bool
-			MaxWait  *int32
-			Body     io.ReadCloser
+			RepoID      api.RepoID
+			Commit      graphqlbackend.GitObjectID
+			Root        string
+			IndexerName string
+			Blocking    *bool
+			MaxWait     *int32
+			Body        io.ReadCloser
 		}{
-			RepoID: repo.ID,
-			Commit: graphqlbackend.GitObjectID(commit),
-			Root:   root,
-			Body:   r.Body,
+			RepoID:      repo.ID,
+			Commit:      graphqlbackend.GitObjectID(commit),
+			Root:        root,
+			IndexerName: indexerName,
+			Body:        r.Body,
 		})
 
 		if err != nil {

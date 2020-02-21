@@ -251,7 +251,7 @@ describe('Code intelligence regression test suite', () => {
 
             for (const { repository } of repoCommits) {
                 // First, remove all existing uploads for the repository
-                await clearUploads(gqlClient, repository)
+                await clearUploads(gqlClient, `github.com/sourcegraph-testing/${repository}`)
             }
 
             const uploadUrls = []
@@ -270,7 +270,7 @@ describe('Code intelligence regression test suite', () => {
                 )
 
                 innerResourceManager.add('LSIF upload', `${repository} upload`, () =>
-                    clearUploads(gqlClient, repository)
+                    clearUploads(gqlClient, `github.com/sourcegraph-testing/${repository}`)
                 )
             }
 
@@ -676,7 +676,9 @@ async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise
 
     const indices = range(nodes.length)
     const args: { [k: string]: string } = {}
-    indices.forEach(i => (args[`upload${i}`] = nodes[i].id))
+    for (const i of indices) {
+        args[`upload${i}`] = nodes[i].id
+    }
 
     await gqlClient
         .mutateGraphQL(

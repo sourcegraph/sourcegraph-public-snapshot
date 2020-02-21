@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -26,6 +25,11 @@ type Provider struct {
 	codeHost *extsvc.CodeHost
 	pageSize int // Page size to use in paginated requests.
 	store    *store
+
+	// pluginPerm enables fetching permissions from the alternative roaring
+	// bitmap endpoint provided by the Bitbucket Server Sourcegraph plugin:
+	// https://github.com/sourcegraph/bitbucket-server-plugin
+	pluginPerm bool
 }
 
 var _ authz.Provider = (*Provider)(nil)
@@ -36,12 +40,13 @@ var clock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond
 // the given bitbucketserver.Client to talk to a Bitbucket Server API that is
 // the source of truth for permissions. It assumes usernames of Sourcegraph accounts
 // match 1-1 with usernames of Bitbucket Server API users.
-func NewProvider(cli *bitbucketserver.Client, db *sql.DB, ttl, hardTTL time.Duration) *Provider {
+func NewProvider(cli *bitbucketserver.Client, db *sql.DB, ttl, hardTTL time.Duration, pluginPerm bool) *Provider {
 	return &Provider{
-		client:   cli,
-		codeHost: extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
-		pageSize: 1000,
-		store:    newStore(db, ttl, hardTTL, clock),
+		client:     cli,
+		codeHost:   extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
+		pageSize:   1000,
+		store:      newStore(db, ttl, hardTTL, clock),
+		pluginPerm: pluginPerm,
 	}
 }
 
@@ -136,7 +141,7 @@ func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
 // all the repos the user with the given userName is authorized to
 // see.
 func (p *Provider) update(userName string) PermissionsUpdateFunc {
-	if conf.BitbucketServerFastPerm() {
+	if p.pluginPerm {
 		return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
 			ids, err := p.repoIDs(ctx, userName)
 			return ids, p.codeHost, err

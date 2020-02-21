@@ -1,4 +1,4 @@
-import { uniqueId } from 'lodash'
+import { uniqueId, noop } from 'lodash'
 import { from, NEVER, Subject, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { Services } from '../../../../shared/src/api/client/services'
@@ -15,8 +15,8 @@ jest.mock('uuid', () => ({
 const createMockController = (services: Services): Controller => ({
     services,
     notifications: NEVER,
-    executeCommand: jest.fn(),
-    unsubscribe: jest.fn(),
+    executeCommand: () => Promise.resolve(),
+    unsubscribe: noop,
 })
 
 describe('text_fields', () => {

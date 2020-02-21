@@ -90,13 +90,26 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (*json.RawMessage, err
 		DayPeriods:            &days,
 		WeekPeriods:           &weeks,
 		MonthPeriods:          &months,
-		IncludeEventCounts:    false,
+		IncludeEventCounts:    !conf.Get().DisableNonCriticalTelemetry,
 		IncludeEventLatencies: true,
 	})
 	if err != nil {
 		return nil, err
 	}
 	contents, err := json.Marshal(codeIntelUsage)
+	if err != nil {
+		return nil, err
+	}
+	message := json.RawMessage(contents)
+	return &message, nil
+}
+
+func getAndMarshalCampaignsUsageJSON(ctx context.Context) (*json.RawMessage, error) {
+	usage, err := usagestats.GetCampaignsUsageStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(usage)
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +169,10 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
+	campaignsUsage, err := getAndMarshalCampaignsUsageJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalCampaignsUsageJSON failed", "error", err)
+	}
 
 	contents, err := json.Marshal(&pingRequest{
 		ClientSiteID:         siteid.Get(),
@@ -173,6 +190,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		HasRepos:             hasRepos,
 		EverSearched:         hasRepos && searchOccurred, // Searches only count if repos have been added.
 		EverFindRefs:         findRefsOccurred,
+		AutomationUsage:      campaignsUsage,
 	})
 	if err != nil {
 		return nil, err
