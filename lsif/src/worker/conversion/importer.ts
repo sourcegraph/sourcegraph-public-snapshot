@@ -107,16 +107,21 @@ export async function importLsif(
     // dump as the target project. For each set of documents that share a path, we
     // choose one document to be the canonical representative and merge the contains,
     // definition, and reference data into the unique canonical document.
-
-    await logAndTraceCall(ctx, 'Canonicalizing documents', () => mergeDocuments(correlator))
+    await logAndTraceCall(ctx, 'Merging documents', () => mergeDocuments(correlator))
 
     // Determine which reference results are linked together. Determine a canonical
     // reference result for each set so that we can remap all identifiers to the
     // chosen one.
-
     const canonicalReferenceResultIds = await logAndTraceCall(ctx, 'Canonicalizing reference results', () =>
         canonicalizeReferenceResults(correlator)
     )
+
+    // Make all necessary visibility queries to gitserver here. This allows us to batch
+    // the requests to reduce the number of network roundtrips, and also allows us to
+    // time the total cost of fetching this data from gitserver by doing it all in one
+    // place. If we perform the queries lazily, we would need to add the timings for
+    // each individual span in the resulting trace.
+    await pathVisibilityChecker.warmCache(Array.from(correlator.documentPaths.values()))
 
     // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size

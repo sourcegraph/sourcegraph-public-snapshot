@@ -1,5 +1,5 @@
 import * as sinon from 'sinon'
-import { PathVisibilityChecker } from './visibility'
+import { PathVisibilityChecker, properAncestors } from './visibility'
 import { getDirectoryChildren } from '../../shared/gitserver/gitserver'
 import { range } from 'lodash'
 
@@ -78,5 +78,11 @@ describe('PathVisibilityChecker', () => {
 
         // Should only check children of / and /node_modules
         expect(mockGetDirectoryChildren.callCount).toEqual(2)
+    })
+})
+
+describe('properAncestors', () => {
+    it('should return all ancestor directories', () => {
+        expect(properAncestors('foo/bar/baz/bonk')).toEqual(['', 'foo', 'foo/bar', 'foo/bar/baz'])
     })
 })

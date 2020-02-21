@@ -1,6 +1,7 @@
 import * as path from 'path'
-import { TracingContext } from '../../shared/tracing'
+import { TracingContext, logAndTraceCall } from '../../shared/tracing'
 import { getDirectoryChildren } from '../../shared/gitserver/gitserver'
+import { createSilentLogger } from '../../shared/logging'
 
 /**
  * Determines whether or not a document path within an LSIF upload should be visible
@@ -22,6 +23,7 @@ export class PathVisibilityChecker {
     private ctx?: TracingContext
     private mockGetDirectoryChildren?: typeof getDirectoryChildren
     private directoryContents = new Map<string, Set<string>>()
+    private numGitserverRequests = 0
 
     /**
      * Create a new PathVisibilityChecker.
@@ -55,6 +57,28 @@ export class PathVisibilityChecker {
         this.frontendUrl = frontendUrl
         this.ctx = ctx
         this.mockGetDirectoryChildren = mockGetDirectoryChildren
+    }
+
+    /**
+     * Warms the git tree cache by determining if each of the supplied paths are
+     * visible in git. This function batches queries to gitserver to minimize the
+     * number of roundtrips during conversion.
+     *
+     * @param documentPaths A set of dump root-relative paths.
+     */
+    public warmCache(documentPaths: string[]): Promise<void> {
+        return logAndTraceCall(
+            this.ctx || {},
+            'Warming document visibility cache',
+            async ({ logger = createSilentLogger() }) => {
+                // TODO - batch requests
+                for (const documentPath of documentPaths) {
+                    await this.isInGitTree(documentPath)
+                }
+
+                logger.debug(`Performed ${this.numGitserverRequests} gitserver requests`)
+            }
+        )
     }
 
     /**
@@ -101,12 +125,11 @@ export class PathVisibilityChecker {
             return new Set()
         }
 
-        const pathSegments = dirname.split('/')
-        for (let i = 0; i < pathSegments.length; i++) {
+        for (const ancestor of properAncestors(dirname)) {
             // Calculate the children of all ancestors of this directory that are also
             // in the repo. We do this from the root down to the leaf so that we can prune
             // large chunks of untracked files with one request (e.g. a node_modules dir).
-            const children = await this.getChildren(pathSegments.slice(0, i).join('/'))
+            const children = await this.getChildren(ancestor)
             if (children.size === 0) {
                 // This directory doesn't exist or there are no children. Either way we can
                 // early out with an empty set of children as there are no descendants.
@@ -114,7 +137,7 @@ export class PathVisibilityChecker {
             }
         }
 
-        return this.getChildren(pathSegments.join('/'))
+        return this.getChildren(dirname)
     }
 
     /**
@@ -145,12 +168,29 @@ export class PathVisibilityChecker {
             ctx: this.ctx,
         })
 
+        this.numGitserverRequests++
         this.directoryContents.set(dirname, children)
         return children
     }
 }
 
+/**
+ * Return the dirname of the given path. Returns empty string
+ * if the path denotes a file in the current directory.
+ */
 function dirnameWithoutDot(pathname: string): string {
     const dirname = path.dirname(pathname)
     return dirname === '.' ? '' : dirname
+}
+
+/**
+ * Return all ancestor paths of the given directory.
+ */
+export function properAncestors(dirname: string): string[] {
+    const ancestors = []
+    const pathSegments = dirname.split('/')
+    for (let i = 0; i < pathSegments.length; i++) {
+        ancestors.push(pathSegments.slice(0, i).join('/'))
+    }
+    return ancestors
 }
