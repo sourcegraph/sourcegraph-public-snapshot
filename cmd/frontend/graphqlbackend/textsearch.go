@@ -23,7 +23,8 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/apimd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -324,6 +325,12 @@ func textSearchURL(ctx context.Context, url string) ([]*FileMatchResolver, bool,
 		if err != nil {
 			return nil, false, err
 		}
+		var e protocol.Error
+		if err := json.Unmarshal(body, &e); err != nil {
+			log15.Error("failed to decode error response", "body", string(body), "statusCode", resp.StatusCode)
+			return nil, false, err
+		}
+
 		return nil, false, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
 	}
 
@@ -343,8 +350,8 @@ func textSearchURL(ctx context.Context, url string) ([]*FileMatchResolver, bool,
 }
 
 type searcherError struct {
-	StatusCode int
-	Message    string
+	StatusCode, ErrorCode int
+	Message               string
 }
 
 func (e *searcherError) BadRequest() bool {

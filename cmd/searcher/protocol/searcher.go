@@ -107,6 +107,19 @@ type PatternInfo struct {
 	CombyRule string
 }
 
+const (
+	ErrorGeneric int = iota
+)
+
+type Error struct {
+	Code    int
+	Message string
+}
+
+func (e *Error) String() string {
+	return e.Message
+}
+
 func (p *PatternInfo) String() string {
 	args := []string{fmt.Sprintf("%q", p.Pattern)}
 	if p.IsRegExp {

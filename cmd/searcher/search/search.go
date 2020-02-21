@@ -109,7 +109,13 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			log.Printf("internal error serving %#+v: %s", p, err)
 		}
-		http.Error(w, err.Error(), code)
+		e := &protocol.Error{
+			Code:    protocol.ErrorGeneric,
+			Message: err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(code)
+		_ = json.NewEncoder(w).Encode(&e)
 		return
 	}
 	if matches == nil {
