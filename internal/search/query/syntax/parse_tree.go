@@ -31,6 +31,21 @@ func (p ParseTree) WithErrorsQuoted() ParseTree {
 	return p2
 }
 
+// Map builds a new parse tree by running a function f on each expression in an
+// existing parse tree and substituting the resulting expression. If f returns
+// nil, the expression is removed in the new parse tree.
+func Map(p ParseTree, f func(e Expr) *Expr) ParseTree {
+	p2 := make(ParseTree, 0, len(p))
+	for _, e := range p {
+		cpy := *e
+		e = &cpy
+		if result := f(*e); result != nil {
+			p2 = append(p, result)
+		}
+	}
+	return p2
+}
+
 // String returns a string that parses to the parse tree, where expressions are
 // separated by a single space.
 func (p ParseTree) String() string {
