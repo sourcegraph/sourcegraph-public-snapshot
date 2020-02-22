@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
 func TestSearchPatternForSuggestion(t *testing.T) {
@@ -138,7 +137,7 @@ func TestAddQueryRegexpField(t *testing.T) {
 				t.Fatal(err)
 			}
 			got := addQueryRegexpField(query, test.addField, test.addPattern)
-			if got := syntax.ExprString(got); got != test.want {
+			if got := got.String(); got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
 		})
