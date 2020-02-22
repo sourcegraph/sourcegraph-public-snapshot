@@ -76,6 +76,21 @@ func alertForQuery(queryString string, err error) *searchAlert {
 	}
 }
 
+func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searchResolver) *searchAlert {
+	return &searchAlert{
+		prometheusType: "timed_out",
+		title:          "Timed out while searching",
+		description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(usedTime.String())),
+		proposedQueries: []*searchQueryDescription{
+			{
+				description: "query with longer timeout",
+				query:       fmt.Sprintf("timeout:%v %s", suggestTime, omitQueryField(r.query.ParseTree, query.FieldTimeout)),
+				patternType: r.patternType,
+			},
+		},
+	}
+}
+
 func alertForStalePermissions() *searchAlert {
 	return &searchAlert{
 		prometheusType: "no_resolved_repos__stale_permissions",
