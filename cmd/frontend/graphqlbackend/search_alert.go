@@ -91,7 +91,7 @@ func alertForQuotesInQueryInLiteralMode(q *query.Query) *searchAlert {
 		description:    "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
 		proposedQueries: []*searchQueryDescription{{
 			description: "Remove quotes",
-			query:       syntax.ExprString(omitQuotes(q)),
+			query:       omitQuotes(q).String(),
 			patternType: query.SearchTypeLiteral,
 		}},
 	}
@@ -334,7 +334,7 @@ outer:
 		newExpr := addQueryRegexpField(r.query, query.FieldRepo, repoParentPattern)
 		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 			description: "in repositories under " + repoParent + more,
-			query:       syntax.ExprString(newExpr),
+			query:       newExpr.String(),
 			patternType: r.patternType,
 		})
 	}
@@ -353,7 +353,7 @@ outer:
 			newExpr := addQueryRegexpField(r.query, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
-				query:       syntax.ExprString(newExpr),
+				query:       newExpr.String(),
 				patternType: r.patternType,
 			})
 		}
@@ -417,7 +417,7 @@ func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*se
 }
 
 func omitQueryFields(r *searchResolver, field string) string {
-	return syntax.ExprString(omitQueryExprWithField(r.query, field))
+	return omitQueryExprWithField(r.query, field).String()
 }
 
 func omitQueryExprWithField(query *query.Query, field string) syntax.ParseTree {
