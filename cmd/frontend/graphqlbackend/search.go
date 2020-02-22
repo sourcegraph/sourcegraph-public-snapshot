@@ -707,7 +707,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	var suggestions []*searchSuggestionResolver
 	for i, result := range fileResults {
 		assumedScore := len(fileResults) - i // Greater score is first, so we inverse the index.
-		suggestions = append(suggestions, newSearchResultResolver(result.File(), assumedScore))
+		suggestions = append(suggestions, newSearchSuggestionResolver(result.File(), assumedScore))
 	}
 	return suggestions, nil
 }
@@ -820,12 +820,12 @@ func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
 	return res, ok
 }
 
-// newSearchResultResolver returns a new searchResultResolver wrapping the
+// newSearchSuggestionResolver returns a new searchSuggestionResolver wrapping the
 // given result.
 //
 // A panic occurs if the type of result is not a *RepositoryResolver, *GitTreeEntryResolver,
 // *searchSymbolResult or *languageResolver.
-func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
+func newSearchSuggestionResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *RepositoryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
