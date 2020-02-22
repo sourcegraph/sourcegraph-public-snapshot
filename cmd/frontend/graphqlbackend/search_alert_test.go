@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
 func TestSearchPatternForSuggestion(t *testing.T) {
@@ -133,12 +132,8 @@ func TestAddQueryRegexpField(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s, add %s:%s", test.query, test.addField, test.addPattern), func(t *testing.T) {
-			query, err := query.ParseAndCheck(test.query)
-			if err != nil {
-				t.Fatal(err)
-			}
-			got := addQueryRegexpField(query, test.addField, test.addPattern)
-			if got := syntax.ExprString(got); got != test.want {
+			got := addQueryRegexpField(test.query, test.addField, test.addPattern)
+			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
 		})
