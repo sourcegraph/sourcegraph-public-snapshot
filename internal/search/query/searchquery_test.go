@@ -187,7 +187,7 @@ func TestQuery_CaseInsensitiveFields(t *testing.T) {
 		t.Errorf("unexpected values: want {\"foo\"}, got %v", values)
 	}
 
-	if got, want := query.Query.String(), `repohasfile~"foo"`; got != want {
+	if got, want := query.Fields.String(), `repohasfile~"foo"`; got != want {
 		t.Errorf("unexpected parsed query:\ngot:  %s\nwant: %s", got, want)
 	}
 }
