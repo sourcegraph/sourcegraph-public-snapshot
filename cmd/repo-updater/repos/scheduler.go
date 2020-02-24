@@ -502,7 +502,7 @@ func (q *updateQueue) acquireNext() *configuredRepo2 {
 
 // The following methods implement heap.Interface based on the priority queue example:
 // https://golang.org/pkg/container/heap/#example__priorityQueue
-// These methods are not concurrent safe by themselves. Therefore, it is caller's
+// These methods are not safe for concurrent use. Therefore, it is the caller's
 // responsibility to ensure they're being guarded by a mutex during any heap operation,
 // i.e. heap.Fix, heap.Remove, heap.Push, heap.Pop.
 
@@ -669,7 +669,7 @@ func (s *schedule) reset() {
 
 // The following methods implement heap.Interface based on the priority queue example:
 // https://golang.org/pkg/container/heap/#example__priorityQueue
-// These methods are not concurrent safe by themselves. Therefore, it is caller's
+// These methods are not safe for concurrent use. Therefore, it is the caller's
 // responsibility to ensure they're being guarded by a mutex during any heap operation,
 // i.e. heap.Fix, heap.Remove, heap.Push, heap.Pop.
 
