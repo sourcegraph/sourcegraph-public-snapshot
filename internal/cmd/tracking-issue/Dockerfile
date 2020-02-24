@@ -1,4 +1,4 @@
-FROM golang:latest
+FROM golang:1.13
 
 WORKDIR /go/src/tracking-issue
 COPY main.go .
