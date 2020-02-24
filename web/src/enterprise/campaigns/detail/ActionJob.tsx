@@ -111,8 +111,20 @@ export const ActionJob: React.FunctionComponent<Props> = ({ actionJob }) => (
                     <>
                         {' '}
                         <h5 className="mb-1">Log output</h5>
-                        <div className="p-1 mb-3" style={{ border: '1px solid grey' }}>
+                        <div
+                            className="p-1 mb-3"
+                            style={{
+                                border: '1px solid grey',
+                                background: 'black',
+                                color: '#fff',
+                                overflowX: 'auto',
+                                maxHeight: '200px',
+                            }}
+                        >
                             <code dangerouslySetInnerHTML={{ __html: actionJob.log }}></code>
+                            <div>
+                                <SyncIcon className="icon-inline" />
+                            </div>
                         </div>
                     </>
                 )}

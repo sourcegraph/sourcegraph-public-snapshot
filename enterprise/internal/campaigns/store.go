@@ -2730,6 +2730,18 @@ func scanCount(count *int64, s scanner) error {
 	)
 }
 
+func scanActionJob(a *campaigns.ActionJob, s scanner) error {
+	return s.Scan(
+		&a.ID,
+		&a.Log,
+		&dbutil.NullTime{Time: &a.ExecutionStart},
+		&dbutil.NullTime{Time: &a.ExecutionEnd},
+		&dbutil.NullTime{Time: &a.RunnerSeenAt},
+		&a.Patch,
+		&a.State,
+	)
+}
+
 func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
@@ -2831,10 +2843,12 @@ func listActionsQuery(opts *ListActionsOpts) *sqlf.Query {
 // UpdateActionJobOpts captures the query options needed for
 // listing actions.
 type UpdateActionJobOpts struct {
-	ID    int64
-	State *string
-	Log   *string
-	Patch *string
+	ID             int64
+	State          *campaigns.ActionJobState
+	Log            *string
+	Patch          *string
+	ExecutionStart *time.Time
+	ExecutionEnd   *time.Time
 }
 
 // UpdateActionJob lists Actions with the given filters.
@@ -2858,7 +2872,7 @@ func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
 	preds := []*sqlf.Query{}
 
 	if opts.State != nil {
-		preds = append(preds, sqlf.Sprintf("state = %s", *opts.State))
+		preds = append(preds, sqlf.Sprintf("state = %s", string(*opts.State)))
 	}
 	if opts.Log != nil {
 		preds = append(preds, sqlf.Sprintf("log = (CASE WHEN log IS NOT NULL THEN log ELSE '' END) || %s", *opts.Log))
@@ -2866,8 +2880,138 @@ func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
 	if opts.Patch != nil {
 		preds = append(preds, sqlf.Sprintf("patch = %s", *opts.Patch))
 	}
+	if opts.ExecutionStart != nil {
+		if (*opts.ExecutionStart).IsZero() {
+			preds = append(preds, sqlf.Sprintf("execution_start = NULL"))
+		} else {
+			// todo may throw
+			time, _ := (*opts.ExecutionStart).MarshalText()
+			preds = append(preds, sqlf.Sprintf("execution_start = %s", time))
+		}
+	}
+	if opts.ExecutionEnd != nil {
+		if (*opts.ExecutionEnd).IsZero() {
+			preds = append(preds, sqlf.Sprintf("execution_end = NULL"))
+		} else {
+			// todo may throw
+			time, _ := (*opts.ExecutionEnd).MarshalText()
+			preds = append(preds, sqlf.Sprintf("execution_end = %s", time))
+		}
+	}
 
 	queryTemplate := updateActionJobQueryFmtstrSelect
 
 	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, ",\n "), opts.ID)
+}
+
+// ClearActionJobOpts captures the query options needed for clearing an action job
+type ClearActionJobOpts struct {
+	ID int64
+}
+
+// ClearActionJob resets an action job so it is retried.
+func (s *Store) ClearActionJob(ctx context.Context, opts ClearActionJobOpts) error {
+	q := clearActionJobQuery(&opts)
+	_, _, err := s.query(ctx, q, nil)
+	return err
+}
+
+var clearActionJobQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:ClearActionJob
+UPDATE
+	action_jobs
+SET
+	log = NULL,
+	execution_start = NULL,
+	execution_end = NULL,
+	runner_seen_at = NULL,
+	patch = NULL,
+	state = 'PENDING'
+WHERE action_jobs.id = %d
+`
+
+func clearActionJobQuery(opts *ClearActionJobOpts) *sqlf.Query {
+	queryTemplate := clearActionJobQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.ID)
+}
+
+// PullActionJob resets an action job so it is eventually retried by a runner.
+func (s *Store) PullActionJob(ctx context.Context) (*campaigns.ActionJob, error) {
+	q := pullActionJobQuery()
+
+	var job campaigns.ActionJob
+	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err := scanActionJob(&job, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, nil
+	})
+
+	return &job, err
+}
+
+var pullActionJobQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:PullActionJob
+UPDATE
+	action_jobs
+SET
+	execution_start = NOW(),
+	state = 'RUNNING'
+WHERE action_jobs.id IN
+	(SELECT id FROM action_jobs WHERE action_jobs.state = 'PENDING' LIMIT 1)
+RETURNING
+	id,
+	log,
+	execution_start,
+	execution_end,
+	runner_seen_at,
+	patch,
+	state
+`
+
+func pullActionJobQuery() *sqlf.Query {
+	queryTemplate := pullActionJobQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate)
+}
+
+type ActionJobByIDOpts struct {
+	ID int64
+}
+
+// ActionJobByID resets an action job so it is eventually retried by a runner.
+func (s *Store) ActionJobByID(ctx context.Context, opts ActionJobByIDOpts) (*campaigns.ActionJob, error) {
+	q := actionJobByIDQuery(&opts)
+
+	var job campaigns.ActionJob
+	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err := scanActionJob(&job, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, nil
+	})
+
+	// todo handle empty ie not-found error
+
+	return &job, err
+}
+
+var actionJobByIDQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:ActionJobByID
+SELECT
+	action_jobs.id,
+	action_jobs.log,
+	action_jobs.execution_start,
+	action_jobs.execution_end,
+	action_jobs.runner_seen_at,
+	action_jobs.patch,
+	action_jobs.state
+FROM
+	action_jobs
+WHERE
+	action_jobs.id = %d
+`
+
+func actionJobByIDQuery(opts *ActionJobByIDOpts) *sqlf.Query {
+	queryTemplate := actionJobByIDQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.ID)
 }

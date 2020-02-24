@@ -1466,8 +1466,13 @@ type ActionExecution struct {
 }
 
 type ActionJob struct {
-	ID    int64
-	Patch *string
+	ID             int64
+	Log            *string
+	ExecutionStart time.Time
+	ExecutionEnd   time.Time
+	RunnerSeenAt   time.Time
+	Patch          *string
+	State          *string
 }
 
 // ActionExecutionInvokationReason defines the possible reasons of an execution to be triggered from.

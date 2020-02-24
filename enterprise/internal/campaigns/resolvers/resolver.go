@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -712,7 +713,7 @@ func (r *actionExecutionConnectionResolver) Nodes(ctx context.Context) ([]graphq
 // actionJobConnectionResolver
 
 type actionJobConnectionResolver struct {
-	// todo
+	store *ee.Store
 }
 
 func (r *actionJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
@@ -721,12 +722,11 @@ func (r *actionJobConnectionResolver) TotalCount(ctx context.Context) (int32, er
 
 func (r *actionJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionJobResolver, error) {
 	actionJobs := make([]graphqlbackend.ActionJobResolver, 1)
-	actionJob := campaigns.ActionJob{
-		ID: 123,
+	actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{ID: 123})
+	if err != nil {
+		return nil, err
 	}
-	actionJobs[0] = &actionJobResolver{
-		job: actionJob,
-	}
+	actionJobs[0] = &actionJobResolver{job: *actionJob}
 	return actionJobs, nil
 }
 
@@ -900,16 +900,20 @@ func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullA
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	actionJob := campaigns.ActionJob{
-		ID: 123,
+	actionJob, err := r.store.PullActionJob(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	// set executionStart = time.Now
+	// todo better handling of this
+	if actionJob.ID == 0 {
+		return nil, nil
+	}
+
 	// set runner = args.Runner
-	// set state = RUNNING
 	// set runnerSeenAt = time.Now
 
-	return &actionJobResolver{job: actionJob}, nil
+	return &actionJobResolver{job: *actionJob}, nil
 }
 
 func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.UpdateActionJobArgs) (_ graphqlbackend.ActionJobResolver, err error) {
@@ -924,9 +928,28 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	fmt.Printf("#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\nUpdate action job state to %s\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n", *args.State)
-	actionJob := campaigns.ActionJob{
-		ID: 123,
+	id, err := unmarshalActionJobID(args.ActionJob)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := ee.UpdateActionJobOpts{
+		ID:    id,
+		State: args.State,
+		Patch: args.Patch,
+	}
+	// set finish time on completion
+	if *args.State == campaigns.ActionJobStateCompleted {
+		now := time.Now()
+		opts.ExecutionEnd = &now
+	}
+	if err := r.store.UpdateActionJob(ctx, opts); err != nil {
+		return nil, err
+	}
+
+	actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{ID: 123})
+	if err != nil {
+		return nil, err
 	}
 	// if args.state == "COMPLETED" {
 	// 	// todo: check if was running before, otherwise updating state is not allowed
@@ -943,7 +966,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 	// 		}
 	// 	}
 	// }
-	return &actionJobResolver{job: actionJob}, nil
+	return &actionJobResolver{job: *actionJob}, nil
 }
 
 func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLogArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -983,6 +1006,17 @@ func (r *Resolver) RetryActionJob(ctx context.Context, args *graphqlbackend.Retr
 	// 🚨 SECURITY: Only site admins may create executions for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	id, err := unmarshalActionJobID(args.ActionJob)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.store.ClearActionJob(ctx, ee.ClearActionJobOpts{
+		ID: id,
+	}); err != nil {
+		return nil, err
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
