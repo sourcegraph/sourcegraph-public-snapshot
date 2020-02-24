@@ -62,7 +62,7 @@ Examples:
 			log.Printf("# scopeQuery in action definition: %s\n", action.ScopeQuery)
 		}
 
-		repos, err := actionRepos(ctx, *verbose, action.ScopeQuery)
+		repos, err := actionRepos(ctx, action.ScopeQuery)
 		if err != nil {
 			return err
 		}

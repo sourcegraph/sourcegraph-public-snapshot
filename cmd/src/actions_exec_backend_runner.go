@@ -50,32 +50,20 @@ func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
 
 	prefix := "action-" + strings.Replace(strings.Replace(repo.Name, "/", "-", -1), "github.com-", "", -1)
 
-	// TODO(sqs): better cleanup of old log files
-	logFile, err := ioutil.TempFile(tempDirPrefix, prefix+"-log")
+	logFileName, err := x.logger.AddRepo(repo)
 	if err != nil {
-		return err
-	}
-	if !x.opt.keepLogs {
-		defer func() {
-			if err == nil {
-				os.Remove(logFile.Name())
-			}
-		}()
-	}
-	logWriter := io.Writer(logFile)
-	if *verbose {
-		logWriter = io.MultiWriter(logWriter, os.Stderr)
+		return errors.Wrapf(err, "failed to setup logging for repo %s", repo.Name)
 	}
 
 	x.updateRepoStatus(repo, ActionRepoStatus{
-		LogFile:   logFile.Name(),
+		LogFile:   logFileName,
 		StartedAt: time.Now(),
 	})
 
 	runCtx, cancel := context.WithTimeout(ctx, x.opt.timeout)
 	defer cancel()
 
-	patch, err := runAction(runCtx, prefix, repo.ID, repo.Name, repo.Rev, x.action.Steps, logWriter)
+	patch, err := runAction(runCtx, prefix, repo.ID, repo.Name, repo.Rev, x.action.Steps, x.logger)
 	status := ActionRepoStatus{
 		FinishedAt: time.Now(),
 	}
@@ -91,9 +79,10 @@ func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
 			err = &errTimeoutReached{timeout: x.opt.timeout}
 		}
 		status.Err = err
-		fmt.Fprintf(logWriter, "# ERROR: %s\n", err)
 	}
+
 	x.updateRepoStatus(repo, status)
+	x.logger.RepoFinished(repo.Name, err)
 
 	// Add to cache if successful.
 	if err == nil {
@@ -123,8 +112,8 @@ func reachedTimeout(cmdCtx context.Context, err error) bool {
 	return errors.Is(err, context.DeadlineExceeded)
 }
 
-func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps []*ActionStep, logFile io.Writer) ([]byte, error) {
-	fmt.Fprintf(logFile, "# Repository %s @ %s (%d steps)\n", repoName, rev, len(steps))
+func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps []*ActionStep, logger *actionLogger) ([]byte, error) {
+	logger.RepoStarted(repoName, rev, steps)
 
 	zipFile, err := fetchRepositoryArchive(ctx, repoName, rev)
 	if err != nil {
@@ -139,32 +128,26 @@ func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps 
 	defer os.RemoveAll(volumeDir)
 
 	for i, step := range steps {
-		if i != 0 {
-			fmt.Fprintln(logFile)
-		}
-
-		logPrefix := fmt.Sprintf("Step %d", i)
-
 		switch step.Type {
 		case "command":
-			fmt.Fprintf(logFile, "# %s: command %v\n", logPrefix, step.Args)
+			logger.CommandStepStarted(repoName, i, step.Args)
 
 			cmd := exec.CommandContext(ctx, step.Args[0], step.Args[1:]...)
 			cmd.Dir = volumeDir
-			cmd.Stdout = logFile
-			cmd.Stderr = logFile
+
+			if w, ok := logger.RepoWriter(repoName); ok {
+				cmd.Stdout = w
+				cmd.Stderr = w
+			}
+
 			if err := cmd.Run(); err != nil {
-				fmt.Fprintf(logFile, "# %s: error: %s.\n", logPrefix, err)
+				logger.CommandStepErrored(repoName, i, err)
 				return nil, errors.Wrap(err, "run command")
 			}
-			fmt.Fprintf(logFile, "# %s: done.\n", logPrefix)
+			logger.CommandStepDone(repoName, i)
 
 		case "docker":
-			var fromDockerfile string
-			if step.Dockerfile != "" {
-				fromDockerfile = " (built from inline Dockerfile)"
-			}
-			fmt.Fprintf(logFile, "# %s: docker run %v%s\n", logPrefix, step.Image, fromDockerfile)
+			logger.DockerStepStarted(repoName, i, step.Dockerfile, step.Image)
 
 			cidFile, err := ioutil.TempFile(tempDirPrefix, prefix+"-container-id")
 			if err != nil {
@@ -214,16 +197,20 @@ func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps 
 			cmd.Args = append(cmd.Args, "--", step.Image)
 			cmd.Args = append(cmd.Args, step.Args...)
 			cmd.Dir = volumeDir
-			cmd.Stdout = logFile
-			cmd.Stderr = logFile
+
+			if w, ok := logger.RepoWriter(repoName); ok {
+				cmd.Stdout = w
+				cmd.Stderr = w
+			}
+
 			t0 := time.Now()
 			err = cmd.Run()
 			elapsed := time.Since(t0).Round(time.Millisecond)
 			if err != nil {
-				fmt.Fprintf(logFile, "# %s: error: %s. (%s)\n", logPrefix, err, elapsed)
+				logger.DockerStepErrored(repoName, i, err, elapsed)
 				return nil, errors.Wrap(err, "run docker container")
 			}
-			fmt.Fprintf(logFile, "# %s: done. (%s)\n", logPrefix, elapsed)
+			logger.DockerStepDone(repoName, i, elapsed)
 
 		default:
 			return nil, fmt.Errorf("unrecognized run type %q", step.Type)

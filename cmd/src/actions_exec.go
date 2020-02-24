@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,14 +13,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"sort"
 	"strings"
-	"sync"
 	"time"
-	"unicode/utf8"
 
 	"github.com/fatih/color"
-	"github.com/gosuri/uilive"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 )
@@ -182,14 +177,22 @@ Format of the action JSON files:
 
 		ctx := context.Background()
 
+		logger := newActionLogger(*verbose, *keepLogsFlag)
+
 		diffSupportsNoDereference, err = diffSupportsFlag(ctx, "--no-dereference")
 		if err != nil {
 			return err
+		}
+		if !diffSupportsNoDereference {
+			logger.Warnf("Local installation of 'diff' doesn't support '%s' flag. Consider upgrading to GNU diff >=3.7.\n", "--no-dereference")
 		}
 
 		diffSupportsColor, err = diffSupportsFlag(ctx, "--color")
 		if err != nil {
 			return err
+		}
+		if !diffSupportsColor {
+			logger.Warnf("Local installation of 'diff' doesn't support '%s' flag. Consider upgrading to GNU diff >=3.7.\n", "--color")
 		}
 
 		err = validateAction(ctx, action)
@@ -203,143 +206,41 @@ Format of the action JSON files:
 			return errors.Wrap(err, "Failed to prepare action")
 		}
 
-		uilive.Out = os.Stderr
-		uilive.RefreshInterval = 10 * time.Hour // TODO!(sqs): manually flush
-		color.NoColor = false                   // force color even when in a pipe
-		var (
-			lwMu sync.Mutex
-			lw   = uilive.New()
-		)
-		lw.Start()
-		defer lw.Stop()
-
-		spinner := []rune{'⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'}
-		spinnerI := 0
-		onUpdate := func(reposMap map[ActionRepo]ActionRepoStatus) {
-			lwMu.Lock()
-			defer lwMu.Unlock()
-
-			spinnerRune := spinner[spinnerI%len(spinner)]
-			spinnerI++
-
-			reposSorted := make([]ActionRepo, 0, len(reposMap))
-			repoNameLen := 0
-			for repo := range reposMap {
-				reposSorted = append(reposSorted, repo)
-				if n := utf8.RuneCountInString(repo.Name); n > repoNameLen {
-					repoNameLen = n
-				}
-			}
-			sort.Slice(reposSorted, func(i, j int) bool { return reposSorted[i].Name < reposSorted[j].Name })
-
-			for i, repo := range reposSorted {
-				status := reposMap[repo]
-
-				var (
-					timerDuration time.Duration
-
-					statusColor func(string, ...interface{}) string
-
-					statusText  string
-					logFileText string
-				)
-				if *keepLogsFlag && status.LogFile != "" {
-					logFileText = color.HiBlackString(status.LogFile)
-				}
-				switch {
-				case !status.Cached && status.StartedAt.IsZero():
-					statusColor = color.HiBlackString
-					statusText = statusColor(string(spinnerRune))
-					timerDuration = time.Since(status.EnqueuedAt)
-
-				case !status.Cached && status.FinishedAt.IsZero():
-					statusColor = color.YellowString
-					statusText = statusColor(string(spinnerRune))
-					timerDuration = time.Since(status.StartedAt)
-
-				case status.Cached || !status.FinishedAt.IsZero():
-					if status.Err != nil {
-						statusColor = color.RedString
-						statusText = "error: see " + status.LogFile
-						logFileText = "" // don't show twice
-					} else {
-						statusColor = color.GreenString
-						if status.Patch != (CampaignPlanPatch{}) && status.Patch.Patch != "" {
-							fileDiffs, err := diff.ParseMultiFileDiff([]byte(status.Patch.Patch))
-							if err != nil {
-								panic(err)
-								// return errors.Wrapf(err, "invalid patch for repository %q", repo.Name)
-							}
-							statusText = diffStatDescription(fileDiffs) + " " + diffStatDiagram(sumDiffStats(fileDiffs))
-							if status.Cached {
-								statusText += " (cached)"
-							}
-						} else {
-							statusText = color.HiBlackString("0 files changed")
-						}
-					}
-					timerDuration = status.FinishedAt.Sub(status.StartedAt)
-				}
-
-				var w io.Writer
-				if i == 0 {
-					w = lw
-				} else {
-					w = lw.Newline()
-				}
-
-				var appendTexts []string
-				if statusText != "" {
-					appendTexts = append(appendTexts, statusText)
-				}
-				if logFileText != "" {
-					appendTexts = append(appendTexts, logFileText)
-				}
-				repoText := statusColor(fmt.Sprintf("%-*s", repoNameLen, repo.Name))
-				pipe := color.HiBlackString("|")
-				fmt.Fprintf(w, "%s %s ", repoText, pipe)
-				fmt.Fprintf(w, "%s", strings.Join(appendTexts, " "))
-				if timerDuration != 0 {
-					fmt.Fprintf(w, color.HiBlackString(" %s"), timerDuration.Round(time.Second))
-				}
-				fmt.Fprintln(w)
-			}
-			_ = lw.Flush()
-		}
-		executor := newActionExecutor(action, *parallelismFlag, actionExecutorOptions{
+		opts := actionExecutorOptions{
 			timeout:  *timeoutFlag,
 			keepLogs: *keepLogsFlag,
 			cache:    actionExecutionDiskCache{dir: *cacheDirFlag},
-			onUpdate: onUpdate,
-		})
-
-		if *verbose {
-			log.Printf("# Querying %s for repositories matching '%s'...", cfg.Endpoint, action.ScopeQuery)
+		}
+		if !*verbose {
+			opts.onUpdate = newTerminalUI(*keepLogsFlag)
 		}
 
 		// Query repos over which to run action
-		repos, err := actionRepos(ctx, *verbose, action.ScopeQuery)
+		logger.Infof("Querying %s for repositories matching '%s'...\n", cfg.Endpoint, action.ScopeQuery)
+		repos, err := actionRepos(ctx, action.ScopeQuery)
 		if err != nil {
 			return err
 		}
-		if *verbose {
-			log.Printf("# %d repositories match. Use 'src actions scope-query' for help with scoping.", len(repos))
-		}
+		logger.Infof("%d repositories match. Use 'src actions scope-query' for help with scoping.\n", len(repos))
+
+		executor := newActionExecutor(action, *parallelismFlag, logger, opts)
 		for _, repo := range repos {
 			executor.enqueueRepo(repo)
 		}
 
 		// Execute actions
-		onUpdate(executor.repos)
+		if opts.onUpdate != nil {
+			opts.onUpdate(executor.repos)
+		}
 
 		go executor.start(ctx)
 		if err := executor.wait(); err != nil {
 			return err
 		}
 		patches := executor.allPatches()
-		if *verbose {
-			log.Printf("# Action produced %d patches.", len(patches))
-		}
+
+		logger.Infof("Action produced %d patches.\n", len(patches))
+
 		return json.NewEncoder(os.Stdout).Encode(patches)
 	}
 
@@ -395,7 +296,7 @@ func prepareAction(ctx context.Context, action Action) error {
 				defer os.Remove(iidFile.Name())
 
 				if *verbose {
-					log.Printf("# Building Docker container for step %d...", i)
+					log.Printf("Building Docker container for step %d...", i)
 				}
 
 				cmd := exec.CommandContext(ctx, "docker", "build", "--iidfile", iidFile.Name(), "-")
@@ -405,7 +306,7 @@ func prepareAction(ctx context.Context, action Action) error {
 					return errors.Wrap(err, "build docker image")
 				}
 				if *verbose {
-					log.Printf("# Done building Docker container for step %d.", i)
+					log.Printf("Done building Docker container for step %d.", i)
 				}
 
 				iid, err := ioutil.ReadFile(iidFile.Name())
@@ -459,7 +360,7 @@ type ActionRepo struct {
 	Rev  string
 }
 
-func actionRepos(ctx context.Context, verbose bool, scopeQuery string) ([]ActionRepo, error) {
+func actionRepos(ctx context.Context, scopeQuery string) ([]ActionRepo, error) {
 	hasCount, err := regexp.MatchString(`count:\d+`, scopeQuery)
 	if err != nil {
 		return nil, err
@@ -533,7 +434,7 @@ query ActionRepos($query: String!) {
 		}
 
 		if repo.DefaultBranch.Name == "" {
-			log.Printf("# Skipping repository %s because we couldn't determine default branch.", repo.Name)
+			log.Printf("Skipping repository %s because we couldn't determine default branch.", repo.Name)
 			continue
 		}
 
