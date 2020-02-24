@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-type savedSearchResolver struct {
+type SavedSearchResolver struct {
 	s types.SavedSearch
 }
 
@@ -26,7 +26,7 @@ func unmarshalSavedSearchID(id graphql.ID) (savedSearchID int32, err error) {
 	return
 }
 
-func savedSearchByID(ctx context.Context, id graphql.ID) (*savedSearchResolver, error) {
+func savedSearchByID(ctx context.Context, id graphql.ID) (*SavedSearchResolver, error) {
 	intID, err := unmarshalSavedSearchID(id)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func savedSearchByID(ctx context.Context, id graphql.ID) (*savedSearchResolver, 
 		return nil, errors.New("failed to get saved search: no Org ID or User ID associated with saved search")
 	}
 
-	savedSearch := &savedSearchResolver{
+	savedSearch := &SavedSearchResolver{
 		types.SavedSearch{
 			ID:              intID,
 			Description:     ss.Config.Description,
@@ -64,23 +64,23 @@ func savedSearchByID(ctx context.Context, id graphql.ID) (*savedSearchResolver, 
 	return savedSearch, nil
 }
 
-func (r savedSearchResolver) ID() graphql.ID {
+func (r SavedSearchResolver) ID() graphql.ID {
 	return marshalSavedSearchID(r.s.ID)
 }
 
-func (r savedSearchResolver) Notify() bool {
+func (r SavedSearchResolver) Notify() bool {
 	return r.s.Notify
 }
 
-func (r savedSearchResolver) NotifySlack() bool {
+func (r SavedSearchResolver) NotifySlack() bool {
 	return r.s.NotifySlack
 }
 
-func (r savedSearchResolver) Description() string { return r.s.Description }
+func (r SavedSearchResolver) Description() string { return r.s.Description }
 
-func (r savedSearchResolver) Query() string { return r.s.Query }
+func (r SavedSearchResolver) Query() string { return r.s.Query }
 
-func (r savedSearchResolver) UserID() *graphql.ID {
+func (r SavedSearchResolver) UserID() *graphql.ID {
 	if r.s.UserID == nil {
 		return nil
 	}
@@ -88,21 +88,21 @@ func (r savedSearchResolver) UserID() *graphql.ID {
 	return &userID
 }
 
-func (r savedSearchResolver) OrgID() *graphql.ID {
+func (r SavedSearchResolver) OrgID() *graphql.ID {
 	if r.s.OrgID == nil {
 		return nil
 	}
 	orgID := marshalOrgID(*r.s.OrgID)
 	return &orgID
 }
-func (r savedSearchResolver) SlackWebhookURL() *string { return r.s.SlackWebhookURL }
+func (r SavedSearchResolver) SlackWebhookURL() *string { return r.s.SlackWebhookURL }
 
-func toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
-	return &savedSearchResolver{entry}
+func toSavedSearchResolver(entry types.SavedSearch) *SavedSearchResolver {
+	return &SavedSearchResolver{entry}
 }
 
-func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResolver, error) {
-	var savedSearches []*savedSearchResolver
+func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*SavedSearchResolver, error) {
+	var savedSearches []*SavedSearchResolver
 	currentUser, err := CurrentUser(ctx)
 	if currentUser == nil {
 		return nil, errors.New("No currently authenticated user")
@@ -148,7 +148,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	NotifySlack bool
 	OrgID       *graphql.ID
 	UserID      *graphql.ID
-}) (*savedSearchResolver, error) {
+}) (*SavedSearchResolver, error) {
 	var userID, orgID *int32
 	// 🚨 SECURITY: Make sure the current user has permission to create a saved search for the specified user or org.
 	if args.UserID != nil {
@@ -200,7 +200,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	NotifySlack bool
 	OrgID       *graphql.ID
 	UserID      *graphql.ID
-}) (*savedSearchResolver, error) {
+}) (*SavedSearchResolver, error) {
 	var userID, orgID *int32
 	// 🚨 SECURITY: Make sure the current user has permission to update a saved search for the specified user or org.
 	if args.UserID != nil {

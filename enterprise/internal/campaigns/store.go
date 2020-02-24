@@ -2718,6 +2718,18 @@ func scanBackgroundProcessStatus(b *campaigns.BackgroundProcessStatus, s scanner
 	)
 }
 
+func scanAction(a *campaigns.Action, s scanner) error {
+	return s.Scan(
+		&a.ID,
+	)
+}
+
+func scanCount(count *int64, s scanner) error {
+	return s.Scan(
+		count,
+	)
+}
+
 func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
@@ -2740,4 +2752,122 @@ func jsonSetColumn(ids []int64) ([]byte, error) {
 		set[id] = nil
 	}
 	return json.Marshal(set)
+}
+
+// ListActionsOpts captures the query options needed for
+// listing actions.
+type ListActionsOpts struct {
+	Cursor int64
+	Limit  int
+}
+
+// ListActions lists Actions with the given filters.
+func (s *Store) ListActions(ctx context.Context, opts ListActionsOpts) (actions []*campaigns.Action, totalCount int64, err error) {
+	q := listActionsQuery(&opts)
+
+	actions = make([]*campaigns.Action, 0, opts.Limit)
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var a campaigns.Action
+		if err = scanAction(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		actions = append(actions, &a)
+		return a.ID, 1, err
+	})
+
+	q = sqlf.Sprintf("SELECT COUNT(*) FROM actions")
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		if err = scanCount(&totalCount, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, err
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return actions, totalCount, err
+}
+
+var listActionsQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:ListActions
+SELECT
+  actions.id
+FROM actions
+`
+
+var listActionsQueryFmtstrCount = `
+-- source: enterprise/internal/campaigns/store.go:ListActions
+SELECT
+  COUNT(*) AS count
+FROM actions
+`
+
+var listActionsQueryFmtstrConditions = `
+WHERE %s
+ORDER BY actions.id ASC
+`
+
+func listActionsQuery(opts *ListActionsOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("actions.id >= %s", opts.Cursor),
+	}
+
+	queryTemplate := listActionsQueryFmtstrSelect + listActionsQueryFmtstrConditions + limitClause
+
+	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
+}
+
+// UpdateActionJobOpts captures the query options needed for
+// listing actions.
+type UpdateActionJobOpts struct {
+	ID    int64
+	State *string
+	Log   *string
+	Patch *string
+}
+
+// UpdateActionJob lists Actions with the given filters.
+func (s *Store) UpdateActionJob(ctx context.Context, opts UpdateActionJobOpts) error {
+	q := updateActionJobQuery(&opts)
+
+	_, _, err := s.query(ctx, q, nil)
+
+	return err
+}
+
+var updateActionJobQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:UpdateActionJob
+UPDATE
+	action_jobs
+SET %s
+WHERE action_jobs.id = %d
+`
+
+func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
+	preds := []*sqlf.Query{}
+
+	if opts.State != nil {
+		preds = append(preds, sqlf.Sprintf("state = %s", *opts.State))
+	}
+	if opts.Log != nil {
+		preds = append(preds, sqlf.Sprintf("log = (CASE WHEN log IS NOT NULL THEN log ELSE '' END) || %s", *opts.Log))
+	}
+	if opts.Patch != nil {
+		preds = append(preds, sqlf.Sprintf("patch = %s", *opts.Patch))
+	}
+
+	queryTemplate := updateActionJobQueryFmtstrSelect
+
+	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, ",\n "), opts.ID)
 }

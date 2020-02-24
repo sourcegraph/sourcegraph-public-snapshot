@@ -214,11 +214,16 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	// Send notifications for new search results in a separate goroutine, so
 	// that we don't block other search queries from running in sequence (which
 	// is done intentionally, to ensure no overloading of searcher/gitserver).
-	go func() {
-		if err := notify(context.Background(), spec, query, newQuery, v); err != nil {
-			log15.Error("executor: failed to send notifications", "error", err)
-		}
-	}()
+	if len(v.Data.Search.Results.Results) != 0 {
+		go func() {
+			if err := notify(context.Background(), spec, query, newQuery, v); err != nil {
+				log15.Error("executor: failed to send notifications", "error", err)
+			}
+		}()
+		go func() {
+			// todo: send request to frontend to trigger actions from a search
+		}()
+	}
 	return nil
 }
 
@@ -277,9 +282,6 @@ var externalURL *url.URL
 
 // notify handles sending notifications for new search results.
 func notify(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSavedQuery, newQuery string, results *gqlSearchResponse) error {
-	if len(results.Data.Search.Results.Results) == 0 {
-		return nil
-	}
 	log15.Info("sending notifications", "new_results", len(results.Data.Search.Results.Results), "description", query.Description)
 
 	// Determine which users to notify.

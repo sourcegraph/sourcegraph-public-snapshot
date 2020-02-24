@@ -110,6 +110,11 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
+	// This file contains no sensitive data but is required to use with kubectl apply
+	if strings.HasPrefix(req.URL.Path, "/.api/runner-kubeconfig.yml") {
+		return true
+	}
+
 	// This is just a redirect to a public download
 	if strings.HasPrefix(req.URL.Path, "/.api/src-cli") {
 		return true

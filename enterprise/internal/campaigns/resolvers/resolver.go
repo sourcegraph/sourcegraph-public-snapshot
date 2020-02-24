@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -629,4 +630,360 @@ func parseCampaignState(s *string) (campaigns.CampaignState, error) {
 	default:
 		return campaigns.CampaignStateAny, fmt.Errorf("unknown state %q", *s)
 	}
+}
+
+// actionEnvVarResolver
+
+type actionEnvVarResolver struct {
+	key   string
+	value string
+}
+
+func (r actionEnvVarResolver) Key() string {
+	return r.key
+}
+
+func (r actionEnvVarResolver) Value() string {
+	return r.value
+}
+
+// actionConnectionResolver
+
+type actionConnectionResolver struct {
+	once  sync.Once
+	store *ee.Store
+
+	first *int32
+
+	actions    []*campaigns.Action
+	totalCount int64
+	err        error
+}
+
+func (r *actionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	_, totalCount, err := r.compute(ctx)
+	if err != nil {
+		return 0, err
+	}
+	// todo: dangerous
+	return int32(totalCount), nil
+}
+
+func (r *actionConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionResolver, error) {
+	nodes, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.ActionResolver, len(nodes))
+	for i, node := range nodes {
+		resolvers[i] = &actionResolver{store: r.store, action: *node}
+	}
+	return resolvers, nil
+}
+
+func (r *actionConnectionResolver) compute(ctx context.Context) ([]*campaigns.Action, int64, error) {
+	r.once.Do(func() {
+		limit := -1
+		if r.first != nil {
+			limit = int(*r.first)
+		}
+		r.actions, r.totalCount, r.err = r.store.ListActions(ctx, ee.ListActionsOpts{Limit: limit, Cursor: 0})
+	})
+	return r.actions, r.totalCount, r.err
+}
+
+// actionExecutionConnectionResolver
+
+type actionExecutionConnectionResolver struct {
+	once  sync.Once
+	store *ee.Store
+}
+
+func (r *actionExecutionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return int32(5), nil
+}
+
+func (r *actionExecutionConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionExecutionResolver, error) {
+	resolvers := make([]graphqlbackend.ActionExecutionResolver, 1)
+	resolvers[0] = &actionExecutionResolver{actionExecution: campaigns.ActionExecution{ID: 123}}
+	return resolvers, nil
+}
+
+// actionJobConnectionResolver
+
+type actionJobConnectionResolver struct {
+	// todo
+}
+
+func (r *actionJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return int32(12), nil
+}
+
+func (r *actionJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionJobResolver, error) {
+	actionJobs := make([]graphqlbackend.ActionJobResolver, 1)
+	actionJob := campaigns.ActionJob{
+		ID: 123,
+	}
+	actionJobs[0] = &actionJobResolver{
+		job: actionJob,
+	}
+	return actionJobs, nil
+}
+
+// runner resolver
+
+type runnerResolver struct {
+	// todo
+}
+
+func (r *runnerResolver) ID() graphql.ID {
+	return "asd"
+}
+
+func (r *runnerResolver) Name() string {
+	return "runner-sg-dev-123"
+}
+
+func (r *runnerResolver) Description() string {
+	return "macOS 10.15.3, Docker 19.06.03, 8 CPU"
+}
+
+func (r *runnerResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolver {
+	return &actionJobConnectionResolver{}
+}
+
+// action definition resolver
+
+type actionDefinitionResolver struct {
+	// todo
+}
+
+func (r *actionDefinitionResolver) Steps() graphqlbackend.JSONCString {
+	return graphqlbackend.JSONCString(`{
+		"scopeQuery": "repo:go-* -repohasfile:INSTALL.md",
+		"steps": [
+		  {
+			"type": "command",
+			"args": ["sh", "-c", "echo '# Installation' > INSTALL.md"]
+		  },
+		  {
+			"type": "command",
+			"args": ["sed", "-i", "s/No install instructions/See INSTALL.md/", "README.md"]
+		  },
+		  {
+			"type": "docker",
+			"dockerfile": "FROM alpine:3 \n CMD find /work -iname '*.md' -type f | xargs -n 1 sed -i s/this/that/g"
+		  },
+		  {
+			"type": "docker",
+			"image": "golang:1.13-alpine",
+			"args": ["go", "fix", "/work/..."]
+		  }
+		]
+	  }`)
+}
+
+func (r *actionDefinitionResolver) ActionWorkspace() *graphqlbackend.GitTreeEntryResolver {
+	return nil
+}
+
+func (r *actionDefinitionResolver) Env() []graphqlbackend.ActionEnvVarResolver {
+	envs := make([]graphqlbackend.ActionEnvVarResolver, 1)
+	envs[0] = &actionEnvVarResolver{
+		key:   "asd",
+		value: "ads",
+	}
+	return envs
+}
+
+// query and mutation resolvers
+
+func (r *Resolver) Actions(ctx context.Context, args *graphqlbackend.ListActionsArgs) (_ graphqlbackend.ActionConnectionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.Actions", fmt.Sprintf("First: %d", args.First))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create executions for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	return &actionConnectionResolver{store: r.store, first: args.First}, nil
+}
+
+func (r *Resolver) ActionJobs(ctx context.Context, args *graphqlbackend.ListActionJobsArgs) (_ graphqlbackend.ActionJobConnectionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.ActionJobs", fmt.Sprintf("First: %d", args.First))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create executions for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	return nil, nil
+}
+
+func (r *Resolver) CreateAction(ctx context.Context, args *graphqlbackend.CreateActionArgs) (_ graphqlbackend.ActionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CreateAction", fmt.Sprintf("Definition: %s", args.Definition))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create executions for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	return nil, nil
+}
+
+func (r *Resolver) UpdateAction(ctx context.Context, args *graphqlbackend.UpdateActionArgs) (_ graphqlbackend.ActionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.UpdateAction", fmt.Sprintf("Action: %s", args.Action))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create executions for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	return nil, nil
+}
+
+func (r *Resolver) UploadWorkspace(ctx context.Context, args *graphqlbackend.UploadWorkspaceArgs) (_ *graphqlbackend.GitTreeEntryResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.UploadWorkspace", fmt.Sprintf("Size: %d", len(args.Content)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create executions for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	return nil, nil
+}
+
+func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbackend.CreateActionExecutionArgs) (_ graphqlbackend.ActionExecutionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CreateActionExecution", fmt.Sprintf("Action: %s", args.Action))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create executions for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	return nil, nil
+}
+
+func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullActionJobArgs) (_ graphqlbackend.ActionJobResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.PullActionJob", fmt.Sprintf("Runner: %q", args.Runner))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admin tokens can register as a runner for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	actionJob := campaigns.ActionJob{
+		ID: 123,
+	}
+
+	// set executionStart = time.Now
+	// set runner = args.Runner
+	// set state = RUNNING
+	// set runnerSeenAt = time.Now
+
+	return &actionJobResolver{job: actionJob}, nil
+}
+
+func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.UpdateActionJobArgs) (_ graphqlbackend.ActionJobResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.UpdateActionJob", fmt.Sprintf("Action job: %s", args.ActionJob))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create executions for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	fmt.Printf("#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\nUpdate action job state to %s\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n#\n", *args.State)
+	actionJob := campaigns.ActionJob{
+		ID: 123,
+	}
+	// if args.state == "COMPLETED" {
+	// 	// todo: check if was running before, otherwise updating state is not allowed
+	// 	// todo: check if ALL are completed, timeouted, or failed now, then proceed with patch generation
+	// 	patches := make([]CampaignPlanPatch)
+	// 	actionJobs := make([]campaigns.ActionJob)
+	// 	for _, aj := range actionJobs {
+	// 		if aj.patch != nil {
+	// 			append(patches, CampaignPlanPatch{
+	// 				Repository:   aj.repo,
+	// 				BaseRevision: aj.revision,
+	// 				Patch:        aj.patch,
+	// 			})
+	// 		}
+	// 	}
+	// }
+	return &actionJobResolver{job: actionJob}, nil
+}
+
+func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLogArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.AppendLog", fmt.Sprintf("ActionJob: %q", args.ActionJob))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admin tokens can register as a runner for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	id, err := unmarshalActionJobID(args.ActionJob)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.store.UpdateActionJob(ctx, ee.UpdateActionJobOpts{
+		ID:  id,
+		Log: &args.Content,
+	}); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) RetryActionJob(ctx context.Context, args *graphqlbackend.RetryActionJobArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.RetryActionJob", fmt.Sprintf("Action job: %s", args.ActionJob))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create executions for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }

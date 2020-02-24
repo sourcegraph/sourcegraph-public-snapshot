@@ -84,6 +84,53 @@ type PublishChangesetArgs struct {
 	ChangesetPlan graphql.ID
 }
 
+type ListActionsArgs struct {
+	First *int32
+}
+
+type ListActionJobsArgs struct {
+	First *int32
+	State campaigns.ActionJobState
+}
+
+type CreateActionArgs struct {
+	Definition string
+	Workspace  *graphql.ID
+}
+
+type UpdateActionArgs struct {
+	Action        graphql.ID
+	NewDefinition string
+	Workspace     *graphql.ID
+}
+
+type UploadWorkspaceArgs struct {
+	Content string
+}
+
+type CreateActionExecutionArgs struct {
+	Action graphql.ID
+}
+
+type PullActionJobArgs struct {
+	Runner graphql.ID
+}
+
+type UpdateActionJobArgs struct {
+	ActionJob graphql.ID
+	Patch     *string
+	State     *campaigns.ActionJobState
+}
+
+type AppendLogArgs struct {
+	ActionJob graphql.ID
+	Content   string
+}
+
+type RetryActionJobArgs struct {
+	ActionJob graphql.ID
+}
+
 type CampaignsResolver interface {
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
 	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
@@ -94,6 +141,17 @@ type CampaignsResolver interface {
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
 	PublishCampaign(ctx context.Context, args *PublishCampaignArgs) (CampaignResolver, error)
 	PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error)
+
+	Actions(ctx context.Context, args *ListActionsArgs) (ActionConnectionResolver, error)
+	ActionJobs(ctx context.Context, args *ListActionJobsArgs) (ActionJobConnectionResolver, error)
+	CreateAction(ctx context.Context, args *CreateActionArgs) (ActionResolver, error)
+	UpdateAction(ctx context.Context, args *UpdateActionArgs) (ActionResolver, error)
+	UploadWorkspace(ctx context.Context, args *UploadWorkspaceArgs) (*GitTreeEntryResolver, error)
+	CreateActionExecution(ctx context.Context, args *CreateActionExecutionArgs) (ActionExecutionResolver, error)
+	PullActionJob(ctx context.Context, args *PullActionJobArgs) (ActionJobResolver, error)
+	UpdateActionJob(ctx context.Context, args *UpdateActionJobArgs) (ActionJobResolver, error)
+	AppendLog(ctx context.Context, args *AppendLogArgs) (*EmptyResponse, error)
+	RetryActionJob(ctx context.Context, args *RetryActionJobArgs) (*EmptyResponse, error)
 
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error)
@@ -144,6 +202,46 @@ func (defaultCampaignsResolver) PublishCampaign(ctx context.Context, args *Publi
 }
 
 func (defaultCampaignsResolver) PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) Actions(ctx context.Context, args *ListActionsArgs) (ActionConnectionResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ActionJobs(ctx context.Context, args *ListActionJobsArgs) (ActionJobConnectionResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CreateAction(ctx context.Context, args *CreateActionArgs) (ActionResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) UpdateAction(ctx context.Context, args *UpdateActionArgs) (ActionResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) UploadWorkspace(ctx context.Context, args *UploadWorkspaceArgs) (*GitTreeEntryResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CreateActionExecution(ctx context.Context, args *CreateActionExecutionArgs) (ActionExecutionResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) PullActionJob(ctx context.Context, args *PullActionJobArgs) (ActionJobResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) UpdateActionJob(ctx context.Context, args *UpdateActionJobArgs) (ActionJobResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) AppendLog(ctx context.Context, args *AppendLogArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) RetryActionJob(ctx context.Context, args *RetryActionJobArgs) (*EmptyResponse, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -319,4 +417,76 @@ type PreviewFileDiffConnection interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	RawDiff(ctx context.Context) (string, error)
+}
+
+type ActionEnvVarResolver interface {
+	Key() string
+	Value() string
+}
+
+type ActionDefinitionResolver interface {
+	Steps() JSONCString
+	Env() []ActionEnvVarResolver
+	// TODO: Wrong return type
+	ActionWorkspace() *GitTreeEntryResolver
+}
+
+type ActionConnectionResolver interface {
+	Nodes(ctx context.Context) ([]ActionResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+}
+
+type ActionResolver interface {
+	ID() graphql.ID
+	Definition() ActionDefinitionResolver
+	SavedSearch() *SavedSearchResolver
+	Schedule() *string
+	CancelPreviousScheduledExecution() *bool
+	Campaign(ctx context.Context) (CampaignResolver, error)
+	ActionExecutions() ActionExecutionConnectionResolver
+}
+
+type ActionExecutionConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	Nodes(ctx context.Context) ([]ActionExecutionResolver, error)
+}
+
+type ActionExecutionResolver interface {
+	ID() graphql.ID
+	Action() ActionResolver
+	InvokationReason() campaigns.ActionExecutionInvokationReason
+	Definition() ActionDefinitionResolver
+	Jobs() ActionJobConnectionResolver
+	Status() campaigns.BackgroundProcessStatus
+	CampaignPlan() CampaignPlanResolver
+}
+
+type ActionJobConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	Nodes(ctx context.Context) ([]ActionJobResolver, error)
+}
+
+type ActionJobResolver interface {
+	ID() graphql.ID
+	Definition() ActionDefinitionResolver
+	Repository(ctx context.Context) (*RepositoryResolver, error)
+	BaseRevision() string
+	State() campaigns.ActionJobState
+	Runner() RunnerResolver
+
+	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
+	Diff() ActionJobResolver
+	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
+
+	ExecutionStart() *DateTime
+	ExecutionEnd() *DateTime
+	Log() *string
+}
+
+type RunnerResolver interface {
+	ID() graphql.ID
+	Name() string
+	Description() string
+	State() campaigns.RunnerState
+	RunningJobs() ActionJobConnectionResolver
 }

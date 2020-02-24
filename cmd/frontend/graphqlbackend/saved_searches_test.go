@@ -29,7 +29,7 @@ func TestSavedSearches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []*savedSearchResolver{{types.SavedSearch{
+	want := []*SavedSearchResolver{{types.SavedSearch{
 		ID:          key,
 		Description: "test query",
 		Query:       "test type:diff patternType:regexp",
@@ -71,7 +71,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := &savedSearchResolver{types.SavedSearch{
+	want := &SavedSearchResolver{types.SavedSearch{
 		ID:          key,
 		Description: "test query",
 		Query:       "test type:diff patternType:regexp",
@@ -131,7 +131,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &savedSearchResolver{types.SavedSearch{
+	want := &SavedSearchResolver{types.SavedSearch{
 		ID:          key,
 		Description: "updated query description",
 		Query:       "test type:diff patternType:regexp",

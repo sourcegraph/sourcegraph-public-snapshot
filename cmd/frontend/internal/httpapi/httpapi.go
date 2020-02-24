@@ -71,6 +71,8 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, bitbucketS
 		})))
 	}
 
+	m.Get(apirouter.RunnerKubeconfigDownload).Handler(trace.TraceRoute(handler(runnerKubeconfigServe)))
+
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCliVersion).Handler(trace.TraceRoute(handler(srcCliVersionServe)))
 	m.Get(apirouter.SrcCliDownload).Handler(trace.TraceRoute(handler(srcCliDownloadServe)))

@@ -1456,3 +1456,47 @@ const (
 func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))
 }
+
+type Action struct {
+	ID int64
+}
+
+type ActionExecution struct {
+	ID int64
+}
+
+type ActionJob struct {
+	ID    int64
+	Patch *string
+}
+
+// ActionExecutionInvokationReason defines the possible reasons of an execution to be triggered from.
+type ActionExecutionInvokationReason string
+
+// ActionExecutionInvokationReason constants
+const (
+	ActionExecutionInvokationReasonManual      ActionExecutionInvokationReason = "MANUAL"
+	ActionExecutionInvokationReasonSchedule    ActionExecutionInvokationReason = "SCHEDULE"
+	ActionExecutionInvokationReasonSavedSearch ActionExecutionInvokationReason = "SAVED_SEARCH"
+)
+
+// RunnerState defines the possible states of a runner.
+type RunnerState string
+
+// RunnerState constants
+const (
+	RunnerStateOnline  RunnerState = "ONLINE"
+	RunnerStateOffline RunnerState = "OFFLINE"
+)
+
+// ActionJobState defines the possible states of a job.
+type ActionJobState string
+
+// ActionJobState constants
+const (
+	ActionJobStatePending   ActionJobState = "PENDING"
+	ActionJobStateRunning   ActionJobState = "RUNNING"
+	ActionJobStateCompleted ActionJobState = "COMPLETED"
+	ActionJobStateErrored   ActionJobState = "ERRORED"
+	ActionJobStateTimeout   ActionJobState = "TIMEOUT"
+)

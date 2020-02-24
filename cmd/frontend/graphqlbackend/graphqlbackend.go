@@ -235,8 +235,8 @@ func (r *NodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
 	return NodeToRegistryExtension(r.Node)
 }
 
-func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
-	n, ok := r.Node.(*savedSearchResolver)
+func (r *NodeResolver) ToSavedSearch() (*SavedSearchResolver, bool) {
+	n, ok := r.Node.(*SavedSearchResolver)
 	return n, ok
 }
 
@@ -247,6 +247,26 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 
 func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 	n, ok := r.Node.(LSIFUploadResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToAction() (ActionResolver, bool) {
+	n, ok := r.Node.(ActionResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToActionExecution() (ActionExecutionResolver, bool) {
+	n, ok := r.Node.(ActionExecutionResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToRunner() (RunnerResolver, bool) {
+	n, ok := r.Node.(RunnerResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToActionJob() (ActionJobResolver, bool) {
+	n, ok := r.Node.(ActionJobResolver)
 	return n, ok
 }
 

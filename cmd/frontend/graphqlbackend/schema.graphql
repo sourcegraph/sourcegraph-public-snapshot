@@ -410,6 +410,156 @@ type Mutation {
         # The level of repository permission.
         perm: RepositoryPermission = READ
     ): EmptyResponse!
+
+    # Create a new action
+    createAction(
+        definition: JSONCString!
+        # ID of a File
+        workspace: ID!
+    ): Action!
+    # TODO: add the following parameter:
+    # env: ActionEnv
+    updateAction(
+        action: ID!
+        newDefinition: JSONCString!
+        # ID of a File
+        workspace: ID!
+    ): Action!
+    # Todo: Is GraphQL the best place to upload a ZIP archive?
+    # Also, we possibly have to chunk the upload into 2mb (TBD) chunks to bypass upload max size from nginx
+    # Brainstorm: Use HTTP header `Content-Range: byte 0-chunkSize/totalSize` with a REST API (?)
+    uploadWorkspace(content: String!): File2!
+
+    # Create a new 'MANUAL' action execution from an action.
+    createActionExecution(action: ID!): ActionExecution!
+
+    # Begin a job on a runner, if some are in the backlog.
+    pullActionJob(runner: ID!): ActionJob
+    updateActionJob(
+        actionJob: ID!
+        # Probably hard-require this if state == completed, otherwise it must be empty
+        patch: String
+        state: ActionJobState
+    ): ActionJob!
+    # Append a log to a job. Runner-only API. Fails if state != 'RUNNING'
+    appendLog(actionJob: ID!, content: String!): EmptyResponse
+    retryActionJob(actionJob: ID!): EmptyResponse
+}
+
+# An env var set for a action execution
+type ActionEnvVar {
+    key: String!
+    value: String!
+}
+
+type ActionConnection {
+    totalCount: Int!
+    nodes: [Action!]!
+}
+
+type ActionDefinition {
+    # The actual definition document.
+    steps: JSONCString!
+    # ZIP file containing the action workspace. TODO: Make not null once implemented
+    actionWorkspace: File2
+    # Environment variables to be set during execution.
+    # Caution: never print the envvar.value directly (they should even be REDACTED in the API response),
+    # they can contain sensitive data
+    env: [ActionEnvVar!]!
+}
+
+# An action is run to create patches for campaigns
+type Action implements Node {
+    id: ID!
+    definition: ActionDefinition!
+    # The saved search this was associated with, cannot be combined with `schedule`
+    savedSearch: SavedSearch
+    # Cron schedule for repeating executions.
+    schedule: String
+    # Required when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invokation.
+    cancelPreviousScheduledExecution: Boolean
+    # Optional associated campaign to update on completion.
+    campaign: Campaign
+    actionExecutions: ActionExecutionConnection!
+}
+
+type ActionExecutionConnection {
+    totalCount: Int!
+    nodes: [ActionExecution!]!
+}
+
+enum ActionExecutionInvokationReason {
+    MANUAL
+    SCHEDULE
+    SAVED_SEARCH
+}
+
+# An action execution is one instance of an action
+type ActionExecution implements Node {
+    id: ID!
+    # The parent action that this execution was derived from.
+    # TODO: Is this legit? It can cause an infinite resolver loop if there is no detection for that
+    action: Action!
+    # Mirrored from the action, but persisted separately, so updating an action is safe.
+    definition: ActionDefinition!
+    invokationReason: ActionExecutionInvokationReason!
+    jobs: ActionJobConnection!
+    # Combined status of all jobs
+    status: BackgroundProcessStatus!
+    # Set when status is 'COMPLETED' and the parent action had no `campaign` set. Upon reporting the completion,
+    # the patches are used with the API method `createCampaignPlanFromPatches` to populate this.
+    campaignPlan: CampaignPlan
+}
+
+enum RunnerState {
+    ONLINE
+    OFFLINE
+}
+
+# A registered actions runner
+type Runner implements Node {
+    id: ID!
+    # Unique name to identify this runner
+    name: String!
+    # Reported information about the runner. This contains OS, Docker version and more.
+    description: String!
+    # Set to 'offline' when no heartbeat was received for a log enough period (TBD what long enough might be)
+    state: RunnerState!
+    # All currently accepted jobs
+    runningJobs: ActionJobConnection!
+}
+
+type ActionJobConnection {
+    totalCount: Int!
+    nodes: [ActionJob!]!
+}
+
+enum ActionJobState {
+    PENDING
+    RUNNING
+    COMPLETED
+    ERRORED
+    TIMEOUT
+}
+
+type ActionJob implements Node {
+    id: ID!
+    # Mirrored from the parent execution, same datasource so they will always be equal. Used for queries that fetch the job directly.
+    definition: ActionDefinition!
+    # The repository that this job is running over.
+    repository: Repository!
+    # The base revision in the repository that this job runs over.
+    baseRevision: String!
+    state: ActionJobState!
+    # Set once accepted by a runner
+    runner: Runner
+    # Set when completed and patches have been uploaded
+    diff: PreviewRepositoryComparison
+    # Time when execution started. Set once accepted by a runner.
+    executionStart: DateTime
+    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`
+    executionEnd: DateTime
+    log: String
 }
 
 # A patch to apply to a repository (in a new branch) when a campaign is created from the parent
@@ -1155,6 +1305,11 @@ type Query {
         first: Int
         state: CampaignState
     ): CampaignConnection!
+
+    # TODO: Better filtering
+    actions(first: Int): ActionConnection!
+    # Get action jobs by state, used in pending job queue list on runners page
+    actionJobs(first: Int, state: ActionJobState!): ActionJobConnection!
 
     # Looks up a repository by either name or cloneURL.
     repository(
