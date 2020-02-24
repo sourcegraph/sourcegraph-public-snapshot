@@ -17,8 +17,11 @@ jobs:
 
   lsif-web:
     runs-on: ubuntu-latest
+    container: node:13.8.0-alpine3.10
     steps:
       - uses: actions/checkout@v1
+      - name: Install dependencies
+        run: yarn
       - name: Generate LSIF data
         uses: sourcegraph/lsif-node-action@master
         with:
@@ -30,8 +33,11 @@ jobs:
 
   lsif-lsif:
     runs-on: ubuntu-latest
+    container: node:13.8.0-alpine3.10
     steps:
       - uses: actions/checkout@v1
+      - name: Install dependencies
+        run: yarn --cwd lsif
       - name: Generate LSIF data
         uses: sourcegraph/lsif-node-action@master
         with:
@@ -43,8 +49,11 @@ jobs:
 
   lsif-shared:
     runs-on: ubuntu-latest
+    container: node:13.8.0-alpine3.10
     steps:
       - uses: actions/checkout@v1
+      - name: Install dependencies
+        run: yarn
       - name: Generate LSIF data
         uses: sourcegraph/lsif-node-action@master
         with:
@@ -56,8 +65,11 @@ jobs:
 
   lsif-browser:
     runs-on: ubuntu-latest
+    container: node:13.8.0-alpine3.10
     steps:
       - uses: actions/checkout@v1
+      - name: Install dependencies
+        run: yarn
       - name: Generate LSIF data
         uses: sourcegraph/lsif-node-action@master
         with:
