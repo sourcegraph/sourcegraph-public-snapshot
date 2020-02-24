@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Zoekt's watchdog ensures the service is down upto 3 times before exiting. The watchdog would misfire on startup on resource constrained systems, with the retries this should make a false positive far less likely. [#7867](https://github.com/sourcegraph/sourcegraph/issues/7867)
+- Updates every repository on every repo-updater sync [#8501](https://github.com/sourcegraph/sourcegraph/issues/8501)
 
 ### Removed
 
