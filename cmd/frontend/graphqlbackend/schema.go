@@ -32,7 +32,7 @@ scalar JSONCString
 type Mutation {
     # Creates a list of Changesets of a given repository in a code host (e.g.
     # pull request on GitHub). If a changeset with the given input already
-    # exists, it's id returned instead of a new entry being added to the database.
+    # exists, its id is returned instead of a new entry being added to the database.
     createChangesets(input: [CreateChangesetInput!]!): [ID!]!
     # Adds a list of Changesets to a Campaign.
     # The campaign must not have a campaign plan.
