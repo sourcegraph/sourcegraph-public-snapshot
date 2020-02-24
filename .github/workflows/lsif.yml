@@ -26,7 +26,7 @@ jobs:
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         with:
-          file: web/dump.lsif
+          file: web/data.lsif
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   lsif-lsif:
@@ -40,7 +40,7 @@ jobs:
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         with:
-          file: lsif/dump.lsif
+          file: lsif/data.lsif
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   lsif-shared:
@@ -54,7 +54,7 @@ jobs:
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         with:
-          file: shared/dump.lsif
+          file: shared/data.lsif
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   lsif-browser:
@@ -68,5 +68,5 @@ jobs:
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         with:
-          file: browser/dump.lsif
+          file: browser/data.lsif
           github_token: ${{ secrets.GITHUB_TOKEN }}
