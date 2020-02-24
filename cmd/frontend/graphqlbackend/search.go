@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -84,7 +85,7 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		queryString = args.Query
 	}
 
-	q, err := query.Process(queryString, searchType)
+	q, p, err := query.Process(queryString, searchType)
 	if err != nil {
 		return alertForQuery(queryString, err), nil
 	}
@@ -109,6 +110,7 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 
 	return &searchResolver{
 		query:         q,
+		parseTree:     p,
 		originalQuery: args.Query,
 		pagination:    pagination,
 		patternType:   searchType,
@@ -172,7 +174,8 @@ func detectSearchType(version string, patternType *string, input string) (query.
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query         *query.Query          // the parsed search query
+	query         *query.Query          // the validated search query
+	parseTree     syntax.ParseTree      // the parsed search query
 	originalQuery string                // the raw string of the original search query
 	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	patternType   query.SearchType
