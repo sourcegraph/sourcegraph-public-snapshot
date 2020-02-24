@@ -23,4 +23,4 @@ jobs:
         with:
           args: -milestone 3.14 -labels team/core-services -update
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN }}
