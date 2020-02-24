@@ -520,23 +520,9 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 		shouldShowAlert = true
 	}
 	if shouldShowAlert {
-		dt := time.Since(start)
-		dt2 := longer(2, dt)
-		rr = &SearchResultsResolver{
-			alert: &searchAlert{
-				prometheusType: "timed_out",
-				title:          "Timed out while searching",
-				description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
-				proposedQueries: []*searchQueryDescription{
-					{
-						description: "query with longer timeout",
-						query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryField(r.query.ParseTree, query.FieldTimeout)),
-						patternType: r.patternType,
-					},
-				},
-			},
-		}
-		return rr, nil
+		usedTime := time.Since(start)
+		suggestTime := longer(2, usedTime)
+		return &SearchResultsResolver{alert: alertForTimeout(usedTime, suggestTime, r)}, nil
 	}
 	return rr, err
 }
