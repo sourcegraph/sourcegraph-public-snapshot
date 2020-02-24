@@ -33,7 +33,7 @@ async function addChangeset({
         throw new RepoNotFoundError(repoName)
     }
 
-    const changeset = dataOrThrowErrors(
+    const changesetID = dataOrThrowErrors(
         await mutateGraphQL(
             gql`
                 mutation CreateChangeSet($repositoryID: ID!, $externalID: String!) {
@@ -55,7 +55,7 @@ async function addChangeset({
                     }
                 }
             `,
-            { campaignID, changesets: [changeset.id] }
+            { campaignID, changesets: [changesetID] }
         ).toPromise()
     )
 }
