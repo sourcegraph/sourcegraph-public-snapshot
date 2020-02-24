@@ -91,7 +91,7 @@ func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRep
 }
 
 func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
-	upload, err := client.DefaultClient.Exists(ctx, &struct {
+	uploads, err := client.DefaultClient.Exists(ctx, &struct {
 		RepoID api.RepoID
 		Commit string
 		Path   string
@@ -105,14 +105,14 @@ func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs)
 		return nil, err
 	}
 
-	if upload == nil {
+	if len(uploads) == 0 {
 		return nil, nil
 	}
 
 	return &lsifQueryResolver{
-		repoID: args.Repository.Type().ID,
-		commit: args.Commit,
-		path:   args.Path,
-		upload: upload,
+		repoID:  args.Repository.Type().ID,
+		commit:  args.Commit,
+		path:    args.Path,
+		uploads: uploads,
 	}, nil
 }

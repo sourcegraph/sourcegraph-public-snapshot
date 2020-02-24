@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"encoding/base64"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -12,7 +11,7 @@ import (
 
 type locationConnectionResolver struct {
 	locations []*lsif.LSIFLocation
-	nextURL   string
+	endCursor string
 }
 
 var _ graphqlbackend.LocationConnectionResolver = &locationConnectionResolver{}
@@ -43,8 +42,8 @@ func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacken
 }
 
 func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if r.nextURL != "" {
-		return graphqlutil.NextPageCursor(base64.StdEncoding.EncodeToString([]byte(r.nextURL))), nil
+	if r.endCursor != "" {
+		return graphqlutil.NextPageCursor(r.endCursor), nil
 	}
 	return graphqlutil.HasNextPage(false), nil
 }

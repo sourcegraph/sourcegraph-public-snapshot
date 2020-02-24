@@ -70,7 +70,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		var effectiveRepoFieldValues []string
 		if len(r.query.Values(query.FieldDefault)) == 1 && (len(r.query.Fields) == 1 || (len(r.query.Fields) == 2 && len(r.query.Values(query.FieldRepoGroup)) == 1)) {
-			effectiveRepoFieldValues = append(effectiveRepoFieldValues, asString(r.query.Values(query.FieldDefault)[0]))
+			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.query.Values(query.FieldDefault)[0].ToString())
 		} else if len(r.query.Values(query.FieldRepo)) > 0 && ((len(r.query.Values(query.FieldRepoGroup)) > 0 && len(r.query.Fields) == 2) || (len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Fields) == 1)) {
 			effectiveRepoFieldValues, _ = r.query.RegexpPatterns(query.FieldRepo)
 		}
@@ -90,7 +90,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 			resolvers := make([]*searchSuggestionResolver, 0, len(repoRevs))
 			for _, rev := range repoRevs {
-				resolvers = append(resolvers, newSearchResultResolver(
+				resolvers = append(resolvers, newSearchSuggestionResolver(
 					&RepositoryResolver{repo: rev.Repo},
 					math.MaxInt32,
 				))
@@ -178,7 +178,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		resolvers := make([]*searchSuggestionResolver, 0, len(inventory.Languages))
 		for _, l := range inventory.Languages {
-			resolvers = append(resolvers, newSearchResultResolver(
+			resolvers = append(resolvers, newSearchSuggestionResolver(
 				&languageResolver{name: strings.ToLower(l.Name)},
 				math.MaxInt32,
 			))
@@ -236,7 +236,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri().String()), strings.ToLower(sr.symbol.Name)) {
 					score++
 				}
-				results = append(results, newSearchResultResolver(sr, score))
+				results = append(results, newSearchSuggestionResolver(sr, score))
 			}
 		}
 
@@ -275,7 +275,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				for i, res := range results.SearchResults {
 					if fm, ok := res.ToFileMatch(); ok {
 						entryResolver := fm.File()
-						suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.SearchResults)-i))
+						suggestions = append(suggestions, newSearchSuggestionResolver(entryResolver, len(results.SearchResults)-i))
 					}
 				}
 			}

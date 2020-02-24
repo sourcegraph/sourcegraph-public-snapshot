@@ -347,10 +347,11 @@ func Test_detectSearchType(t *testing.T) {
 func Test_QuoteSuggestions(t *testing.T) {
 	t.Run("regex error", func(t *testing.T) {
 		raw := "*"
-		_, alert := processQuery(raw, query.SearchTypeRegex)
-		if alert == nil {
-			t.Fatalf(`alert returned from syntax.Parse("%s") is nil`, raw)
+		_, err := query.Process(raw, query.SearchTypeRegex)
+		if err == nil {
+			t.Fatalf("error returned from syntax.Parse(%q) is nil", raw)
 		}
+		alert := alertForQuery(raw, err)
 		if !strings.Contains(strings.ToLower(alert.title), "regexp") {
 			t.Errorf("title is '%s', want it to contain 'regexp'", alert.title)
 		}
@@ -361,18 +362,19 @@ func Test_QuoteSuggestions(t *testing.T) {
 
 	t.Run("type error that is not a regex error should show a suggestion", func(t *testing.T) {
 		raw := "-foobar"
-		_, alert := processQuery(raw, query.SearchTypeRegex)
+		_, alert := query.Process(raw, query.SearchTypeRegex)
 		if alert == nil {
-			t.Fatalf(`alert returned from syntax.Parse("%s") is nil`, raw)
+			t.Fatalf("alert returned from syntax.Parse(%q) is nil", raw)
 		}
 	})
 
 	t.Run("query parse error", func(t *testing.T) {
 		raw := ":"
-		_, alert := processQuery(raw, query.SearchTypeRegex)
-		if alert == nil {
-			t.Fatalf(`alert returned from syntax.Parse("%s") is nil`, raw)
+		_, err := query.Process(raw, query.SearchTypeRegex)
+		if err == nil {
+			t.Fatalf("error returned from syntax.Parse(%q) is nil", raw)
 		}
+		alert := alertForQuery(raw, err)
 		if strings.Contains(strings.ToLower(alert.title), "regexp") {
 			t.Errorf("title is '%s', want it not to contain 'regexp'", alert.title)
 		}
@@ -383,10 +385,11 @@ func Test_QuoteSuggestions(t *testing.T) {
 
 	t.Run("negated file field with an invalid regex", func(t *testing.T) {
 		raw := "-f:(a"
-		_, alert := processQuery(raw, query.SearchTypeRegex)
-		if alert == nil {
-			t.Fatal("ParseAndCheck failed to detect the invalid regex in the f: field")
+		_, err := query.Process(raw, query.SearchTypeRegex)
+		if err == nil {
+			t.Fatal("query.Process failed to detect the invalid regex in the f: field")
 		}
+		alert := alertForQuery(raw, err)
 		if len(alert.proposedQueries) != 1 {
 			t.Fatalf("got %d proposed queries (%v), want exactly 1", len(alert.proposedQueries), alert.proposedQueries)
 		}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"regexp"
-	rxsyntax "regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
@@ -30,9 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
-	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
-	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -67,72 +63,6 @@ type SearchImplementer interface {
 	Stats(context.Context) (*searchResultsStats, error)
 }
 
-func alertForParseError(err error, queryString string) *searchAlert {
-	switch e := err.(type) {
-	case *syntax.ParseError:
-		return &searchAlert{
-			prometheusType:  "parse_syntax_error",
-			title:           capFirst(e.Msg),
-			description:     "Quoting the query may help if you want a literal match.",
-			proposedQueries: proposedQuotedQueries(queryString),
-		}
-	}
-	return &searchAlert{
-		prometheusType: "parse_syntax_error",
-		title:          "Query Parse Error",
-		description:    capFirst(err.Error()),
-	}
-}
-
-func alertForTypecheckError(err error, queryString string) *searchAlert {
-	switch e := err.(type) {
-	case *querytypes.TypeError:
-		switch e := e.Err.(type) {
-		case *rxsyntax.Error:
-			return &searchAlert{
-				prometheusType:  "typecheck_regex_syntax_error",
-				title:           capFirst(e.Error()),
-				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
-				proposedQueries: proposedQuotedQueries(queryString),
-			}
-		}
-	}
-	return &searchAlert{
-		prometheusType: "typecheck_error",
-		title:          "Query Typecheck Error",
-		description:    capFirst(err.Error()),
-	}
-}
-
-// processQuery runs the processing pipeline that parses, type checks, and
-// validates search queries. Errors are converted to descriptive alerts or
-// suggestions that surface in the client.
-//
-// TODO(rvantonder): this function should belong to
-// the internal/search/query package, once alerts can be constructed in
-// internal/search.
-func processQuery(queryString string, searchType query.SearchType) (*query.Query, *searchAlert) {
-	parseTree, err := query.Parse(queryString)
-	if err != nil {
-		return nil, alertForParseError(err, queryString)
-	}
-
-	q, err := query.Check(parseTree)
-	if err != nil {
-		return nil, alertForTypecheckError(err, queryString)
-	}
-
-	err = query.Validate(q, searchType)
-	if err != nil {
-		return nil, &searchAlert{
-			title:       "Invalid Query",
-			description: capFirst(err.Error()),
-		}
-	}
-
-	return q, nil
-}
-
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
@@ -154,9 +84,9 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		queryString = args.Query
 	}
 
-	q, alert := processQuery(queryString, searchType)
-	if alert != nil {
-		return alert, nil
+	q, err := query.Process(queryString, searchType)
+	if err != nil {
+		return alertForQuery(queryString, err), nil
 	}
 
 	// If the request is a paginated one, decode those arguments now.
@@ -238,17 +168,6 @@ func detectSearchType(version string, patternType *string, input string) (query.
 	}
 
 	return searchType, nil
-}
-
-func asString(v *searchquerytypes.Value) string {
-	switch {
-	case v.String != nil:
-		return *v.String
-	case v.Regexp != nil:
-		return v.Regexp.String()
-	default:
-		return "<unable to get searchquerytypes.Value as string>"
-	}
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
@@ -788,7 +707,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	var suggestions []*searchSuggestionResolver
 	for i, result := range fileResults {
 		assumedScore := len(fileResults) - i // Greater score is first, so we inverse the index.
-		suggestions = append(suggestions, newSearchResultResolver(result.File(), assumedScore))
+		suggestions = append(suggestions, newSearchSuggestionResolver(result.File(), assumedScore))
 	}
 	return suggestions, nil
 }
@@ -901,12 +820,12 @@ func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
 	return res, ok
 }
 
-// newSearchResultResolver returns a new searchResultResolver wrapping the
+// newSearchSuggestionResolver returns a new searchSuggestionResolver wrapping the
 // given result.
 //
 // A panic occurs if the type of result is not a *RepositoryResolver, *GitTreeEntryResolver,
 // *searchSymbolResult or *languageResolver.
-func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
+func newSearchSuggestionResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *RepositoryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}

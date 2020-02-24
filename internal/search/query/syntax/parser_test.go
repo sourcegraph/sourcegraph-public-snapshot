@@ -105,7 +105,7 @@ func TestParser(t *testing.T) {
 			if test.wantString == "" && len(query) > 0 {
 				test.wantString = input
 			}
-			if exprString := ExprString(query); exprString != test.wantString {
+			if exprString := query.String(); exprString != test.wantString {
 				t.Errorf("expr string: %s\ngot  %s\nwant %s", input, exprString, test.wantString)
 			}
 		})
