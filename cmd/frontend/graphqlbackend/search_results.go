@@ -530,7 +530,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "query with longer timeout",
-						query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
+						query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryField(r.query.ParseTree, query.FieldTimeout)),
 						patternType: r.patternType,
 					},
 				},
@@ -1302,7 +1302,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
-		alert = alertForQuotesInQueryInLiteralMode(r.query)
+		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree)
 	}
 
 	// If we have some results, only log the error instead of returning it,

@@ -84,14 +84,14 @@ func alertForStalePermissions() *searchAlert {
 	}
 }
 
-func alertForQuotesInQueryInLiteralMode(q *query.Query) *searchAlert {
+func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
 	return &searchAlert{
 		prometheusType: "no_results__suggest_quotes",
 		title:          "No results. Did you mean to use quotes?",
 		description:    "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
 		proposedQueries: []*searchQueryDescription{{
 			description: "Remove quotes",
-			query:       omitQuotes(q).String(),
+			query:       omitQuotes(p),
 			patternType: query.SearchTypeLiteral,
 		}},
 	}
@@ -128,7 +128,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 	// TODO(sqs): handle -repo:foo fields.
 
-	withoutRepoFields := omitQueryFields(r, query.FieldRepo)
+	withoutRepoFields := omitQueryField(r.query.ParseTree, query.FieldRepo)
 
 	var a searchAlert
 	switch {
@@ -148,7 +148,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		if len(repos1) > 0 {
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryFields(r, query.FieldRepoGroup),
+				query:       omitQueryField(r.query.ParseTree, query.FieldRepoGroup),
 				patternType: r.patternType,
 			})
 		}
@@ -186,7 +186,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		if len(repos1) > 0 {
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryFields(r, query.FieldRepoGroup),
+				query:       omitQueryField(r.query.ParseTree, query.FieldRepoGroup),
 				patternType: r.patternType,
 			})
 		}
@@ -416,32 +416,26 @@ func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*se
 	}
 }
 
-func omitQueryFields(r *searchResolver, field string) string {
-	return omitQueryExprWithField(r.query, field).String()
-}
-
-func omitQueryExprWithField(query *query.Query, field string) syntax.ParseTree {
-	expr2 := make(syntax.ParseTree, 0, len(query.ParseTree))
-	for _, e := range query.ParseTree {
+func omitQueryField(p syntax.ParseTree, field string) string {
+	omitField := func(e syntax.Expr) *syntax.Expr {
 		if e.Field == field {
-			continue
+			return nil
 		}
-		expr2 = append(expr2, e)
+		return &e
 	}
-	return expr2
+	return syntax.Map(p, omitField).String()
 }
 
-func omitQuotes(query *query.Query) syntax.ParseTree {
-	result := make(syntax.ParseTree, 0, len(query.ParseTree))
-	for _, e := range query.ParseTree {
-		cpy := *e
-		e = &cpy
+func omitQuotes(p syntax.ParseTree) string {
+	omitQuotes := func(e syntax.Expr) *syntax.Expr {
+
 		if e.Field == "" && strings.HasPrefix(e.Value, `"\"`) && strings.HasSuffix(e.Value, `\""`) {
 			e.Value = strings.TrimSuffix(strings.TrimPrefix(e.Value, `"\"`), `\""`)
+			return &e
 		}
-		result = append(result, e)
+		return &e
 	}
-	return result
+	return syntax.Map(p, omitQuotes).String()
 }
 
 // pathParentsByFrequency returns the most common path parents of the given paths.
