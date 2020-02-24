@@ -167,25 +167,25 @@ func Validate(q *Query, searchType SearchType) error {
 	return nil
 }
 
-// Process is the top level function for processing raw strings into parsed,
-// typechecked, and validated queries.
-func Process(queryString string, searchType SearchType) (*Query, error) {
+// Process is a top level convenience function for processing a raw string into
+// a validated and type checked query, and the parse tree of the raw string.
+func Process(queryString string, searchType SearchType) (*Query, syntax.ParseTree, error) {
 	parseTree, err := Parse(queryString)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	query, err := Check(parseTree)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = Validate(query, searchType)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return query, nil
+	return query, parseTree, nil
 }
 
 // parseAndCheck is preserved for testing custom Configs only.

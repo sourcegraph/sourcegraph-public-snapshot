@@ -1288,7 +1288,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
-		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree)
+		alert = alertForQuotesInQueryInLiteralMode(r.parseTree)
 	}
 
 	// If we have some results, only log the error instead of returning it,
