@@ -32,35 +32,45 @@ func getExtensionManifestWithBundleURL(ctx context.Context, extensionID string, 
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, time.Time{}, err
 	}
-	if release != nil {
-		// Add URL to bundle if necessary.
-		var o map[string]interface{}
-		if err := json.Unmarshal([]byte(release.Manifest), &o); err != nil {
-			return nil, time.Time{}, fmt.Errorf("parsing extension manifest for extension with ID %d (release tag %q): %s", registryExtensionID, releaseTag, err)
-		}
-		if o == nil {
-			o = map[string]interface{}{}
-		}
-		urlStr, _ := o["url"].(string)
-		if urlStr == "" {
-			// Insert "url" field with link to bundle file on this site.
-			bundleURL, err := makeExtensionBundleURL(release.ID, release.CreatedAt.UnixNano(), extensionID)
-			if err != nil {
-				return nil, time.Time{}, err
-			}
-			o["url"] = bundleURL
-			b, err := json.MarshalIndent(o, "", "  ")
-			if err != nil {
-				return nil, time.Time{}, err
-			}
-			release.Manifest = string(b)
-		}
-
-		manifest = &release.Manifest
-		publishedAt = release.CreatedAt
+	if release == nil {
+		return nil, time.Time{}, nil
 	}
 
-	return manifest, publishedAt, nil
+	if err := prepReleaseManifest(extensionID, release); err != nil {
+		return nil, time.Time{}, fmt.Errorf("parsing extension manifest for extension with ID %d (release tag %q): %s", registryExtensionID, releaseTag, err)
+	}
+
+	return &release.Manifest, release.CreatedAt, nil
+}
+
+// prepReleaseManifest will set the Manifest field of the release. If the manifest has no "url"
+// field itself, a "url" field pointing to the extension's bundle is inserted. It also returns
+// the date that the release was published.
+func prepReleaseManifest(extensionID string, release *dbRelease) error {
+	// Add URL to bundle if necessary.
+	var o map[string]interface{}
+	if err := json.Unmarshal([]byte(release.Manifest), &o); err != nil {
+		return err
+	}
+	if o == nil {
+		o = map[string]interface{}{}
+	}
+	urlStr, _ := o["url"].(string)
+	if urlStr == "" {
+		// Insert "url" field with link to bundle file on this site.
+		bundleURL, err := makeExtensionBundleURL(release.ID, release.CreatedAt.UnixNano(), extensionID)
+		if err != nil {
+			return err
+		}
+		o["url"] = bundleURL
+		b, err := json.MarshalIndent(o, "", "  ")
+		if err != nil {
+			return err
+		}
+		release.Manifest = string(b)
+	}
+
+	return nil
 }
 
 var nonLettersDigits = lazyregexp.New(`[^a-zA-Z0-9-]`)
