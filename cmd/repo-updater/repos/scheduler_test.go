@@ -1313,3 +1313,46 @@ func verifyRecording(t *testing.T, s *updateScheduler, timeAfterFuncDelays []tim
 func timePtr(t time.Time) *time.Time {
 	return &t
 }
+
+func Test_updateQueue_Less(t *testing.T) {
+	q := &updateQueue{}
+	tests := []struct {
+		name   string
+		heap   []*repoUpdate
+		expVal bool
+	}{
+		{
+			name: "updating",
+			heap: []*repoUpdate{
+				{Updating: false},
+				{Updating: true},
+			},
+			expVal: true,
+		},
+		{
+			name: "priority",
+			heap: []*repoUpdate{
+				{Priority: priorityHigh},
+				{Priority: priorityLow},
+			},
+			expVal: true,
+		},
+		{
+			name: "seq",
+			heap: []*repoUpdate{
+				{Seq: 1},
+				{Seq: 2},
+			},
+			expVal: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			q.heap = test.heap
+			got := q.Less(0, 1)
+			if test.expVal != got {
+				t.Fatalf("want %v but got: %v", test.expVal, got)
+			}
+		})
+	}
+}
