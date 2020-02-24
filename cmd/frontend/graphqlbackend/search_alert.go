@@ -346,10 +346,10 @@ outer:
 		// add it to the user's query, but be smart. For example, if the user's
 		// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
 		// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-		newExpr := addQueryRegexpField(r.query, query.FieldRepo, repoParentPattern)
+		newExpr := addRegexpField(r.query.ParseTree, query.FieldRepo, repoParentPattern)
 		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 			description: "in repositories under " + repoParent + more,
-			query:       newExpr.String(),
+			query:       newExpr,
 			patternType: r.patternType,
 		})
 	}
@@ -365,10 +365,10 @@ outer:
 			if i >= maxReposToPropose {
 				break
 			}
-			newExpr := addQueryRegexpField(r.query, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+			newExpr := addRegexpField(r.query.ParseTree, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
-				query:       newExpr.String(),
+				query:       newExpr,
 				patternType: r.patternType,
 			})
 		}
@@ -475,38 +475,33 @@ func pathParentsByFrequency(paths []string) []string {
 	return parents
 }
 
-// addQueryRegexpField adds a new expr to the query with the given field
+// addRegexpField adds a new expr to the query with the given field
 // and pattern value. The field is assumed to be a regexp.
 //
-// It tries to simplify (avoid redundancy in) the result. For example, given
+// It tries to remove redundancy in the result. For example, given
 // a query like "x:foo", if given a field "x" with pattern "foobar" to add,
 // it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
 // guaranteed to always return the simplest query.
-func addQueryRegexpField(query *query.Query, field, pattern string) syntax.ParseTree {
-	// Copy query expressions.
-	expr := make(syntax.ParseTree, len(query.ParseTree))
-	for i, e := range query.ParseTree {
-		tmp := *e
-		expr[i] = &tmp
-	}
-
+func addRegexpField(p syntax.ParseTree, field, pattern string) string {
 	var added bool
-	for i, e := range expr {
+	addRegexpField := func(e syntax.Expr) *syntax.Expr {
 		if e.Field == field && strings.Contains(pattern, e.Value) {
-			expr[i].Value = pattern
+			e.Value = pattern
 			added = true
-			break
+			return &e
 		}
+		return &e
 	}
-
+	modified := syntax.Map(p, addRegexpField)
 	if !added {
-		expr = append(expr, &syntax.Expr{
+		p = append(p, &syntax.Expr{
 			Field:     field,
 			Value:     pattern,
 			ValueType: syntax.TokenLiteral,
 		})
+		return p.String()
 	}
-	return expr
+	return modified.String()
 }
 
 func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {

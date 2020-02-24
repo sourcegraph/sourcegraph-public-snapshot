@@ -40,7 +40,7 @@ func Map(p ParseTree, f func(e Expr) *Expr) ParseTree {
 		cpy := *e
 		e = &cpy
 		if result := f(*e); result != nil {
-			p2 = append(p, result)
+			p2 = append(p2, result)
 		}
 	}
 	return p2
