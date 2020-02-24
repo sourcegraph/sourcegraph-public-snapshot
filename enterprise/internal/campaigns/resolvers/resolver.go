@@ -376,7 +376,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	}, nil
 }
 
-func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.CreateChangesetsArgs) (_ []graphqlbackend.ExternalChangesetResolver, err error) {
+func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.CreateChangesetsArgs) (_ []graphql.ID, err error) {
 	// 🚨 SECURITY: Only site admins may create changesets for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -462,17 +462,12 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		}
 	}
 
-	store = repos.NewDBStore(tx.DB(), sql.TxOptions{})
-	csr := make([]graphqlbackend.ExternalChangesetResolver, len(cs))
+	gids := make([]graphql.ID, len(cs))
 	for i := range cs {
-		csr[i] = &changesetResolver{
-			store:         r.store,
-			Changeset:     cs[i],
-			preloadedRepo: repoSet[cs[i].RepoID],
-		}
+		gids[i] = marshalChangesetID(cs[i].ID)
 	}
 
-	return csr, nil
+	return gids, nil
 }
 
 func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {

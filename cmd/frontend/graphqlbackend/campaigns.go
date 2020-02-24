@@ -95,7 +95,7 @@ type CampaignsResolver interface {
 	PublishCampaign(ctx context.Context, args *PublishCampaignArgs) (CampaignResolver, error)
 	PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error)
 
-	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
+	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]graphql.ID, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error)
 	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExternalChangesetsConnectionResolver, error)
 
@@ -147,7 +147,7 @@ func (defaultCampaignsResolver) PublishChangeset(ctx context.Context, args *Publ
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error) {
+func (defaultCampaignsResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]graphql.ID, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

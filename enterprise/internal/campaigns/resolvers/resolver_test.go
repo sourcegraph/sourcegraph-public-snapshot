@@ -370,7 +370,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	var result struct {
-		Changesets []Changeset
+		Changesets []graphql.ID
 	}
 
 	graphqlGithubRepoID := string(graphqlbackend.MarshalRepositoryID(api.RepoID(githubRepo.ID)))
@@ -396,153 +396,14 @@ func TestCampaigns(t *testing.T) {
 	}()
 
 	mustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
-		fragment gitRef on GitRef {
-			name
-			abbrevName
-			displayName
-			prefix
-			type
-			repository { id }
-			url
-			target {
-				oid
-				abbreviatedOID
-				type
-			}
-		}
-		fragment cs on ExternalChangeset {
-			id
-			repository { id }
-			createdAt
-			updatedAt
-			title
-			body
-			state
-			externalURL {
-				url
-				serviceType
-			}
-			reviewState
-			checkState
-			events(first: 100) {
-				totalCount
-			}
-			head { ...gitRef }
-			base { ...gitRef }
-		}
 		mutation() {
-			changesets: createChangesets(input: %s) {
-				...cs
-			}
+			changesets: createChangesets(input: %s)
 		}
 	`, in))
 
-	{
-		want := []Changeset{
-			{
-				Repository: struct{ ID string }{ID: graphqlGithubRepoID},
-				CreatedAt:  now.Format(time.RFC3339),
-				UpdatedAt:  now.Format(time.RFC3339),
-				Title:      "add extension filter to filter bar",
-				Body:       "Enables adding extension filters to the filter bar by rendering the extension filter as filter chips inside the filter bar.\r\nWIP for https://github.com/sourcegraph/sourcegraph/issues/962\r\n\r\n> This PR updates the CHANGELOG.md file to describe any user-facing changes.\r\n.\r\n",
-				State:      "MERGED",
-				ExternalURL: struct{ URL, ServiceType string }{
-					URL:         "https://github.com/sourcegraph/sourcegraph/pull/999",
-					ServiceType: "github",
-				},
-				ReviewState: "APPROVED",
-				CheckState:  "PENDING",
-				Events: ChangesetEventConnection{
-					TotalCount: 57,
-				},
-				Head: GitRef{
-					Name:        "refs/heads/vo/add-type-issue-filter",
-					AbbrevName:  "vo/add-type-issue-filter",
-					DisplayName: "vo/add-type-issue-filter",
-					Prefix:      "refs/heads/",
-					RefType:     "GIT_BRANCH",
-					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
-					URL:         "/github.com/sourcegraph/sourcegraph@vo/add-type-issue-filter",
-
-					Target: GitTarget{
-						OID:            "7db302f07955e41d50e656d5faebefb4d87bce8a",
-						AbbreviatedOID: "7db302f",
-						TargetType:     "GIT_COMMIT",
-					},
-				},
-				Base: GitRef{
-					Name:        "refs/heads/master",
-					AbbrevName:  "master",
-					DisplayName: "master",
-					Prefix:      "refs/heads/",
-					RefType:     "GIT_BRANCH",
-					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
-					URL:         "/github.com/sourcegraph/sourcegraph@master",
-					Target: GitTarget{
-						OID:            "fa3815ba9ddd49db9111c5e9691e16d27e8f1f60",
-						AbbreviatedOID: "fa3815b",
-						TargetType:     "GIT_COMMIT",
-					},
-				},
-			},
-			{
-				Repository: struct{ ID string }{ID: graphqlBBSRepoID},
-				CreatedAt:  now.Format(time.RFC3339),
-				UpdatedAt:  now.Format(time.RFC3339),
-				Title:      "Release testing pr",
-				Body:       "* Remove dump.go\r\n* make make make",
-				State:      "MERGED",
-				ExternalURL: struct{ URL, ServiceType string }{
-					URL:         "https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/pull-requests/2",
-					ServiceType: "bitbucketServer",
-				},
-				ReviewState: "PENDING",
-				CheckState:  "PENDING",
-				Events: ChangesetEventConnection{
-					TotalCount: 9,
-				},
-				Head: GitRef{
-					Name:        "refs/heads/release-testing-pr",
-					AbbrevName:  "release-testing-pr",
-					DisplayName: "release-testing-pr",
-					Prefix:      "refs/heads/",
-					RefType:     "GIT_BRANCH",
-					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
-					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@release-testing-pr",
-					Target: GitTarget{
-						OID:            "mockcommitid",
-						AbbreviatedOID: "mockcom",
-						TargetType:     "GIT_COMMIT",
-					},
-				},
-				Base: GitRef{
-					Name:        "refs/heads/master",
-					AbbrevName:  "master",
-					DisplayName: "master",
-					Prefix:      "refs/heads/",
-					RefType:     "GIT_BRANCH",
-					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
-					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@master",
-					Target: GitTarget{
-						OID:            "mockcommitid",
-						AbbreviatedOID: "mockcom",
-						TargetType:     "GIT_COMMIT",
-					},
-				},
-			},
-		}
-
-		have := make([]Changeset, 0, len(result.Changesets))
-		for _, c := range result.Changesets {
-			if c.ID == "" {
-				t.Fatal("Changeset ID is empty")
-			}
-
-			c.ID = ""
-			have = append(have, c)
-		}
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
+	for _, c := range result.Changesets {
+		if c == "" {
+			t.Fatal("Changeset ID is empty")
 		}
 	}
 
@@ -579,9 +440,9 @@ func TestCampaigns(t *testing.T) {
 
 	var addChangesetsResult struct{ Campaign CampaignWithChangesets }
 
-	changesetIDs := make([]string, 0, len(result.Changesets))
-	for _, c := range result.Changesets {
-		changesetIDs = append(changesetIDs, c.ID)
+	changesetIDs := make([]string, len(result.Changesets))
+	for i := range result.Changesets {
+		changesetIDs[i] = string(result.Changesets[i])
 	}
 
 	// Date when PR #999 from above was created
@@ -664,8 +525,8 @@ func TestCampaigns(t *testing.T) {
 			have = append(have, n.ID)
 		}
 
-		if !reflect.DeepEqual(have, want) {
-			t.Errorf("wrong changesets added to campaign. want=%v, have=%v", want, have)
+		if diff := cmp.Diff(want, have); diff != "" {
+			t.Errorf("wrong changesets added to campaign. %s", diff)
 		}
 	}
 
@@ -1366,6 +1227,7 @@ func exec(
 	}
 
 	if err := json.Unmarshal(r.Data, out); err != nil {
+		t.Logf(string(r.Data))
 		t.Fatalf("failed to unmarshal graphql data: %v", err)
 	}
 
