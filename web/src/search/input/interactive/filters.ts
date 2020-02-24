@@ -1,4 +1,3 @@
-import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
 import { Suggestion } from '../Suggestion'
 import { assign } from 'lodash/fp'
 import { FilterTypes } from '../../../../../shared/src/search/interactive/util'
@@ -18,7 +17,7 @@ export const finiteFilters: Record<
         default: 'yes',
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
             assign({
-                type: SuggestionTypes.fork,
+                type: FilterTypes.archived,
             })
         ),
     },
@@ -26,7 +25,7 @@ export const finiteFilters: Record<
         default: 'yes',
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
             assign({
-                type: SuggestionTypes.fork,
+                type: FilterTypes.fork,
             })
         ),
     },
@@ -41,7 +40,7 @@ export const finiteFilters: Record<
             { value: 'symbols' },
         ].map(
             assign({
-                type: SuggestionTypes.type,
+                type: FilterTypes.type,
             })
         ),
     },

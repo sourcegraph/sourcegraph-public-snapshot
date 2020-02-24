@@ -6,38 +6,39 @@ import FilterIcon from 'mdi-react/FilterIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
-import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
+import { SuggestionTypes, NonFilterSuggestionTypes } from '../../../../shared/src/search/suggestions/util'
 import { escapeRegExp } from 'lodash'
+import { FilterTypes } from '../../../../shared/src/search/interactive/util'
 
 export const filterAliases: Record<string, FiltersSuggestionTypes | undefined> = {
-    r: SuggestionTypes.repo,
-    g: SuggestionTypes.repogroup,
-    f: SuggestionTypes.file,
-    l: SuggestionTypes.lang,
-    language: SuggestionTypes.lang,
+    r: FilterTypes.repo,
+    g: FilterTypes.repogroup,
+    f: FilterTypes.file,
+    l: FilterTypes.lang,
+    language: FilterTypes.lang,
 }
 
 /**
  * Filters which use fuzzy-search for their suggestion values
  */
-export const fuzzySearchFilters = [
-    SuggestionTypes.repo,
-    SuggestionTypes.repogroup,
-    SuggestionTypes.file,
-    SuggestionTypes.repohasfile,
+export const fuzzySearchFilters: FiltersSuggestionTypes[] = [
+    FilterTypes.repo,
+    FilterTypes.repogroup,
+    FilterTypes.file,
+    FilterTypes.repohasfile,
 ]
 
 /**
  * Some filter types should have their suggestions searched without influence
  * from the rest of the query, as they will then influence the scope of other filters.
  */
-export const isolatedFuzzySearchFilters = [SuggestionTypes.repo, SuggestionTypes.repogroup]
+export const isolatedFuzzySearchFilters: FiltersSuggestionTypes[] = [FilterTypes.repo, FilterTypes.repogroup]
 
 /**
  * dir and symbol are fetched/suggested by the fuzzy-search
  * but are not filter types: /web/src/search/searchFilterSuggestions.ts
  */
-export type FiltersSuggestionTypes = Exclude<SuggestionTypes, SuggestionTypes.dir | SuggestionTypes.symbol>
+export type FiltersSuggestionTypes = FilterTypes | 'filters'
 
 export interface Suggestion {
     type: SuggestionTypes
@@ -74,7 +75,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
     switch (item.__typename) {
         case 'Repository': {
             return {
-                type: SuggestionTypes.repo,
+                type: FilterTypes.repo,
                 // Add "regex start and end boundaries" to
                 // correctly scope additional suggestions
                 value: formatRegExp(item.name),
@@ -92,7 +93,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
             descriptionParts.push(basename(item.repository.name))
             if (item.isDirectory) {
                 return {
-                    type: SuggestionTypes.dir,
+                    type: NonFilterSuggestionTypes.dir,
                     value: '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
                     url: `${item.url}?suggestion`,
@@ -100,7 +101,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 }
             }
             return {
-                type: SuggestionTypes.file,
+                type: FilterTypes.file,
                 value: formatRegExp(item.path),
                 displayValue: item.name,
                 description: descriptionParts.join(' — '),
@@ -110,7 +111,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
         }
         case 'Symbol': {
             return {
-                type: SuggestionTypes.symbol,
+                type: NonFilterSuggestionTypes.symbol,
                 symbolKind: item.kind,
                 value: item.name,
                 description: `${item.containerName || item.location.resource.path} — ${basename(
@@ -127,15 +128,15 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
 
 const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, children, ...props }) => {
     switch (suggestion.type) {
-        case SuggestionTypes.filters:
+        case NonFilterSuggestionTypes.filters:
             return <FilterIcon {...props} />
-        case SuggestionTypes.repo:
+        case FilterTypes.repo:
             return <SourceRepositoryIcon {...props} />
-        case SuggestionTypes.file:
+        case FilterTypes.file:
             return <FileIcon {...props} />
-        case SuggestionTypes.lang:
+        case FilterTypes.lang:
             return <LanguageIcon {...props} language={suggestion.value} {...props} />
-        case SuggestionTypes.symbol:
+        case NonFilterSuggestionTypes.symbol:
             if (!suggestion.symbolKind) {
                 return null
             }

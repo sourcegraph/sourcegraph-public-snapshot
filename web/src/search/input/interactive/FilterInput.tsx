@@ -34,7 +34,6 @@ import {
     FilterTypes,
     isNegatableFilter,
 } from '../../../../../shared/src/search/interactive/util'
-import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
 import { startCase, isEqual } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -206,8 +205,8 @@ export class FilterInput extends React.Component<Props, State> {
                                 // Only show fuzzy-suggestions that are relevant to the typed filter
                                 if (filterAndValueBeforeCursor?.resolvedFilterType) {
                                     switch (filterAndValueBeforeCursor.resolvedFilterType) {
-                                        case SuggestionTypes.repohasfile:
-                                            return suggestion.type === SuggestionTypes.file
+                                        case FilterTypes.repohasfile:
+                                            return suggestion.type === FilterTypes.file
                                         default:
                                             return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
                                     }

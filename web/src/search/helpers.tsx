@@ -7,7 +7,7 @@ import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
 import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
 import { FiltersToTypeAndValue, FilterTypes } from '../../../shared/src/search/interactive/util'
-import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
+import { NonFilterSuggestionTypes } from '../../../shared/src/search/suggestions/util'
 import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
 
 /**
@@ -127,7 +127,7 @@ export const isSearchResults = (val: any): val is GQL.ISearchResults =>
     val && typeof val === 'object' && val.__typename === 'SearchResults'
 
 const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
-    Object.prototype.hasOwnProperty.call(SuggestionTypes, filter) ||
+    Object.prototype.hasOwnProperty.call(FilterTypes, filter) ||
     Object.prototype.hasOwnProperty.call(filterAliases, filter)
 
 /**
@@ -203,7 +203,7 @@ export const filterStaticSuggestions = (queryState: QueryState, suggestions: Sea
     if (
         // suggest values for selected filter
         resolvedFilterType &&
-        resolvedFilterType !== SuggestionTypes.filters &&
+        resolvedFilterType !== NonFilterSuggestionTypes.filters &&
         (value || filterAndValue.endsWith(':'))
     ) {
         const suggestionsToShow = suggestions[resolvedFilterType] ?? []
@@ -247,7 +247,7 @@ export const insertSuggestionInQuery = (
     cursorPosition: number
 ): QueryState => {
     const { firstPart, lastPart } = splitStringAtPosition(queryToInsertIn, cursorPosition)
-    const isFiltersSuggestion = selectedSuggestion.type === SuggestionTypes.filters
+    const isFiltersSuggestion = selectedSuggestion.type === NonFilterSuggestionTypes.filters
     // Know where to place the suggestion later on
     const separatorIndex = firstPart.lastIndexOf(!isFiltersSuggestion ? ':' : ' ')
     // If a filter value or separate word suggestion was selected, then append a whitespace
@@ -299,8 +299,8 @@ export const isFuzzyWordSearch = (queryState: QueryState): boolean => {
  * See `./Suggestion.tsx->fuzzySearchFilters`.
  * E.g: `repohasfile` expects a file name as a value, so we should show `file` suggestions
  */
-export const filterAliasForSearch: Record<string, SuggestionTypes | undefined> = {
-    [SuggestionTypes.repohasfile]: SuggestionTypes.file,
+export const filterAliasForSearch: Record<string, FilterTypes | undefined> = {
+    [FilterTypes.repohasfile]: FilterTypes.file,
 }
 
 /**
