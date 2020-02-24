@@ -1473,6 +1473,7 @@ type ActionJob struct {
 	RunnerSeenAt   time.Time
 	Patch          *string
 	State          *string
+	RepoID         int32
 }
 
 // ActionExecutionInvokationReason defines the possible reasons of an execution to be triggered from.

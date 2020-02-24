@@ -250,7 +250,7 @@ func (r *campaignJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.C
 		return nil, err
 	}
 	return &previewFileDiffConnectionResolver{
-		job:    r.job,
+		diff:   &r.job.Diff,
 		commit: commit,
 		first:  args.First,
 	}, nil
@@ -276,7 +276,7 @@ func (r *campaignJobResolver) PublicationEnqueued(ctx context.Context) (bool, er
 }
 
 type previewFileDiffConnectionResolver struct {
-	job    *campaigns.CampaignJob
+	diff   *string
 	commit *graphqlbackend.GitCommitResolver
 	first  *int32
 
@@ -289,7 +289,7 @@ type previewFileDiffConnectionResolver struct {
 
 func (r *previewFileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, error) {
 	r.once.Do(func() {
-		r.fileDiffs, r.err = diff.ParseMultiFileDiff([]byte(r.job.Diff))
+		r.fileDiffs, r.err = diff.ParseMultiFileDiff([]byte(*r.diff))
 		if r.err != nil {
 			return
 		}

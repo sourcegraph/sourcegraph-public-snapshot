@@ -2739,6 +2739,7 @@ func scanActionJob(a *campaigns.ActionJob, s scanner) error {
 		&dbutil.NullTime{Time: &a.RunnerSeenAt},
 		&a.Patch,
 		&a.State,
+		&a.RepoID,
 	)
 }
 
@@ -2966,7 +2967,8 @@ RETURNING
 	execution_end,
 	runner_seen_at,
 	patch,
-	state
+	state,
+	repository
 `
 
 func pullActionJobQuery() *sqlf.Query {
@@ -3004,7 +3006,8 @@ SELECT
 	action_jobs.execution_end,
 	action_jobs.runner_seen_at,
 	action_jobs.patch,
-	action_jobs.state
+	action_jobs.state,
+	action_jobs.repository
 FROM
 	action_jobs
 WHERE
