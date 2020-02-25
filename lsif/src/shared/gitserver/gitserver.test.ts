@@ -2,7 +2,7 @@ import nock from 'nock'
 import { flattenCommitParents, getCommitsNear, getDirectoryChildren } from './gitserver'
 
 describe('getDirectoryChildren', () => {
-    it('should parse responses from gitserver', async () => {
+    it('should parse response from gitserver', async () => {
         nock('http://frontend')
             .post('/.internal/git/42/exec', {
                 args: ['ls-tree', '--name-only', 'c', '--', '.', 'foo/', 'bar/baz/'],

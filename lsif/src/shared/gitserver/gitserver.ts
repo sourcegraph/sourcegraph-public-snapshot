@@ -42,7 +42,7 @@ export async function getDirectoryChildren({
     }
 
     // Retrieve a flat list of children of the dirnames constructed above. This returns a flat
-    // list sorted alphabetically.
+    // list sorted alphabetically, which we then need to partition by parent directory.
     const uncategorizedChildren = await gitserverExecLines(frontendUrl, repositoryId, args, ctx)
 
     const children: Set<string>[] = []
