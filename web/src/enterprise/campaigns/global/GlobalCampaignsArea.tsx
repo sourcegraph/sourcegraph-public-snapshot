@@ -5,8 +5,8 @@ import { CampaignDetails } from '../detail/CampaignDetails'
 import { IUser } from '../../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { Runners } from '../detail/Runners'
-import { ActionExecution } from '../detail/ActionExecution'
+import { Runners } from '../actions/Runners'
+import { ActionExecution } from '../actions/ActionExecution'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: IUser
