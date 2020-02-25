@@ -2758,6 +2758,7 @@ func scanActionJob(a *campaigns.ActionJob, s scanner) error {
 		&a.State,
 		&a.RepoID,
 		&a.ExecutionID,
+		&a.BaseRevision,
 	)
 }
 
@@ -2902,7 +2903,8 @@ RETURNING
 	patch,
 	state,
 	repository,
-	execution
+	execution,
+	revision
 `
 
 func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
@@ -3015,7 +3017,8 @@ RETURNING
 	patch,
 	state,
 	repository,
-	execution
+	execution,
+	revision
 `
 
 func pullActionJobQuery() *sqlf.Query {
@@ -3055,7 +3058,8 @@ SELECT
 	action_jobs.patch,
 	action_jobs.state,
 	action_jobs.repository,
-	action_jobs.execution
+	action_jobs.execution,
+	action_jobs.revision
 FROM
 	action_jobs
 WHERE
@@ -3232,4 +3236,97 @@ func listActionExecutionsQuery(opts *ListActionExecutionsOpts) *sqlf.Query {
 	queryTemplate := listActionExecutionsQueryFmtstrSelect + listActionExecutionsQueryFmtstrConditions + limitClause
 
 	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
+}
+
+type CreateActionExecutionOpts struct {
+	InvokationReason campaigns.ActionExecutionInvokationReason
+	Steps            string
+	EnvStr           string
+	ActionID         int64
+}
+
+// CreateActionExecution resets an action job so it is eventually retried by a runner.
+func (s *Store) CreateActionExecution(ctx context.Context, opts CreateActionExecutionOpts) (*campaigns.ActionExecution, error) {
+	q := createActionExecutionQuery(&opts)
+
+	var a campaigns.ActionExecution
+	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err := scanActionExecution(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, nil
+	})
+
+	// todo handle empty ie not-found error
+
+	return &a, err
+}
+
+var createActionExecutionQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:CreateActionExecution
+INSERT INTO
+	action_executions
+	(steps, env, invokation_reason, action)
+VALUES
+	(%s, %s::json, %s, %d)
+RETURNING
+	action_executions.id,
+	action_executions.steps,
+	action_executions.env,
+	action_executions.invokation_reason,
+	action_executions.campaign_plan,
+	action_executions.action
+`
+
+func createActionExecutionQuery(opts *CreateActionExecutionOpts) *sqlf.Query {
+	queryTemplate := createActionExecutionQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.Steps, opts.EnvStr, string(opts.InvokationReason), opts.ActionID)
+}
+
+type CreateActionJobOpts struct {
+	RepositoryID int64
+	ExecutionID  int64
+	BaseRevision string
+}
+
+// CreateActionJob resets an action job so it is eventually retried by a runner.
+func (s *Store) CreateActionJob(ctx context.Context, opts CreateActionJobOpts) (*campaigns.ActionJob, error) {
+	q := createActionJobQuery(&opts)
+
+	var a campaigns.ActionJob
+	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err := scanActionJob(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, nil
+	})
+
+	// todo handle empty ie not-found error
+
+	return &a, err
+}
+
+var createActionJobQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:CreateActionJob
+INSERT INTO
+	action_jobs
+	(state, repository, execution, revision)
+VALUES
+	('PENDING', %d, %d, %s)
+RETURNING
+	action_jobs.id,
+	action_jobs.log,
+	action_jobs.execution_start,
+	action_jobs.execution_end,
+	action_jobs.runner_seen_at,
+	action_jobs.patch,
+	action_jobs.state,
+	action_jobs.repository,
+	action_jobs.execution,
+	action_jobs.revision
+`
+
+func createActionJobQuery(opts *CreateActionJobOpts) *sqlf.Query {
+	queryTemplate := createActionJobQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.RepositoryID, opts.ExecutionID, opts.BaseRevision)
 }

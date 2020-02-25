@@ -549,6 +549,7 @@ type ActionJob implements Node {
     # The repository that this job is running over.
     repository: Repository!
     # The base revision in the repository that this job runs over.
+    # Todo: Make this a GitRef
     baseRevision: String!
     state: ActionJobState!
     # Set once accepted by a runner

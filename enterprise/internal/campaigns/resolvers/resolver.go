@@ -743,7 +743,7 @@ type actionJobConnectionResolver struct {
 	store *ee.Store
 
 	once       sync.Once
-	jobs       []graphqlbackend.ActionJobResolver
+	jobs       *[]campaigns.ActionJob
 	totalCount int32
 	err        error
 }
@@ -755,30 +755,36 @@ func (r *actionJobConnectionResolver) TotalCount(ctx context.Context) (int32, er
 
 func (r *actionJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionJobResolver, error) {
 	jobs, _, err := r.compute(ctx)
-	return jobs, err
+	resolvers := make([]graphqlbackend.ActionJobResolver, len(jobs))
+	for i, job := range jobs {
+		resolvers[i] = &actionJobResolver{store: r.store, job: job}
+	}
+	return resolvers, err
 }
 
-func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]graphqlbackend.ActionJobResolver, int32, error) {
-	r.once.Do(func() {
-		actionJobs := make([]graphqlbackend.ActionJobResolver, 1)
-		actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{ID: 123})
-		if err != nil {
-			r.jobs = nil
-			r.totalCount = 0
-			r.err = err
-		} else if actionJob == nil {
-			r.jobs = nil
-			r.totalCount = 0
-			r.err = nil
-		} else {
-			// todo: this is needs to be fetched from the parent action execution, not be static 123
-			actionJobs[0] = &actionJobResolver{store: r.store, job: *actionJob}
-			r.jobs = actionJobs
-			r.totalCount = 1
-			r.err = err
-		}
-	})
-	return r.jobs, r.totalCount, r.err
+func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]campaigns.ActionJob, int32, error) {
+	if r.jobs == nil {
+		r.once.Do(func() {
+			actionJobs := make([]campaigns.ActionJob, 1)
+			actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{ID: 123})
+			if err != nil {
+				r.jobs = nil
+				r.totalCount = 0
+				r.err = err
+			} else if actionJob == nil {
+				r.jobs = nil
+				r.totalCount = 0
+				r.err = nil
+			} else {
+				// todo: this is needs to be fetched from the parent action execution, not be static 123
+				actionJobs[0] = *actionJob
+				r.jobs = &actionJobs
+				r.totalCount = 1
+				r.err = err
+			}
+		})
+	}
+	return *r.jobs, r.totalCount, r.err
 }
 
 // runner resolver
@@ -933,7 +939,57 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	return nil, nil
+	actionID, err := unmarshalActionID(args.Action)
+	if err != nil {
+		return nil, err
+	}
+
+	action, err := r.store.ActionByID(ctx, ee.ActionByIDOpts{ID: actionID})
+	if err != nil {
+		return nil, err
+	}
+	if action.ID == 0 {
+		return nil, errors.New("Action not found")
+	}
+	scopeQuery, err := scopeQueryForSteps(action.Steps)
+	if err != nil {
+		return nil, err
+	}
+	repos, err := findRepos(ctx, scopeQuery)
+	if err != nil {
+		return nil, err
+	}
+	if len(repos) == 0 {
+		return nil, errors.New("Cannot create execution for action that yields 0 repositories")
+	}
+	// todo: the next steps need to happen in a transaction
+	actionExecution, err := r.store.CreateActionExecution(ctx, ee.CreateActionExecutionOpts{
+		InvokationReason: campaigns.ActionExecutionInvokationReasonManual,
+		Steps:            action.Steps,
+		EnvStr:           action.EnvStr,
+		ActionID:         action.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	actionJobs := make([]campaigns.ActionJob, len(repos))
+	for i, repo := range repos {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repo.ID))
+		if err != nil {
+			return nil, err
+		}
+		actionJob, err := r.store.CreateActionJob(ctx, ee.CreateActionJobOpts{
+			ExecutionID:  actionExecution.ID,
+			RepositoryID: int64(repoID),
+			BaseRevision: repo.Rev,
+		})
+		if err != nil {
+			return nil, err
+		}
+		actionJobs[i] = *actionJob
+	}
+
+	return &actionExecutionResolver{store: r.store, actionExecution: *actionExecution, actionJobs: actionJobs}, nil
 }
 
 func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullActionJobArgs) (_ graphqlbackend.ActionJobResolver, err error) {
@@ -1030,10 +1086,11 @@ func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLog
 		return nil, err
 	}
 
+	now := time.Now()
 	actionJob, err := r.store.UpdateActionJob(ctx, ee.UpdateActionJobOpts{
 		ID:           id,
 		Log:          &args.Content,
-		RunnerSeenAt: time.Now(),
+		RunnerSeenAt: &now,
 	})
 	if err != nil {
 		return nil, err

@@ -75,7 +75,7 @@ func (r *actionJobResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 }
 
 func (r *actionJobResolver) BaseRevision() string {
-	return "master"
+	return r.job.BaseRevision
 }
 
 func (r *actionJobResolver) State() campaigns.ActionJobState {

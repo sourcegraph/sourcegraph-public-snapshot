@@ -434,8 +434,8 @@ type Mutation {
         patch: String
         state: ActionJobState
     ): ActionJob!
-    # Append a log to a job. Runner-only API. Fails if state != 'RUNNING'
-    appendLog(actionJob: ID!, content: String!): EmptyResponse
+    # Append a log to a job. Runner-only API. Fails if state != 'RUNNING'. Returns empty if action job was not found.
+    appendLog(actionJob: ID!, content: String!): ActionJob
     retryActionJob(actionJob: ID!): EmptyResponse
 }
 
@@ -542,6 +542,7 @@ type ActionJob implements Node {
     # The repository that this job is running over.
     repository: Repository!
     # The base revision in the repository that this job runs over.
+    # Todo: Make this a GitRef
     baseRevision: String!
     state: ActionJobState!
     # Set once accepted by a runner

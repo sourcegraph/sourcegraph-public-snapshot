@@ -54,6 +54,7 @@ Referenced by:
  state           | text                     | not null default 'PENDING'::text
  repository      | integer                  | not null
  execution       | integer                  | not null
+ revision        | text                     | not null
 Indexes:
     "action_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:

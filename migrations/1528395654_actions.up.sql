@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS action_jobs (
     patch text,
     state text NOT NULL DEFAULT 'PENDING'::text,
     repository integer NOT NULL REFERENCES repo(id) ON UPDATE CASCADE,
-    execution integer NOT NULL REFERENCES action_executions(id) ON UPDATE CASCADE
+    execution integer NOT NULL REFERENCES action_executions(id) ON UPDATE CASCADE,
+    revision text NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS action_jobs_pkey ON action_jobs(id int4_ops);
 
