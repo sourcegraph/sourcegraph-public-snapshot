@@ -83,6 +83,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Campaigns now gracefully handle GitHub review dismissals when rendering the burndown chart.
+
 ## 3.12.6
 
 ### Changed
