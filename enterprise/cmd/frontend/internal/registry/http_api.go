@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
@@ -31,13 +32,14 @@ var (
 		if err != nil {
 			return nil, err
 		}
-		xs := make([]*registry.Extension, 0, len(vs))
-		for _, v := range vs {
-			x, err := toRegistryAPIExtension(ctx, v)
-			if err != nil {
-				continue
-			}
 
+		xs, err := toRegistryAPIExtensionBatch(ctx, vs)
+		if err != nil {
+			return nil, err
+		}
+
+		ys := make([]*registry.Extension, 0, len(xs))
+		for _, x := range xs {
 			// To be safe, ensure that the JSON can be safely unmarshaled by API clients. If not,
 			// skip this extension.
 			if x.Manifest != nil {
@@ -46,10 +48,9 @@ var (
 					continue
 				}
 			}
-
-			xs = append(xs, x)
+			ys = append(ys, x)
 		}
-		return xs, nil
+		return ys, nil
 	}
 
 	registryGetByUUID = func(ctx context.Context, uuid string) (*registry.Extension, error) {
@@ -70,11 +71,37 @@ var (
 )
 
 func toRegistryAPIExtension(ctx context.Context, v *dbExtension) (*registry.Extension, error) {
-	manifest, publishedAt, err := getExtensionManifestWithBundleURL(ctx, v.NonCanonicalExtensionID, v.ID, "release")
+	release, err := getLatestRelease(ctx, v.NonCanonicalExtensionID, v.ID, "release")
 	if err != nil {
 		return nil, err
 	}
 
+	if release == nil {
+		return newExtension(v, nil, time.Time{}), nil
+	}
+
+	return newExtension(v, &release.Manifest, release.CreatedAt), nil
+}
+
+func toRegistryAPIExtensionBatch(ctx context.Context, vs []*dbExtension) ([]*registry.Extension, error) {
+	releasesByExtensionID, err := getLatestForBatch(ctx, vs)
+	if err != nil {
+		return nil, err
+	}
+
+	var extensions []*registry.Extension
+	for _, v := range vs {
+		release, ok := releasesByExtensionID[v.ID]
+		if !ok {
+			extensions = append(extensions, newExtension(v, nil, time.Time{}))
+		} else {
+			extensions = append(extensions, newExtension(v, &release.Manifest, release.CreatedAt))
+		}
+	}
+	return extensions, nil
+}
+
+func newExtension(v *dbExtension, manifest *string, publishedAt time.Time) *registry.Extension {
 	baseURL := strings.TrimSuffix(conf.Get().ExternalURL, "/")
 	return &registry.Extension{
 		UUID:        v.UUID,
@@ -89,7 +116,7 @@ func toRegistryAPIExtension(ctx context.Context, v *dbExtension) (*registry.Exte
 		UpdatedAt:   v.UpdatedAt,
 		PublishedAt: publishedAt,
 		URL:         baseURL + frontendregistry.ExtensionURL(v.NonCanonicalExtensionID),
-	}, nil
+	}
 }
 
 // handleRegistry serves the external HTTP API for the extension registry.
