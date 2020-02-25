@@ -91,7 +91,7 @@ LIMIT 1`, includeArtifacts, includeArtifacts, registryExtensionID, releaseTag)
 	return &r, nil
 }
 
-// GetLatestBatch gest the latest releases for the estensions with the given release tag
+// GetLatestBatch gets the latest releases for the extensions with the given release tag
 // (e.g., "release"). If includeArtifacts is true, it populates the (*dbRelease).{Bundle,SourceMap}
 // fields, which may be large.
 func (dbReleases) GetLatestBatch(ctx context.Context, registryExtensionIDs []int32, releaseTag string, includeArtifacts bool) ([]*dbRelease, error) {
