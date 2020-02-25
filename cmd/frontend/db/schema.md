@@ -36,6 +36,8 @@ Indexes:
 Foreign-key constraints:
     "action_executions_action_fkey" FOREIGN KEY (action) REFERENCES actions(id) ON UPDATE CASCADE
     "action_executions_campaign_plan_fkey" FOREIGN KEY (campaign_plan) REFERENCES campaign_plans(id) ON UPDATE CASCADE
+Referenced by:
+    TABLE "action_jobs" CONSTRAINT "action_jobs_execution_fkey" FOREIGN KEY (execution) REFERENCES action_executions(id) ON UPDATE CASCADE
 
 ```
 
@@ -51,9 +53,11 @@ Foreign-key constraints:
  patch           | text                     | 
  state           | text                     | not null default 'PENDING'::text
  repository      | integer                  | not null
+ execution       | integer                  | not null
 Indexes:
     "action_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
+    "action_jobs_execution_fkey" FOREIGN KEY (execution) REFERENCES action_executions(id) ON UPDATE CASCADE
     "action_jobs_repository_fkey" FOREIGN KEY (repository) REFERENCES repo(id) ON UPDATE CASCADE
 
 ```
