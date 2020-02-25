@@ -177,7 +177,7 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) (*p
 	return &res, nil
 }
 
-// MockEnqueueRepoUpdate mocks (*Client).EnqueueRepoUpdate for tests.
+// MockEnqueueChangesetSync mocks (*Client).EnqueueChangesetSync for tests.
 var MockEnqueueChangesetSync func(ctx context.Context, ids []int64) error
 
 func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
