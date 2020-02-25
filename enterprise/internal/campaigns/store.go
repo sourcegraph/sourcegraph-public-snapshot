@@ -1,7 +1,6 @@
 package campaigns
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -2602,12 +2601,6 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	)
 	if err != nil {
 		return err
-	}
-
-	// metadata could be empty if we haven't synced yet in which case we should
-	// leave the metadata nil
-	if len(metadata) == 0 || bytes.Equal(metadata, []byte("{}")) {
-		return nil
 	}
 
 	switch t.ExternalServiceType {
