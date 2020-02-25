@@ -135,9 +135,9 @@ tslint.config.js @sourcegraph/web
 /internal/eventlogger @dadlerj
 
 # Campaigns
-/cmd/frontend/graphqlbackend/a8n.go @sourcegraph/campaigns-core
-/enterprise/internal/a8n @sourcegraph/campaigns-core
-/internal/a8n @sourcegraph/campaigns-core
+/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns-core
+/enterprise/internal/campaigns @sourcegraph/campaigns-core
+/internal/campaigns @sourcegraph/campaigns-core
 /web/**/campaigns/** @sourcegraph/campaigns-web @mrnugget @sourcegraph/web
 
 # Auth
