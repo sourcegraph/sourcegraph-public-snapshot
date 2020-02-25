@@ -343,20 +343,23 @@ func reserializeCodeIntelUsage(payload json.RawMessage) (json.RawMessage, error)
 		return nil, err
 	}
 
-	payload, err := json.Marshal(struct {
+	singlePeriodUsage := struct {
 		Daily   *types.CodeIntelUsagePeriod
 		Weekly  *types.CodeIntelUsagePeriod
 		Monthly *types.CodeIntelUsagePeriod
-	}{
-		Daily:   codeIntelUsage.Daily[0],
-		Weekly:  codeIntelUsage.Weekly[0],
-		Monthly: codeIntelUsage.Monthly[0],
-	})
-	if err != nil {
-		return nil, err
+	}{}
+
+	if len(codeIntelUsage.Daily) > 0 {
+		singlePeriodUsage.Daily = codeIntelUsage.Daily[0]
+	}
+	if len(codeIntelUsage.Weekly) > 0 {
+		singlePeriodUsage.Weekly = codeIntelUsage.Weekly[0]
+	}
+	if len(codeIntelUsage.Monthly) > 0 {
+		singlePeriodUsage.Monthly = codeIntelUsage.Monthly[0]
 	}
 
-	return payload, nil
+	return json.Marshal(singlePeriodUsage)
 }
 
 // reserializeSearchUsage will reserialize a code intel usage statistics
@@ -373,15 +376,23 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 		return nil, err
 	}
 
-	return json.Marshal(struct {
+	singlePeriodUsage := struct {
 		Daily   *types.SearchUsagePeriod
 		Weekly  *types.SearchUsagePeriod
 		Monthly *types.SearchUsagePeriod
-	}{
-		Daily:   searchUsage.Daily[0],
-		Weekly:  searchUsage.Weekly[0],
-		Monthly: searchUsage.Monthly[0],
-	})
+	}{}
+
+	if len(searchUsage.Daily) > 0 {
+		singlePeriodUsage.Daily = searchUsage.Daily[0]
+	}
+	if len(searchUsage.Weekly) > 0 {
+		singlePeriodUsage.Weekly = searchUsage.Weekly[0]
+	}
+	if len(searchUsage.Monthly) > 0 {
+		singlePeriodUsage.Monthly = searchUsage.Monthly[0]
+	}
+
+	return json.Marshal(singlePeriodUsage)
 }
 
 var (
