@@ -740,7 +740,8 @@ func (r *actionExecutionConnectionResolver) compute(ctx context.Context) ([]*cam
 // actionJobConnectionResolver
 
 type actionJobConnectionResolver struct {
-	store      *ee.Store
+	store *ee.Store
+
 	once       sync.Once
 	jobs       []graphqlbackend.ActionJobResolver
 	totalCount int32
@@ -871,7 +872,8 @@ func (r *Resolver) ActionJobs(ctx context.Context, args *graphqlbackend.ListActi
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	return nil, nil
+	// todo: pass down args
+	return &actionJobConnectionResolver{store: r.store}, nil
 }
 
 func (r *Resolver) CreateAction(ctx context.Context, args *graphqlbackend.CreateActionArgs) (_ graphqlbackend.ActionResolver, err error) {
@@ -989,14 +991,11 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 		now := time.Now()
 		opts.ExecutionEnd = &now
 	}
-	if err := r.store.UpdateActionJob(ctx, opts); err != nil {
-		return nil, err
-	}
-
-	actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{ID: 123})
+	actionJob, err := r.store.UpdateActionJob(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
+
 	// if args.state == "COMPLETED" {
 	// 	// todo: check if was running before, otherwise updating state is not allowed
 	// 	// todo: check if ALL are completed, timeouted, or failed now, then proceed with patch generation
@@ -1015,7 +1014,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 	return &actionJobResolver{store: r.store, job: *actionJob}, nil
 }
 
-func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLogArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLogArgs) (_ graphqlbackend.ActionJobResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.AppendLog", fmt.Sprintf("ActionJob: %q", args.ActionJob))
 	defer func() {
 		tr.SetError(err)
@@ -1032,14 +1031,20 @@ func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLog
 		return nil, err
 	}
 
-	if err := r.store.UpdateActionJob(ctx, ee.UpdateActionJobOpts{
+	actionJob, err := r.store.UpdateActionJob(ctx, ee.UpdateActionJobOpts{
 		ID:  id,
 		Log: &args.Content,
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	// todo: test if this works
+	if actionJob.ID == 0 {
+		return nil, nil
+	}
+
+	return &actionJobResolver{store: r.store, job: *actionJob}, nil
 }
 
 func (r *Resolver) RetryActionJob(ctx context.Context, args *graphqlbackend.RetryActionJobArgs) (_ *graphqlbackend.EmptyResponse, err error) {

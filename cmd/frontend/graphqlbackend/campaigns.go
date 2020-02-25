@@ -157,7 +157,7 @@ type CampaignsResolver interface {
 	CreateActionExecution(ctx context.Context, args *CreateActionExecutionArgs) (ActionExecutionResolver, error)
 	PullActionJob(ctx context.Context, args *PullActionJobArgs) (ActionJobResolver, error)
 	UpdateActionJob(ctx context.Context, args *UpdateActionJobArgs) (ActionJobResolver, error)
-	AppendLog(ctx context.Context, args *AppendLogArgs) (*EmptyResponse, error)
+	AppendLog(ctx context.Context, args *AppendLogArgs) (ActionJobResolver, error)
 	RetryActionJob(ctx context.Context, args *RetryActionJobArgs) (*EmptyResponse, error)
 
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
@@ -244,7 +244,7 @@ func (defaultCampaignsResolver) UpdateActionJob(ctx context.Context, args *Updat
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) AppendLog(ctx context.Context, args *AppendLogArgs) (*EmptyResponse, error) {
+func (defaultCampaignsResolver) AppendLog(ctx context.Context, args *AppendLogArgs) (ActionJobResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

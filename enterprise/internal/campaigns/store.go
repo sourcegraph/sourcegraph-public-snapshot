@@ -2870,12 +2870,20 @@ type UpdateActionJobOpts struct {
 }
 
 // UpdateActionJob lists Actions with the given filters.
-func (s *Store) UpdateActionJob(ctx context.Context, opts UpdateActionJobOpts) error {
+func (s *Store) UpdateActionJob(ctx context.Context, opts UpdateActionJobOpts) (*campaigns.ActionJob, error) {
 	q := updateActionJobQuery(&opts)
 
-	_, _, err := s.query(ctx, q, nil)
+	var job campaigns.ActionJob
+	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err := scanActionJob(&job, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, nil
+	})
 
-	return err
+	// todo handle empty ie not-found error
+
+	return &job, err
 }
 
 var updateActionJobQueryFmtstrSelect = `
@@ -2884,6 +2892,16 @@ UPDATE
 	action_jobs
 SET %s
 WHERE action_jobs.id = %d
+RETURNING
+	id,
+	log,
+	execution_start,
+	execution_end,
+	runner_seen_at,
+	patch,
+	state,
+	repository,
+	execution
 `
 
 func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
