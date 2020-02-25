@@ -14,6 +14,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	boldRed   = color.New(color.Bold, color.FgRed)
+	boldGreen = color.New(color.Bold, color.FgGreen)
+	yellow    = color.New(color.FgYellow)
+	grey      = color.New(color.FgHiBlack)
+)
+
 type actionLogger struct {
 	verbose  bool
 	keepLogs bool
@@ -41,7 +48,7 @@ func newActionLogger(verbose, keepLogs bool) *actionLogger {
 
 func (a *actionLogger) Warnf(format string, args ...interface{}) {
 	if a.verbose {
-		fmt.Fprintf(os.Stderr, "WARNING: "+format, args...)
+		fmt.Fprintf(os.Stderr, color.YellowString("WARNING: ")+format, args...)
 	}
 }
 
@@ -67,7 +74,7 @@ func (a *actionLogger) AddRepo(repo ActionRepo) (string, error) {
 	a.logWriters[repo.Name] = logWriter
 
 	if a.verbose {
-		fmt.Fprintf(os.Stderr, "%s -> Logfile created at %s\n", a.highlight(repo.Name), logFile.Name())
+		fmt.Fprintf(os.Stderr, "%s -> Enqueued. Logfile created at %s\n", grey.Sprint(repo.Name), logFile.Name())
 	}
 
 	return logFile.Name(), nil
@@ -80,20 +87,22 @@ func (a *actionLogger) RepoWriter(repoName string) (io.Writer, bool) {
 	return w, ok
 }
 
-func (a *actionLogger) write(repoName, format string, args ...interface{}) {
+func (a *actionLogger) write(repoName string, c *color.Color, format string, args ...interface{}) {
 	if w, ok := a.RepoWriter(repoName); ok {
 		fmt.Fprintf(w, format, args...)
 	}
 
 	if a.verbose {
-		format = fmt.Sprintf("%s -> %s", a.highlight(repoName), format)
+		format = fmt.Sprintf("%s -> %s", c.Sprint(repoName), format)
 		fmt.Fprintf(os.Stderr, format, args...)
 	}
 }
 
-func (a *actionLogger) RepoFinished(repoName string, actionErr error) error {
+func (a *actionLogger) RepoFinished(repoName string, patchProduced bool, actionErr error) error {
 	if actionErr != nil {
-		a.write(repoName, "%s: ERROR: %s\n", repoName, actionErr)
+		a.write(repoName, boldRed, "%s\n", actionErr)
+	} else if patchProduced {
+		a.write(repoName, boldGreen, "Patch generated.\n")
 	}
 
 	a.mu.Lock()
@@ -117,19 +126,19 @@ func (a *actionLogger) RepoFinished(repoName string, actionErr error) error {
 }
 
 func (a *actionLogger) RepoStarted(repoName, rev string, steps []*ActionStep) {
-	a.write(repoName, "Starting action @ %s (%d steps)\n", rev, len(steps))
+	a.write(repoName, yellow, "Starting action @ %s (%d steps)\n", rev, len(steps))
 }
 
 func (a *actionLogger) CommandStepStarted(repoName string, step int, args []string) {
-	a.write(repoName, "Step %d: command %v\n", step, args)
+	a.write(repoName, yellow, "Step %d: command %v\n", step, args)
 }
 
 func (a *actionLogger) CommandStepErrored(repoName string, step int, err error) {
-	a.write(repoName, "Step %d: error: %s.\n", step, err)
+	a.write(repoName, boldRed, "Step %d: error: %s.\n", step, err)
 }
 
 func (a *actionLogger) CommandStepDone(repoName string, step int) {
-	a.write(repoName, "Step %d: done.\n", step)
+	a.write(repoName, yellow, "Step %d: done.\n", step)
 }
 
 func (a *actionLogger) DockerStepStarted(repoName string, step int, dockerfile, image string) {
@@ -137,13 +146,13 @@ func (a *actionLogger) DockerStepStarted(repoName string, step int, dockerfile, 
 	if dockerfile != "" {
 		fromDockerfile = " (built from inline Dockerfile)"
 	}
-	a.write(repoName, "Step %d: docker run %v%s\n", step, image, fromDockerfile)
+	a.write(repoName, yellow, "Step %d: docker run %v%s\n", step, image, fromDockerfile)
 }
 
 func (a *actionLogger) DockerStepErrored(repoName string, step int, err error, elapsed time.Duration) {
-	a.write(repoName, "Step %d: error: %s. (%s)\n", step, err, elapsed)
+	a.write(repoName, boldRed, "Step %d: error: %s. (%s)\n", step, err, elapsed)
 }
 
 func (a *actionLogger) DockerStepDone(repoName string, step int, elapsed time.Duration) {
-	a.write(repoName, "Step %d: done. (%s)\n", step, elapsed)
+	a.write(repoName, yellow, "Step %d: done. (%s)\n", step, elapsed)
 }

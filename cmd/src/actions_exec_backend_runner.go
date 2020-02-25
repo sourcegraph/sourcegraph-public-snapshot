@@ -82,7 +82,7 @@ func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
 	}
 
 	x.updateRepoStatus(repo, status)
-	x.logger.RepoFinished(repo.Name, err)
+	x.logger.RepoFinished(repo.Name, len(patch) > 0, err)
 
 	// Add to cache if successful.
 	if err == nil {
