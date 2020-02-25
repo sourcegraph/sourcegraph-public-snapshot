@@ -59,7 +59,7 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*campaigns.C
 		return nil
 	}
 
-	bySource, err := GroupChangesetsBySource(ctx, s.ReposStore, s.HTTPFactory, cs...)
+	bySource, err := s.GroupChangesetsBySource(ctx, cs...)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 // GroupChangesetsBySource returns a slice of SourceChangesets in which the
 // given *campaigns.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
-func GroupChangesetsBySource(ctx context.Context, reposStore repos.Store, cf *httpcli.Factory, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
+func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID
 	repoSet := map[api.RepoID]*repos.Repo{}
 
@@ -131,7 +131,7 @@ func GroupChangesetsBySource(ctx context.Context, reposStore repos.Store, cf *ht
 		}
 	}
 
-	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+	rs, err := s.ReposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func GroupChangesetsBySource(ctx context.Context, reposStore repos.Store, cf *ht
 		}
 	}
 
-	es, err := reposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
+	es, err := s.ReposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func GroupChangesetsBySource(ctx context.Context, reposStore repos.Store, cf *ht
 
 	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
-		src, err := repos.NewSource(e, cf)
+		src, err := repos.NewSource(e, s.HTTPFactory)
 		if err != nil {
 			return nil, err
 		}
