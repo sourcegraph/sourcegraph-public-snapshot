@@ -34,7 +34,7 @@ type actionExecutionResolver struct {
 	action *campaigns.Action
 
 	// pass this when the jobs are already known:
-	actionJobs []campaigns.ActionJob
+	actionJobs *[]*campaigns.ActionJob
 }
 
 func (r *Resolver) ActionExecutionByID(ctx context.Context, id graphql.ID) (graphqlbackend.ActionExecutionResolver, error) {
@@ -85,7 +85,7 @@ func (r *actionExecutionResolver) ActionWorkspace() *graphqlbackend.GitTreeEntry
 }
 
 func (r *actionExecutionResolver) Jobs() graphqlbackend.ActionJobConnectionResolver {
-	return &actionJobConnectionResolver{store: r.store, jobs: &r.actionJobs}
+	return &actionJobConnectionResolver{store: r.store, actionExecution: &r.actionExecution, knownJobs: r.actionJobs}
 }
 
 func (r *actionExecutionResolver) Status() campaigns.BackgroundProcessStatus {

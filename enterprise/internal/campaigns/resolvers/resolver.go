@@ -741,54 +741,57 @@ func (r *actionExecutionConnectionResolver) compute(ctx context.Context) ([]*cam
 
 type actionJobConnectionResolver struct {
 	store *ee.Store
+	// pass this in to avoid duplicate sql queries in job resolvers (for Definition())
+	actionExecution *campaigns.ActionExecution
+
+	// pass them in for caching
+	knownJobs *[]*campaigns.ActionJob
 
 	once       sync.Once
-	jobs       *[]campaigns.ActionJob
-	totalCount int32
+	jobs       []*campaigns.ActionJob
+	totalCount int64
 	err        error
 }
 
 func (r *actionJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	_, totalCount, err := r.compute(ctx)
-	return totalCount, err
+	// todo: unsafe
+	return int32(totalCount), err
 }
 
 func (r *actionJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionJobResolver, error) {
 	jobs, _, err := r.compute(ctx)
 	resolvers := make([]graphqlbackend.ActionJobResolver, len(jobs))
 	for i, job := range jobs {
-		resolvers[i] = &actionJobResolver{store: r.store, job: job}
+		resolvers[i] = &actionJobResolver{store: r.store, actionExecution: r.actionExecution, job: *job}
 	}
 	return resolvers, err
 }
 
-func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]campaigns.ActionJob, int32, error) {
+func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]*campaigns.ActionJob, int64, error) {
 	// this might have been passed down (CreateActionExecution already knows all jobs, so why fetch them again. TODO: paginate those as well)
-	if r.jobs == nil {
+	if r.knownJobs == nil {
 		r.once.Do(func() {
-			actionJobs := make([]campaigns.ActionJob, 1)
-			actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{ID: 123})
+			var executionID *int64
+			if r.actionExecution != nil {
+				executionID = &r.actionExecution.ID
+			}
+			actionJobs, totalCount, err := r.store.ListActionJobs(ctx, ee.ListActionJobsOpts{ExecutionID: executionID})
 			if err != nil {
 				r.jobs = nil
 				r.totalCount = 0
 				r.err = err
-			} else if actionJob == nil {
-				r.jobs = nil
-				r.totalCount = 0
-				r.err = nil
-			} else {
-				// todo: this is needs to be fetched from the parent action execution, not be static 123
-				actionJobs[0] = *actionJob
-				r.jobs = &actionJobs
-				r.totalCount = 1
-				r.err = err
+				return
 			}
+			r.jobs = actionJobs
+			r.totalCount = totalCount
+			r.err = nil
 		})
 	} else {
-		// todo: unsafe
-		r.totalCount = int32(len(*r.jobs))
+		r.jobs = *r.knownJobs
+		r.totalCount = int64(len(r.jobs))
 	}
-	return *r.jobs, r.totalCount, r.err
+	return r.jobs, r.totalCount, r.err
 }
 
 // runner resolver
@@ -976,7 +979,7 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 	if err != nil {
 		return nil, err
 	}
-	actionJobs := make([]campaigns.ActionJob, len(repos))
+	actionJobs := make([]*campaigns.ActionJob, len(repos))
 	for i, repo := range repos {
 		repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repo.ID))
 		if err != nil {
@@ -990,10 +993,10 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 		if err != nil {
 			return nil, err
 		}
-		actionJobs[i] = *actionJob
+		actionJobs[i] = actionJob
 	}
 
-	return &actionExecutionResolver{store: r.store, actionExecution: *actionExecution, actionJobs: actionJobs}, nil
+	return &actionExecutionResolver{store: r.store, actionExecution: *actionExecution, actionJobs: &actionJobs}, nil
 }
 
 func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullActionJobArgs) (_ graphqlbackend.ActionJobResolver, err error) {

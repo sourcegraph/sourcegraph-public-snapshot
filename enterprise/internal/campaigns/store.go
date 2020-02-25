@@ -3330,3 +3330,91 @@ func createActionJobQuery(opts *CreateActionJobOpts) *sqlf.Query {
 	queryTemplate := createActionJobQueryFmtstrSelect
 	return sqlf.Sprintf(queryTemplate, opts.RepositoryID, opts.ExecutionID, opts.BaseRevision)
 }
+
+// ListActionJobsOpts captures the query options needed for
+// listing action executions.
+type ListActionJobsOpts struct {
+	Cursor      int64
+	Limit       int
+	ExecutionID *int64
+}
+
+// ListActionJobs lists ActionJobs with the given filters.
+func (s *Store) ListActionJobs(ctx context.Context, opts ListActionJobsOpts) (actionJobs []*campaigns.ActionJob, totalCount int64, err error) {
+	q := listActionJobsQuery(&opts)
+
+	actionJobs = make([]*campaigns.ActionJob, 0, opts.Limit)
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var a campaigns.ActionJob
+		if err = scanActionJob(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		actionJobs = append(actionJobs, &a)
+		return a.ID, 1, err
+	})
+
+	q = sqlf.Sprintf("SELECT COUNT(*) FROM action_jobs")
+	countTemplate := "SELECT COUNT(*) FROM action_jobs"
+	if opts.ExecutionID != nil {
+		countTemplate = countTemplate + " WHERE execution = %d"
+		q = sqlf.Sprintf(countTemplate, opts.ExecutionID)
+	} else {
+		q = sqlf.Sprintf(countTemplate)
+	}
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		if err = scanCount(&totalCount, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, err
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return actionJobs, totalCount, err
+}
+
+var listActionJobsQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:ListActionJobs
+SELECT
+	action_jobs.id,
+	action_jobs.log,
+	action_jobs.execution_start,
+	action_jobs.execution_end,
+	action_jobs.runner_seen_at,
+	action_jobs.patch,
+	action_jobs.state,
+	action_jobs.repository,
+	action_jobs.execution,
+	action_jobs.revision
+FROM action_jobs
+`
+
+var listActionJobsQueryFmtstrConditions = `
+WHERE %s
+ORDER BY action_jobs.id ASC
+`
+
+func listActionJobsQuery(opts *ListActionJobsOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("action_jobs.id >= %s", opts.Cursor),
+	}
+
+	if opts.ExecutionID != nil {
+		preds = append(preds, sqlf.Sprintf("action_jobs.execution = %s", opts.ExecutionID))
+	}
+
+	queryTemplate := listActionJobsQueryFmtstrSelect + listActionJobsQueryFmtstrConditions + limitClause
+
+	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
+}
