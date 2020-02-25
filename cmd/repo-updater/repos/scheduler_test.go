@@ -550,6 +550,110 @@ func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
 	}
 }
 
+func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
+	a := &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := &configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+
+	tests := []struct {
+		name            string
+		initialSchedule []*scheduledRepoUpdate
+		initialQueue    []*repoUpdate
+		diff            Diff
+		finalSchedule   []*scheduledRepoUpdate
+		finalQueue      []*repoUpdate
+	}{
+		{
+			name: "diff with deleted repos",
+			initialSchedule: []*scheduledRepoUpdate{
+				{Repo: a, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+			},
+			initialQueue: []*repoUpdate{
+				{Repo: a, Seq: 1, Updating: false},
+			},
+			diff: Diff{
+				Deleted: []*Repo{
+					{ID: a.ID, Name: string(a.Name), URI: a.URL},
+				},
+			},
+		},
+		{
+			name: "diff with add and modified repos",
+			diff: Diff{
+				Added: []*Repo{
+					{
+						ID:   a.ID,
+						Name: string(a.Name),
+						Sources: map[string]*SourceInfo{
+							string(a.Name): {CloneURL: a.URL},
+						},
+					},
+				},
+				Modified: []*Repo{
+					{
+						ID:   b.ID,
+						Name: string(b.Name),
+						Sources: map[string]*SourceInfo{
+							string(b.Name): {CloneURL: b.URL},
+						},
+					},
+				},
+			},
+			finalSchedule: []*scheduledRepoUpdate{
+				{Repo: a, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+			},
+			finalQueue: []*repoUpdate{
+				{Repo: a, Seq: 1, Updating: false},
+				{Repo: b, Seq: 2, Updating: false},
+			},
+		},
+		{
+			name: "diff with unmodified but partially deleted repos",
+			initialSchedule: []*scheduledRepoUpdate{
+				{Repo: a, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+			},
+			initialQueue: []*repoUpdate{
+				{Repo: a, Seq: 1, Updating: false},
+			},
+			diff: Diff{
+				Unmodified: []*Repo{
+					{
+						ID:        a.ID,
+						Name:      string(a.Name),
+						DeletedAt: defaultTime,
+					},
+					{
+						ID:   b.ID,
+						Name: string(b.Name),
+						Sources: map[string]*SourceInfo{
+							string(b.Name): {CloneURL: b.URL},
+						},
+					},
+				},
+			},
+			finalSchedule: []*scheduledRepoUpdate{
+				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// The recording is not important for testing this method, but we want to mock and clean up timers.
+			_, stop := startRecording()
+			defer stop()
+
+			s := NewUpdateScheduler()
+			setupInitialSchedule(s, test.initialSchedule)
+			setupInitialQueue(s, test.initialQueue)
+
+			s.UpdateFromDiff(test.diff)
+
+			verifySchedule(t, s, test.finalSchedule)
+			verifyQueue(t, s, test.finalQueue)
+		})
+	}
+}
+
 func TestSchedule_upsert(t *testing.T) {
 	a := &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
 	a2 := &configuredRepo2{ID: 1, Name: "a2", URL: "a2.com"}

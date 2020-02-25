@@ -183,8 +183,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	if envvar.SourcegraphDotComMode() {
 		syncer.FailFullSync = true
 	} else {
-		syncer.Synced = make(chan repos.Repos)
-		syncer.SubsetSynced = make(chan repos.Repos)
+		syncer.Synced = make(chan repos.Diff)
+		syncer.SubsetSynced = make(chan repos.Diff)
 		go watchSyncer(ctx, syncer, scheduler, gps)
 		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
 	}
@@ -229,7 +229,8 @@ func Main(enterpriseInit EnterpriseInit) {
 }
 
 type scheduler interface {
-	Update(...*repos.Repo)
+	// UpdateFromDiff updates the scheduled and queued repos from the given sync diff.
+	UpdateFromDiff(repos.Diff)
 }
 
 func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps *repos.GitolitePhabricatorMetadataSyncer) {
@@ -237,20 +238,20 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 
 	for {
 		select {
-		case rs := <-syncer.Synced:
+		case diff := <-syncer.Synced:
 			if !conf.Get().DisableAutoGitUpdates {
-				sched.Update(rs...)
+				sched.UpdateFromDiff(diff)
 			}
 
 			go func() {
-				if err := gps.Sync(ctx, rs); err != nil {
+				if err := gps.Sync(ctx, diff.Repos()); err != nil {
 					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
 				}
 			}()
 
-		case rs := <-syncer.SubsetSynced:
+		case diff := <-syncer.SubsetSynced:
 			if !conf.Get().DisableAutoGitUpdates {
-				sched.Update(rs...)
+				sched.UpdateFromDiff(diff)
 			}
 		}
 	}
