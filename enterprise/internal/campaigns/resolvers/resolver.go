@@ -451,7 +451,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		Store:       tx,
 		HTTPFactory: r.httpFactory,
 	}
-	// NOTE: We performing a blocking sync here in order to ensure
+	// NOTE: We are performing a blocking sync here in order to ensure
 	// that the remote changeset exists and also to remove the possibility
 	// of an unsynced changeset entering our database
 	if err = syncer.SyncChangesets(ctx, cs...); err != nil {
