@@ -42,10 +42,9 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 	// Change this once we have a proper scheduler in place and we've decided how to deal with
 	// it in places where we currently expect blocking
 	cs, _, err := s.Store.ListChangesets(ctx, ListChangesetsOpts{
-		Limit:           -1,
-		IDs:             ids,
-		WithoutDeleted:  true,
-		IncludeUnsynced: true,
+		Limit:          -1,
+		IDs:            ids,
+		WithoutDeleted: true,
 	})
 	if err != nil {
 		return err
@@ -202,10 +201,9 @@ func GroupChangesetsBySource(ctx context.Context, reposStore repos.Store, cf *ht
 func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all []*campaigns.Changeset, err error) {
 	for cursor := int64(-1); cursor != 0; {
 		opts := ListChangesetsOpts{
-			Cursor:          cursor,
-			Limit:           1000,
-			WithoutDeleted:  true,
-			IncludeUnsynced: true,
+			Cursor:         cursor,
+			Limit:          1000,
+			WithoutDeleted: true,
 		}
 		cs, next, err := s.Store.ListChangesets(ctx, opts)
 		if err != nil {

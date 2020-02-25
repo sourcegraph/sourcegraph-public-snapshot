@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -381,19 +380,6 @@ func TestCampaigns(t *testing.T) {
 		graphqlGithubRepoID, "999",
 		graphqlBBSRepoID, "2",
 	)
-
-	repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
-		// Call directly so we don't need to set up a repo updater instance in tests
-		syncer := ee.ChangesetSyncer{
-			Store:       sr.store,
-			ReposStore:  store,
-			HTTPFactory: cf,
-		}
-		return syncer.EnqueueChangesetSyncs(ctx, ids)
-	}
-	defer func() {
-		repoupdater.MockEnqueueChangesetSync = nil
-	}()
 
 	mustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
 		fragment gitRef on GitRef {

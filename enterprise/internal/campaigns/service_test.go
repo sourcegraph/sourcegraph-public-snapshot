@@ -781,7 +781,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			for _, j := range append(wantUnmodifiedChangesetJobs, wantModifiedChangesetJobs...) {
 				wantAttachedChangesetIDs = append(wantAttachedChangesetIDs, j.ChangesetID)
 			}
-			changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{IDs: wantAttachedChangesetIDs, IncludeUnsynced: true})
+			changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{IDs: wantAttachedChangesetIDs})
 			if err != nil {
 				t.Fatal(err)
 			}

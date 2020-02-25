@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -673,11 +672,12 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	// to close the Changesets and not update the events (which is what
 	// SyncChangesetsWithSources does) our burndown chart will be outdated
 	// until the next run of campaigns.Syncer.
-	ids := make([]int64, len(cs))
-	for i := range ids {
-		ids[i] = cs[i].ID
+	syncer := ChangesetSyncer{
+		ReposStore:  reposStore,
+		Store:       s.store,
+		HTTPFactory: s.cf,
 	}
-	return repoupdater.DefaultClient.EnqueueChangesetSync(ctx, ids)
+	return syncer.SyncChangesetsWithSources(ctx, bySource)
 }
 
 // CreateChangesetJobForCampaignJob creates a ChangesetJob for the
@@ -888,8 +888,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{
-		IDs:             changesetsToCloseAndDetach,
-		IncludeUnsynced: true,
+		IDs: changesetsToCloseAndDetach,
 	})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "listing changesets to close and detach")
