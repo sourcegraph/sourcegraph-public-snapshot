@@ -286,20 +286,9 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		updateArgs.Plan = &campaignPlanID
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
+	campaign, err := updateCampaign(ctx, r.store, r.httpFactory, tr, updateArgs)
 	if err != nil {
 		return nil, err
-	}
-
-	if detachedChangesets != nil {
-		go func() {
-			ctx := trace.ContextWithTrace(context.Background(), tr)
-			err := svc.CloseOpenChangesets(ctx, detachedChangesets)
-			if err != nil {
-				log15.Error("CloseOpenChangesets", "err", err)
-			}
-		}()
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
@@ -1109,9 +1098,21 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 				return nil, err
 			}
 			// attach plan to action execution
-			_, err = tx.UpdateActionExecution(ctx, ee.UpdateActionExecutionOpts{ExecutionID: actionJob.ExecutionID, CampaignPlanID: plan.ID})
+			actionExecution, err := tx.UpdateActionExecution(ctx, ee.UpdateActionExecutionOpts{ExecutionID: actionJob.ExecutionID, CampaignPlanID: plan.ID})
 			if err != nil {
 				return nil, err
+			}
+
+			// check if action is associated to a campaign, then we update that directly with the plan from above
+			action, err := tx.ActionByID(ctx, ee.ActionByIDOpts{ID: actionExecution.ActionID})
+			if err != nil {
+				return nil, err
+			}
+			if action.CampaignID != nil {
+				// todo: the tx is completed when the background go func of updateCampaign executes
+				if _, err = updateCampaign(ctx, tx, r.httpFactory, tr, ee.UpdateCampaignArgs{Campaign: *action.CampaignID, Plan: &plan.ID}); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

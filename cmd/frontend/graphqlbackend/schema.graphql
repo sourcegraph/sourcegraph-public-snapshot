@@ -482,6 +482,7 @@ type Action implements Node {
     # Cron schedule for repeating executions.
     schedule: String
     # Respected when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invokation.
+    # Required to be true when `campaign` is set, otherwise race conditions may happen. todo: we can also handle that gracefully and simply return if a newer execution exists.
     cancelPreviousScheduledExecution: Boolean!
     # Optional associated campaign to update on completion.
     campaign: Campaign

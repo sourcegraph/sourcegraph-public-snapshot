@@ -13,6 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var _ graphqlbackend.CampaignsConnectionResolver = &campaignsConnectionResolver{}
@@ -309,4 +313,23 @@ func (r *emptyChangesetPlansConnectionsResolver) TotalCount(ctx context.Context)
 
 func (r *emptyChangesetPlansConnectionsResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	return graphqlutil.HasNextPage(false), nil
+}
+
+func updateCampaign(ctx context.Context, store *ee.Store, httpFactory *httpcli.Factory, tr *trace.Trace, updateArgs ee.UpdateCampaignArgs) (*campaigns.Campaign, error) {
+	svc := ee.NewService(store, gitserver.DefaultClient, nil, httpFactory)
+	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	if detachedChangesets != nil {
+		go func() {
+			ctx := trace.ContextWithTrace(context.Background(), tr)
+			err := svc.CloseOpenChangesets(ctx, detachedChangesets)
+			if err != nil {
+				log15.Error("CloseOpenChangesets", "err", err)
+			}
+		}()
+	}
+	return campaign, nil
 }
