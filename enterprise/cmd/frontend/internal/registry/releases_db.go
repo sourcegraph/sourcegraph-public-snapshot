@@ -104,6 +104,10 @@ func (dbReleases) GetLatestBatch(ctx context.Context, registryExtensionIDs []int
 		ids = append(ids, sqlf.Sprintf("%s", id))
 	}
 
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
 	q := sqlf.Sprintf(`
 SELECT rer.id, rer.registry_extension_id, rer.creator_user_id, rer.release_version, rer.release_tag, rer.manifest, CASE WHEN %v::boolean THEN rer.bundle ELSE null END AS bundle, CASE WHEN %v::boolean THEN rer.source_map ELSE null END AS source_map, rer.created_at
 FROM registry_extension_releases rer
