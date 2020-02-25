@@ -2,16 +2,12 @@
 
 Sourcegraph's user data can be migrated from the single Docker image (`sourcegraph/server`) to the Docker Compose deployment by dumping and restoring the Postgres database.
 
-## Notes 
+## Notes
 
 ### Version requirements
 
-* This migration can only be done with Sourcegraph `3.12.7` and above (e.g. `sourcegraph/server:3.12.7` and [v3.12.7 (FILL IN RELEASE HERE) Docker Compose](TODO) ).
-* The single Docker image version **must** match the version Sourcegraph Docker Compose deployment that you're migrating your data to. If you're running a version of Sourcegraph server that's older than the Docker Compose deployment, you **must** upgrade to a newer `sourcegraph/server` version before continuing. 
-
-Sourcegraph's user data can only be transferred between deployments that are running the same Sourcegraph verion (e.g. `sourcegraph/server:3.12.7` can only transfer its data to `v3.12.7` of the Docker Compose definition). If you 
-
-The `sourcegraph/server` image that that you're migrating from **must** match the Docker Compose version that you're upgrading to. If you're running an older `sourcegraph/server` version.
+* This migration can only be done with Sourcegraph `3.13.0` and above (e.g. `sourcegraph/server:3.13.0` and [v3.13.0 (FILL IN RELEASE HERE) Docker Compose](TODO) ).
+* Sourcegraph's user data can only be transferred between deployments that are running the same Sourcegraph verion (e.g. `sourcegraph/server:3.13.0` can only transfer its data to `v3.13.0` of the Docker Compose definition). If you're running a version of Sourcegraph server that's older than the Docker Compose deployment version, you **must** upgrade to a newer `sourcegraph/server` version before continuing.
 
 ### Storage Location
 
