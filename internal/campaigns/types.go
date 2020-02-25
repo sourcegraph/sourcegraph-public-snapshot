@@ -1484,7 +1484,7 @@ type ActionJob struct {
 	ExecutionEnd   time.Time
 	RunnerSeenAt   time.Time
 	Patch          *string
-	State          *string
+	State          ActionJobState
 	RepoID         int32
 }
 
