@@ -35,6 +35,9 @@ All notable changes to Sourcegraph are documented in this file.
 - The default timeout of indexed search has been increased. Previously indexed search would always return within 3s. This lead to broken behaviour on new instances which had yet to tune resource allocations. [#8720](https://github.com/sourcegraph/sourcegraph/pull/8720)
 - Bitbucket Server older than 5.13 failed to sync since Sourcegraph 3.12. This was due to us querying for the `archived` label, but Bitbucket Server 5.13 does not support labels. [#8883](https://github.com/sourcegraph/sourcegraph/issues/8883)
 - The default timeout of indexed search has been increased. Previously indexed search would always return within 3s. This lead to broken behaviour on new instances which had yet to tune resource allocations. [#8720](https://github.com/sourcegraph/sourcegraph/pull/8720)
+- Sourcegraph instances that are not connected to the internet will no longer display errors when users submit NPS survey responses (the responses will continue to be stored locally). Rather, an error will be printed to the frontend logs. [#8598](https://github.com/sourcegraph/sourcegraph/issues/8598)
+- Showing `head>` in the search results if the first line of the file is shown [#8619](https://github.com/sourcegraph/sourcegraph/issues/8619)
+- A regression in repo-updater was fixed that lead to every repository's git clone being updated every time the list of repositories was synced from the code host. [#8501](https://github.com/sourcegraph/sourcegraph/issues/8501)
 
 ### Removed
 
