@@ -2721,6 +2721,23 @@ func scanBackgroundProcessStatus(b *campaigns.BackgroundProcessStatus, s scanner
 func scanAction(a *campaigns.Action, s scanner) error {
 	return s.Scan(
 		&a.ID,
+		&a.CampaignID,
+		&a.Schedule,
+		&a.CancelPrevious,
+		&a.SavedSearchID,
+		&a.Steps,
+		&a.EnvStr,
+	)
+}
+
+func scanActionExecution(a *campaigns.ActionExecution, s scanner) error {
+	return s.Scan(
+		&a.ID,
+		&a.Steps,
+		&a.EnvStr,
+		&a.InvokationReason,
+		&a.CampaignPlanID,
+		&a.ActionID,
 	)
 }
 
@@ -3016,5 +3033,88 @@ WHERE
 
 func actionJobByIDQuery(opts *ActionJobByIDOpts) *sqlf.Query {
 	queryTemplate := actionJobByIDQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.ID)
+}
+
+type ActionByIDOpts struct {
+	ID int64
+}
+
+// ActionByID resets an action job so it is eventually retried by a runner.
+func (s *Store) ActionByID(ctx context.Context, opts ActionByIDOpts) (*campaigns.Action, error) {
+	q := actionByIDQuery(&opts)
+
+	var a campaigns.Action
+	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err := scanAction(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, nil
+	})
+
+	// todo handle empty ie not-found error
+
+	return &a, err
+}
+
+var actionByIDQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:ActionByID
+SELECT
+	actions.id,
+	actions.campaign,
+	actions.schedule,
+	actions.cancel_previous,
+	actions.saved_search,
+	actions.steps,
+	actions.env
+FROM
+	actions
+WHERE
+	actions.id = %d
+`
+
+func actionByIDQuery(opts *ActionByIDOpts) *sqlf.Query {
+	queryTemplate := actionByIDQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.ID)
+}
+
+type ActionExecutionByIDOpts struct {
+	ID int64
+}
+
+// ActionExecutionByID resets an action job so it is eventually retried by a runner.
+func (s *Store) ActionExecutionByID(ctx context.Context, opts ActionExecutionByIDOpts) (*campaigns.ActionExecution, error) {
+	q := actionExecutionByIDQuery(&opts)
+
+	var a campaigns.ActionExecution
+	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err := scanActionExecution(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, nil
+	})
+
+	// todo handle empty ie not-found error
+
+	return &a, err
+}
+
+var actionExecutionByIDQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:ActionExecutionByID
+SELECT
+	action_executions.id,
+	action_executions.steps,
+	action_executions.env,
+	action_executions.invokation_reason,
+	action_executions.campaign_plan,
+	action_executions.action
+FROM
+	action_executions
+WHERE
+	action_executions.id = %d
+`
+
+func actionExecutionByIDQuery(opts *ActionExecutionByIDOpts) *sqlf.Query {
+	queryTemplate := actionExecutionByIDQueryFmtstrSelect
 	return sqlf.Sprintf(queryTemplate, opts.ID)
 }

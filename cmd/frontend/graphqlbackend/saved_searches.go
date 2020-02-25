@@ -32,6 +32,10 @@ func savedSearchByID(ctx context.Context, id graphql.ID) (*SavedSearchResolver, 
 		return nil, err
 	}
 
+	return SavedSearchByIDInt32(ctx, intID)
+}
+
+func SavedSearchByIDInt32(ctx context.Context, intID int32) (*SavedSearchResolver, error) {
 	ss, err := db.SavedSearches.GetByID(ctx, intID)
 	if err != nil {
 		return nil, err

@@ -1458,11 +1458,23 @@ func unixMilliToTime(ms int64) time.Time {
 }
 
 type Action struct {
-	ID int64
+	ID             int64
+	CampaignID     *int64
+	Schedule       *string
+	CancelPrevious bool
+	// todo: 32 or 64? if 64 we have to truncate in the resolver of the action
+	SavedSearchID *int32
+	Steps         string
+	EnvStr        string
 }
 
 type ActionExecution struct {
-	ID int64
+	ID               int64
+	Steps            string
+	EnvStr           *string
+	InvokationReason ActionExecutionInvokationReason
+	CampaignPlanID   *int64
+	ActionID         int64
 }
 
 type ActionJob struct {

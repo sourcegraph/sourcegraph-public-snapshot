@@ -469,8 +469,8 @@ type Action implements Node {
     savedSearch: SavedSearch
     # Cron schedule for repeating executions.
     schedule: String
-    # Required when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invokation.
-    cancelPreviousScheduledExecution: Boolean
+    # Respected when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invokation.
+    cancelPreviousScheduledExecution: Boolean!
     # Optional associated campaign to update on completion.
     campaign: Campaign
     actionExecutions: ActionExecutionConnection!

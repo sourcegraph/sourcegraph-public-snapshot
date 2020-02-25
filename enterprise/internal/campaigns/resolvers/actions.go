@@ -26,10 +26,27 @@ type actionResolver struct {
 	store *ee.Store
 	once  sync.Once
 
-	// todo: remove
-	campaignID *graphql.ID
-
 	action campaigns.Action
+}
+
+func (r *Resolver) ActionByID(ctx context.Context, id graphql.ID) (graphqlbackend.ActionResolver, error) {
+	// todo: permissions
+
+	dbId, err := unmarshalActionID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	action, err := r.store.ActionByID(ctx, ee.ActionByIDOpts{
+		ID: dbId,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if action.ID == 0 {
+		return nil, nil
+	}
+	return &actionResolver{store: r.store, action: *action}, nil
 }
 
 func (r *actionResolver) ID() graphql.ID {
@@ -37,33 +54,30 @@ func (r *actionResolver) ID() graphql.ID {
 }
 
 func (r *actionResolver) Definition() graphqlbackend.ActionDefinitionResolver {
-	return &actionDefinitionResolver{}
+	return &actionDefinitionResolver{envStr: r.action.EnvStr, steps: r.action.Steps}
 }
 
-func (r *actionResolver) SavedSearch() *graphqlbackend.SavedSearchResolver {
-	return nil
+func (r *actionResolver) SavedSearch(ctx context.Context) (*graphqlbackend.SavedSearchResolver, error) {
+	if r.action.SavedSearchID == nil {
+		return nil, nil
+	}
+	return graphqlbackend.SavedSearchByIDInt32(ctx, *r.action.SavedSearchID)
 }
 
 func (r *actionResolver) Schedule() *string {
-	schedStr := "30 */2 * * *"
-	return &schedStr
+	return r.action.Schedule
 }
 
-func (r *actionResolver) CancelPreviousScheduledExecution() *bool {
-	return nil
+func (r *actionResolver) CancelPreviousScheduledExecution() bool {
+	return r.action.CancelPrevious
 }
 
 func (r *actionResolver) Campaign(ctx context.Context) (graphqlbackend.CampaignResolver, error) {
-	// todo: much of this is copied from campaignbyid resolver
-	if r.campaignID == nil {
+	if r.action.CampaignID == nil {
 		return nil, nil
 	}
-	campaignID, err := unmarshalCampaignID(*r.campaignID)
-	if err != nil {
-		return nil, err
-	}
 
-	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
+	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: *r.action.CampaignID})
 	if err != nil {
 		return nil, err
 	}

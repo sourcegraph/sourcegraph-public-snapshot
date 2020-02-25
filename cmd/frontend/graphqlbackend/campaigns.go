@@ -142,6 +142,8 @@ type CampaignsResolver interface {
 	PublishCampaign(ctx context.Context, args *PublishCampaignArgs) (CampaignResolver, error)
 	PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error)
 
+	ActionByID(ctx context.Context, id graphql.ID) (ActionResolver, error)
+	ActionExecutionByID(ctx context.Context, id graphql.ID) (ActionExecutionResolver, error)
 	ActionJobByID(ctx context.Context, id graphql.ID) (ActionJobResolver, error)
 	Actions(ctx context.Context, args *ListActionsArgs) (ActionConnectionResolver, error)
 	ActionJobs(ctx context.Context, args *ListActionJobsArgs) (ActionJobConnectionResolver, error)
@@ -271,6 +273,14 @@ func (defaultCampaignsResolver) CampaignPlanByID(ctx context.Context, id graphql
 }
 
 func (defaultCampaignsResolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (ChangesetPlanResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ActionByID(ctx context.Context, id graphql.ID) (ActionResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ActionExecutionByID(ctx context.Context, id graphql.ID) (ActionExecutionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -431,7 +441,7 @@ type ActionEnvVarResolver interface {
 
 type ActionDefinitionResolver interface {
 	Steps() JSONCString
-	Env() []ActionEnvVarResolver
+	Env() ([]ActionEnvVarResolver, error)
 	// TODO: Wrong return type
 	ActionWorkspace() *GitTreeEntryResolver
 }
@@ -444,9 +454,9 @@ type ActionConnectionResolver interface {
 type ActionResolver interface {
 	ID() graphql.ID
 	Definition() ActionDefinitionResolver
-	SavedSearch() *SavedSearchResolver
+	SavedSearch(ctx context.Context) (*SavedSearchResolver, error)
 	Schedule() *string
-	CancelPreviousScheduledExecution() *bool
+	CancelPreviousScheduledExecution() bool
 	Campaign(ctx context.Context) (CampaignResolver, error)
 	ActionExecutions() ActionExecutionConnectionResolver
 }
@@ -458,12 +468,12 @@ type ActionExecutionConnectionResolver interface {
 
 type ActionExecutionResolver interface {
 	ID() graphql.ID
-	Action() ActionResolver
+	Action(ctx context.Context) (ActionResolver, error)
 	InvokationReason() campaigns.ActionExecutionInvokationReason
 	Definition() ActionDefinitionResolver
 	Jobs() ActionJobConnectionResolver
 	Status() campaigns.BackgroundProcessStatus
-	CampaignPlan() CampaignPlanResolver
+	CampaignPlan(ctx context.Context) (CampaignPlanResolver, error)
 }
 
 type ActionJobConnectionResolver interface {

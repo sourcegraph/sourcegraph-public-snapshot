@@ -33,6 +33,8 @@ type actionJobResolver struct {
 }
 
 func (r *Resolver) ActionJobByID(ctx context.Context, id graphql.ID) (graphqlbackend.ActionJobResolver, error) {
+	// todo: permissions
+
 	dbId, err := unmarshalActionJobID(id)
 	if err != nil {
 		return nil, err
@@ -55,6 +57,7 @@ func (r *actionJobResolver) ID() graphql.ID {
 }
 
 func (r *actionJobResolver) Definition() graphqlbackend.ActionDefinitionResolver {
+	// todo: get from parent execution
 	return &actionDefinitionResolver{}
 }
 

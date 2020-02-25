@@ -314,6 +314,10 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.ChangesetByID(ctx, id)
 	case "ChangesetPlan":
 		return r.ChangesetPlanByID(ctx, id)
+	case "Action":
+		return r.ActionByID(ctx, id)
+	case "ActionExecution":
+		return r.ActionExecutionByID(ctx, id)
 	case "ActionJob":
 		return r.ActionJobByID(ctx, id)
 	case "DiscussionComment":

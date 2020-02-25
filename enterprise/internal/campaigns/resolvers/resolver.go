@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -706,7 +707,7 @@ func (r *actionExecutionConnectionResolver) TotalCount(ctx context.Context) (int
 
 func (r *actionExecutionConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionExecutionResolver, error) {
 	resolvers := make([]graphqlbackend.ActionExecutionResolver, 1)
-	resolvers[0] = &actionExecutionResolver{actionExecution: campaigns.ActionExecution{ID: 123}}
+	resolvers[0] = &actionExecutionResolver{store: r.store, actionExecution: campaigns.ActionExecution{ID: 123}}
 	return resolvers, nil
 }
 
@@ -755,45 +756,37 @@ func (r *runnerResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolve
 // action definition resolver
 
 type actionDefinitionResolver struct {
-	// todo
+	steps  string
+	envStr string
 }
 
 func (r *actionDefinitionResolver) Steps() graphqlbackend.JSONCString {
-	return graphqlbackend.JSONCString(`{
-		"scopeQuery": "repo:go-* -repohasfile:INSTALL.md",
-		"steps": [
-		  {
-			"type": "command",
-			"args": ["sh", "-c", "echo '# Installation' > INSTALL.md"]
-		  },
-		  {
-			"type": "command",
-			"args": ["sed", "-i", "s/No install instructions/See INSTALL.md/", "README.md"]
-		  },
-		  {
-			"type": "docker",
-			"dockerfile": "FROM alpine:3 \n CMD find /work -iname '*.md' -type f | xargs -n 1 sed -i s/this/that/g"
-		  },
-		  {
-			"type": "docker",
-			"image": "golang:1.13-alpine",
-			"args": ["go", "fix", "/work/..."]
-		  }
-		]
-	  }`)
+	return graphqlbackend.JSONCString(r.steps)
 }
 
 func (r *actionDefinitionResolver) ActionWorkspace() *graphqlbackend.GitTreeEntryResolver {
 	return nil
 }
 
-func (r *actionDefinitionResolver) Env() []graphqlbackend.ActionEnvVarResolver {
-	envs := make([]graphqlbackend.ActionEnvVarResolver, 1)
-	envs[0] = &actionEnvVarResolver{
-		key:   "asd",
-		value: "ads",
+func (r *actionDefinitionResolver) Env() ([]graphqlbackend.ActionEnvVarResolver, error) {
+	if r.envStr == "" {
+		return []graphqlbackend.ActionEnvVarResolver{}, nil
 	}
-	return envs
+	var parsed []struct {
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	}
+	if err := json.Unmarshal([]byte(r.envStr), &parsed); err != nil {
+		return nil, errors.Wrap(err, "invalid env stored")
+	}
+	envs := make([]graphqlbackend.ActionEnvVarResolver, len(parsed))
+	for i, env := range parsed {
+		envs[i] = &actionEnvVarResolver{
+			key:   env.Key,
+			value: env.Value,
+		}
+	}
+	return envs, nil
 }
 
 // query and mutation resolvers
