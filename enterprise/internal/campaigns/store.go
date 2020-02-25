@@ -442,8 +442,7 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 // CountChangesetsOpts captures the query options needed for
 // counting changesets.
 type CountChangesetsOpts struct {
-	CampaignID      int64
-	IncludeUnsynced bool
+	CampaignID int64
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -466,10 +465,6 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.CampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
-	}
-
-	if !opts.IncludeUnsynced {
-		preds = append(preds, sqlf.Sprintf("metadata::text <> '{}'"))
 	}
 
 	if len(preds) == 0 {
