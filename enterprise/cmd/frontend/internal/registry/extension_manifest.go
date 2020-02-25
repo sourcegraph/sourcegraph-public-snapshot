@@ -78,12 +78,9 @@ func getLatestForBatch(ctx context.Context, vs []*dbExtension) (map[int32]*dbRel
 // the date that the release was published.
 func prepReleaseManifest(extensionID string, release *dbRelease) error {
 	// Add URL to bundle if necessary.
-	var o map[string]interface{}
+	o := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(release.Manifest), &o); err != nil {
 		return err
-	}
-	if o == nil {
-		o = map[string]interface{}{}
 	}
 	urlStr, _ := o["url"].(string)
 	if urlStr == "" {

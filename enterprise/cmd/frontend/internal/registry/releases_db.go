@@ -134,7 +134,7 @@ AND NOT EXISTS (SELECT 1 FROM registry_extension_releases rer2
 		releases = append(releases, &r)
 	}
 
-	if err = rows.Err(); err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 

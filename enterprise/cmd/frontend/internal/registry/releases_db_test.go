@@ -22,11 +22,11 @@ func TestRegistryExtensionReleases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	xExtensionID, err := (dbExtensions{}).Create(ctx, user.ID, 0, "x")
+	xExtensionID, err := dbExtensions{}.Create(ctx, user.ID, 0, "x")
 	if err != nil {
 		t.Fatal(err)
 	}
-	yExtensionID, err := (dbExtensions{}).Create(ctx, user.ID, 0, "y")
+	yExtensionID, err := dbExtensions{}.Create(ctx, user.ID, 0, "y")
 	if err != nil {
 		t.Fatal(err)
 	}
