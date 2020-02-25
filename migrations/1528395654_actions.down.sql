@@ -1,0 +1,9 @@
+BEGIN;
+
+DROP TABLE actions IF NOT EXISTS;
+
+DROP TABLE action_executions IF NOT EXISTS;
+
+DROP TABLE action_jobs IF NOT EXISTS;
+
+COMMIT;
