@@ -959,7 +959,6 @@ func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullA
 	}
 
 	// set runner = args.Runner
-	// set runnerSeenAt = time.Now
 
 	return &actionJobResolver{store: r.store, job: *actionJob}, nil
 }
@@ -1021,7 +1020,7 @@ func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLog
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admin tokens can register as a runner for now
+	// 🚨 SECURITY: Only site admin tokens can register as a runner for now, todo: this should only be allowed to runners. (we set RunnerSeenAt: time.Now())
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -1032,8 +1031,9 @@ func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLog
 	}
 
 	actionJob, err := r.store.UpdateActionJob(ctx, ee.UpdateActionJobOpts{
-		ID:  id,
-		Log: &args.Content,
+		ID:           id,
+		Log:          &args.Content,
+		RunnerSeenAt: time.Now(),
 	})
 	if err != nil {
 		return nil, err

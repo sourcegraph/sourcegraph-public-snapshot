@@ -2867,6 +2867,7 @@ type UpdateActionJobOpts struct {
 	Patch          *string
 	ExecutionStart *time.Time
 	ExecutionEnd   *time.Time
+	RunnerSeenAt   *time.Time
 }
 
 // UpdateActionJob lists Actions with the given filters.
@@ -2934,6 +2935,15 @@ func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
 			preds = append(preds, sqlf.Sprintf("execution_end = %s", time))
 		}
 	}
+	if opts.RunnerSeenAt != nil {
+		if (*opts.RunnerSeenAt).IsZero() {
+			preds = append(preds, sqlf.Sprintf("runner_seen_at = NULL"))
+		} else {
+			// todo may throw
+			time, _ := (*opts.RunnerSeenAt).MarshalText()
+			preds = append(preds, sqlf.Sprintf("runner_seen_at = %s", time))
+		}
+	}
 
 	queryTemplate := updateActionJobQueryFmtstrSelect
 
@@ -2992,7 +3002,8 @@ UPDATE
 	action_jobs
 SET
 	execution_start = NOW(),
-	state = 'RUNNING'
+	state = 'RUNNING',
+	runner_seen_at = NOW()
 WHERE action_jobs.id IN
 	(SELECT id FROM action_jobs WHERE action_jobs.state = 'PENDING' LIMIT 1)
 RETURNING
