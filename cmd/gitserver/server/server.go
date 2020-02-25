@@ -918,11 +918,19 @@ func newURLRedactor(rawurl string) *urlRedactor {
 	var sensitive []string
 	parsedURL, _ := url.Parse(rawurl)
 	if parsedURL != nil {
-		if pw, _ := parsedURL.User.Password(); pw != "" {
+		pw, _ := parsedURL.User.Password()
+		u := parsedURL.User.Username()
+		if pw != "" && u != "" {
+			// Only block password if we have both as we can
+			// assume that the username isn't sensitive in this case
 			sensitive = append(sensitive, pw)
-		}
-		if u := parsedURL.User.Username(); u != "" {
-			sensitive = append(sensitive, u)
+		} else {
+			if pw != "" {
+				sensitive = append(sensitive, pw)
+			}
+			if u != "" {
+				sensitive = append(sensitive, u)
+			}
 		}
 	}
 	sensitive = append(sensitive, rawurl)
