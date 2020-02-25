@@ -697,18 +697,44 @@ func (r *actionConnectionResolver) compute(ctx context.Context) ([]*campaigns.Ac
 // actionExecutionConnectionResolver
 
 type actionExecutionConnectionResolver struct {
-	once  sync.Once
-	store *ee.Store
+	store    *ee.Store
+	actionID int64
+	first    *int32
+
+	once sync.Once
+
+	actionExecutions []*campaigns.ActionExecution
+	totalCount       int64
+	err              error
 }
 
 func (r *actionExecutionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(5), nil
+	_, totalCount, err := r.compute(ctx)
+	// todo: dangerous
+	return int32(totalCount), err
 }
 
 func (r *actionExecutionConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionExecutionResolver, error) {
-	resolvers := make([]graphqlbackend.ActionExecutionResolver, 1)
-	resolvers[0] = &actionExecutionResolver{store: r.store, actionExecution: campaigns.ActionExecution{ID: 123}}
+	nodes, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.ActionExecutionResolver, len(nodes))
+	for i, node := range nodes {
+		resolvers[i] = &actionExecutionResolver{store: r.store, actionExecution: *node}
+	}
 	return resolvers, nil
+}
+
+func (r *actionExecutionConnectionResolver) compute(ctx context.Context) ([]*campaigns.ActionExecution, int64, error) {
+	r.once.Do(func() {
+		limit := -1
+		if r.first != nil {
+			limit = int(*r.first)
+		}
+		r.actionExecutions, r.totalCount, r.err = r.store.ListActionExecutions(ctx, ee.ListActionExecutionsOpts{Limit: limit, Cursor: 0, ActionID: &r.actionID})
+	})
+	return r.actionExecutions, r.totalCount, r.err
 }
 
 // actionJobConnectionResolver
@@ -744,7 +770,8 @@ func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]graphqlbac
 			r.totalCount = 0
 			r.err = nil
 		} else {
-			actionJobs[0] = &actionJobResolver{job: *actionJob}
+			// todo: this is needs to be fetched from the parent action execution, not be static 123
+			actionJobs[0] = &actionJobResolver{store: r.store, job: *actionJob}
 			r.jobs = actionJobs
 			r.totalCount = 1
 			r.err = err
@@ -769,6 +796,10 @@ func (r *runnerResolver) Name() string {
 
 func (r *runnerResolver) Description() string {
 	return "macOS 10.15.3, Docker 19.06.03, 8 CPU"
+}
+
+func (r *runnerResolver) State() campaigns.RunnerState {
+	return campaigns.RunnerStateOnline
 }
 
 func (r *runnerResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolver {
@@ -928,7 +959,7 @@ func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullA
 	// set runner = args.Runner
 	// set runnerSeenAt = time.Now
 
-	return &actionJobResolver{job: *actionJob}, nil
+	return &actionJobResolver{store: r.store, job: *actionJob}, nil
 }
 
 func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.UpdateActionJobArgs) (_ graphqlbackend.ActionJobResolver, err error) {
@@ -981,7 +1012,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 	// 		}
 	// 	}
 	// }
-	return &actionJobResolver{job: *actionJob}, nil
+	return &actionJobResolver{store: r.store, job: *actionJob}, nil
 }
 
 func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLogArgs) (_ *graphqlbackend.EmptyResponse, err error) {

@@ -88,6 +88,10 @@ type ListActionsArgs struct {
 	First *int32
 }
 
+type ListActionExecutionsArgs struct {
+	First *int32
+}
+
 type ListActionJobsArgs struct {
 	First *int32
 	State campaigns.ActionJobState
@@ -458,7 +462,7 @@ type ActionResolver interface {
 	Schedule() *string
 	CancelPreviousScheduledExecution() bool
 	Campaign(ctx context.Context) (CampaignResolver, error)
-	ActionExecutions() ActionExecutionConnectionResolver
+	ActionExecutions(args *ListActionExecutionsArgs) ActionExecutionConnectionResolver
 }
 
 type ActionExecutionConnectionResolver interface {
@@ -483,7 +487,7 @@ type ActionJobConnectionResolver interface {
 
 type ActionJobResolver interface {
 	ID() graphql.ID
-	Definition() ActionDefinitionResolver
+	Definition(ctx context.Context) (ActionDefinitionResolver, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRevision() string
 	State() campaigns.ActionJobState

@@ -1486,6 +1486,7 @@ type ActionJob struct {
 	Patch          *string
 	State          ActionJobState
 	RepoID         int32
+	ExecutionID    int64
 }
 
 // ActionExecutionInvokationReason defines the possible reasons of an execution to be triggered from.

@@ -128,10 +128,40 @@ export const queryActions = ({ first }: IActionsOnQueryArguments): Observable<IA
         gql`
             query Actions($first: Int) {
                 actions(first: $first) {
+                    totalCount
                     nodes {
                         id
+                        savedSearch {
+                            description
+                        }
+                        schedule
+                        actionExecutions {
+                            totalCount
+                            nodes {
+                                id
+                                definition {
+                                    steps
+                                    actionWorkspace {
+                                        name
+                                    }
+                                    env {
+                                        key
+                                        value
+                                    }
+                                }
+                                invokationReason
+                                status {
+                                    errors
+                                    state
+                                    pendingCount
+                                    completedCount
+                                }
+                                campaignPlan {
+                                    id
+                                }
+                            }
+                        }
                     }
-                    totalCount
                 }
             }
         `,

@@ -473,7 +473,7 @@ type Action implements Node {
     cancelPreviousScheduledExecution: Boolean!
     # Optional associated campaign to update on completion.
     campaign: Campaign
-    actionExecutions: ActionExecutionConnection!
+    actionExecutions(first: Int): ActionExecutionConnection!
 }
 
 type ActionExecutionConnection {

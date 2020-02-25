@@ -96,9 +96,11 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                             }}
                         >
                             <code dangerouslySetInnerHTML={{ __html: actionJob.log }}></code>
-                            <div>
-                                <SyncIcon className="icon-inline" />
-                            </div>
+                            {actionJob.state === GQL.ActionJobState.RUNNING && (
+                                <div>
+                                    <SyncIcon className="icon-inline" />
+                                </div>
+                            )}
                         </div>
                     </>
                 )}

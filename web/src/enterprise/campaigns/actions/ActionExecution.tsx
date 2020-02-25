@@ -29,7 +29,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
     const execution = useObservable(
         React.useMemo(
             () =>
-                merge(of(undefined), interval(5000)).pipe(switchMap(() => fetchActionExecutionByID(actionExecutionID))),
+                merge(of(undefined), interval(2000)).pipe(switchMap(() => fetchActionExecutionByID(actionExecutionID))),
             [actionExecutionID]
         )
     )
@@ -196,7 +196,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 className="mb-3"
             ></MonacoSettingsEditor>
             <h2>Action status</h2>
-            <p>
+            <div>
                 <div className="alert alert-info mt-1">
                     <h3>Want faster execution? To add more runners:</h3>
                     <p>Use the below token to register your runner to this Sourcegraph instance</p>
@@ -220,7 +220,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 </div>
                 <SyncIcon className="icon-inline" /> Action is running for 03h:15:12, estimated remaining time:
                 10h:51:49
-            </p>
+            </div>
             {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
                 <div className="progress">
                     <div

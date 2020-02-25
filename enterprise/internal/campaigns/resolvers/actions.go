@@ -85,6 +85,6 @@ func (r *actionResolver) Campaign(ctx context.Context) (graphqlbackend.CampaignR
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *actionResolver) ActionExecutions() graphqlbackend.ActionExecutionConnectionResolver {
-	return &actionExecutionConnectionResolver{store: r.store}
+func (r *actionResolver) ActionExecutions(args *graphqlbackend.ListActionExecutionsArgs) graphqlbackend.ActionExecutionConnectionResolver {
+	return &actionExecutionConnectionResolver{store: r.store, first: args.First, actionID: r.action.ID}
 }

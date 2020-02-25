@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS action_jobs (
     runner_seen_at timestamp with time zone,
     patch text,
     state text NOT NULL DEFAULT 'PENDING'::text,
-    repository integer NOT NULL REFERENCES repo(id) ON UPDATE CASCADE
+    repository integer NOT NULL REFERENCES repo(id) ON UPDATE CASCADE,
+    execution integer NOT NULL REFERENCES action_executions(id) ON UPDATE CASCADE
 );
 CREATE UNIQUE INDEX IF NOT EXISTS action_jobs_pkey ON action_jobs(id int4_ops);
 

@@ -25,7 +25,10 @@ func unmarshalActionJobID(id graphql.ID) (actionJobID int64, err error) {
 }
 
 type actionJobResolver struct {
-	job campaigns.ActionJob
+	store *ee.Store
+	job   campaigns.ActionJob
+	// todo: pass in from parent if present to avoid duplicate sql query
+	actionExecution *campaigns.ActionExecution
 
 	repoOnce sync.Once
 	repo     *graphqlbackend.RepositoryResolver
@@ -49,16 +52,22 @@ func (r *Resolver) ActionJobByID(ctx context.Context, id graphql.ID) (graphqlbac
 	if actionJob.ID == 0 {
 		return nil, nil
 	}
-	return &actionJobResolver{job: *actionJob}, nil
+	return &actionJobResolver{store: r.store, job: *actionJob}, nil
 }
 
 func (r *actionJobResolver) ID() graphql.ID {
 	return marshalActionJobID(r.job.ID)
 }
 
-func (r *actionJobResolver) Definition() graphqlbackend.ActionDefinitionResolver {
-	// todo: get from parent execution
-	return &actionDefinitionResolver{}
+func (r *actionJobResolver) Definition(ctx context.Context) (graphqlbackend.ActionDefinitionResolver, error) {
+	if r.actionExecution != nil {
+		return &actionDefinitionResolver{steps: r.actionExecution.Steps, envStr: *r.actionExecution.EnvStr}, nil
+	}
+	actionExecution, err := r.store.ActionExecutionByID(ctx, ee.ActionExecutionByIDOpts{ID: r.job.ExecutionID})
+	if err != nil {
+		return nil, err
+	}
+	return &actionDefinitionResolver{steps: actionExecution.Steps, envStr: *actionExecution.EnvStr}, nil
 }
 
 func (r *actionJobResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
@@ -74,14 +83,20 @@ func (r *actionJobResolver) State() campaigns.ActionJobState {
 }
 
 func (r *actionJobResolver) Runner() graphqlbackend.RunnerResolver {
-	return nil
+	if r.job.State == campaigns.ActionJobStatePending {
+		return nil
+	}
+	return &runnerResolver{}
 }
 
 func (r *actionJobResolver) BaseRepository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	return r.Repository(ctx)
 }
 func (r *actionJobResolver) Diff() graphqlbackend.ActionJobResolver {
-	return r
+	if r.job.Patch != nil {
+		return r
+	}
+	return nil
 }
 func (r *actionJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.PreviewFileDiffConnection, error) {
 	repo, err := r.computeRepo(ctx)
