@@ -134,11 +134,11 @@ tslint.config.js @sourcegraph/web
 /cmd/frontend/internal/pkg/usagestatsdeprecated @dadlerj
 /internal/eventlogger @dadlerj
 
-# Automation
-/cmd/frontend/graphqlbackend/a8n.go @sourcegraph/automation-core
-/enterprise/internal/a8n @sourcegraph/automation-core
-/internal/a8n @sourcegraph/automation-core
-/web/**/campaigns/** @sourcegraph/automation-web @mrnugget @sourcegraph/web
+# Campaigns
+/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns-core
+/enterprise/internal/campaigns @sourcegraph/campaigns-core
+/internal/campaigns @sourcegraph/campaigns-core
+/web/**/campaigns/** @sourcegraph/campaigns-web @mrnugget @sourcegraph/web
 
 # Auth
 /cmd/frontend/auth/ @beyang @unknwon
