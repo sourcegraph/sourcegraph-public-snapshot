@@ -1,0 +1,32 @@
+import React from 'react'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { Collapsible } from '../../../../components/Collapsible'
+import { ActionExecutionNode } from './ActionExecutionNode'
+
+export interface ActionNodeProps {
+    node: Pick<GQL.IAction, 'id' | 'savedSearch' | 'schedule' | 'actionExecutions'>
+}
+
+/**
+ * An item in the list of actions.
+ */
+export const ActionNode: React.FunctionComponent<ActionNodeProps> = ({ node }) => (
+    <li className="card p-2 mt-2">
+        <Collapsible
+            title={
+                <div className="d-flex align-items-center">
+                    Unnamed action
+                    {node.schedule}
+                    {node.savedSearch?.description}
+                </div>
+            }
+        >
+            <h4>Associated executions</h4>
+            <ul className="list-group">
+                {node.actionExecutions.nodes.map(actionExecution => (
+                    <ActionExecutionNode node={actionExecution} key={actionExecution.id} />
+                ))}
+            </ul>
+        </Collapsible>
+    </li>
+)

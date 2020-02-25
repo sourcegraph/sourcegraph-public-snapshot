@@ -10,19 +10,27 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import { useObservable } from '../../../util/useObservable'
 import { fetchActionExecutionByID } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { interval } from 'rxjs'
+import { interval, merge, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
 interface Props extends ThemeProps {
+    actionExecutionID: string
+
     location: H.Location
     history: H.History
 }
 
-export const ActionExecution: React.FunctionComponent<Props> = ({ isLightTheme, history, location }) => {
+export const ActionExecution: React.FunctionComponent<Props> = ({
+    actionExecutionID,
+    isLightTheme,
+    history,
+    location,
+}) => {
     const execution = useObservable(
         React.useMemo(
-            () => interval(5000).pipe(switchMap(() => fetchActionExecutionByID('QWN0aW9uRXhlY3V0aW9uOjEyMw=='))),
-            []
+            () =>
+                merge(of(undefined), interval(5000)).pipe(switchMap(() => fetchActionExecutionByID(actionExecutionID))),
+            [actionExecutionID]
         )
     )
     if (execution === undefined) {
@@ -215,8 +223,17 @@ export const ActionExecution: React.FunctionComponent<Props> = ({ isLightTheme, 
             </p>
             {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
                 <div className="progress">
-                    {/* eslint-disable-next-line react/forbid-dom-props */}
-                    <div className="progress-bar" style={{ width: (449 / 1500) * 100 + '%' }}>
+                    <div
+                        className="progress-bar"
+                        /* eslint-disable-next-line react/forbid-dom-props */
+                        style={{
+                            width:
+                                (execution.status.pendingCount /
+                                    (execution.status.pendingCount + execution.status.completedCount)) *
+                                    100 +
+                                '%',
+                        }}
+                    >
                         &nbsp;
                     </div>
                 </div>

@@ -39,6 +39,9 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
     <>
         <h1>Campaigns</h1>
         <p>Perform and track large-scale code changes</p>
+        <Link to="/campaigns/actions" className="btn btn-primary">
+            Manage actions
+        </Link>
 
         {props.authenticatedUser.siteAdmin && (
             <div className="text-right mb-1">

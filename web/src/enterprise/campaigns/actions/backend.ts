@@ -2,7 +2,14 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
 import { Observable } from 'rxjs'
-import { ID, IEmptyResponse, IActionExecution } from '../../../../../shared/src/graphql/schema'
+import {
+    ID,
+    IEmptyResponse,
+    IActionExecution,
+    IActionsOnQueryArguments,
+    IActionConnection,
+} from '../../../../../shared/src/graphql/schema'
+import { PreviewFileDiffFields, FileDiffHunkRangeFields, DiffStatFields } from '../../../backend/diff'
 
 export async function retryActionJob(actionJobID: ID): Promise<IEmptyResponse | null> {
     const result = await mutateGraphQL(
@@ -62,11 +69,45 @@ export const fetchActionExecutionByID = (actionExecution: ID): Observable<IActio
                             totalCount
                             nodes {
                                 id
+                                repository {
+                                    name
+                                }
+                                baseRevision
+                                state
+                                runner {
+                                    id
+                                    name
+                                    description
+                                    state
+                                }
+                                executionStart
+                                executionEnd
+                                log
+                                diff {
+                                    fileDiffs {
+                                        nodes {
+                                            ...PreviewFileDiffFields
+                                        }
+                                        totalCount
+                                        pageInfo {
+                                            hasNextPage
+                                        }
+                                        diffStat {
+                                            ...DiffStatFields
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+
+            ${PreviewFileDiffFields}
+
+            ${FileDiffHunkRangeFields}
+
+            ${DiffStatFields}
         `,
         { actionExecution }
     ).pipe(
@@ -80,4 +121,22 @@ export const fetchActionExecutionByID = (actionExecution: ID): Observable<IActio
             }
             return node
         })
+    )
+
+export const queryActions = ({ first }: IActionsOnQueryArguments): Observable<IActionConnection> =>
+    queryGraphQL(
+        gql`
+            query Actions($first: Int) {
+                actions(first: $first) {
+                    nodes {
+                        id
+                    }
+                    totalCount
+                }
+            }
+        `,
+        { first }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.actions)
     )

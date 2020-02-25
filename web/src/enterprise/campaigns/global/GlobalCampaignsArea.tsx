@@ -7,6 +7,7 @@ import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { Runners } from '../actions/Runners'
 import { ActionExecution } from '../actions/ActionExecution'
+import { ActionsList } from '../actions/list/ActionsList'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: IUser
@@ -31,9 +32,15 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                 exact={true}
             />
             <Route
-                path={`${match.url}/actions/192`}
-                render={props => <ActionExecution {...outerProps} {...props} />}
+                path={`${match.url}/actions`}
+                render={props => <ActionsList {...outerProps} {...props} />}
                 exact={true}
+            />
+            <Route
+                path={`${match.url}/actions/executions/:actionExecutionID`}
+                render={({ match, ...props }: RouteComponentProps<{ actionExecutionID: string }>) => (
+                    <ActionExecution {...outerProps} {...props} actionExecutionID={match.params.actionExecutionID} />
+                )}
             />
             <Route
                 path={`${match.url}/(new|update)`}
