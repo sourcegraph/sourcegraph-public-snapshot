@@ -1,23 +1,21 @@
 language: go
 go:
-  - 1.13.x
+- 1.13.x
 go_import_path: github.com/sourcegraph/src-cli
 install:
-  - go get -d -t ./...
-  - go test -i ./...
-  - go get -u github.com/mitchellh/gox
-  - mkdir release
-  - cd release && gox -ldflags="-X 'main.buildTag=`git tag --contains $(git rev-parse HEAD) | grep -v latest | tail -1`'" -arch 'amd64' -os 'linux windows darwin' ../cmd/...
+- go get -d -t ./...
+- go test -i ./...
 script:
-  - cd $TRAVIS_BUILD_DIR
-  - go test -race -v ./...
+- cd $TRAVIS_BUILD_DIR
+- go test -race -v ./...
+env:
+  global:
+  - secure: eFuG5PSCXNz0i4Knic0wVmTko+O/epoLWpDtDs7jGHo3UD0JIukDTeIoHRPF56LEF3ZmfJWarc0XWZRSUmtn2EYydvCrTlroXLe6lfiFL/ctH0CWpArCp5xHQKVqKk+h6F53hAva3o181PfnFtk58H/xgj2jo8sANbqXricnL5aT34RVje85483poL2RLmd2WiYVqDqeGdkg7DaorpJra1mFvOCmInrbMpexpomJKmpCbxzrdvUmvRE9bDWLHctgvWL6bVTsQNzUN0zh6AIfT0FuFmiwjVlD5d4Bo10jUucg1qs4gglHneplPMoQb3dW7reeE1hIjuZSjXmDZKwYaonpuy8lsEJTEZpo18obYfRP9fjJZJb71rQ/sjbAd2EEV84r13k4JcprUp4uFd/LgUpHNwyRxnm2bKneHSpf9eb0D+A6Kzxkix/vSJeH8G/pHc07mYtf1rqMG57eVeeVinAFbGsvmggQfFGXupW3c48VYS6TTUmcUv0B7jiDHEdFG1zRXElX48S6HJnhI4531jxbEsvgBt63sR5wH5dZv++VodzznwjaJ4LJv+bxZEtswhNA/nzxGCk9vNDkhPxpS531mNAyfV2ewJ81QW94BuWh0dTfo6gVypCS/2xI8L2I2sqs5vk2iCr51WJDL79yLXRP6QhXLcr8jgDpBQMNbpE=
 deploy:
-  provider: releases
-  api_key:
-    secure: UoKg6fE1QlXTrYdY+AdaQ8WogXEydYhb5MTbabLbpC7byuopM/FHPXOTJ97+bsYgaVH3sElDJR1+v3PLm5lDeM9o2l1/HnfZK5M5iiNrktxNUOo+ppX6i4ylQ+AHEgRUc5zS3hYkNbXRu4IVULevmHsCUX1MchI7t+56uVZkSE3yFxGi8jTUm/cAyFX6MNyuOGXRlew2ivgKhJ/OT0ebxWaCxz/sn5H+1Cmr7r7Pf45vx9XpbY2wd7NqwsFa+w42z2hvEurzM91ZTJzo68hEGPcQoczobyzn37sDiqak0OoTUJ1tHCL/cgWN8tXgWXDGF3isXJ/yquoBCFvIaZTayV7mKu44ABIfLR4e0gj5vWV2Vv2yhbIaH52HnC5CvSsLkDxllCpFllJ8Nh6QAD2oP30c9Af+d4fgPWJ2WSFfx16vNOqONw6y0/FQ34HHmcek2KpPWZdSIbm6IVsMw3V8ThUWz1XXO6DE03jnk88y/LrIFuu+E1RLzgfmBo3NNb5GwcgrTm3v3ti0ObRPC1Cfyr3g2FoCfs+3I8ecrKs8Md9Pf5gN/xevHzLnTPj6Yq976ElympPnPeXTekF26ymsMJUvNj+2WZogEYFp5xkeXfvnQUTOgQVQn5FTWVf0/h4Dgy6j8JT1YUmdAeqZkfLi0xWWkMOnm0ofvU6gglELDS4=
-  file_glob: true
-  file: release/*
+- provider: script
+  script: curl -sL https://git.io/goreleaser | bash
   overwrite: true
   skip_cleanup: true
   on:
     tags: true
+    condition: "$TRAVIS_OS_NAME = linux"

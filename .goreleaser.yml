@@ -1,0 +1,44 @@
+dist: release
+env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+before:
+  hooks:
+    - go mod download
+    - go mod tidy
+builds:
+-
+  main: ./cmd/src/
+  binary: src
+  ldflags:
+    - -X main.buildTag={{.Version}}
+  goos:
+    - linux
+    - windows
+    - darwin
+  goarch:
+    - amd64
+archives:
+- id: tarball
+  format: tar.gz
+- id: bin
+  format: binary
+  wrap_in_directory: false
+  name_template: "src_{{ .Os }}_{{ .Arch }}"
+brews:
+  -
+    name: src-cli
+    homepage: "https://sourcegraph.com/"
+    description: "Sourcegraph CLI"
+    github:
+      owner: sourcegraph
+      name: homebrew-src-cli
+    # Folder inside the repository to put the formula.
+    # Default is the root folder.
+    folder: Formula
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
