@@ -1525,6 +1525,15 @@ NOT EXISTS (
   campaigns.campaign_plan_id = campaign_plans.id
 )
 AND
+-- todo: what is the case we want to handle here?
+NOT EXISTS (
+	SELECT 1
+	FROM
+	action_executions
+	WHERE
+	action_executions.campaign_plan = campaign_plans.id
+)
+AND
 NOT EXISTS (
   SELECT id
   FROM
