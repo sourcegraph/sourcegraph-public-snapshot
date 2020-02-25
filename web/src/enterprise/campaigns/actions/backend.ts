@@ -8,6 +8,7 @@ import {
     IActionExecution,
     IActionsOnQueryArguments,
     IActionConnection,
+    IAction,
 } from '../../../../../shared/src/graphql/schema'
 import { PreviewFileDiffFields, FileDiffHunkRangeFields, DiffStatFields } from '../../../backend/diff'
 
@@ -139,16 +140,6 @@ export const queryActions = ({ first }: IActionsOnQueryArguments): Observable<IA
                             totalCount
                             nodes {
                                 id
-                                definition {
-                                    steps
-                                    actionWorkspace {
-                                        name
-                                    }
-                                    env {
-                                        key
-                                        value
-                                    }
-                                }
                                 invokationReason
                                 status {
                                     errors
@@ -170,3 +161,87 @@ export const queryActions = ({ first }: IActionsOnQueryArguments): Observable<IA
         map(dataOrThrowErrors),
         map(data => data.actions)
     )
+
+export const fetchActionByID = (action: ID): Observable<IAction | null> =>
+    queryGraphQL(
+        gql`
+            query ActionByID($action: ID!) {
+                node(id: $action) {
+                    __typename
+                    ... on Action {
+                        id
+                        savedSearch {
+                            description
+                        }
+                        definition {
+                            steps
+                            actionWorkspace {
+                                name
+                            }
+                            env {
+                                key
+                                value
+                            }
+                        }
+                        schedule
+                        actionExecutions {
+                            totalCount
+                            nodes {
+                                id
+                                invokationReason
+                                status {
+                                    errors
+                                    state
+                                    pendingCount
+                                    completedCount
+                                }
+                                campaignPlan {
+                                    id
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        { action }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                return null
+            }
+            if (node.__typename !== 'Action') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Action`)
+            }
+            return node
+        })
+    )
+
+export async function createActionExecution(actionID: ID): Promise<IActionExecution> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation CreateActionExecution($action: ID!) {
+                createActionExecution(action: $action) {
+                    id
+                }
+            }
+        `,
+        { action: actionID }
+    ).toPromise()
+    return dataOrThrowErrors(result).createActionExecution
+}
+
+export async function createAction(definition: string): Promise<IAction> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation CreateAction($definition: JSONCString!) {
+                createAction(definition: $definition) {
+                    id
+                }
+            }
+        `,
+        { definition }
+    ).toPromise()
+    return dataOrThrowErrors(result).createAction
+}

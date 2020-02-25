@@ -3418,3 +3418,47 @@ func listActionJobsQuery(opts *ListActionJobsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
 }
+
+type CreateActionOpts struct {
+	Steps string
+}
+
+// CreateAction creates a new action in the database.
+func (s *Store) CreateAction(ctx context.Context, opts CreateActionOpts) (*campaigns.Action, error) {
+	q := createActionQuery(&opts)
+
+	var a campaigns.Action
+	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err := scanAction(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, nil
+	})
+
+	// todo handle empty ie not-found error
+
+	return &a, err
+}
+
+// todo: pass env
+var createActionQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:CreateAction
+INSERT INTO
+	actions
+	(steps, env)
+VALUES
+	(%s, '[]'::json)
+RETURNING
+	actions.id,
+	actions.campaign,
+	actions.schedule,
+	actions.cancel_previous,
+	actions.saved_search,
+	actions.steps,
+	actions.env
+`
+
+func createActionQuery(opts *CreateActionOpts) *sqlf.Query {
+	queryTemplate := createActionQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.Steps)
+}

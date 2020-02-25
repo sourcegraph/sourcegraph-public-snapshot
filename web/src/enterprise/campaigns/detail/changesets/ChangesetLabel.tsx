@@ -24,7 +24,7 @@ export const ChangesetLabel: React.FunctionComponent<Props> = ({ label }) => {
 
     return (
         <span
-            className={classNames('badge mr-2 badge-secondary', labelBrightness < 127 && 'text-white')}
+            className={classNames('badge mr-2 badge-secondary', labelBrightness < 127 ? 'text-white' : 'text-dark')}
             // eslint-disable-next-line react/forbid-dom-props
             style={{ backgroundColor: '#' + label.color }}
             data-tooltip={label.description}

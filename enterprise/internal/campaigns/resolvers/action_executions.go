@@ -80,6 +80,7 @@ func (r *actionExecutionResolver) Definition() graphqlbackend.ActionDefinitionRe
 	return &actionDefinitionResolver{steps: r.actionExecution.Steps, envStr: *r.actionExecution.EnvStr}
 }
 
+// todo:
 func (r *actionExecutionResolver) ActionWorkspace() *graphqlbackend.GitTreeEntryResolver {
 	return nil
 }
@@ -88,6 +89,7 @@ func (r *actionExecutionResolver) Jobs() graphqlbackend.ActionJobConnectionResol
 	return &actionJobConnectionResolver{store: r.store, actionExecution: &r.actionExecution, knownJobs: r.actionJobs}
 }
 
+// todo:
 func (r *actionExecutionResolver) Status() campaigns.BackgroundProcessStatus {
 	return campaigns.BackgroundProcessStatus{
 		Canceled:      false,

@@ -20,6 +20,9 @@ export const ActionsList: React.FunctionComponent<Props> = props => (
         <Link to="/campaigns" className="btn btn-primary mb-3">
             Manage campaigns
         </Link>
+        <Link to="/campaigns/actions/new" className="btn btn-primary ml-2 mb-3">
+            New action
+        </Link>
 
         <FilteredConnection<Pick<IAction, 'id' | 'savedSearch' | 'schedule' | 'actionExecutions'>>
             {...props}

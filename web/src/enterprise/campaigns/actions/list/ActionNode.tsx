@@ -2,6 +2,7 @@ import React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { Collapsible } from '../../../../components/Collapsible'
 import { ActionExecutionNode } from './ActionExecutionNode'
+import { Link } from '../../../../../../shared/src/components/Link'
 
 export interface ActionNodeProps {
     node: Pick<GQL.IAction, 'id' | 'savedSearch' | 'schedule' | 'actionExecutions'>
@@ -13,9 +14,12 @@ export interface ActionNodeProps {
 export const ActionNode: React.FunctionComponent<ActionNodeProps> = ({ node }) => (
     <li className="card p-2 mt-2">
         <Collapsible
+            wholeTitleClickable={false}
             title={
                 <div className="d-flex align-items-center">
-                    Unnamed action
+                    <Link to={`/campaigns/actions/${node.id}`} className="d-block">
+                        Unnamed action
+                    </Link>
                     {node.schedule}
                     {node.savedSearch?.description}
                 </div>

@@ -407,8 +407,8 @@ type Mutation {
     # Create a new action
     createAction(
         definition: JSONCString!
-        # ID of a File
-        workspace: ID!
+        # ID of a File, todo: make non nullable
+        workspace: ID
     ): Action!
     # TODO: add the following parameter:
     # env: ActionEnv
@@ -464,6 +464,9 @@ type ActionDefinition {
 # An action is run to create patches for campaigns
 type Action implements Node {
     id: ID!
+    # todo: Should we add a name property for readability in the list?
+    # name: String!
+    # The current action definition
     definition: ActionDefinition!
     # The saved search this was associated with, cannot be combined with `schedule`
     savedSearch: SavedSearch

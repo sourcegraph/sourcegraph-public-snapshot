@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -820,42 +819,6 @@ func (r *runnerResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolve
 	return &actionJobConnectionResolver{}
 }
 
-// action definition resolver
-
-type actionDefinitionResolver struct {
-	steps  string
-	envStr string
-}
-
-func (r *actionDefinitionResolver) Steps() graphqlbackend.JSONCString {
-	return graphqlbackend.JSONCString(r.steps)
-}
-
-func (r *actionDefinitionResolver) ActionWorkspace() *graphqlbackend.GitTreeEntryResolver {
-	return nil
-}
-
-func (r *actionDefinitionResolver) Env() ([]graphqlbackend.ActionEnvVarResolver, error) {
-	if r.envStr == "" {
-		return []graphqlbackend.ActionEnvVarResolver{}, nil
-	}
-	var parsed []struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	}
-	if err := json.Unmarshal([]byte(r.envStr), &parsed); err != nil {
-		return nil, errors.Wrap(err, "invalid env stored")
-	}
-	envs := make([]graphqlbackend.ActionEnvVarResolver, len(parsed))
-	for i, env := range parsed {
-		envs[i] = &actionEnvVarResolver{
-			key:   env.Key,
-			value: env.Value,
-		}
-	}
-	return envs, nil
-}
-
 // query and mutation resolvers
 
 func (r *Resolver) Actions(ctx context.Context, args *graphqlbackend.ListActionsArgs) (_ graphqlbackend.ActionConnectionResolver, err error) {
@@ -901,7 +864,14 @@ func (r *Resolver) CreateAction(ctx context.Context, args *graphqlbackend.Create
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	return nil, nil
+	action, err := r.store.CreateAction(ctx, ee.CreateActionOpts{
+		Steps: args.Definition,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &actionResolver{store: r.store, action: *action}, nil
 }
 
 func (r *Resolver) UpdateAction(ctx context.Context, args *graphqlbackend.UpdateActionArgs) (_ graphqlbackend.ActionResolver, err error) {
@@ -919,6 +889,7 @@ func (r *Resolver) UpdateAction(ctx context.Context, args *graphqlbackend.Update
 	return nil, nil
 }
 
+// todo:
 func (r *Resolver) UploadWorkspace(ctx context.Context, args *graphqlbackend.UploadWorkspaceArgs) (_ *graphqlbackend.GitTreeEntryResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.UploadWorkspace", fmt.Sprintf("Size: %d", len(args.Content)))
 	defer func() {

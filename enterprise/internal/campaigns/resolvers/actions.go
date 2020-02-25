@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -23,9 +22,7 @@ func unmarshalActionID(id graphql.ID) (actionID int64, err error) {
 }
 
 type actionResolver struct {
-	store *ee.Store
-	once  sync.Once
-
+	store  *ee.Store
 	action campaigns.Action
 }
 
