@@ -153,6 +153,50 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 	return res, nil
 }
 
+type gqlGenericResponse struct {
+	Data   interface{}
+	Errors []interface{}
+}
+
+type gqlActionExecutionTriggerVars struct {
+	SavedSearchQuery string `json:"savedSearchQuery"`
+}
+
+func triggerActionExecution(ctx context.Context, query string) error {
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(graphQLQuery{
+		Query: `mutation CreateActionExecutionsForSavedSearch($savedSearchQuery: String!) {
+	createActionExecutionsForSavedSearch(savedSearchQuery: $savedSearchQuery) {
+		alwaysNil
+	}
+}`,
+		Variables: gqlActionExecutionTriggerVars{SavedSearchQuery: query},
+	})
+	if err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+
+	url, err := gqlURL("CreateActionExecutionsForSavedSearch")
+	if err != nil {
+		return errors.Wrap(err, "constructing frontend URL")
+	}
+
+	resp, err := ctxhttp.Post(ctx, nil, url, "application/json", &buf)
+	if err != nil {
+		return errors.Wrap(err, "Post")
+	}
+	defer resp.Body.Close()
+
+	var res *gqlGenericResponse
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	if len(res.Errors) > 0 {
+		return fmt.Errorf("graphql: errors: %v", res.Errors)
+	}
+	return nil
+}
+
 func gqlURL(queryName string) (string, error) {
 	u, err := url.Parse(api.InternalClient.URL)
 	if err != nil {

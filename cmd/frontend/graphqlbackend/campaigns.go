@@ -116,6 +116,10 @@ type CreateActionExecutionArgs struct {
 	Action graphql.ID
 }
 
+type CreateActionExecutionsForSavedSearchArgs struct {
+	SavedSearchQuery string
+}
+
 type PullActionJobArgs struct {
 	Runner graphql.ID
 }
@@ -155,6 +159,7 @@ type CampaignsResolver interface {
 	UpdateAction(ctx context.Context, args *UpdateActionArgs) (ActionResolver, error)
 	UploadWorkspace(ctx context.Context, args *UploadWorkspaceArgs) (*GitTreeEntryResolver, error)
 	CreateActionExecution(ctx context.Context, args *CreateActionExecutionArgs) (ActionExecutionResolver, error)
+	CreateActionExecutionsForSavedSearch(ctx context.Context, args *CreateActionExecutionsForSavedSearchArgs) (*EmptyResponse, error)
 	PullActionJob(ctx context.Context, args *PullActionJobArgs) (ActionJobResolver, error)
 	UpdateActionJob(ctx context.Context, args *UpdateActionJobArgs) (ActionJobResolver, error)
 	AppendLog(ctx context.Context, args *AppendLogArgs) (ActionJobResolver, error)
@@ -233,6 +238,10 @@ func (defaultCampaignsResolver) UploadWorkspace(ctx context.Context, args *Uploa
 }
 
 func (defaultCampaignsResolver) CreateActionExecution(ctx context.Context, args *CreateActionExecutionArgs) (ActionExecutionResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CreateActionExecutionsForSavedSearch(ctx context.Context, args *CreateActionExecutionsForSavedSearchArgs) (*EmptyResponse, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

@@ -113,6 +113,54 @@ func (r *actionExecutionResolver) CampaignPlan(ctx context.Context) (graphqlback
 	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
 }
 
+func createActionExecutionForAction(ctx context.Context, store *ee.Store, action *campaigns.Action, invokationReason campaigns.ActionExecutionInvokationReason) (*campaigns.ActionExecution, []*campaigns.ActionJob, error) {
+	scopeQuery, err := scopeQueryForSteps(action.Steps)
+	if err != nil {
+		return nil, nil, err
+	}
+	repos, err := findRepos(ctx, scopeQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(repos) == 0 {
+		return nil, nil, errors.New("Cannot create execution for action that yields 0 repositories")
+	}
+
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer tx.Done(&err)
+
+	actionExecution, err := tx.CreateActionExecution(ctx, ee.CreateActionExecutionOpts{
+		InvokationReason: invokationReason,
+		Steps:            action.Steps,
+		EnvStr:           action.EnvStr,
+		ActionID:         action.ID,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	actionJobs := make([]*campaigns.ActionJob, len(repos))
+	for i, repo := range repos {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repo.ID))
+		if err != nil {
+			return nil, nil, err
+		}
+		// todo: caching
+		actionJob, err := tx.CreateActionJob(ctx, ee.CreateActionJobOpts{
+			ExecutionID:  actionExecution.ID,
+			RepositoryID: int64(repoID),
+			BaseRevision: repo.Rev,
+		})
+		if err != nil {
+			return nil, nil, err
+		}
+		actionJobs[i] = actionJob
+	}
+	return actionExecution, actionJobs, nil
+}
+
 // todo: this is like what we did in src-cli, can we optimize here?
 func scopeQueryForSteps(actionFile string) (string, error) {
 	var action struct {

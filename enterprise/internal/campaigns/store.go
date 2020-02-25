@@ -3562,3 +3562,55 @@ func updateActionExecutionQuery(opts *UpdateActionExecutionOpts) *sqlf.Query {
 	queryTemplate := updateActionExecutionQueryFmtstrSelect
 	return sqlf.Sprintf(queryTemplate, opts.CampaignPlanID, opts.ExecutionID)
 }
+
+// todo: this can be combined with the generic ListActions store method. This was just quicker for now as the count query needs the new handling as well
+// ListActionsBySavedSearchQueryOpts captures the query options needed for
+// listing action executions.
+type ListActionsBySavedSearchQueryOpts struct {
+	SavedSearchQuery string
+}
+
+// ListActionsBySavedSearchQuery lists ActionExecutions with the given filters.
+func (s *Store) ListActionsBySavedSearchQuery(ctx context.Context, opts ListActionsBySavedSearchQueryOpts) (actions []*campaigns.Action, err error) {
+	q := listActionsBySavedSearchQueryQuery(&opts)
+
+	actions = make([]*campaigns.Action, 0)
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var a campaigns.Action
+		if err = scanAction(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		actions = append(actions, &a)
+		return a.ID, 1, err
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return actions, err
+}
+
+var listActionsBySavedSearchQueryQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:ListActionsBySavedSearchQuery
+SELECT
+	actions.id,
+	actions.campaign,
+	actions.schedule,
+	actions.cancel_previous,
+	actions.saved_search,
+	actions.steps,
+	actions.env
+FROM
+	actions
+WHERE
+	actions.saved_search IS NOT NULL
+AND
+	actions.saved_search IN (SELECT id FROM saved_searches WHERE query = %s)
+ORDER BY actions.id ASC
+`
+
+func listActionsBySavedSearchQueryQuery(opts *ListActionsBySavedSearchQueryOpts) *sqlf.Query {
+	queryTemplate := listActionsBySavedSearchQueryQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.SavedSearchQuery)
+}

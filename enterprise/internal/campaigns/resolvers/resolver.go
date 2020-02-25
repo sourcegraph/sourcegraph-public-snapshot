@@ -943,52 +943,27 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 	if action.ID == 0 {
 		return nil, errors.New("Action not found")
 	}
-	scopeQuery, err := scopeQueryForSteps(action.Steps)
+	actionExecution, actionJobs, err := createActionExecutionForAction(ctx, r.store, action, campaigns.ActionExecutionInvokationReasonManual)
 	if err != nil {
 		return nil, err
-	}
-	repos, err := findRepos(ctx, scopeQuery)
-	if err != nil {
-		return nil, err
-	}
-	if len(repos) == 0 {
-		return nil, errors.New("Cannot create execution for action that yields 0 repositories")
-	}
-
-	tx, err := r.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Done(&err)
-
-	actionExecution, err := tx.CreateActionExecution(ctx, ee.CreateActionExecutionOpts{
-		InvokationReason: campaigns.ActionExecutionInvokationReasonManual,
-		Steps:            action.Steps,
-		EnvStr:           action.EnvStr,
-		ActionID:         action.ID,
-	})
-	if err != nil {
-		return nil, err
-	}
-	actionJobs := make([]*campaigns.ActionJob, len(repos))
-	for i, repo := range repos {
-		repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repo.ID))
-		if err != nil {
-			return nil, err
-		}
-		// todo: caching
-		actionJob, err := tx.CreateActionJob(ctx, ee.CreateActionJobOpts{
-			ExecutionID:  actionExecution.ID,
-			RepositoryID: int64(repoID),
-			BaseRevision: repo.Rev,
-		})
-		if err != nil {
-			return nil, err
-		}
-		actionJobs[i] = actionJob
 	}
 
 	return &actionExecutionResolver{store: r.store, actionExecution: *actionExecution, actionJobs: &actionJobs}, nil
+}
+
+func (r *Resolver) CreateActionExecutionsForSavedSearch(ctx context.Context, args *graphqlbackend.CreateActionExecutionsForSavedSearchArgs) (*graphqlbackend.EmptyResponse, error) {
+	actions, err := r.store.ListActionsBySavedSearchQuery(ctx, ee.ListActionsBySavedSearchQueryOpts{SavedSearchQuery: args.SavedSearchQuery})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range actions {
+		_, _, err := createActionExecutionForAction(ctx, r.store, action, campaigns.ActionExecutionInvokationReasonSavedSearch)
+		if err != nil {
+			return nil, err
+		}
+		log15.Info(fmt.Sprintf("Created new execution for action %d\n", action.ID))
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullActionJobArgs) (_ graphqlbackend.ActionJobResolver, err error) {

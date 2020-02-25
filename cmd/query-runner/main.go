@@ -138,10 +138,6 @@ func (e *executorT) run(ctx context.Context) error {
 // runQuery runs the given query if an appropriate amount of time has elapsed
 // since it last ran.
 func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSavedQuery) error {
-	if !query.Notify && !query.NotifySlack {
-		// No need to run this query because there will be nobody to notify.
-		return nil
-	}
 	if !strings.Contains(query.Query, "type:diff") && !strings.Contains(query.Query, "type:commit") {
 		// TODO(slimsag): we temporarily do not support non-commit search
 		// queries, since those do not support the after:"time" operator.
@@ -216,12 +212,18 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	// is done intentionally, to ensure no overloading of searcher/gitserver).
 	if len(v.Data.Search.Results.Results) != 0 {
 		go func() {
+			if !query.Notify && !query.NotifySlack {
+				// No need to run this query because there will be nobody to notify.
+				return
+			}
 			if err := notify(context.Background(), spec, query, newQuery, v); err != nil {
 				log15.Error("executor: failed to send notifications", "error", err)
 			}
 		}()
 		go func() {
-			// todo: send request to frontend to trigger actions from a search
+			if err := triggerActionExecution(ctx, query.Query); err != nil {
+				log15.Error("executor: failed to notify frontend of saved search change", "error", err)
+			}
 		}()
 	}
 	return nil

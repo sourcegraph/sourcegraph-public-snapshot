@@ -425,6 +425,8 @@ type Mutation {
 
     # Create a new 'MANUAL' action execution from an action.
     createActionExecution(action: ID!): ActionExecution!
+    # Called internally by the query-runner to trigger executions
+    createActionExecutionsForSavedSearch(savedSearchQuery: String!): EmptyResponse
 
     # Begin a job on a runner, if some are in the backlog.
     pullActionJob(runner: ID!): ActionJob
