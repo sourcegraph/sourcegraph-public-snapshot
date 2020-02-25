@@ -70,7 +70,7 @@ func (r *actionJobResolver) BaseRevision() string {
 }
 
 func (r *actionJobResolver) State() campaigns.ActionJobState {
-	return campaigns.ActionJobState(*r.job.State)
+	return r.job.State
 }
 
 func (r *actionJobResolver) Runner() graphqlbackend.RunnerResolver {
