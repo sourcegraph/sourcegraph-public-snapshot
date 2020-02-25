@@ -763,6 +763,7 @@ func (r *actionJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]campaigns.ActionJob, int32, error) {
+	// this might have been passed down (CreateActionExecution already knows all jobs, so why fetch them again. TODO: paginate those as well)
 	if r.jobs == nil {
 		r.once.Do(func() {
 			actionJobs := make([]campaigns.ActionJob, 1)
@@ -783,6 +784,9 @@ func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]campaigns.
 				r.err = err
 			}
 		})
+	} else {
+		// todo: unsafe
+		r.totalCount = int32(len(*r.jobs))
 	}
 	return *r.jobs, r.totalCount, r.err
 }
