@@ -1,12 +1,12 @@
 import * as sqliteModels from '../../shared/models/sqlite'
 import * as lsif from 'lsif-protocol'
-import RelateUrl from 'relateurl'
 import { createSilentLogger } from '../../shared/logging'
 import { DefaultMap } from '../../shared/datastructures/default-map'
 import { DisjointSet } from '../../shared/datastructures/disjoint-set'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
 import { Logger } from 'winston'
 import { mustGet, mustGetFromEither } from '../../shared/maps'
+import { relativePath } from './paths'
 
 /**
  * Identifiers of result set vertices.
@@ -119,12 +119,7 @@ export class Correlator {
                         throw new Error('No metadata defined.')
                     }
 
-                    const path = RelateUrl.relate(`${this.projectRoot.href}/`, new URL(element.uri).href, {
-                        defaultPorts: {},
-                        output: RelateUrl.PATH_RELATIVE,
-                        removeRootTrailingSlash: false,
-                    })
-
+                    const path = relativePath(this.projectRoot, new URL(element.uri))
                     this.documentPaths.set(element.id, path)
                     this.containsData.set(element.id, new Set<lsif.RangeId>())
                     break

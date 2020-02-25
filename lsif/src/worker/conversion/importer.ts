@@ -221,7 +221,7 @@ async function populateDocumentsTable(
         // as the current text document path and the dump root are compared to determine
         // which dump to open. If the path does not exist in git, it will also never be
         // queried.
-        if (!(await pathExistenceChecker.shouldIncludePath(documentPath))) {
+        if (!pathExistenceChecker.shouldIncludePath(documentPath)) {
             continue
         }
 
@@ -266,9 +266,9 @@ async function populateResultChunksTable(
         documentIdRangeIds: new Map<sqliteModels.DefinitionReferenceResultId, sqliteModels.DocumentIdRangeId[]>(),
     }))
 
-    const chunkResults = async (
+    const chunkResults = (
         data: Map<sqliteModels.DefinitionReferenceResultId, Map<sqliteModels.DocumentId, lsif.RangeId[]>>
-    ): Promise<void> => {
+    ): void => {
         for (const [id, documentRanges] of data) {
             // Flatten map into list of ranges
             let flattenedRangeList: (sqliteModels.DocumentIdRangeId & { documentPath: string })[] = []
@@ -279,7 +279,7 @@ async function populateResultChunksTable(
                 // with indexers that point to generated files or dependencies that are not
                 // committed (e.g. node_modules). Keeping these in the dump can cause the
                 // UI to redirect to a path that doesn't exist.
-                if (!(await pathExistenceChecker.shouldIncludePath(documentPath, false))) {
+                if (!pathExistenceChecker.shouldIncludePath(documentPath, false)) {
                     continue
                 }
 
@@ -301,8 +301,8 @@ async function populateResultChunksTable(
     }
 
     // Add definitions and references to result chunks
-    await chunkResults(correlator.definitionData)
-    await chunkResults(correlator.referenceData)
+    chunkResults(correlator.definitionData)
+    chunkResults(correlator.referenceData)
 
     for (const [id, resultChunk] of resultChunks.entries()) {
         // Empty chunk, no need to serialize as it will never be queried
@@ -394,7 +394,7 @@ async function populateDefinitionsAndReferencesTables(
                     // Skip definitions or references that point to a document that are not
                     // present in the dump. Including this would cause a query that always
                     // fails when it cannot resolve the missing document data.
-                    if (!(await pathExistenceChecker.shouldIncludePath(documentPath))) {
+                    if (!pathExistenceChecker.shouldIncludePath(documentPath)) {
                         continue
                     }
 

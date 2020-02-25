@@ -1,7 +1,8 @@
 import * as path from 'path'
 import { TracingContext, logAndTraceCall } from '../../shared/tracing'
 import { getDirectoryChildren } from '../../shared/gitserver/gitserver'
-import { createSilentLogger } from '../../shared/logging'
+import { createBatcher } from './batch'
+import { dirnameWithoutDot } from './paths'
 
 /**
  * Determines whether or not a document path within an LSIF upload should be visible
@@ -23,7 +24,6 @@ export class PathExistenceChecker {
     private ctx?: TracingContext
     private mockGetDirectoryChildren?: typeof getDirectoryChildren
     private directoryContents = new Map<string, Set<string>>()
-    private numGitserverRequests = 0
 
     /**
      * Create a new PathExistenceChecker.
@@ -60,138 +60,64 @@ export class PathExistenceChecker {
     }
 
     /**
-     * Warms the git directory cache by determining if each of the supplied paths
-     * exist in git. This function batches queries to gitserver to minimize the
-     * number of roundtrips during conversion.
-     *
-     * @param documentPaths A set of dump root-relative paths.
-     */
-    public warmCache(documentPaths: string[]): Promise<void> {
-        return logAndTraceCall(
-            this.ctx || {},
-            'Warming git directory cache',
-            async ({ logger = createSilentLogger() }) => {
-                // TODO - batch requests. Must do this in a separate PR as the frontend
-                // gitserver proxy currently only accepts a single ExecRequest payload.
-                // Tracked in https://github.com/sourcegraph/sourcegraph/issues/8555.
-                for (const documentPath of documentPaths) {
-                    await this.isInGitTree(documentPath)
-                }
-
-                logger.debug(`Performed ${this.numGitserverRequests} gitserver requests`)
-            }
-        )
-    }
-
-    /**
      * Determines if the given file path should be included in the generated dump.
      *
      * @param documentPath The path of the file relative to the dump root.
      * @param requireDocumentDump Whether or not we require the path to be within the dump root.
      */
-    public async shouldIncludePath(documentPath: string, requireDocumentDump: boolean = true): Promise<boolean> {
-        return (await this.isInGitTree(documentPath)) && (!requireDocumentDump || !documentPath.startsWith('..'))
-    }
-
-    /**
-     * Determine if the given path is known by git. If no frontend url is configured,
-     * this method returns true (assumes it's in the tree).
-     *
-     * @param documentPath The path of the file relative to the dump root.
-     */
-    private async isInGitTree(documentPath: string): Promise<boolean> {
-        if (!this.frontendUrl) {
-            // Integration tests do not set a frontend url for conversion.
-            // We early out here as we can just include everything in the
-            // index.
-            return true
-        }
-
-        const relativePath = path.join(this.root, documentPath)
-        const dirname = dirnameWithoutDot(relativePath)
-        return (await this.getChildrenFromRoot(dirname)).has(relativePath)
-    }
-
-    /**
-     * Returns the set of root-relative paths of the immediate children of the
-     * given directory. If no frontend url is configured or the directory is outside of
-     * the repository root, this method returns an empty set.
-     *
-     * @param dirname The repo-root-relative directory.
-     */
-    private async getChildrenFromRoot(dirname: string): Promise<Set<string>> {
-        // Not in git tree. Do not make a query for this. Not just because
-        // it would be useless, but git ls-tree will blow up pretty hard.
-        if (dirname.startsWith('..')) {
-            return new Set()
-        }
-
-        for (const ancestor of properAncestors(dirname)) {
-            // Calculate the children of all ancestors of this directory that are also
-            // in the repo. We do this from the root down to the leaf so that we can prune
-            // large chunks of untracked files with one request (e.g. a node_modules dir).
-            const children = await this.getChildren(ancestor)
-            if (children.size === 0) {
-                // This directory doesn't exist or there are no children. Either way we can
-                // early out with an empty set of children as there are no descendants.
-                return new Set()
+    public shouldIncludePath(documentPath: string, requireDocumentDump: boolean = true): boolean {
+        if (this.frontendUrl) {
+            // Determine if the given path is known by git. Integration
+            // tests do not set a frontend url for conversion, in which case
+            // we consider every file to be in the index.
+            const relativePath = path.join(this.root, documentPath)
+            if (!this.directoryContents.get(dirnameWithoutDot(relativePath))?.has(relativePath)) {
+                return false
             }
         }
 
-        return this.getChildren(dirname)
+        return !requireDocumentDump || !documentPath.startsWith('..')
     }
 
     /**
-     * Returns the set of root-relative paths of the immediate children of the
-     * given directory. If no frontend url is configured, this method returns an empty
-     * set.
+     * Warms the git directory cache by determining if each of the supplied paths exist
+     * in git. This function batches queries to gitserver to minimize the number of
+     * roundtrips during conversion. If no frontend url is configured, this method does
+     * nothing.
      *
-     * This method memoizes the results so a dump conversion will make only one request
-     * to gitserver per directory.
-     *
-     * @param dirname The repo-root-relative directory.
+     * @param documentPaths A set of dump root-relative paths.
      */
-    private async getChildren(dirname: string): Promise<Set<string>> {
-        if (!this.frontendUrl) {
-            return new Set()
-        }
+    public warmCache(documentPaths: string[]): Promise<void> {
+        return logAndTraceCall(this.ctx || {}, 'Warming git directory cache', async () => {
+            if (!this.frontendUrl) {
+                return
+            }
 
-        let children = this.directoryContents.get(dirname)
-        if (children) {
-            return children
-        }
+            const batcher = createBatcher(this.root, documentPaths)
+            let exists: string[] = []
 
-        children = await (this.mockGetDirectoryChildren || getDirectoryChildren)({
-            frontendUrl: this.frontendUrl,
-            repositoryId: this.repositoryId,
-            commit: this.commit,
-            dirname,
-            ctx: this.ctx,
+            while (true) {
+                const { value: batch, done } = batcher.next(exists)
+                if (done || !batch || batch.length === 0) {
+                    break
+                }
+
+                const children = await (this.mockGetDirectoryChildren || getDirectoryChildren)({
+                    frontendUrl: this.frontendUrl,
+                    repositoryId: this.repositoryId,
+                    commit: this.commit,
+                    dirnames: batch,
+                    ctx: this.ctx,
+                })
+
+                exists = []
+                for (const [i, dirname] of batch.entries()) {
+                    this.directoryContents.set(dirname, children[i])
+                    if (children[i].size > 0) {
+                        exists.push(dirname)
+                    }
+                }
+            }
         })
-
-        this.numGitserverRequests++
-        this.directoryContents.set(dirname, children)
-        return children
     }
-}
-
-/**
- * Return the dirname of the given path. Returns empty string
- * if the path denotes a file in the current directory.
- */
-function dirnameWithoutDot(pathname: string): string {
-    const dirname = path.dirname(pathname)
-    return dirname === '.' ? '' : dirname
-}
-
-/**
- * Return all ancestor paths of the given directory.
- */
-export function properAncestors(dirname: string): string[] {
-    const ancestors = []
-    const pathSegments = dirname.split('/')
-    for (let i = 0; i < pathSegments.length; i++) {
-        ancestors.push(pathSegments.slice(0, i).join('/'))
-    }
-    return ancestors
 }
