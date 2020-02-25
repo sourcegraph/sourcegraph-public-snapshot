@@ -257,12 +257,26 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
             </ul>
             <h2>Action summary</h2>
             <p>
-                The action execution finished
-                {execution.status.state === GQL.BackgroundProcessState.ERRORED
-                    ? ', but some tasks failed'
-                    : ' successfully'}
-                . <span className="badge badge-secondary">{execution.jobs.nodes.filter(job => job.diff).length}</span>{' '}
-                patches have been created.
+                {[GQL.BackgroundProcessState.ERRORED, GQL.BackgroundProcessState.COMPLETED].includes(
+                    execution.status.state
+                ) && (
+                    <>
+                        The action execution finished
+                        {execution.status.state === GQL.BackgroundProcessState.ERRORED
+                            ? ', but some tasks failed'
+                            : ' successfully'}
+                        .
+                    </>
+                )}{' '}
+                {execution.status.state === GQL.BackgroundProcessState.CANCELED && (
+                    <>The action execution has been canceled.</>
+                )}{' '}
+                {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
+                    <>The action execution is still running.</>
+                )}{' '}
+                <span className="badge badge-secondary">{execution.jobs.nodes.filter(job => job.diff).length}</span>{' '}
+                patches have been created{execution.status.state === GQL.BackgroundProcessState.PROCESSING && ' so far'}
+                .
             </p>
             {execution.campaignPlan ? (
                 <div className="mb-3">
