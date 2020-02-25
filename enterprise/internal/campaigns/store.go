@@ -3462,3 +3462,94 @@ func createActionQuery(opts *CreateActionOpts) *sqlf.Query {
 	queryTemplate := createActionQueryFmtstrSelect
 	return sqlf.Sprintf(queryTemplate, opts.Steps)
 }
+
+type UpdateActionOpts struct {
+	ActionID int64
+	Steps    string
+}
+
+// UpdateAction creates a new action in the database.
+func (s *Store) UpdateAction(ctx context.Context, opts UpdateActionOpts) (*campaigns.Action, error) {
+	q := updateActionQuery(&opts)
+
+	var a campaigns.Action
+	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err := scanAction(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, nil
+	})
+
+	// todo handle empty ie not-found error
+
+	return &a, err
+}
+
+// todo: pass env
+var updateActionQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:UpdateAction
+UPDATE
+	actions
+SET
+	steps = %s
+WHERE
+	actions.id = %d
+RETURNING
+	actions.id,
+	actions.campaign,
+	actions.schedule,
+	actions.cancel_previous,
+	actions.saved_search,
+	actions.steps,
+	actions.env
+`
+
+func updateActionQuery(opts *UpdateActionOpts) *sqlf.Query {
+	queryTemplate := updateActionQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.Steps, opts.ActionID)
+}
+
+type UpdateActionExecutionOpts struct {
+	ExecutionID    int64
+	CampaignPlanID int64
+}
+
+// UpdateActionExecution creates a new action in the database.
+func (s *Store) UpdateActionExecution(ctx context.Context, opts UpdateActionExecutionOpts) (*campaigns.ActionExecution, error) {
+	q := updateActionExecutionQuery(&opts)
+
+	var a campaigns.ActionExecution
+	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err := scanActionExecution(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, nil
+	})
+
+	// todo handle empty ie not-found error
+
+	return &a, err
+}
+
+// todo: pass env
+var updateActionExecutionQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:UpdateActionExecution
+UPDATE
+	action_executions
+SET
+	campaign_plan = %s
+WHERE
+	action_executions.id = %d
+RETURNING
+	action_executions.id,
+	action_executions.steps,
+	action_executions.env,
+	action_executions.invokation_reason,
+	action_executions.campaign_plan,
+	action_executions.action
+`
+
+func updateActionExecutionQuery(opts *UpdateActionExecutionOpts) *sqlf.Query {
+	queryTemplate := updateActionExecutionQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.CampaignPlanID, opts.ExecutionID)
+}

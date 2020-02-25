@@ -12,6 +12,7 @@ import { fetchActionExecutionByID } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { interval, merge, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
+import { Link } from '../../../../../shared/src/components/Link'
 
 interface Props extends ThemeProps {
     actionExecutionID: string
@@ -265,12 +266,12 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
             </p>
             {execution.campaignPlan ? (
                 <div className="mb-3">
-                    <button type="button" className="btn btn-primary">
+                    <Link to={`/campaigns/new?plan=${execution.campaignPlan.id}`} className="btn btn-primary">
                         Create campaign
-                    </button>
-                    <button type="button" className="btn btn-primary ml-2">
+                    </Link>
+                    <Link to={`/campaigns/update?plan=${execution.campaignPlan.id}`} className="btn btn-primary ml-2">
                         Update existing campaign
-                    </button>
+                    </Link>
                 </div>
             ) : (
                 <p>

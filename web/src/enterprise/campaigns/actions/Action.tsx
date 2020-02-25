@@ -8,7 +8,7 @@ import { useObservable } from '../../../util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { interval, merge, of, Subject } from 'rxjs'
 import { switchMap, filter, tap } from 'rxjs/operators'
-import { fetchActionByID, createActionExecution, createAction } from './backend'
+import { fetchActionByID, createActionExecution, createAction, updateAction } from './backend'
 import { ActionExecutionNode } from './list/ActionExecutionNode'
 
 interface Props extends ThemeProps {
@@ -44,6 +44,15 @@ export const Action: React.FunctionComponent<Props> = ({ actionID, isLightTheme,
             setIsLoading(false)
         }
     }, [steps, history, nextUpdate])
+    const _updateAction = React.useCallback(async () => {
+        setIsLoading(true)
+        try {
+            await updateAction(actionID!, steps ?? '')
+            nextUpdate.next()
+        } finally {
+            setIsLoading(false)
+        }
+    }, [actionID, steps, nextUpdate])
     const createExecution = React.useCallback(async () => {
         if (action) {
             await createActionExecution(action.id)
@@ -83,7 +92,7 @@ export const Action: React.FunctionComponent<Props> = ({ actionID, isLightTheme,
             <h2>Action definition</h2>
             <MonacoSettingsEditor
                 isLightTheme={isLightTheme}
-                readOnly={!!actionID}
+                // readOnly={!!actionID}
                 language="json"
                 value={steps}
                 onChange={setSteps}
@@ -93,6 +102,11 @@ export const Action: React.FunctionComponent<Props> = ({ actionID, isLightTheme,
             {!action && (
                 <button className="btn btn-primary mb-3" type="button" onClick={_createAction} disabled={isLoading}>
                     Create action
+                </button>
+            )}
+            {action && (
+                <button className="btn btn-primary mb-3" type="button" onClick={_updateAction} disabled={isLoading}>
+                    Update action definition
                 </button>
             )}
             {action && (

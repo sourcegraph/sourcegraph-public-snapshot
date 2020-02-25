@@ -416,7 +416,7 @@ type Mutation {
         action: ID!
         newDefinition: JSONCString!
         # ID of a File
-        workspace: ID!
+        workspace: ID
     ): Action!
     # Todo: Is GraphQL the best place to upload a ZIP archive?
     # Also, we possibly have to chunk the upload into 2mb (TBD) chunks to bypass upload max size from nginx

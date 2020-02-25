@@ -75,7 +75,7 @@ var defaultRepoResolveRevision = func(ctx context.Context, repo *repos.Repo, rev
 // specification).
 //
 // If resolveRevision is nil, a default implementation is used.
-func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []campaigns.CampaignPlanPatch, userID int32) (*campaigns.CampaignPlan, error) {
+func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []campaigns.CampaignPlanPatch, userID int32, useTx bool) (*campaigns.CampaignPlan, error) {
 	if userID == 0 {
 		return nil, backend.ErrNotAuthenticated
 	}
@@ -93,12 +93,14 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 	for _, repo := range allRepos {
 		reposByID[repo.ID] = repo
 	}
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
+	store := s.store
+	if useTx == true {
+		tx, err := s.store.Transact(ctx)
+		if err != nil {
+			return nil, err
+		}
+		defer tx.Done(&err)
 	}
-	defer tx.Done(&err)
 
 	plan := &campaigns.CampaignPlan{
 		CampaignType: campaignTypePatch,
@@ -106,7 +108,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 		UserID:       userID,
 	}
 
-	err = tx.CreateCampaignPlan(ctx, plan)
+	err = store.CreateCampaignPlan(ctx, plan)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +136,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 			StartedAt:      s.clock(),
 			FinishedAt:     s.clock(),
 		}
-		if err := tx.CreateCampaignJob(ctx, job); err != nil {
+		if err := store.CreateCampaignJob(ctx, job); err != nil {
 			return nil, err
 		}
 	}

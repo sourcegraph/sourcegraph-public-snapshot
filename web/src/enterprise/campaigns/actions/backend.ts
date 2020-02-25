@@ -245,3 +245,17 @@ export async function createAction(definition: string): Promise<IAction> {
     ).toPromise()
     return dataOrThrowErrors(result).createAction
 }
+
+export async function updateAction(action: ID, newDefinition: string): Promise<IAction> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation UpdateAction($action: ID!, $newDefinition: JSONCString!) {
+                updateAction(action: $action, newDefinition: $newDefinition) {
+                    id
+                }
+            }
+        `,
+        { newDefinition, action }
+    ).toPromise()
+    return dataOrThrowErrors(result).updateAction
+}

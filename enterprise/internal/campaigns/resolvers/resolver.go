@@ -532,7 +532,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
+	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -864,6 +864,7 @@ func (r *Resolver) CreateAction(ctx context.Context, args *graphqlbackend.Create
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
+	// todo: workspaceFile
 	action, err := r.store.CreateAction(ctx, ee.CreateActionOpts{
 		Steps: args.Definition,
 	})
@@ -886,7 +887,20 @@ func (r *Resolver) UpdateAction(ctx context.Context, args *graphqlbackend.Update
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	return nil, nil
+	actionID, err := unmarshalActionID(args.Action)
+	if err != nil {
+		return nil, err
+	}
+
+	action, err := r.store.UpdateAction(ctx, ee.UpdateActionOpts{
+		ActionID: actionID,
+		Steps:    args.NewDefinition,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &actionResolver{store: r.store, action: *action}, nil
 }
 
 // todo:
@@ -940,8 +954,14 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 	if len(repos) == 0 {
 		return nil, errors.New("Cannot create execution for action that yields 0 repositories")
 	}
-	// todo: the next steps need to happen in a transaction
-	actionExecution, err := r.store.CreateActionExecution(ctx, ee.CreateActionExecutionOpts{
+
+	tx, err := r.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Done(&err)
+
+	actionExecution, err := tx.CreateActionExecution(ctx, ee.CreateActionExecutionOpts{
 		InvokationReason: campaigns.ActionExecutionInvokationReasonManual,
 		Steps:            action.Steps,
 		EnvStr:           action.EnvStr,
@@ -956,7 +976,8 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 		if err != nil {
 			return nil, err
 		}
-		actionJob, err := r.store.CreateActionJob(ctx, ee.CreateActionJobOpts{
+		// todo: caching
+		actionJob, err := tx.CreateActionJob(ctx, ee.CreateActionJobOpts{
 			ExecutionID:  actionExecution.ID,
 			RepositoryID: int64(repoID),
 			BaseRevision: repo.Rev,
@@ -1009,9 +1030,46 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
+	// todo: we need a user to associate the campaign plan with, but is the issuer of the runner token implicitly good enough?
+	user, err := backend.CurrentUser(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	}
+	if user == nil {
+		return nil, backend.ErrNotAuthenticated
+	}
+
 	id, err := unmarshalActionJobID(args.ActionJob)
 	if err != nil {
 		return nil, err
+	}
+
+	if args.Patch != nil {
+		// todo: Where are we logging this error? Append to log and mark as failed?
+		// Ensure patch is a valid unified diff. This is the same check we do for manually uploaded patches in the CreateCampaignPlanFromPatches mutation.
+		diffReader := diff.NewMultiFileDiffReader(strings.NewReader(*args.Patch))
+		for {
+			_, err := diffReader.ReadFile()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return nil, errors.Wrap(err, "invalid patch submitted")
+			}
+		}
+	}
+
+	actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	if actionJob == nil {
+		return nil, errors.New("ActionJob not found")
+	}
+
+	// check if is running, otherwise updating state is not allowed
+	if actionJob.State != campaigns.ActionJobStateRunning {
+		return nil, errors.New("Cannot update not running action job")
 	}
 
 	opts := ee.UpdateActionJobOpts{
@@ -1024,26 +1082,64 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 		now := time.Now()
 		opts.ExecutionEnd = &now
 	}
-	actionJob, err := r.store.UpdateActionJob(ctx, opts)
+
+	tx, err := r.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Done(&err)
+
+	actionJob, err = tx.UpdateActionJob(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	// if args.state == "COMPLETED" {
-	// 	// todo: check if was running before, otherwise updating state is not allowed
-	// 	// todo: check if ALL are completed, timeouted, or failed now, then proceed with patch generation
-	// 	patches := make([]CampaignPlanPatch)
-	// 	actionJobs := make([]campaigns.ActionJob)
-	// 	for _, aj := range actionJobs {
-	// 		if aj.patch != nil {
-	// 			append(patches, CampaignPlanPatch{
-	// 				Repository:   aj.repo,
-	// 				BaseRevision: aj.revision,
-	// 				Patch:        aj.patch,
-	// 			})
-	// 		}
-	// 	}
-	// }
+	// check if ALL are completed, timeouted, or failed now, then proceed with patch generation
+	if actionJob.State != campaigns.ActionJobStatePending && actionJob.State != campaigns.ActionJobStateRunning {
+		actionJobs, _, err := tx.ListActionJobs(ctx, ee.ListActionJobsOpts{
+			ExecutionID: &actionJob.ExecutionID,
+			Limit:       -1,
+		})
+		if err != nil {
+			return nil, err
+		}
+		allCompleted := true
+		patchCount := 0
+		for _, j := range actionJobs {
+			if j.Patch != nil {
+				patchCount = patchCount + 1
+			}
+			// a job is completed, when it timeouted, failed, or completed
+			if j.State == campaigns.ActionJobStatePending || j.State == campaigns.ActionJobStateRunning {
+				allCompleted = false
+				break
+			}
+		}
+		if allCompleted {
+			var patches []campaigns.CampaignPlanPatch
+			for _, job := range actionJobs {
+				if job.Patch != nil {
+					patches = append(patches, campaigns.CampaignPlanPatch{
+						Repo:         api.RepoID(job.RepoID),
+						BaseRevision: job.BaseRevision,
+						Patch:        *job.Patch,
+					})
+				}
+			}
+			svc := ee.NewService(tx, gitserver.DefaultClient, nil, r.httpFactory)
+			// important: pass false for useTx, as our transaction will already be committed bu CreateCampaignPlanFromPatches
+			// otherwise, and we cannot update the execution within the tx anymore
+			plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID, false)
+			if err != nil {
+				return nil, err
+			}
+			// attach plan to action execution
+			_, err = tx.UpdateActionExecution(ctx, ee.UpdateActionExecutionOpts{ExecutionID: actionJob.ExecutionID, CampaignPlanID: plan.ID})
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 	return &actionJobResolver{store: r.store, job: *actionJob}, nil
 }
 
@@ -1063,6 +1159,8 @@ func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLog
 	if err != nil {
 		return nil, err
 	}
+
+	// todo: when is the threshold for appending missing logs hit and appending any further logs is forbidden?
 
 	now := time.Now()
 	actionJob, err := r.store.UpdateActionJob(ctx, ee.UpdateActionJobOpts{
