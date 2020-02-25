@@ -160,6 +160,16 @@ type RepoUpdateResponse struct {
 	URL string `json:"url"`
 }
 
+// ChangesetSyncRequest is a request to sync a number of changesets
+type ChangesetSyncRequest struct {
+	IDs []int64
+}
+
+// ChangesetSyncResponse is a response to sync a number of changesets
+type ChangesetSyncResponse struct {
+	Error string
+}
+
 // ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
 //
 // The FrontendAPI is one of the issuers of this request. It does so when creating or
