@@ -38,7 +38,7 @@ var (
 			return nil, err
 		}
 
-		ys := make([]*registry.Extension, 0, len(vs))
+		ys := make([]*registry.Extension, 0, len(xs))
 		for _, x := range xs {
 			// To be safe, ensure that the JSON can be safely unmarshaled by API clients. If not,
 			// skip this extension.
@@ -71,40 +71,33 @@ var (
 )
 
 func toRegistryAPIExtension(ctx context.Context, v *dbExtension) (*registry.Extension, error) {
-	manifest, publishedAt, err := getExtensionManifestWithBundleURL(ctx, v.NonCanonicalExtensionID, v.ID, "release")
+	release, err := getLatestRelease(ctx, v.NonCanonicalExtensionID, v.ID, "release")
 	if err != nil {
 		return nil, err
 	}
 
-	return newExtension(v, manifest, publishedAt), nil
+	if release == nil {
+		return newExtension(v, nil, time.Time{}), nil
+	}
+
+	return newExtension(v, &release.Manifest, release.CreatedAt), nil
 }
 
 func toRegistryAPIExtensionBatch(ctx context.Context, vs []*dbExtension) ([]*registry.Extension, error) {
-	var extensionIDs []int32
-	for _, v := range vs {
-		extensionIDs = append(extensionIDs, v.ID)
-	}
-
-	releases, err := dbReleases{}.GetLatestBatch(ctx, extensionIDs, "release", false)
+	releasesByExtensionID, err := getLatestForBatch(ctx, vs)
 	if err != nil {
 		return nil, err
-	}
-
-	releasesByExtensionID := map[int32]*dbRelease{}
-	for _, r := range releases {
-		releasesByExtensionID[r.RegistryExtensionID] = r
 	}
 
 	var extensions []*registry.Extension
 	for _, v := range vs {
-		release := releasesByExtensionID[v.ID]
-		if err := prepReleaseManifest(v.NonCanonicalExtensionID, release); err != nil {
-			return nil, fmt.Errorf("parsing extension manifest for extension with ID %d (release tag %q): %s", v.ID, "release", err)
+		release, ok := releasesByExtensionID[v.ID]
+		if !ok {
+			extensions = append(extensions, newExtension(v, nil, time.Time{}))
+		} else {
+			extensions = append(extensions, newExtension(v, &release.Manifest, release.CreatedAt))
 		}
-
-		extensions = append(extensions, newExtension(v, &release.Manifest, release.CreatedAt))
 	}
-
 	return extensions, nil
 }
 
