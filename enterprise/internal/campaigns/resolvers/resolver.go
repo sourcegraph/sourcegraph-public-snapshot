@@ -714,21 +714,43 @@ func (r *actionExecutionConnectionResolver) Nodes(ctx context.Context) ([]graphq
 // actionJobConnectionResolver
 
 type actionJobConnectionResolver struct {
-	store *ee.Store
+	store      *ee.Store
+	once       sync.Once
+	jobs       []graphqlbackend.ActionJobResolver
+	totalCount int32
+	err        error
 }
 
 func (r *actionJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(12), nil
+	_, totalCount, err := r.compute(ctx)
+	return totalCount, err
 }
 
 func (r *actionJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionJobResolver, error) {
-	actionJobs := make([]graphqlbackend.ActionJobResolver, 1)
-	actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{ID: 123})
-	if err != nil {
-		return nil, err
-	}
-	actionJobs[0] = &actionJobResolver{job: *actionJob}
-	return actionJobs, nil
+	jobs, _, err := r.compute(ctx)
+	return jobs, err
+}
+
+func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]graphqlbackend.ActionJobResolver, int32, error) {
+	r.once.Do(func() {
+		actionJobs := make([]graphqlbackend.ActionJobResolver, 1)
+		actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{ID: 123})
+		if err != nil {
+			r.jobs = nil
+			r.totalCount = 0
+			r.err = err
+		} else if actionJob == nil {
+			r.jobs = nil
+			r.totalCount = 0
+			r.err = nil
+		} else {
+			actionJobs[0] = &actionJobResolver{job: *actionJob}
+			r.jobs = actionJobs
+			r.totalCount = 1
+			r.err = err
+		}
+	})
+	return r.jobs, r.totalCount, r.err
 }
 
 // runner resolver

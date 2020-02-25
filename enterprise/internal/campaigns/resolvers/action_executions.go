@@ -78,7 +78,7 @@ func (r *actionExecutionResolver) ActionWorkspace() *graphqlbackend.GitTreeEntry
 }
 
 func (r *actionExecutionResolver) Jobs() graphqlbackend.ActionJobConnectionResolver {
-	return &actionJobConnectionResolver{}
+	return &actionJobConnectionResolver{store: r.store}
 }
 
 func (r *actionExecutionResolver) Status() campaigns.BackgroundProcessStatus {
