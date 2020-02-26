@@ -446,6 +446,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     {...this.props}
                                     navbarSearchQuery={this.props.value.query}
                                     filtersInQuery={this.props.filterQuery}
+                                    className="query-input2__toggle-container"
                                 />
                             </div>
                         </div>
