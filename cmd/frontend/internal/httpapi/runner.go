@@ -31,7 +31,7 @@ spec:
           #    memory: 4Gi
           env:
             - name: DOCKER_HOST
-              value: tcp://localhost:2375
+              value: tcp://localhost:2375 # CI:LOCALHOST_OK
             - name: MAX_CONCURRENT_TASKS
               value: '8'
             - name: SG_TOKEN

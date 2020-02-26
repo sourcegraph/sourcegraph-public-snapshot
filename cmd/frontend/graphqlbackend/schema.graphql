@@ -427,7 +427,7 @@ type Mutation {
     ): Action!
     # Todo: Is GraphQL the best place to upload a ZIP archive?
     # Also, we possibly have to chunk the upload into 2mb (TBD) chunks to bypass upload max size from nginx
-    # Brainstorm: Use HTTP header `Content-Range: byte 0-chunkSize/totalSize` with a REST API (?)
+    # Brainstorm: Use HTTP header 'Content-Range: byte 0-chunkSize/totalSize' with a REST API (?)
     uploadWorkspace(content: String!): File2!
 
     # Create a new 'MANUAL' action execution from an action.
@@ -438,9 +438,11 @@ type Mutation {
     # Begin a job on a runner, if some are in the backlog.
     pullActionJob(runner: ID!): ActionJob
     updateActionJob(
+        # The action job to update
         actionJob: ID!
         # Probably hard-require this if state == completed, otherwise it must be empty
         patch: String
+        # The optional new state
         state: ActionJobState
     ): ActionJob!
     # Append a log to a job. Runner-only API. Fails if state != 'RUNNING'. Returns empty if action job was not found.
@@ -450,15 +452,21 @@ type Mutation {
 
 # An env var set for a action execution
 type ActionEnvVar {
+    # Name of the env var
     key: String!
+    # Content of the env var
     value: String!
 }
 
+# List of actions
 type ActionConnection {
+    # Total number of actions in this connection
     totalCount: Int!
+    # The actions in the connection itself
     nodes: [Action!]!
 }
 
+# An action definition describes everything required to run the jobs, except for repo and base-rev which are per-job.
 type ActionDefinition {
     # The actual definition document.
     steps: JSONCString!
@@ -561,7 +569,9 @@ enum ActionJobState {
     CANCELED
 }
 
+# An action job is one run over a single repository within an execution
 type ActionJob implements Node {
+    # Unique identifier for the job
     id: ID!
     # Mirrored from the parent execution, same datasource so they will always be equal. Used for queries that fetch the job directly.
     definition: ActionDefinition!
@@ -570,6 +580,7 @@ type ActionJob implements Node {
     # The base revision in the repository that this job runs over.
     # Todo: Make this a GitRef
     baseRevision: String!
+    # The current state of the action job
     state: ActionJobState!
     # Set once accepted by a runner
     runner: Runner
@@ -579,6 +590,7 @@ type ActionJob implements Node {
     executionStart: DateTime
     # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`
     executionEnd: DateTime
+    # The output logged to the runner
     log: String
 }
 

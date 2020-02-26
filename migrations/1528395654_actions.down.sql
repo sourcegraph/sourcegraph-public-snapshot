@@ -1,9 +1,9 @@
 BEGIN;
 
-DROP TABLE actions IF NOT EXISTS;
+DROP TABLE IF NOT EXISTS actions;
 
-DROP TABLE action_executions IF NOT EXISTS;
+DROP TABLE IF NOT EXISTS action_executions;
 
-DROP TABLE action_jobs IF NOT EXISTS;
+DROP TABLE IF NOT EXISTS action_jobs;
 
 COMMIT;
