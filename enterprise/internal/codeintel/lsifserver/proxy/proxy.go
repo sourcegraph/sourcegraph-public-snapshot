@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -53,8 +54,16 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 		// 🚨 SECURITY: Ensure we return before proxying to the lsif-server upload
 		// endpoint. This endpoint is unprotected, so we need to make sure the user
 		// provides a valid token proving contributor access to the repository.
-		if conf.Get().LsifEnforceAuth && !enforceAuth(ctx, w, r, repoName) {
-			return
+		if conf.Get().LsifEnforceAuth {
+			canBypassAuth, err := isSiteAdmin(ctx)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if !canBypassAuth && !enforceAuth(ctx, w, r, repoName) {
+				return
+			}
 		}
 
 		uploadID, queued, err := client.DefaultClient.Upload(ctx, &struct {
@@ -118,6 +127,18 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 	}
 
 	return repo, true
+}
+
+func isSiteAdmin(ctx context.Context) (bool, error) {
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return user != nil && user.SiteAdmin, nil
 }
 
 func enforceAuth(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string) bool {
