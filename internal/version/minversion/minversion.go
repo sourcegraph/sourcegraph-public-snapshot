@@ -20,7 +20,7 @@ func main() {
 	//
 	// Note: This is just for development, our images are built in CI with the
 	// version specified in .tool-versions in the root of our repository.
-	minimumVersion := "1.13"
+	minimumVersion := "1.14"
 	rawVersion := runtime.Version()
 	versionNumber := strings.TrimPrefix(rawVersion, "go")
 	minimumVersionMet := version.Compare(minimumVersion, versionNumber, "<=")
