@@ -129,6 +129,18 @@ const suggestionToCompletionItem = (suggestion: SearchSuggestion): PartialComple
 }
 
 /**
+ * An internal Monaco command causing completion providers to be invoked,
+ * and the suggestions widget to be shown.
+ *
+ * Useful to show the suggestions widget right after selecting a filter type
+ * completion, to offer filter values completions.
+ */
+const TRIGGER_SUGGESTIONS: Monaco.languages.Command = {
+    id: 'editor.action.triggerSuggest',
+    title: 'Trigger suggestions',
+}
+
+/**
  * Returns the completion items for a search query being typed in the Monaco query input,
  * including both static and dynamically fetched suggestions.
  */
@@ -151,6 +163,7 @@ export async function getCompletionItems(
                 (suggestion): Monaco.languages.CompletionItem => ({
                     ...suggestion,
                     range: defaultRange,
+                    command: TRIGGER_SUGGESTIONS,
                 })
             ),
         }
@@ -168,6 +181,7 @@ export async function getCompletionItems(
             (suggestion): Monaco.languages.CompletionItem => ({
                 ...suggestion,
                 range: toMonacoRange(range),
+                command: TRIGGER_SUGGESTIONS,
             })
         )
         const dynamicSuggestions = (await fetchSuggestions(rawQuery).toPromise())
