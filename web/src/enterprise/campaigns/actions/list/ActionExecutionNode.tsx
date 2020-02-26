@@ -25,31 +25,28 @@ export const ActionExecutionNode: React.FunctionComponent<ActionNodeProps> = ({ 
                 <p className="mb-0">{node.invokationReason}</p>
             </div>
             <div className="flex-grow-0">
-                {node.status.state === GQL.BackgroundProcessState.COMPLETED && (
-                    <div className="d-flex justify-content-end">
-                        <CheckboxBlankCircleIcon data-tooltip="Execution is running" className="text-success" />
-                    </div>
-                )}
-                {node.status.state === GQL.BackgroundProcessState.PROCESSING && (
-                    <div className="d-flex justify-content-end">
+                <div className="d-flex justify-content-end">
+                    {node.status.state === GQL.BackgroundProcessState.COMPLETED && (
+                        <CheckboxBlankCircleIcon
+                            data-tooltip="Execution has finished successful"
+                            className="text-success"
+                        />
+                    )}
+                    {node.status.state === GQL.BackgroundProcessState.PROCESSING && (
                         <SyncIcon data-tooltip="Execution is running" className="text-info" />
-                    </div>
-                )}
-                {node.status.state === GQL.BackgroundProcessState.CANCELED && (
-                    <div className="d-flex justify-content-end">
-                        <CollapseAllIcon data-tooltip="Execution has been canceled" className="text-warn" />
-                    </div>
-                )}
-                {node.status.state === GQL.BackgroundProcessState.ERRORED && (
-                    <>
-                        <div className="d-flex justify-content-end">
+                    )}
+                    {node.status.state === GQL.BackgroundProcessState.CANCELED && (
+                        <CollapseAllIcon data-tooltip="Execution has been canceled" className="text-warning" />
+                    )}
+                    {node.status.state === GQL.BackgroundProcessState.ERRORED && (
+                        <>
                             <AlertCircleIcon data-tooltip="Execution has failed" className="text-danger" />
-                        </div>
-                        <button type="button" className="btn btn-sm btn-secondary">
-                            Retry
-                        </button>
-                    </>
-                )}
+                            <button type="button" className="btn btn-sm btn-secondary">
+                                Retry
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     </li>

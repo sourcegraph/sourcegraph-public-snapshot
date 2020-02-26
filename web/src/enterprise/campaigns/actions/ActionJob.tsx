@@ -91,7 +91,7 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                 )}
                                 {actionJob.state === GQL.ActionJobState.CANCELED && (
                                     <div className="d-flex justify-content-end">
-                                        <CollapseAllIcon data-tooltip="Task was canceled" className="text-warn" />
+                                        <CollapseAllIcon data-tooltip="Task was canceled" className="text-warning" />
                                     </div>
                                 )}
                                 {actionJob.state === GQL.ActionJobState.ERRORED && (
@@ -165,7 +165,11 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                 ></FileDiffNode>
                             ))
                         ) : (
-                            <p className="text-muted">No diff has been generated</p>
+                            <p className="text-muted">
+                                No diff has been generated{' '}
+                                {[GQL.ActionJobState.PENDING, GQL.ActionJobState.RUNNING].includes(actionJob.state) &&
+                                    ' yet'}
+                            </p>
                         )}
                     </div>
                 </Collapsible>

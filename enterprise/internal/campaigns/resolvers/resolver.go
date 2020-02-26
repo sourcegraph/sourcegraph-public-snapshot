@@ -805,6 +805,7 @@ func (r *runnerResolver) State() campaigns.RunnerState {
 }
 
 func (r *runnerResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolver {
+	// todo: missing store and runner param
 	return &actionJobConnectionResolver{}
 }
 

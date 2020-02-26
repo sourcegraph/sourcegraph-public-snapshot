@@ -89,16 +89,32 @@ func (r *actionExecutionResolver) Jobs() graphqlbackend.ActionJobConnectionResol
 	return &actionJobConnectionResolver{store: r.store, actionExecution: &r.actionExecution, knownJobs: r.actionJobs}
 }
 
-// todo:
-func (r *actionExecutionResolver) Status() campaigns.BackgroundProcessStatus {
-	return campaigns.BackgroundProcessStatus{
-		Canceled:      false,
-		Total:         int32(100),
-		Completed:     int32(10),
-		Pending:       int32(90),
-		ProcessState:  campaigns.BackgroundProcessStateProcessing,
-		ProcessErrors: []string{},
+func (r *actionExecutionResolver) Status(ctx context.Context) (*campaigns.BackgroundProcessStatus, error) {
+	status, err := r.store.ActionExecutionStatus(ctx, ee.ActionExecutionStatusOpts{ExecutionID: r.actionExecution.ID})
+	if err != nil {
+		return nil, err
 	}
+
+	var processState campaigns.BackgroundProcessState = campaigns.BackgroundProcessStateProcessing
+	// canceled has higher precendence than errored
+	if status.Canceled == true {
+		processState = campaigns.BackgroundProcessStateCanceled
+	} else if status.Pending == 0 {
+		// todo: currently, still running has precedence over errored, revisit if that's useful
+		processState = campaigns.BackgroundProcessStateCompleted
+	} else if status.Errored == true {
+		processState = campaigns.BackgroundProcessStateErrored
+	}
+
+	return &campaigns.BackgroundProcessStatus{
+		Canceled:     status.Canceled,
+		Total:        int32(status.Total),
+		Completed:    int32(status.Total - status.Pending),
+		Pending:      int32(status.Pending),
+		ProcessState: processState,
+		// todo: we don't have the errors as single line strings
+		ProcessErrors: []string{},
+	}, nil
 }
 
 func (r *actionExecutionResolver) CampaignPlan(ctx context.Context) (graphqlbackend.CampaignPlanResolver, error) {

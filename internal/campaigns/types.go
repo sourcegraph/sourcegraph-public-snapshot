@@ -173,9 +173,13 @@ func (b BackgroundProcessStatus) CompletedCount() int32         { return b.Compl
 func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pending }
 func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }
 func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
+
+// not exposed via graphql
 func (b BackgroundProcessStatus) Finished() bool {
 	return b.ProcessState != BackgroundProcessStateProcessing
 }
+
+// not exposed via graphql
 func (b BackgroundProcessStatus) Processing() bool {
 	return b.ProcessState == BackgroundProcessStateProcessing
 }
@@ -1519,4 +1523,5 @@ const (
 	ActionJobStateCompleted ActionJobState = "COMPLETED"
 	ActionJobStateErrored   ActionJobState = "ERRORED"
 	ActionJobStateTimeout   ActionJobState = "TIMEOUT"
+	ActionJobStateCanceled  ActionJobState = "CANCELED"
 )

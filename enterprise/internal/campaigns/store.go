@@ -3614,3 +3614,56 @@ func listActionsBySavedSearchQueryQuery(opts *ListActionsBySavedSearchQueryOpts)
 	queryTemplate := listActionsBySavedSearchQueryQueryFmtstrSelect
 	return sqlf.Sprintf(queryTemplate, opts.SavedSearchQuery)
 }
+
+// ActionExecutionStatusOpts captures the query options needed for
+// getting an action execution's status.
+type ActionExecutionStatusOpts struct {
+	ExecutionID int64
+}
+
+// Result of the query for the status of an execution
+type ActionExecutionStatusResult struct {
+	Total    int64
+	Canceled bool
+	Pending  int64
+	Errored  bool
+}
+
+// ActionExecutionStatus lists ActionExecutions with the given filters.
+func (s *Store) ActionExecutionStatus(ctx context.Context, opts ActionExecutionStatusOpts) (result *ActionExecutionStatusResult, err error) {
+	q := actionExecutionStatusQuery(&opts)
+	result = &ActionExecutionStatusResult{}
+	_, _, err = s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		if err = sc.Scan(
+			&result.Total,
+			&result.Canceled,
+			&result.Pending,
+			&result.Errored,
+		); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+var actionExecutionStatusQueryFmtstrSelect = `
+-- source: enterprise/internal/campaigns/store.go:ActionExecutionStatus
+SELECT
+	COUNT(*) AS total,
+	COUNT(CASE action_jobs.state WHEN 'CANCELED' THEN 1 ELSE NULL END) > 0 AS canceled,
+	COUNT(CASE action_jobs.state WHEN 'PENDING' THEN 1 WHEN 'RUNNING' THEN 1 ELSE NULL END) AS pending,
+	COUNT(CASE action_jobs.state WHEN 'ERRORED' THEN 1 ELSE NULL END) > 0 AS errored
+FROM
+	action_jobs
+WHERE
+	action_jobs.execution = %d
+`
+
+func actionExecutionStatusQuery(opts *ActionExecutionStatusOpts) *sqlf.Query {
+	queryTemplate := actionExecutionStatusQueryFmtstrSelect
+	return sqlf.Sprintf(queryTemplate, opts.ExecutionID)
+}

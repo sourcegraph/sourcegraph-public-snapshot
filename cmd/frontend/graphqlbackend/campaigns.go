@@ -485,7 +485,7 @@ type ActionExecutionResolver interface {
 	InvokationReason() campaigns.ActionExecutionInvokationReason
 	Definition() ActionDefinitionResolver
 	Jobs() ActionJobConnectionResolver
-	Status() campaigns.BackgroundProcessStatus
+	Status(ctx context.Context) (*campaigns.BackgroundProcessStatus, error)
 	CampaignPlan(ctx context.Context) (CampaignPlanResolver, error)
 }
 

@@ -16,6 +16,7 @@ func (r *actionDefinitionResolver) Steps() graphqlbackend.JSONCString {
 	return graphqlbackend.JSONCString(r.steps)
 }
 
+// todo:
 func (r *actionDefinitionResolver) ActionWorkspace() *graphqlbackend.GitTreeEntryResolver {
 	return nil
 }

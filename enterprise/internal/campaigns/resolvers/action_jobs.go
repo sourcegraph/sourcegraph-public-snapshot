@@ -27,7 +27,7 @@ func unmarshalActionJobID(id graphql.ID) (actionJobID int64, err error) {
 type actionJobResolver struct {
 	store *ee.Store
 	job   campaigns.ActionJob
-	// todo: pass in from parent if present to avoid duplicate sql query
+	// todo: pass in from parent if known to avoid duplicate sql query
 	actionExecution *campaigns.ActionExecution
 
 	repoOnce sync.Once

@@ -477,6 +477,8 @@ type Action implements Node {
     # Respected when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invokation.
     # Required to be true when `campaign` is set, otherwise race conditions may happen. todo: we can also handle that gracefully and simply return if a newer execution exists.
     cancelPreviousScheduledExecution: Boolean!
+    # todo: use this flag to auto update the associated campaign. If it's false, the plan is retained but the UI shows an 'Apply' button instead of 'Create campaign'
+    # autoupdate: Boolean
     # Optional associated campaign to update on completion.
     campaign: Campaign
     actionExecutions(first: Int): ActionExecutionConnection!
@@ -534,11 +536,18 @@ type ActionJobConnection {
 }
 
 enum ActionJobState {
+    # note yet picked up by a runner
     PENDING
+    # currently running
     RUNNING
+    # finished successfully
     COMPLETED
+    # completed with errors, no patch allowed
     ERRORED
+    # did not complete within the given time boundaries
     TIMEOUT
+    # The job was canceled
+    CANCELED
 }
 
 type ActionJob implements Node {

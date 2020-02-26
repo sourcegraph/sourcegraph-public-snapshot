@@ -13,6 +13,9 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { interval, merge, of, Subject } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { Link } from '../../../../../shared/src/components/Link'
+import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
+import CollapseAllIcon from 'mdi-react/CollapseAllIcon'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 interface Props extends ThemeProps {
     actionExecutionID: string
@@ -47,7 +50,28 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
     return (
         <>
             <PageTitle title="Action execution #19292" />
-            <h1 className={classNames(isLightTheme && 'text-info')}>Running action #19292</h1>
+            <h1 className={classNames(isLightTheme && 'text-info')}>
+                Running action #19292
+                {/* TODO: this is copied from ActionExecutionNode, extract to separate component */}
+                {execution.status.state === GQL.BackgroundProcessState.COMPLETED && (
+                    <CheckboxBlankCircleIcon
+                        data-tooltip="Execution has finished successful"
+                        className="icon-inline ml-3 text-success"
+                    />
+                )}
+                {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
+                    <SyncIcon data-tooltip="Execution is running" className="icon-inline ml-3 text-info" />
+                )}
+                {execution.status.state === GQL.BackgroundProcessState.CANCELED && (
+                    <CollapseAllIcon
+                        data-tooltip="Execution has been canceled"
+                        className="icon-inline ml-3 text-warning"
+                    />
+                )}
+                {execution.status.state === GQL.BackgroundProcessState.ERRORED && (
+                    <AlertCircleIcon data-tooltip="Execution has failed" className="icon-inline ml-3 text-danger" />
+                )}
+            </h1>
             {execution.invokationReason === GQL.ActionExecutionInvokationReason.SCHEDULE && (
                 <div className="alert alert-info">
                     This execution is part of a scheduled action.
@@ -96,30 +120,35 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                         </code>
                     </div>
                 </div>
-                <SyncIcon className="icon-inline" /> Action is running for 03h:15:12, estimated remaining time:
-                10h:51:49
+                <p>
+                    <SyncIcon className="icon-inline" /> Action is running for 03h:15:12, estimated remaining time:
+                    10h:51:49
+                </p>
             </div>
             {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
-                <div className="progress">
-                    <div
-                        className="progress-bar"
-                        /* eslint-disable-next-line react/forbid-dom-props */
-                        style={{
-                            width:
-                                (execution.status.pendingCount /
-                                    (execution.status.pendingCount + execution.status.completedCount)) *
-                                    100 +
-                                '%',
-                        }}
-                    >
-                        &nbsp;
+                <>
+                    {' '}
+                    <div className="progress">
+                        <div
+                            className="progress-bar"
+                            /* eslint-disable-next-line react/forbid-dom-props */
+                            style={{
+                                width:
+                                    (execution.status.completedCount /
+                                        (execution.status.pendingCount + execution.status.completedCount)) *
+                                        100 +
+                                    '%',
+                            }}
+                        >
+                            &nbsp;
+                        </div>
                     </div>
-                </div>
+                    <p className="text-center mt-1 w-100">
+                        {execution.status.completedCount} /{' '}
+                        {execution.status.pendingCount + execution.status.completedCount} jobs ran
+                    </p>
+                </>
             )}
-            <p className="text-center w-100">
-                {execution.status.pendingCount} / {execution.status.pendingCount + execution.status.completedCount} jobs
-                ran
-            </p>
             <h2>Action jobs</h2>
             <ul className="list-group mb-3">
                 {execution.jobs.nodes.map(actionJob => (
