@@ -119,6 +119,28 @@ func (s *repos) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo,
 	return s.getReposBySQL(ctx, false, true, q)
 }
 
+// GetByExternalIDs a list repositories by given (code host) IDs with external service type
+// and service ID. The number of results in the returned list could be less than the candidate
+// list due to no repository is associated with some IDs.
+// 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
+// is the site admin because this method returns all available data from the database.
+func (s *repos) GetByExternalIDs(ctx context.Context, serviceType, serviceID string, extIDs ...string) ([]*types.Repo, error) {
+	if len(extIDs) == 0 {
+		return []*types.Repo{}, nil
+	}
+
+	items := make([]*sqlf.Query, len(extIDs))
+	for i := range extIDs {
+		items[i] = sqlf.Sprintf("%s", extIDs[i])
+	}
+	q := sqlf.Sprintf(`
+    external_service_type = %s
+AND external_service_id = %s
+AND external_id IN (%s)`,
+		serviceType, serviceID, sqlf.Join(items, ","))
+	return s.getReposBySQL(ctx, false, true, q)
+}
+
 func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)

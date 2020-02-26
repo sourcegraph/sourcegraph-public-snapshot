@@ -113,6 +113,12 @@ AND provider = %s
 	)
 }
 
+// TODO(jchen): docstring
+func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
+	// TODO(jchen): Finish in a followup PR.
+	return nil
+}
+
 // SetRepoPermissions performs a full update for p, new user IDs found in p will be upserted
 // and user IDs no longer in p will be removed. This method updates both `user_permissions`
 // and `repo_permissions` tables.
