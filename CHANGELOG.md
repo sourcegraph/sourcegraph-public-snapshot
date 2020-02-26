@@ -27,6 +27,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.13.1
+
+### Fixed
+
+- To reduce the chance of users running into "502 Bad Gateway" errors an internal timeout has been increased from 60 seconds to 10 minutes so that long running requests are cut short by the proxy in front of `sourcegraph-frontend` and correctly reported as "504 Gateway Timeout". [#8606](https://github.com/sourcegraph/sourcegraph/pull/8606)
+
 ## 3.13.0
 
 ### Added
