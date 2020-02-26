@@ -62,7 +62,7 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 			}
 
 			if !canBypassAuth {
-				if authenticated := enforceAuth(ctx, w, r, repoName); !authenticated {
+				if authorized := enforceAuth(ctx, w, r, repoName); !authorized {
 					return
 				}
 			}
