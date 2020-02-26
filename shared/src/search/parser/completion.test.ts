@@ -4,13 +4,67 @@ import { NEVER, of } from 'rxjs'
 import { SearchSuggestion } from '../../graphql/schema'
 
 describe('getCompletionItems()', () => {
-    test('returns static filter type completions along with dynamically fetched completions', async () => {
+    test('returns only static filter type completions when the token matches a known filter', async () => {
         expect(
             (
                 await getCompletionItems(
                     're',
                     (parseSearchQuery('re') as ParseSuccess<Sequence>).token,
                     { column: 3 },
+                    () =>
+                        of([
+                            {
+                                __typename: 'Repository',
+                                name: 'github.com/sourcegraph/jsonrpc2',
+                            },
+                            {
+                                __typename: 'Symbol',
+                                name: 'RepoRoutes',
+                                kind: 'VARIABLE',
+                                location: {
+                                    resource: {
+                                        repository: {
+                                            name: 'github.com/sourcegraph/jsonrpc2',
+                                        },
+                                    },
+                                },
+                            },
+                        ] as SearchSuggestion[])
+                )
+            )?.suggestions.map(({ label }) => label)
+        ).toStrictEqual([
+            'after',
+            'archived',
+            'author',
+            'before',
+            'case',
+            'content',
+            'count',
+            'file',
+            '-file',
+            'fork',
+            'lang',
+            '-lang',
+            'message',
+            'patterntype',
+            'repo',
+            '-repo',
+            'repogroup',
+            'repohascommitafter',
+            'repohasfile',
+            '-repohasfile',
+            'timeout',
+            'type',
+        ])
+    })
+
+    test("returns static filter type completions along with dynamically fetched completions when the token doesn't match a filter", async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    'reposi',
+                    (parseSearchQuery('reposi') as ParseSuccess<Sequence>).token,
+                    { column: 7 },
                     () =>
                         of([
                             {
