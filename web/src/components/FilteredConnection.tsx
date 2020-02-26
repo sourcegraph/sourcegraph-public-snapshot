@@ -193,7 +193,6 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
 
         let summary: React.ReactFragment | undefined
         if (
-            !this.props.loading &&
             this.props.connection &&
             (!this.props.noSummaryIfAllNodesVisible || this.props.connection.nodes.length === 0 || hasNextPage)
         ) {
