@@ -184,6 +184,16 @@ export async function getCompletionItems(
                 command: TRIGGER_SUGGESTIONS,
             })
         )
+        // If the token being typed matches a known filter,
+        // only return static filter type suggestions.
+        // This avoids blocking on dynamic suggestions to display
+        // the suggestions widget.
+        if (
+            token.type === 'literal' &&
+            staticSuggestions.some(({ label }) => label.startsWith(token.value.toLowerCase()))
+        ) {
+            return { suggestions: staticSuggestions }
+        }
         const dynamicSuggestions = (await fetchSuggestions(rawQuery).toPromise())
             .map(suggestionToCompletionItem)
             .filter(isDefined)
