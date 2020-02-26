@@ -74,7 +74,14 @@ async function main(logger: Logger): Promise<void> {
             (): Promise<void> =>
                 logAndTraceCall(ctx, 'Converting upload', async (ctx: TracingContext) => {
                     // Convert the database and populate the cross-dump package data
-                    await convertDatabase(entityManager, dumpManager, dependencyManager, upload, ctx)
+                    await convertDatabase(
+                        entityManager,
+                        dumpManager,
+                        dependencyManager,
+                        SRC_FRONTEND_INTERNAL,
+                        upload,
+                        ctx
+                    )
 
                     // Remove overlapping dumps that would cause a unique index error once this upload has
                     // transitioned into the completed state. As this is done in a transaction, we do not
@@ -84,6 +91,7 @@ async function main(logger: Logger): Promise<void> {
                         upload.repositoryId,
                         upload.commit,
                         upload.root,
+                        upload.indexer,
                         { logger, span },
                         entityManager
                     )

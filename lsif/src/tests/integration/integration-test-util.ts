@@ -15,6 +15,8 @@ import { userInfo } from 'os'
 import { InternalLocation } from '../../server/backend/database'
 import { DumpManager } from '../../shared/store/dumps'
 import { DependencyManager } from '../../shared/store/dependencies'
+import { createSilentLogger } from '../../shared/logging'
+import { PathExistenceChecker } from '../../worker/conversion/existence'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.
@@ -93,7 +95,11 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     try {
         // Run migrations then connect to database
         await child_process.exec(migrateCommand, { env })
-        connection = await connectPostgres({ host, port, username, password, database, ssl: false }, suffix)
+        connection = await connectPostgres(
+            { host, port, username, password, database, ssl: false },
+            suffix,
+            createSilentLogger()
+        )
         return { connection, cleanup }
     } catch (error) {
         // We made a database but can't use it - try to clean up
@@ -131,21 +137,24 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
  * @param dumpManager The dumps manager instance.
  * @param repositoryId The repository identifier.
  * @param commit The commit.
- * @param root The root of the dump.
+ * @param root The root of all files in the dump.
+ * @param indexer The type of indexer used to produce this dump.
  */
 export async function insertDump(
     connection: Connection,
     dumpManager: DumpManager,
     repositoryId: number,
     commit: string,
-    root: string
+    root: string,
+    indexer: string
 ): Promise<pgModels.LsifDump> {
-    await dumpManager.deleteOverlappingDumps(repositoryId, commit, root, {})
+    await dumpManager.deleteOverlappingDumps(repositoryId, commit, root, indexer, {})
 
     const upload = new pgModels.LsifUpload()
     upload.repositoryId = repositoryId
     upload.commit = commit
     upload.root = root
+    upload.indexer = indexer
     upload.filename = '<test>'
     upload.uploadedAt = new Date()
     upload.state = 'completed'
@@ -157,6 +166,7 @@ export async function insertDump(
     dump.repositoryId = repositoryId
     dump.commit = commit
     dump.root = root
+    dump.indexer = indexer
     return dump
 }
 
@@ -171,7 +181,8 @@ export async function insertDump(
  * @param storageRoot The temporary storage root.
  * @param repositoryId The repository identifier.
  * @param commit The commit.
- * @param root The root of the dump.
+ * @param root The root of all files in the dump.
+ * @param indexer The indexer that produced the dump.
  * @param filename The filename of the (gzipped) LSIF dump.
  * @param updateCommits Whether not to update commits.
  */
@@ -183,6 +194,7 @@ export async function convertTestData(
     repositoryId: number,
     commit: string,
     root: string,
+    indexer: string,
     filename: string,
     updateCommits: boolean = true
 ): Promise<void> {
@@ -191,8 +203,9 @@ export async function convertTestData(
     const fullFilename = path.join((await fs.exists('lsif')) ? 'lsif' : '', 'src/tests/integration/data', filename)
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
-    const { packages, references } = await convertLsif(fullFilename, tmp)
-    const dump = await insertDump(connection, dumpManager, repositoryId, commit, root)
+    const pathExistenceChecker = new PathExistenceChecker({ repositoryId, commit, root })
+    const { packages, references } = await convertLsif(fullFilename, tmp, pathExistenceChecker)
+    const dump = await insertDump(connection, dumpManager, repositoryId, commit, root, indexer)
     await dependencyManager.addPackagesAndReferences(dump.id, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dump.id))
 
@@ -267,7 +280,8 @@ export class BackendTestContext {
      *
      * @param repositoryId The repository identifier.
      * @param commit The commit.
-     * @param root The root of the dump.
+     * @param root The root of all files in the dump.
+     * @param indexer The type of indexer used to produce this dump.
      * @param filename The filename of the (gzipped) LSIF dump.
      * @param updateCommits Whether not to update commits.
      */
@@ -275,6 +289,7 @@ export class BackendTestContext {
         repositoryId: number,
         commit: string,
         root: string,
+        indexer: string,
         filename: string,
         updateCommits: boolean = true
     ): Promise<void> {
@@ -290,6 +305,7 @@ export class BackendTestContext {
             repositoryId,
             commit,
             root,
+            indexer,
             filename,
             updateCommits
         )

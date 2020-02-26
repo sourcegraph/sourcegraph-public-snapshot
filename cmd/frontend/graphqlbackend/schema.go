@@ -2522,6 +2522,8 @@ type GitCommit implements Node {
         query: String
         # Return commits that affect the path.
         path: String
+        # Return commits more recent than the specified date.
+        after: String
     ): GitCommitConnection!
     # Returns the number of commits that this commit is behind and ahead of revspec.
     behindAhead(revspec: String!): BehindAheadCounts!
@@ -2791,14 +2793,6 @@ type GitBlob implements TreeEntry & File2 {
 # A wrapper object around LSIF query methods for a particular path-at-revision. When this node is
 # null, no LSIF data is available for containing git blob.
 type LSIFQueryResolver {
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
-    # The commit that is being used to power code intelligence. This may be distinct from
-    # the commit of the git blob from which this query resolver came when there is no
-    # LSIF data available for that commit.
-    commit: GitCommit!
-
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
@@ -4261,6 +4255,9 @@ type LSIFUpload implements Node {
 
     # The original root supplied at upload time.
     inputRoot: String!
+
+    # The original indexer name supplied at upload time.
+    inputIndexer: String!
 
     # The upload's current state.
     state: LSIFUploadState!

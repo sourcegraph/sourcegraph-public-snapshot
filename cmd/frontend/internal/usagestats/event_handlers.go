@@ -31,7 +31,7 @@ func LogBackendEvent(userID int32, eventName string, argument json.RawMessage) e
 	return LogEvent(context.Background(), Event{
 		EventName:    eventName,
 		UserID:       userID,
-		UserCookieID: "",
+		UserCookieID: "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues
 		URL:          "",
 		Source:       "BACKEND",
 		Argument:     argument,

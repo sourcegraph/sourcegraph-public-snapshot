@@ -41,13 +41,19 @@
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY0MDk4NjE=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY0MDk4NjI=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         }
        ]
       },
@@ -70,13 +76,19 @@
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY0MTAzODA=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY0MTAzODM=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         }
        ]
       },
@@ -136,13 +148,19 @@
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY0MTAzODA=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY0MTAzODM=",
          "Status": "QUEUED",
          "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z"
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
         }
        ]
       },

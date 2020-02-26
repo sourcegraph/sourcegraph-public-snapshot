@@ -211,7 +211,11 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                         border={false}
                     ></MonacoEditor>
                 </div>
-                <Toggles {...this.props} navbarSearchQuery={this.props.queryState.query} />
+                <Toggles
+                    {...this.props}
+                    navbarSearchQuery={this.props.queryState.query}
+                    className="monaco-query-input-container__toggle-container"
+                />
             </div>
         )
     }

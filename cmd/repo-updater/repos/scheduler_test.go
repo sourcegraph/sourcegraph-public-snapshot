@@ -9,7 +9,6 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 )
@@ -548,6 +547,110 @@ func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
 
 	if !reflect.DeepEqual(expected, actualQueue) {
 		t.Fatalf("\nexpected final queue\n%s\ngot\n%s", spew.Sdump(expected), spew.Sdump(actualQueue))
+	}
+}
+
+func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
+	a := &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := &configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+
+	tests := []struct {
+		name            string
+		initialSchedule []*scheduledRepoUpdate
+		initialQueue    []*repoUpdate
+		diff            Diff
+		finalSchedule   []*scheduledRepoUpdate
+		finalQueue      []*repoUpdate
+	}{
+		{
+			name: "diff with deleted repos",
+			initialSchedule: []*scheduledRepoUpdate{
+				{Repo: a, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+			},
+			initialQueue: []*repoUpdate{
+				{Repo: a, Seq: 1, Updating: false},
+			},
+			diff: Diff{
+				Deleted: []*Repo{
+					{ID: a.ID, Name: string(a.Name), URI: a.URL},
+				},
+			},
+		},
+		{
+			name: "diff with add and modified repos",
+			diff: Diff{
+				Added: []*Repo{
+					{
+						ID:   a.ID,
+						Name: string(a.Name),
+						Sources: map[string]*SourceInfo{
+							string(a.Name): {CloneURL: a.URL},
+						},
+					},
+				},
+				Modified: []*Repo{
+					{
+						ID:   b.ID,
+						Name: string(b.Name),
+						Sources: map[string]*SourceInfo{
+							string(b.Name): {CloneURL: b.URL},
+						},
+					},
+				},
+			},
+			finalSchedule: []*scheduledRepoUpdate{
+				{Repo: a, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+			},
+			finalQueue: []*repoUpdate{
+				{Repo: a, Seq: 1, Updating: false},
+				{Repo: b, Seq: 2, Updating: false},
+			},
+		},
+		{
+			name: "diff with unmodified but partially deleted repos",
+			initialSchedule: []*scheduledRepoUpdate{
+				{Repo: a, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+			},
+			initialQueue: []*repoUpdate{
+				{Repo: a, Seq: 1, Updating: false},
+			},
+			diff: Diff{
+				Unmodified: []*Repo{
+					{
+						ID:        a.ID,
+						Name:      string(a.Name),
+						DeletedAt: defaultTime,
+					},
+					{
+						ID:   b.ID,
+						Name: string(b.Name),
+						Sources: map[string]*SourceInfo{
+							string(b.Name): {CloneURL: b.URL},
+						},
+					},
+				},
+			},
+			finalSchedule: []*scheduledRepoUpdate{
+				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// The recording is not important for testing this method, but we want to mock and clean up timers.
+			_, stop := startRecording()
+			defer stop()
+
+			s := NewUpdateScheduler()
+			setupInitialSchedule(s, test.initialSchedule)
+			setupInitialQueue(s, test.initialQueue)
+
+			s.UpdateFromDiff(test.diff)
+
+			verifySchedule(t, s, test.finalSchedule)
+			verifyQueue(t, s, test.finalQueue)
+		})
 	}
 }
 
@@ -1315,189 +1418,45 @@ func timePtr(t time.Time) *time.Time {
 	return &t
 }
 
-func TestUpdateScheduler_updateSource(t *testing.T) {
-	type updateSourceCall struct {
-		source  string
-		newList sourceRepoMap
-	}
-
+func Test_updateQueue_Less(t *testing.T) {
+	q := &updateQueue{}
 	tests := []struct {
-		name                  string
-		initialSourceRepos    map[string]sourceRepoMap
-		initialSchedule       []*scheduledRepoUpdate
-		initialQueue          []*repoUpdate
-		updateSourceCalls     []*updateSourceCall
-		finalSourceRepos      map[string]sourceRepoMap
-		finalSchedule         []*scheduledRepoUpdate
-		finalQueue            []*repoUpdate
-		timeAfterFuncDelays   []time.Duration
-		expectedNotifications func(s *updateScheduler) []chan struct{}
+		name   string
+		heap   []*repoUpdate
+		expVal bool
 	}{
 		{
-			name:               "add enabled repo",
-			initialSourceRepos: map[string]sourceRepoMap{},
-			updateSourceCalls: []*updateSourceCall{
-				{
-					source: "a",
-					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{ID: 1, Name: "a", URL: "a.com"},
-					},
-				},
+			name: "updating",
+			heap: []*repoUpdate{
+				{Updating: false},
+				{Updating: true},
 			},
-			finalSourceRepos: map[string]sourceRepoMap{
-				"a": {
-					api.RepoName("a/a"): &configuredRepo2{ID: 1, Name: "a", URL: "a.com"},
-				},
-			},
-			finalSchedule: []*scheduledRepoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
-			},
-			finalQueue: []*repoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Seq: 1, Updating: false},
-			},
-			timeAfterFuncDelays: []time.Duration{minDelay},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
-				return []chan struct{}{s.schedule.wakeup, s.updateQueue.notifyEnqueue}
-			},
+			expVal: true,
 		},
 		{
-			name: "missing repo removed from schedule and queue",
-			initialSourceRepos: map[string]sourceRepoMap{
-				"a": {
-					api.RepoName("a/a"): &configuredRepo2{ID: 1, Name: "a", URL: "a.com"},
-				},
+			name: "priority",
+			heap: []*repoUpdate{
+				{Priority: priorityHigh},
+				{Priority: priorityLow},
 			},
-			initialSchedule: []*scheduledRepoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Interval: minDelay, Due: defaultTime},
-			},
-			initialQueue: []*repoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Updating: false},
-			},
-			updateSourceCalls: []*updateSourceCall{
-				{
-					source:  "a",
-					newList: sourceRepoMap{},
-				},
-			},
-			finalSourceRepos: map[string]sourceRepoMap{
-				"a": {},
-			},
+			expVal: true,
 		},
 		{
-			name: "missing repo not removed from queue when updating",
-			initialSourceRepos: map[string]sourceRepoMap{
-				"a": {
-					api.RepoName("a/a"): &configuredRepo2{ID: 1, Name: "a", URL: "a.com"},
-				},
+			name: "seq",
+			heap: []*repoUpdate{
+				{Seq: 1},
+				{Seq: 2},
 			},
-			initialSchedule: []*scheduledRepoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Interval: minDelay, Due: defaultTime},
-			},
-			initialQueue: []*repoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Updating: true},
-			},
-			updateSourceCalls: []*updateSourceCall{
-				{
-					source:  "a",
-					newList: sourceRepoMap{},
-				},
-			},
-			finalQueue: []*repoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Seq: 1, Updating: true},
-			},
-			finalSourceRepos: map[string]sourceRepoMap{
-				"a": {},
-			},
-		},
-		{
-			name: "repo updated",
-			initialSourceRepos: map[string]sourceRepoMap{
-				"a": {
-					api.RepoName("a/a"): &configuredRepo2{ID: 1, Name: "a", URL: "a.com"},
-				},
-			},
-			initialSchedule: []*scheduledRepoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
-			},
-			initialQueue: []*repoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Seq: 1, Updating: false},
-			},
-			updateSourceCalls: []*updateSourceCall{
-				{
-					source: "a",
-					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{ID: 1, Name: "a", URL: "aa.com"},
-					},
-				},
-			},
-			finalSourceRepos: map[string]sourceRepoMap{
-				"a": {
-					api.RepoName("a/a"): &configuredRepo2{ID: 1, Name: "a", URL: "aa.com"},
-				},
-			},
-			finalSchedule: []*scheduledRepoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "aa.com"}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
-			},
-			finalQueue: []*repoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "aa.com"}, Seq: 1, Updating: false},
-			},
-		},
-		{
-			name: "update repo while updating",
-			initialSourceRepos: map[string]sourceRepoMap{
-				"a": {
-					api.RepoName("a/a"): &configuredRepo2{ID: 1, Name: "a", URL: "a.com"},
-				},
-			},
-			initialSchedule: []*scheduledRepoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
-			},
-			initialQueue: []*repoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Seq: 1, Updating: true},
-			},
-			updateSourceCalls: []*updateSourceCall{
-				{
-					source: "a",
-					newList: sourceRepoMap{
-						api.RepoName("a/a"): &configuredRepo2{ID: 1, Name: "a", URL: "aa.com"},
-					},
-				},
-			},
-			finalSourceRepos: map[string]sourceRepoMap{
-				"a": {
-					api.RepoName("a/a"): &configuredRepo2{ID: 1, Name: "a", URL: "aa.com"},
-				},
-			},
-			finalSchedule: []*scheduledRepoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "aa.com"}, Interval: minDelay, Due: defaultTime.Add(minDelay)},
-			},
-			finalQueue: []*repoUpdate{
-				{Repo: &configuredRepo2{ID: 1, Name: "a", URL: "a.com"}, Seq: 1, Updating: true},
-			},
+			expVal: true,
 		},
 	}
-
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			r, stop := startRecording()
-			defer stop()
-
-			s := NewUpdateScheduler()
-			s.sourceRepos = test.initialSourceRepos
-			setupInitialSchedule(s, test.initialSchedule)
-			setupInitialQueue(s, test.initialQueue)
-
-			for _, call := range test.updateSourceCalls {
-				s.updateSource(call.source, call.newList)
+			q.heap = test.heap
+			got := q.Less(0, 1)
+			if test.expVal != got {
+				t.Fatalf("want %v but got: %v", test.expVal, got)
 			}
-
-			if !reflect.DeepEqual(s.sourceRepos, test.finalSourceRepos) {
-				t.Fatalf("\nexpected source repos\n%s\ngot\n%s", spew.Sdump(test.finalSourceRepos), spew.Sdump(s.sourceRepos))
-			}
-
-			verifySchedule(t, s, test.finalSchedule)
-			verifyQueue(t, s, test.finalQueue)
-			verifyRecording(t, s, test.timeAfterFuncDelays, test.expectedNotifications, r)
 		})
 	}
 }

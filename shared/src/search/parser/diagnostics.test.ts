@@ -44,10 +44,10 @@ describe('getDiagnostics()', () => {
             )
         ).toStrictEqual([
             {
-                endColumn: 28,
+                endColumn: 14,
                 endLineNumber: 1,
-                message: 'Quoting the query may help if you want a literal match.',
-                severity: 4,
+                message: 'Invalid filter type.',
+                severity: 8,
                 startColumn: 1,
                 startLineNumber: 1,
             },
@@ -60,7 +60,16 @@ describe('getDiagnostics()', () => {
                 (parseSearchQuery('Configuration::doStuff(...)') as ParseSuccess<Sequence>).token,
                 SearchPatternType.literal
             )
-        ).toStrictEqual([])
+        ).toStrictEqual([
+            {
+                endColumn: 14,
+                endLineNumber: 1,
+                message: 'Invalid filter type.',
+                severity: 8,
+                startColumn: 1,
+                startLineNumber: 1,
+            },
+        ])
     })
 
     test('search query containing quoted token, regexp pattern type', () => {

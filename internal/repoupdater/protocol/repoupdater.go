@@ -107,6 +107,7 @@ type RepoInfo struct {
 	Description string // repository description (from the external service)
 	Fork        bool   // whether this repository is a fork of another repository (from the external service)
 	Archived    bool   // whether this repository is archived (from the external service)
+	Private     bool   // whether this repository is private (from the external service)
 
 	VCS VCSInfo // VCS-related information (for cloning/updating)
 
@@ -157,6 +158,16 @@ type RepoUpdateResponse struct {
 	Name string `json:"name"`
 	// URL of the repo that got an update request.
 	URL string `json:"url"`
+}
+
+// ChangesetSyncRequest is a request to sync a number of changesets
+type ChangesetSyncRequest struct {
+	IDs []int64
+}
+
+// ChangesetSyncResponse is a response to sync a number of changesets
+type ChangesetSyncResponse struct {
+	Error string
 }
 
 // ExternalServiceSyncRequest is a request to sync a specific external service eagerly.

@@ -658,7 +658,7 @@ func (c *Client) LabeledRepos(ctx context.Context, pageToken *PageToken, label s
 	return repos, next, err
 }
 
-// RepoIDs fetches a list of repositories that the user token has permission for.
+// RepoIDs fetches a list of repository IDs that the user token has permission for.
 // Permission: ["admin", "read", "write"]
 func (c *Client) RepoIDs(ctx context.Context, permission string) ([]uint32, error) {
 	u := fmt.Sprintf("rest/sourcegraph-admin/1.0/permissions/repositories?permission=%s", permission)
@@ -781,7 +781,10 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		})
 	}
 
-	if result != nil {
+	// handle binary response
+	if s, ok := result.(*[]byte); ok {
+		*s = bs
+	} else if result != nil {
 		return json.Unmarshal(bs, result)
 	}
 

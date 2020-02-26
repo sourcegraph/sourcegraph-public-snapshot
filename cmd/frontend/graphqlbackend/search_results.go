@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/src-d/enry/v2"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
@@ -520,23 +520,9 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 		shouldShowAlert = true
 	}
 	if shouldShowAlert {
-		dt := time.Since(start)
-		dt2 := longer(2, dt)
-		rr = &SearchResultsResolver{
-			alert: &searchAlert{
-				prometheusType: "timed_out",
-				title:          "Timed out while searching",
-				description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
-				patternType:    r.patternType,
-				proposedQueries: []*searchQueryDescription{
-					{
-						description: "query with longer timeout",
-						query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
-					},
-				},
-			},
-		}
-		return rr, nil
+		usedTime := time.Since(start)
+		suggestTime := longer(2, usedTime)
+		return &SearchResultsResolver{alert: alertForTimeout(usedTime, suggestTime, r)}, nil
 	}
 	return rr, err
 }
@@ -730,17 +716,9 @@ func processSearchPattern(q *query.Query, opts *getPatternInfoOptions) (string, 
 	if opts.performStructuralSearch {
 		isStructuralPat = true
 		for _, v := range patternValues {
-			var piece string
-			switch {
-			case v.String != nil:
-				piece = *v.String
-			case v.Regexp != nil:
-				piece = v.Regexp.String()
+			if piece := v.ToString(); piece != "" {
+				pieces = append(pieces, piece)
 			}
-			if piece == "" {
-				continue
-			}
-			pieces = append(pieces, piece)
 		}
 		pattern = strings.Join(pieces, " ")
 	} else if !opts.forceFileSearch {
@@ -788,13 +766,13 @@ func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPa
 
 	if opts.forceFileSearch {
 		for _, v := range q.Values(query.FieldDefault) {
-			includePatterns = append(includePatterns, asString(v))
+			includePatterns = append(includePatterns, v.ToString())
 		}
 	}
 
 	var combyRule []string
 	for _, v := range q.Values(query.FieldCombyRule) {
-		combyRule = append(combyRule, asString(v))
+		combyRule = append(combyRule, v.ToString())
 	}
 
 	// Handle lang: and -lang: filters.
@@ -825,6 +803,36 @@ func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPa
 		patternInfo.ExcludePattern = unionRegExps(excludePatterns)
 	}
 	return patternInfo, nil
+}
+
+// langIncludeExcludePatterns returns regexps for the include/exclude path patterns given the lang:
+// and -lang: filter values in a search query. For example, a query containing "lang:go" should
+// include files whose paths match /\.go$/.
+func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns, excludePatterns []string, err error) {
+	do := func(values []string, patterns *[]string) error {
+		for _, value := range values {
+			lang, ok := enry.GetLanguageByAlias(value)
+			if !ok {
+				return fmt.Errorf("unknown language: %q", value)
+			}
+			exts := enry.GetLanguageExtensions(lang)
+			extPatterns := make([]string, len(exts))
+			for i, ext := range exts {
+				// Add `\.ext$` pattern to match files with the given extension.
+				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
+			}
+			*patterns = append(*patterns, unionRegExps(extPatterns))
+		}
+		return nil
+	}
+
+	if err := do(values, &includePatterns); err != nil {
+		return nil, nil, err
+	}
+	if err := do(negatedValues, &excludePatterns); err != nil {
+		return nil, nil, err
+	}
+	return includePatterns, excludePatterns, nil
 }
 
 var (
@@ -888,7 +896,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
-			alert := r.alertForStalePermissions(ctx)
+			alert := alertForStalePermissions()
 			return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
 		return nil, nil, nil, err
@@ -940,44 +948,6 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 	return resultTypes, alert
 }
 
-// alertOnError filters certain errors from multiErr and converts them into an
-// alert. We support surfacing only one alert at a time, so the last converted error
-// will be surfaced in the alert.
-func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, alert *searchAlert) {
-	if multiErr != nil {
-		for _, err := range multiErr.Errors {
-			if strings.Contains(err.Error(), "Assert_failure zip") {
-				alert = &searchAlert{
-					prometheusType: "structural_search_repo_too_large",
-					title:          "Repository too large for structural search",
-					description:    "One repository is too large to perform structural search. Use the `repo:` filter to run on a specific repository. This is a temporary restriction that will be removed in the future. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/7133",
-				}
-			} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
-				alert = &searchAlert{
-					prometheusType: "structural_search_needs_more_memory",
-					title:          "Structural search needs more memory",
-					description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
-				}
-			} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
-				var msg string
-				if envvar.SourcegraphDotComMode() {
-					msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
-				} else {
-					msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
-				}
-				alert = &searchAlert{
-					prometheusType: "structural_search_on_zero_indexed_repos",
-					title:          "Unindexed repositories with structural search",
-					description:    fmt.Sprintf("Structural search currently only works on indexed repositories. Some of the repositories to search are not indexed, so we can't return results for them. %s", msg),
-				}
-			} else {
-				newMultiErr = multierror.Append(newMultiErr, err)
-			}
-		}
-	}
-	return newMultiErr, alert
-}
-
 // doResults is one of the highest level search functions that handles finding results.
 //
 // If forceOnlyResultType is specified, only results of the given type are returned,
@@ -1008,14 +978,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	options := &getPatternInfoOptions{}
-	if r.patternType == SearchTypeStructural {
+	if r.patternType == query.SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 		forceOnlyResultType = "file"
 	}
-	if r.patternType == SearchTypeLiteral {
+	if r.patternType == query.SearchTypeLiteral {
 		options = &getPatternInfoOptions{performLiteralSearch: true}
 	}
 	p, err := r.getPatternInfo(options)
+
+	// Fallback to literal search for searching repos and files if
+	// the structural search pattern is empty.
+	if r.patternType == query.SearchTypeStructural && p.Pattern == "" {
+		r.patternType = query.SearchTypeLiteral
+		p.IsStructuralPat = false
+		forceOnlyResultType = ""
+	}
 
 	if err != nil {
 		return nil, err
@@ -1300,17 +1278,17 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
 
-	multiErr, newAlert := alertOnError(multiErr)
+	multiErr, newAlert := alertForStructuralSearch(multiErr)
 	if newAlert != nil {
 		alert = newAlert // takes higher precedence
 	}
 
 	if len(missingRepoRevs) > 0 {
-		alert = r.alertForMissingRepoRevs(missingRepoRevs)
+		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
 	}
 
-	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == SearchTypeLiteral {
-		alert, err = r.alertForQuotesInQueryInLiteralMode(ctx)
+	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
+		alert = alertForQuotesInQueryInLiteralMode(r.parseTree)
 	}
 
 	// If we have some results, only log the error instead of returning it,

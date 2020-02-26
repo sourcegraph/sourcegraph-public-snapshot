@@ -131,6 +131,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
+		Private:      proj.Visibility == "private",
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,

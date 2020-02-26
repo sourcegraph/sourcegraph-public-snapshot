@@ -40,6 +40,9 @@ type Repo struct {
 	// Previously, this was called RepoURI.
 	Name api.RepoName
 
+	// Private is whether the repository is private on the code host.
+	Private bool
+
 	// RepoFields contains fields that are loaded from the DB only when necessary.
 	// This is to reduce memory usage when loading thousands of repos.
 	*RepoFields
@@ -196,7 +199,7 @@ type Event struct {
 	Timestamp       time.Time
 }
 
-type AutomationUsageStatistics struct {
+type CampaignsUsageStatistics struct {
 	CampaignsCount int
 }
 
@@ -219,6 +222,7 @@ type SearchTypeLatency struct {
 	Repo       *SearchLatency
 	Diff       *SearchLatency
 	Commit     *SearchLatency
+	Symbol     *SearchLatency
 }
 
 type SearchLatency struct {

@@ -28,7 +28,9 @@ npm init sourcegraph-extension
 
 Then publish your extension:
 
-```src extension publish```
+```
+src extension publish
+```
 
 Confirm your extension is enabled and working by:
 
