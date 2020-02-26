@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -34,7 +33,7 @@ type store struct {
 	hardTTL time.Duration
 	clock   func() time.Time
 	block   bool // Perform blocking updates if true.
-	updates chan *iauthz.UserPermissions
+	updates chan *authz.UserPermissions
 }
 
 func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time) *store {
@@ -71,7 +70,7 @@ type PermissionsUpdateFunc func(context.Context) (
 // returned.
 func (s *store) LoadPermissions(
 	ctx context.Context,
-	p *iauthz.UserPermissions,
+	p *authz.UserPermissions,
 	update PermissionsUpdateFunc,
 ) (err error) {
 	if s == nil || p == nil {
@@ -99,7 +98,7 @@ func (s *store) LoadPermissions(
 // to fetch fresh data from the source of truth.
 func (s *store) UpdatePermissions(
 	ctx context.Context,
-	p *iauthz.UserPermissions,
+	p *authz.UserPermissions,
 	update PermissionsUpdateFunc,
 ) (err error) {
 	ctx, save := s.observe(ctx, "UpdatePermissions", "")
@@ -110,7 +109,7 @@ func (s *store) UpdatePermissions(
 	expired.IDs = nil
 
 	if !s.block { // Non blocking code path
-		go func(expired *iauthz.UserPermissions) {
+		go func(expired *authz.UserPermissions) {
 			err := s.update(ctx, expired, update)
 			if err != nil && err != errLockNotAvailable {
 				log15.Error("bitbucketserver.authz.store.UpdatePermissions", "error", err)
@@ -153,7 +152,7 @@ var errLockNotAvailable = errors.New("lock not available")
 // lock uses Postgres advisory locks to acquire an exclusive lock over the
 // given UserPermissions. Concurrent processes that call this method while a lock is
 // already held by another process will have errLockNotAvailable returned.
-func (s *store) lock(ctx context.Context, p *iauthz.UserPermissions) (err error) {
+func (s *store) lock(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "lock", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -191,7 +190,7 @@ func (s *store) lock(ctx context.Context, p *iauthz.UserPermissions) (err error)
 
 var lockNamespace = int32(fnv1.HashString32("perms"))
 
-func lockQuery(p *iauthz.UserPermissions) *sqlf.Query {
+func lockQuery(p *authz.UserPermissions) *sqlf.Query {
 	// Postgres advisory lock ids are a global namespace within one database.
 	// It's very unlikely that another part of our application uses a lock
 	// namespace identically to this one. It's equally unlikely that there are
@@ -212,7 +211,7 @@ const lockQueryFmtStr = `
 SELECT pg_try_advisory_xact_lock(%s, %s)
 `
 
-func (s *store) load(ctx context.Context, p *iauthz.UserPermissions) (err error) {
+func (s *store) load(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "load", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -309,7 +308,7 @@ func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs
 	return ids, nil
 }
 
-func loadQuery(p *iauthz.UserPermissions) *sqlf.Query {
+func loadQuery(p *authz.UserPermissions) *sqlf.Query {
 	return sqlf.Sprintf(
 		loadQueryFmtStr,
 		p.UserID,
@@ -329,7 +328,7 @@ AND object_type = %s
 AND provider = %s
 `
 
-func (s *store) update(ctx context.Context, p *iauthz.UserPermissions, update PermissionsUpdateFunc) (err error) {
+func (s *store) update(ctx context.Context, p *authz.UserPermissions, update PermissionsUpdateFunc) (err error) {
 	_, save := s.observe(ctx, "update", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -414,7 +413,7 @@ func (s *store) tx(ctx context.Context) (*sql.Tx, error) {
 	}
 }
 
-func (s *store) upsert(ctx context.Context, p *iauthz.UserPermissions) (err error) {
+func (s *store) upsert(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "upsert", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -432,7 +431,7 @@ func (s *store) upsert(ctx context.Context, p *iauthz.UserPermissions) (err erro
 	return rows.Close()
 }
 
-func (s *store) upsertQuery(p *iauthz.UserPermissions) (*sqlf.Query, error) {
+func (s *store) upsertQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 	ids, err := p.IDs.ToBytes()
 	if err != nil {
 		return nil, err
