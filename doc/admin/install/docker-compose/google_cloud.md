@@ -49,9 +49,9 @@ sudo apt-get update -y
 sudo apt-get install -y git
 
 # Clone Docker Compose definition
-git clone "https://github.com/sourcegraph/deploy-sourcegraph-docker.git" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
+git clone "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL}" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
-git checkout ${SOURCEGRAPH_VERSION}
+git checkout "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION}"
 
 # Format (if necessary) and mount GCP persistent disk
 device_fs=$(sudo lsblk "${PERSISTENT_DISK_DEVICE_NAME}" --noheadings --output fsType)
