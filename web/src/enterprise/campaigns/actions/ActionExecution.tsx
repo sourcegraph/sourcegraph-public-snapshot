@@ -10,7 +10,7 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import { useObservable } from '../../../util/useObservable'
 import { fetchActionExecutionByID } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { interval, merge, of } from 'rxjs'
+import { interval, merge, of, Subject } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { Link } from '../../../../../shared/src/components/Link'
 
@@ -27,11 +27,15 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
     history,
     location,
 }) => {
+    const executionUpdates = React.useMemo(() => new Subject<void>(), [])
+    const nextExecutionUpdate = React.useCallback(() => executionUpdates.next(), [executionUpdates])
     const execution = useObservable(
         React.useMemo(
             () =>
-                merge(of(undefined), interval(2000)).pipe(switchMap(() => fetchActionExecutionByID(actionExecutionID))),
-            [actionExecutionID]
+                merge(of(undefined), executionUpdates, interval(2000)).pipe(
+                    switchMap(() => fetchActionExecutionByID(actionExecutionID))
+                ),
+            [actionExecutionID, executionUpdates]
         )
     )
     if (execution === undefined) {
@@ -40,133 +44,6 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
     if (execution === null) {
         return <h3>Execution not found!</h3>
     }
-    // const [execution] = React.useState<GQL.IActionExecution>({
-    //     __typename: 'ActionExecution',
-    //     id: 'asd',
-    //     invokationReason: GQL.ActionExecutionInvokationReason.MANUAL,
-    //     env: [{ __typename: 'ActionEnvVar', key: 'FORCE_COLOR', value: '1' }],
-    //     actionDefinition: '',
-    //     actionWorkspace: null,
-    //     campaignPlan: null,
-    //     // TODO: this is ugly
-    //     action: {
-    //         __typename: 'Action',
-    //         id: 'asd',
-    //         actionDefinition,
-    //         actionWorkspace: null,
-    //         schedule: '30 */2 * * *',
-    //         cancelPreviousScheduledExecution: false,
-    //         env: [{ __typename: 'ActionEnvVar', key: 'SG_SUPER_KEY', value: '<REDACTED>' }],
-    //         savedSearch: {
-    //             description: 'Repo has core.js <3.0.0 installed',
-    //         } as any,
-    //         campaign: null,
-    //         actionExecutions: {
-    //             __typename: 'ActionExecutionConnection',
-    //             totalCount: 0,
-    //             nodes: [] as GQL.IActionExecution[],
-    //         },
-    //     },
-    //     state: {
-    //         __typename: 'BackgroundProcessStatus',
-    //         completedCount: 10,
-    //         errors: [],
-    //         pendingCount: 1500,
-    //         state: GQL.BackgroundProcessState.PROCESSING,
-    //     },
-    //     jobs: {
-    //         __typename: 'ActionJobConnection',
-    //         totalCount: 10,
-    //         nodes: [
-    //             {
-    //                 __typename: 'ActionJob',
-    //                 id: 'asd',
-    //                 image: 'alpine',
-    //                 command: null,
-    //                 baseRevision: 'master',
-    //                 diff: null,
-    //                 log: null,
-    //                 executionStart: new Date().toISOString(),
-    //                 executionEnd: undefined,
-    //                 runner: {
-    //                     __typename: 'Runner',
-    //                     id: 'asda',
-    //                     name: 'sg-dev1',
-    //                     description: 'macOS 10.15.2',
-    //                 } as any,
-    //                 repository: {
-    //                     name: 'github.com/sourcegraph/sourcegraph',
-    //                 } as any,
-    //                 state: GQL.ActionJobState.RUNNING,
-    //             },
-    //             {
-    //                 __typename: 'ActionJob',
-    //                 id: 'asd',
-    //                 image: 'alpine',
-    //                 command: null,
-    //                 baseRevision: 'master',
-    //                 diff: null,
-    //                 log: null,
-    //                 executionStart: undefined,
-    //                 executionEnd: undefined,
-    //                 runner: null,
-    //                 repository: {
-    //                     name: 'github.com/sourcegraph/about',
-    //                 } as any,
-    //                 state: GQL.ActionJobState.PENDING,
-    //             },
-    //             {
-    //                 __typename: 'ActionJob',
-    //                 id: 'asd',
-    //                 image: 'alpine',
-    //                 command: null,
-    //                 baseRevision: 'master',
-    //                 executionStart: subHours(new Date(), 1).toISOString(),
-    //                 executionEnd: subMinutes(new Date(), 30).toISOString(),
-    //                 runner: {
-    //                     id: 'asda',
-    //                     name: 'sg-dev1',
-    //                     description: 'macOS 10.15.2',
-    //                 } as any,
-    //                 repository: {
-    //                     name: 'github.com/sourcegraph/src-cli',
-    //                 } as any,
-    //                 diff: {
-    //                     fileDiffs: {
-    //                         diffStat: {
-    //                             __typename: 'DiffStat',
-    //                             added: 10,
-    //                             changed: 20,
-    //                             deleted: 10,
-    //                         },
-    //                     },
-    //                 } as any,
-    //                 state: GQL.ActionJobState.COMPLETED,
-    //                 log: actionLog,
-    //             },
-    //             {
-    //                 __typename: 'ActionJob',
-    //                 id: 'asd',
-    //                 image: 'alpine',
-    //                 command: null,
-    //                 baseRevision: 'master',
-    //                 diff: null,
-    //                 executionStart: subHours(new Date(), 1).toISOString(),
-    //                 executionEnd: subMinutes(new Date(), 10).toISOString(),
-    //                 runner: {
-    //                     id: 'asda',
-    //                     name: 'sg-dev1',
-    //                     description: 'macOS 10.15.2',
-    //                 } as any,
-    //                 repository: {
-    //                     name: 'github.com/sourcegraph/javascript-typescript-langserver',
-    //                 } as any,
-    //                 state: GQL.ActionJobState.ERRORED,
-    //                 log: actionLog,
-    //             },
-    //         ],
-    //     },
-    // })
     return (
         <>
             <PageTitle title="Action execution #19292" />
@@ -252,6 +129,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                         key={actionJob.id}
                         history={history}
                         location={location}
+                        onRetry={nextExecutionUpdate}
                     />
                 ))}
             </ul>
@@ -278,7 +156,17 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 patches have been created{execution.status.state === GQL.BackgroundProcessState.PROCESSING && ' so far'}
                 .
             </p>
-            {execution.campaignPlan ? (
+            {execution.action.campaign ? (
+                <>
+                    <p className="alert alert-info">
+                        This action belongs to campaign{' '}
+                        <Link to={`/campaigns/${execution.action.campaign.id}`}>
+                            <em>{execution.action.campaign.name}</em>
+                        </Link>
+                        . The patches are automatically applied to the campaign upon completion.
+                    </p>
+                </>
+            ) : execution.campaignPlan ? (
                 <div className="mb-3">
                     <Link to={`/campaigns/new?plan=${execution.campaignPlan.id}`} className="btn btn-primary">
                         Create campaign

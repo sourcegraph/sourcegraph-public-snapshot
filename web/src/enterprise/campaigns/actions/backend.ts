@@ -17,7 +17,7 @@ export async function retryActionJob(actionJobID: ID): Promise<IEmptyResponse | 
         gql`
             mutation RetryActionJob($actionJob: ID!) {
                 retryActionJob(actionJob: $actionJob) {
-                    id
+                    alwaysNil
                 }
             }
         `,

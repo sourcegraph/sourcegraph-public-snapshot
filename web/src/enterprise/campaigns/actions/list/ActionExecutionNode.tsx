@@ -4,6 +4,7 @@ import { Link } from '../../../../../../shared/src/components/Link'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
+import CollapseAllIcon from 'mdi-react/CollapseAllIcon'
 
 export interface ActionNodeProps {
     node: Pick<GQL.IActionExecution, 'id' | 'invokationReason' | 'status' | 'campaignPlan'>
@@ -36,7 +37,7 @@ export const ActionExecutionNode: React.FunctionComponent<ActionNodeProps> = ({ 
                 )}
                 {node.status.state === GQL.BackgroundProcessState.CANCELED && (
                     <div className="d-flex justify-content-end">
-                        <CheckboxBlankCircleIcon data-tooltip="Execution has been canceled" className="text-gray" />
+                        <CollapseAllIcon data-tooltip="Execution has been canceled" className="text-warn" />
                     </div>
                 )}
                 {node.status.state === GQL.BackgroundProcessState.ERRORED && (
