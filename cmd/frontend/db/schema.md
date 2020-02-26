@@ -33,6 +33,8 @@ Foreign-key constraints:
  action            | integer | not null
 Indexes:
     "action_executions_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "action_executions_invokation_reason_check" CHECK (invokation_reason = ANY (ARRAY['MANUAL'::text, 'SAVED_SEARCH'::text, 'SCHEDULE'::text]))
 Foreign-key constraints:
     "action_executions_action_fkey" FOREIGN KEY (action) REFERENCES actions(id) ON UPDATE CASCADE
     "action_executions_campaign_plan_fkey" FOREIGN KEY (campaign_plan) REFERENCES campaign_plans(id) ON UPDATE CASCADE
@@ -57,6 +59,8 @@ Referenced by:
  revision        | text                     | not null
 Indexes:
     "action_jobs_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "action_jobs_state_check" CHECK (state = ANY (ARRAY['PENDING'::text, 'RUNNING'::text, 'COMPLETED'::text, 'ERRORED'::text, 'TIMEOUT'::text, 'CANCELED'::text]))
 Foreign-key constraints:
     "action_jobs_execution_fkey" FOREIGN KEY (execution) REFERENCES action_executions(id) ON UPDATE CASCADE
     "action_jobs_repository_fkey" FOREIGN KEY (repository) REFERENCES repo(id) ON UPDATE CASCADE
