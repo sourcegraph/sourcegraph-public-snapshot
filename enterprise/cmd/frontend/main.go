@@ -74,6 +74,7 @@ func main() {
 	go bitbucketServerWebhook.Upsert(30 * time.Second)
 
 	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
+	// todo: register schedule checker
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
