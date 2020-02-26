@@ -2747,6 +2747,8 @@ func scanActionExecution(a *campaigns.ActionExecution, s scanner) error {
 		&a.InvokationReason,
 		&a.CampaignPlanID,
 		&a.ActionID,
+		&dbutil.NullTime{Time: &a.ExecutionStart},
+		&dbutil.NullTime{Time: &a.ExecutionEnd},
 	)
 }
 
@@ -3151,7 +3153,9 @@ SELECT
 	action_executions.env,
 	action_executions.invokation_reason,
 	action_executions.campaign_plan,
-	action_executions.action
+	action_executions.action,
+	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
+	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
 FROM
 	action_executions
 WHERE
@@ -3214,7 +3218,9 @@ SELECT
 	action_executions.env,
 	action_executions.invokation_reason,
 	action_executions.campaign_plan,
-	action_executions.action
+	action_executions.action,
+	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
+	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
 FROM action_executions
 `
 
@@ -3284,7 +3290,9 @@ RETURNING
 	action_executions.env,
 	action_executions.invokation_reason,
 	action_executions.campaign_plan,
-	action_executions.action
+	action_executions.action,
+	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
+	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
 `
 
 func createActionExecutionQuery(opts *CreateActionExecutionOpts) *sqlf.Query {
@@ -3555,7 +3563,9 @@ RETURNING
 	action_executions.env,
 	action_executions.invokation_reason,
 	action_executions.campaign_plan,
-	action_executions.action
+	action_executions.action,
+	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
+	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
 `
 
 func updateActionExecutionQuery(opts *UpdateActionExecutionOpts) *sqlf.Query {

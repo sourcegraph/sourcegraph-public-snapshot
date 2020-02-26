@@ -117,6 +117,20 @@ func (r *actionExecutionResolver) Status(ctx context.Context) (*campaigns.Backgr
 	}, nil
 }
 
+func (r *actionExecutionResolver) ExecutionStart() *graphqlbackend.DateTime {
+	if r.actionExecution.ExecutionStart.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.actionExecution.ExecutionStart}
+}
+
+func (r *actionExecutionResolver) ExecutionEnd() *graphqlbackend.DateTime {
+	if r.actionExecution.ExecutionEnd.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.actionExecution.ExecutionEnd}
+}
+
 func (r *actionExecutionResolver) CampaignPlan(ctx context.Context) (graphqlbackend.CampaignPlanResolver, error) {
 	if r.actionExecution.CampaignPlanID == nil {
 		return nil, nil

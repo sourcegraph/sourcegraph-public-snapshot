@@ -507,6 +507,10 @@ type ActionExecution implements Node {
     jobs: ActionJobConnection!
     # Combined status of all jobs
     status: BackgroundProcessStatus!
+    # Time when execution started. Set once any job was accepted by a runner.
+    executionStart: DateTime
+    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`
+    executionEnd: DateTime
     # Set when status is 'COMPLETED' and the parent action had no `campaign` set. Upon reporting the completion,
     # the patches are used with the API method `createCampaignPlanFromPatches` to populate this.
     campaignPlan: CampaignPlan

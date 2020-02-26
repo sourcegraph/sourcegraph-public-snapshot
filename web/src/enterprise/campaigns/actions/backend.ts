@@ -63,6 +63,8 @@ export const fetchActionExecutionByID = (actionExecution: ID): Observable<IActio
                             pendingCount
                             completedCount
                         }
+                        executionStart
+                        executionEnd
                         campaignPlan {
                             id
                         }

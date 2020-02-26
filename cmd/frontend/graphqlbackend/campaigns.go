@@ -486,6 +486,8 @@ type ActionExecutionResolver interface {
 	Definition() ActionDefinitionResolver
 	Jobs() ActionJobConnectionResolver
 	Status(ctx context.Context) (*campaigns.BackgroundProcessStatus, error)
+	ExecutionStart() *DateTime
+	ExecutionEnd() *DateTime
 	CampaignPlan(ctx context.Context) (CampaignPlanResolver, error)
 }
 

@@ -1479,6 +1479,8 @@ type ActionExecution struct {
 	InvokationReason ActionExecutionInvokationReason
 	CampaignPlanID   *int64
 	ActionID         int64
+	ExecutionStart   time.Time
+	ExecutionEnd     time.Time
 }
 
 type ActionJob struct {

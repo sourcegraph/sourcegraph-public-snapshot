@@ -16,6 +16,8 @@ import { Link } from '../../../../../shared/src/components/Link'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import CollapseAllIcon from 'mdi-react/CollapseAllIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { formatDistance, parseISO } from 'date-fns'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 interface Props extends ThemeProps {
     actionExecutionID: string
@@ -120,10 +122,29 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                         </code>
                     </div>
                 </div>
-                <p>
-                    <SyncIcon className="icon-inline" /> Action is running for 03h:15:12, estimated remaining time:
-                    10h:51:49
-                </p>
+                {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
+                    <p>
+                        {execution.executionStart ? (
+                            <>
+                                <SyncIcon className="icon-inline" /> Execution is running since{' '}
+                                {formatDistance(parseISO(execution.executionStart), new Date())}.
+                            </>
+                        ) : (
+                            <>Execution is awaiting a runner to pick up jobs.</>
+                        )}
+                    </p>
+                )}
+                {execution.status.state === GQL.BackgroundProcessState.COMPLETED && (
+                    <p>
+                        <CheckCircleIcon className="icon-inline text-success" /> Execution finished
+                        {execution.executionEnd && (
+                            <> {formatDistance(parseISO(execution.executionEnd), new Date())} ago</>
+                        )}
+                        .
+                    </p>
+                )}
+                {execution.status.state === GQL.BackgroundProcessState.CANCELED && <p>Execution has been canceled.</p>}
+                {execution.status.state === GQL.BackgroundProcessState.ERRORED && <p>Execution has errored.</p>}
             </div>
             {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
                 <>
