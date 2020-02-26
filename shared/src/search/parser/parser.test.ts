@@ -198,7 +198,7 @@ describe('parseSearchQuery()', () => {
     })
 
     test('filter with a value ending with a colon', () => {
-        expect(parseSearchQuery('f:a:')).toMatchInlineSnapshot({
+        expect(parseSearchQuery('f:a:')).toStrictEqual({
             range: {
                 end: 4,
                 start: 0,
@@ -244,7 +244,7 @@ describe('parseSearchQuery()', () => {
     })
 
     test('filter where the value is a colon', () => {
-        expect(parseSearchQuery('f::')).toMatchInlineSnapshot({
+        expect(parseSearchQuery('f::')).toStrictEqual({
             range: {
                 end: 3,
                 start: 0,
