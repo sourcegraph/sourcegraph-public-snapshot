@@ -74,7 +74,7 @@
 // 1528395652_add_lsif_indexer.up.sql (611B)
 // 1528395653_repo_normalize_visibility_metadata.down.sql (65B)
 // 1528395653_repo_normalize_visibility_metadata.up.sql (1.035kB)
-// 1528395654_actions.down.sql (135B)
+// 1528395654_actions.down.sql (123B)
 // 1528395654_actions.up.sql (1.598kB)
 
 package migrations
@@ -1624,7 +1624,7 @@ func _1528395653_repo_normalize_visibility_metadataUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395654_actionsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x4c\x2e\xc9\xcc\xcf\x2b\x26\xac\x24\x3e\xb5\x22\x35\xb9\x94\x58\xc5\x59\xf9\x49\x20\x65\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x10\xad\x0e\x07\x87\x00\x00\x00")
+var __1528395654_actionsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x4c\x2e\xc9\xcc\xcf\x2b\xc6\x2f\x1d\x9f\x5a\x91\x9a\x5c\x4a\x8c\xc2\xac\xfc\x24\x90\x12\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\x47\xd2\x28\xbb\x7b\x00\x00\x00")
 
 func _1528395654_actionsDownSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -1640,7 +1640,7 @@ func _1528395654_actionsDownSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395654_actions.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x30, 0xf4, 0x4c, 0x3e, 0x21, 0xfb, 0xf4, 0x5c, 0x8f, 0x3c, 0xc8, 0x1a, 0xc3, 0xf8, 0xc1, 0x9b, 0x15, 0x60, 0xe5, 0xec, 0xda, 0x61, 0xdb, 0xe2, 0xf8, 0xb0, 0xbc, 0x5b, 0x47, 0xc5, 0x8a, 0xfe}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa3, 0xf9, 0x59, 0x86, 0x10, 0x2e, 0x8f, 0xed, 0x29, 0xb0, 0x16, 0x94, 0xb4, 0x88, 0xad, 0xec, 0xa8, 0x1, 0x59, 0x17, 0x28, 0x9c, 0x12, 0xe5, 0x23, 0x65, 0xac, 0x28, 0x6c, 0x5f, 0xea, 0x19}}
 	return a, nil
 }
 
