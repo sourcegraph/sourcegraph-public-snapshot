@@ -31,6 +31,7 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
                 {
                     ...completionItem,
                     label: `-${label}`,
+                    filterText: `-${label}`,
                     detail: FILTERS[filterType].description(true),
                 },
             ]
