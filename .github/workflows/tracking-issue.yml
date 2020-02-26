@@ -24,3 +24,11 @@ jobs:
           args: -milestone 3.14 -labels team/core-services -update
         env:
           GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN }}
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker://sourcegraph/tracking-issue:latest
+        with:
+          args: -milestone 3.14 -labels team/web -update
+        env:
+          GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN }}
