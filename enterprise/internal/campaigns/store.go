@@ -3018,7 +3018,7 @@ SET
 	state = 'RUNNING',
 	runner_seen_at = NOW()
 WHERE action_jobs.id IN
-	(SELECT id FROM action_jobs WHERE action_jobs.state = 'PENDING' LIMIT 1)
+	(SELECT id FROM action_jobs WHERE action_jobs.state = 'PENDING' ORDER BY action_jobs.id ASC LIMIT 1)
 RETURNING
 	id,
 	log,
