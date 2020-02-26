@@ -107,7 +107,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                     <input className="form-control mb-2" readOnly={true} value="KK3DK99AA1291S8" />
                     <div>
                         <code>
-                            src runner register --sourcegraph-url={window.location.protocol}//{window.location.host}{' '}
+                            src actions runner --sourcegraph-url={window.location.protocol}//{window.location.host}{' '}
                             --token=KK3DK99AA1291S8
                         </code>
                     </div>
