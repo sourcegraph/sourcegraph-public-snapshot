@@ -6,7 +6,7 @@ import FilterIcon from 'mdi-react/FilterIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
-import { SuggestionTypes, NonFilterSuggestionTypes } from '../../../../shared/src/search/suggestions/util'
+import { SuggestionTypes, NonFilterSuggestionType } from '../../../../shared/src/search/suggestions/util'
 import { escapeRegExp } from 'lodash'
 import { FilterTypes } from '../../../../shared/src/search/interactive/util'
 
@@ -93,7 +93,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
             descriptionParts.push(basename(item.repository.name))
             if (item.isDirectory) {
                 return {
-                    type: NonFilterSuggestionTypes.dir,
+                    type: NonFilterSuggestionType.dir,
                     value: '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
                     url: `${item.url}?suggestion`,
@@ -111,7 +111,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
         }
         case 'Symbol': {
             return {
-                type: NonFilterSuggestionTypes.symbol,
+                type: NonFilterSuggestionType.symbol,
                 symbolKind: item.kind,
                 value: item.name,
                 description: `${item.containerName || item.location.resource.path} — ${basename(
@@ -128,7 +128,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
 
 const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, children, ...props }) => {
     switch (suggestion.type) {
-        case NonFilterSuggestionTypes.filters:
+        case NonFilterSuggestionType.filters:
             return <FilterIcon {...props} />
         case FilterTypes.repo:
             return <SourceRepositoryIcon {...props} />
@@ -136,7 +136,7 @@ const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggesti
             return <FileIcon {...props} />
         case FilterTypes.lang:
             return <LanguageIcon {...props} language={suggestion.value} {...props} />
-        case NonFilterSuggestionTypes.symbol:
+        case NonFilterSuggestionType.symbol:
             if (!suggestion.symbolKind) {
                 return null
             }

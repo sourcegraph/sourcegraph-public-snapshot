@@ -1,7 +1,7 @@
 import { Suggestion, FiltersSuggestionTypes } from './input/Suggestion'
 import { assign } from 'lodash/fp'
 import { languageIcons } from '../../../shared/src/components/languageIcons'
-import { NonFilterSuggestionTypes } from '../../../shared/src/search/suggestions/util'
+import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
 import { FilterTypes } from '../../../shared/src/search/interactive/util'
 
 export type SearchFilterSuggestions = Record<
@@ -97,7 +97,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
             },
         ].map(
             assign({
-                type: NonFilterSuggestionTypes.filters,
+                type: NonFilterSuggestionType.filters,
             })
         ),
     },

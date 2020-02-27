@@ -7,7 +7,7 @@ import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
 import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
 import { FiltersToTypeAndValue, FilterTypes } from '../../../shared/src/search/interactive/util'
-import { NonFilterSuggestionTypes } from '../../../shared/src/search/suggestions/util'
+import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
 import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
 
 /**
@@ -203,7 +203,7 @@ export const filterStaticSuggestions = (queryState: QueryState, suggestions: Sea
     if (
         // suggest values for selected filter
         resolvedFilterType &&
-        resolvedFilterType !== NonFilterSuggestionTypes.filters &&
+        resolvedFilterType !== NonFilterSuggestionType.filters &&
         (value || filterAndValue.endsWith(':'))
     ) {
         const suggestionsToShow = suggestions[resolvedFilterType] ?? []
@@ -247,7 +247,7 @@ export const insertSuggestionInQuery = (
     cursorPosition: number
 ): QueryState => {
     const { firstPart, lastPart } = splitStringAtPosition(queryToInsertIn, cursorPosition)
-    const isFiltersSuggestion = selectedSuggestion.type === NonFilterSuggestionTypes.filters
+    const isFiltersSuggestion = selectedSuggestion.type === NonFilterSuggestionType.filters
     // Know where to place the suggestion later on
     const separatorIndex = firstPart.lastIndexOf(!isFiltersSuggestion ? ':' : ' ')
     // If a filter value or separate word suggestion was selected, then append a whitespace
