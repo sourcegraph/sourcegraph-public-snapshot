@@ -6,11 +6,11 @@
  
 ## Exposing the debug port to generate profiling data
 
-Follow the instructions below to generate profiling data. We will use the Sourcegraph frontend and a memory profile as example (the instructions are easily adapted to any of the Sourcegraph backends and any profiling kind).
+Follow the instructions below to generate profiling data. We will use the Sourcegraph frontend and a memory profile as an example (the instructions are easily adapted to any of the Sourcegraph backends and any profiling kind).
 
 ### Kubernetes
 
-If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
+If you're using the [Kubernetes cluster deployment](https://github.com/sourcegraph/deploy-sourcegraph),  
 you need to port-forward 6060 from the frontend pod (if you have more than one, choose one):
 
 ```bash script
@@ -36,14 +36,14 @@ sshuttle -r user@host 0/0
 
 ## Generating profiling data
 
-Once the port is reachable you can trigger a profile dump by sending an HTTP request
+Once the port is reachable, you can trigger a profile dump by sending an HTTP request:
 (in the browser or with curl, wget or similar):
 
 ```bash script
 curl -sK -v http://localhost:6060/debug/pprof/heap > heap.out
 ```
 
-Please then upload `heap.out` for Sourcegraph support to access it. If desired, we can send you a shared private Google Drive folder for the upload.
+Once the `heap.out` file has been generated, share it with Sourcegraph support or your account manager for analysis.
 
 
 ## Debug ports
