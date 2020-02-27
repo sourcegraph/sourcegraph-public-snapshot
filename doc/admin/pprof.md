@@ -43,7 +43,7 @@ Once the port is reachable, you can trigger a profile dump by sending an HTTP re
 curl -sK -v http://localhost:6060/debug/pprof/heap > heap.out
 ```
 
-Please then upload `heap.out` for Sourcegraph support to access it. If desired, we can send you a shared private Google Drive folder for the upload.
+Once the `heap.out` file has been generated, share it with Sourcegraph support or your account manager for analysis.
 
 
 ## Debug ports
