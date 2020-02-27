@@ -391,6 +391,15 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
+        test('Structural search, return repo results if pattern is empty', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/facebook/react$',
+                GQL.SearchPatternType.structural,
+                false
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
         test('Commit search, nonzero result', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ type:commit hello world',

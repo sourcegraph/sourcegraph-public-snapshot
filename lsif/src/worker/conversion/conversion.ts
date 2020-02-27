@@ -11,6 +11,7 @@ import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
 import { DumpManager } from '../../shared/store/dumps'
 import { DependencyManager } from '../../shared/store/dependencies'
+import { PathExistenceChecker } from './existence'
 
 /**
  * Convert the LSIF dump input into a SQLite database and populate the dependency tables
@@ -19,6 +20,7 @@ import { DependencyManager } from '../../shared/store/dependencies'
  * @param entityManager The EntityManager to use as part of a transaction.
  * @param dumpManager The dumps manager instance.
  * @param dependencyManager The dependency manager instance.
+ * @param frontendUrl The url of the frontend internal API.
  * @param upload The unprocessed upload record.
  * @param ctx The tracing context.
  */
@@ -26,23 +28,27 @@ export async function convertDatabase(
     entityManager: EntityManager,
     dumpManager: DumpManager,
     dependencyManager: DependencyManager,
+    frontendUrl: string,
     upload: pgModels.LsifUpload,
     { logger = createSilentLogger(), span }: TracingContext
 ): Promise<void> {
+    const ctx = { logger, span }
     const tempFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, uuid.v4())
 
     try {
+        const pathExistenceChecker = new PathExistenceChecker({
+            repositoryId: upload.repositoryId,
+            commit: upload.commit,
+            root: upload.root,
+            frontendUrl,
+            ctx,
+        })
+
         // Create database in a temp path
-        const { packages, references } = await convertLsif(upload.filename, tempFile, { logger, span })
+        const { packages, references } = await convertLsif(upload.filename, tempFile, pathExistenceChecker, ctx)
 
         // Insert dump and add packages and references to Postgres
-        await dependencyManager.addPackagesAndReferences(
-            upload.id,
-            packages,
-            references,
-            { logger, span },
-            entityManager
-        )
+        await dependencyManager.addPackagesAndReferences(upload.id, packages, references, ctx, entityManager)
 
         // Move the temp file where it can be found by the server
         await fs.rename(tempFile, dbFilename(settings.STORAGE_ROOT, upload.id))

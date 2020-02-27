@@ -35,11 +35,21 @@ func (s *ChangesetSyncer) Sync(ctx context.Context) error {
 	return nil
 }
 
-// A SourceChangesets groups *repos.Changesets together with the
-// repos.ChangesetSource that can be used to modify the changesets.
-type SourceChangesets struct {
-	repos.ChangesetSource
-	Changesets []*repos.Changeset
+// EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
+// An error indicates that no changesets have been synced
+func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
+	// TODO(ryanslade): For now, we're not actually enqueueing but doing a blocking sync
+	// Change this once we have a proper scheduler in place and we've decided how to deal with
+	// it in places where we currently expect blocking
+	cs, _, err := s.Store.ListChangesets(ctx, ListChangesetsOpts{
+		Limit:          -1,
+		IDs:            ids,
+		WithoutDeleted: true,
+	})
+	if err != nil {
+		return err
+	}
+	return s.SyncChangesets(ctx, cs...)
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
@@ -190,7 +200,11 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*ca
 
 func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all []*campaigns.Changeset, err error) {
 	for cursor := int64(-1); cursor != 0; {
-		opts := ListChangesetsOpts{Cursor: cursor, Limit: 1000, WithoutDeleted: true}
+		opts := ListChangesetsOpts{
+			Cursor:         cursor,
+			Limit:          1000,
+			WithoutDeleted: true,
+		}
 		cs, next, err := s.Store.ListChangesets(ctx, opts)
 		if err != nil {
 			return nil, err
@@ -199,4 +213,11 @@ func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all 
 	}
 
 	return all, err
+}
+
+// A SourceChangesets groups *repos.Changesets together with the
+// repos.ChangesetSource that can be used to modify the changesets.
+type SourceChangesets struct {
+	repos.ChangesetSource
+	Changesets []*repos.Changeset
 }

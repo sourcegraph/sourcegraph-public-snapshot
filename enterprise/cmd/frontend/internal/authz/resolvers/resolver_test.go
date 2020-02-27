@@ -12,13 +12,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -161,14 +161,14 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			db.Mocks.Users.GetByUsernames = func(context.Context, ...string) ([]*types.User, error) {
 				return test.mockUsers, nil
 			}
-			edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *iauthz.RepoPermissions) error {
+			edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
 				ids := p.UserIDs.ToArray()
 				if diff := cmp.Diff(test.expectUserIDs, ids); diff != "" {
 					return fmt.Errorf("p.UserIDs: %v", diff)
 				}
 				return nil
 			}
-			edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, bindIDs []string, _ *iauthz.RepoPermissions) error {
+			edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, bindIDs []string, _ *authz.RepoPermissions) error {
 				if diff := cmp.Diff(test.expectPendingBindIDs, bindIDs); diff != "" {
 					return fmt.Errorf("bindIDs: %v", diff)
 				}
@@ -227,12 +227,12 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		}
 		return repos, nil
 	}
-	edb.Mocks.Perms.LoadUserPermissions = func(_ context.Context, p *iauthz.UserPermissions) error {
+	edb.Mocks.Perms.LoadUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		p.IDs = roaring.NewBitmap()
 		p.IDs.Add(1)
 		return nil
 	}
-	edb.Mocks.Perms.LoadUserPendingPermissions = func(_ context.Context, p *iauthz.UserPendingPermissions) error {
+	edb.Mocks.Perms.LoadUserPendingPermissions = func(_ context.Context, p *authz.UserPendingPermissions) error {
 		p.IDs = roaring.NewBitmap()
 		p.IDs.Add(2)
 		return nil
@@ -467,7 +467,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 	db.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id}, nil
 	}
-	edb.Mocks.Perms.LoadRepoPermissions = func(_ context.Context, p *iauthz.RepoPermissions) error {
+	edb.Mocks.Perms.LoadRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
 		p.UserIDs = roaring.NewBitmap()
 		p.UserIDs.Add(1)
 		return nil

@@ -1,7 +1,7 @@
 # Install Sourcegraph with Docker Compose
 
 | Deployment Type                                          | Suggested for                                       | Setup time | Multi-machine? | Auto healing? | Monitoring? |
-|----------------------------------------------------------|-----------------------------------------------------|------------|----------------|---------------|-------------|
+| -------------------------------------------------------- | --------------------------------------------------- | ---------- | -------------- | ------------- | ----------- |
 | [Single-container server](../../install/docker/index.md) | Local testing                                       | 60 seconds | Impossible     | No            | No          |
 | [Docker Compose](../../install/docker-compose/index.md)  | Small & medium production deployments               | 5 minutes  | Possible       | No            | Yes         |
 | [Kubernetes](../../install/cluster.md)                   | Medium & large highly-available cluster deployments | 30 minutes | Easily         | Yes           | Yes         |
@@ -25,6 +25,22 @@ Once the server is ready (the `sourcegraph-frontend-0` service is healthy when r
 For next steps and further configuration options, visit the [site administration documentation](../../index.md).
 
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
+
+## (optional, recommended) Store customizations in a fork
+
+We **strongly** recommend that you create your own fork of [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). This will make upgrades far easier.
+
+* Fork [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/)
+  * The fork can be public **unless** you plan to store secrets (SSL certificates, external Postgres credentials, etc.) in the repository itself.
+
+* Create a `release` branch (to track all of your customizations to Sourcegraph. When you upgrade Sourcegraph's Docker Compose definition, you will merge upstream into this branch.
+
+```bash
+SOURCEGRAPH_VERSION="v3.12.5-1"
+git checkout $SOURCEGRAPH_VERSION -b release
+```
+
+* Commit customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) to your `release` branch
 
 ## Storage
 

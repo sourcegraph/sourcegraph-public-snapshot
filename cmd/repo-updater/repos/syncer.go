@@ -29,11 +29,11 @@ type Syncer struct {
 	// Sourcegraph.com
 	FailFullSync bool
 
-	// Synced is sent Repos that were synced by Sync (only if Synced is non-nil)
-	Synced chan Repos
+	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
+	Synced chan Diff
 
-	// SubsetSynced is sent Repos that were synced by SubsetSync (only if SubsetSynced is non-nil)
-	SubsetSynced chan Repos
+	// SubsetSynced is sent a collection of Repos that were synced by SubsetSync (only if SubsetSynced is non-nil)
+	SubsetSynced chan Diff
 
 	// Logger if non-nil is logged to.
 	Logger log15.Logger
@@ -147,7 +147,7 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 	}
 
 	if s.Synced != nil {
-		s.Synced <- diff.Repos()
+		s.Synced <- diff
 	}
 
 	return nil
@@ -219,7 +219,7 @@ func (s *Syncer) syncSubset(ctx context.Context, insertOnly bool, sourcedSubset 
 	}
 
 	if s.SubsetSynced != nil {
-		s.SubsetSynced <- diff.Repos()
+		s.SubsetSynced <- diff
 	}
 
 	return diff, nil
