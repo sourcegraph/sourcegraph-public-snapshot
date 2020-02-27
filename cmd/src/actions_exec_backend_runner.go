@@ -41,10 +41,9 @@ func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
 	if result, ok, err := x.opt.cache.get(ctx, cacheKey); err != nil {
 		return errors.Wrapf(err, "checking cache for %s", repo.Name)
 	} else if ok {
-		x.updateRepoStatus(repo, ActionRepoStatus{
-			Cached: true,
-			Patch:  result,
-		})
+		status := ActionRepoStatus{Cached: true, Patch: result}
+		x.updateRepoStatus(repo, status)
+		x.logger.RepoCacheHit(repo, status.Patch != CampaignPlanPatch{})
 		return nil
 	}
 

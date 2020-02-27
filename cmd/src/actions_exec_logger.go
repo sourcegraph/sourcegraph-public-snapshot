@@ -17,6 +17,7 @@ import (
 var (
 	boldRed   = color.New(color.Bold, color.FgRed)
 	boldGreen = color.New(color.Bold, color.FgGreen)
+	green     = color.New(color.FgGreen)
 	yellow    = color.New(color.FgYellow)
 	grey      = color.New(color.FgHiBlack)
 )
@@ -55,6 +56,17 @@ func (a *actionLogger) Warnf(format string, args ...interface{}) {
 func (a *actionLogger) Infof(format string, args ...interface{}) {
 	if a.verbose {
 		fmt.Fprintf(os.Stderr, format, args...)
+	}
+}
+
+func (a *actionLogger) RepoCacheHit(repo ActionRepo, patchProduced bool) {
+	if a.verbose {
+		if patchProduced {
+			fmt.Fprintf(os.Stderr, "%s -> Cached result with patch found.\n", boldGreen.Sprint(repo.Name))
+			return
+		}
+
+		fmt.Fprintf(os.Stderr, "%s -> Cached result without patch found.\n", green.Sprint(repo.Name))
 	}
 }
 
