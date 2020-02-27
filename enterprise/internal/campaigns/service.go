@@ -671,7 +671,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 		return errs
 	}
 
-	// Here we need to sync the just-closed changesets (even though
+	// Here we need to syncAll the just-closed changesets (even though
 	// CloseChangesets updates the given Changesets too), because closing a
 	// Changeset often produces a ChangesetEvent on the codehost and if we were
 	// to close the Changesets and not update the events (which is what
