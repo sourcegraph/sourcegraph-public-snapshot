@@ -69,6 +69,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		cfg                          conf.Unified
 		gitlabConnections            []*schema.GitLabConnection
 		bitbucketServerConnections   []*schema.BitbucketServerConnection
+		githubConnections            []*schema.GitHubConnection
 		expAuthzAllowAccessByDefault bool
 		expAuthzProviders            func(*testing.T, []authz.Provider)
 		expSeriousProblems           []string
@@ -161,7 +162,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
 		},
 		{
-			description: "Two GitLab connections with authz enabled, two matching GitLab auth providers",
+			description: "Two GitLab connections with authz enabled, two matching auth providers found",
 			cfg: conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{
@@ -201,25 +202,8 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 					Token: "asdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: providersEqual(
-				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthAuthzProviderOp{
-						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
-						CacheTTL:          3 * time.Hour,
-						MinBatchThreshold: 200,
-						MaxBatchRequests:  300,
-					},
-				},
-				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthAuthzProviderOp{
-						BaseURL:           mustURLParse(t, "https://gitlab.com"),
-						CacheTTL:          3 * time.Hour,
-						MinBatchThreshold: 200,
-						MaxBatchRequests:  300,
-					},
-				},
-			),
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"Only one GitLab authorization configuration is supported."},
 		},
 		{
 			description: "1 GitLab connection with authz disabled",
@@ -441,6 +425,89 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 				}
 			},
 		},
+		{
+			description: "Two Bitbucket Server connections with authz enabled",
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: &schema.BitbucketServerAuthorization{
+						IdentityProvider: schema.BitbucketServerIdentityProvider{
+							Username: &schema.BitbucketServerUsernameIdentity{
+								Type: "username",
+							},
+						},
+						Oauth: schema.BitbucketServerOAuth{
+							ConsumerKey: "sourcegraph",
+							SigningKey:  bogusKey,
+						},
+						Ttl: "15m",
+					},
+					Url:      "https://bitbucketserver.mycorp.org",
+					Username: "admin",
+					Token:    "secret-token",
+				}, {
+					Authorization: &schema.BitbucketServerAuthorization{
+						IdentityProvider: schema.BitbucketServerIdentityProvider{
+							Username: &schema.BitbucketServerUsernameIdentity{
+								Type: "username",
+							},
+						},
+						Oauth: schema.BitbucketServerOAuth{
+							ConsumerKey: "sourcegraph",
+							SigningKey:  bogusKey,
+						},
+						Ttl: "15m",
+					},
+					Url:      "https://bitbucketserver2.mycorp.org",
+					Username: "admin",
+					Token:    "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"Only one Bitbucket Server authorization configuration is supported."},
+		},
+		{
+			description: "Two GitHub connections with authz enabled, two matching auth providers found",
+			cfg: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					AuthProviders: []schema.AuthProviders{
+						{
+							Github: &schema.GitHubAuthProvider{
+								Type:         "github",
+								Url:          "https://github.me",
+								DisplayName:  "GitHub.me",
+								ClientID:     "clientID",
+								ClientSecret: "clientSecret",
+							},
+						}, {
+							Github: &schema.GitHubAuthProvider{
+								Type:         "github",
+								Url:          "https://github.mine",
+								DisplayName:  "GitHub.mine",
+								ClientID:     "clientID",
+								ClientSecret: "clientSecret",
+							},
+						},
+					},
+				},
+			},
+			githubConnections: []*schema.GitHubConnection{
+				{
+					Url: "https://github.me",
+					Authorization: &schema.GitHubAuthorization{
+						Ttl: "15m",
+					},
+					Token: "secret-token",
+				}, {
+					Url: "https://github.mine",
+					Authorization: &schema.GitHubAuthorization{
+						Ttl: "15m",
+					},
+					Token: "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"Only one GitHub authorization configuration is supported."},
+		},
 
 		// For Sourcegraph authz provider
 		{
@@ -515,6 +582,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		store := fakeStore{
 			gitlabs:          test.gitlabConnections,
 			bitbucketServers: test.bitbucketServerConnections,
+			githubs:          test.githubConnections,
 		}
 
 		allowAccessByDefault, authzProviders, seriousProblems, _ :=

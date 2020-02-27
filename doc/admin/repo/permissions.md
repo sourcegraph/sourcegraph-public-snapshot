@@ -4,6 +4,8 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 
 Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions are supported. Check our [product direction](https://about.sourcegraph.com/direction) for plans to support other code hosts. If your desired code host is not yet on the roadmap, please [open a feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
 
+Please be noted that we only support enforcing repository permissions for one code host per type. For example, you are able to configure authorization for one GitHub and one GitLab instances, but not for two GitLab instances. Although it is still possible to configure as many instances as you need for adding repositories to your Sourcegraph instance.
+
 > NOTE: Site admin users bypass all permission checks and have access to every repository on Sourcegraph.
 
 ## GitHub

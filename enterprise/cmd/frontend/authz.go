@@ -168,6 +168,9 @@ func authzProvidersFromConfig(
 		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load GitHub external service configs: %s", err))
 	} else {
 		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(ghConns)
+		if len(ghProviders) > 1 {
+			ghProblems = append(ghProblems, "Only one GitHub authorization configuration is supported.")
+		}
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
 		warnings = append(warnings, ghWarnings...)
@@ -177,6 +180,9 @@ func authzProvidersFromConfig(
 		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load GitLab external service configs: %s", err))
 	} else {
 		glProviders, glProblems, glWarnings := gitlab.NewAuthzProviders(cfg, glConns)
+		if len(glProviders) > 1 {
+			glProblems = append(glProblems, "Only one GitLab authorization configuration is supported.")
+		}
 		providers = append(providers, glProviders...)
 		seriousProblems = append(seriousProblems, glProblems...)
 		warnings = append(warnings, glWarnings...)
@@ -186,6 +192,9 @@ func authzProvidersFromConfig(
 		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load Bitbucket Server external service configs: %s", err))
 	} else {
 		bbsProviders, bbsProblems, bbsWarnings := bitbucketserver.NewAuthzProviders(bbsConns, db)
+		if len(bbsProviders) > 1 {
+			bbsProblems = append(bbsProblems, "Only one Bitbucket Server authorization configuration is supported.")
+		}
 		providers = append(providers, bbsProviders...)
 		seriousProblems = append(seriousProblems, bbsProblems...)
 		warnings = append(warnings, bbsWarnings...)

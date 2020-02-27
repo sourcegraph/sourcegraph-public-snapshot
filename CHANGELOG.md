@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The "automation" feature was renamed to "campaigns".
   - `campaigns.readAccess.enabled` replaces the deprecated site configuration property `automation.readAccess.enabled`.
   - The experimental feature flag was not renamed (because it will go away soon) and remains `{"experimentalFeatures": {"automation": "enabled"}}`.
+- Enforce only one authorization configuration per code host type is supported.
 
 ### Fixed
 
