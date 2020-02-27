@@ -36,7 +36,7 @@ sshuttle -r user@host 0/0
 
 ## Generating profiling data
 
-Once the port is reachable you can trigger a profile dump by sending an HTTP request
+Once the port is reachable, you can trigger a profile dump by sending an HTTP request:
 (in the browser or with curl, wget or similar):
 
 ```bash script
