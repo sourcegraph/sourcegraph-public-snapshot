@@ -10,7 +10,7 @@ Follow the instructions below to generate profiling data. We will use the Source
 
 ### Kubernetes
 
-If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
+If you're using the [Kubernetes cluster deployment](https://github.com/sourcegraph/deploy-sourcegraph),  
 you need to port-forward 6060 from the frontend pod (if you have more than one, choose one):
 
 ```bash script
