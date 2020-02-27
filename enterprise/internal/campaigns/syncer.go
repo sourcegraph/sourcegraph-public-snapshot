@@ -84,7 +84,8 @@ func (s *ChangesetSyncer) StartSyncing() {
 	}
 }
 
-func nextUpdate(clock func() time.Time, ours, theirs time.Time) time.Time {
+// nextSync computes the time we want the next sync to happen
+func nextSync(clock func() time.Time, ours, theirs time.Time) time.Time {
 	minDelay := 2 * time.Minute
 	maxDelay := 8 * time.Hour
 	now := clock()
@@ -120,7 +121,7 @@ func (s *ChangesetSyncer) computeQueue(ctx context.Context) (*changesetQueue, er
 
 	csd := make([]changesetDeadline, len(cs))
 	for i := range cs {
-		deadline := nextUpdate(s.clock, cs[i].UpdatedAt, changed(cs[i]))
+		deadline := nextSync(s.clock, cs[i].UpdatedAt, cs[i].ExternalUpdatedAt)
 
 		csd[i] = changesetDeadline{
 			cs:       cs[i],
@@ -139,10 +140,6 @@ func (s *ChangesetSyncer) computeQueue(ctx context.Context) (*changesetQueue, er
 	q := newChangesetQueue(ctx, s.clock, csd)
 	return q, nil
 
-}
-
-func changed(cs *campaigns.Changeset) time.Time {
-	return cs.ExternalUpdatedAt
 }
 
 // syncAll refreshes the metadata of all changesets and updates them in the

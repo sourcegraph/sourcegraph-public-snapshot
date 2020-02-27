@@ -982,6 +982,28 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 		})
 
+		t.Run("ListChangesetHeuristics", func(t *testing.T) {
+			hs, err := s.ListChangesetSyncHeuristics(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []ChangesetSyncHeuristics{
+				{
+					ChangesetID: 2,
+					UpdatedAt:   clock(),
+					LatestEvent: clock(),
+				},
+				{
+					ChangesetID: 1,
+					UpdatedAt:   clock(),
+					LatestEvent: clock(),
+				},
+			}
+			if diff := cmp.Diff(want, hs); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
 		t.Run("CampaignPlans", func(t *testing.T) {
 			campaignPlans := make([]*cmpgn.CampaignPlan, 0, 3)
 

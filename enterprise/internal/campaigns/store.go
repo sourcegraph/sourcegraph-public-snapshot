@@ -547,6 +547,52 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
+type ChangesetSyncHeuristics struct {
+	ChangesetID       int64
+	UpdatedAt         time.Time
+	LatestEvent       time.Time
+	ExternalUpdatedAt time.Time
+}
+
+// ListChangesetSyncHeuristics returns sync timing data on all non deleted changesets
+func (s *Store) ListChangesetSyncHeuristics(ctx context.Context) ([]ChangesetSyncHeuristics, error) {
+	q := listChangesetSyncHeuristicsQuery()
+	results := make([]ChangesetSyncHeuristics, 0)
+	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var h ChangesetSyncHeuristics
+		if err = scanChangesetHeuristics(&h, sc); err != nil {
+			return 0, 0, err
+		}
+		results = append(results, h)
+		return h.ChangesetID, 1, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+func scanChangesetHeuristics(h *ChangesetSyncHeuristics, s scanner) error {
+	return s.Scan(
+		&h.ChangesetID,
+		&h.UpdatedAt,
+		&dbutil.NullTime{Time: &h.LatestEvent},
+		&dbutil.NullTime{Time: &h.ExternalUpdatedAt},
+	)
+}
+
+func listChangesetSyncHeuristicsQuery() *sqlf.Query {
+	return sqlf.Sprintf(`
+SELECT changesets.id,
+       changesets.updated_at,
+       max(ce.updated_at) as latest_event,
+       changesets.external_updated_at
+FROM changesets
+JOIN changeset_events ce ON changesets.id = ce.changeset_id
+GROUP by changesets.id
+`)
+}
+
 // ListChangesetsOpts captures the query options needed for
 // listing changesets.
 type ListChangesetsOpts struct {
