@@ -20,8 +20,6 @@ type ChangesetSyncer struct {
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
 
-	// The number of changesets to request from the db at a time
-	BatchSize        int
 	ScheduleInterval time.Duration
 
 	clock func() time.Time
@@ -35,10 +33,6 @@ func (s *ChangesetSyncer) StartSyncing() {
 	scheduleInterval := s.ScheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
-	}
-	batchSize := s.BatchSize
-	if batchSize <= 0 {
-		batchSize = 100
 	}
 	if s.clock == nil {
 		s.clock = time.Now
