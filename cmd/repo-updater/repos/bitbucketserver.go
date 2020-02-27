@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -202,6 +203,8 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 		}
 
 		cs[i].Changeset.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
+		// BitBucket timestamps are in milliseconds
+		cs[i].Changeset.ExternalUpdatedAt = time.Unix(0, int64(pr.UpdatedDate*1000000))
 		cs[i].Changeset.Metadata = pr
 	}
 

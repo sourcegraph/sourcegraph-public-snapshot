@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"time"
 
@@ -10,8 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -145,18 +142,7 @@ func (s *ChangesetSyncer) computeQueue(ctx context.Context) (*changesetQueue, er
 }
 
 func changed(cs *campaigns.Changeset) time.Time {
-	switch m := cs.Metadata.(type) {
-	case *github.PullRequest:
-		// TODO: We may need to check individual events but on initial inspection
-		// some of them do update the top level timestamp (comments for example)
-		return m.UpdatedAt
-	case *bitbucketserver.PullRequest:
-		// TODO: Look into dates of events
-		return time.Unix(int64(m.UpdatedDate)/1000, 0)
-	default:
-		log15.Info("Unknown metadata type", "type", fmt.Sprintf("%T", m))
-		return time.Time{}
-	}
+	return cs.ExternalUpdatedAt
 }
 
 // syncAll refreshes the metadata of all changesets and updates them in the
