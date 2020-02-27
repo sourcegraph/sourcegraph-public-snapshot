@@ -5,7 +5,7 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
-import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
+import { Suggestion, FilterSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
 import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
@@ -126,7 +126,7 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 export const isSearchResults = (val: any): val is GQL.ISearchResults =>
     val && typeof val === 'object' && val.__typename === 'SearchResults'
 
-const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
+const isValidFilter = (filter: string = ''): filter is FilterSuggestionTypes =>
     Object.prototype.hasOwnProperty.call(FilterType, filter) ||
     Object.prototype.hasOwnProperty.call(filterAliases, filter)
 
@@ -151,13 +151,13 @@ interface FilterAndValueMatch {
 }
 
 interface ValidFilterAndValueMatch extends FilterAndValueMatch {
-    resolvedFilterType: FiltersSuggestionTypes
+    resolvedFilterType: FilterSuggestionTypes
 }
 
 /**
  * Tries to resolve the given string into a valid filter type.
  */
-export const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null => {
+export const resolveFilterType = (filter: string = ''): FilterSuggestionTypes | null => {
     const absoluteFilter = filter.replace(/^-/, '')
     return filterAliases[absoluteFilter] ?? (isValidFilter(absoluteFilter) ? absoluteFilter : null)
 }

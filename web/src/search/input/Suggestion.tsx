@@ -6,11 +6,11 @@ import FilterIcon from 'mdi-react/FilterIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
-import { SuggestionTypes, NonFilterSuggestionType } from '../../../../shared/src/search/suggestions/util'
+import { SuggestionType, NonFilterSuggestionType } from '../../../../shared/src/search/suggestions/util'
 import { escapeRegExp } from 'lodash'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 
-export const filterAliases: Record<string, FiltersSuggestionTypes | undefined> = {
+export const filterAliases: Record<string, FilterSuggestionTypes | undefined> = {
     r: FilterType.repo,
     g: FilterType.repogroup,
     f: FilterType.file,
@@ -21,7 +21,7 @@ export const filterAliases: Record<string, FiltersSuggestionTypes | undefined> =
 /**
  * Filters which use fuzzy-search for their suggestion values
  */
-export const fuzzySearchFilters: FiltersSuggestionTypes[] = [
+export const fuzzySearchFilters: FilterSuggestionTypes[] = [
     FilterType.repo,
     FilterType.repogroup,
     FilterType.file,
@@ -32,16 +32,16 @@ export const fuzzySearchFilters: FiltersSuggestionTypes[] = [
  * Some filter types should have their suggestions searched without influence
  * from the rest of the query, as they will then influence the scope of other filters.
  */
-export const isolatedFuzzySearchFilters: FiltersSuggestionTypes[] = [FilterType.repo, FilterType.repogroup]
+export const isolatedFuzzySearchFilters: FilterSuggestionTypes[] = [FilterType.repo, FilterType.repogroup]
 
 /**
  * dir and symbol are fetched/suggested by the fuzzy-search
  * but are not filter types: /web/src/search/searchFilterSuggestions.ts
  */
-export type FiltersSuggestionTypes = FilterType | 'filters'
+export type FilterSuggestionTypes = FilterType | 'filters'
 
 export interface Suggestion {
-    type: SuggestionTypes
+    type: SuggestionType
     /** The value to be suggested and that will be added to queries */
     value: string
     /**
