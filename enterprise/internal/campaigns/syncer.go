@@ -60,8 +60,6 @@ func (s *ChangesetSyncer) StartSyncing() {
 	// How often to refresh the queue
 	scheduleTicker := time.NewTicker(scheduleInterval)
 
-	// TODO: Many functions below were written when we were syncing groups of changesets
-	// Use more efficient versions that work for single changeset syncing
 	for {
 		select {
 		case <-scheduleTicker.C:
@@ -73,13 +71,11 @@ func (s *ChangesetSyncer) StartSyncing() {
 			}
 			queue.cancel()
 			queue = q
-		case cs := <-queue.csChan:
-			log15.Info("Syncing changeset", "external branch", cs.ExternalBranch)
-			err := s.SyncChangesets(ctx, []*campaigns.Changeset{cs}...)
+		case id := <-queue.idChan:
+			err := s.SyncChangesetByID(ctx, id)
 			if err != nil {
 				log15.Error("Syncing changesets", "err", err)
 			}
-			log15.Info("Syncing done")
 		}
 	}
 }
@@ -112,32 +108,32 @@ func nextSync(clock func() time.Time, ours, theirs time.Time) time.Time {
 
 func (s *ChangesetSyncer) computeQueue(ctx context.Context) (*changesetQueue, error) {
 	// This will happen in the db later, for now we'll grab everything and order in code
-	cs, err := s.listAllNonDeletedChangesets(ctx)
+	hs, err := s.Store.ListChangesetSyncHeuristics(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "listing all changesets")
+		return nil, errors.Wrap(err, "listing changeset heuristics")
 	}
 
-	log15.Info("listAllNonDeletedChangesets", "count", len(cs))
+	log15.Info("ListChangesetSyncHeuristics", "count", len(hs))
 
-	csd := make([]changesetDeadline, len(cs))
-	for i := range cs {
-		deadline := nextSync(s.clock, cs[i].UpdatedAt, cs[i].ExternalUpdatedAt)
+	ss := make([]syncSchedule, len(hs))
+	for i := range hs {
+		nextSync := nextSync(s.clock, hs[i].UpdatedAt, hs[i].ExternalUpdatedAt)
 
-		csd[i] = changesetDeadline{
-			cs:       cs[i],
-			deadline: deadline,
+		ss[i] = syncSchedule{
+			changesetID: hs[i].ChangesetID,
+			nextSync:    nextSync,
 		}
 	}
 
-	sort.Slice(csd, func(i, j int) bool {
-		return csd[i].deadline.Before(csd[j].deadline)
+	sort.Slice(ss, func(i, j int) bool {
+		return ss[i].nextSync.Before(ss[j].nextSync)
 	})
 
-	for i := range csd {
-		log15.Info("ChangesetDeadline", "external branch", csd[i].cs.ExternalBranch, "deadline", csd[i].deadline, "diff", csd[i].deadline.Sub(time.Now()))
+	for _, s := range ss {
+		log15.Info("NexySync", "id", s.changesetID, "nextSync", s.nextSync, "diff", s.nextSync.Sub(time.Now()))
 	}
 
-	q := newChangesetQueue(ctx, s.clock, csd)
+	q := newChangesetQueue(ctx, s.clock, ss)
 	return q, nil
 
 }
@@ -173,6 +169,17 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 		return err
 	}
 	return s.SyncChangesets(ctx, cs...)
+}
+
+// SyncChangesetByID will sync a single changeset given its id
+func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
+	cs, err := s.Store.GetChangeset(ctx, GetChangesetOpts{
+		ID: id,
+	})
+	if err != nil {
+		return err
+	}
+	return s.SyncChangesets(ctx, []*campaigns.Changeset{cs}...)
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
@@ -339,24 +346,24 @@ func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all 
 }
 
 type changesetQueue struct {
-	csChan chan *campaigns.Changeset
+	idChan chan int64
 
 	ctx    context.Context
 	cancel context.CancelFunc
 }
 
-func newChangesetQueue(ctx context.Context, clock func() time.Time, csd []changesetDeadline) *changesetQueue {
+func newChangesetQueue(ctx context.Context, clock func() time.Time, ss []syncSchedule) *changesetQueue {
 	q := new(changesetQueue)
 	q.ctx, q.cancel = context.WithCancel(ctx)
-	q.csChan = make(chan *campaigns.Changeset)
+	q.idChan = make(chan int64)
 
 	var timer *time.Timer
 	go func() {
-		for i := range csd {
-			deadline := csd[i].deadline
-			d := deadline.Sub(clock())
+		for i := range ss {
+			nextSync := ss[i].nextSync
+			d := nextSync.Sub(clock())
 			timer = time.NewTimer(d)
-			log15.Info("queueInnerLoop", "i", i, "of", len(csd), "deadline", deadline, "in", deadline.Sub(clock()))
+			log15.Info("queueInnerLoop", "i", i, "of", len(ss), "nextSync", nextSync, "in", nextSync.Sub(clock()))
 			select {
 			case <-ctx.Done():
 				log15.Info("queueInnerLoop one Done")
@@ -369,7 +376,7 @@ func newChangesetQueue(ctx context.Context, clock func() time.Time, csd []change
 			case <-ctx.Done():
 				log15.Info("queueInnerLoop two Done")
 				return
-			case q.csChan <- csd[i].cs:
+			case q.idChan <- ss[i].changesetID:
 			}
 		}
 	}()
@@ -377,9 +384,9 @@ func newChangesetQueue(ctx context.Context, clock func() time.Time, csd []change
 	return q
 }
 
-type changesetDeadline struct {
-	cs       *campaigns.Changeset
-	deadline time.Time
+type syncSchedule struct {
+	changesetID int64
+	nextSync    time.Time
 }
 
 // A SourceChangesets groups *repos.Changesets together with the
