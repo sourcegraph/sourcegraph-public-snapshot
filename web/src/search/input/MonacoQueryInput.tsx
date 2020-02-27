@@ -242,13 +242,15 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
         if (this.props.autoFocus) {
-            // Focus the editor with cursor at end.
+            // Focus the editor with cursor at end, and reveal that position.
             editor.focus()
-            editor.setPosition({
+            const position = {
                 // +2 as Monaco is 1-indexed, and the cursor should be placed after the query.
                 column: editor.getValue().length + 2,
                 lineNumber: 1,
-            })
+            }
+            editor.setPosition(position)
+            editor.revealPosition(position)
         }
         // Prevent newline insertion in model, and surface query changes with stripped newlines.
         this.subscriptions.add(
