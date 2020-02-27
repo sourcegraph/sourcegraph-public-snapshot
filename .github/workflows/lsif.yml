@@ -24,6 +24,8 @@ jobs:
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
         run: yarn
+      - name: Generate GQL types
+        run: yarn run graphql
       - name: Generate LSIF data
         uses: sourcegraph/lsif-node-action@master
         with:
@@ -60,6 +62,8 @@ jobs:
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
         run: yarn
+      - name: Generate GQL types
+        run: yarn run graphql
       - name: Generate LSIF data
         uses: sourcegraph/lsif-node-action@master
         with:
@@ -79,6 +83,8 @@ jobs:
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
         run: yarn
+      - name: Generate GQL types
+        run: yarn run graphql
       - name: Generate LSIF data
         uses: sourcegraph/lsif-node-action@master
         with:
