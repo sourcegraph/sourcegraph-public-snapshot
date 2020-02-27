@@ -1,5 +1,4 @@
 > NOTE: Using Sourcegraph with an external database is a [paid feature](https://about.sourcegraph.com/pricing). [Contact us](https://about.sourcegraph.com/contact/sales) to get a trial license.
-
 # Using external databases with Sourcegraph
 
 > NOTE: Using Sourcegraph with an external database is a [paid feature](https://about.sourcegraph.com/pricing). [Contact us](https://about.sourcegraph.com/contact/sales) to get a trial license.
