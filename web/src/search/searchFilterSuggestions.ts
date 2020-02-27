@@ -2,7 +2,7 @@ import { Suggestion, FiltersSuggestionTypes } from './input/Suggestion'
 import { assign } from 'lodash/fp'
 import { languageIcons } from '../../../shared/src/components/languageIcons'
 import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
-import { FilterTypes } from '../../../shared/src/search/interactive/util'
+import { FilterType } from '../../../shared/src/search/interactive/util'
 
 export type SearchFilterSuggestions = Record<
     FiltersSuggestionTypes,
@@ -105,7 +105,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         default: 'code',
         values: [{ value: 'code' }, { value: 'diff' }, { value: 'commit' }, { value: 'symbol' }].map(
             assign({
-                type: FilterTypes.type,
+                type: FilterType.type,
             })
         ),
     },
@@ -113,7 +113,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         default: 'no',
         values: [{ value: 'yes' }, { value: 'no' }].map(
             assign({
-                type: FilterTypes.case,
+                type: FilterType.case,
             })
         ),
     },
@@ -121,7 +121,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         default: 'yes',
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
             assign({
-                type: FilterTypes.fork,
+                type: FilterType.fork,
             })
         ),
     },
@@ -129,7 +129,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         default: 'yes',
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
             assign({
-                type: FilterTypes.archived,
+                type: FilterType.archived,
             })
         ),
     },
@@ -140,11 +140,11 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         ].map(suggestion => ({
             ...suggestion,
             description: suggestion.value,
-            type: FilterTypes.file,
+            type: FilterType.file,
         })),
     },
     lang: {
-        values: Object.keys(languageIcons).map(value => ({ type: FilterTypes.lang, value })),
+        values: Object.keys(languageIcons).map(value => ({ type: FilterType.lang, value })),
     },
     repogroup: {
         values: [],
@@ -158,21 +158,21 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
     repohascommitafter: {
         values: [{ value: "'1 week ago'" }, { value: "'1 month ago'" }].map(
             assign({
-                type: FilterTypes.repohascommitafter,
+                type: FilterType.repohascommitafter,
             })
         ),
     },
     count: {
         values: [{ value: '100' }, { value: '1000' }].map(
             assign({
-                type: FilterTypes.count,
+                type: FilterType.count,
             })
         ),
     },
     timeout: {
         values: [{ value: '10s' }, { value: '30s' }].map(
             assign({
-                type: FilterTypes.timeout,
+                type: FilterType.timeout,
             })
         ),
     },
@@ -184,12 +184,12 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
     },
     before: {
         values: [{ value: '"1 week ago"' }, { value: '"1 day ago"' }, { value: '"last thursday"' }].map(
-            assign({ type: FilterTypes.before })
+            assign({ type: FilterType.before })
         ),
     },
     after: {
         values: [{ value: '"1 week ago"' }, { value: '"1 day ago"' }, { value: '"last thursday"' }].map(
-            assign({ type: FilterTypes.after })
+            assign({ type: FilterType.after })
         ),
     },
     content: {
@@ -197,7 +197,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
     },
     patterntype: {
         values: [{ value: 'literal' }, { value: 'structural' }, { value: 'regexp' }].map(
-            assign({ type: FilterTypes.patterntype })
+            assign({ type: FilterType.patterntype })
         ),
     },
 }

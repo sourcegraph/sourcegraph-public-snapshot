@@ -1,6 +1,6 @@
-import { FilterTypes } from '../interactive/util'
+import { FilterType } from '../interactive/util'
 
-export type SuggestionTypes = FilterTypes | NonFilterSuggestionType
+export type SuggestionTypes = FilterType | NonFilterSuggestionType
 
 /**
  * NonFilterSuggestionType represents the types of suggestion results that do not match a filter.

@@ -8,7 +8,7 @@ export interface FiltersToTypeAndValue {
      * */
     [key: string]: {
         // `type` is the field type of the filter (repo, file, etc.)
-        type: FilterTypes
+        type: FilterType
         // `value` is the current value for that particular filter,
         value: string
         // `editable` is whether the corresponding filter input is currently editable in the UI.
@@ -18,7 +18,7 @@ export interface FiltersToTypeAndValue {
     }
 }
 
-export enum FilterTypes {
+export enum FilterType {
     repo = 'repo',
     repogroup = 'repogroup',
     repohasfile = 'repohasfile',
@@ -39,9 +39,9 @@ export enum FilterTypes {
     patterntype = 'patterntype',
 }
 
-export const isFilterType = (filter: string): filter is FilterTypes => filter in FilterTypes
+export const isFilterType = (filter: string): filter is FilterType => filter in FilterType
 
-export const filterTypeKeys: FilterTypes[] = Object.keys(FilterTypes) as FilterTypes[]
+export const filterTypeKeys: FilterType[] = Object.keys(FilterType) as FilterType[]
 
 export enum NegatedFilters {
     repo = '-repo',
@@ -54,9 +54,9 @@ export enum NegatedFilters {
 }
 
 /** The list of filters that are able to be negated. */
-export type NegatableFilter = FilterTypes.repo | FilterTypes.file | FilterTypes.repohasfile | FilterTypes.lang
+export type NegatableFilter = FilterType.repo | FilterType.file | FilterType.repohasfile | FilterType.lang
 
-export const isNegatableFilter = (filter: FilterTypes): filter is NegatableFilter =>
+export const isNegatableFilter = (filter: FilterType): filter is NegatableFilter =>
     Object.keys(NegatedFilters).includes(filter)
 
 /** The list of all negated filters. i.e. all valid filters that have `-` as a suffix. */
@@ -66,13 +66,13 @@ export const isNegatedFilter = (filter: string): filter is NegatedFilters =>
     negatedFilters.includes(filter as NegatedFilters)
 
 const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
-    '-repo': FilterTypes.repo,
-    '-file': FilterTypes.file,
-    '-lang': FilterTypes.lang,
-    '-r': FilterTypes.repo,
-    '-f': FilterTypes.file,
-    '-l': FilterTypes.lang,
-    '-repohasfile': FilterTypes.repohasfile,
+    '-repo': FilterType.repo,
+    '-file': FilterType.file,
+    '-lang': FilterType.lang,
+    '-r': FilterType.repo,
+    '-f': FilterType.file,
+    '-l': FilterType.lang,
+    '-repohasfile': FilterType.repohasfile,
 }
 
 export const resolveNegatedFilter = (filter: NegatedFilters): NegatableFilter => negatedFilterToNegatableFilter[filter]

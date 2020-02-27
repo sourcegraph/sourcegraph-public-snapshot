@@ -1,6 +1,6 @@
 import {
     FiltersToTypeAndValue,
-    FilterTypes,
+    FilterType,
     isNegatedFilter,
     resolveNegatedFilter,
 } from '../../../../shared/src/search/interactive/util'
@@ -31,7 +31,7 @@ export function convertPlainTextToInteractiveQuery(
                 member.token.filterValue &&
                 validateFilter(member.token.filterType.token.value, member.token.filterValue).valid
             ) {
-                const filterType = member.token.filterType.token.value as FilterTypes
+                const filterType = member.token.filterType.token.value as FilterType
                 newFiltersInQuery[isSingularFilter(filterType) ? filterType : uniqueId(filterType)] = {
                     type: isNegatedFilter(filterType) ? resolveNegatedFilter(filterType) : filterType,
                     value: query.substring(member.token.filterValue.range.start, member.token.filterValue.range.end),

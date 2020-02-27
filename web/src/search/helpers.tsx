@@ -6,7 +6,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
 import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
-import { FiltersToTypeAndValue, FilterTypes } from '../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
 import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
 
@@ -127,7 +127,7 @@ export const isSearchResults = (val: any): val is GQL.ISearchResults =>
     val && typeof val === 'object' && val.__typename === 'SearchResults'
 
 const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
-    Object.prototype.hasOwnProperty.call(FilterTypes, filter) ||
+    Object.prototype.hasOwnProperty.call(FilterType, filter) ||
     Object.prototype.hasOwnProperty.call(filterAliases, filter)
 
 /**
@@ -299,8 +299,8 @@ export const isFuzzyWordSearch = (queryState: QueryState): boolean => {
  * See `./Suggestion.tsx->fuzzySearchFilters`.
  * E.g: `repohasfile` expects a file name as a value, so we should show `file` suggestions
  */
-export const filterAliasForSearch: Record<string, FilterTypes | undefined> = {
-    [FilterTypes.repohasfile]: FilterTypes.file,
+export const filterAliasForSearch: Record<string, FilterType | undefined> = {
+    [FilterType.repohasfile]: FilterType.file,
 }
 
 /**
@@ -351,7 +351,7 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
  * */
 export const formatInteractiveQueryForFuzzySearch = (
     fullQuery: string,
-    filterType: FilterTypes,
+    filterType: FilterType,
     value: string = ''
 ): string => {
     // `repohasfile:` should be converted to `file:`

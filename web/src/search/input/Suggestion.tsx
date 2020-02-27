@@ -8,37 +8,37 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
 import { SuggestionTypes, NonFilterSuggestionType } from '../../../../shared/src/search/suggestions/util'
 import { escapeRegExp } from 'lodash'
-import { FilterTypes } from '../../../../shared/src/search/interactive/util'
+import { FilterType } from '../../../../shared/src/search/interactive/util'
 
 export const filterAliases: Record<string, FiltersSuggestionTypes | undefined> = {
-    r: FilterTypes.repo,
-    g: FilterTypes.repogroup,
-    f: FilterTypes.file,
-    l: FilterTypes.lang,
-    language: FilterTypes.lang,
+    r: FilterType.repo,
+    g: FilterType.repogroup,
+    f: FilterType.file,
+    l: FilterType.lang,
+    language: FilterType.lang,
 }
 
 /**
  * Filters which use fuzzy-search for their suggestion values
  */
 export const fuzzySearchFilters: FiltersSuggestionTypes[] = [
-    FilterTypes.repo,
-    FilterTypes.repogroup,
-    FilterTypes.file,
-    FilterTypes.repohasfile,
+    FilterType.repo,
+    FilterType.repogroup,
+    FilterType.file,
+    FilterType.repohasfile,
 ]
 
 /**
  * Some filter types should have their suggestions searched without influence
  * from the rest of the query, as they will then influence the scope of other filters.
  */
-export const isolatedFuzzySearchFilters: FiltersSuggestionTypes[] = [FilterTypes.repo, FilterTypes.repogroup]
+export const isolatedFuzzySearchFilters: FiltersSuggestionTypes[] = [FilterType.repo, FilterType.repogroup]
 
 /**
  * dir and symbol are fetched/suggested by the fuzzy-search
  * but are not filter types: /web/src/search/searchFilterSuggestions.ts
  */
-export type FiltersSuggestionTypes = FilterTypes | 'filters'
+export type FiltersSuggestionTypes = FilterType | 'filters'
 
 export interface Suggestion {
     type: SuggestionTypes
@@ -75,7 +75,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
     switch (item.__typename) {
         case 'Repository': {
             return {
-                type: FilterTypes.repo,
+                type: FilterType.repo,
                 // Add "regex start and end boundaries" to
                 // correctly scope additional suggestions
                 value: formatRegExp(item.name),
@@ -101,7 +101,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 }
             }
             return {
-                type: FilterTypes.file,
+                type: FilterType.file,
                 value: formatRegExp(item.path),
                 displayValue: item.name,
                 description: descriptionParts.join(' — '),
@@ -130,11 +130,11 @@ const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggesti
     switch (suggestion.type) {
         case NonFilterSuggestionType.filters:
             return <FilterIcon {...props} />
-        case FilterTypes.repo:
+        case FilterType.repo:
             return <SourceRepositoryIcon {...props} />
-        case FilterTypes.file:
+        case FilterType.file:
             return <FileIcon {...props} />
-        case FilterTypes.lang:
+        case FilterType.lang:
             return <LanguageIcon {...props} language={suggestion.value} {...props} />
         case NonFilterSuggestionType.symbol:
             if (!suggestion.symbolKind) {
