@@ -1,5 +1,7 @@
 # Using external databases with Sourcegraph
 
+> NOTE: Using Sourcegraph with an external database is a [paid feature](https://about.sourcegraph.com/pricing). [Contact us](https://about.sourcegraph.com/contact/sales) to get a trial license.
+
 Sourcegraph by default provides its own PostgreSQL and Redis databases for data storage:
 
 - PostgreSQL for storing long-term information, such as user information when using Sourcegraph's built-in authentication provider instead of an external one.
