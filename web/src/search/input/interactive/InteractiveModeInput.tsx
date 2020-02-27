@@ -80,7 +80,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         let filterKey: string = uniqueId(filterType)
         if (isSingularFilter(filterType)) {
             filterKey = filterType
-            // We only allow finite-option filters to be specified once per query,
+            // Singular filters can only be specified at most once per query,
             // so we don't need to append a uniqueId.
             if (this.props.filtersInQuery[filterKey]) {
                 // If the finite filter already exists in the query, just make the
