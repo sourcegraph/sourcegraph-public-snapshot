@@ -100,7 +100,13 @@ export class Correlator {
      */
     public exportedMonikers = new Set<sqliteModels.MonikerId>()
 
-    constructor(private logger: Logger = createSilentLogger()) {}
+    /**
+     * Creates a new Correlator.
+     *
+     * @param dumpRoot The repository-relative root of all files that are in the dump.
+     * @param logger The logger instance.
+     */
+    constructor(private dumpRoot: string = '', private logger: Logger = createSilentLogger()) {}
 
     /**
      * Process a single vertex or edge.
@@ -250,6 +256,19 @@ export class Correlator {
     private handleMetaData(vertex: lsif.MetaData): void {
         this.lsifVersion = vertex.version
         this.projectRoot = new URL(vertex.projectRoot)
+
+        // We assume that the project root in the LSIF dump is either:
+        //
+        //   (1) the root of the LSIF dump, or
+        //   (2) the root of the repository
+        //
+        // These are the common cases and we don't explicitly support
+        // anything else. Here we normalize to (1) by appending the dump
+        // root if it's not already suffixed by it.
+
+        if (this.dumpRoot !== '' && !this.projectRoot.href.endsWith(this.dumpRoot)) {
+            this.projectRoot = new URL(this.dumpRoot, `${this.projectRoot.href}/`)
+        }
     }
 
     //
