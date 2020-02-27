@@ -6,7 +6,7 @@
  
 ## Exposing the debug port to generate profiling data
 
-Follow the instructions below to generate profiling data. We will use the Sourcegraph frontend and a memory profile as example (the instructions are easily adapted to any of the Sourcegraph backends and any profiling kind).
+Follow the instructions below to generate profiling data. We will use the Sourcegraph frontend and a memory profile as an example (the instructions are easily adapted to any of the Sourcegraph backends and any profiling kind).
 
 ### Kubernetes
 
