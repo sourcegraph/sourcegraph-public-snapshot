@@ -76,7 +76,7 @@ COPY --from=sourcegraph/prometheus:10.0.6@sha256:f681ceb9400f0d546601cbf827ac9c3
 RUN set -ex && \
     addgroup -S grafana && \
     adduser -S -G grafana grafana && \
-    apk add --no-cache libc6-compat=1.1.24-r0 ca-certificates su-exec
+    apk add --no-cache libc6-compat ca-certificates su-exec
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:10.0.9@sha256:0132e5602030145803753468497a2d17640164b9c34df4ce2532dd93e4b1f6fc /usr/share/grafana /usr/share/grafana
