@@ -316,7 +316,8 @@ WITH batch AS (
       external_id           text,
       external_service_type text,
       external_branch       text,
-      external_deleted_at   timestamptz
+      external_deleted_at   timestamptz,
+      external_updated_at   timestamptz
     )
   )
   WITH ORDINALITY
@@ -335,7 +336,8 @@ changed AS (
     external_id,
     external_service_type,
     external_branch,
-	external_deleted_at
+	external_deleted_at,
+    external_updated_at
   )
   SELECT
     repo_id,
@@ -346,7 +348,8 @@ changed AS (
     external_id,
     external_service_type,
     external_branch,
-	external_deleted_at
+	external_deleted_at,
+	external_updated_at
   FROM batch
   ON CONFLICT ON CONSTRAINT
     changesets_repo_external_id_unique
@@ -366,7 +369,8 @@ SELECT
   COALESCE(changed.external_id, existing.external_id) AS external_id,
   COALESCE(changed.external_service_type, existing.external_service_type) AS external_service_type,
   COALESCE(changed.external_branch, existing.external_branch) AS external_branch,
-  COALESCE(changed.external_deleted_at, existing.external_deleted_at) AS external_deleted_at
+  COALESCE(changed.external_deleted_at, existing.external_deleted_at) AS external_deleted_at,
+  COALESCE(changed.external_updated_at, existing.external_updated_at) AS external_updated_at
 FROM changed
 RIGHT JOIN batch ON batch.repo_id = changed.repo_id
 AND batch.external_id = changed.external_id
@@ -401,6 +405,7 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 		ExternalServiceType string          `json:"external_service_type"`
 		ExternalBranch      string          `json:"external_branch"`
 		ExternalDeletedAt   *time.Time      `json:"external_deleted_at"`
+		ExternalUpdatedAt   *time.Time      `json:"external_updated_at"`
 	}
 
 	records := make([]record, 0, len(cs))
@@ -427,6 +432,7 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 			ExternalServiceType: c.ExternalServiceType,
 			ExternalBranch:      c.ExternalBranch,
 			ExternalDeletedAt:   nullTimeColumn(c.ExternalDeletedAt),
+			ExternalUpdatedAt:   nullTimeColumn(c.ExternalUpdatedAt),
 		})
 	}
 
@@ -514,7 +520,8 @@ SELECT
   external_id,
   external_service_type,
   external_branch,
-  external_deleted_at
+  external_deleted_at,
+  external_updated_at
 FROM changesets
 WHERE %s
 LIMIT 1
@@ -584,7 +591,8 @@ SELECT
   external_id,
   external_service_type,
   external_branch,
-  external_deleted_at
+  external_deleted_at,
+  external_updated_at
 FROM changesets
 WHERE %s
 ORDER BY id ASC
@@ -659,7 +667,8 @@ changed AS (
     external_id           = batch.external_id,
     external_service_type = batch.external_service_type,
     external_branch       = batch.external_branch,
-	external_deleted_at   = batch.external_deleted_at
+	external_deleted_at   = batch.external_deleted_at,
+	external_updated_at   = batch.external_updated_at
   FROM batch
   WHERE changesets.id = batch.id
   RETURNING changesets.*
@@ -677,7 +686,8 @@ SELECT
   changed.external_id,
   changed.external_service_type,
   changed.external_branch,
-  changed.external_deleted_at
+  changed.external_deleted_at,
+  changed.external_updated_at
 FROM changed
 LEFT JOIN batch ON batch.repo_id = changed.repo_id
 AND batch.external_id = changed.external_id
@@ -2598,9 +2608,10 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.ExternalServiceType,
 		&t.ExternalBranch,
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
+		&dbutil.NullTime{Time: &t.ExternalUpdatedAt},
 	)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "scanning changeset")
 	}
 
 	switch t.ExternalServiceType {

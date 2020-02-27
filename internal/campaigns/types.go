@@ -274,6 +274,7 @@ type Changeset struct {
 	ExternalServiceType string
 	ExternalBranch      string
 	ExternalDeletedAt   time.Time
+	ExternalUpdatedAt   time.Time
 }
 
 // Clone returns a clone of a Changeset.
