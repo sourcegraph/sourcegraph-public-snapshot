@@ -42,3 +42,7 @@ scp -r username@hostname:/tmp/sourcegraph-metrics-dump.tgz .
 ```
 
 Please then upload the `sourcegraph-metrics-dump.tgz` for Sourcegraph support to access it. If desired, we can send you a shared private Google Drive folder for the upload as it can sometimes be a few gigabytes.
+
+### Generating pprof profiles
+
+Please follow [these instructions](pprof.md) to generate pprof profiles.
