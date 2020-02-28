@@ -133,9 +133,13 @@ func (s *state) parseParameterList() ([]Node, error) {
 		case ")":
 			s.balanced--
 			s.advance(1)
+			if len(nodes) == 0 {
+				// Return a non-nil node if we parsed "()".
+				return []Node{Parameter{Value: ""}}, nil
+			}
 			return nodes, nil
 		case "and", "or":
-			// caller advances
+			// Caller advances.
 			return nodes, nil
 		default:
 			value, err := s.scanParameter()
@@ -151,10 +155,18 @@ func (s *state) parseParameterList() ([]Node, error) {
 }
 
 func reduce(left, right []Node, kind string) ([]Node, bool) {
+	switch left[0].(type) {
+	case Parameter:
+		if left[0].(Parameter).Value == "" {
+			// Remove empty string parameters.
+			return right, true
+		}
+	}
+
 	switch right[0].(type) {
 	case Op:
 		if kind == right[0].(Op).Kind {
-			// Reduce right node
+			// Reduce right node.
 			left = append(left, right[0].(Op).Children...)
 			if len(right) > 1 {
 				left = append(left, right[1:]...)
@@ -162,16 +174,23 @@ func reduce(left, right []Node, kind string) ([]Node, bool) {
 			return left, true
 		}
 	case Parameter:
+		if right[0].(Parameter).Value == "" {
+			// Remove empty string parameters.
+			if len(right) > 1 {
+				return append(left, right[1:]...), true
+			}
+			return left, true
+		}
 		switch left[0].(type) {
 		case Op:
 			if kind == left[0].(Op).Kind {
-				// Reduce left node
+				// Reduce left node.
 				return append(left[0].(Op).Children, right...), true
 			}
 		}
 	}
 	if len(right) > 1 {
-		// Reduce right list
+		// Reduce right list.
 		reduced, changed := reduce(append(left, right[0]), right[1:], kind)
 		if changed {
 			return reduced, true

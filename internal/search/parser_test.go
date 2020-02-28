@@ -19,6 +19,16 @@ func Test_Parse(t *testing.T) {
 			Want:  "",
 		},
 		{
+			Name:  "Single",
+			Input: "a",
+			Want:  "a",
+		},
+		{
+			Name:  "Whitespace basic",
+			Input: "a b",
+			Want:  "(and a b)",
+		},
+		{
 			Name:  "Basic",
 			Input: "a and b and c",
 			Want:  "(and a b c)",
@@ -58,6 +68,7 @@ func Test_Parse(t *testing.T) {
 			Input: "(((a b c))) and d",
 			Want:  "(and a b c d)",
 		},
+		// Errors.
 		{
 			Name:  "Unbalanced",
 			Input: "(foo) (bar",
@@ -88,6 +99,7 @@ func Test_Parse(t *testing.T) {
 			Input: "or or or",
 			Want:  "expected operand at 0",
 		},
+		// Reduction.
 		{
 			Name:  "paren reduction with ands",
 			Input: "(a and b) and (c and d)",
@@ -132,6 +144,37 @@ func Test_Parse(t *testing.T) {
 			Name:  "mixed interpolated grouped paren reduction",
 			Input: "(a and b and (z or q)) and (c and d) and (e and f)",
 			Want:  "(and a b (or z q) c d e f)",
+		},
+		// Parentheses.
+		{
+			Name:  "empty paren",
+			Input: "()",
+			Want:  "",
+		},
+		{
+			Name:  "nested empty paren",
+			Input: "(x())",
+			Want:  "x",
+		},
+		{
+			Name:  "interpolated nested empty paren",
+			Input: "(()x(  )(())())",
+			Want:  "x",
+		},
+		{
+			Name:  "empty paren on or",
+			Input: "() or ()",
+			Want:  "",
+		},
+		{
+			Name:  "empty left paren on or",
+			Input: "() or (x)",
+			Want:  "x",
+		},
+		{
+			Name:  "complex interpolated nested empty paren",
+			Input: "(()x(  )(y or () or (f))())",
+			Want:  "(and x (or y f))",
 		},
 	}
 	for _, tt := range cases {
