@@ -1,6 +1,6 @@
 # Global settings
 
-Settings provide the ability to customize and control the Sourcegraph UI and user specific features and do not configure operational aspects of the instance.
+Settings provide the ability to customize and control the Sourcegraph UI and user specific features. They do not configure operational aspects of the instance.
 
 Settings are also different to [site configuration](site_config.md) as they are set the global level by site admins, the organization level by organization members, and at the individual user level.
 
