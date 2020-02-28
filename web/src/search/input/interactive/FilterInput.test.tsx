@@ -1,12 +1,12 @@
 import React from 'react'
 import { FilterInput } from './FilterInput'
-import { FilterTypes, FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
+import { FilterType, FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 import sinon from 'sinon'
 import { render, fireEvent, cleanup, getByText } from '@testing-library/react'
 
 const defaultFiltersInQuery: FiltersToTypeAndValue = {
     fork: {
-        type: FilterTypes.fork,
+        type: FilterType.fork,
         value: 'no',
         editable: false,
         negated: false,
@@ -17,7 +17,7 @@ const defaultProps = {
     navbarQuery: { query: 'test', cursorPosition: 4 },
     mapKey: 'repo',
     value: '',
-    filterType: FilterTypes.repo as Exclude<FilterTypes, FilterTypes.patterntype>,
+    filterType: FilterType.repo as Exclude<FilterType, FilterType.patterntype>,
     editable: true,
     negated: false,
     isHomepage: false,
@@ -60,7 +60,7 @@ describe('FilterInput', () => {
             <FilterInput
                 {...defaultProps}
                 mapKey="content"
-                filterType={FilterTypes.content}
+                filterType={FilterType.content}
                 onFilterEdited={onFilterEditedHandler}
                 editable={true}
             />
@@ -78,7 +78,7 @@ describe('FilterInput', () => {
                 {...defaultProps}
                 mapKey="content"
                 filtersInQuery={nextFiltersInQuery}
-                filterType={FilterTypes.content}
+                filterType={FilterType.content}
                 value={nextValue}
                 onFilterEdited={onFilterEditedHandler}
                 editable={false}
@@ -92,7 +92,7 @@ describe('FilterInput', () => {
             <FilterInput
                 {...defaultProps}
                 mapKey="message"
-                filterType={FilterTypes.message}
+                filterType={FilterType.message}
                 onFilterEdited={onFilterEditedHandler}
                 editable={true}
             />
@@ -110,7 +110,7 @@ describe('FilterInput', () => {
                 {...defaultProps}
                 mapKey="message"
                 filtersInQuery={nextFiltersInQuery}
-                filterType={FilterTypes.message}
+                filterType={FilterType.message}
                 value={nextValue}
                 onFilterEdited={onFilterEditedHandler}
                 editable={false}
@@ -130,7 +130,7 @@ describe('FilterInput', () => {
     })
 
     test('Updating type filter with an empty value does work', () => {
-        container = render(<FilterInput {...defaultProps} value="diff" filterType={FilterTypes.type} mapKey="type" />)
+        container = render(<FilterInput {...defaultProps} value="diff" filterType={FilterType.type} mapKey="type" />)
             .container
         const codeRadioButton = container.querySelector('.e2e-filter-input-radio-button-')
         expect(codeRadioButton).toBeTruthy()

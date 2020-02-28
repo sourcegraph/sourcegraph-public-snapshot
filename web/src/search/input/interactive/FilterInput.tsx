@@ -29,17 +29,12 @@ import {
     filterStaticSuggestions,
 } from '../../helpers'
 import { dedupeWhitespace, isQuoted } from '../../../../../shared/src/util/strings'
-import {
-    FiltersToTypeAndValue,
-    FilterTypes,
-    isNegatableFilter,
-} from '../../../../../shared/src/search/interactive/util'
-import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
+import { FiltersToTypeAndValue, FilterType, isNegatableFilter } from '../../../../../shared/src/search/interactive/util'
 import { startCase, isEqual } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CheckButton } from './CheckButton'
-import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypesToProseNames } from './filters'
+import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypeToProseNames } from './filters'
 import classNames from 'classnames'
 import { generateFiltersQuery } from '../../../../../shared/src/util/url'
 
@@ -67,7 +62,7 @@ interface Props {
     /**
      * The search filter type, as available in {@link SuggstionTypes}
      */
-    filterType: Exclude<FilterTypes, FilterTypes.patterntype>
+    filterType: Exclude<FilterType, FilterType.patterntype>
 
     /**
      * Whether or not this FilterInput is currently editable.
@@ -206,8 +201,8 @@ export class FilterInput extends React.Component<Props, State> {
                                 // Only show fuzzy-suggestions that are relevant to the typed filter
                                 if (filterAndValueBeforeCursor?.resolvedFilterType) {
                                     switch (filterAndValueBeforeCursor.resolvedFilterType) {
-                                        case SuggestionTypes.repohasfile:
-                                            return suggestion.type === SuggestionTypes.file
+                                        case FilterType.repohasfile:
+                                            return suggestion.type === FilterType.file
                                         default:
                                             return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
                                     }
@@ -279,11 +274,11 @@ export class FilterInput extends React.Component<Props, State> {
         e.preventDefault()
         e.stopPropagation()
 
-        if (this.state.inputValue !== '' || this.props.filterType === FilterTypes.type) {
+        if (this.state.inputValue !== '' || this.props.filterType === FilterType.type) {
             // Don't allow empty filters, unless it's the type filter.
             let inputValue = this.state.inputValue
 
-            if (this.props.filterType === FilterTypes.content || this.props.filterType === FilterTypes.message) {
+            if (this.props.filterType === FilterType.content || this.props.filterType === FilterType.message) {
                 // The content and message filters should always be quoted.
                 inputValue = isQuoted(inputValue) ? inputValue : JSON.stringify(inputValue)
             }
@@ -510,7 +505,7 @@ export class FilterInput extends React.Component<Props, State> {
             <Form onSubmit={this.onSubmitInput}>
                 <div className="filter-input__form e2e-filter-input-finite-form">
                     <div className="filter-input__radio-button-container">
-                        <span>{`${FilterTypesToProseNames[this.props.filterType]}:`}</span>
+                        <span>{`${FilterTypeToProseNames[this.props.filterType]}:`}</span>
                         {isFiniteFilter(this.props.filterType) &&
                             finiteFilters[this.props.filterType].values.map(val => (
                                 <div key={val.value} className="filter-input__radio">
