@@ -20,7 +20,8 @@ const (
 type requestType int
 
 const (
-	requestTypeRepo requestType = iota
+	requestTypeUnknown requestType = iota
+	requestTypeRepo
 	requestTypeUser
 )
 
@@ -79,7 +80,7 @@ var notify = func(ch chan struct{}) {
 // the sync request's position in the queue is updated accordingly.
 func (q *requestQueue) enqueue(typ requestType, id int32, priority Priority) (updated bool) {
 	if id == 0 {
-		panic("id is zero")
+		return false
 	}
 
 	q.mu.Lock()
@@ -115,7 +116,7 @@ func (q *requestQueue) enqueue(typ requestType, id int32, priority Priority) (up
 // updating argument.
 func (q *requestQueue) remove(typ requestType, id int32, updating bool) (removed bool) {
 	if id == 0 {
-		panic("id is zero")
+		return false
 	}
 
 	q.mu.Lock()
