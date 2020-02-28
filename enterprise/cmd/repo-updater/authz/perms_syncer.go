@@ -208,6 +208,27 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	return nil
 }
 
+// syncPerms processes the permissions syncing request and remove the request from
+// the quque once it is done (independent of success or failure).
+func (s PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) {
+	defer s.queue.remove(request.typ, request.id, true)
+
+	var err error
+	switch request.typ {
+	case requestTypeUser:
+		err = s.syncUserPerms(ctx, request.id)
+	case requestTypeRepo:
+		err = s.syncRepoPerms(ctx, api.RepoID(request.id))
+	default:
+		err = fmt.Errorf("unexpected request type: %v", request.typ)
+	}
+
+	if err != nil {
+		log15.Warn("Error syncing permissions", "type", request.typ, "id", request.id, "err", err)
+		return
+	}
+}
+
 // RunPermsSyncer starts running the given syncer in the background.
 func RunPermsSyncer(ctx context.Context, syncer *PermsSyncer) {
 	log15.Debug("started perms syncer")
@@ -220,38 +241,12 @@ func RunPermsSyncer(ctx context.Context, syncer *PermsSyncer) {
 			return
 		}
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-
-			request := syncer.queue.acquireNext()
-			if request == nil {
-				// No waiting request is in the queue
-				break
-			}
-
-			syncPerms := func(ctx context.Context, request *syncRequest) {
-				defer syncer.queue.remove(request.typ, request.id, true)
-
-				var err error
-				switch request.typ {
-				case requestTypeUser:
-					err = syncer.syncUserPerms(ctx, request.id)
-				case requestTypeRepo:
-					err = syncer.syncRepoPerms(ctx, api.RepoID(request.id))
-				default:
-					err = fmt.Errorf("unexpected request type: %v", request.typ)
-				}
-
-				if err != nil {
-					log15.Warn("Error syncing permissions", "type", request.typ, "id", request.id, "err", err)
-					return
-				}
-			}
-			syncPerms(ctx, request)
+		request := syncer.queue.acquireNext()
+		if request == nil {
+			// No waiting request is in the queue
+			continue
 		}
+
+		syncer.syncPerms(ctx, request)
 	}
 }
