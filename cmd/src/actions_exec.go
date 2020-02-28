@@ -21,15 +21,6 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 )
 
-// Older versions of GNU diff (< 3.3) do not support all the flags we want, but
-// since macOS Mojave and Catalina ship with GNU diff 2.8.1, we try to detect
-// missing flags and degrade behavior gracefully instead of failing. check for
-// the flags and degrade if they're not available.
-var (
-	diffSupportsNoDereference = false
-	diffSupportsColor         = false
-)
-
 type Action struct {
 	ScopeQuery string        `json:"scopeQuery,omitempty"`
 	Steps      []*ActionStep `json:"steps"`
@@ -146,6 +137,10 @@ Format of the action JSON files:
 	handler := func(args []string) error {
 		flagSet.Parse(args)
 
+		if !isGitAvailable() {
+			return errors.New("Could not find git in $PATH. 'src actions exec' requires git to be available.")
+		}
+
 		if *cacheDirFlag == displayUserCacheDir {
 			*cacheDirFlag = cacheDir
 		}
@@ -178,22 +173,6 @@ Format of the action JSON files:
 		ctx := context.Background()
 
 		logger := newActionLogger(*verbose, *keepLogsFlag)
-
-		diffSupportsNoDereference, err = diffSupportsFlag(ctx, "--no-dereference")
-		if err != nil {
-			return err
-		}
-		if !diffSupportsNoDereference {
-			logger.Warnf("Local installation of 'diff' doesn't support '%s' flag. Consider upgrading to GNU diff >=3.7.\n", "--no-dereference")
-		}
-
-		diffSupportsColor, err = diffSupportsFlag(ctx, "--color")
-		if err != nil {
-			return err
-		}
-		if !diffSupportsColor {
-			logger.Warnf("Local installation of 'diff' doesn't support '%s' flag. Consider upgrading to GNU diff >=3.7.\n", "--color")
-		}
 
 		err = validateAction(ctx, action)
 		if err != nil {
@@ -488,4 +467,12 @@ func diffStatDiagram(stat diff.Stat) string {
 		deleted *= x
 	}
 	return color.GreenString(strings.Repeat("+", int(added))) + color.RedString(strings.Repeat("-", int(deleted)))
+}
+
+func isGitAvailable() bool {
+	cmd := exec.Command("git", "version")
+	if err := cmd.Run(); err != nil {
+		return false
+	}
+	return true
 }

@@ -14,12 +14,10 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-diff/diff"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -126,6 +124,27 @@ func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps 
 	}
 	defer os.RemoveAll(volumeDir)
 
+	runGitCmd := func(args ...string) ([]byte, error) {
+		cmd := exec.CommandContext(ctx, "git", args...)
+		cmd.Dir = volumeDir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return nil, errors.Wrapf(err, "'git %s' failed: %s", strings.Join(args, " "), out)
+		}
+		return out, nil
+	}
+
+	if _, err := runGitCmd("init"); err != nil {
+		return nil, errors.Wrap(err, "git init failed")
+	}
+	// --force because we want previously "gitignored" files in the repository
+	if _, err := runGitCmd("add", "--force", "--all"); err != nil {
+		return nil, errors.Wrap(err, "git add failed")
+	}
+	if _, err := runGitCmd("commit", "--quiet", "--all", "-m", "src-action-exec"); err != nil {
+		return nil, errors.Wrap(err, "git commit failed")
+	}
+
 	for i, step := range steps {
 		switch step.Type {
 		case "command":
@@ -216,72 +235,16 @@ func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps 
 		}
 	}
 
-	// Compute diff.
-	oldDir, err := unzipToTempDir(ctx, zipFile.Name(), prefix)
+	if _, err := runGitCmd("add", "--all"); err != nil {
+		return nil, errors.Wrap(err, "git add failed")
+	}
+
+	diffOut, err := runGitCmd("diff", "--cached")
 	if err != nil {
-		return nil, err
-	}
-	defer os.RemoveAll(oldDir)
-
-	diffOut, err := diffDirs(ctx, oldDir, volumeDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "Generating a diff failed")
+		return nil, errors.Wrap(err, "git diff failed")
 	}
 
-	// Strip temp dir prefixes from diff.
-	fileDiffs, err := diff.ParseMultiFileDiff(diffOut)
-	if err != nil {
-		return nil, err
-	}
-	for _, fileDiff := range fileDiffs {
-		for i := range fileDiff.Extended {
-			fileDiff.Extended[i] = strings.Replace(fileDiff.Extended[i], oldDir+string(os.PathSeparator), "", -1)
-			fileDiff.Extended[i] = strings.Replace(fileDiff.Extended[i], volumeDir+string(os.PathSeparator), "", -1)
-		}
-		fileDiff.OrigName = strings.TrimPrefix(fileDiff.OrigName, oldDir+string(os.PathSeparator))
-		fileDiff.NewName = strings.TrimPrefix(fileDiff.NewName, volumeDir+string(os.PathSeparator))
-	}
-	return diff.PrintMultiFileDiff(fileDiffs)
-}
-
-func diffDirs(ctx context.Context, oldDir, newDir string) ([]byte, error) {
-	args := []string{"--unified", "--new-file", "--recursive"}
-
-	if diffSupportsNoDereference {
-		args = append(args, "--no-dereference")
-	}
-
-	if diffSupportsColor {
-		args = append(args, "--color=never")
-	}
-
-	args = append(args, oldDir, newDir)
-	cmd := exec.CommandContext(ctx, "diff", args...)
-
-	out, err := cmd.CombinedOutput()
-	// 1 just means files differ, not error
-	if err != nil && cmd.ProcessState.ExitCode() != 1 {
-		outputSummary := string(out)
-		if max := 250; len(outputSummary) >= max {
-			outputSummary = outputSummary[:max] + "..."
-		}
-		return nil, errors.Wrapf(err, "diff (output was: %q)", outputSummary)
-	}
-
-	return out, nil
-}
-
-func diffSupportsFlag(ctx context.Context, flag string) (bool, error) {
-	cmd := exec.CommandContext(ctx, "diff", flag)
-	out, err := cmd.CombinedOutput()
-	// diff 2.8.1 returns exit code 2 when printing "unrecognized option" message
-	if err != nil && cmd.ProcessState.ExitCode() != 2 {
-		return false, errors.Wrapf(err, "Checking whether diff supports %q failed", flag)
-	}
-
-	pattern := fmt.Sprintf("unrecognized\\soption\\s[`']%s", flag)
-	matched, err := regexp.MatchString(pattern, string(out))
-	return !matched, err
+	return diffOut, err
 }
 
 // We use an explicit prefix for our temp directories, because otherwise Go

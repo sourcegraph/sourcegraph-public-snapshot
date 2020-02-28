@@ -26,6 +26,8 @@ For Sourcegraph 3.12 and older, run the following commands verbatim (against sou
 https://github.com/sourcegraph/src-cli/releases/download/{version}/{binary}
 ````
 
+> NOTE: If you want to use the 'src actions exec' functionality, make sure that git is installed and accessible by src.
+
 #### Mac OS
 
 ```bash
@@ -76,8 +78,6 @@ If you want to use `src` with your own Sourcegraph instance set the `SRC_ENDPOIN
 ```sh
 SRC_ENDPOINT=https://sourcegraph.example.com src search
 ```
-
-> NOTE: If you want to use the `src actions exec` functionality on macOS, we recommend installing the `zip` and `diffutils` packages from Homebrew (or any other package manager that has up-to-date versions) as the versions that come with macOS are quite old. This will solve issues related to being unable to unzip archives and diffing files.
 
 ### Authentication
 
