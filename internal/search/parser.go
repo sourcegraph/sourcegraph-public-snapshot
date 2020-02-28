@@ -12,9 +12,11 @@ type Node interface {
 	node()
 }
 
+// All terms that implement Node.
 func (Parameter) node() {}
 func (Operator) node()  {}
 
+// Parameter is a leaf node of expressions.
 type Parameter struct {
 	Value string
 }
@@ -26,6 +28,7 @@ const (
 	And
 )
 
+// Operator is a nonterminal node of kind Kind with child nodes Operands.
 type Operator struct {
 	Kind     operatorKind
 	Operands []Node
@@ -51,6 +54,7 @@ func (node Operator) String() string {
 
 type keyword string
 
+// Reserved keyword syntax.
 const (
 	AND    keyword = "and"
 	OR             = "or"
@@ -62,6 +66,7 @@ func isSpace(c byte) bool {
 	return (c == ' ') || (c == '\n') || (c == '\r') || (c == '\t')
 }
 
+// skipSpace returns the number of spaces skipped from the beginning of a buffer buf.
 func skipSpace(buf []byte) int {
 	for i, c := range buf {
 		if !isSpace(c) {
@@ -81,6 +86,17 @@ func (p *parser) done() bool {
 	return p.pos >= len(p.buf)
 }
 
+// peek looks ahead n bytes in the input and returns a string if it succeeds, or
+// an error if the length exceeds what's available in the buffer.
+func (p *parser) peek(n int) (string, error) {
+	if p.pos+n > len(p.buf) {
+		return "", io.ErrShortBuffer
+	}
+	return string(p.buf[p.pos : p.pos+n]), nil
+}
+
+// match returns whether it succeeded matching a keyword at the current
+// position. It does not advance the position.
 func (p *parser) match(keyword keyword) bool {
 	v, err := p.peek(len(string(keyword)))
 	if err != nil {
@@ -89,6 +105,7 @@ func (p *parser) match(keyword keyword) bool {
 	return strings.ToLower(v) == string(keyword)
 }
 
+// expect returns the result of match, and advances the position if it succeeds.
 func (p *parser) expect(keyword keyword) bool {
 	if !p.match(keyword) {
 		return false
@@ -97,17 +114,13 @@ func (p *parser) expect(keyword keyword) bool {
 	return true
 }
 
+// isKeyword returns whether current parser position matches a reserved keyword.
 func (p *parser) isKeyword() bool {
 	return p.match(AND) || p.match(OR) || p.match(LPAREN) || p.match(RPAREN)
 }
 
-func (p *parser) peek(n int) (string, error) {
-	if p.pos+n > len(p.buf) {
-		return "", io.ErrShortBuffer
-	}
-	return string(p.buf[p.pos : p.pos+n]), nil
-}
-
+// skipSpaces advances the input and places the parser position at the next
+// non-space value.
 func (p *parser) skipSpaces() error {
 	if p.pos > len(p.buf) {
 		return io.ErrShortBuffer
@@ -120,6 +133,7 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
+// scanParameter scans for leaf node values.
 func (p *parser) scanParameter() (string, error) {
 	start := p.pos
 	for {
@@ -137,6 +151,7 @@ func (p *parser) scanParameter() (string, error) {
 	return string(p.buf[start:p.pos]), nil
 }
 
+// scanParameterList scans for consecutive leaf nodes.
 func (p *parser) parseParameterList() ([]Node, error) {
 	var nodes []Node
 	for {
@@ -169,14 +184,15 @@ func (p *parser) parseParameterList() ([]Node, error) {
 			if err != nil {
 				return nil, err
 			}
-			if value != "" {
-				nodes = append(nodes, Parameter{Value: value})
-			}
+			nodes = append(nodes, Parameter{Value: value})
 		}
 	}
 	return nodes, nil
 }
 
+// reduce takes lists of left and right nodes and reduces them if possible. For example,
+// (and a (b and c))       => (and a b c)
+// (((a and b) or c) or d) => (or (and a b) c d)
 func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 	if param, ok := left[0].(Parameter); ok && param.Value == "" {
 		// Remove empty string parameter.
@@ -217,6 +233,8 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 	return append(left, right...), false
 }
 
+// newOperator constructs a new node of kind operatorKind with operands nodes,
+// reducing nodes as needed.
 func newOperator(nodes []Node, kind operatorKind) []Node {
 	if len(nodes) == 0 {
 		return nil
@@ -231,6 +249,7 @@ func newOperator(nodes []Node, kind operatorKind) []Node {
 	return []Node{Operator{Kind: kind, Operands: reduced}}
 }
 
+// parseAnd parses and-expressions.
 func (p *parser) parseAnd() ([]Node, error) {
 	left, err := p.parseParameterList()
 	if err != nil {
@@ -249,6 +268,8 @@ func (p *parser) parseAnd() ([]Node, error) {
 	return newOperator(append(left, right...), And), nil
 }
 
+// parseOr parses or-expressions. Or operators have lower precedence than And
+// operators, therefore this function calls parseAnd.
 func (p *parser) parseOr() ([]Node, error) {
 	left, err := p.parseAnd()
 	if err != nil {
@@ -267,6 +288,7 @@ func (p *parser) parseOr() ([]Node, error) {
 	return newOperator(append(left, right...), Or), nil
 }
 
+// Parse parses a raw input string into a parse tree comprising Nodes.
 func Parse(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil
