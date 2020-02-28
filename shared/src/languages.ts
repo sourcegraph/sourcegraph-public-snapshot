@@ -91,7 +91,7 @@ function getModeFromExtension(ext: string): string | undefined {
         // C#
         case 'cs':
         case 'csx':
-            return 'cs'
+            return 'csharp'
 
         // C++
         case 'c':
