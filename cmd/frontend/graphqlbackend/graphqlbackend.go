@@ -279,6 +279,9 @@ func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }
 	if err != nil {
 		return nil, err
 	}
+	if n == nil {
+		return nil, nil
+	}
 	return &NodeResolver{n}, nil
 }
 

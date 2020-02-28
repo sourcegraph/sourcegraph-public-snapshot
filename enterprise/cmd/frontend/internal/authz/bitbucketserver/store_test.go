@@ -14,7 +14,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -48,7 +47,7 @@ func BenchmarkStore(b *testing.B) {
 		s := newStore(db, 0, DefaultHardTTL, clock)
 		s.block = true
 
-		ps := &iauthz.UserPermissions{
+		ps := &authz.UserPermissions{
 			UserID: 99,
 			Perm:   authz.Read,
 			Type:   "repos",
@@ -66,7 +65,7 @@ func BenchmarkStore(b *testing.B) {
 		s := newStore(db, 60*time.Second, DefaultHardTTL, clock)
 		s.block = true
 
-		ps := &iauthz.UserPermissions{
+		ps := &authz.UserPermissions{
 			UserID: 100,
 			Perm:   authz.Read,
 			Type:   "repos",
@@ -123,7 +122,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		}
 
 		s := newStore(db, ttl, hardTTL, clock)
-		s.updates = make(chan *iauthz.UserPermissions)
+		s.updates = make(chan *authz.UserPermissions)
 
 		ids := []uint32{1, 2, 3}
 		e := error(nil)
@@ -131,8 +130,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 			return ids, &codeHost, e
 		}
 
-		ps := &iauthz.UserPermissions{UserID: 42, Perm: authz.Read, Type: "repos"}
-		load := func(s *store) (*iauthz.UserPermissions, error) {
+		ps := &authz.UserPermissions{UserID: 42, Perm: authz.Read, Type: "repos"}
+		load := func(s *store) (*authz.UserPermissions, error) {
 			ps := *ps
 			return &ps, s.LoadPermissions(ctx, &ps, update)
 		}
@@ -217,12 +216,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			type op struct {
 				id  int
-				ps  *iauthz.UserPermissions
+				ps  *authz.UserPermissions
 				err error
 			}
 
 			ch := make(chan op, 30)
-			updates := make(chan *iauthz.UserPermissions)
+			updates := make(chan *authz.UserPermissions)
 
 			for i := 0; i < cap(ch); i++ {
 				go func(i int) {

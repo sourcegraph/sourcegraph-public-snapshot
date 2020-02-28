@@ -49,17 +49,26 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  * Populate a SQLite database with the given input stream. Returns the
  * data required to populate the dependency tables in Postgres.
  *
- * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
- * @param database The filepath of the database to populate.
- * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
- * @param ctx The tracing context.
+ * @param args Parameter bag.
  */
-export async function convertLsif(
-    path: string,
-    database: string,
-    pathExistenceChecker: PathExistenceChecker,
-    { logger = createSilentLogger(), span }: TracingContext = {}
-): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+export async function convertLsif({
+    path,
+    root,
+    database,
+    pathExistenceChecker,
+    ctx: { logger = createSilentLogger(), span } = {},
+}: {
+    /** The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump. */
+    path: string
+    /** The root of all files that are in the dump. */
+    root: string
+    /** The filepath of the database to populate. */
+    database: string
+    /** An object that tracks whether a path is visible within the LSIF dump. */
+    pathExistenceChecker: PathExistenceChecker
+    /** The tracing context. */
+    ctx?: TracingContext
+}): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const connection = await createSqliteConnection(database, sqliteModels.entities, logger)
 
     try {
@@ -67,7 +76,7 @@ export async function convertLsif(
         await connection.query('PRAGMA journal_mode = OFF')
 
         return await connection.transaction(entityManager =>
-            importLsif(entityManager, path, pathExistenceChecker, { logger, span })
+            importLsif(entityManager, path, root, pathExistenceChecker, { logger, span })
         )
     } finally {
         await connection.close()
@@ -81,17 +90,19 @@ export async function convertLsif(
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
+ * @param root The root of all files that are in the dump.
  * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
  * @param ctx The tracing context.
  */
 export async function importLsif(
     entityManager: EntityManager,
     path: string,
+    root: string,
     pathExistenceChecker: PathExistenceChecker,
     ctx: TracingContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     // Correlate input data into in-memory maps
-    const correlator = new Correlator(ctx.logger)
+    const correlator = new Correlator(root, ctx.logger)
     await logAndTraceCall(ctx, 'Correlating LSIF data', async () => {
         for await (const element of readGzippedJsonElementsFromFile(path) as AsyncIterable<lsif.Vertex | lsif.Edge>) {
             correlator.insert(element)

@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -109,7 +108,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		userName = user.Name
 	}
 
-	ps := &iauthz.UserPermissions{
+	ps := &authz.UserPermissions{
 		UserID:   userID,
 		Perm:     authz.Read,
 		Type:     authz.PermRepos,
@@ -127,7 +126,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 // UpdatePermissions forces an update of the permissions of the given
 // user.
 func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
-	ps := &iauthz.UserPermissions{
+	ps := &authz.UserPermissions{
 		UserID:   u.ID,
 		Perm:     authz.Read,
 		Type:     authz.PermRepos,

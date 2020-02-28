@@ -1,13 +1,12 @@
 import {
     FiltersToTypeAndValue,
-    FilterTypes,
+    FilterType,
     isNegatedFilter,
     resolveNegatedFilter,
 } from '../../../../shared/src/search/interactive/util'
 import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
 import { uniqueId } from 'lodash'
-import { isFiniteFilter } from './interactive/filters'
-import { validateFilter } from '../../../../shared/src/search/parser/filters'
+import { validateFilter, isSingularFilter } from '../../../../shared/src/search/parser/filters'
 
 /**
  * Converts a plain text query into a an object containing the two components
@@ -32,8 +31,8 @@ export function convertPlainTextToInteractiveQuery(
                 member.token.filterValue &&
                 validateFilter(member.token.filterType.token.value, member.token.filterValue).valid
             ) {
-                const filterType = member.token.filterType.token.value as FilterTypes
-                newFiltersInQuery[isFiniteFilter(filterType) ? filterType : uniqueId(filterType)] = {
+                const filterType = member.token.filterType.token.value as FilterType
+                newFiltersInQuery[isSingularFilter(filterType) ? filterType : uniqueId(filterType)] = {
                     type: isNegatedFilter(filterType) ? resolveNegatedFilter(filterType) : filterType,
                     value: query.substring(member.token.filterValue.range.start, member.token.filterValue.range.end),
                     editable: false,

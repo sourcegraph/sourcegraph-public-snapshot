@@ -6,7 +6,7 @@ import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'
 import { SearchSuggestion, IRepository, IFile, ISymbol, ILanguage, SymbolKind } from '../../graphql/schema'
 import { isDefined } from '../../util/types'
-import { FilterTypes, isNegatableFilter } from '../interactive/util'
+import { FilterType, isNegatableFilter } from '../interactive/util'
 
 const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
@@ -15,7 +15,7 @@ type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
 const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] = Object.keys(FILTERS)
     .flatMap(label => {
-        const filterType = label as FilterTypes
+        const filterType = label as FilterType
         const completionItem: Omit<Monaco.languages.CompletionItem, 'range' | 'detail'> = {
             label,
             kind: filterCompletionItemKind,
@@ -31,6 +31,7 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
                 {
                     ...completionItem,
                     label: `-${label}`,
+                    filterText: `-${label}`,
                     detail: FILTERS[filterType].description(true),
                 },
             ]
@@ -129,6 +130,18 @@ const suggestionToCompletionItem = (suggestion: SearchSuggestion): PartialComple
 }
 
 /**
+ * An internal Monaco command causing completion providers to be invoked,
+ * and the suggestions widget to be shown.
+ *
+ * Useful to show the suggestions widget right after selecting a filter type
+ * completion, to offer filter values completions.
+ */
+const TRIGGER_SUGGESTIONS: Monaco.languages.Command = {
+    id: 'editor.action.triggerSuggest',
+    title: 'Trigger suggestions',
+}
+
+/**
  * Returns the completion items for a search query being typed in the Monaco query input,
  * including both static and dynamically fetched suggestions.
  */
@@ -151,6 +164,7 @@ export async function getCompletionItems(
                 (suggestion): Monaco.languages.CompletionItem => ({
                     ...suggestion,
                     range: defaultRange,
+                    command: TRIGGER_SUGGESTIONS,
                 })
             ),
         }
@@ -168,8 +182,19 @@ export async function getCompletionItems(
             (suggestion): Monaco.languages.CompletionItem => ({
                 ...suggestion,
                 range: toMonacoRange(range),
+                command: TRIGGER_SUGGESTIONS,
             })
         )
+        // If the token being typed matches a known filter,
+        // only return static filter type suggestions.
+        // This avoids blocking on dynamic suggestions to display
+        // the suggestions widget.
+        if (
+            token.type === 'literal' &&
+            staticSuggestions.some(({ label }) => label.startsWith(token.value.toLowerCase()))
+        ) {
+            return { suggestions: staticSuggestions }
+        }
         const dynamicSuggestions = (await fetchSuggestions(rawQuery).toPromise())
             .map(suggestionToCompletionItem)
             .filter(isDefined)

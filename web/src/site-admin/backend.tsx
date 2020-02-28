@@ -293,6 +293,7 @@ export function fetchSite(): Observable<GQL.ISite> {
         query Site {
             site {
                 id
+                canReloadSite
                 configuration {
                     id
                     effectiveContents
