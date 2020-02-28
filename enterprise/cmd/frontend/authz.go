@@ -169,7 +169,7 @@ func authzProvidersFromConfig(
 	} else {
 		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(ghConns)
 		if len(ghProviders) > 1 {
-			ghProblems = append(ghProblems, "Only one GitHub authorization configuration is supported.")
+			ghWarnings = append(ghWarnings, "Only one GitHub authorization configuration is supported.")
 		}
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
@@ -181,7 +181,7 @@ func authzProvidersFromConfig(
 	} else {
 		glProviders, glProblems, glWarnings := gitlab.NewAuthzProviders(cfg, glConns)
 		if len(glProviders) > 1 {
-			glProblems = append(glProblems, "Only one GitLab authorization configuration is supported.")
+			glWarnings = append(glWarnings, "Only one GitLab authorization configuration is supported.")
 		}
 		providers = append(providers, glProviders...)
 		seriousProblems = append(seriousProblems, glProblems...)
@@ -193,7 +193,7 @@ func authzProvidersFromConfig(
 	} else {
 		bbsProviders, bbsProblems, bbsWarnings := bitbucketserver.NewAuthzProviders(bbsConns, db)
 		if len(bbsProviders) > 1 {
-			bbsProblems = append(bbsProblems, "Only one Bitbucket Server authorization configuration is supported.")
+			bbsWarnings = append(bbsWarnings, "Only one Bitbucket Server authorization configuration is supported.")
 		}
 		providers = append(providers, bbsProviders...)
 		seriousProblems = append(seriousProblems, bbsProblems...)

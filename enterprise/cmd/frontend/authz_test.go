@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -73,6 +74,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		expAuthzAllowAccessByDefault bool
 		expAuthzProviders            func(*testing.T, []authz.Provider)
 		expSeriousProblems           []string
+		expWarnings                  []string
 	}{
 		{
 			description: "1 GitLab connection with authz enabled, 1 GitLab matching auth provider",
@@ -202,8 +204,8 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 					Token: "asdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Only one GitLab authorization configuration is supported."},
+			expAuthzAllowAccessByDefault: true,
+			expWarnings:                  []string{"Only one GitLab authorization configuration is supported."},
 		},
 		{
 			description: "1 GitLab connection with authz disabled",
@@ -409,7 +411,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 						},
 						Ttl: "15m",
 					},
-					Url:      "https://bitbucketserver.mycorp.org",
+					Url:      "", // NOTE: Leave empty to fail quick with stable error message
 					Username: "admin",
 					Token:    "secret-token",
 				},
@@ -424,6 +426,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 					t.Fatalf("no Bitbucket Server authz provider returned")
 				}
 			},
+			expWarnings: []string{`BitbucketServer config for / was invalid: Get "/rest/api/1.0/admin/permissions/users?filter=admin&user_id=admin": unsupported protocol scheme ""`},
 		},
 		{
 			description: "Two Bitbucket Server connections with authz enabled",
@@ -441,7 +444,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 						},
 						Ttl: "15m",
 					},
-					Url:      "https://bitbucketserver.mycorp.org",
+					Url:      "", // NOTE: Leave empty to fail quick with stable error message
 					Username: "admin",
 					Token:    "secret-token",
 				}, {
@@ -457,13 +460,17 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 						},
 						Ttl: "15m",
 					},
-					Url:      "https://bitbucketserver2.mycorp.org",
+					Url:      "", // NOTE: Leave empty to fail quick with stable error message
 					Username: "admin",
 					Token:    "secret-token",
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Only one Bitbucket Server authorization configuration is supported."},
+			expAuthzAllowAccessByDefault: true,
+			expWarnings: []string{
+				`BitbucketServer config for / was invalid: Get "/rest/api/1.0/admin/permissions/users?filter=admin&user_id=admin": unsupported protocol scheme ""`,
+				`BitbucketServer config for / was invalid: Get "/rest/api/1.0/admin/permissions/users?filter=admin&user_id=admin": unsupported protocol scheme ""`,
+				"Only one Bitbucket Server authorization configuration is supported.",
+			},
 		},
 		{
 			description: "Two GitHub connections with authz enabled, two matching auth providers found",
@@ -505,8 +512,8 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 					Token: "secret-token",
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Only one GitHub authorization configuration is supported."},
+			expAuthzAllowAccessByDefault: true,
+			expWarnings:                  []string{"Only one GitHub authorization configuration is supported."},
 		},
 
 		// For Sourcegraph authz provider
@@ -566,13 +573,14 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 						},
 						Ttl: "15m",
 					},
-					Url:      "https://bitbucketserver.mycorp.org",
+					Url:      "", // NOTE: Leave empty to fail quick with stable error message
 					Username: "admin",
 					Token:    "secret-token",
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
 			expSeriousProblems:           []string{"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when \"bitbucketServer\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
+			expWarnings:                  []string{`BitbucketServer config for / was invalid: Get "/rest/api/1.0/admin/permissions/users?filter=admin&user_id=admin": unsupported protocol scheme ""`},
 		},
 	}
 
@@ -585,7 +593,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			githubs:          test.githubConnections,
 		}
 
-		allowAccessByDefault, authzProviders, seriousProblems, _ :=
+		allowAccessByDefault, authzProviders, seriousProblems, warnings :=
 			authzProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
@@ -593,8 +601,11 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		if test.expAuthzProviders != nil {
 			test.expAuthzProviders(t, authzProviders)
 		}
-		if !reflect.DeepEqual(seriousProblems, test.expSeriousProblems) {
-			t.Errorf("seriousProblems: (actual) %+v != (expected) %+v", asJSON(t, seriousProblems), asJSON(t, test.expSeriousProblems))
+		if diff := cmp.Diff(test.expSeriousProblems, seriousProblems); diff != "" {
+			t.Errorf("seriousProblems: %v", diff)
+		}
+		if diff := cmp.Diff(test.expWarnings, warnings); diff != "" {
+			t.Errorf("warnings: %v", diff)
 		}
 	}
 }
