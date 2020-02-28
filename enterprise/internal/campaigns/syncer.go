@@ -115,7 +115,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, 
 
 	ss := make([]syncSchedule, len(hs))
 	for i := range hs {
-		nextSync := nextSync(s.clock, hs[i].UpdatedAt, hs[i].ExternalUpdatedAt)
+		nextSync := nextSync(s.clock, maxTime(hs[i].UpdatedAt, hs[i].LatestEvent), hs[i].ExternalUpdatedAt)
 
 		ss[i] = syncSchedule{
 			changesetID: hs[i].ChangesetID,
@@ -133,6 +133,13 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, 
 	}
 
 	return ss, nil
+}
+
+func maxTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
 }
 
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
