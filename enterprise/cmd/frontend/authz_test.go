@@ -205,7 +205,25 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
-			expWarnings:                  []string{"Only one GitLab authorization configuration is supported."},
+			expAuthzProviders: providersEqual(
+				gitlabAuthzProviderParams{
+					OAuthOp: gitlab.OAuthAuthzProviderOp{
+						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
+						CacheTTL:          3 * time.Hour,
+						MinBatchThreshold: 200,
+						MaxBatchRequests:  300,
+					},
+				},
+				gitlabAuthzProviderParams{
+					OAuthOp: gitlab.OAuthAuthzProviderOp{
+						BaseURL:           mustURLParse(t, "https://gitlab.com"),
+						CacheTTL:          3 * time.Hour,
+						MinBatchThreshold: 200,
+						MaxBatchRequests:  300,
+					},
+				},
+			),
+			expWarnings: []string{"Only one GitLab authorization configuration is supported."},
 		},
 		{
 			description: "1 GitLab connection with authz disabled",
