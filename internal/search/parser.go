@@ -49,34 +49,34 @@ func skipSpace(buf []byte) int {
 	return len(buf)
 }
 
-type state struct {
+type parser struct {
 	buf      []byte
 	pos      int
 	balanced int
 }
 
-func (s *state) done() bool {
-	return s.pos >= len(s.buf)
+func (p *parser) done() bool {
+	return p.pos >= len(p.buf)
 }
 
-func (s *state) advance(n int) {
-	s.pos += n
+func (p *parser) advance(n int) {
+	p.pos += n
 }
 
-func (s *state) peek(n int) (string, error) {
-	if s.pos+n > len(s.buf) {
+func (p *parser) peek(n int) (string, error) {
+	if p.pos+n > len(p.buf) {
 		return "", io.ErrShortBuffer
 	}
-	return string(s.buf[s.pos : s.pos+n]), nil
+	return string(p.buf[p.pos : p.pos+n]), nil
 }
 
-func (s *state) skipSpaces() error {
-	if s.pos > len(s.buf) {
+func (p *parser) skipSpaces() error {
+	if p.pos > len(p.buf) {
 		return io.ErrShortBuffer
 	}
 
-	s.pos += skipSpace(s.buf[s.pos:])
-	if s.pos > len(s.buf) {
+	p.pos += skipSpace(p.buf[p.pos:])
+	if p.pos > len(p.buf) {
 		return io.ErrShortBuffer
 	}
 	return nil
@@ -86,57 +86,57 @@ func (s *state) skipSpaces() error {
 // position. If no such reserved string exists, it returns the empty string.
 // This lets the parser observe syntactic cues and decide to, e.g., keep lexing
 // or return control to parsing a different term.
-func (s *state) reserved() string {
-	if v, err := s.peek(3); err == nil && (v == "AND" || v == "and") {
+func (p *parser) reserved() string {
+	if v, err := p.peek(3); err == nil && (v == "AND" || v == "and") {
 		return "and"
 	}
-	if v, err := s.peek(2); err == nil && (v == "OR" || v == "or") {
+	if v, err := p.peek(2); err == nil && (v == "OR" || v == "or") {
 		return "or"
 	}
-	if v, err := s.peek(1); err == nil && (v == "(" || v == ")") {
+	if v, err := p.peek(1); err == nil && (v == "(" || v == ")") {
 		return v
 	}
 	return ""
 }
 
-func (s *state) scanParameter() (string, error) {
-	start := s.pos
+func (p *parser) scanParameter() (string, error) {
+	start := p.pos
 	for {
-		if s.reserved() != "" {
+		if p.reserved() != "" {
 			break
 		}
-		if s.done() {
+		if p.done() {
 			break
 		}
-		if isSpace(s.buf[s.pos]) {
+		if isSpace(p.buf[p.pos]) {
 			break
 		}
-		s.pos++
+		p.pos++
 	}
-	return string(s.buf[start:s.pos]), nil
+	return string(p.buf[start:p.pos]), nil
 }
 
-func (s *state) parseParameterList() ([]Node, error) {
+func (p *parser) parseParameterList() ([]Node, error) {
 	var nodes []Node
 	for {
-		if err := s.skipSpaces(); err != nil {
+		if err := p.skipSpaces(); err != nil {
 			return nil, err
 		}
-		if s.done() {
+		if p.done() {
 			break
 		}
-		switch s.reserved() {
+		switch p.reserved() {
 		case "(":
-			s.balanced++
-			s.advance(1)
-			result, err := s.parseOr()
+			p.balanced++
+			p.advance(1)
+			result, err := p.parseOr()
 			if err != nil {
 				return nil, err
 			}
 			nodes = append(nodes, result...)
 		case ")":
-			s.balanced--
-			s.advance(1)
+			p.balanced--
+			p.advance(1)
 			if len(nodes) == 0 {
 				// Return a non-nil node if we parsed "()".
 				return []Node{Parameter{Value: ""}}, nil
@@ -146,7 +146,7 @@ func (s *state) parseParameterList() ([]Node, error) {
 			// Caller advances.
 			return nodes, nil
 		default:
-			value, err := s.scanParameter()
+			value, err := p.scanParameter()
 			if err != nil {
 				return nil, err
 			}
@@ -221,39 +221,39 @@ func newOr(nodes []Node) []Node {
 	return newOperator(nodes, "or")
 }
 
-func (s *state) parseAnd() ([]Node, error) {
-	left, err := s.parseParameterList()
+func (p *parser) parseAnd() ([]Node, error) {
+	left, err := p.parseParameterList()
 	if err != nil {
 		return nil, err
 	}
 	if left == nil {
-		return nil, fmt.Errorf("expected operand at %d", s.pos)
+		return nil, fmt.Errorf("expected operand at %d", p.pos)
 	}
-	if s.done() || s.reserved() != "and" {
+	if p.done() || p.reserved() != "and" {
 		return newAnd(left), nil
 	}
-	s.advance(len("and"))
-	right, err := s.parseAnd()
+	p.advance(len("and"))
+	right, err := p.parseAnd()
 	if err != nil {
 		return nil, err
 	}
 	return newAnd(append(left, right...)), nil
 }
 
-func (s *state) parseOr() ([]Node, error) {
-	left, err := s.parseAnd()
+func (p *parser) parseOr() ([]Node, error) {
+	left, err := p.parseAnd()
 	if err != nil {
 		return nil, err
 	}
 	if left == nil {
-		return nil, fmt.Errorf("expected operand at %d", s.pos)
+		return nil, fmt.Errorf("expected operand at %d", p.pos)
 	}
-	if s.done() || s.reserved() != "or" {
+	if p.done() || p.reserved() != "or" {
 		return newOr(left), nil
 	}
 
-	s.advance(len("or"))
-	right, err := s.parseOr()
+	p.advance(len("or"))
+	right, err := p.parseOr()
 	if err != nil {
 		return nil, err
 	}
@@ -264,12 +264,12 @@ func Parse(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil
 	}
-	state := &state{buf: []byte(in)}
-	nodes, err := state.parseOr()
+	parser := &parser{buf: []byte(in)}
+	nodes, err := parser.parseOr()
 	if err != nil {
 		return nil, err
 	}
-	if state.balanced != 0 {
+	if parser.balanced != 0 {
 		return nil, errors.New("unbalanced expression")
 	}
 	return nodes, nil
