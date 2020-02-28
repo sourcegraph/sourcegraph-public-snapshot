@@ -24,17 +24,15 @@ type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
 	// fetchers is a list of authz.Provider implementations that also
-	//implemented PermsFetcher. Keys are ServiceID (e.g. https://gitlab.com/).
+	// implemented PermsFetcher. Keys are ServiceID (e.g. https://gitlab.com/).
 	// TODO(jchen): Use conf.Watch to get up-to-date authz providers.
 	// The current approach is to minimize the changes required by keeping
 	// the authz.Provider interface as-is, so each authz provider could be
 	// opt-in progressively until we fully complete the transition of moving
 	// permissions syncing process to the background for all authz providers.
 	fetchers map[string]PermsFetcher
-	// The database interface.
-	db dbutil.DB
-	// The clock to mock time.
-	clock func() time.Time
+	// The cached PermsStore object.
+	store *edb.PermsStore
 }
 
 // PermsFetcher is an authz.Provider that could also fetch permissions in both
@@ -56,8 +54,7 @@ func NewPermsSyncer(fetchers map[string]PermsFetcher, db dbutil.DB, clock func()
 	return &PermsSyncer{
 		queue:    newRequestQueue(),
 		fetchers: fetchers,
-		db:       db,
-		clock:    clock,
+		store:    edb.NewPermsStore(db, clock),
 	}
 }
 
@@ -117,8 +114,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 			p.IDs.Add(uint32(repos[i].ID))
 		}
 
-		store := edb.NewPermsStore(s.db, s.clock)
-		err = store.SetUserPermissions(ctx, p)
+		err = s.store.SetUserPermissions(ctx, p)
 		if err != nil {
 			return errors.Wrap(err, "set user permissions")
 		}
@@ -185,8 +181,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 		p.UserIDs.Add(uint32(users[i].ID))
 	}
 
-	store := edb.NewPermsStore(s.db, s.clock)
-	txs, err := store.Transact(ctx)
+	txs, err := s.store.Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "start transaction")
 	}
