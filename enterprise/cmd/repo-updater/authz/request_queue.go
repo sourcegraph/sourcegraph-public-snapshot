@@ -97,11 +97,7 @@ func (q *requestQueue) enqueue(typ requestType, id int32, priority Priority) (up
 		return false
 	}
 
-	if request.updating {
-		return false
-	}
-
-	if request.priority >= priority {
+	if request.updating || request.priority >= priority {
 		// Request is already in the queue with at least as good priority.
 		return false
 	}
@@ -132,7 +128,8 @@ func (q *requestQueue) remove(typ requestType, id int32, updating bool) (removed
 }
 
 // acquireNext acquires the next sync request. The acquired request must be removed from
-// the queue when the request finishes (independent of success or failure).
+// the queue when the request finishes (independent of success or failure). This is to
+// prevent enqueuing a new request while an earlier and identical one is being processed.
 func (q *requestQueue) acquireNext() *syncRequest {
 	q.mu.Lock()
 	defer q.mu.Unlock()
