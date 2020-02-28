@@ -40,7 +40,7 @@ type syncRequest struct {
 	id       int32
 	priority Priority
 
-	updating bool // Whether the request has been acquired
+	acquired bool // Whether the request has been acquired
 	index    int  // The index in the heap
 }
 
@@ -106,8 +106,8 @@ func (q *requestQueue) enqueue(typ requestType, id int32, priority Priority) (up
 		return false
 	}
 
-	if request.updating || request.priority >= priority {
-		// Request is already in the queue with at least as good priority.
+	if request.acquired || request.priority >= priority {
+		// Request is acquired and in processing, or is already in the queue with at least as good priority.
 		return false
 	}
 
@@ -117,9 +117,9 @@ func (q *requestQueue) enqueue(typ requestType, id int32, priority Priority) (up
 	return true
 }
 
-// remove removes the sync request from the queue if the request.Updating matches the
-// updating argument.
-func (q *requestQueue) remove(typ requestType, id int32, updating bool) (removed bool) {
+// remove removes the sync request from the queue if the request.acquired matches the
+// acquired argument.
+func (q *requestQueue) remove(typ requestType, id int32, acquired bool) (removed bool) {
 	if id == 0 {
 		return false
 	}
@@ -128,7 +128,7 @@ func (q *requestQueue) remove(typ requestType, id int32, updating bool) (removed
 	defer q.mu.Unlock()
 
 	request := q.index[typ][id]
-	if request != nil && request.updating == updating {
+	if request != nil && request.acquired == acquired {
 		heap.Remove(q, request.index)
 		return true
 	}
@@ -148,12 +148,12 @@ func (q *requestQueue) acquireNext() *syncRequest {
 	}
 
 	request := q.heap[0]
-	if request.updating {
-		// Everything in the queue is already updating.
+	if request.acquired {
+		// Everything in the queue is already acquired and updating.
 		return nil
 	}
 
-	request.updating = true
+	request.acquired = true
 	heap.Fix(q, request.index)
 	return request
 }
@@ -170,9 +170,9 @@ func (q *requestQueue) Less(i, j int) bool {
 	qi := q.heap[i]
 	qj := q.heap[j]
 
-	if qi.updating != qj.updating {
-		// Requests that are already updating are sorted last.
-		return qj.updating
+	if qi.acquired != qj.acquired {
+		// Requests that are already acquired are sorted last.
+		return qj.acquired
 	}
 
 	if qi.priority != qj.priority {
