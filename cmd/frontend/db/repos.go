@@ -123,7 +123,11 @@ func (s *repos) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo,
 // type and service ID. The number of results in the returned list could be less than the
 // candidate list due to no repository being associated with some IDs.
 func (s *repos) GetByExternalIDs(ctx context.Context, serviceType, serviceID string, extIDs ...string) ([]*types.Repo, error) {
-	if len(extIDs) == 0 {
+	if serviceType == "" {
+		return nil, errors.New("empty serviceType")
+	} else if serviceID == "" {
+		return nil, errors.New("empty serviceID")
+	} else if len(extIDs) == 0 {
 		return []*types.Repo{}, nil
 	}
 
