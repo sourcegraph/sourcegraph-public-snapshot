@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -88,6 +89,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 	// NOTE: The following logic is based on the assumption that we only support
 	// configuring one authz provider per code host type.
 	// See https://github.com/sourcegraph/sourcegraph/issues/8597 for details.
+	// Set internal actor to bypass checking permissions.
+	ctx = actor.WithActor(ctx, &actor.Actor{Internal: true})
 	for _, acct := range accts {
 		fetcher := s.fetchers[acct.ServiceType]
 		if fetcher == nil {
