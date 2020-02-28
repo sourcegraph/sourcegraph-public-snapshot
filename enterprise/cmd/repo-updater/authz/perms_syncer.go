@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -31,8 +32,10 @@ type PermsSyncer struct {
 	// opt-in progressively until we fully complete the transition of moving
 	// permissions syncing process to the background for all authz providers.
 	fetchers map[string]PermsFetcher
+	// The database interface for any repos and external services operations.
+	reposStore repos.Store
 	// The cached PermsStore object.
-	store *edb.PermsStore
+	permsStore *edb.PermsStore
 }
 
 // PermsFetcher is an authz.Provider that could also fetch permissions in both
@@ -50,11 +53,12 @@ type PermsFetcher interface {
 }
 
 // NewPermsSyncer returns a new permissions syncing request manager.
-func NewPermsSyncer(fetchers map[string]PermsFetcher, db dbutil.DB, clock func() time.Time) *PermsSyncer {
+func NewPermsSyncer(fetchers map[string]PermsFetcher, reposStore repos.Store, db dbutil.DB, clock func() time.Time) *PermsSyncer {
 	return &PermsSyncer{
-		queue:    newRequestQueue(),
-		fetchers: fetchers,
-		store:    edb.NewPermsStore(db, clock),
+		queue:      newRequestQueue(),
+		fetchers:   fetchers,
+		reposStore: reposStore,
+		permsStore: edb.NewPermsStore(db, clock),
 	}
 }
 
@@ -114,7 +118,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 			p.IDs.Add(uint32(repos[i].ID))
 		}
 
-		err = s.store.SetUserPermissions(ctx, p)
+		err = s.permsStore.SetUserPermissions(ctx, p)
 		if err != nil {
 			return errors.Wrap(err, "set user permissions")
 		}
@@ -127,11 +131,16 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 // It discards requests that are made for non-private repositories based on the
 // value of "repo.private" column.
 func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) error {
-	repo, err := db.Repos.Get(ctx, repoID)
+	rs, err := s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
+		IDs: []api.RepoID{repoID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "get repositroy")
+		return errors.Wrap(err, "list repositories")
+	} else if len(rs) == 0 {
+		return nil
 	}
 
+	repo := rs[0]
 	if !repo.Private {
 		return nil
 	}
@@ -158,17 +167,10 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 		return errors.Wrap(err, "get users by usernames")
 	}
 
-	// Compute bind IDs for late-binding users
-	bindIDSet := make(map[string]struct{}, len(usernames))
+	// Set up set of all usernames that need to be bound to permissions
+	bindUsernamesSet := make(map[string]struct{}, len(usernames))
 	for i := range usernames {
-		bindIDSet[usernames[i]] = struct{}{}
-	}
-	for i := range users {
-		delete(bindIDSet, users[i].Username)
-	}
-	pendingBindIDs := make([]string, 0, len(bindIDSet))
-	for id := range bindIDSet {
-		pendingBindIDs = append(pendingBindIDs, id)
+		bindUsernamesSet[usernames[i]] = struct{}{}
 	}
 
 	// Save permissions to database
@@ -177,11 +179,21 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
 		UserIDs: roaring.NewBitmap(),
 	}
+
 	for i := range users {
+		// Add existing user to permissions
 		p.UserIDs.Add(uint32(users[i].ID))
+
+		// Remove existing user from set of pending users
+		delete(bindUsernamesSet, users[i].Username)
 	}
 
-	txs, err := s.store.Transact(ctx)
+	pendingBindUsernames := make([]string, 0, len(bindUsernamesSet))
+	for id := range bindUsernamesSet {
+		pendingBindUsernames = append(pendingBindUsernames, id)
+	}
+
+	txs, err := s.permsStore.Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "start transaction")
 	}
@@ -189,7 +201,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 
 	if err = txs.SetRepoPermissions(ctx, p); err != nil {
 		return errors.Wrap(err, "set repository permissions")
-	} else if err = txs.SetRepoPendingPermissions(ctx, pendingBindIDs, p); err != nil {
+	} else if err = txs.SetRepoPendingPermissions(ctx, pendingBindUsernames, p); err != nil {
 		return errors.Wrap(err, "set repository pending permissions")
 	}
 
