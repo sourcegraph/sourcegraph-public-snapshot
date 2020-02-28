@@ -234,7 +234,7 @@ func (s *state) continueParsing(left []Node, operator string) ([]Node, error) {
 		newOp = newOr
 	}
 
-	if s.done() || !s.expect(operator) {
+	if !s.expect(operator) {
 		return newOp(left), nil
 	}
 
