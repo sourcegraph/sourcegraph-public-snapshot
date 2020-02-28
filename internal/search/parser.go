@@ -210,14 +210,6 @@ func newOperator(nodes []Node, kind string) []Node {
 	return []Node{Operator{Kind: kind, Operands: reduced}}
 }
 
-func newAnd(nodes []Node) []Node {
-	return newOperator(nodes, "and")
-}
-
-func newOr(nodes []Node) []Node {
-	return newOperator(nodes, "or")
-}
-
 func (p *parser) parseAnd() ([]Node, error) {
 	left, err := p.parseParameterList()
 	if err != nil {
@@ -227,13 +219,13 @@ func (p *parser) parseAnd() ([]Node, error) {
 		return nil, fmt.Errorf("expected operand at %d", p.pos)
 	}
 	if !p.expect("and") {
-		return newAnd(left), nil
+		return left, nil
 	}
 	right, err := p.parseAnd()
 	if err != nil {
 		return nil, err
 	}
-	return newAnd(append(left, right...)), nil
+	return newOperator(append(left, right...), "and"), nil
 }
 
 func (p *parser) parseOr() ([]Node, error) {
@@ -245,13 +237,13 @@ func (p *parser) parseOr() ([]Node, error) {
 		return nil, fmt.Errorf("expected operand at %d", p.pos)
 	}
 	if !p.expect("or") {
-		return newAnd(left), nil
+		return left, nil
 	}
 	right, err := p.parseOr()
 	if err != nil {
 		return nil, err
 	}
-	return newOr(append(left, right...)), nil
+	return newOperator(append(left, right...), "or"), nil
 }
 
 func Parse(in string) ([]Node, error) {
@@ -266,5 +258,5 @@ func Parse(in string) ([]Node, error) {
 	if parser.balanced != 0 {
 		return nil, errors.New("unbalanced expression")
 	}
-	return nodes, nil
+	return newOperator(nodes, "and"), nil
 }
