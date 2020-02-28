@@ -91,7 +91,7 @@ func nextSync(clock func() time.Time, lastSync, lastChange time.Time) time.Time 
 
 	sinceLastSync := now.Sub(lastSync)
 	if sinceLastSync >= maxSyncDelay {
-		// TODO: We may want to add some jitter so that we don't a large cluster
+		// TODO: We may want to add some jitter so that we don't have a large cluster
 		// of old repos all syncing around the same time
 		return now
 	}
