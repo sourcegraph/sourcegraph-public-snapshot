@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"text/template"
 
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
@@ -57,37 +58,16 @@ Examples:
 			return err
 		}
 
-		query := `mutation CreateCampaignPlanFromPatches($patches: [CampaignPlanPatch!]!) {
-  createCampaignPlanFromPatches(patches: $patches) {
-    ...CampaignPlanFields
-  }
-}
-` + campaignPlanFragment(*changesetsFlag)
-
 		if isatty.IsTerminal(os.Stdin.Fd()) {
 			log.Println("# Waiting for JSON patches input on stdin...")
 		}
 
-		var patches []map[string]interface{}
+		var patches []CampaignPlanPatch
 		if err := json.NewDecoder(os.Stdin).Decode(&patches); err != nil {
 			return errors.Wrap(err, "invalid JSON patches input")
 		}
 
-		var result struct {
-			CreateCampaignPlanFromPatches CampaignPlan
-		}
-		return (&apiRequest{
-			query:  query,
-			vars:   map[string]interface{}{"patches": patches},
-			result: &result,
-			done: func() error {
-				if err := execTemplate(tmpl, result.CreateCampaignPlanFromPatches); err != nil {
-					return err
-				}
-				return nil
-			},
-			flags: apiFlags,
-		}).do()
+		return createCampaignPlanFromPatches(apiFlags, patches, tmpl, *changesetsFlag)
 	}
 
 	// Register the command.
@@ -96,4 +76,37 @@ Examples:
 		handler:   handler,
 		usageFunc: usageFunc,
 	})
+}
+
+const createCampaignPlanMutation = `
+mutation CreateCampaignPlanFromPatches($patches: [CampaignPlanPatch!]!) {
+  createCampaignPlanFromPatches(patches: $patches) {
+    ...CampaignPlanFields
+  }
+}
+`
+
+func createCampaignPlanFromPatches(
+	apiFlags *apiFlags,
+	patches []CampaignPlanPatch,
+	tmpl *template.Template,
+	numChangesets int,
+) error {
+	query := createCampaignPlanMutation + campaignPlanFragment(numChangesets)
+
+	var result struct {
+		CreateCampaignPlanFromPatches CampaignPlan
+	}
+	return (&apiRequest{
+		query:  query,
+		vars:   map[string]interface{}{"patches": patches},
+		result: &result,
+		done: func() error {
+			if err := execTemplate(tmpl, result.CreateCampaignPlanFromPatches); err != nil {
+				return err
+			}
+			return nil
+		},
+		flags: apiFlags,
+	}).do()
 }

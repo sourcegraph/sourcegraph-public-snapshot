@@ -62,9 +62,12 @@ Examples:
 			log.Printf("# scopeQuery in action definition: %s\n", action.ScopeQuery)
 		}
 
-		repos, err := actionRepos(ctx, action.ScopeQuery)
+		repos, skipped, err := actionRepos(ctx, action.ScopeQuery)
 		if err != nil {
 			return err
+		}
+		for _, r := range skipped {
+			log.Printf("# Skipping repository %s because we couldn't determine default branch.\n", r)
 		}
 		if *verbose {
 			log.Printf("# %d repositories match.", len(repos))

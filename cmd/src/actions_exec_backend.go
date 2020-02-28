@@ -87,9 +87,9 @@ func (x *actionExecutor) allPatches() []CampaignPlanPatch {
 	patches := make([]CampaignPlanPatch, 0, len(x.repos))
 	x.reposMu.Lock()
 	defer x.reposMu.Unlock()
-	for _, repoStatus := range x.repos {
-		if patch := repoStatus.Patch; patch != (CampaignPlanPatch{}) {
-			patches = append(patches, repoStatus.Patch)
+	for _, status := range x.repos {
+		if patch := status.Patch; patch != (CampaignPlanPatch{}) && status.Err == nil {
+			patches = append(patches, status.Patch)
 		}
 	}
 	return patches

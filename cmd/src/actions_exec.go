@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 )
@@ -61,19 +63,23 @@ Examples:
 
   Execute an action defined in ~/run-gofmt-in-dockerfile.json:
 
-    	$ src actions exec -f ~/run-gofmt-in-dockerfile.json
-
-  Verbosely execute an action and keep the logs available for debugging:
-
-		$ src -v actions exec -keep-logs -f ~/run-gofmt-in-dockerfile.json
+	$ src actions exec -f ~/run-gofmt-in-dockerfile.json
 
   Execute an action and create a campaign plan from the patches it produced:
 
-    	$ src actions exec -f ~/run-gofmt-in-dockerfile.json | src campaign plan create-from-patches
+	$ src actions exec -f ~/run-gofmt-in-dockerfile.json -create-plan
+
+  Verbosely execute an action and keep the logs available for debugging:
+
+	$ src -v actions exec -keep-logs -f ~/run-gofmt-in-dockerfile.json
+
+  Execute an action and pipe the patches it produced to 'src campaign plan create-from-patches':
+
+	$ src actions exec -f ~/run-gofmt-in-dockerfile.json | src campaign plan create-from-patches
 
   Read and execute an action definition from standard input:
 
-		$ cat ~/my-action.json | src actions exec -f -
+	$ cat ~/my-action.json | src actions exec -f -
 
 
 Format of the action JSON files:
@@ -132,6 +138,11 @@ Format of the action JSON files:
 		cacheDirFlag    = flagSet.String("cache", displayUserCacheDir, "Directory for caching results.")
 		keepLogsFlag    = flagSet.Bool("keep-logs", false, "Do not remove execution log files when done.")
 		timeoutFlag     = flagSet.Duration("timeout", defaultTimeout, "The maximum duration a single action run can take (excluding the building of Docker images).")
+
+		createPlanFlag      = flagSet.Bool("create-plan", false, "Create a campaign plan from the produced set of patches. When the execution of the action fails in a single repository a prompt will ask to confirm or reject the campaign plan creation.")
+		forceCreatePlanFlag = flagSet.Bool("force-create-plan", false, "Force creation of campaign plan from the produced set of patches, without asking for confirmation even when the execution of the action failed for a subset of repositories.")
+
+		apiFlags = newAPIFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -196,11 +207,16 @@ Format of the action JSON files:
 
 		// Query repos over which to run action
 		logger.Infof("Querying %s for repositories matching '%s'...\n", cfg.Endpoint, action.ScopeQuery)
-		repos, err := actionRepos(ctx, action.ScopeQuery)
+		repos, skipped, err := actionRepos(ctx, action.ScopeQuery)
 		if err != nil {
 			return err
 		}
+		for _, r := range skipped {
+			logger.Infof("Skipping repository %s because we couldn't determine default branch.\n", r)
+		}
 		logger.Infof("%d repositories match. Use 'src actions scope-query' for help with scoping.\n", len(repos))
+
+		logger.Start()
 
 		executor := newActionExecutor(action, *parallelismFlag, logger, opts)
 		for _, repo := range repos {
@@ -213,14 +229,55 @@ Format of the action JSON files:
 		}
 
 		go executor.start(ctx)
-		if err := executor.wait(); err != nil {
+		err = executor.wait()
+
+		patches := executor.allPatches()
+		if len(patches) == 0 {
+			// We call os.Exit because we don't want to return the error
+			// and have it printed.
+			logger.ActionFailed(err, patches)
+			os.Exit(1)
+		}
+
+		if !*createPlanFlag && !*forceCreatePlanFlag {
+			if err != nil {
+				logger.ActionFailed(err, patches)
+				os.Exit(1)
+			}
+
+			logger.ActionSuccess(patches, true)
+
+			return json.NewEncoder(os.Stdout).Encode(patches)
+		}
+
+		if err != nil {
+			logger.ActionFailed(err, patches)
+
+			if len(patches) == 0 {
+				os.Exit(1)
+			}
+
+			if !*forceCreatePlanFlag {
+				canInput := isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd())
+				if !canInput {
+					return err
+				}
+
+				c, _ := askForConfirmation(fmt.Sprintf("Create a campaign plan for the produced patches anyway?"))
+				if !c {
+					return err
+				}
+			}
+		} else {
+			logger.ActionSuccess(patches, false)
+		}
+
+		tmpl, err := parseTemplate("{{friendlyCampaignPlanCreatedMessage .}}")
+		if err != nil {
 			return err
 		}
-		patches := executor.allPatches()
 
-		logger.Infof("Action produced %d patches.\n", len(patches))
-
-		return json.NewEncoder(os.Stdout).Encode(patches)
+		return createCampaignPlanFromPatches(apiFlags, patches, tmpl, 100)
 	}
 
 	// Register the command.
@@ -339,10 +396,10 @@ type ActionRepo struct {
 	Rev  string
 }
 
-func actionRepos(ctx context.Context, scopeQuery string) ([]ActionRepo, error) {
+func actionRepos(ctx context.Context, scopeQuery string) ([]ActionRepo, []string, error) {
 	hasCount, err := regexp.MatchString(`count:\d+`, scopeQuery)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if !hasCount {
@@ -396,9 +453,10 @@ query ActionRepos($query: String!) {
 		},
 		result: &result,
 	}).do(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
+	skipped := []string{}
 	reposByID := map[string]ActionRepo{}
 	for _, searchResult := range result.Search.Results.Results {
 		var repo Repository
@@ -413,7 +471,7 @@ query ActionRepos($query: String!) {
 		}
 
 		if repo.DefaultBranch.Name == "" {
-			log.Printf("Skipping repository %s because we couldn't determine default branch.", repo.Name)
+			skipped = append(skipped, repo.Name)
 			continue
 		}
 
@@ -430,7 +488,7 @@ query ActionRepos($query: String!) {
 	for _, repo := range reposByID {
 		repos = append(repos, repo)
 	}
-	return repos, nil
+	return repos, skipped, nil
 }
 
 func sumDiffStats(fileDiffs []*diff.FileDiff) diff.Stat {
@@ -475,4 +533,24 @@ func isGitAvailable() bool {
 		return false
 	}
 	return true
+}
+
+// askForConfirmation asks the user for confirmation. A user must type in "yes"
+// and press enter to confirm. It has fuzzy matching, so "y", "Y", "yes",
+// "YES", and "Yes" all count as confirmations. Everything else counts as "no".
+func askForConfirmation(s string) (bool, error) {
+	fmt.Fprintf(os.Stderr, "%s [y/n]: ", s)
+
+	reader := bufio.NewReader(os.Stdin)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		return false, err
+	}
+
+	response = strings.ToLower(strings.TrimSpace(response))
+	if response == "y" || response == "yes" {
+		return true, nil
+	}
+
+	return false, nil
 }

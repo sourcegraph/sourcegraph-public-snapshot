@@ -11,13 +11,16 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
+	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 )
 
 var (
+	boldBlack = color.New(color.Bold, color.FgBlack)
 	boldRed   = color.New(color.Bold, color.FgRed)
 	boldGreen = color.New(color.Bold, color.FgGreen)
 	green     = color.New(color.FgGreen)
+	hiGreen   = color.New(color.FgHiGreen)
 	yellow    = color.New(color.FgYellow)
 	grey      = color.New(color.FgHiBlack)
 )
@@ -47,15 +50,52 @@ func newActionLogger(verbose, keepLogs bool) *actionLogger {
 	}
 }
 
+func (a *actionLogger) Start() {
+	if a.verbose {
+		fmt.Fprintln(os.Stderr)
+	}
+}
+
 func (a *actionLogger) Warnf(format string, args ...interface{}) {
 	if a.verbose {
-		fmt.Fprintf(os.Stderr, color.YellowString("WARNING: ")+format, args...)
+		yellow.Fprintf(os.Stderr, "WARNING: "+format, args...)
+	}
+}
+
+func (a *actionLogger) ActionFailed(err error, patches []CampaignPlanPatch) {
+	if !a.verbose {
+		return
+	}
+	fmt.Fprintln(os.Stderr)
+	if perr, ok := err.(parallel.Errors); ok {
+		if len(patches) > 0 {
+			yellow.Fprintf(os.Stderr, "✗  Action produced %d patches but failed with %d errors.\n\n", len(patches), len(perr))
+		} else {
+			yellow.Fprintf(os.Stderr, "✗  Action failed with %d errors.\n", len(perr))
+		}
+	} else {
+		if len(patches) > 0 {
+			yellow.Fprintf(os.Stderr, "✗  Action produced %d patches but failed with error: %s\n\n", len(patches), err)
+		} else {
+			yellow.Fprintf(os.Stderr, "✗  Action failed with error: %s\n\n", err)
+		}
+	}
+}
+
+func (a *actionLogger) ActionSuccess(patches []CampaignPlanPatch, newLines bool) {
+	if a.verbose {
+		fmt.Fprintln(os.Stderr)
+		format := "✔  Action produced %d patches."
+		if newLines {
+			format = format + "\n\n"
+		}
+		hiGreen.Fprintf(os.Stderr, format, len(patches))
 	}
 }
 
 func (a *actionLogger) Infof(format string, args ...interface{}) {
 	if a.verbose {
-		fmt.Fprintf(os.Stderr, format, args...)
+		grey.Fprintf(os.Stderr, format, args...)
 	}
 }
 
@@ -85,10 +125,6 @@ func (a *actionLogger) AddRepo(repo ActionRepo) (string, error) {
 	a.logFiles[repo.Name] = logFile
 	a.logWriters[repo.Name] = logWriter
 
-	if a.verbose {
-		fmt.Fprintf(os.Stderr, "%s -> Enqueued. Logfile created at %s\n", grey.Sprint(repo.Name), logFile.Name())
-	}
-
 	return logFile.Name(), nil
 }
 
@@ -111,19 +147,28 @@ func (a *actionLogger) write(repoName string, c *color.Color, format string, arg
 }
 
 func (a *actionLogger) RepoFinished(repoName string, patchProduced bool, actionErr error) error {
+	a.mu.Lock()
+	f, ok := a.logFiles[repoName]
+	if !ok {
+		a.mu.Unlock()
+		return nil
+	}
+	a.mu.Unlock()
+
 	if actionErr != nil {
-		a.write(repoName, boldRed, "%s\n", actionErr)
+		if a.keepLogs {
+			a.write(repoName, boldRed, "Action failed. Logfile: %s\n", f.Name())
+		} else {
+			a.write(repoName, boldRed, "Action failed.\n")
+		}
 	} else if patchProduced {
-		a.write(repoName, boldGreen, "Patch generated.\n")
+		a.write(repoName, boldGreen, "Finished. Patch produced.\n")
+	} else {
+		a.write(repoName, grey, "Finished. No patch produced.\n")
 	}
 
 	a.mu.Lock()
 	defer a.mu.Unlock()
-
-	f, ok := a.logFiles[repoName]
-	if !ok {
-		return nil
-	}
 
 	delete(a.logFiles, repoName)
 	delete(a.logWriters, repoName)
@@ -142,15 +187,15 @@ func (a *actionLogger) RepoStarted(repoName, rev string, steps []*ActionStep) {
 }
 
 func (a *actionLogger) CommandStepStarted(repoName string, step int, args []string) {
-	a.write(repoName, yellow, "Step %d: command %v\n", step, args)
+	a.write(repoName, yellow, "[Step %d] command %v\n", step, args)
 }
 
 func (a *actionLogger) CommandStepErrored(repoName string, step int, err error) {
-	a.write(repoName, boldRed, "Step %d: error: %s.\n", step, err)
+	a.write(repoName, boldRed, "[Step %d] %s.\n", step, err)
 }
 
 func (a *actionLogger) CommandStepDone(repoName string, step int) {
-	a.write(repoName, yellow, "Step %d: done.\n", step)
+	a.write(repoName, yellow, "[Step %d] Done.\n", step)
 }
 
 func (a *actionLogger) DockerStepStarted(repoName string, step int, dockerfile, image string) {
@@ -158,13 +203,13 @@ func (a *actionLogger) DockerStepStarted(repoName string, step int, dockerfile, 
 	if dockerfile != "" {
 		fromDockerfile = " (built from inline Dockerfile)"
 	}
-	a.write(repoName, yellow, "Step %d: docker run %v%s\n", step, image, fromDockerfile)
+	a.write(repoName, yellow, "[Step %d] docker run %v%s\n", step, image, fromDockerfile)
 }
 
 func (a *actionLogger) DockerStepErrored(repoName string, step int, err error, elapsed time.Duration) {
-	a.write(repoName, boldRed, "Step %d: error: %s. (%s)\n", step, err, elapsed)
+	a.write(repoName, boldRed, "[Step %d] %s. (%s)\n", step, err, elapsed)
 }
 
 func (a *actionLogger) DockerStepDone(repoName string, step int, elapsed time.Duration) {
-	a.write(repoName, yellow, "Step %d: done. (%s)\n", step, elapsed)
+	a.write(repoName, yellow, "[Step %d] Done. (%s)\n", step, elapsed)
 }

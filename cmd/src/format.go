@@ -98,7 +98,7 @@ func parseTemplate(text string) (*template.Template, error) {
 		"friendlyCampaignPlanCreatedMessage": func(campaignPlan CampaignPlan) string {
 			var buf bytes.Buffer
 			fmt.Fprintln(&buf)
-			fmt.Fprintln(&buf, color.HiGreenString("✔  Campaign plan saved."), "\n\nTo preview and run the campaign (and create branches and changesets):")
+			fmt.Fprintln(&buf, color.HiGreenString("✔  Campaign plan saved."), "\n\nPreview and create this campaign on Sourcegraph using one of the following options:")
 			fmt.Fprintln(&buf)
 			fmt.Fprintln(&buf, " ", color.HiCyanString("▶ Web:"), campaignPlan.PreviewURL, color.HiBlackString("or"))
 			cliCommand := fmt.Sprintf("src campaigns create -plan=%s -branch=DESIRED-BRANCH-NAME", campaignPlan.ID)
