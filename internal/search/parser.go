@@ -7,6 +7,15 @@ import (
 	"strings"
 )
 
+/*
+Parser implements a parser for the following grammar:
+
+OrTerm     → AndTerm { OR AndTerm }
+AndTerm    → Term { AND Term }
+Term       → (OrTerm) | Parameters
+Parameters → Parameter { " " Parameter }
+*/
+
 type Node interface {
 	String() string
 	node()
@@ -57,9 +66,9 @@ type keyword string
 // Reserved keyword syntax.
 const (
 	AND    keyword = "and"
-	OR             = "or"
-	LPAREN         = "("
-	RPAREN         = ")"
+	OR     keyword = "or"
+	LPAREN keyword = "("
+	RPAREN keyword = ")"
 )
 
 func isSpace(c byte) bool {
