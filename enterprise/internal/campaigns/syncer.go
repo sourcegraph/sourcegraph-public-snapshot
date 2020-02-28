@@ -128,10 +128,6 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, 
 		return ss[i].nextSync.Before(ss[j].nextSync)
 	})
 
-	for _, s := range ss {
-		log15.Info("NextSync", "id", s.changesetID, "nextSync", s.nextSync, "diff", s.nextSync.Sub(time.Now()))
-	}
-
 	return ss, nil
 }
 
@@ -153,7 +149,6 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 
 // SyncChangesetByID will sync a single changeset given its id
 func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
-	log15.Info("SyncChangesetByID", "id", id)
 	cs, err := s.Store.GetChangeset(ctx, GetChangesetOpts{
 		ID: id,
 	})
@@ -331,8 +326,7 @@ type changesetQueue struct {
 	priority  chan int64
 
 	// ordered slice of scheduled syncs
-	schedule []syncSchedule
-	cancel   context.CancelFunc
+	cancel context.CancelFunc
 }
 
 func newChangesetQueue(priorityCapacity int) *changesetQueue {
@@ -342,10 +336,11 @@ func newChangesetQueue(priorityCapacity int) *changesetQueue {
 	}
 }
 
-func (q *changesetQueue) updateSchedule(newSchedule []syncSchedule) {
+func (q *changesetQueue) updateSchedule(schedule []syncSchedule) {
 	// cancel existing goroutine if running
 	if q.cancel != nil {
-		// TODO: double check that this is blocking
+		// cancel closes the done chan on the existing context
+		// which will cause the existing worker routine to exit
 		q.cancel()
 	}
 
@@ -353,26 +348,24 @@ func (q *changesetQueue) updateSchedule(newSchedule []syncSchedule) {
 	ctx, q.cancel = context.WithCancel(ctx)
 	var timer *time.Timer
 	go func() {
-		for i := range newSchedule {
+		for i := range schedule {
 			// Get most urgent changeset and sleep until it should be synced
 			now := time.Now()
-			nextSync := newSchedule[i].nextSync
+			nextSync := schedule[i].nextSync
 			d := nextSync.Sub(now)
 			timer = time.NewTimer(d)
-			log15.Info("queueInnerLoop", "i", i, "of", len(newSchedule), "nextSync", nextSync, "in", nextSync.Sub(now))
 			select {
 			case <-ctx.Done():
-				log15.Info("queueInnerLoop one Done")
 				timer.Stop()
 				return
 			case <-timer.C:
+				// Timer ready, try and send sync instruction
 			}
 
 			select {
 			case <-ctx.Done():
-				log15.Info("queueInnerLoop two Done")
 				return
-			case q.scheduled <- newSchedule[i].changesetID:
+			case q.scheduled <- schedule[i].changesetID:
 			}
 		}
 	}()
