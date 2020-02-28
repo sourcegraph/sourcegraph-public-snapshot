@@ -14,9 +14,15 @@ describe('getDirectoryChildren', () => {
                 frontendUrl: 'frontend',
                 repositoryId: 42,
                 commit: 'c',
-                dirnames: ['', 'foo', 'bar/baz'],
+                dirnames: ['', 'foo', 'bar/baz/'],
             })
-        ).toEqual([new Set(['a', 'b', 'c']), new Set(['foo/1', 'foo/2', 'foo/3']), new Set(['bar/baz/x', 'bar/baz/y'])])
+        ).toEqual(
+            new Map([
+                ['', new Set(['a', 'b', 'c'])],
+                ['foo', new Set(['foo/1', 'foo/2', 'foo/3'])],
+                ['bar/baz/', new Set(['bar/baz/x', 'bar/baz/y'])],
+            ])
+        )
     })
 })
 

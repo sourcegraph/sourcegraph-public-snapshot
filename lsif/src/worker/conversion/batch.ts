@@ -15,7 +15,7 @@ export function createBatcher(root: string, documentPaths: string[]): Generator<
 /** A node in a directory path tree. */
 interface Node {
     /** The name of a directory in this level of the directory tree. */
-    segment: string
+    dirname: string
 
     /** The segments directly nested in this node. */
     children: Node[]
@@ -34,7 +34,7 @@ function createTree(root: string, documentPaths: string[]): Node {
     const dirs = Array.from(new Set(documentDirs)).filter(dirname => !dirname.startsWith('..'))
 
     // Construct the canned root node
-    const rootNode: Node = { segment: '', children: [] }
+    const rootNode: Node = { dirname: '', children: [] }
 
     for (const dir of dirs) {
         // Skip the dump root as the following loop body would make
@@ -49,10 +49,10 @@ function createTree(root: string, documentPaths: string[]): Node {
         // tree. Any node that doesn't exist is created with empty
         // children.
 
-        for (const segment of dir.split('/')) {
-            let child = node.children.find(n => n.segment === segment)
+        for (const dirname of dir.split('/')) {
+            let child = node.children.find(n => n.dirname === dirname)
             if (!child) {
-                child = { segment, children: [] }
+                child = { dirname, children: [] }
                 node.children.push(child)
             }
 
@@ -94,7 +94,7 @@ function* traverse(root: Node): Generator<string[], void, string[]> {
                 // get the full path to that node. Create the new frontier from
                 // the current frontier's children after pruning the non-existent
                 // paths.
-                children.map((child): [string, Node[]] => [path.join(parent, child.segment), child.children])
+                children.map((child): [string, Node[]] => [path.join(parent, child.dirname), child.children])
             )
     }
 }

@@ -35,7 +35,28 @@ describe('createBatcher', () => {
             ds.flatMap(d => is.map(i => `${d}/${i}/file.ts`))
         )
 
-        expect(values).toEqual([[''], ['foo'], ds.map(d => `foo/${d}`), ds.flatMap(d => is.map(i => `foo/${d}/${i}`))])
+        expect(values).toEqual([
+            [''],
+            ['foo'],
+            ['foo/bar', 'foo/baz', 'foo/bonk'],
+            [
+                'foo/bar/0',
+                'foo/bar/1',
+                'foo/bar/2',
+                'foo/bar/3',
+                'foo/bar/4',
+                'foo/baz/0',
+                'foo/baz/1',
+                'foo/baz/2',
+                'foo/baz/3',
+                'foo/baz/4',
+                'foo/bonk/0',
+                'foo/bonk/1',
+                'foo/bonk/2',
+                'foo/bonk/3',
+                'foo/bonk/4',
+            ],
+        ])
     })
 
     it('should cut subtrees that do not exist', () => {

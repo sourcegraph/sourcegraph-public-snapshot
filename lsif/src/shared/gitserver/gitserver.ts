@@ -30,7 +30,7 @@ export async function getDirectoryChildren({
     dirnames: string[]
     /** The tracing context. */
     ctx?: TracingContext
-}): Promise<Set<string>[]> {
+}): Promise<Map<string, Set<string>>> {
     const args = ['ls-tree', '--name-only', commit, '--']
 
     for (const dirname of dirnames) {
@@ -45,16 +45,17 @@ export async function getDirectoryChildren({
     // list sorted alphabetically, which we then need to partition by parent directory.
     const uncategorizedChildren = await gitserverExecLines(frontendUrl, repositoryId, args, ctx)
 
-    const children: Set<string>[] = []
+    const childMap = new Map()
     for (const dirname of dirnames) {
-        if (dirname === '') {
-            children.push(new Set(uncategorizedChildren.filter(line => !line.includes('/'))))
-        } else {
-            children.push(new Set(uncategorizedChildren.filter(line => line.startsWith(dirname))))
-        }
+        childMap.set(
+            dirname,
+            dirname === ''
+                ? new Set(uncategorizedChildren.filter(line => !line.includes('/')))
+                : new Set(uncategorizedChildren.filter(line => line.startsWith(dirname)))
+        )
     }
 
-    return children
+    return childMap
 }
 
 /**

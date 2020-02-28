@@ -18,7 +18,7 @@ describe('PathExistenceChecker', () => {
             root: 'web',
             frontendUrl: 'frontend',
             mockGetDirectoryChildren: ({ dirnames }) =>
-                Promise.resolve(dirnames.map(dirname => new Set(children.get(dirname)))),
+                Promise.resolve(new Map(dirnames.map(dirname => [dirname, new Set(children.get(dirname))]))),
         })
 
         await pathExistenceChecker.warmCache([
@@ -49,7 +49,7 @@ describe('PathExistenceChecker', () => {
     it('should cache directory contents', async () => {
         const children = new Map([['', Array.from(range(100).map(i => `${i}.ts`))]])
         const mockGetDirectoryChildren = sinon.spy<typeof getDirectoryChildren>(({ dirnames }) =>
-            Promise.resolve(dirnames.map(dirname => new Set(children.get(dirname))))
+            Promise.resolve(new Map(dirnames.map(dirname => [dirname, new Set(children.get(dirname))])))
         )
         const pathExistenceChecker = new PathExistenceChecker({
             repositoryId: 42,
@@ -72,7 +72,7 @@ describe('PathExistenceChecker', () => {
     it('should early out on untracked ancestors', async () => {
         const children = new Map([['', ['not_node_modules']]])
         const mockGetDirectoryChildren = sinon.spy<typeof getDirectoryChildren>(({ dirnames }) =>
-            Promise.resolve(dirnames.map(dirname => new Set(children.get(dirname))))
+            Promise.resolve(new Map(dirnames.map(dirname => [dirname, new Set(children.get(dirname))])))
         )
 
         const pathExistenceChecker = new PathExistenceChecker({

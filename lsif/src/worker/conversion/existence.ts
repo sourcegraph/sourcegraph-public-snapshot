@@ -99,10 +99,14 @@ export class PathExistenceChecker {
             while (true) {
                 const { value: batch, done } = batcher.next(exists)
                 if (done || !batch || batch.length === 0) {
+                    // If iteration stops or we have an empty batch we're done. Since
+                    // each batch contains the visible children at depth d, an empty
+                    // batch signifies end of iteration as the frontier is necessarily
+                    // empty.
                     break
                 }
 
-                const children = await (this.mockGetDirectoryChildren || getDirectoryChildren)({
+                const childMap = await (this.mockGetDirectoryChildren || getDirectoryChildren)({
                     frontendUrl: this.frontendUrl,
                     repositoryId: this.repositoryId,
                     commit: this.commit,
@@ -110,10 +114,14 @@ export class PathExistenceChecker {
                     ctx: this.ctx,
                 })
 
+                for (const [dirname, children] of childMap.entries()) {
+                    this.directoryContents.set(dirname, children)
+                }
+
                 exists = []
-                for (const [i, dirname] of batch.entries()) {
-                    this.directoryContents.set(dirname, children[i])
-                    if (children[i].size > 0) {
+                for (const dirname of batch) {
+                    const children = this.directoryContents.get(dirname)
+                    if (children && children.size > 0) {
                         exists.push(dirname)
                     }
                 }
