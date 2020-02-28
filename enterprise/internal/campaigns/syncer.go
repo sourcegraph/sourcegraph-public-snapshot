@@ -23,10 +23,11 @@ type ChangesetSyncer struct {
 	ScheduleInterval time.Duration
 
 	clock func() time.Time
+	queue *changesetQueue
 }
 
 // StartSyncing will start the process of changeset syncing. It is long running
-// as is expected to be launched once at startup.
+// and is expected to be launched once at startup.
 func (s *ChangesetSyncer) StartSyncing() {
 	// TODO: Setup instrumentation here
 	ctx := context.Background()
@@ -38,76 +39,76 @@ func (s *ChangesetSyncer) StartSyncing() {
 		s.clock = time.Now
 	}
 
-	// Get initial queue
-	var queue *changesetQueue
-	var err error
+	queue := newChangesetQueue(100)
+	// Get initial schedule
 	for {
-		queue, err = s.computeQueue(ctx)
+		sched, err := s.computeSchedule(ctx)
 		if err != nil {
 			log15.Error("Computing queue", "err", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
+		queue.updateSchedule(sched)
 		break
 	}
+	s.queue = queue
 
-	// How often to refresh the queue
+	// How often to refresh the schedule
 	scheduleTicker := time.NewTicker(scheduleInterval)
 
 	for {
 		select {
 		case <-scheduleTicker.C:
 			// TODO: Retries?
-			q, err := s.computeQueue(ctx)
+			sched, err := s.computeSchedule(ctx)
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
-			queue.cancel()
-			queue = q
-		case id := <-queue.idChan:
+			queue.updateSchedule(sched)
+		case id := <-queue.scheduled:
 			err := s.SyncChangesetByID(ctx, id)
 			if err != nil {
-				log15.Error("Syncing changesets", "err", err)
+				log15.Error("Syncing changeset", "err", err)
+			}
+		case id := <-queue.priority:
+			err := s.SyncChangesetByID(ctx, id)
+			if err != nil {
+				log15.Error("Syncing changeset", "err", err)
 			}
 		}
 	}
 }
 
 // nextSync computes the time we want the next sync to happen
-func nextSync(clock func() time.Time, ours, theirs time.Time) time.Time {
+func nextSync(clock func() time.Time, lastSync, lastChange time.Time) time.Time {
 	minDelay := 2 * time.Minute
 	maxDelay := 8 * time.Hour
 	now := clock()
 
-	sinceLastSync := now.Sub(ours)
+	sinceLastSync := now.Sub(lastSync)
 	if sinceLastSync >= maxDelay {
+		// TODO: We may want to add some jitter so that we don't a large cluster
+		// of old repos all syncing around the same time
 		return now
-	}
-	if sinceLastSync <= minDelay {
-		// Last sync was recent, push back next update
-		return now.Add(maxDelay)
 	}
 
 	// Simple linear backoff for now
-	diff := ours.Sub(theirs)
+	diff := lastSync.Sub(lastChange)
 	if diff >= maxDelay {
 		diff = maxDelay
 	}
 	if diff <= minDelay {
 		diff = minDelay
 	}
-	return ours.Add(diff)
+	return lastSync.Add(diff)
 }
 
-func (s *ChangesetSyncer) computeQueue(ctx context.Context) (*changesetQueue, error) {
-	// This will happen in the db later, for now we'll grab everything and order in code
+func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, error) {
 	hs, err := s.Store.ListChangesetSyncHeuristics(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changeset heuristics")
 	}
-
-	log15.Info("ListChangesetSyncHeuristics", "count", len(hs))
 
 	ss := make([]syncSchedule, len(hs))
 	for i := range hs {
@@ -119,54 +120,30 @@ func (s *ChangesetSyncer) computeQueue(ctx context.Context) (*changesetQueue, er
 		}
 	}
 
+	// This will happen in the db later, for now we'll grab everything and order in code
 	sort.Slice(ss, func(i, j int) bool {
 		return ss[i].nextSync.Before(ss[j].nextSync)
 	})
 
 	for _, s := range ss {
-		log15.Info("NexySync", "id", s.changesetID, "nextSync", s.nextSync, "diff", s.nextSync.Sub(time.Now()))
+		log15.Info("NextSync", "id", s.changesetID, "nextSync", s.nextSync, "diff", s.nextSync.Sub(time.Now()))
 	}
 
-	q := newChangesetQueue(ctx, s.clock, ss)
-	return q, nil
-
-}
-
-// syncAll refreshes the metadata of all changesets and updates them in the
-// database
-func (s *ChangesetSyncer) syncAll(ctx context.Context) error {
-	cs, err := s.listAllNonDeletedChangesets(ctx)
-	if err != nil {
-		log15.Error("ChangesetSyncer.listAllNonDeletedChangesets", "error", err)
-		return err
-	}
-
-	if err := s.SyncChangesets(ctx, cs...); err != nil {
-		log15.Error("ChangesetSyncer", "error", err)
-		return err
-	}
-	return nil
+	return ss, nil
 }
 
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
 // An error indicates that no changesets have been synced
 func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
-	// TODO(ryanslade): For now, we're not actually enqueueing but doing a blocking syncAll
-	// Change this once we have a proper scheduler in place and we've decided how to deal with
-	// it in places where we currently expect blocking
-	cs, _, err := s.Store.ListChangesets(ctx, ListChangesetsOpts{
-		Limit:          -1,
-		IDs:            ids,
-		WithoutDeleted: true,
-	})
-	if err != nil {
-		return err
+	if s.queue == nil {
+		return errors.New("background syncing not initialised")
 	}
-	return s.SyncChangesets(ctx, cs...)
+	return s.queue.enqueuePriority(ids)
 }
 
 // SyncChangesetByID will sync a single changeset given its id
 func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
+	log15.Info("SyncChangesetByID", "id", id)
 	cs, err := s.Store.GetChangeset(ctx, GetChangesetOpts{
 		ID: id,
 	})
@@ -340,24 +317,39 @@ func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all 
 }
 
 type changesetQueue struct {
-	idChan chan int64
+	scheduled chan int64
+	priority  chan int64
 
-	ctx    context.Context
-	cancel context.CancelFunc
+	// ordered slice of scheduled syncs
+	schedule []syncSchedule
+	cancel   context.CancelFunc
 }
 
-func newChangesetQueue(ctx context.Context, clock func() time.Time, ss []syncSchedule) *changesetQueue {
-	q := new(changesetQueue)
-	q.ctx, q.cancel = context.WithCancel(ctx)
-	q.idChan = make(chan int64)
+func newChangesetQueue(priorityCapacity int) *changesetQueue {
+	return &changesetQueue{
+		scheduled: make(chan int64),
+		priority:  make(chan int64, priorityCapacity),
+	}
+}
 
+func (q *changesetQueue) updateSchedule(newSchedule []syncSchedule) {
+	// cancel existing goroutine if running
+	if q.cancel != nil {
+		// TODO: double check that this is blocking
+		q.cancel()
+	}
+
+	ctx := context.Background()
+	ctx, q.cancel = context.WithCancel(ctx)
 	var timer *time.Timer
 	go func() {
-		for i := range ss {
-			nextSync := ss[i].nextSync
-			d := nextSync.Sub(clock())
+		for i := range newSchedule {
+			// Get most urgent changeset and sleep until it should be synced
+			now := time.Now()
+			nextSync := newSchedule[i].nextSync
+			d := nextSync.Sub(now)
 			timer = time.NewTimer(d)
-			log15.Info("queueInnerLoop", "i", i, "of", len(ss), "nextSync", nextSync, "in", nextSync.Sub(clock()))
+			log15.Info("queueInnerLoop", "i", i, "of", len(newSchedule), "nextSync", nextSync, "in", nextSync.Sub(now))
 			select {
 			case <-ctx.Done():
 				log15.Info("queueInnerLoop one Done")
@@ -370,12 +362,24 @@ func newChangesetQueue(ctx context.Context, clock func() time.Time, ss []syncSch
 			case <-ctx.Done():
 				log15.Info("queueInnerLoop two Done")
 				return
-			case q.idChan <- ss[i].changesetID:
+			case q.scheduled <- newSchedule[i].changesetID:
 			}
 		}
 	}()
+}
 
-	return q
+func (q *changesetQueue) enqueuePriority(ids []int64) error {
+	// q.priority will be buffered so that we allow
+	// a fixed depth in the high priority queue and
+	// can perform a non blocking add here
+	for _, id := range ids {
+		select {
+		case q.priority <- id:
+		default:
+			return errors.New("queue capacity for priority syncing reached")
+		}
+	}
+	return nil
 }
 
 type syncSchedule struct {
