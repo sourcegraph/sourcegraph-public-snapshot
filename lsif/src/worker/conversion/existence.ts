@@ -98,11 +98,7 @@ export class PathExistenceChecker {
 
             while (true) {
                 const { value: batch, done } = batcher.next(exists)
-                if (done || !batch || batch.length === 0) {
-                    // If iteration stops or we have an empty batch we're done. Since
-                    // each batch contains the visible children at depth d, an empty
-                    // batch signifies end of iteration as the frontier is necessarily
-                    // empty.
+                if (done || !batch) {
                     break
                 }
 
