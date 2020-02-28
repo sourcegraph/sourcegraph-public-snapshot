@@ -59,8 +59,24 @@ func (p *parser) done() bool {
 	return p.pos >= len(p.buf)
 }
 
-func (p *parser) advance(n int) {
-	p.pos += n
+func (p *parser) match(keyword string) bool {
+	v, err := p.peek(len(keyword))
+	if err != nil {
+		return false
+	}
+	return strings.ToLower(v) == keyword
+}
+
+func (p *parser) expect(keyword string) bool {
+	if !p.match(keyword) {
+		return false
+	}
+	p.pos += len(keyword)
+	return true
+}
+
+func (p *parser) isKeyword() bool {
+	return p.match("and") || p.match("or") || p.match("(") || p.match(")")
 }
 
 func (p *parser) peek(n int) (string, error) {
@@ -82,27 +98,10 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
-// reserved returns a reserved string (token) and its value at the current
-// position. If no such reserved string exists, it returns the empty string.
-// This lets the parser observe syntactic cues and decide to, e.g., keep lexing
-// or return control to parsing a different term.
-func (p *parser) reserved() string {
-	if v, err := p.peek(3); err == nil && (v == "AND" || v == "and") {
-		return "and"
-	}
-	if v, err := p.peek(2); err == nil && (v == "OR" || v == "or") {
-		return "or"
-	}
-	if v, err := p.peek(1); err == nil && (v == "(" || v == ")") {
-		return v
-	}
-	return ""
-}
-
 func (p *parser) scanParameter() (string, error) {
 	start := p.pos
 	for {
-		if p.reserved() != "" {
+		if p.isKeyword() {
 			break
 		}
 		if p.done() {
@@ -125,24 +124,22 @@ func (p *parser) parseParameterList() ([]Node, error) {
 		if p.done() {
 			break
 		}
-		switch p.reserved() {
-		case "(":
+		switch {
+		case p.expect("("):
 			p.balanced++
-			p.advance(1)
 			result, err := p.parseOr()
 			if err != nil {
 				return nil, err
 			}
 			nodes = append(nodes, result...)
-		case ")":
+		case p.expect(")"):
 			p.balanced--
-			p.advance(1)
 			if len(nodes) == 0 {
 				// Return a non-nil node if we parsed "()".
 				return []Node{Parameter{Value: ""}}, nil
 			}
 			return nodes, nil
-		case "and", "or":
+		case p.match("and"), p.match("or"):
 			// Caller advances.
 			return nodes, nil
 		default:
@@ -229,10 +226,9 @@ func (p *parser) parseAnd() ([]Node, error) {
 	if left == nil {
 		return nil, fmt.Errorf("expected operand at %d", p.pos)
 	}
-	if p.done() || p.reserved() != "and" {
+	if !p.expect("and") {
 		return newAnd(left), nil
 	}
-	p.advance(len("and"))
 	right, err := p.parseAnd()
 	if err != nil {
 		return nil, err
@@ -248,11 +244,9 @@ func (p *parser) parseOr() ([]Node, error) {
 	if left == nil {
 		return nil, fmt.Errorf("expected operand at %d", p.pos)
 	}
-	if p.done() || p.reserved() != "or" {
-		return newOr(left), nil
+	if !p.expect("or") {
+		return newAnd(left), nil
 	}
-
-	p.advance(len("or"))
 	right, err := p.parseOr()
 	if err != nil {
 		return nil, err
