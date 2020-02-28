@@ -6,6 +6,12 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 
 ---
 
+## (optional, recommended) Create a fork for customizations
+
+We **strongly** recommend that you create your own fork of [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). This will make upgrades far easier.
+
+See ["Store customizations in a fork"](./index.md#optional-recommended-store-customizations-in-a-fork) for full instructions.
+
 ## Deploy to EC2
 
 * Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
@@ -13,6 +19,9 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 * Select an appropriate instance size (we recommend `t2.2xlarge` or larger, depending on team size and number of repositories/languages enabled), then **Next: Configure Instance Details**
 * Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
 * Add the following user data (as text) in the **Advanced Details** section:
+  * (optional) If you [created a fork as recommended above](#optional-recommended-create-a-fork-for-customizations), update the following environment variables in the script below:
+    * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
+    * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose yaml. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in ["Store customizations in a fork"](./index.md#optional-recommended-store-customizations-in-a-fork).
 
 ```bash
 #!/usr/bin/env bash
@@ -23,17 +32,20 @@ EBS_VOLUME_DEVICE_NAME='/dev/sdb'
 DOCKER_DATA_ROOT='/mnt/docker-data'
 
 DOCKER_COMPOSE_VERSION='1.25.3'
-SOURCEGRAPH_VERSION='v3.12.5'
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
+
+# 🚨 Update these variables with the correct values from your fork!
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.12.5'
 
 # Install git
 yum update -y
 yum install git -y
 
 # Clone Docker Compose definition
-git clone "https://github.com/sourcegraph/deploy-sourcegraph-docker.git" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
+git clone "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL}" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
-git checkout "${SOURCEGRAPH_VERSION}"
+git checkout "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION}"
 
 # Format (if necessary) and mount EBS volume
 device_fs=$(lsblk "${EBS_VOLUME_DEVICE_NAME}" --noheadings --output fsType)

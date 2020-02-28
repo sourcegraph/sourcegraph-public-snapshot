@@ -91,11 +91,11 @@ var (
 	}
 )
 
-// A Query is the parsed representation of a search query.
+// A Query is the typechecked representation of a search query.
 type Query struct {
 	conf *types.Config // the typechecker config used to produce this query
 
-	*types.Query // the underlying query
+	types.Fields // the query fields
 }
 
 func Parse(input string) (syntax.ParseTree, error) {
@@ -112,11 +112,11 @@ func Parse(input string) (syntax.ParseTree, error) {
 }
 
 func Check(parseTree syntax.ParseTree) (*Query, error) {
-	checkedQuery, err := conf.Check(parseTree)
+	checkedFields, err := conf.Check(parseTree)
 	if err != nil {
 		return nil, err
 	}
-	return &Query{conf: &conf, Query: checkedQuery}, nil
+	return &Query{conf: &conf, Fields: *checkedFields}, nil
 }
 
 // ParseAndCheck parses and typechecks a search query using the default
@@ -167,25 +167,25 @@ func Validate(q *Query, searchType SearchType) error {
 	return nil
 }
 
-// Process is the top level function for processing raw strings into parsed,
-// typechecked, and validated queries.
-func Process(queryString string, searchType SearchType) (*Query, error) {
+// Process is a top level convenience function for processing a raw string into
+// a validated and type checked query, and the parse tree of the raw string.
+func Process(queryString string, searchType SearchType) (*Query, syntax.ParseTree, error) {
 	parseTree, err := Parse(queryString)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	query, err := Check(parseTree)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = Validate(query, searchType)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return query, nil
+	return query, parseTree, nil
 }
 
 // parseAndCheck is preserved for testing custom Configs only.
@@ -204,7 +204,7 @@ func parseAndCheck(conf *types.Config, input string) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Query{conf: conf, Query: checkedQuery}, nil
+	return &Query{conf: conf, Fields: *checkedQuery}, nil
 }
 
 // BoolValue returns the last boolean value (yes/no) for the field. For example, if the query is

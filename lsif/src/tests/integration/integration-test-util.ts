@@ -204,7 +204,14 @@ export async function convertTestData(
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const pathExistenceChecker = new PathExistenceChecker({ repositoryId, commit, root })
-    const { packages, references } = await convertLsif(fullFilename, tmp, pathExistenceChecker)
+
+    const { packages, references } = await convertLsif({
+        path: fullFilename,
+        root: '',
+        database: tmp,
+        pathExistenceChecker,
+    })
+
     const dump = await insertDump(connection, dumpManager, repositoryId, commit, root, indexer)
     await dependencyManager.addPackagesAndReferences(dump.id, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dump.id))

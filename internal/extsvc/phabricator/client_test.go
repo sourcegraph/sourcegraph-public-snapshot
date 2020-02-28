@@ -62,7 +62,7 @@ func TestClient_ListRepos(t *testing.T) {
 		{
 			name: "timeout",
 			ctx:  timeout,
-			err:  "Post https://secure.phabricator.com/api/diffusion.repository.search: context deadline exceeded",
+			err:  `Post "https://secure.phabricator.com/api/diffusion.repository.search": context deadline exceeded`,
 		},
 	} {
 		tc := tc
@@ -136,7 +136,7 @@ func TestClient_GetRawDiff(t *testing.T) {
 	}, {
 		name: "timeout",
 		ctx:  timeout,
-		err:  "Post https://secure.phabricator.com/api/differential.getrawdiff: context deadline exceeded",
+		err:  `Post "https://secure.phabricator.com/api/differential.getrawdiff": context deadline exceeded`,
 	}} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
@@ -207,7 +207,7 @@ func TestClient_GetDiffInfo(t *testing.T) {
 	}, {
 		name: "timeout",
 		ctx:  timeout,
-		err:  "Post https://secure.phabricator.com/api/differential.querydiffs: context deadline exceeded",
+		err:  `Post "https://secure.phabricator.com/api/differential.querydiffs": context deadline exceeded`,
 	}} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {

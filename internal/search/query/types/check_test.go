@@ -119,7 +119,7 @@ func TestCheck(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if got := toTestValueMap(query.Fields); !reflect.DeepEqual(got, test.want) {
+			if got := toTestValueMap(*query); !reflect.DeepEqual(got, test.want) {
 				t.Errorf("fields\ngot  %+v\nwant %+v", got, test.want)
 			}
 		})

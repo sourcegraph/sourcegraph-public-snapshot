@@ -45,7 +45,13 @@ export async function convertDatabase(
         })
 
         // Create database in a temp path
-        const { packages, references } = await convertLsif(upload.filename, tempFile, pathExistenceChecker, ctx)
+        const { packages, references } = await convertLsif({
+            path: upload.filename,
+            root: upload.root,
+            database: tempFile,
+            pathExistenceChecker,
+            ctx,
+        })
 
         // Insert dump and add packages and references to Postgres
         await dependencyManager.addPackagesAndReferences(upload.id, packages, references, ctx, entityManager)

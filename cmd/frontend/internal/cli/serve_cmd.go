@@ -259,7 +259,7 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 	srv.GoServe(l, &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 60 * time.Second,
+		WriteTimeout: 10 * time.Minute,
 	})
 
 	if httpAddrInternal != "" {

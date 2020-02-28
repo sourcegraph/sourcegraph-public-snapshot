@@ -62,6 +62,9 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 
 	changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: changesetID})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -81,6 +84,9 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 
 	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -100,6 +106,9 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 
 	job, err := r.store.GetCampaignJob(ctx, ee.GetCampaignJobOpts{ID: campaignJobID})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -119,6 +128,9 @@ func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphql
 
 	plan, err := r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: planID})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -154,7 +166,6 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, err
 	}
-
 	defer tx.Done(&err)
 
 	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
@@ -405,9 +416,8 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 
 	tx, err := r.store.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating transaction")
 	}
-
 	defer tx.Done(&err)
 
 	store := repos.NewDBStore(tx.DB(), sql.TxOptions{})
@@ -453,10 +463,12 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		Store:       tx,
 		HTTPFactory: r.httpFactory,
 	}
+	// NOTE: We are performing a blocking sync here in order to ensure
+	// that the remote changeset exists and also to remove the possibility
+	// of an unsynced changeset entering our database
 	if err = syncer.SyncChangesets(ctx, cs...); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "syncing changesets")
 	}
-
 	csr := make([]graphqlbackend.ExternalChangesetResolver, len(cs))
 	for i := range cs {
 		csr[i] = &changesetResolver{

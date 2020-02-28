@@ -10,15 +10,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
-// A Query is the typechecked representation of a search query.
-type Query struct {
-	ParseTree syntax.ParseTree    // the query parse tree
-	Fields    map[string][]*Value // map of field name -> values
-}
+// Map of field name -> values
+type Fields map[string][]*Value
 
-func (q *Query) String() string {
+func (f *Fields) String() string {
 	fields := []string{}
-	for key, values := range q.Fields {
+	for key, values := range *f {
 		for _, v := range values {
 			switch s := v.Value().(type) {
 			case string:
