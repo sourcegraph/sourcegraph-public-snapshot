@@ -19,11 +19,20 @@ const (
 // permissions syncing is either repository-centric or user-centric.
 type requestType int
 
+// A list of request types, the larger the value, the higher the priority.
+// requestTypeUser had the highest because it is often triggered by a user
+// action (e.g. sign up, log in).
 const (
 	requestTypeUnknown requestType = iota
 	requestTypeRepo
 	requestTypeUser
 )
+
+// higherPriorityThan returns true if the current request type has higher priority
+// than the other one.
+func (t1 requestType) higherPriorityThan(t2 requestType) bool {
+	return t1 > t2
+}
 
 // syncRequest is a permissions syncing request with its current status in the queue.
 type syncRequest struct {
@@ -172,8 +181,7 @@ func (q *requestQueue) Less(i, j int) bool {
 	}
 
 	if qi.typ != qj.typ {
-		// requestTypeUser > requestTypeRepo
-		return qi.typ > qj.typ
+		return qi.typ.higherPriorityThan(qj.typ)
 	}
 
 	return false
