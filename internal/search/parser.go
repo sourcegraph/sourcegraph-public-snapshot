@@ -55,10 +55,6 @@ func (s *state) done() bool {
 	return s.pos >= len(s.buf)
 }
 
-func (s *state) advance(n int) {
-	s.pos += n
-}
-
 func (s *state) peek(n int) (string, error) {
 	if s.pos+n > len(s.buf) {
 		return "", io.ErrShortBuffer
@@ -84,6 +80,14 @@ func (s *state) match(keyword string) bool {
 		return false
 	}
 	return strings.ToLower(v) == keyword
+}
+
+func (s *state) expect(keyword string) bool {
+	if !s.match(keyword) {
+		return false
+	}
+	s.pos += len(keyword)
+	return true
 }
 
 func (s *state) isKeyword() bool {
@@ -117,17 +121,15 @@ func (s *state) parseParameterList() ([]Node, error) {
 			break
 		}
 		switch {
-		case s.match("("):
+		case s.expect("("):
 			s.balanced++
-			s.advance(1)
 			result, err := s.parseOr()
 			if err != nil {
 				return nil, err
 			}
 			nodes = append(nodes, result...)
-		case s.match(")"):
+		case s.expect(")"):
 			s.balanced--
-			s.advance(1)
 			if len(nodes) == 0 {
 				// Return a non-nil node if we parsed "()".
 				return []Node{Parameter{Value: ""}}, nil
@@ -232,18 +234,15 @@ func (s *state) continueParsing(left []Node, operator string) ([]Node, error) {
 		newOp = newOr
 	}
 
-	if s.done() {
+	if s.done() || !s.expect(operator) {
 		return newOp(left), nil
 	}
-	if s.match(operator) {
-		s.advance(len(operator))
-		right, err := parse()
-		if err != nil {
-			return nil, err
-		}
-		return newOp(append(left, right...)), nil
+
+	right, err := parse()
+	if err != nil {
+		return nil, err
 	}
-	return newOp(left), nil
+	return newOp(append(left, right...)), nil
 }
 
 func (s *state) parseAnd() ([]Node, error) {
