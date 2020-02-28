@@ -62,7 +62,7 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'sh':
         case 'bash':
         case 'zsh':
-            return 'bash'
+            return 'shell'
 
         // Clojure
         case 'clj':
