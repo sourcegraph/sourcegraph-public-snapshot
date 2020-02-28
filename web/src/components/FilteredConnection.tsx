@@ -532,6 +532,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         }
                     ),
                     switchMap(({ query, filter, shouldRefresh, queryCount }) => {
+                        console.log('triggered', shouldRefresh, this.props.noShowLoaderOnSlowLoad)
                         const result = this.props
                             .queryConnection({
                                 // If this is our first query and we were supplied a value for `visible`,
@@ -554,13 +555,16 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 share()
                             )
 
-                        return (shouldRefresh && this.props.noShowLoaderOnSlowLoad !== true
+                        return (shouldRefresh
                             ? merge(
                                   result,
-                                  of({ connectionOrError: undefined, loading: true }).pipe(
-                                      delay(250),
-                                      takeUntil(result)
-                                  )
+                                  of({
+                                      connectionOrError:
+                                          this.props.noShowLoaderOnSlowLoad === true
+                                              ? this.state.connectionOrError
+                                              : undefined,
+                                      loading: true,
+                                  }).pipe(delay(250), takeUntil(result))
                               )
                             : result
                         ).pipe(map(stateUpdate => ({ shouldRefresh, ...stateUpdate })))
@@ -636,7 +640,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (this.props.updates) {
             this.subscriptions.add(
                 this.props.updates.subscribe(() => {
-                    this.setState({ loading: true }, () => refreshRequests.next({ forceRefresh: true }))
+                    this.setState({ loading: this.props.noShowLoaderOnSlowLoad !== true }, () =>
+                        refreshRequests.next({ forceRefresh: true })
+                    )
                 })
             )
         }
