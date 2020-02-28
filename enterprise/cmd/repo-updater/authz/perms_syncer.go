@@ -23,8 +23,8 @@ import (
 type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
-	// fetchers is a list of authz.Provider implementations that
-	// also implemented PermsFetcher. Keys are ServiceType (e.g. gitlab, github).
+	// fetchers is a list of authz.Provider implementations that also
+	//implemented PermsFetcher. Keys are ServiceID (e.g. https://gitlab.com/).
 	// TODO(jchen): Use conf.Watch to get up-to-date authz providers.
 	// The current approach is to minimize the changes required by keeping
 	// the authz.Provider interface as-is, so each authz provider could be
@@ -86,13 +86,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 		return errors.Wrap(err, "list external accounts")
 	}
 
-	// NOTE: The following logic is based on the assumption that we only support
-	// configuring one authz provider per code host type.
-	// See https://github.com/sourcegraph/sourcegraph/issues/8597 for details.
 	// Set internal actor to bypass checking permissions.
 	ctx = actor.WithActor(ctx, &actor.Actor{Internal: true})
 	for _, acct := range accts {
-		fetcher := s.fetchers[acct.ServiceType]
+		fetcher := s.fetchers[acct.ServiceID]
 		if fetcher == nil {
 			// We have no authz provider configured for this external account.
 			continue
@@ -111,11 +108,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 
 		// Save permissions to database
 		p := &authz.UserPermissions{
-			UserID:   userID,
-			Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-			Type:     authz.PermRepos,
-			IDs:      roaring.NewBitmap(),
-			Provider: authz.ProviderType(fetcher.ServiceType()),
+			UserID: userID,
+			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+			Type:   authz.PermRepos,
+			IDs:    roaring.NewBitmap(),
 		}
 		for i := range repos {
 			p.IDs.Add(uint32(repos[i].ID))
@@ -144,7 +140,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 		return nil
 	}
 
-	fetcher := s.fetchers[repo.ExternalRepo.ServiceType]
+	fetcher := s.fetchers[repo.ExternalRepo.ServiceID]
 	if fetcher == nil {
 		// We have no authz provider configured for this repository.
 		return nil
@@ -181,10 +177,9 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 
 	// Save permissions to database
 	p := &authz.RepoPermissions{
-		RepoID:   int32(repoID),
-		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs:  roaring.NewBitmap(),
-		Provider: authz.ProviderType(fetcher.ServiceType()),
+		RepoID:  int32(repoID),
+		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
+		UserIDs: roaring.NewBitmap(),
 	}
 	for i := range users {
 		p.UserIDs.Add(uint32(users[i].ID))
