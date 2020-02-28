@@ -49,19 +49,26 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  * Populate a SQLite database with the given input stream. Returns the
  * data required to populate the dependency tables in Postgres.
  *
- * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
- * @param root The root of all files that are in the dump.
- * @param database The filepath of the database to populate.
- * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
- * @param ctx The tracing context.
+ * @param args Parameter bag.
  */
-export async function convertLsif(
-    path: string,
-    root: string,
-    database: string,
-    pathExistenceChecker: PathExistenceChecker,
-    { logger = createSilentLogger(), span }: TracingContext = {}
-): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+export async function convertLsif({
+    path,
+    root,
+    database,
+    pathExistenceChecker,
+    ctx: { logger = createSilentLogger(), span } = {},
+}: {
+    /** The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump. */
+    path: string
+    /** The root of all files that are in the dump. */
+    root: string
+    /** The filepath of the database to populate. */
+    database: string
+    /** An object that tracks whether a path is visible within the LSIF dump. */
+    pathExistenceChecker: PathExistenceChecker
+    /** The tracing context. */
+    ctx?: TracingContext
+}): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const connection = await createSqliteConnection(database, sqliteModels.entities, logger)
 
     try {
