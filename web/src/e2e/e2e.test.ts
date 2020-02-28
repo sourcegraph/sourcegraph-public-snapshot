@@ -1393,18 +1393,6 @@ describe('e2e test suite', () => {
         })
     })
 
-    describe('Literal search by default toast', () => {
-        test('Dismiss literal search toast', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-literal-search-toast')
-            await driver.page.click('.e2e-close-toast')
-            const nodes = await driver.page.evaluate(
-                () => document.querySelectorAll('.e2e-literal-search-toast').length
-            )
-            expect(nodes).toEqual(0)
-        })
-    })
-
     describe('Search statistics', () => {
         beforeEach(async () => {
             await driver.setUserSettings<Settings>({ experimentalFeatures: { searchStats: true } })
