@@ -78,27 +78,22 @@ func (s *state) skipSpaces() error {
 	return nil
 }
 
-// reserved returns a reserved string (token) and it's value at the current
-// position. If no such reserved string exists, it returns the empty string.
-// This lets the parser observe syntactic cues and decide to, e.g., keep lexing
-// or return control to parsing a different term.
-func (s *state) reserved() string {
-	if v, err := s.peek(3); err == nil && (v == "AND" || v == "and") {
-		return "and"
+func (s *state) match(keyword string) bool {
+	v, err := s.peek(len(keyword))
+	if err != nil {
+		return false
 	}
-	if v, err := s.peek(2); err == nil && (v == "OR" || v == "or") {
-		return "or"
-	}
-	if v, err := s.peek(1); err == nil && (v == "(" || v == ")") {
-		return v
-	}
-	return ""
+	return strings.ToLower(v) == keyword
+}
+
+func (s *state) isKeyword() bool {
+	return s.match("and") || s.match("or") || s.match("(") || s.match(")")
 }
 
 func (s *state) scanParameter() (string, error) {
 	start := s.pos
 	for {
-		if v := s.reserved(); v != "" {
+		if s.isKeyword() {
 			break
 		}
 		if s.done() {
@@ -121,8 +116,8 @@ func (s *state) parseParameterList() ([]Node, error) {
 		if s.done() {
 			break
 		}
-		switch s.reserved() {
-		case "(":
+		switch {
+		case s.match("("):
 			s.balanced++
 			s.advance(1)
 			result, err := s.parseOr()
@@ -130,7 +125,7 @@ func (s *state) parseParameterList() ([]Node, error) {
 				return nil, err
 			}
 			nodes = append(nodes, result...)
-		case ")":
+		case s.match(")"):
 			s.balanced--
 			s.advance(1)
 			if len(nodes) == 0 {
@@ -138,7 +133,7 @@ func (s *state) parseParameterList() ([]Node, error) {
 				return []Node{Parameter{Value: ""}}, nil
 			}
 			return nodes, nil
-		case "and", "or":
+		case s.match("and"), s.match("or"):
 			// Caller advances.
 			return nodes, nil
 		default:
@@ -240,7 +235,7 @@ func (s *state) continueParsing(left []Node, operator string) ([]Node, error) {
 	if s.done() {
 		return newOp(left), nil
 	}
-	if s.reserved() == operator {
+	if s.match(operator) {
 		s.advance(len(operator))
 		right, err := parse()
 		if err != nil {
