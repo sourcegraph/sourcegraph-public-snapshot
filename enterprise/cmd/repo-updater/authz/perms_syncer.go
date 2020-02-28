@@ -16,13 +16,13 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// PermsSyncer is a permissions syncing request manager that in charges of
+// PermsSyncer is a permissions syncing request manager that is in charge of
 // both accepting and processing those requests. It is meant to be running
 // in the background.
 type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
-	// fetchers is basically a list of authz.Provider implementations that
+	// fetchers is a list of authz.Provider implementations that
 	// also implemented PermsFetcher. Keys are ServiceType (e.g. gitlab, github).
 	// TODO(jchen): Use conf.Watch to get up-to-date authz providers.
 	// The current approach is to minimize the changes required by keeping
@@ -40,7 +40,7 @@ type PermsSyncer struct {
 // user-centric and repository-centric ways.
 type PermsFetcher interface {
 	authz.Provider
-	// FetchUserPerms returns a list of repositories' (code host) ID that the given
+	// FetchUserPerms returns a list of repository IDs (on code host) that the given
 	// account has read access on the code host. The returned list should only include
 	// private repositories.
 	FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]string, error)
@@ -64,7 +64,7 @@ func NewPermsSyncer(fetchers map[string]PermsFetcher, db dbutil.DB, clock func()
 // in desired priority.
 func (s *PermsSyncer) ScheduleUser(userID int32, priority Priority) error {
 	updated := s.queue.enqueue(requestTypeUser, userID, priority)
-	log15.Debug("PermsSyncer.queue.upserted", "userID", userID, "updated", updated)
+	log15.Debug("PermsSyncer.queue.enqueued", "userID", userID, "updated", updated)
 	return nil
 }
 
@@ -72,7 +72,7 @@ func (s *PermsSyncer) ScheduleUser(userID int32, priority Priority) error {
 // in desired priority.
 func (s *PermsSyncer) ScheduleRepo(repoID api.RepoID, priority Priority) error {
 	updated := s.queue.enqueue(requestTypeRepo, int32(repoID), priority)
-	log15.Debug("PermsSyncer.queue.upserted", "repoID", repoID, "updated", updated)
+	log15.Debug("PermsSyncer.queue.enqueued", "repoID", repoID, "updated", updated)
 	return nil
 }
 
