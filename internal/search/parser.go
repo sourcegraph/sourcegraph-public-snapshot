@@ -9,24 +9,28 @@ import (
 
 type Node interface {
 	String() string
+	node()
 }
+
+func (Parameter) node() {}
+func (Operator) node()  {}
 
 type Parameter struct {
 	Value string
 }
 
-type Op struct {
+type Operator struct {
 	Kind     string
-	Children []Node
+	Operands []Node
 }
 
 func (node Parameter) String() string {
 	return node.Value
 }
 
-func (node Op) String() string {
+func (node Operator) String() string {
 	var result []string
-	for _, child := range node.Children {
+	for _, child := range node.Operands {
 		result = append(result, child.String())
 	}
 	return fmt.Sprintf("(%s %s)", strings.ToLower(node.Kind), strings.Join(result, " "))
@@ -78,7 +82,7 @@ func (s *state) skipSpaces() error {
 	return nil
 }
 
-// reserved returns a reserved string (token) and it's value at the current
+// reserved returns a reserved string (token) and its value at the current
 // position. If no such reserved string exists, it returns the empty string.
 // This lets the parser observe syntactic cues and decide to, e.g., keep lexing
 // or return control to parsing a different term.
@@ -98,7 +102,7 @@ func (s *state) reserved() string {
 func (s *state) scanParameter() (string, error) {
 	start := s.pos
 	for {
-		if v := s.reserved(); v != "" {
+		if s.reserved() != "" {
 			break
 		}
 		if s.done() {
@@ -155,19 +159,16 @@ func (s *state) parseParameterList() ([]Node, error) {
 }
 
 func reduce(left, right []Node, kind string) ([]Node, bool) {
-	switch left[0].(type) {
-	case Parameter:
-		if left[0].(Parameter).Value == "" {
-			// Remove empty string parameters.
-			return right, true
-		}
+	if param, ok := left[0].(Parameter); ok && param.Value == "" {
+		// Remove empty string parameter.
+		return right, true
 	}
 
 	switch right[0].(type) {
-	case Op:
-		if kind == right[0].(Op).Kind {
+	case Operator:
+		if kind == right[0].(Operator).Kind {
 			// Reduce right node.
-			left = append(left, right[0].(Op).Children...)
+			left = append(left, right[0].(Operator).Operands...)
 			if len(right) > 1 {
 				left = append(left, right[1:]...)
 			}
@@ -175,18 +176,16 @@ func reduce(left, right []Node, kind string) ([]Node, bool) {
 		}
 	case Parameter:
 		if right[0].(Parameter).Value == "" {
-			// Remove empty string parameters.
+			// Remove empty string parameter.
 			if len(right) > 1 {
 				return append(left, right[1:]...), true
 			}
 			return left, true
 		}
-		switch left[0].(type) {
-		case Op:
-			if kind == left[0].(Op).Kind {
-				// Reduce left node.
-				return append(left[0].(Op).Children, right...), true
-			}
+		if operator, ok := left[0].(Operator); ok && operator.Kind == kind {
+			// Reduce left node.
+			return append(left[0].(Operator).Operands, right...), true
+
 		}
 	}
 	if len(right) > 1 {
@@ -199,7 +198,7 @@ func reduce(left, right []Node, kind string) ([]Node, bool) {
 	return append(left, right...), false
 }
 
-func newOp(nodes []Node, kind string) []Node {
+func newOperator(nodes []Node, kind string) []Node {
 	if len(nodes) == 0 {
 		return nil
 	} else if len(nodes) == 1 {
@@ -208,47 +207,18 @@ func newOp(nodes []Node, kind string) []Node {
 
 	reduced, changed := reduce([]Node{nodes[0]}, nodes[1:], kind)
 	if changed {
-		return newOp(reduced, kind)
+		return newOperator(reduced, kind)
 	}
 
-	return []Node{Op{Kind: kind, Children: reduced}}
+	return []Node{Operator{Kind: kind, Operands: reduced}}
 }
 
 func newAnd(nodes []Node) []Node {
-	return newOp(nodes, "and")
+	return newOperator(nodes, "and")
 }
 
 func newOr(nodes []Node) []Node {
-	return newOp(nodes, "or")
-}
-
-func (s *state) continueParsing(left []Node, operator string) ([]Node, error) {
-	if left == nil {
-		return nil, fmt.Errorf("expected operand at %d", s.pos)
-	}
-
-	var parse func() ([]Node, error)
-	var newOp func(nodes []Node) []Node
-	if operator == "and" {
-		parse = s.parseAnd
-		newOp = newAnd
-	} else {
-		parse = s.parseOr
-		newOp = newOr
-	}
-
-	if s.done() {
-		return newOp(left), nil
-	}
-	if s.reserved() == operator {
-		s.advance(len(operator))
-		right, err := parse()
-		if err != nil {
-			return nil, err
-		}
-		return newOp(append(left, right...)), nil
-	}
-	return newOp(left), nil
+	return newOperator(nodes, "or")
 }
 
 func (s *state) parseAnd() ([]Node, error) {
@@ -256,7 +226,18 @@ func (s *state) parseAnd() ([]Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	return s.continueParsing(left, "and")
+	if left == nil {
+		return nil, fmt.Errorf("expected operand at %d", s.pos)
+	}
+	if s.done() || s.reserved() != "and" {
+		return newAnd(left), nil
+	}
+	s.advance(len("and"))
+	right, err := s.parseAnd()
+	if err != nil {
+		return nil, err
+	}
+	return newAnd(append(left, right...)), nil
 }
 
 func (s *state) parseOr() ([]Node, error) {
@@ -264,7 +245,19 @@ func (s *state) parseOr() ([]Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	return s.continueParsing(left, "or")
+	if left == nil {
+		return nil, fmt.Errorf("expected operand at %d", s.pos)
+	}
+	if s.done() || s.reserved() != "or" {
+		return newOr(left), nil
+	}
+
+	s.advance(len("or"))
+	right, err := s.parseOr()
+	if err != nil {
+		return nil, err
+	}
+	return newOr(append(left, right...)), nil
 }
 
 func Parse(in string) ([]Node, error) {
