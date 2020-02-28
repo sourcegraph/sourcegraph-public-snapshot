@@ -19,8 +19,15 @@ type Parameter struct {
 	Value string
 }
 
+type operatorKind int
+
+const (
+	Or operatorKind = iota
+	And
+)
+
 type Operator struct {
-	Kind     string
+	Kind     operatorKind
 	Operands []Node
 }
 
@@ -33,8 +40,23 @@ func (node Operator) String() string {
 	for _, child := range node.Operands {
 		result = append(result, child.String())
 	}
-	return fmt.Sprintf("(%s %s)", strings.ToLower(node.Kind), strings.Join(result, " "))
+	var kind string
+	if node.Kind == Or {
+		kind = "or"
+	} else {
+		kind = "and"
+	}
+	return fmt.Sprintf("(%s %s)", kind, strings.Join(result, " "))
 }
+
+type keyword string
+
+const (
+	AND    keyword = "and"
+	OR             = "or"
+	LPAREN         = "("
+	RPAREN         = ")"
+)
 
 func isSpace(c byte) bool {
 	return (c == ' ') || (c == '\n') || (c == '\r') || (c == '\t')
@@ -59,24 +81,24 @@ func (p *parser) done() bool {
 	return p.pos >= len(p.buf)
 }
 
-func (p *parser) match(keyword string) bool {
-	v, err := p.peek(len(keyword))
+func (p *parser) match(keyword keyword) bool {
+	v, err := p.peek(len(string(keyword)))
 	if err != nil {
 		return false
 	}
-	return strings.ToLower(v) == keyword
+	return strings.ToLower(v) == string(keyword)
 }
 
-func (p *parser) expect(keyword string) bool {
+func (p *parser) expect(keyword keyword) bool {
 	if !p.match(keyword) {
 		return false
 	}
-	p.pos += len(keyword)
+	p.pos += len(string(keyword))
 	return true
 }
 
 func (p *parser) isKeyword() bool {
-	return p.match("and") || p.match("or") || p.match("(") || p.match(")")
+	return p.match(AND) || p.match(OR) || p.match(LPAREN) || p.match(RPAREN)
 }
 
 func (p *parser) peek(n int) (string, error) {
@@ -125,21 +147,21 @@ func (p *parser) parseParameterList() ([]Node, error) {
 			break
 		}
 		switch {
-		case p.expect("("):
+		case p.expect(LPAREN):
 			p.balanced++
 			result, err := p.parseOr()
 			if err != nil {
 				return nil, err
 			}
 			nodes = append(nodes, result...)
-		case p.expect(")"):
+		case p.expect(RPAREN):
 			p.balanced--
 			if len(nodes) == 0 {
 				// Return a non-nil node if we parsed "()".
 				return []Node{Parameter{Value: ""}}, nil
 			}
 			return nodes, nil
-		case p.match("and"), p.match("or"):
+		case p.match(AND), p.match(OR):
 			// Caller advances.
 			return nodes, nil
 		default:
@@ -155,7 +177,7 @@ func (p *parser) parseParameterList() ([]Node, error) {
 	return nodes, nil
 }
 
-func reduce(left, right []Node, kind string) ([]Node, bool) {
+func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 	if param, ok := left[0].(Parameter); ok && param.Value == "" {
 		// Remove empty string parameter.
 		return right, true
@@ -195,7 +217,7 @@ func reduce(left, right []Node, kind string) ([]Node, bool) {
 	return append(left, right...), false
 }
 
-func newOperator(nodes []Node, kind string) []Node {
+func newOperator(nodes []Node, kind operatorKind) []Node {
 	if len(nodes) == 0 {
 		return nil
 	} else if len(nodes) == 1 {
@@ -206,7 +228,6 @@ func newOperator(nodes []Node, kind string) []Node {
 	if changed {
 		return newOperator(reduced, kind)
 	}
-
 	return []Node{Operator{Kind: kind, Operands: reduced}}
 }
 
@@ -218,14 +239,14 @@ func (p *parser) parseAnd() ([]Node, error) {
 	if left == nil {
 		return nil, fmt.Errorf("expected operand at %d", p.pos)
 	}
-	if !p.expect("and") {
+	if !p.expect(AND) {
 		return left, nil
 	}
 	right, err := p.parseAnd()
 	if err != nil {
 		return nil, err
 	}
-	return newOperator(append(left, right...), "and"), nil
+	return newOperator(append(left, right...), And), nil
 }
 
 func (p *parser) parseOr() ([]Node, error) {
@@ -236,14 +257,14 @@ func (p *parser) parseOr() ([]Node, error) {
 	if left == nil {
 		return nil, fmt.Errorf("expected operand at %d", p.pos)
 	}
-	if !p.expect("or") {
+	if !p.expect(OR) {
 		return left, nil
 	}
 	right, err := p.parseOr()
 	if err != nil {
 		return nil, err
 	}
-	return newOperator(append(left, right...), "or"), nil
+	return newOperator(append(left, right...), Or), nil
 }
 
 func Parse(in string) ([]Node, error) {
@@ -258,5 +279,5 @@ func Parse(in string) ([]Node, error) {
 	if parser.balanced != 0 {
 		return nil, errors.New("unbalanced expression")
 	}
-	return newOperator(nodes, "and"), nil
+	return newOperator(nodes, And), nil
 }
