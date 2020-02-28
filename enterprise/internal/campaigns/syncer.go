@@ -80,14 +80,17 @@ func (s *ChangesetSyncer) StartSyncing() {
 	}
 }
 
+var (
+	minSyncDelay = 2 * time.Minute
+	maxSyncDelay = 8 * time.Hour
+)
+
 // nextSync computes the time we want the next sync to happen
 func nextSync(clock func() time.Time, lastSync, lastChange time.Time) time.Time {
-	minDelay := 2 * time.Minute
-	maxDelay := 8 * time.Hour
 	now := clock()
 
 	sinceLastSync := now.Sub(lastSync)
-	if sinceLastSync >= maxDelay {
+	if sinceLastSync >= maxSyncDelay {
 		// TODO: We may want to add some jitter so that we don't a large cluster
 		// of old repos all syncing around the same time
 		return now
@@ -95,11 +98,11 @@ func nextSync(clock func() time.Time, lastSync, lastChange time.Time) time.Time 
 
 	// Simple linear backoff for now
 	diff := lastSync.Sub(lastChange)
-	if diff >= maxDelay {
-		diff = maxDelay
+	if diff >= maxSyncDelay {
+		diff = maxSyncDelay
 	}
-	if diff <= minDelay {
-		diff = minDelay
+	if diff <= minSyncDelay {
+		diff = minSyncDelay
 	}
 	return lastSync.Add(diff)
 }
