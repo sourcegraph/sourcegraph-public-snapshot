@@ -47,7 +47,7 @@ describe('PathExistenceChecker', () => {
     })
 
     it('should cache directory contents', async () => {
-        const children = new Map([['', Array.from(range(0, 100).map(i => `${i}.ts`))]])
+        const children = new Map([['', Array.from(range(100).map(i => `${i}.ts`))]])
         const mockGetDirectoryChildren = sinon.spy<typeof getDirectoryChildren>(({ dirnames }) =>
             Promise.resolve(dirnames.map(dirname => new Set(children.get(dirname))))
         )
@@ -59,7 +59,7 @@ describe('PathExistenceChecker', () => {
             mockGetDirectoryChildren,
         })
 
-        await pathExistenceChecker.warmCache(Array.from(range(0, 100).flatMap(i => [`${i}.ts`, `${i}.js`])))
+        await pathExistenceChecker.warmCache(Array.from(range(100).flatMap(i => [`${i}.ts`, `${i}.js`])))
 
         for (let i = 0; i < 100; i++) {
             expect(pathExistenceChecker.shouldIncludePath(`${i}.ts`, false)).toBeTruthy()

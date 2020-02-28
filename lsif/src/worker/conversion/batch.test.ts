@@ -4,9 +4,9 @@ import { range } from 'lodash'
 describe('createBatcher', () => {
     it('should traverse entire tree', () => {
         const values = gatherValues('foo', [
-            ...range(0, 10).map(i => `bar/${i}.ts`),
-            ...range(0, 10).map(i => `bar/baz/${i}.ts`),
-            ...range(0, 10).map(i => `bar/baz/bonk/${i}.ts`),
+            ...range(10).map(i => `bar/${i}.ts`),
+            ...range(10).map(i => `bar/baz/${i}.ts`),
+            ...range(10).map(i => `bar/baz/bonk/${i}.ts`),
         ])
 
         expect(values).toEqual([[''], ['foo'], ['foo/bar'], ['foo/bar/baz'], ['foo/bar/baz/bonk']])
