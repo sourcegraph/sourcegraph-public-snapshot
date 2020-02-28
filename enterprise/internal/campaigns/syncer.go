@@ -115,7 +115,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, 
 
 	ss := make([]syncSchedule, len(hs))
 	for i := range hs {
-		nextSync := nextSync(s.clock, maxTime(hs[i].UpdatedAt, hs[i].LatestEvent), hs[i].ExternalUpdatedAt)
+		nextSync := nextSync(s.clock, hs[i].UpdatedAt, maxTime(hs[i].ExternalUpdatedAt, hs[i].LatestEvent))
 
 		ss[i] = syncSchedule{
 			changesetID: hs[i].ChangesetID,
