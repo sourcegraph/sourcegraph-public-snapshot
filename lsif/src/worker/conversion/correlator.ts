@@ -119,7 +119,7 @@ export class Correlator {
                         throw new Error('No metadata defined.')
                     }
 
-                    const path = RelateUrl.relate(this.projectRoot.href + '/', new URL(element.uri).href, {
+                    const path = RelateUrl.relate(`${this.projectRoot.href}/`, new URL(element.uri).href, {
                         defaultPorts: {},
                         output: RelateUrl.PATH_RELATIVE,
                         removeRootTrailingSlash: false,

@@ -40,20 +40,17 @@ type FieldType struct {
 }
 
 // Check typechecks the input query for field and type validity.
-func (c *Config) Check(parseTree syntax.ParseTree) (*Query, error) {
-	checkedQuery := Query{
-		ParseTree: parseTree,
-		Fields:    map[string][]*Value{},
-	}
+func (c *Config) Check(parseTree syntax.ParseTree) (*Fields, error) {
+	checkedQuery := Fields{}
 	for _, expr := range parseTree {
 		field, fieldType, value, err := c.checkExpr(expr)
 		if err != nil {
 			return nil, err
 		}
-		if fieldType.Singular && len(checkedQuery.Fields[field]) >= 1 {
+		if fieldType.Singular && len(checkedQuery[field]) >= 1 {
 			return nil, &TypeError{Pos: expr.Pos, Err: fmt.Errorf("field %q may not be used more than once", field)}
 		}
-		checkedQuery.Fields[field] = append(checkedQuery.Fields[field], value)
+		checkedQuery[field] = append(checkedQuery[field], value)
 	}
 	return &checkedQuery, nil
 }

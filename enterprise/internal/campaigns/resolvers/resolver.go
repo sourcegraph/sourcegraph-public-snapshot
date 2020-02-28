@@ -154,7 +154,6 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, err
 	}
-
 	defer tx.Done(&err)
 
 	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
@@ -405,9 +404,8 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 
 	tx, err := r.store.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating transaction")
 	}
-
 	defer tx.Done(&err)
 
 	store := repos.NewDBStore(tx.DB(), sql.TxOptions{})
@@ -453,10 +451,12 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		Store:       tx,
 		HTTPFactory: r.httpFactory,
 	}
+	// NOTE: We are performing a blocking sync here in order to ensure
+	// that the remote changeset exists and also to remove the possibility
+	// of an unsynced changeset entering our database
 	if err = syncer.SyncChangesets(ctx, cs...); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "syncing changesets")
 	}
-
 	csr := make([]graphqlbackend.ExternalChangesetResolver, len(cs))
 	for i := range cs {
 		csr[i] = &changesetResolver{

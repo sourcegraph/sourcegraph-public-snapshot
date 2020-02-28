@@ -442,7 +442,9 @@ func unhighlightLongLines(h string, n int) (string, error) {
 	}
 
 	buf.Reset()
-	if err := html.Render(&buf, doc); err != nil {
+	// NOTE: The result of html.Parse has parent nodes like "<html><head><body><table>..."
+	// to be a valid HTML, but what we want to return is just the <table> section.
+	if err := html.Render(&buf, table); err != nil {
 		return "", err
 	}
 	return buf.String(), nil

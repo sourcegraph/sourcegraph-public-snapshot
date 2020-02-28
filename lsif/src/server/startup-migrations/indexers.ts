@@ -60,6 +60,10 @@ export function assignIndexer(connection: Connection, ctx: TracingContext): Prom
             await Promise.all(batch.map(updateDump))
         }
 
+        await entityManager
+            .getRepository(pgModels.LsifDump)
+            .query("UPDATE lsif_uploads SET indexer='lsif-tsc' WHERE indexer='lsif-node'")
+
         await connectionCache.flush()
         await documentCache.flush()
         await resultChunkCache.flush()
@@ -75,7 +79,7 @@ const extensionsToIndexer = new Map([
     ['.h', 'lsif-cpp'],
     ['.java', 'lsif-java'],
     ['.scala', 'lsif-semanticdb'],
-    ['.ts', 'lsif-node'],
+    ['.ts', 'lsif-tsc'],
 ])
 
 function determineIndexer(paths: string[]): string | undefined {

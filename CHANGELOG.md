@@ -21,7 +21,18 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Zoekt's watchdog ensures the service is down upto 3 times before exiting. The watchdog would misfire on startup on resource constrained systems, with the retries this should make a false positive far less likely. [#7867](https://github.com/sourcegraph/sourcegraph/issues/7867)
+- A regression in repo-updater was fixed that lead to every repository's git clone being updated every time the list of repositories was synced from the code host. [#8501](https://github.com/sourcegraph/sourcegraph/issues/8501)
+
 ### Removed
+
+## 3.13.1
+
+### Fixed
+
+- To reduce the chance of users running into "502 Bad Gateway" errors an internal timeout has been increased from 60 seconds to 10 minutes so that long running requests are cut short by the proxy in front of `sourcegraph-frontend` and correctly reported as "504 Gateway Timeout". [#8606](https://github.com/sourcegraph/sourcegraph/pull/8606)
+- Sourcegraph instances that are not connected to the internet will no longer display errors when users submit NPS survey responses (the responses will continue to be stored locally). Rather, an error will be printed to the frontend logs. [#8598](https://github.com/sourcegraph/sourcegraph/issues/8598)
+- Showing `head>` in the search results if the first line of the file is shown [#8619](https://github.com/sourcegraph/sourcegraph/issues/8619)
 
 ## 3.13.0
 
@@ -54,6 +65,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The GraphQL field `CampaignPlan.changesets` has been deprecated and will be removed in 3.15. A new field called `CampaignPlan.changesetPlans` has been introduced to make the naming more consistent with the `Campaign.changesetPlans` field. Please use that instead. [#7966](https://github.com/sourcegraph/sourcegraph/pull/7966)
 - Long lines (>2000 bytes) are no longer highlighted, in order to prevent performance issues in browser rendering. [#6489](https://github.com/sourcegraph/sourcegraph/issues/6489)
 - No longer requires `read:org` permissions for GitHub OAuth if `allowOrgs` is not enabled in the site configuration. [#8163](https://github.com/sourcegraph/sourcegraph/issues/8163)
+- [Documentation](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/jaeger/README.md) in github.com/sourcegraph/deploy-sourcegraph for deploying Jaeger in Kubernetes clusters running Sourcegraph has been updated to use the [Jaeger Operator](https://www.jaegertracing.io/docs/1.16/operator/), the recommended standard way of deploying Jaeger in a Kubernetes cluster. We recommend existing customers that use Jaeger adopt this new method of deployment. Please reach out to support@sourcegraph.com if you'd like assistance updating.
 
 ### Fixed
 
@@ -79,6 +91,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Campaigns now gracefully handle GitHub review dismissals when rendering the burndown chart.
+
+## 3.12.6
+
+### Changed
+
+- When GitLab permissions are turned on using GitLab OAuth authentication, GitLab project visibility is fetched in batches, which is generally more efficient than fetching them individually. The `minBatchingThreshold` and `maxBatchRequests` fields of the `authorization.identityProvider` object in the GitLab repositories configuration control when such batch fetching is used. [#8171](https://github.com/sourcegraph/sourcegraph/pull/8171)
 
 ## 3.12.5
 
@@ -170,7 +188,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
-- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.13.0` will need to manually modify their `docker run` command to use `sourcegraph/server:3.13.0` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
+- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.13.1` will need to manually modify their `docker run` command to use `sourcegraph/server:3.13.1` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
 
 ## 3.11.1
 

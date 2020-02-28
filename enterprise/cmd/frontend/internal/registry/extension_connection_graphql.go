@@ -23,18 +23,24 @@ func listLocalRegistryExtensions(ctx context.Context, args graphqlbackend.Regist
 	if err != nil {
 		return nil, err
 	}
-	xs, err := dbExtensions{}.List(ctx, opt)
+
+	vs, err := dbExtensions{}.List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
-	if err := prefixLocalExtensionID(xs...); err != nil {
+	if err := prefixLocalExtensionID(vs...); err != nil {
 		return nil, err
 	}
-	xs2 := make([]graphqlbackend.RegistryExtension, len(xs))
-	for i, x := range xs {
-		xs2[i] = &extensionDBResolver{v: x}
+
+	releasesByExtensionID, err := getLatestForBatch(ctx, vs)
+	if err != nil {
+		return nil, err
 	}
-	return xs2, nil
+	var ys []graphqlbackend.RegistryExtension
+	for _, v := range vs {
+		ys = append(ys, &extensionDBResolver{v: v, r: releasesByExtensionID[v.ID]})
+	}
+	return ys, nil
 }
 
 func countLocalRegistryExtensions(ctx context.Context, args graphqlbackend.RegistryExtensionConnectionArgs) (int, error) {
