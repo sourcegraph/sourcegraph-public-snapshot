@@ -16,7 +16,7 @@ import (
 func init() {
 	deployType := DeployType()
 	if !IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q. Got: %q", DeployCluster, DeployDocker, DeployDev, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q. Got: %q", DeployCluster, DeployDockerCompose, DeployPureDocker, DeploySingleDocker, DeployDev, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -27,9 +27,9 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 	switch {
 	case IsDev(deployType):
 		return confdefaults.DevAndTesting
-	case IsDeployTypeDockerContainer(deployType):
+	case IsDeployTypeSingleDockerContainer(deployType):
 		return confdefaults.DockerContainer
-	case IsDeployTypeCluster(deployType):
+	case IsDeployTypeCluster(deployType), IsDeployTypeDockerCompose(deployType), IsDeployTypePureDocker(deployType):
 		return confdefaults.Cluster
 	default:
 		panic("deploy type did not register default configuration")
@@ -136,9 +136,11 @@ func CanReadEmail() bool {
 // Deploy type constants. Any changes here should be reflected in the DeployType type declared in web/src/globals.d.ts:
 // https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
 const (
-	DeployCluster = "cluster"
-	DeployDocker  = "docker-container"
-	DeployDev     = "dev"
+	DeployCluster       = "cluster"
+	DeploySingleDocker  = "docker-container"
+	DeployDockerCompose = "docker-compose"
+	DeployPureDocker    = "pure-docker"
+	DeployDev           = "dev"
 )
 
 // DeployType tells the deployment type.
@@ -152,7 +154,7 @@ func DeployType() string {
 }
 
 // IsDeployTypeCluster tells if the given deployment type is a cluster (and
-// non-dev, non-single Docker image).
+// non-dev, not docker-compose, not pure-docker, and non-single Docker image).
 func IsDeployTypeCluster(deployType string) bool {
 	if deployType == "k8s" {
 		// backwards compatibility for older deployments
@@ -161,10 +163,22 @@ func IsDeployTypeCluster(deployType string) bool {
 	return deployType == DeployCluster
 }
 
-// IsDeployTypeDockerContainer tells if the given deployment type is Docker sourcegraph/server
-// single-container (non-Kubernetes, non-cluster, non-dev).
-func IsDeployTypeDockerContainer(deployType string) bool {
-	return deployType == DeployDocker
+// IsDeployTypeDockerCompose tells if the given deployment type is the Docker Compose
+// deployment (and non-dev, not pure-docker, non-cluster, and non-single Docker image).
+func IsDeployTypeDockerCompose(deployType string) bool {
+	return deployType == DeployDockerCompose
+}
+
+// IsDeployTypePureDocker tells if the given deployment type is the pure Docker
+// deployment (and non-dev, not docker-compose, non-cluster, and non-single Docker image).
+func IsDeployTypePureDocker(deployType string) bool {
+	return deployType == DeployPureDocker
+}
+
+// IsDeployTypeSingleDockerContainer tells if the given deployment type is Docker sourcegraph/server
+// single-container (non-Kubernetes, not docker-compose, not pure-docker, non-cluster, non-dev).
+func IsDeployTypeSingleDockerContainer(deployType string) bool {
+	return deployType == DeploySingleDocker
 }
 
 // IsDev tells if the given deployment type is "dev".
@@ -172,10 +186,14 @@ func IsDev(deployType string) bool {
 	return deployType == DeployDev
 }
 
-// IsValidDeployType returns true iff the given deployType is a Kubernetes deployment, Docker deployment, or a
-// local development environmnent.
+// IsValidDeployType returns true iff the given deployType is a Kubernetes deployment, a Docker Compose
+// deployment, a pure Docker deployment, a Docker deployment, or a local development environment.
 func IsValidDeployType(deployType string) bool {
-	return IsDeployTypeCluster(deployType) || IsDeployTypeDockerContainer(deployType) || IsDev(deployType)
+	return IsDeployTypeCluster(deployType) ||
+		IsDeployTypeDockerCompose(deployType) ||
+		IsDeployTypePureDocker(deployType) ||
+		IsDeployTypeSingleDockerContainer(deployType) ||
+		IsDev(deployType)
 }
 
 // UpdateChannel tells the update channel. Default is "release".
@@ -200,7 +218,7 @@ func SearchIndexEnabled() bool {
 		enabled, _ := strconv.ParseBool(v)
 		return enabled
 	}
-	return DeployType() != DeployDocker
+	return DeployType() != DeploySingleDocker
 }
 
 func SymbolIndexEnabled() bool {
