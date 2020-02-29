@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -12,6 +13,7 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"golang.org/x/sync/semaphore"
 )
 
 const actionExecutionIDKind = "ActionExecution"
@@ -228,35 +230,40 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 		return []actionRepo{}, err
 	}
 
-	reposByID := map[string]actionRepo{}
 	// todo: is this correct /cc @mrnugget
-	for _, repo := range resultsResolver.Repositories() {
-		defaultBranch, err := repo.DefaultBranch(ctx)
-		if err != nil {
-			continue
-		}
-		if defaultBranch == nil {
-			fmt.Printf("# Skipping repository %s because we couldn't determine default branch.", repo.Name())
-			continue
-		}
-		target := defaultBranch.Target()
-		// todo: this is slow, but it is safer than just "master" as it's reproducible
-		oid, err := target.OID(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		if _, ok := reposByID[string(repo.ID())]; !ok {
-			reposByID[string(repo.ID())] = actionRepo{
+	repos := make([]actionRepo, 0)
+	var wg sync.WaitGroup
+	var repoMutex sync.Mutex
+	sem := semaphore.NewWeighted(8)
+	// todo: are repositories guaranteed to be unique?
+	// todo: is this correct /cc @mrnugget? I don't think the results are correct
+	for _, _repo := range resultsResolver.Repositories() {
+		wg.Add(1)
+		repo := _repo
+		sem.Acquire(ctx, 1)
+		go func() {
+			defer wg.Done()
+			defer sem.Release(1)
+			defaultBranch, err := repo.DefaultBranch(ctx)
+			if err != nil || defaultBranch == nil {
+				fmt.Printf("# Skipping repository %s because we couldn't determine default branch.", repo.Name())
+				return
+			}
+			target := defaultBranch.Target()
+			// todo: this is slow, but it is safer than just "master" as it's reproducible
+			oid, err := target.OID(ctx)
+			if err != nil {
+				fmt.Printf("# Skipping repository %s because we couldn't determine OID.", repo.Name())
+				return
+			}
+			repoMutex.Lock()
+			repos = append(repos, actionRepo{
 				ID:  string(repo.ID()),
 				Rev: string(oid),
-			}
-		}
+			})
+			repoMutex.Unlock()
+		}()
 	}
-
-	repos := make([]actionRepo, 0, len(reposByID))
-	for _, repo := range reposByID {
-		repos = append(repos, repo)
-	}
+	wg.Wait()
 	return repos, nil
 }
