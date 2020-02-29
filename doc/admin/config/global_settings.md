@@ -2,7 +2,7 @@
 
 Settings provide the ability to customize and control the Sourcegraph UI and user-specific features. They do not configure operational aspects of the instance (which are set in the [site configuration](site_config.md)).
 
-Settings are also different to [site configuration](site_config.md) as they are set the global level by site admins, the organization level by organization members, and at the individual user level.
+Settings can be set at the global level (by site admins), the organization level (by organization members), and at the individual user level.
 
 <div class="text-center">
   <object data="settings-cascade.svg" type="image/svg+xml" style="width:80%;"></object>
