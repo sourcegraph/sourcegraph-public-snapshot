@@ -101,9 +101,11 @@ func (r *actionExecutionResolver) Status(ctx context.Context) (*campaigns.Backgr
 		processState = campaigns.BackgroundProcessStateCanceled
 	} else if status.Pending == 0 {
 		// todo: currently, still running has precedence over errored, revisit if that's useful
-		processState = campaigns.BackgroundProcessStateCompleted
-	} else if status.Errored == true {
-		processState = campaigns.BackgroundProcessStateErrored
+		if status.Errored == true {
+			processState = campaigns.BackgroundProcessStateErrored
+		} else {
+			processState = campaigns.BackgroundProcessStateCompleted
+		}
 	}
 
 	return &campaigns.BackgroundProcessStatus{

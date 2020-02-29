@@ -12,6 +12,7 @@ import CollapseAllIcon from 'mdi-react/CollapseAllIcon'
 import { FileDiffNode } from '../../../components/diff/FileDiffNode'
 import { retryActionJob, updateActionJob } from './backend'
 import { asError } from '../../../../../shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 interface Props extends ThemeProps {
     actionJob: GQL.IActionJob
@@ -112,7 +113,7 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                             disabled={isCanceling}
                                             onClick={cancel}
                                         >
-                                            Cancel
+                                            {isCanceling && <LoadingSpinner className="icon-inline" />} Cancel
                                             {cancelError && (
                                                 <AlertCircleIcon
                                                     className="ml-2 icon-inline text-danger"
@@ -138,7 +139,7 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                             disabled={isRetrying}
                                             onClick={retry}
                                         >
-                                            Retry
+                                            {isRetrying && <LoadingSpinner className="icon-inline" />} Retry
                                             {retryError && (
                                                 <AlertCircleIcon
                                                     className="ml-2 icon-inline text-danger"
