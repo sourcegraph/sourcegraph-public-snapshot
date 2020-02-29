@@ -1,10 +1,11 @@
 # Configuring SAML with JumpCloud
 
->Please substitute `https://sourcegraph.example.com` with the actual value of `externalURL` in your [site configuration](../../config/site_config.md)).
+> NOTE: Please substitute `https://sourcegraph.example.com` with the actual value of `externalURL` in your [site configuration](../../config/site_config.md)).
 
 ## 1. Configure SAML 2.0 application on JumpCloud
 
 Configure a new **SAML 2.0** application with the following settings:
+
 - **Display Label**: Recommend `Sourcegraph`, but could be anything you prefer.
 - **IdP Entity ID**: Recommend `JumpCloud`, but could be anything you prefer.
 - **SP Entity ID**: `Sourcegraph`
