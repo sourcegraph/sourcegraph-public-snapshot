@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 import { useObservable } from '../../../util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { interval, merge, of, Subject } from 'rxjs'
+import { merge, of, Subject } from 'rxjs'
 import { switchMap, filter, tap } from 'rxjs/operators'
 import { fetchActionByID, createActionExecution, createAction, updateAction } from './backend'
 import { ActionExecutionNode } from './list/ActionExecutionNode'
@@ -23,7 +23,7 @@ export const Action: React.FunctionComponent<Props> = ({ actionID, isLightTheme,
     const action = useObservable(
         React.useMemo(
             () =>
-                merge(nextUpdate, merge(of(undefined), interval(20000)).pipe(filter(() => !!actionID))).pipe(
+                merge(nextUpdate, of(undefined).pipe(filter(() => !!actionID))).pipe(
                     switchMap(() => fetchActionByID(actionID!)),
                     tap(action => {
                         if (action) {
