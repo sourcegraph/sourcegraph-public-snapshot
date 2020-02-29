@@ -214,6 +214,9 @@ func (r *searchResolver) maxResults() int32 {
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
 		if n > 0 {
+			if n > math.MaxInt32 {
+				return math.MaxInt32
+			}
 			return int32(n)
 		}
 	}
@@ -221,6 +224,9 @@ func (r *searchResolver) maxResults() int32 {
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
 		if n > 0 {
+			if n > math.MaxInt32 {
+				return math.MaxInt32
+			}
 			return int32(n)
 		}
 	}
