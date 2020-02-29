@@ -3017,8 +3017,10 @@ SET
 	execution_start = NOW(),
 	state = 'RUNNING',
 	runner_seen_at = NOW()
-WHERE action_jobs.id IN
-	(SELECT id FROM action_jobs WHERE action_jobs.state = 'PENDING' ORDER BY action_jobs.id ASC LIMIT 1)
+WHERE
+	-- todo: just the IN query is not atomic and jobs were pulled twice. the second AND will yield a null job though, wasting one pullActionJob request, it's just a hot fix
+	action_jobs.id IN (SELECT id FROM action_jobs WHERE action_jobs.state = 'PENDING' ORDER BY action_jobs.id ASC LIMIT 1)
+	AND action_jobs.state = 'PENDING'
 RETURNING
 	id,
 	log,
