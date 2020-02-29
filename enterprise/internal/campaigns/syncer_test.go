@@ -28,13 +28,6 @@ func TestNextSync(t *testing.T) {
 			want:       clock().Add(minSyncDelay),
 		},
 		{
-			name:       "No sync in a long time",
-			clock:      clock,
-			lastSync:   clock().Add(-1 * maxSyncDelay).Add(-1 * time.Hour),
-			lastChange: clock(),
-			want:       clock(),
-		},
-		{
 			name:       "Linear backoff",
 			clock:      clock,
 			lastSync:   clock(),
