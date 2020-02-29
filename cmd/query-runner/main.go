@@ -211,15 +211,13 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	// that we don't block other search queries from running in sequence (which
 	// is done intentionally, to ensure no overloading of searcher/gitserver).
 	if len(v.Data.Search.Results.Results) != 0 {
-		go func() {
-			if !query.Notify && !query.NotifySlack {
-				// No need to run this query because there will be nobody to notify.
-				return
-			}
-			if err := notify(context.Background(), spec, query, newQuery, v); err != nil {
-				log15.Error("executor: failed to send notifications", "error", err)
-			}
-		}()
+		if query.Notify || query.NotifySlack {
+			go func() {
+				if err := notify(context.Background(), spec, query, newQuery, v); err != nil {
+					log15.Error("executor: failed to send notifications", "error", err)
+				}
+			}()
+		}
 		go func() {
 			if err := triggerActionExecution(ctx, query.Query); err != nil {
 				log15.Error("executor: failed to notify frontend of saved search change", "error", err)

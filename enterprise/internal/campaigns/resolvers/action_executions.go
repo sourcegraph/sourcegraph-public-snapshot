@@ -229,12 +229,8 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 	}
 
 	reposByID := map[string]actionRepo{}
-	for _, res := range resultsResolver.Results() {
-		repo, ok := res.ToRepository()
-		if !ok {
-			continue
-		}
-
+	// todo: is this correct /cc @mrnugget
+	for _, repo := range resultsResolver.Repositories() {
 		defaultBranch, err := repo.DefaultBranch(ctx)
 		if err != nil {
 			continue
