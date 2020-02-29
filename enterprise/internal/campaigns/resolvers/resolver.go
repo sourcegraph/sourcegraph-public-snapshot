@@ -764,7 +764,10 @@ func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]*campaigns
 			if r.actionExecution != nil {
 				executionID = &r.actionExecution.ID
 			}
-			actionJobs, totalCount, err := r.store.ListActionJobs(ctx, ee.ListActionJobsOpts{ExecutionID: executionID})
+			actionJobs, totalCount, err := r.store.ListActionJobs(ctx, ee.ListActionJobsOpts{
+				ExecutionID: executionID,
+				Limit: -1,
+			})
 			if err != nil {
 				r.jobs = nil
 				r.totalCount = 0
