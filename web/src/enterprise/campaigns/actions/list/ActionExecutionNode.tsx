@@ -33,7 +33,7 @@ export const ActionExecutionNode: React.FunctionComponent<ActionNodeProps> = ({ 
                         />
                     )}
                     {node.status.state === GQL.BackgroundProcessState.PROCESSING && (
-                        <SyncIcon data-tooltip="Execution is running" className="text-info" />
+                        <SyncIcon data-tooltip="Execution is running" className="text-info icon-spinning" />
                     )}
                     {node.status.state === GQL.BackgroundProcessState.CANCELED && (
                         <CollapseAllIcon data-tooltip="Execution has been canceled" className="text-warning" />

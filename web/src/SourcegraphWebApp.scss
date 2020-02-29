@@ -209,6 +209,15 @@ body,
     box-shadow: $btn-focus-box-shadow;
 }
 
+.icon-spinning {
+    animation: spin-loader 4s linear infinite;
+}
+@keyframes spin-loader {
+    100% {
+        transform: rotate(-360deg);
+    }
+}
+
 // Pages
 @import './Layout';
 @import './api/APIConsole';

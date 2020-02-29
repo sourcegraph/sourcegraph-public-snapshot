@@ -62,7 +62,10 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                     />
                 )}
                 {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
-                    <SyncIcon data-tooltip="Execution is running" className="icon-inline ml-3 text-info" />
+                    <SyncIcon
+                        data-tooltip="Execution is running"
+                        className="icon-inline ml-3 text-info icon-spinning"
+                    />
                 )}
                 {execution.status.state === GQL.BackgroundProcessState.CANCELED && (
                     <CollapseAllIcon
@@ -126,7 +129,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                     <p>
                         {execution.executionStart ? (
                             <>
-                                <SyncIcon className="icon-inline" /> Execution is running since{' '}
+                                <SyncIcon className="icon-inline icon-spinning" /> Execution is running since{' '}
                                 {formatDistance(parseISO(execution.executionStart), new Date())}.
                             </>
                         ) : (

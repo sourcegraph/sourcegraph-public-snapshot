@@ -101,7 +101,10 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                     <>
                                         {' '}
                                         <div className="d-flex justify-content-end">
-                                            <SyncIcon data-tooltip="Task is running" className="text-info" />
+                                            <SyncIcon
+                                                data-tooltip="Task is running"
+                                                className="text-info icon-spinning"
+                                            />
                                         </div>
                                         <button
                                             type="button"
@@ -172,7 +175,7 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                 <code dangerouslySetInnerHTML={{ __html: actionJob.log }}></code>
                                 {actionJob.state === GQL.ActionJobState.RUNNING && (
                                     <div>
-                                        <SyncIcon className="icon-inline" />
+                                        <SyncIcon className="icon-inline icon-spinning" />
                                     </div>
                                 )}
                             </div>
