@@ -9,6 +9,8 @@ import {
     IActionsOnQueryArguments,
     IActionConnection,
     IAction,
+    ActionJobState,
+    IActionJob,
 } from '../../../../../shared/src/graphql/schema'
 import { PreviewFileDiffFields, FileDiffHunkRangeFields, DiffStatFields } from '../../../backend/diff'
 
@@ -260,4 +262,18 @@ export async function updateAction(action: ID, newDefinition: string): Promise<I
         { newDefinition, action }
     ).toPromise()
     return dataOrThrowErrors(result).updateAction
+}
+
+export async function updateActionJob(actionJob: ID, { state }: { state?: ActionJobState }): Promise<IActionJob> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation UpdateActionJob($actionJob: ID!, $state: ActionJobState) {
+                updateActionJob(actionJob: $actionJob, state: $state) {
+                    id
+                }
+            }
+        `,
+        { state, actionJob }
+    ).toPromise()
+    return dataOrThrowErrors(result).updateActionJob
 }

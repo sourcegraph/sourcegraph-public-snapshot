@@ -10,7 +10,7 @@ import { DiffStat } from '../../../components/diff/DiffStat'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CollapseAllIcon from 'mdi-react/CollapseAllIcon'
 import { FileDiffNode } from '../../../components/diff/FileDiffNode'
-import { retryActionJob } from './backend'
+import { retryActionJob, updateActionJob } from './backend'
 import { asError } from '../../../../../shared/src/util/errors'
 
 interface Props extends ThemeProps {
@@ -27,13 +27,26 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
         setIsRetrying(true)
         setRetryError(undefined)
         try {
-            await new Promise(resolve => setTimeout(resolve, 4000))
             await retryActionJob(actionJob.id)
             onRetry()
         } catch (error) {
             setRetryError(asError(error))
         } finally {
             setIsRetrying(false)
+        }
+    }, [actionJob.id, onRetry])
+    const [isCanceling, setIsCanceling] = React.useState<boolean>(false)
+    const [cancelError, setCancelError] = React.useState<Error | undefined>()
+    const cancel = React.useCallback(async () => {
+        setIsCanceling(true)
+        setCancelError(undefined)
+        try {
+            await updateActionJob(actionJob.id, { state: GQL.ActionJobState.CANCELED })
+            onRetry()
+        } catch (error) {
+            setCancelError(asError(error))
+        } finally {
+            setIsCanceling(false)
         }
     }, [actionJob.id, onRetry])
     return (
@@ -85,9 +98,26 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                     </div>
                                 )}
                                 {actionJob.state === GQL.ActionJobState.RUNNING && (
-                                    <div className="d-flex justify-content-end">
-                                        <SyncIcon data-tooltip="Task is running" className="text-info" />
-                                    </div>
+                                    <>
+                                        {' '}
+                                        <div className="d-flex justify-content-end">
+                                            <SyncIcon data-tooltip="Task is running" className="text-info" />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-secondary"
+                                            disabled={isCanceling}
+                                            onClick={cancel}
+                                        >
+                                            Cancel
+                                            {cancelError && (
+                                                <AlertCircleIcon
+                                                    className="ml-2 icon-inline text-danger"
+                                                    data-tooltip={cancelError}
+                                                />
+                                            )}
+                                        </button>
+                                    </>
                                 )}
                                 {actionJob.state === GQL.ActionJobState.CANCELED && (
                                     <div className="d-flex justify-content-end">
