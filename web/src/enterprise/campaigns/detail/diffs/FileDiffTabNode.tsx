@@ -7,7 +7,9 @@ import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 
 export interface FileDiffTabNodeProps extends ThemeProps {
-    node: GQL.IChangesetPlan | GQL.IExternalChangeset
+    node: Pick<GQL.IChangesetPlan | GQL.IExternalChangeset, 'diff'> & {
+        repository: Pick<GQL.IChangesetPlan['repository'] | GQL.IExternalChangeset['repository'], 'name' | 'url'>
+    }
     persistLines?: boolean
     history: H.History
     location: H.Location

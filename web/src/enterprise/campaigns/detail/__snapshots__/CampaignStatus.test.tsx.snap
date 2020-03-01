@@ -2,7 +2,9 @@
 
 exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
 <React.Fragment>
-  <div>
+  <div
+    className="mt-3"
+  >
     <Memo(AlertCircleIcon)
       className="icon-inline text-danger mr-1"
     />
@@ -114,10 +116,10 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3"
+      className="d-flex my-3 alert alert-info"
     >
       <Memo(InformationIcon)
-        className="icon-inline text-info mr-1"
+        className="icon-inline mr-1"
       />
        Campaign is a draft.
        
@@ -143,10 +145,10 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3"
+      className="d-flex my-3 alert alert-info"
     >
       <Memo(InformationIcon)
-        className="icon-inline text-info mr-1"
+        className="icon-inline mr-1"
       />
        Campaign is a draft.
        
@@ -170,7 +172,9 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
 
 exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
 <React.Fragment>
-  <div>
+  <div
+    className="mt-3"
+  >
     <Memo(AlertCircleIcon)
       className="icon-inline text-danger mr-1"
     />
@@ -289,10 +293,10 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3"
+      className="d-flex my-3 alert alert-info"
     >
       <Memo(InformationIcon)
-        className="icon-inline text-info mr-1"
+        className="icon-inline mr-1"
       />
        Campaign is a draft.
        
@@ -325,10 +329,10 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3"
+      className="d-flex my-3 alert alert-info"
     >
       <Memo(InformationIcon)
-        className="icon-inline text-info mr-1"
+        className="icon-inline mr-1"
       />
        Campaign is a draft.
        

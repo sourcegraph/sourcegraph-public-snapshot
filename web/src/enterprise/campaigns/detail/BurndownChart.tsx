@@ -11,6 +11,7 @@ import {
     TooltipPayload,
 } from 'recharts'
 import { ICampaign } from '../../../../../shared/src/graphql/schema'
+import InformationIcon from 'mdi-react/InformationIcon'
 
 interface Props extends Pick<ICampaign, 'changesetCountsOverTime'> {
     history: H.History
@@ -54,12 +55,19 @@ const tooltipItemSorter = (item: TooltipPayload): number => tooltipItemOrder[ite
 export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime }) => {
     if (changesetCountsOverTime.length <= 1) {
         return (
-            <div className="alert alert-info">Burndown chart will be shown when there is more than 1 day of data.</div>
+            <div className="d-flex my-3">
+                <InformationIcon className="icon-inline mr-1" /> Burndown chart will be shown when there is more than 1
+                day of data.
+            </div>
         )
     }
     const hasEntries = changesetCountsOverTime.some(counts => counts.total > 0)
     if (!hasEntries) {
-        return <div className="alert alert-info">Burndown chart will be shown when data is available.</div>
+        return (
+            <div className="d-flex my-3">
+                <InformationIcon className="icon-inline mr-1" /> Burndown chart will be shown when data is available.
+            </div>
+        )
     }
     return (
         <ResponsiveContainer width="100%" height={300}>

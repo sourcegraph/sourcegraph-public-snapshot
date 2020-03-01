@@ -3,7 +3,6 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignsIcon } from '../icons'
 import classNames from 'classnames'
 import { Link } from '../../../../../shared/src/components/Link'
-import { CampaignTitleField } from './form/CampaignTitleField'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignUIMode } from './CampaignDetails'
@@ -12,7 +11,7 @@ interface Props {
     mode: CampaignUIMode
     previewingCampaignPlan: boolean
 
-    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
+    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
         status: Pick<GQL.ICampaign['status'], 'state'>
     }
@@ -20,8 +19,6 @@ interface Props {
     onClose: (closeChangesets: boolean) => Promise<void>
     onDelete: (closeChangesets: boolean) => Promise<void>
     onEdit: React.MouseEventHandler
-    name: string
-    onNameChange: (newName: string) => void
 }
 
 export const CampaignActionsBar: React.FunctionComponent<Props> = ({
@@ -31,8 +28,6 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     onClose,
     onDelete,
     onEdit,
-    name,
-    onNameChange,
 }) => {
     const showActionButtons = campaign && !previewingCampaignPlan && campaign.viewerCanAdminister
     const showSpinner = mode === 'saving' || mode === 'deleting' || mode === 'closing'
@@ -54,16 +49,8 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                     <Link to="/campaigns">Campaigns</Link>
                 </span>
                 <span className="text-muted d-inline-block mx-2">/</span>
-                {editingCampaign ? (
-                    <CampaignTitleField
-                        className="w-auto d-inline-block e2e-campaign-title"
-                        value={name}
-                        onChange={onNameChange}
-                        disabled={mode === 'saving'}
-                    />
-                ) : (
-                    <span>{campaign?.name}</span>
-                )}
+                <span>{campaign?.name ?? 'New campaign'}</span>
+                {campaign && !campaign.publishedAt && <span className="badge badge-light ml-2">Draft</span>}
             </h2>
             <span className="flex-grow-1 d-flex justify-content-end align-items-center">
                 {showSpinner && <LoadingSpinner className="mr-2" />}
