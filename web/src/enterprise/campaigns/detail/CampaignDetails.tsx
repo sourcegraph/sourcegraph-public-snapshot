@@ -196,7 +196,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     }),
                     catchError(error => {
                         setAlertError(asError(error))
-                        return []
+                        return [null]
                     })
                 ),
             [previewCampaignPlans, planID, _fetchCampaignPlanById, changesetUpdates]
