@@ -10,14 +10,15 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import { useObservable } from '../../../util/useObservable'
 import { fetchActionExecutionByID } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { interval, merge, of, Subject } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { merge, of, Subject } from 'rxjs'
+import { switchMap, repeatWhen, delay, catchError } from 'rxjs/operators'
 import { Link } from '../../../../../shared/src/components/Link'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import CollapseAllIcon from 'mdi-react/CollapseAllIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { formatDistance, parseISO } from 'date-fns'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props extends ThemeProps {
     actionExecutionID: string
@@ -32,13 +33,22 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
     history,
     location,
 }) => {
+    const [alertError, setAlertError] = React.useState<Error | undefined>()
     const executionUpdates = React.useMemo(() => new Subject<void>(), [])
     const nextExecutionUpdate = React.useCallback(() => executionUpdates.next(), [executionUpdates])
     const execution = useObservable(
         React.useMemo(
             () =>
-                merge(of(undefined), executionUpdates, interval(2000)).pipe(
-                    switchMap(() => fetchActionExecutionByID(actionExecutionID))
+                merge(of(undefined), executionUpdates).pipe(
+                    switchMap(() =>
+                        fetchActionExecutionByID(actionExecutionID).pipe(
+                            catchError(error => {
+                                setAlertError(error)
+                                return []
+                            }),
+                            repeatWhen(obs => obs.pipe(delay(2000)))
+                        )
+                    )
                 ),
             [actionExecutionID, executionUpdates]
         )
@@ -77,6 +87,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                     <AlertCircleIcon data-tooltip="Execution has failed" className="icon-inline ml-3 text-danger" />
                 )}
             </h1>
+            {alertError && <ErrorAlert error={alertError} />}
             {execution.invokationReason === GQL.ActionExecutionInvokationReason.SCHEDULE && (
                 <div className="alert alert-info">
                     This execution is part of a scheduled action.
