@@ -34,6 +34,26 @@ const HideIncompleteLSIFUploadsToggle: FunctionComponent<HideIncompleteLSIFUploa
     </div>
 )
 
+interface HideNonVisibleLSIFUploadsToggleProps {
+    onlyVisible: boolean
+    onToggle: (enabled: boolean) => void
+}
+
+const HideNonVisibleLSIFUploadsToggle: FunctionComponent<HideNonVisibleLSIFUploadsToggleProps> = ({
+    onlyVisible,
+    onToggle,
+}) => (
+    <div className="lsif-uploads-filter-toggle">
+        <label className="radio-buttons__item lsif-uploads-filter-toggle-label" title="Show only current uploads">
+            <Toggle value={onlyVisible} onToggle={onToggle} title="Show only current uploads" />
+
+            <small>
+                <div className="radio-buttons__label">Show only current uploads</div>
+            </small>
+        </label>
+    </div>
+)
+
 const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: () => void }> = ({ node, onDelete }) => {
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
@@ -133,8 +153,33 @@ interface Props extends RouteComponentProps<{}> {
 export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ repo, ...props }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsCodeIntelligence'), [])
 
+    // State used in the toggle component shows or hides non-visible uploads
+    const [onlyVisible, setOnlyVisibleRaw] = useState(true)
+
     // State used in the toggle component shows or hides incomplete uploads
-    const [onlyCompleted, setState] = useState(true)
+    const [onlyCompleted, setOnlyCompletedRaw] = useState(true)
+
+    // Ensure that if only visible is true that only completed is also true
+    const setOnlyVisible = useCallback(
+        (val: boolean): void => {
+            setOnlyVisibleRaw(val)
+            if (val) {
+                setOnlyCompletedRaw(true)
+            }
+        },
+        [setOnlyVisibleRaw, setOnlyCompletedRaw]
+    )
+
+    // Ensure that if only completed is false that only visible is false
+    const setOnlyCompleted = useCallback(
+        (val: boolean) => {
+            setOnlyCompletedRaw(val)
+            if (!val) {
+                setOnlyVisibleRaw(false)
+            }
+        },
+        [setOnlyVisibleRaw, setOnlyCompletedRaw]
+    )
 
     // This observable emits values after successful deletion of an upload and
     // force each filter connection to refresh. As these lists can share the
@@ -143,20 +188,16 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
     const onDeleteSubject = useMemo(() => new Subject<void>(), [])
     const onDeleteCallback = useMemo(() => onDeleteSubject.next.bind(onDeleteSubject), [onDeleteSubject])
 
-    const queryLatestUploads = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
-            fetchLsifUploads({ repository: repo.id, isLatestForRepo: true, ...args }),
-        [repo.id]
-    )
-
     const queryUploads = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            fetchLsifUploads({
-                repository: repo.id,
-                ...(onlyCompleted ? { state: GQL.LSIFUploadState.COMPLETED } : {}),
-                ...args,
-            }),
-        [repo.id, onlyCompleted]
+            onlyVisible
+                ? fetchLsifUploads({ repository: repo.id, isLatestForRepo: true, ...args })
+                : fetchLsifUploads({
+                      repository: repo.id,
+                      ...(onlyCompleted ? { state: GQL.LSIFUploadState.COMPLETED } : {}),
+                      ...args,
+                  }),
+        [repo.id, onlyVisible, onlyCompleted]
     )
 
     return (
@@ -168,61 +209,25 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                 <a href="https://docs.sourcegraph.com/user/code_intelligence/lsif">uploading LSIF data</a>.
             </p>
 
-            <div className="mt-4">
-                <h3>Current LSIF uploads</h3>
-                <p>
-                    These uploads provide code intelligence for the latest commit on the default branch and are used in
-                    cross-repository <em>Find References</em> requests.
-                </p>
-
-                <FilteredConnection<GQL.ILSIFUpload, { onDelete: () => void }>
-                    className="list-group list-group-flush mt-3"
-                    noun="upload"
-                    pluralNoun="uploads"
-                    hideSearch={true}
-                    useURLQuery={false}
-                    noSummaryIfAllNodesVisible={true}
-                    queryConnection={queryLatestUploads}
-                    nodeComponent={LsifUploadNode}
-                    nodeComponentProps={{ onDelete: onDeleteCallback }}
-                    updates={onDeleteSubject}
-                    history={props.history}
-                    location={props.location}
-                    listClassName="list-group list-group-flush"
-                    cursorPaging={true}
-                    emptyElement={
-                        <small>No uploads are recent enough to be used at the tip of the default branch.</small>
-                    }
-                />
-            </div>
-
-            <div className="mt-4">
-                <Collapsible
-                    title="All LSIF uploads"
-                    defaultExpanded={false}
-                    className="repo-settings-code-intelligence-page-collapsible"
-                    titleClassName="h5 mb-0"
-                >
-                    <p>These uploads provide code intelligence for branches and older commits.</p>
-
-                    <FilteredConnection<GQL.ILSIFUpload, { onDelete: () => void }>
-                        className="list-group list-group-flush mt-3"
-                        noun="upload"
-                        pluralNoun="uploads"
-                        queryConnection={queryUploads}
-                        nodeComponent={LsifUploadNode}
-                        nodeComponentProps={{ onDelete: onDeleteCallback }}
-                        updates={onDeleteSubject}
-                        history={props.history}
-                        location={props.location}
-                        listClassName="list-group list-group-flush"
-                        cursorPaging={true}
-                        additionalFilterElement={
-                            <HideIncompleteLSIFUploadsToggle onlyCompleted={onlyCompleted} onToggle={setState} />
-                        }
-                    />
-                </Collapsible>
-            </div>
+            <FilteredConnection<GQL.ILSIFUpload, { onDelete: () => void }>
+                className="list-group list-group-flush mt-3"
+                noun="upload"
+                pluralNoun="uploads"
+                queryConnection={queryUploads}
+                nodeComponent={LsifUploadNode}
+                nodeComponentProps={{ onDelete: onDeleteCallback }}
+                updates={onDeleteSubject}
+                history={props.history}
+                location={props.location}
+                listClassName="list-group list-group-flush"
+                cursorPaging={true}
+                additionalFilterElement={
+                    <span>
+                        <HideIncompleteLSIFUploadsToggle onlyCompleted={onlyCompleted} onToggle={setOnlyCompleted} />
+                        <HideNonVisibleLSIFUploadsToggle onlyVisible={onlyVisible} onToggle={setOnlyVisible} />
+                    </span>
+                }
+            />
         </div>
     )
 }
