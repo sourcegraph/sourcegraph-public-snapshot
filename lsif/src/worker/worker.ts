@@ -14,13 +14,14 @@ import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
 import { UploadManager } from '../shared/store/uploads'
 import * as pgModels from '../shared/models/pg'
-import { convertDatabase, updateCommitsAndDumpsVisibleFromTip } from './conversion/conversion'
+import { convertDatabase } from './conversion/conversion'
 import { pick } from 'lodash'
 import AsyncPolling from 'async-polling'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { EntityManager } from 'typeorm'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
+import { updateCommitsAndDumpsVisibleFromTip } from '../shared/visibility'
 
 /**
  * Runs the worker that converts LSIF uploads.
@@ -107,7 +108,8 @@ async function main(logger: Logger): Promise<void> {
                         entityManager,
                         dumpManager,
                         SRC_FRONTEND_INTERNAL,
-                        upload,
+                        upload.repositoryId,
+                        upload.commit,
                         ctx
                     )
                 })
