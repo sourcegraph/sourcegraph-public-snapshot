@@ -1,14 +1,13 @@
-import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
 import { Suggestion } from '../Suggestion'
 import { assign } from 'lodash/fp'
-import { FilterTypes } from '../../../../../shared/src/search/interactive/util'
+import { FilterType } from '../../../../../shared/src/search/interactive/util'
 import { resolveFilter } from '../../../../../shared/src/search/parser/filters'
 
 /** FilterTypes which have a finite number of valid options. */
-export type FiniteFilterTypes = FilterTypes.archived | FilterTypes.fork | FilterTypes.type
+export type FiniteFilterType = FilterType.archived | FilterType.fork | FilterType.type
 
 export const finiteFilters: Record<
-    FiniteFilterTypes,
+    FiniteFilterType,
     {
         default: string
         values: Suggestion[]
@@ -18,7 +17,7 @@ export const finiteFilters: Record<
         default: 'yes',
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
             assign({
-                type: SuggestionTypes.fork,
+                type: FilterType.archived,
             })
         ),
     },
@@ -26,7 +25,7 @@ export const finiteFilters: Record<
         default: 'yes',
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
             assign({
-                type: SuggestionTypes.fork,
+                type: FilterType.fork,
             })
         ),
     },
@@ -41,16 +40,16 @@ export const finiteFilters: Record<
             { value: 'symbols' },
         ].map(
             assign({
-                type: SuggestionTypes.type,
+                type: FilterType.type,
             })
         ),
     },
 }
 
-export const isFiniteFilter = (filter: FilterTypes): filter is FiniteFilterTypes =>
+export const isFiniteFilter = (filter: FilterType): filter is FiniteFilterType =>
     !!resolveFilter(filter) && ['fork', 'archived', 'type'].includes(filter)
 
-export function isTextFilter(filter: FilterTypes): boolean {
+export function isTextFilter(filter: FilterType): boolean {
     return !!resolveFilter(filter) && !isFiniteFilter(filter)
 }
 
@@ -60,9 +59,9 @@ export function isTextFilter(filter: FilterTypes): boolean {
  *
  * Same as {@link isolatedFuzzySearchFilters} but using FilterTypes rather than SuggestionTypes.
  */
-export const isolatedFuzzySearchFiltersFilterType = [FilterTypes.repo, FilterTypes.repogroup]
+export const isolatedFuzzySearchFiltersFilterType = [FilterType.repo, FilterType.repogroup]
 
-export const FilterTypesToProseNames: Record<FilterTypes, string> = {
+export const FilterTypeToProseNames: Record<FilterType, string> = {
     repo: 'Repository',
     repogroup: 'Repository group',
     repohasfile: 'Repo has file',

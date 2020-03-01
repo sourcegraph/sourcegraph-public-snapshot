@@ -6,7 +6,7 @@ import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'
 import { SearchSuggestion, IRepository, IFile, ISymbol, ILanguage, SymbolKind } from '../../graphql/schema'
 import { isDefined } from '../../util/types'
-import { FilterTypes, isNegatableFilter } from '../interactive/util'
+import { FilterType, isNegatableFilter } from '../interactive/util'
 
 const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
@@ -15,7 +15,7 @@ type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
 const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] = Object.keys(FILTERS)
     .flatMap(label => {
-        const filterType = label as FilterTypes
+        const filterType = label as FilterType
         const completionItem: Omit<Monaco.languages.CompletionItem, 'range' | 'detail'> = {
             label,
             kind: filterCompletionItemKind,

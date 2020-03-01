@@ -5,7 +5,11 @@ import { instrument } from '../metrics'
 import * as metrics from './metrics'
 
 /**
- * Get the set of children of a directory at a particular commit.
+ * Get the children of a set of directories at a particular commit. This function
+ * returns a list of sets `L` where `L[i]` is the set of children for `dirnames[i]`.
+ *
+ * Except for the root directory, denoted by the empty string, all supplied
+ * directories should be disjoint (one should not contain another).
  *
  * @param args Parameter bag.
  */
@@ -13,7 +17,7 @@ export async function getDirectoryChildren({
     frontendUrl,
     repositoryId,
     commit,
-    dirname,
+    dirnames,
     ctx = {},
 }: {
     /** The url of the frontend internal API. */
@@ -22,17 +26,36 @@ export async function getDirectoryChildren({
     repositoryId: number
     /** The commit from which the gitserver queries should start. */
     commit: string
-    /** The repo-root-relative directory. */
-    dirname: string
+    /** A list of repo-root-relative directories. */
+    dirnames: string[]
     /** The tracing context. */
     ctx?: TracingContext
-}): Promise<Set<string>> {
-    const args = ['ls-tree', '--name-only', commit]
-    if (dirname !== '') {
-        args.push('--', dirname.endsWith('/') ? dirname : dirname + '/')
+}): Promise<Map<string, Set<string>>> {
+    const args = ['ls-tree', '--name-only', commit, '--']
+
+    for (const dirname of dirnames) {
+        if (dirname === '') {
+            args.push('.')
+        } else {
+            args.push(dirname.endsWith('/') ? dirname : dirname + '/')
+        }
     }
 
-    return new Set(await gitserverExecLines(frontendUrl, repositoryId, args, ctx))
+    // Retrieve a flat list of children of the dirnames constructed above. This returns a flat
+    // list sorted alphabetically, which we then need to partition by parent directory.
+    const uncategorizedChildren = await gitserverExecLines(frontendUrl, repositoryId, args, ctx)
+
+    const childMap = new Map()
+    for (const dirname of dirnames) {
+        childMap.set(
+            dirname,
+            dirname === ''
+                ? new Set(uncategorizedChildren.filter(line => !line.includes('/')))
+                : new Set(uncategorizedChildren.filter(line => line.startsWith(dirname)))
+        )
+    }
+
+    return childMap
 }
 
 /**
