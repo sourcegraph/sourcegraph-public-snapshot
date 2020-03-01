@@ -322,7 +322,7 @@ Array [
     className="d-flex my-3"
   >
     <svg
-      className="mdi-icon icon-inline mr-1"
+      className="mdi-icon icon-inline text-info mr-1"
       fill="currentColor"
       height={24}
       viewBox="0 0 24 24"
@@ -10791,7 +10791,7 @@ Array [
     className="d-flex my-3"
   >
     <svg
-      className="mdi-icon icon-inline mr-1"
+      className="mdi-icon icon-inline text-info mr-1"
       fill="currentColor"
       height={24}
       viewBox="0 0 24 24"
@@ -21384,7 +21384,7 @@ Array [
     className="d-flex my-3"
   >
     <svg
-      className="mdi-icon icon-inline mr-1"
+      className="mdi-icon icon-inline text-info mr-1"
       fill="currentColor"
       height={24}
       viewBox="0 0 24 24"

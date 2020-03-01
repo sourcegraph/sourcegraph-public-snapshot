@@ -56,8 +56,8 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
     if (changesetCountsOverTime.length <= 1) {
         return (
             <div className="d-flex my-3">
-                <InformationIcon className="icon-inline mr-1" /> Burndown chart will be shown when there is more than 1
-                day of data.
+                <InformationIcon className="icon-inline text-info mr-1" /> Burndown chart will be shown when there is
+                more than 1 day of data.
             </div>
         )
     }
@@ -65,7 +65,8 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
     if (!hasEntries) {
         return (
             <div className="d-flex my-3">
-                <InformationIcon className="icon-inline mr-1" /> Burndown chart will be shown when data is available.
+                <InformationIcon className="icon-inline text-info mr-1" /> Burndown chart will be shown when data is
+                available.
             </div>
         )
     }
