@@ -2568,10 +2568,10 @@
   dependencies:
     "@types/filesystem" "*"
 
-"@types/chrome@0.0.93":
-  version "0.0.93"
-  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.93.tgz#d46aaedfcf36032a749fe63e6268b3265c6dd046"
-  integrity sha512-Esw1xlLYYFj85YdqdM7FCSJ2WtVu75fJ3yikty71zUwQkp3u4dctcVDj5cQIRHCAElUHD0667cpv4U8HZeFiNw==
+"@types/chrome@0.0.98":
+  version "0.0.98"
+  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.98.tgz#1d9aef8b27d0925c099f994a7a923ea6534396cb"
+  integrity sha512-hEYcMXB8at3bDPdk7NmfleRvpw0gxUGMwHZxaWUYs3/VWFLkg9nQPTsYJauZgKHdAoW8RDBRrk4fWDvXjP3OKg==
   dependencies:
     "@types/filesystem" "*"
 
