@@ -84,16 +84,12 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     return deletionOrError === 'deleted' ? (
         <Redirect to=".." />
     ) : isErrorLike(deletionOrError) ? (
-        <div className="alert alert-danger">
-            <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
-        </div>
+        <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
     ) : (
         <div className="site-admin-lsif-upload-page w-100">
             <PageTitle title="LSIF uploads - Admin" />
             {isErrorLike(uploadOrError) ? (
-                <div className="alert alert-danger">
-                    <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
-                </div>
+                <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
             ) : !uploadOrError ? (
                 <LoadingSpinner className="icon-inline" />
             ) : (
