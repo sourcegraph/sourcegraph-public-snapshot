@@ -10,9 +10,21 @@ import (
 )
 
 func main() {
-	procfile := []string{
-		`lsif-server: node /lsif/out/server/server.js`,
-		`lsif-worker: node /lsif/out/worker/worker.js`,
+	procfile := []string{}
+
+	serverOnly, _ := strconv.ParseBool(os.Getenv("SERVER_ONLY"))
+	workerOnly, _ := strconv.ParseBool(os.Getenv("WORKER_ONLY"))
+
+	if serverOnly && workerOnly {
+		log.Fatal("Flags server_only and worker_only are mutually exclusive")
+	}
+
+	if !workerOnly {
+		procfile = append(procfile, `lsif-server: node /lsif/out/server/server.js`)
+	}
+
+	if !serverOnly {
+		procfile = append(procfile, `lsif-worker: node /lsif/out/worker/worker.js`)
 	}
 
 	// Shutdown if any process dies
