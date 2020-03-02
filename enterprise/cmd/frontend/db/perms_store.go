@@ -110,9 +110,115 @@ AND provider = %s
 	)
 }
 
-// TODO(jchen): docstring
+// SetUserPermissions performs a full update for p, new object IDs found in p will be upserted
+// and object IDs no longer in p will be removed. This method updates both `user_permissions`
+// and `repo_permissions` tables.
+//
+// Example input:
+// &UserPermissions{
+//     UserID: 1,
+//     Perm: authz.Read,
+//     Type: authz.PermRepos,
+//     IDs: bitmap{1, 2},
+//     Provider: ProviderSourcegraph,
+// }
+//
+// Table states for input:
+// 	"user_permissions":
+//   user_id | permission | object_type |  object_ids   | updated_at |  provider
+//  ---------+------------+-------------+---------------+------------+------------
+//         1 |       read |       repos |  bitmap{1, 2} | <DateTime> | sourcegraph
+//
+//  "repo_permissions":
+//   repo_id | permission | user_ids  |   provider  | updated_at
+//  ---------+------------+--------------+-------------+------------
+//         1 |       read | bitmap{1} | sourcegraph | <DateTime>
+//         2 |       read | bitmap{1} | sourcegraph | <DateTime>
 func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
-	// TODO(jchen): Finish in a followup PR.
+	ctx, save := s.observe(ctx, "SetUserPermissions", "")
+	defer func() { save(&err, p.TracingFields()...) }()
+
+	// Open a transaction for update consistency.
+	txs, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer txs.Done(&err)
+
+	// Retrieve currently stored object IDs of this user.
+	var oldIDs *roaring.Bitmap
+	vals, err := txs.load(ctx, loadUserPermissionsQuery(p, "FOR UPDATE"))
+	if err != nil {
+		if err == ErrPermsNotFound {
+			oldIDs = roaring.NewBitmap()
+		} else {
+			return errors.Wrap(err, "load user permissions")
+		}
+	} else {
+		oldIDs = vals.ids
+	}
+
+	if p.IDs == nil {
+		p.IDs = roaring.NewBitmap()
+	}
+
+	// Compute differences between the old and new sets.
+	added := roaring.AndNot(p.IDs, oldIDs)
+	removed := roaring.AndNot(oldIDs, p.IDs)
+
+	// Load stored object IDs of both added and removed.
+	changedIDs := roaring.Or(added, removed).ToArray()
+
+	// In case there is nothing to add or remove.
+	if len(changedIDs) == 0 {
+		return nil
+	}
+
+	q := loadRepoPermissionsBatchQuery(changedIDs, p.Perm, p.Provider, "FOR UPDATE")
+	loadedIDs, err := txs.batchLoadIDs(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "batch load repo permissions")
+	}
+
+	// We have two sets of IDs that one needs to add, and the other needs to remove.
+	updatedAt := txs.clock()
+	updatedPerms := make([]*authz.RepoPermissions, 0, len(changedIDs))
+	for _, id := range changedIDs {
+		repoID := int32(id)
+		userIDs := loadedIDs[repoID]
+		if userIDs == nil {
+			userIDs = roaring.NewBitmap()
+		}
+
+		switch {
+		case added.Contains(id):
+			userIDs.Add(uint32(p.UserID))
+		case removed.Contains(id):
+			userIDs.Remove(uint32(p.UserID))
+		}
+
+		updatedPerms = append(updatedPerms, &authz.RepoPermissions{
+			RepoID:    repoID,
+			Perm:      p.Perm,
+			UserIDs:   userIDs,
+			Provider:  p.Provider,
+			UpdatedAt: updatedAt,
+		})
+	}
+
+	if q, err = upsertRepoPermissionsBatchQuery(updatedPerms...); err != nil {
+		return err
+	} else if err = txs.execute(ctx, q); err != nil {
+		return errors.Wrap(err, "execute upsert repo permissions batch query")
+	}
+
+	p.UpdatedAt = updatedAt
+	if q, err = upsertUserPermissionsBatchQuery(p); err != nil {
+		return err
+	} else if err = txs.execute(ctx, q); err != nil {
+		return errors.Wrap(err, "execute upsert user permissions batch query")
+	}
+
 	return nil
 }
 
