@@ -90,7 +90,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                         <span className="text-muted small">(all branches)</span>
                     </li>
                 </ul>
-                <DropdownItem divider={true} />
+                <DropdownItem divider={true} className="mb-0" />
                 <a
                     // eslint-disable-next-line react/jsx-no-target-blank
                     target="_blank"
