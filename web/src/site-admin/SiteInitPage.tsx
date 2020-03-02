@@ -22,28 +22,31 @@ export class SiteInitPage extends React.Component<Props> {
 
         return (
             <div className="site-init-page">
-                <div className="site-init-page__content">
-                    <BrandLogo className="site-init-page__logo" isLightTheme={this.props.isLightTheme} />
-                    {this.props.authenticatedUser ? (
-                        // If there's already a user but the site is not initialized, then the we're in an
-                        // unexpected state, likely because of a previous bug or because someone manually modified
-                        // the site_config DB table.
-                        <p>
-                            You're signed in as <strong>{this.props.authenticatedUser.username}</strong>. A site admin
-                            must initialize Sourcegraph before you can continue.
-                        </p>
-                    ) : (
-                        <>
-                            <h2 className="site-init-page__header">Welcome</h2>
-                            <p>Create an admin account to start using Sourcegraph.</p>
-                            <SignUpForm
-                                buttonLabel="Create admin account & continue"
-                                doSignUp={this.doSiteInit}
-                                location={this.props.location}
-                                history={this.props.history}
-                            />
-                        </>
-                    )}
+                <div className="site-init-page__content card">
+                    <div className="card-body p-4">
+                        <BrandLogo className="w-100 mb-3" isLightTheme={this.props.isLightTheme} />
+                        {this.props.authenticatedUser ? (
+                            // If there's already a user but the site is not initialized, then the we're in an
+                            // unexpected state, likely because of a previous bug or because someone manually modified
+                            // the site_config DB table.
+                            <p>
+                                You're signed in as <strong>{this.props.authenticatedUser.username}</strong>. A site
+                                admin must initialize Sourcegraph before you can continue.
+                            </p>
+                        ) : (
+                            <>
+                                <h2 className="site-init-page__header">Welcome</h2>
+                                <p>Create an admin account to start using Sourcegraph.</p>
+                                <SignUpForm
+                                    className="w-100"
+                                    buttonLabel="Create admin account & continue"
+                                    doSignUp={this.doSiteInit}
+                                    location={this.props.location}
+                                    history={this.props.history}
+                                />
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         )

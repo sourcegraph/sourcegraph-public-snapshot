@@ -34,15 +34,19 @@ export class SignInPage extends React.Component<SignInPageProps> {
                     title="Sign into Sourcegraph"
                     body={
                         window.context.authProviders && window.context.authProviders.length > 0 ? (
-                            window.context.authProviders.map((p, i) =>
-                                p.isBuiltin ? (
-                                    <UsernamePasswordSignInForm key={i} {...this.props} />
-                                ) : (
-                                    <a key={i} href={p.authenticationURL} className="btn btn-primary mt-3 mb-1">
-                                        Sign in with {p.displayName}
-                                    </a>
-                                )
-                            )
+                            <div className="mb-4">
+                                {window.context.authProviders.map((provider, i) =>
+                                    provider.isBuiltin ? (
+                                        <UsernamePasswordSignInForm key={i} {...this.props} />
+                                    ) : (
+                                        <div className="mb-2">
+                                            <a key={i} href={provider.authenticationURL} className="btn btn-secondary">
+                                                Sign in with {provider.displayName}
+                                            </a>
+                                        </div>
+                                    )
+                                )}
+                            </div>
                         ) : (
                             <div className="alert alert-info mt-3">
                                 No authentication providers are available. Contact a site administrator for help.
