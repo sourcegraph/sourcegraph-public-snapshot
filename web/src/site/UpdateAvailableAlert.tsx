@@ -34,6 +34,7 @@ export const UpdateAvailableAlert: React.FunctionComponent<{
             href="https://about.sourcegraph.com/changelog" // this is the old URL, but it redirects
             // eslint-disable-next-line react/jsx-no-target-blank
             target="_blank"
+            rel="noopener"
             onClick={onClickChangelog}
         >
             changelog
