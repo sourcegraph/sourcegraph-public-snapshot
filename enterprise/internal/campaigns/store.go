@@ -547,23 +547,12 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// ChangesetSyncHeuristics represents data about the sync status of a changeset
-type ChangesetSyncHeuristics struct {
-	ChangesetID int64
-	// UpdatedAt is the time we last updated / synced the changeset in our DB
-	UpdatedAt time.Time
-	// LatestEvent is the time we received the most recent changeset event
-	LatestEvent time.Time
-	// ExternalUpdatedAt is the time the external changeset last changed
-	ExternalUpdatedAt time.Time
-}
-
 // ListChangesetSyncHeuristics returns sync timing data on all non deleted changesets.
-func (s *Store) ListChangesetSyncHeuristics(ctx context.Context) ([]ChangesetSyncHeuristics, error) {
+func (s *Store) ListChangesetSyncHeuristics(ctx context.Context) ([]campaigns.ChangesetSyncHeuristics, error) {
 	q := listChangesetSyncHeuristicsQuery()
-	results := make([]ChangesetSyncHeuristics, 0)
+	results := make([]campaigns.ChangesetSyncHeuristics, 0)
 	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var h ChangesetSyncHeuristics
+		var h campaigns.ChangesetSyncHeuristics
 		if err = scanChangesetHeuristics(&h, sc); err != nil {
 			return 0, 0, err
 		}
@@ -576,7 +565,7 @@ func (s *Store) ListChangesetSyncHeuristics(ctx context.Context) ([]ChangesetSyn
 	return results, nil
 }
 
-func scanChangesetHeuristics(h *ChangesetSyncHeuristics, s scanner) error {
+func scanChangesetHeuristics(h *campaigns.ChangesetSyncHeuristics, s scanner) error {
 	return s.Scan(
 		&h.ChangesetID,
 		&h.UpdatedAt,

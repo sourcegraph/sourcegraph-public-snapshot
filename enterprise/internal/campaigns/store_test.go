@@ -987,7 +987,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := []ChangesetSyncHeuristics{
+			want := []cmpgn.ChangesetSyncHeuristics{
 				{
 					ChangesetID: 2,
 					UpdatedAt:   clock(),
