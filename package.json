@@ -82,7 +82,7 @@
     "@testing-library/react": "^9.4.1",
     "@testing-library/react-hooks": "^3.2.1",
     "@types/babel__core": "7.1.6",
-    "@types/chai": "4.2.9",
+    "@types/chai": "4.2.10",
     "@types/chai-as-promised": "7.1.2",
     "@types/chrome": "0.0.98",
     "@types/classnames": "2.2.9",
