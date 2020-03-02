@@ -18,6 +18,7 @@ import (
 
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
+	"github.com/pkg/browser"
 )
 
 func isFlagSet(fs *flag.FlagSet, name string) bool {
@@ -63,7 +64,8 @@ Examples:
 		fileFlag        = flagSet.String("file", "./dump.lsif", `The path to the LSIF dump file.`)
 		githubTokenFlag = flagSet.String("github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
 		rootFlag        = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the empty string, which refers to the top level of the repository.`)
-		indexerName     = flagSet.String("indexerName", "", `The name of the indexer that generated the dump. This will override the 'toolInfo.name' field in the metadata vertex of the LSIF dump file. This must be supplied if the indexer does not set this field (in which case the upload will fail with an explicit message).`)
+		indexerNameFlag = flagSet.String("indexerName", "", `The name of the indexer that generated the dump. This will override the 'toolInfo.name' field in the metadata vertex of the LSIF dump file. This must be supplied if the indexer does not set this field (in which case the upload will fail with an explicit message).`)
+		openFlag        = flagSet.Bool("open", false, `Open the LSIF upload page in your browser.`)
 		apiFlags        = newAPIFlags(flagSet)
 	)
 
@@ -153,8 +155,8 @@ Examples:
 		if *rootFlag != "" {
 			qs.Add("root", *rootFlag)
 		}
-		if *indexerName != "" {
-			qs.Add("indexerName", *indexerName)
+		if *indexerNameFlag != "" {
+			qs.Add("indexerName", *indexerNameFlag)
 		}
 
 		url, err := url.Parse(cfg.Endpoint + "/.api/lsif/upload")
@@ -244,10 +246,19 @@ Examples:
 			return err
 		}
 
-		jobURL := string(base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFUpload:"%s"`, payload.ID))))
+		uploadID := string(base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFUpload:"%s"`, payload.ID))))
+		uploadURL := fmt.Sprintf("%s/%s/-/settings/code-intelligence/lsif-uploads/%s", cfg.Endpoint, *repoFlag, uploadID)
+
 		fmt.Println("")
-		fmt.Printf("LSIF dump successfully uploaded. It will be converted asynchronously.\n")
-		fmt.Printf("To check the status, visit %s/site-admin/lsif-uploads/%s.\n", cfg.Endpoint, jobURL)
+		fmt.Printf("LSIF dump successfully uploaded for processing.\n")
+		fmt.Printf("View processing status at %s.\n", uploadURL)
+
+		if *openFlag {
+			if err := browser.OpenURL(uploadURL); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	}
 

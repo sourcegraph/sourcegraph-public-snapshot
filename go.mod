@@ -14,6 +14,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
+	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/pkg/errors v0.9.1
 	github.com/sourcegraph/go-diff v0.5.1
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
