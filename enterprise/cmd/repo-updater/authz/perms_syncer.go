@@ -33,7 +33,7 @@ type PermsSyncer struct {
 	fetchers map[string]PermsFetcher
 	// The database interface for any repos and external services operations.
 	reposStore repos.Store
-	// The cached PermsStore object.
+	// The database interface for any permissions operations.
 	permsStore *edb.PermsStore
 }
 
@@ -63,16 +63,26 @@ func NewPermsSyncer(fetchers map[string]PermsFetcher, reposStore repos.Store, db
 
 // ScheduleUser schedules a new permissions syncing request for given user
 // in desired priority.
-func (s *PermsSyncer) ScheduleUser(userID int32, priority Priority) error {
-	updated := s.queue.enqueue(requestTypeUser, userID, priority)
+func (s *PermsSyncer) ScheduleUser(priority Priority, userID int32, lastUpdated time.Time) error {
+	updated := s.queue.enqueue(&requestMeta{
+		priority:    priority,
+		typ:         requestTypeUser,
+		id:          userID,
+		lastUpdated: lastUpdated,
+	})
 	log15.Debug("PermsSyncer.queue.enqueued", "userID", userID, "updated", updated)
 	return nil
 }
 
 // ScheduleRepo schedules a new permissions syncing request for given repository
 // in desired priority.
-func (s *PermsSyncer) ScheduleRepo(repoID api.RepoID, priority Priority) error {
-	updated := s.queue.enqueue(requestTypeRepo, int32(repoID), priority)
+func (s *PermsSyncer) ScheduleRepo(priority Priority, repoID api.RepoID, lastUpdated time.Time) error {
+	updated := s.queue.enqueue(&requestMeta{
+		priority:    priority,
+		typ:         requestTypeRepo,
+		id:          int32(repoID),
+		lastUpdated: lastUpdated,
+	})
 	log15.Debug("PermsSyncer.queue.enqueued", "repoID", repoID, "updated", updated)
 	return nil
 }

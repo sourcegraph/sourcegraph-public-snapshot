@@ -3,6 +3,7 @@ package authz
 import (
 	"container/heap"
 	"sync"
+	"time"
 )
 
 // Priority defines how urgent the permissions syncing request is.
@@ -34,11 +35,17 @@ func (t1 requestType) higherPriorityThan(t2 requestType) bool {
 	return t1 > t2
 }
 
+// requestMeta contains metadata of a permissions syncing request.
+type requestMeta struct {
+	priority    Priority
+	typ         requestType
+	id          int32
+	lastUpdated time.Time
+}
+
 // syncRequest is a permissions syncing request with its current status in the queue.
 type syncRequest struct {
-	typ      requestType
-	id       int32
-	priority Priority
+	*requestMeta
 
 	acquired bool // Whether the request has been acquired
 	index    int  // The index in the heap
@@ -80,38 +87,36 @@ var notify = func(ch chan struct{}) {
 	}
 }
 
-// enqueue adds a sync request to the queue with the given information.
+// enqueue adds a sync request to the queue with the given metadata.
 //
-// If the sync request is already in the queue and it isn't yet updating,
+// If the sync request is already in the queue and it isn't yet acquired,
 // the request is updated.
 //
 // If the given priority is higher than the one in the queue,
 // the sync request's position in the queue is updated accordingly.
-func (q *requestQueue) enqueue(typ requestType, id int32, priority Priority) (updated bool) {
-	if id == 0 {
+func (q *requestQueue) enqueue(meta *requestMeta) (updated bool) {
+	if meta == nil {
 		return false
 	}
 
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	request := q.index[typ][id]
+	request := q.index[meta.typ][meta.id]
 	if request == nil {
 		heap.Push(q, &syncRequest{
-			typ:      typ,
-			id:       id,
-			priority: priority,
+			requestMeta: meta,
 		})
 		notify(q.notifyEnqueue)
 		return false
 	}
 
-	if request.acquired || request.priority >= priority {
+	if request.acquired || request.priority >= meta.priority {
 		// Request is acquired and in processing, or is already in the queue with at least as good priority.
 		return false
 	}
 
-	request.priority = priority
+	request.requestMeta = meta
 	heap.Fix(q, request.index)
 	notify(q.notifyEnqueue)
 	return true
@@ -184,7 +189,8 @@ func (q *requestQueue) Less(i, j int) bool {
 		return qi.typ.higherPriorityThan(qj.typ)
 	}
 
-	return false
+	// Request comes from a more outdated record has higher priority.
+	return qi.lastUpdated.Before(qj.lastUpdated)
 }
 
 func (q *requestQueue) Swap(i, j int) {
