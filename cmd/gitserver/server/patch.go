@@ -71,8 +71,8 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		if resp.Error != nil {
 			resp.Error.Command = redactor.redact(resp.Error.Command)
 			resp.Error.CombinedOutput = redactor.redact(resp.Error.CombinedOutput)
-			if resp.Error.Err != nil {
-				resp.Error.Err = errors.New(redactor.redact(resp.Error.Err.Error()))
+			if resp.Error.InternalError != "" {
+				resp.Error.InternalError = redactor.redact(resp.Error.InternalError)
 			}
 		}
 	}()

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -202,6 +203,7 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 		}
 
 		cs[i].Changeset.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
+		cs[i].Changeset.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 		cs[i].Changeset.Metadata = pr
 	}
 
@@ -462,4 +464,8 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 		next = page
 	}
 	return ids, nil
+}
+
+func unixMilliToTime(ms int64) time.Time {
+	return time.Unix(0, ms*int64(time.Millisecond))
 }

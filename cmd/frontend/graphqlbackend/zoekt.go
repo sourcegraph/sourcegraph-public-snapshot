@@ -47,7 +47,7 @@ func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 
 func zoektSearchOpts(k int, query *search.TextPatternInfo) zoekt.SearchOptions {
 	searchOpts := zoekt.SearchOptions{
-		MaxWallTime:            3 * time.Second,
+		MaxWallTime:            10 * time.Second,
 		ShardMaxMatchCount:     100 * k,
 		TotalMaxMatchCount:     100 * k,
 		ShardMaxImportantMatch: 15 * k,

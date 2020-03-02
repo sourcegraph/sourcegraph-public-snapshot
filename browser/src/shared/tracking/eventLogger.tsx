@@ -1,7 +1,7 @@
 import { noop } from 'lodash'
 import { Observable, ReplaySubject } from 'rxjs'
 import { take } from 'rxjs/operators'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { TelemetryService } from '../../../../shared/src/telemetry/telemetryService'

@@ -182,7 +182,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return () => unblockHistoryRef.current()
     }, [campaignID, history, planID])
 
-    const updateMode = campaignID && planID
+    const updateMode = !!campaignID && !!planID
     const previewCampaignPlans = useMemo(() => new Subject<GQL.ID>(), [])
     const campaignPlan = useObservable(
         useMemo(
@@ -445,33 +445,33 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         className="my-3"
                     />
                 )}
+                {(mode === 'editing' || mode === 'saving') && specifyingBranchAllowed && (
+                    <div className="form-group mt-3">
+                        <label>
+                            Branch name{' '}
+                            <small>
+                                <InformationOutlineIcon
+                                    className="icon-inline"
+                                    data-tooltip={
+                                        'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
+                                    }
+                                />
+                            </small>
+                        </label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            onChange={onBranchChange}
+                            placeholder="my-awesome-campaign"
+                            value={branch}
+                            required={true}
+                            disabled={mode === 'saving'}
+                        />
+                    </div>
+                )}
                 {!updateMode ? (
                     (!campaign || campaignPlan) && (
                         <>
-                            {specifyingBranchAllowed && (
-                                <div className="form-group mt-3">
-                                    <label>
-                                        Branch name{' '}
-                                        <small>
-                                            <InformationOutlineIcon
-                                                className="icon-inline"
-                                                data-tooltip={
-                                                    'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
-                                                }
-                                            />
-                                        </small>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        onChange={onBranchChange}
-                                        placeholder="my-awesome-campaign"
-                                        value={branch}
-                                        required={true}
-                                        disabled={mode === 'saving'}
-                                    />
-                                </div>
-                            )}
                             <div className="mt-3">
                                 {campaignPlan && (
                                     <button

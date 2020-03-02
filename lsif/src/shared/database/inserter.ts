@@ -11,12 +11,12 @@ interface TableInserterMetrics {
     /**
      * A histogram that is observed on each round-trip to the database.
      */
-    durationHistogram: promClient.Histogram
+    durationHistogram: promClient.Histogram<string>
 
     /**
      * A counter that increments on each error that occurs during an insertion.
      */
-    errorsCounter: promClient.Counter
+    errorsCounter: promClient.Counter<string>
 }
 
 /**

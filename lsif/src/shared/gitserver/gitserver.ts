@@ -83,8 +83,8 @@ export async function getCommitsNear(
     try {
         return flattenCommitParents(await gitserverExecLines(frontendUrl, repositoryId, args, ctx))
     } catch (error) {
-        if (error.statusCode === 404) {
-            // repository unknown
+        if (error.response && error.response.statusCode === 404) {
+            // Unknown repository
             return new Map()
         }
 
@@ -176,7 +176,7 @@ function gitserverExec(
     return logAndTraceCall(ctx, 'Executing git command', () =>
         instrument(metrics.gitserverDurationHistogram, metrics.gitserverErrorsCounter, async () => {
             // Perform request - this may fail with a 404 or 500
-            const resp = await got(new URL(`http://${frontendUrl}/.internal/git/${repositoryId}/exec`).href, {
+            const resp = await got.post(new URL(`http://${frontendUrl}/.internal/git/${repositoryId}/exec`).href, {
                 body: JSON.stringify({ args }),
             })
 
