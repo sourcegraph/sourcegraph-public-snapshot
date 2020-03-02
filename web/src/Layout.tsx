@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { Suspense } from 'react'
-import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
 import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
@@ -31,7 +31,13 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
-import { parseSearchURLQuery, PatternTypeProps } from './search'
+import {
+    parseSearchURLQuery,
+    PatternTypeProps,
+    InteractiveSearchProps,
+    CaseSensitivityProps,
+    SmartSearchFieldProps,
+} from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
@@ -40,16 +46,16 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
-import LiteralSearchToast from './marketing/LiteralSearchToast'
+import { SurveyToast } from './marketing/SurveyToast'
 import { ThemeProps } from '../../shared/src/theme'
-import { ThemePreferenceProps } from './search/theme'
+import { ThemePreferenceProps } from './theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 
 export interface LayoutProps
-    extends RouteComponentProps<any>,
+    extends RouteComponentProps<{}>,
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
@@ -58,7 +64,10 @@ export interface LayoutProps
         EventLoggerProps,
         ThemePreferenceProps,
         ActivationProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        CaseSensitivityProps,
+        InteractiveSearchProps,
+        SmartSearchFieldProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -78,7 +87,7 @@ export interface LayoutProps
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
-    routes: readonly LayoutRouteProps[]
+    routes: readonly LayoutRouteProps<any>[]
 
     authenticatedUser: GQL.IUser | null
 
@@ -100,16 +109,22 @@ export interface LayoutProps
         patternType: GQL.SearchPatternType,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
+
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
     children?: never
 }
 
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
+    const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
+    const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
+
+    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] =
+        props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
 
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
@@ -130,37 +145,36 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
                 <IntegrationsToast history={props.history} />
             )}
-            {!isSiteInit && <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />}
-            {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
+            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && (
+                <GlobalNavbar
+                    {...props}
+                    isSearchRelatedPage={isSearchRelatedPage}
+                    lowProfile={isSearchHomepage}
+                    hideGlobalSearchInput={hideGlobalSearchInput}
+                    hideNavLinks={false}
+                />
+            )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
-                        {props.routes.map(({ render, condition = () => true, ...route }) => {
-                            const isFullWidth = !route.forceNarrowWidth
-                            return (
+                        {props.routes.map(
+                            ({ render, condition = () => true, ...route }) =>
                                 condition(props) && (
                                     <Route
                                         {...route}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
-                                            <div
-                                                className={[
-                                                    'layout__app-router-container',
-                                                    `layout__app-router-container--${
-                                                        isFullWidth ? 'full-width' : 'restricted'
-                                                    }`,
-                                                ].join(' ')}
-                                            >
+                                            <div className="layout__app-router-container">
                                                 {render({ ...props, ...routeComponentProps })}
                                             </div>
                                         )}
                                     />
                                 )
-                            )
-                        })}
+                        )}
                         {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>

@@ -191,14 +191,14 @@ main.go:7:}
 	defer ts.Close()
 
 	for i, test := range cases {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			test.arg.PatternMatchesContent = true
 			req := protocol.Request{
 				Repo:         "foo",
 				URL:          "u",
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  test.arg,
-				FetchTimeout: "500ms",
+				FetchTimeout: "2000ms",
 			}
 			m, err := doSearch(ts.URL, &req)
 			if err != nil {
@@ -350,6 +350,7 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		"URL":             []string{string(p.URL)},
 		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
+		"FetchTimeout":    []string{p.FetchTimeout},
 		"IncludePatterns": p.IncludePatterns,
 		"ExcludePattern":  []string{p.ExcludePattern},
 	}

@@ -17,6 +17,7 @@ exports[`ActionItem actionItem variant 1`] = `
    
   g: 
   t
+   
 </a>
 `;
 
@@ -37,6 +38,7 @@ exports[`ActionItem non-actionItem variant 1`] = `
    
   g: 
   t
+   
 </a>
 `;
 
@@ -51,6 +53,7 @@ exports[`ActionItem non-pressed actionItem 1`] = `
   tabIndex={0}
 >
   b
+   
 </a>
 `;
 
@@ -80,19 +83,36 @@ exports[`ActionItem pressed toggle actionItem 1`] = `
   tabIndex={0}
 >
   b
+   
 </a>
 `;
 
 exports[`ActionItem render as link for "open" command 1`] = `
 <a
   className="action-item "
+  href="https://example.com/bar"
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
-  to="https://example.com"
 >
   
   t
+   
+</a>
+`;
+
+exports[`ActionItem render as link with icon for "open" command with different origin 1`] = `
+<a
+  className="action-item "
+  href="https://other.com/foo"
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+>
+  
+  t
+   
+  <OpenInNewIcon />
 </a>
 `;
 
@@ -113,6 +133,7 @@ exports[`ActionItem run command 1`] = `
    
   g: 
   t
+   
 </a>
 `;
 
@@ -133,6 +154,7 @@ exports[`ActionItem run command 2`] = `
    
   g: 
   t
+   
 </a>
 `;
 
@@ -153,6 +175,7 @@ exports[`ActionItem run command with error 1`] = `
    
   g: 
   t
+   
 </a>
 `;
 
@@ -173,6 +196,7 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
    
   g: 
   t
+   
 </a>
 `;
 
@@ -193,6 +217,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
    
   g: 
   t
+   
   <div
     className="action-item__loader"
   >
@@ -220,6 +245,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
    
   g: 
   t
+   
 </a>
 `;
 
@@ -236,5 +262,6 @@ exports[`ActionItem title element 1`] = `
   <span>
     t2
   </span>
+   
 </a>
 `;

@@ -1,17 +1,13 @@
 import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { sortBy } from 'lodash'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, Observable, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
-import { CodeEditorData, EditorId, EditorUpdate } from '../../client/services/editorService'
+import { EditorUpdate } from '../../client/services/editorService'
 import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
-
-export interface WindowData {
-    editors: readonly (CodeEditorData & EditorId)[]
-}
 
 interface WindowsProxyData {
     windows: ClientWindowsAPI
@@ -144,15 +140,17 @@ export interface ExtWindowsAPI extends ProxyValue {
 export class ExtWindows implements ExtWindowsAPI, ProxyValue {
     public readonly [proxyValueSymbol] = true
 
-    public activeWindow: ExtWindow | undefined
+    public activeWindow: ExtWindow
+    public readonly activeWindowChanges: Observable<sourcegraph.Window>
 
     /** @internal */
     constructor(
         private proxy: ProxyResult<{ windows: ClientWindowsAPI; codeEditor: ClientCodeEditorAPI }>,
         private documents: ExtDocuments
-    ) {}
-
-    public readonly activeWindowChanges = new BehaviorSubject<sourcegraph.Window | undefined>(undefined)
+    ) {
+        this.activeWindow = new ExtWindow(this.proxy, this.documents, [])
+        this.activeWindowChanges = of(this.activeWindow)
+    }
 
     /**
      * Returns all known windows.
@@ -160,23 +158,11 @@ export class ExtWindows implements ExtWindowsAPI, ProxyValue {
      * @internal
      */
     public getAll(): sourcegraph.Window[] {
-        return this.activeWindow ? [this.activeWindow] : []
+        return [this.activeWindow]
     }
 
     /** @internal */
     public $acceptWindowData(editorUpdates: EditorUpdate[]): void {
-        if (!this.activeWindow) {
-            const window = new ExtWindow(this.proxy, this.documents, editorUpdates)
-            if (window.visibleViewComponents.length) {
-                this.activeWindow = window
-                this.activeWindowChanges.next(this.activeWindow)
-            }
-        } else {
-            this.activeWindow.update(editorUpdates)
-            if (this.activeWindow.visibleViewComponents.length === 0) {
-                this.activeWindow = undefined
-                this.activeWindowChanges.next(undefined)
-            }
-        }
+        this.activeWindow.update(editorUpdates)
     }
 }

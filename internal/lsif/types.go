@@ -1,40 +1,31 @@
 package lsif
 
 import (
-	"encoding/json"
 	"time"
+
+	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-type LSIFDump struct {
-	ID           int64     `json:"id"`
-	Repository   string    `json:"repository"`
-	Commit       string    `json:"commit"`
-	Root         string    `json:"root"`
-	VisibleAtTip bool      `json:"visibleAtTip"`
-	UploadedAt   time.Time `json:"uploadedAt"`
-	ProcessedAt  time.Time `json:"processedAt"`
+type LSIFUpload struct {
+	ID                int64      `json:"id"`
+	RepositoryID      api.RepoID `json:"repositoryId"`
+	Commit            string     `json:"commit"`
+	Root              string     `json:"root"`
+	Indexer           string     `json:"indexer"`
+	Filename          string     `json:"filename"`
+	State             string     `json:"state"`
+	UploadedAt        time.Time  `json:"uploadedAt"`
+	StartedAt         *time.Time `json:"startedAt"`
+	FinishedAt        *time.Time `json:"finishedAt"`
+	FailureSummary    *string    `json:"failureSummary"`
+	FailureStacktrace *string    `json:"failureStacktrace"`
+	VisibleAtTip      bool       `json:"visibleAtTip"`
 }
 
-type LSIFJobStats struct {
-	ProcessingCount int32 `json:"processingCount"`
-	ErroredCount    int32 `json:"erroredCount"`
-	CompletedCount  int32 `json:"completedCount"`
-	QueuedCount     int32 `json:"queuedCount"`
-	ScheduledCount  int32 `json:"scheduledCount"`
-}
-
-type LSIFJob struct {
-	ID                   string           `json:"id"`
-	Type                 string           `json:"type"`
-	Argumentss           *json.RawMessage `json:"arguments"`
-	State                string           `json:"state"`
-	Failure              *LSIFJobFailure  `json:"failure"`
-	QueuedAt             time.Time        `json:"queuedAt"`
-	StartedAt            *time.Time       `json:"startedAt"`
-	CompletedOrErroredAt *time.Time       `json:"completedOrErroredAt"`
-}
-
-type LSIFJobFailure struct {
-	Summary     string   `json:"summary"`
-	Stacktraces []string `json:"stacktraces"`
+type LSIFLocation struct {
+	RepositoryID api.RepoID `json:"repositoryId"`
+	Commit       string     `json:"commit"`
+	Path         string     `json:"path"`
+	Range        lsp.Range  `json:"range"`
 }

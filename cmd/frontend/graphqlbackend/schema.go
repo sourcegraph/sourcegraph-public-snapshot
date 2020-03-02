@@ -39,34 +39,51 @@ type Mutation {
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
-    # Preview the plan for a campaign, including its diff.
-    # The returned CampaignPlan can be referred to when creating the campaign.
-    # It is cached with a short TTL.
-    # The campaign plan is computed asynchronously.
-    # Check its status property and query it by its id to see its latest state.
-    previewCampaignPlan(
-        specification: CampaignPlanSpecification!
-        # Whether to wait to finish computing the plan before returning.
-        # If false, callers must poll the CampaignPlan using its node ID to track progress and get results.
-        # If the plan is not ready within an interval that would result in request timeouts,
-        # the query will return anyway, so the caller must check the result's CampaignPlan.status.
-        wait: Boolean = false
+    # Create a campaign plan from patches (in unified diff format) that are computed by the caller.
+    #
+    # To create the campaign, call createCampaign with the returned CampaignPlan.id in the
+    # CreateCampaignInput.plan field.
+    createCampaignPlanFromPatches(
+        # A list of patches (diffs) to apply to repositories (in new branches) when a campaign is
+        # created from this campaign plan.
+        patches: [CampaignPlanPatch!]!
     ): CampaignPlan!
-    # Cancel a campaign plan that is being generated.
-    # Cancellation expresses a desinterest in the campaign plan and is best-effort.
-    # It may not be relied upon.
-    # The return of this mutation does not mean the plan was fully cancelled yet,
-    # only that the desinterest in the campaign plan was acknowledged.
-    # This mutation is idempotent and a noop if called for a completed campaign plan.
-    # There is no requirement to call this mutation, it is a performance optimization.
-    cancelCampaignPlan(plan: ID!): EmptyResponse
     # Updates a campaign.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Retries creating changesets of the campaign plan that could not be successfully created on the code host.
     # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.
     retryCampaign(campaign: ID!): Campaign!
     # Deletes a campaign.
-    deleteCampaign(campaign: ID!): EmptyResponse
+    deleteCampaign(
+        campaign: ID!
+        # Whether to close the changesets associated with this campaign on their
+        # respective codehosts, where "close" means the appropriate final state
+        # on the codehost (e.g. "declined" on Bitbucket Server).
+        closeChangesets: Boolean = false
+    ): EmptyResponse
+    # Closes a campaign.
+    # Closing a campaign sets the Campaign's ClosedAt timestamp to the current
+    # time and, if closeChangesets = true, closes associated changesets on the
+    # codehosts.
+    closeCampaign(
+        campaign: ID!
+        # Whether to close the changesets associated with this campaign on their
+        # respective codehosts, where "close" means the appropriate final state
+        # on the codehost (e.g. "declined" on Bitbucket Server).
+        closeChangesets: Boolean = false
+    ): Campaign!
+    # Publishes the Campaign by turning its changesetPlans into changesets on
+    # the codehosts.
+    # The Campaign.draft field will be set to false and Campaign.status will
+    # update according to the progress of turning the changesetPlans into
+    # changesets.
+    publishCampaign(campaign: ID!): Campaign!
+    # Creates an ExternalChangeset on the codehost asynchronously.
+    # The ChangesetPlan has to belong to a CampaignPlan that has been attached
+    # to a Campaign. Otherwise an error is returned.
+    # Since this is an asynchronous operation, the Campaign.status field can be
+    # used to keep track of progress.
+    publishChangeset(changesetPlan: ID!): EmptyResponse!
 
     # Updates the user profile information for the user with the given ID.
     #
@@ -98,15 +115,6 @@ type Mutation {
     # Only site admins may perform this mutation.
     setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
         @deprecated(reason: "update external service exclude setting.")
-    # DEPRECATED: All repositories are accessible or deleted. To prevent a
-    # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration.
-    #
-    # Enables or disables all site repositories.
-    #
-    # Only site admins may perform this mutation.
-    setAllRepositoriesEnabled(enabled: Boolean!): EmptyResponse
-        @deprecated(reason: "update external service exclude setting.")
     # Tests the connection to a mirror repository's original source repository. This is an
     # expensive and slow operation, so it should only be used for interactive diagnostics.
     #
@@ -135,19 +143,6 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
-    # DEPRECATED: All repositories are accessible or deleted. To prevent a
-    # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration. It will be deleted. This mutation will be removed in 3.6.
-    #
-    # Deletes a repository and all data associated with it, irreversibly.
-    #
-    # If the repository was added because it was present in the site configuration (directly,
-    # or because it originated from a configured code host), then it will be re-added during
-    # the next sync. If you intend to make the repository inaccessible to users and not searchable,
-    # use setRepositoryEnabled to disable the repository instead of deleteRepository.
-    #
-    # Only site admins may perform this mutation.
-    deleteRepository(repository: ID!): EmptyResponse @deprecated(reason: "update external service exclude setting.")
     # Creates a new user account.
     #
     # Only site admins may perform this mutation.
@@ -367,9 +362,6 @@ type Mutation {
     requestTrial(email: String!): EmptyResponse
     # Manages the extension registry.
     extensionRegistry: ExtensionRegistryMutation!
-    # Clears the management console plaintext password forever. Only site
-    # admins can perform this action.
-    clearManagementConsolePlaintextPassword: EmptyResponse
     # Mutations that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
@@ -396,24 +388,37 @@ type Mutation {
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
 
-    # Deletes an LSIF dump.
-    deleteLSIFDump(id: ID!): EmptyResponse
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # Deletes an LSIF upload.
+    deleteLSIFUpload(id: ID!): EmptyResponse
 
-    # Deletes an LSIF job.
-    deleteLSIFJob(id: ID!): EmptyResponse
+    # Set permissions of a repository with a full set of users by their usernames or emails.
+    setRepositoryPermissionsForUsers(
+        # The repository that the mutation is applied to.
+        repository: ID!
+        # A list of usernames or email addresses according to site configuration.
+        bindIDs: [String!]!
+        # The level of repository permission.
+        perm: RepositoryPermission = READ
+    ): EmptyResponse!
 }
 
-# The specification of what changesets Sourcegraph will open when the campaign is created.
-input CampaignPlanSpecification {
-    # A known campaign type.
-    # Currently only "comby" is supported.
-    type: String!
+# A patch to apply to a repository (in a new branch) when a campaign is created from the parent
+# campaign plan.
+input CampaignPlanPatch {
+    # The repository that this patch is applied to.
+    repository: ID!
 
-    # JSONC string that configures the changes that Sourcegraph will open changesets for when the campaign is created.
+    # The base revision in the repository that this patch is applied to.
+    baseRevision: String!
+
+    # The patch (in unified diff format) to apply.
     #
-    # Schema for comby:
-    # { scopeQuery: string, matchTemplate: string, rewriteTemplate: string }
-    arguments: JSONCString!
+    # The filenames must not be prefixed (e.g., with 'a/' and 'b/'). Tip: use 'git diff --no-prefix'
+    # to omit the prefix.
+    patch: String!
 }
 
 # Input arguments for creating a campaign.
@@ -427,14 +432,24 @@ input CreateCampaignInput {
     # The description of the campaign as Markdown.
     description: String!
 
+    # The name of the branch that will be created for each changeset on the codehost if the plan attribute is specified.
+    # If a branch with the given name already exists a fallback name will be created by adding a count to the end of the branch name until the name doesn't exist. Example: "my-branch-name" becomes "my-branch-name-1".
+    # This is required if the plan attribute is specified.
+    branch: String
+
     # An optional reference to a completed campaign plan that was previewed before this mutation.
     # If null, existing changesets can be added manually.
     # If set, no changesets can be added manually, they will be created by Sourcegraph
     # after creating the campaign according to the precomputed campaign plan.
-    # Will error if the plan has been purged already and needs to be recomputed by another call to previewCampaignPlan.
+    # Will error if the plan has been purged already and needs to be recreated.
     # Will error if the plan is not completed yet.
     # Using a campaign plan for a campaign will retain it for the lifetime of the campaign and prevents it from being purged.
     plan: ID
+
+    # Whether or not to create the Campaign in draft mode. Default is false.
+    # When a Campaign is created in draft mode, its changesetPlans are not
+    # created on the codehost, but only when publishing the Campaign.
+    draft: Boolean
 }
 
 # Input arguments for updating a campaign.
@@ -445,27 +460,39 @@ input UpdateCampaignInput {
     # The updated name of the campaign (if non-null).
     name: String
 
+    # The branch name. This is not allowed if the campaign or any individual changesets have already been published.
+    branch: String
+
     # The updated description of the campaign as Markdown (if non-null).
     description: String
+
+    # An optional reference to a completed CampaignPlan that was previewed
+    # before updating the Campaign.
+    # If set, the Campaign's changesets will be updated to the Changesets of the given CampaignPlan.
+    # The Campaign's status will be updated accordingly while possibly
+    # new ExternalChangesets are created/updated/closed on the codehosts.
+    plan: ID
 }
 
 # A preview of changes that will be applied by a campaign.
-# It is chached and addressable by its ID for a limited amount of time.
+# It is cached and addressable by its ID for a limited amount of time.
 type CampaignPlan implements Node {
     # The unique ID of this campaign plan.
     id: ID!
 
-    # The campaign type.
-    type: String!
-
-    # The JSONC string that configures how Sourcegraph generates the diff and changesets.
-    arguments: JSONCString!
-
     # The progress status of generating changesets.
     status: BackgroundProcessStatus!
 
-    # The changesets that will be created by the campaign.
+    # DEPRECATED
+    # The proposed patches ("plans") for the changesets that will be created by the campaign.
     changesets(first: Int): ChangesetPlanConnection!
+        @deprecated(reason: "This field will be removed in 3.15. Please use changesetPlans instead.")
+
+    # The proposed patches ("plans") for the changesets that will be created by the campaign.
+    changesetPlans(first: Int): ChangesetPlanConnection!
+
+    # The URL where the plan can be previewed and a campaign can be created from it.
+    previewURL: String!
 }
 
 # A paginated list of repository diffs committed to git.
@@ -488,6 +515,8 @@ enum BackgroundProcessState {
     ERRORED
     # The background process completed processing all items successfully.
     COMPLETED
+    # The background process was canceled.
+    CANCELED
 }
 
 # Reusable type to report progress of a background process.
@@ -514,8 +543,9 @@ type Campaign implements Node {
     # If null, changesets are added to the campaign manually.
     plan: CampaignPlan
 
-    # The current status of creating the campaigns changesets on the code host.
-    changesetCreationStatus: BackgroundProcessStatus
+    # The current status of creating or updating the campaigns changesets on
+    # the code host.
+    status: BackgroundProcessStatus!
 
     # The namespace where this campaign is defined.
     namespace: Namespace!
@@ -526,8 +556,14 @@ type Campaign implements Node {
     # The description as Markdown.
     description: String!
 
+    # The branch of the changesets created by a campaign plan.
+    branch: String
+
     # The user who authored the campaign.
     author: User!
+
+    # Whether the current user can edit or delete this campaign.
+    viewerCanAdminister: Boolean!
 
     # The URL to this campaign.
     url: String!
@@ -553,6 +589,25 @@ type Campaign implements Node {
         # Defaults to now.
         to: DateTime
     ): [ChangesetCounts!]!
+
+    # The date and time when the campaign was closed.
+    closedAt: DateTime
+
+    # The date and time when the Campaign changed from draft mode to published.
+    # If the Campaign has not been published yet (is still in draft mode) this
+    # is null.
+    # If the Campaign was never in draft mode the value is the same as createdAt.
+    publishedAt: DateTime
+
+    # The changesets that will be created on the code host when publishing the
+    # Campaign.
+    # If the Campaign is a "manual" campaign and doesn't have a CampaignPlan
+    # attached, there won't be any nodes returned by this connection
+    # When publishing a Campaign, the number of nodes in changesets will
+    # increase with each decrease in changesetPlans. The Completed count in the
+    # Campaign.status increments with every ChangesetPlan turned into an
+    # ExternalChangeset.
+    changesetPlans(first: Int): ChangesetPlanConnection!
 }
 
 # The counts of changesets in certain states at a specific point in time.
@@ -592,6 +647,7 @@ enum ChangesetState {
     OPEN
     CLOSED
     MERGED
+    DELETED
 }
 
 # The state of a Changeset Review
@@ -599,6 +655,13 @@ enum ChangesetReviewState {
     APPROVED
     CHANGES_REQUESTED
     PENDING
+}
+
+# The state of continuous integration checks on a changeset
+enum ChangesetCheckState {
+    PENDING
+    PASSED
+    FAILED
 }
 
 # The input to the createChangesets mutation.
@@ -612,11 +675,34 @@ input CreateChangesetInput {
 
 # Preview of a changeset planned to be created.
 type ChangesetPlan {
+    # The id of the changeset plan.
+    id: ID!
+
     # The repository changed by the changeset.
     repository: Repository!
 
     # The diff of the changeset.
     diff: PreviewRepositoryComparison!
+
+    # Whether the ChangesetPlan is enqueued for publication. Default is false.
+    # It will be true when:
+    # - a Campaign has been created with the CampaignPlan to which this
+    # ChangesetPlan belongs
+    # - when a Campaign with the CampaignPlan has been published after being in
+    # draft mode
+    # - when the ChangesetPlan has been individually published through the
+    # publishChangeset mutation
+    publicationEnqueued: Boolean!
+}
+
+# A label attached to a changeset on a codehost, mirrored
+type ChangesetLabel {
+    # The labels text
+    text: String!
+    # Label color, defined in hex without the #. E.g., 93ba13
+    color: String!
+    # Optional descriptive text to support the understandability of the labels meaning
+    description: String
 }
 
 # A changeset in a code host (e.g. a PR on Github)
@@ -624,11 +710,15 @@ type ExternalChangeset implements Node {
     # The unique ID for the changeset.
     id: ID!
 
+    # The external ID that uniquely identifies this ExternalChangeset on the
+    # codehost. For example, on GitHub this is the PR number.
+    externalID: String!
+
     # The repository changed by this changeset.
     repository: Repository!
 
     # The campaigns that have this changeset in them.
-    campaigns(first: Int): CampaignConnection!
+    campaigns(first: Int, state: CampaignState): CampaignConnection!
 
     # The events belonging to this changeset.
     events(first: Int): ChangesetEventConnection!
@@ -648,6 +738,9 @@ type ExternalChangeset implements Node {
     # The state of the changeset
     state: ChangesetState!
 
+    # The labels attached to the changeset on the code host.
+    labels: [ChangesetLabel!]!
+
     # The external URL of the changeset on the code host.
     externalURL: ExternalLink!
 
@@ -663,6 +756,10 @@ type ExternalChangeset implements Node {
     # The diff of this changeset.
     # Only returned if the changeset has not been merged or closed.
     diff: RepositoryComparison
+
+    # The state of the continuous integration checks on this changeset.
+    # It can be null if no checks have been configured.
+    checkState: ChangesetCheckState
 }
 
 # A list of changesets.
@@ -902,6 +999,7 @@ input MarkdownOptions {
 enum EventSource {
     WEB
     CODEHOSTINTEGRATION
+    BACKEND
 }
 
 # Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user
@@ -1031,6 +1129,12 @@ input SurveySubmissionInput {
     better: String
 }
 
+# The state of the campaign
+enum CampaignState {
+    OPEN
+    CLOSED
+}
+
 # A query.
 type Query {
     # The root of the query.
@@ -1042,6 +1146,7 @@ type Query {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        state: CampaignState
     ): CampaignConnection!
 
     # Looks up a repository by either name or cloneURL.
@@ -1049,12 +1154,24 @@ type Query {
         # Query the repository by name, for example "github.com/gorilla/mux".
         name: String
         # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
-        # by checking if there exists a code host configuration that matches the clone URL.
+        # by checking for a code host configuration that matches the clone URL.
         # Will not actually check the code host to see if the repository actually exists.
         cloneURL: String
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
+    # Looks up a repository by either name or cloneURL. When the repository does not exist on the server
+    # and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
+    # an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
+    # null.
+    repositoryRedirect(
+        # Query the repository by name, for example "github.com/gorilla/mux".
+        name: String
+        # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
+        # by checking for a code host configuration that matches the clone URL.
+        # Will not actually check the code host to see if the repository actually exists.
+        cloneURL: String
+    ): RepositoryRedirect
     # Lists all external services.
     externalServices(
         # Returns the first n external services from the list.
@@ -1068,14 +1185,6 @@ type Query {
         query: String
         # Return repositories whose names are in the list.
         names: [String!]
-        # Include enabled repositories.
-        #
-        # DEPRECATED: All repositories are enabled. Will be removed in 3.6.
-        enabled: Boolean = true
-        # Include disabled repositories.
-        #
-        # DEPRECATED: No repositories are disabled. Will be removed in 3.6.
-        disabled: Boolean = false
         # Include cloned repositories.
         cloned: Boolean = true
         # Include repositories that are currently being cloned.
@@ -1238,30 +1347,26 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
-    # Retrieve counts of jobs by state in the LSIF work queue.
-    lsifJobStats: LSIFJobStats!
-
-    # Search for LSIF jobs by state and query term.
-    lsifJobs(
-        # The state of returned jobs.
-        state: LSIFJobState!
-
-        # An (optional) search query that searches over the job name, failure
-        # properties (reason and stacktrace) and the job's arguments.
-        query: String
-
-        # When specified, indicates that this request should be paginated and
-        # the first N results (relative to the cursor) should be returned. i.e.
-        # how many results to return per page. It must be in the range of 0-5000.
-        first: Int
-
-        # When specified, indicates that this request should be paginated and
-        # to fetch results starting at this cursor.
-        #
-        # A future request can be made for more results by passing in the
-        # 'LSIFJobConnection.pageInfo.endCursor' that is returned.
+    # The repositories a user is authorized to access with the given permission.
+    # This isn’t defined in the User type because we store permissions for users
+    # that don’t yet exist (i.e. late binding). Only one of "username" or "email"
+    # is required to identify a user.
+    authorizedUserRepositories(
+        # The username.
+        username: String
+        # One of the email addresses.
+        email: String
+        # Permission that the user has on the repositories.
+        perm: RepositoryPermission = READ
+        # Number of repositories to return after the given cursor.
+        first: Int!
+        # Opaque pagination cursor.
         after: String
-    ): LSIFJobConnection!
+    ): RepositoryConnection!
+
+    # Returns a list of usernames or emails that have associated pending permissions.
+    # The returned list can be used to query authorizedUserRepositories for pending permissions.
+    usersWithPendingPermissions: [String!]!
 }
 
 # The version of the search syntax.
@@ -1383,18 +1488,39 @@ type SearchResults {
     sparkline: [Int!]!
     # Repositories that were eligible to be searched.
     repositories: [Repository!]!
+    # The number of repositories that were eligible to be searched (for clients
+    # that just wish to know how many without querying the, sometimes extremely
+    # large, list).
+    repositoriesCount: Int!
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
     # because a timeout or error occurred while performing the search, or because the result limit was already
     # reached.
+    #
+    # In paginated search requests, this represents the set of repositories searched for the
+    # individual paginated request / input cursor and not the global set of repositories that
+    # would be searched if further requests were made.
     repositoriesSearched: [Repository!]!
     # Indexed repositories searched. This is a subset of repositoriesSearched.
     indexedRepositoriesSearched: [Repository!]!
     # Repositories that are busy cloning onto gitserver.
+    #
+    # In paginated search requests, some repositories may be cloning. These are reported here
+    # and you may choose to retry the paginated request with the same cursor after they have
+    # cloned OR you may simply continue making further paginated requests and choose to skip
+    # the cloning repositories.
     cloning: [Repository!]!
     # Repositories or commits that do not exist.
+    #
+    # In paginated search requests, some repositories may be missing (e.g. if Sourcegraph is
+    # aware of them but is temporarily unable to serve them). These are reported here and you
+    # may choose to retry the paginated request with the same cursor and they may no longer be
+    # missing OR you may simply continue making further paginated requests and choose to skip
+    # the missing repositories.
     missing: [Repository!]!
     # Repositories or commits which we did not manage to search in time. Trying
     # again usually will work.
+    #
+    # In paginated search requests, this field is not relevant.
     timedout: [Repository!]!
     # True if indexed search is enabled but was not available during this search.
     indexUnavailable: Boolean!
@@ -1416,6 +1542,11 @@ type SearchResultsStats {
     approximateResultCount: String!
     # The sparkline.
     sparkline: [Int!]!
+
+    # Statistics about the languages represented in the search results.
+    #
+    # Known issue: The LanguageStatistics.totalBytes field values are incorrect in the result.
+    languages: [LanguageStatistics!]!
 }
 
 # A search filter.
@@ -1644,13 +1775,6 @@ type Repository implements Node & GenericSearchResultInterface {
     description: String!
     # The primary programming language in the repository.
     language: String!
-    # DEPRECATED: All repositories are enabled. This field will be removed in 3.6.
-    #
-    # Whether the repository is enabled. A disabled repository should only be accessible to site admins.
-    #
-    # NOTE: Disabling a repository does not provide any additional security. This field is merely a
-    # guideline to UI implementations.
-    enabled: Boolean! @deprecated(reason: "Always true. All repositories are enabled.")
     # DEPRECATED: This field is unused in known clients.
     #
     # The date when this repository was created on Sourcegraph.
@@ -1749,7 +1873,7 @@ type Repository implements Node & GenericSearchResultInterface {
         first: Int
     ): RepositoryContributorConnection!
     # Link to another Sourcegraph instance location where this repository is located.
-    redirectURL: String
+    redirectURL: String @deprecated(reason: "use repositoryRedirect query instead")
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
     # Base64 data uri to an icon.
@@ -1761,12 +1885,18 @@ type Repository implements Node & GenericSearchResultInterface {
     # The result previews of the result.
     matches: [SearchResultMatch!]!
 
-    # The repository's LSIF dumps.
-    lsifDumps(
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifUploads(
         # An (optional) search query that searches over the commit and root properties.
         query: String
 
-        # When specified, shows only dumps that are latest for the given repository.
+        # The state of returned uploads.
+        state: LSIFUploadState
+
+        # When specified, shows only uploads that are latest for the given repository.
         isLatestForRepo: Boolean
 
         # When specified, indicates that this request should be paginated and
@@ -1778,10 +1908,31 @@ type Repository implements Node & GenericSearchResultInterface {
         # to fetch results starting at this cursor.
         #
         # A future request can be made for more results by passing in the
-        # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
+        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         after: String
-    ): LSIFDumpConnection!
+    ): LSIFUploadConnection!
+
+    # A list of authorized users to access this repository with the given permission.
+    # This API currently only returns permissions from the Sourcegraph provider, i.e.
+    # "permissions.userMapping" in site configuration.
+    authorizedUsers(
+        # Permission that the user has on this repository.
+        perm: RepositoryPermission = READ
+        # Number of users to return after the given cursor.
+        first: Int!
+        # Opaque pagination cursor.
+        after: String
+    ): UserConnection!
 }
+
+# A reference to another Sourcegraph instance.
+type Redirect {
+    # The URL of the other Sourcegraph instance.
+    url: String!
+}
+
+# A repository or a link to another Sourcegraph instance location where this repository may be located.
+union RepositoryRedirect = Repository | Redirect
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
 type ExternalLink {
@@ -2303,14 +2454,16 @@ type GitCommitConnection {
     pageInfo: PageInfo!
 }
 
-# Statistics about a specific language
+# Statistics about a language's usage.
 type LanguageStatistics {
-    # The name of the programming language
-    Name: String!
-    # The total bytes of the language
-    TotalBytes: Float!
-    # The total lines of the language
-    TotalLines: Int!
+    # The name of the language.
+    name: String!
+
+    # The total bytes in the language.
+    totalBytes: Float!
+
+    # The total number of lines in the language.
+    totalLines: Int!
 }
 
 # A Git commit.
@@ -2369,6 +2522,8 @@ type GitCommit implements Node {
         query: String
         # Return commits that affect the path.
         path: String
+        # Return commits more recent than the specified date.
+        after: String
     ): GitCommitConnection!
     # Returns the number of commits that this commit is behind and ahead of revspec.
     behindAhead(revspec: String!): BehindAheadCounts!
@@ -2552,7 +2707,15 @@ interface File2 {
     # The URLs to this file on external services.
     externalURLs: [ExternalLink!]!
     # Highlight the file.
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        # If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        # 2000 bytes is enabled. This may produce a significant amount of HTML
+        # which some browsers (such as Chrome, but not Firefox) may have trouble
+        # rendering efficiently.
+        highlightLongLines: Boolean = false
+    ): HighlightedFile!
 }
 
 # File is temporarily preserved for backcompat with browser extension search API client code.
@@ -2599,7 +2762,7 @@ type GitBlob implements TreeEntry & File2 {
     # Blame the blob.
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Highlight the blob contents.
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!, highlightLongLines: Boolean = false): HighlightedFile!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # Symbols defined in this blob.
@@ -2618,6 +2781,65 @@ type GitBlob implements TreeEntry & File2 {
         # Recurse into sub-trees of single-child directories
         recursiveSingleChild: Boolean = false
     ): Boolean!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
+    # intelligence queries for this path-at-revision, this resolves to null.
+    lsif: LSIFQueryResolver
+}
+
+# A wrapper object around LSIF query methods for a particular path-at-revision. When this node is
+# null, no LSIF data is available for containing git blob.
+type LSIFQueryResolver {
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # A list of definitions of the symbol under the given document position.
+    definitions(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        character: Int!
+    ): LocationConnection
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # A list of references of the symbol under the given document position.
+    references(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        character: Int!
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LocationConnection.pageInfo.endCursor' that is returned.
+        after: String
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page.
+        first: Int
+    ): LocationConnection
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The hover result of the symbol under the given document position.
+    hover(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        character: Int!
+    ): Hover
 }
 
 # A highlighted file.
@@ -2638,6 +2860,9 @@ type FileMatch {
     file: GitBlob!
     # The repository containing the file match.
     repository: Repository!
+    # The revspec of the revision that contains this match. If no revspec was given (such as when no
+    # repository filter or revspec is specified in the search query), it is null.
+    revSpec: GitRevSpec
     # The resource.
     resource: String! @deprecated(reason: "use the file field instead")
     # The symbols found in this file that match the query.
@@ -2730,6 +2955,8 @@ type User implements Node & SettingsSubject & Namespace {
     #
     # Only the user and site admins can access this field.
     siteAdmin: Boolean!
+    # Whether the user account uses built in auth.
+    builtinAuth: Boolean!
     # The latest settings for the user.
     #
     # Only the user and site admins can access this field.
@@ -3389,27 +3616,25 @@ type Site implements SettingsSubject {
     productSubscription: ProductSubscriptionStatus!
     # Usage statistics for this site.
     usageStatistics(
-        # Days of history.
+        # Days of history (based on current UTC time).
         days: Int
-        # Weeks of history.
+        # Weeks of history (based on current UTC time).
         weeks: Int
-        # Months of history.
+        # Months of history (based on current UTC time).
         months: Int
     ): SiteUsageStatistics!
-    # Information about this site's management console.
-    #
-    # Only site admins may retrieve this information.
-    managementConsoleState: ManagementConsoleState!
-}
-
-# Information about this site's management console.
-#
-# Only site admins may retrieve this information.
-type ManagementConsoleState {
-    # The plaintext password of the management console, which is automatically
-    # generated. This can only be retrieved until the admin clears it, after
-    # which it is impossible to retrieve.
-    plaintextPassword: String
+    # (experimental) The extended usage statistics API may change substantially in the near
+    # future as we continue to adjust it for our use cases. Changes will not be documented
+    # in the CHANGELOG during this time.
+    # Usage statistics of code intelligence features.
+    codeIntelUsageStatistics(
+        # Days of history (based on current UTC time).
+        days: Int
+        # Weeks of history (based on current UTC time).
+        weeks: Int
+        # Months of history (based on current UTC time).
+        months: Int
+    ): CodeIntelUsageStatistics!
 }
 
 # The configuration for a site.
@@ -3644,6 +3869,62 @@ type SiteUsageStages {
     secure: Int!
     # The number of users using automation stage features.
     automate: Int!
+}
+
+# A site's aggregate usage statistics of code intel features.
+#
+# This information is visible to all viewers.
+type CodeIntelUsageStatistics {
+    # Recent daily code intel usage statistics.
+    daily: [CodeIntelUsagePeriod!]!
+    # Recent weekly code intel usage statistics.
+    weekly: [CodeIntelUsagePeriod!]!
+    # Recent monthly code intel usage statistics.
+    monthly: [CodeIntelUsagePeriod!]!
+}
+
+# Usage statistics of code intel features in a given timespan.
+#
+# This information is visible to all viewers.
+type CodeIntelUsagePeriod {
+    # The time when this started.
+    startTime: DateTime!
+    # Recent hover statistics.
+    hover: CodeIntelEventCategoryStatistics!
+    # Recent definitions statistics.
+    definitions: CodeIntelEventCategoryStatistics!
+    # Recent references statistics.
+    references: CodeIntelEventCategoryStatistics!
+}
+
+# Statistics about aparticular family of code intel features in a given timestan.
+type CodeIntelEventCategoryStatistics {
+    # Recent LSIF-based code intel event statistics.
+    lsif: CodeIntelEventStatistics!
+    # Recent LSP-based code intel event statistics.
+    lsp: CodeIntelEventStatistics!
+    # Recent search-based code intel event statistics.
+    search: CodeIntelEventStatistics!
+}
+
+# Statistics about a particular code intel feature in a given timespan.
+type CodeIntelEventStatistics {
+    # The number of unique users that performed this event in this timespan.
+    usersCount: Int!
+    # The total number of events in this timespan.
+    eventsCount: Int!
+    # Latency percentiles of all events in this timespan.
+    eventLatencies: CodeIntelEventLatencies!
+}
+
+# A collection of event latencies for a particular event in a given timespan.
+type CodeIntelEventLatencies {
+    # The 50th percentile latency in this timespan.
+    p50: Float!
+    # The 90th percentile latency in this timespan.
+    p90: Float!
+    # The 99th percentile latency in this timespan.
+    p99: Float!
 }
 
 # A deployment configuration.
@@ -3928,119 +4209,93 @@ type RegistryExtensionConnection {
     error: String
 }
 
-# Metadata about an LSIF upload.
-type LSIFDump implements Node {
-    # An opaque GraphQL ID representing this LSIF dump.
-    id: ID!
-
-    # The project for which this dump provides code intelligence.
-    projectRoot: GitTree!
-
-    # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
-    # will return symbols from remote repositories only when this property is true. This property is updated
-    # asynchronously and is eventually consistent with the git data known by the Sourcegraph instance.
-    isLatestForRepo: Boolean!
-
-    # The time the dump was uploaded.
-    uploadedAt: DateTime!
-
-    # The time the dump became available for use.
-    processedAt: DateTime!
-}
-
-# A list of LSIF dumps.
-type LSIFDumpConnection {
-    # A list of LSIF dumps.
-    nodes: [LSIFDump!]!
-
-    # The total number of dumps for this repository.
-    totalCount: Int!
+# A list of locations within a file.
+type LocationConnection {
+    # A list of locations within a file.
+    nodes: [Location!]!
 
     # Pagination information.
     pageInfo: PageInfo!
 }
 
-# The state an LSIF job can be in.
-enum LSIFJobState {
-    # The LSIF worker is processing this job.
+# Hover range and markdown content.
+type Hover {
+    # A markdown string containing the contents of the hover.
+    markdown: Markdown!
+
+    # The range to highlight.
+    range: Range!
+}
+
+# The state an LSIF upload can be in.
+enum LSIFUploadState {
+    # The LSIF worker is processing this upload.
     PROCESSING
 
-    # The LSIF worker failed to process this job.
+    # The LSIF worker failed to process this upload.
     ERRORED
 
-    # The LSIF worker processed this job successfully.
+    # The LSIF worker processed this upload successfully.
     COMPLETED
 
-    # This job is queued to be processed later.
+    # This upload is queued to be processed later.
     QUEUED
-
-    # This job is scheduled to be queued at a specific time.
-    SCHEDULED
 }
 
-# Counts of LISF jobs by state.
-type LSIFJobStats implements Node {
-    # An opaque GraphQL ID.
-    id: ID!
-
-    # How many jobs are currently being processed.
-    processingCount: Int!
-
-    # How many jobs have errored.
-    erroredCount: Int!
-
-    # How many jobs have completed.
-    completedCount: Int!
-
-    # How many jobs are queued.
-    queuedCount: Int!
-
-    # How many jobs are scheduled.
-    scheduledCount: Int!
-}
-
-# Metadata and status about an LSIF job.
-type LSIFJob implements Node {
+# Metadata and status about an LSIF upload.
+type LSIFUpload implements Node {
     # The ID.
     id: ID!
 
-    # The job type.
-    type: String!
+    # The project for which this upload provides code intelligence.
+    projectRoot: GitTree
 
-    # The job's arguments.
-    arguments: JSONValue!
+    # The original 40-character commit commit supplied at upload time.
+    inputCommit: String!
 
-    # The job's current state.
-    state: LSIFJobState!
+    # The original root supplied at upload time.
+    inputRoot: String!
 
-    # Metadata about a job's failure (not set if state is not ERRORED).
-    failure: LSIFJobFailureReason
+    # The original indexer name supplied at upload time.
+    inputIndexer: String!
 
-    # The time the job was queued.
-    queuedAt: DateTime!
+    # The upload's current state.
+    state: LSIFUploadState!
 
-    # The time the job was processed.
+    # The time the upload was uploaded.
+    uploadedAt: DateTime!
+
+    # The time the upload was processed.
     startedAt: DateTime
 
-    # The time the job compelted or errored.
-    completedOrErroredAt: DateTime
+    # The time the upload compelted or errored.
+    finishedAt: DateTime
+
+    # Metadata about a upload's failure (not set if state is not ERRORED).
+    failure: LSIFUploadFailureReason
+
+    # Whether or not this upload provides intelligence for the tip of the default branch. Find reference
+    # queries will return symbols from remote repositories only when this property is true. This property
+    # is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
+    # instance.
+    isLatestForRepo: Boolean!
 }
 
-# Metadata about a LSIF job failure.
-type LSIFJobFailureReason {
+# Metadata about a LSIF upload failure.
+type LSIFUploadFailureReason {
     # A summary of the failure.
     summary: String!
 
-    # The stacktrace from each failed attempt of the job.
-    stacktraces: [String!]!
+    # The stacktrace of the failure.
+    stacktrace: String!
 }
 
-# A list of LSIF jobs.
-type LSIFJobConnection {
-    # A list of LSIF jobs.
-    nodes: [LSIFJob!]!
+# A list of LSIF uploads.
+type LSIFUploadConnection {
+    # A list of LSIF uploads.
+    nodes: [LSIFUpload!]!
 
-    # The total number of jobs in this result set.
+    # The total number of uploads in this result set.
     totalCount: Int
 
     # Pagination information.
@@ -4160,6 +4415,8 @@ type DotcomQuery {
         #
         # Only Sourcegraph.com site admins may perform this query with account == null.
         account: ID
+        # Returns product subscriptions from users with usernames or email addresses that match the query.
+        query: String
     ): ProductSubscriptionConnection!
     # The invoice that would be generated for a new or updated subscription. This is used to show
     # users a preview of the credits, debits, and other billing information before creating or
@@ -4436,4 +4693,9 @@ union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use
 # Date#toISOString.
 scalar DateTime
+
+# Different repository permission levels.
+enum RepositoryPermission {
+    READ
+}
 `

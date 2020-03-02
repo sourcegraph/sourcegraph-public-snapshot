@@ -79,4 +79,41 @@ describe('CampaignBurndownChart', () => {
                 .toJSON()
         ).toMatchSnapshot()
     })
+    test('renders an alert when no datapoints are in a set of more than 1 day of data', () => {
+        const history = H.createMemoryHistory({ keyLength: 0 })
+        expect(
+            renderer
+                .create(
+                    <CampaignBurndownChart
+                        changesetCountsOverTime={[
+                            {
+                                __typename: 'ChangesetCounts',
+                                closed: 0,
+                                date: '2019-11-13T12:00:00Z',
+                                merged: 0,
+                                openApproved: 0,
+                                openChangesRequested: 0,
+                                openPending: 0,
+                                total: 0,
+                                open: 0,
+                            },
+                            {
+                                __typename: 'ChangesetCounts',
+                                closed: 0,
+                                date: '2019-11-14T12:00:00Z',
+                                merged: 0,
+                                openApproved: 0,
+                                openChangesRequested: 0,
+                                openPending: 0,
+                                total: 0,
+                                open: 0,
+                            },
+                        ]}
+                        history={history}
+                    />,
+                    { createNodeMock }
+                )
+                .toJSON()
+        ).toMatchSnapshot()
+    })
 })

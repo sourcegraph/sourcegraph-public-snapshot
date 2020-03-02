@@ -2,8 +2,6 @@ package repos
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -13,23 +11,15 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"gopkg.in/inconshreveable/log15.v2"
 )
-
-// NewPreSync takes in dependencies used by the Syncer and returns a function
-// that can then be set on the Syncer as a PreSync.
-type NewPreSync func(*sql.DB, Store, *httpcli.Factory) func(context.Context) error
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	Store   Store
 	Sourcer Sourcer
-
-	// PreSync is called before this Syncer's Sync method.
-	PreSync func(context.Context) error
 
 	// DisableStreaming if true will prevent the syncer from streaming in new
 	// sourced repositories into the store.
@@ -39,11 +29,11 @@ type Syncer struct {
 	// Sourcegraph.com
 	FailFullSync bool
 
-	// Synced is sent Repos that were synced by Sync (only if Synced is non-nil)
-	Synced chan Repos
+	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
+	Synced chan Diff
 
-	// SubsetSynced is sent Repos that were synced by SubsetSync (only if SubsetSynced is non-nil)
-	SubsetSynced chan Repos
+	// SubsetSynced is sent a collection of Repos that were synced by SubsetSync (only if SubsetSynced is non-nil)
+	SubsetSynced chan Diff
 
 	// Logger if non-nil is logged to.
 	Logger log15.Logger
@@ -109,12 +99,6 @@ func (s *Syncer) TriggerSync() {
 
 // Sync synchronizes the repositories.
 func (s *Syncer) Sync(ctx context.Context) (err error) {
-	if s.PreSync != nil {
-		if err := s.PreSync(ctx); err != nil && s.Logger != nil {
-			s.Logger.Error("PreSync", "error", err)
-		}
-	}
-
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.Sync", "")
@@ -163,7 +147,7 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 	}
 
 	if s.Synced != nil {
-		s.Synced <- diff.Repos()
+		s.Synced <- diff
 	}
 
 	return nil
@@ -235,7 +219,7 @@ func (s *Syncer) syncSubset(ctx context.Context, insertOnly bool, sourcedSubset 
 	}
 
 	if s.SubsetSynced != nil {
-		s.SubsetSynced <- diff.Repos()
+		s.SubsetSynced <- diff
 	}
 
 	return diff, nil
@@ -248,19 +232,16 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 	for _, repo := range diff.Deleted {
 		repo.UpdatedAt, repo.DeletedAt = now, now
 		repo.Sources = map[string]*SourceInfo{}
-		repo.Enabled = true
 		upserts = append(upserts, repo)
 	}
 
 	for _, repo := range diff.Modified {
 		repo.UpdatedAt, repo.DeletedAt = now, time.Time{}
-		repo.Enabled = true
 		upserts = append(upserts, repo)
 	}
 
 	for _, repo := range diff.Added {
 		repo.CreatedAt, repo.UpdatedAt, repo.DeletedAt = now, now, time.Time{}
-		repo.Enabled = true
 		upserts = append(upserts, repo)
 	}
 
@@ -313,9 +294,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
 	for _, r := range sourced {
-		if !r.ExternalRepo.IsSet() {
-			panic(fmt.Errorf("%s has no valid external repo spec: %s", r.Name, r.ExternalRepo))
-		} else if old := byID[r.ExternalRepo]; old != nil {
+		if old := byID[r.ExternalRepo]; old != nil {
 			merge(old, r)
 		} else {
 			byID[r.ExternalRepo] = r
@@ -341,19 +320,8 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
 	seenName := make(map[string]bool, len(stored))
 
-	// We are unsure if customer repositories can have ExternalRepo unset. We
-	// know it can be unset for Sourcegraph.com. As such, we want to fallback
-	// to associating stored repositories by name with the sourced
-	// repositories.
-	//
-	// We do not want a stored repository without an externalrepo to be set
-	sort.Stable(byExternalRepoSpecSet(stored))
-
 	for _, old := range stored {
 		src := byID[old.ExternalRepo]
-		if src == nil && old.ExternalRepo.ID == "" && !seenName[old.Name] {
-			src = byName[strings.ToLower(old.Name)]
-		}
 
 		if src == nil {
 			diff.Deleted = append(diff.Deleted, old)
@@ -498,19 +466,6 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 
 		tr.Finish()
 	}
-}
-
-type byExternalRepoSpecSet []*Repo
-
-func (rs byExternalRepoSpecSet) Len() int      { return len(rs) }
-func (rs byExternalRepoSpecSet) Swap(i, j int) { rs[i], rs[j] = rs[j], rs[i] }
-func (rs byExternalRepoSpecSet) Less(i, j int) bool {
-	iSet := rs[i].ExternalRepo.IsSet()
-	jSet := rs[j].ExternalRepo.IsSet()
-	if iSet == jSet {
-		return false
-	}
-	return iSet
 }
 
 type signal struct {

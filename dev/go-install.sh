@@ -5,7 +5,7 @@
 #
 # This will install binaries into the `.bin` directory under the repository root.
 
-all_oss_commands=" gitserver query-runner github-proxy management-console searcher replacer frontend repo-updater symbols "
+all_oss_commands=" gitserver query-runner github-proxy searcher replacer frontend repo-updater symbols "
 
 # handle options
 verbose=false
@@ -42,7 +42,6 @@ export GOBIN=$PWD/.bin
 export GO111MODULE=on
 
 INSTALL_GO_PKGS="github.com/mattn/goreman \
-github.com/sourcegraph/docsite/cmd/docsite \
 github.com/google/zoekt/cmd/zoekt-archive-index \
 github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
 github.com/google/zoekt/cmd/zoekt-webserver \

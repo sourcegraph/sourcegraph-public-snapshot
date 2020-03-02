@@ -55,7 +55,7 @@ export function search(
                             results {
                                 __typename
                                 limitHit
-                                resultCount
+                                matchCount
                                 approximateResultCount
                                 missing {
                                     name
@@ -63,6 +63,7 @@ export function search(
                                 cloning {
                                     name
                                 }
+                                repositoriesCount
                                 timedout {
                                     name
                                 }
@@ -92,6 +93,23 @@ export function search(
                                         repository {
                                             name
                                             url
+                                        }
+                                        revSpec {
+                                            __typename
+                                            ... on GitRef {
+                                                displayName
+                                                url
+                                            }
+                                            ... on GitRevSpecExpr {
+                                                expr
+                                                object { commit { url } }
+                                            }
+                                            ... on GitObject {
+                                                abbreviatedOID
+                                                commit {
+                                                    url
+                                                }
+                                            }
                                         }
                                         limitHit
                                         symbols {
@@ -134,29 +152,6 @@ export function search(
                 }),
                 catchError(error => [asError(error)])
             )
-        })
-    )
-}
-
-export function fetchSearchResultStats(query: string): Observable<GQL.ISearchResultsStats> {
-    return queryGraphQL(
-        gql`
-            query SearchResultsStats($query: String!) {
-                search(query: $query) {
-                    stats {
-                        approximateResultCount
-                        sparkline
-                    }
-                }
-            }
-        `,
-        { query }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.search || !data.search.stats) {
-                throw createAggregateError(errors)
-            }
-            return data.search.stats
         })
     )
 }

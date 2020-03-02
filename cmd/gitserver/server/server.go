@@ -39,7 +39,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -541,13 +540,19 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		var tr *trace.Trace
 		tr, ctx = trace.New(ctx, "exec."+cmd, string(req.Repo))
-		tr.LazyPrintf("args: %s", args)
+		tr.LogFields(
+			otlog.Object("args", args),
+			otlog.String("remote_url", req.URL),
+			otlog.String("ensure_revision", req.EnsureRevision),
+		)
+
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
 			tr.LogFields(
 				otlog.String("status", status),
 				otlog.Int64("stdout", stdoutN),
 				otlog.Int64("stderr", stderrN),
+				otlog.String("ensure_revision_status", ensureRevisionStatus),
 			)
 			tr.SetError(execErr)
 			tr.Finish()
@@ -586,7 +591,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				}
 
 				if honey.Enabled() {
-					ev.Send()
+					_ = ev.Send()
 				}
 				if traceLogs {
 					log15.Debug("TRACE gitserver exec", mapToLog15Ctx(ev.Fields())...)
@@ -607,7 +612,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	if cloneInProgress {
 		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
 		})
@@ -653,8 +658,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
-		if resolved, err := quickRevParseHead(dir); err == nil && git.IsAbsoluteRevision(resolved) {
-			w.Write([]byte(resolved))
+		if resolved, err := quickRevParseHead(dir); err == nil && isAbsoluteRevision(resolved) {
+			_, _ = w.Write([]byte(resolved))
 			w.Header().Set("X-Exec-Error", "")
 			w.Header().Set("X-Exec-Exit-Status", "0")
 			w.Header().Set("X-Exec-Stderr", "")
@@ -664,7 +669,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	var stderrBuf bytes.Buffer
 	stdoutW := &writeCounter{w: w}
-	stderrW := &writeCounter{w: &stderrBuf}
+	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
 
 	cmdStart = time.Now()
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
@@ -679,14 +684,12 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stderrN = stderrW.n
 
 	stderr := stderrBuf.String()
-	if len(stderr) > 1024 {
-		stderr = stderr[:1024]
-	}
+	checkMaybeCorruptRepo(req.Repo, dir, stderr)
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
-	w.Header().Set("X-Exec-Stderr", string(stderr))
+	w.Header().Set("X-Exec-Stderr", stderr)
 }
 
 // setGitAttributes writes our global gitattributes to
@@ -724,11 +727,12 @@ type cloneOptions struct {
 }
 
 // cloneRepo issues a git clone command for the given repo. It is
-// non-blocking.
+// non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, opts *cloneOptions) (string, error) {
 	if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return "This will never finish cloning", nil
 	}
+	redactor := newURLRedactor(url)
 
 	dir := s.dir(repo)
 
@@ -749,7 +753,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 	}
 	defer cancel()
 	if err := s.isCloneable(ctx, url); err != nil {
-		return "", fmt.Errorf("error cloning repo: repo %s (%s) not cloneable: %s", repo, url, err)
+		return "", fmt.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactor.redact(err.Error()))
 	}
 
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
@@ -803,12 +807,22 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		tmpPath = filepath.Join(tmpPath, ".git")
 		tmp := GitDir(tmpPath)
 
-		cmd := exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
+		var cmd *exec.Cmd
+		if useRefspecOverrides() {
+			cmd, err = refspecOverridesCloneCmd(ctx, url, tmpPath)
+			if err != nil {
+				return err
+			}
+		} else {
+			cmd = exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
+		}
+		// see issue #7322: skip LFS content in repositories with Git LFS configured
+		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
 
 		pr, pw := io.Pipe()
 		defer pw.Close()
-		go readCloneProgress(url, lock, pr)
+		go readCloneProgress(redactor, lock, pr)
 
 		if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
 			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
@@ -869,10 +883,9 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(url string, lock *RepositoryLock, pr io.Reader) {
+func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader) {
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
-	redactor := newURLRedactor(url)
 	for scan.Scan() {
 		progress := scan.Text()
 
@@ -905,11 +918,19 @@ func newURLRedactor(rawurl string) *urlRedactor {
 	var sensitive []string
 	parsedURL, _ := url.Parse(rawurl)
 	if parsedURL != nil {
-		if pw, _ := parsedURL.User.Password(); pw != "" {
+		pw, _ := parsedURL.User.Password()
+		u := parsedURL.User.Username()
+		if pw != "" && u != "" {
+			// Only block password if we have both as we can
+			// assume that the username isn't sensitive in this case
 			sensitive = append(sensitive, pw)
-		}
-		if u := parsedURL.User.Username(); u != "" {
-			sensitive = append(sensitive, u)
+		} else {
+			if pw != "" {
+				sensitive = append(sensitive, pw)
+			}
+			if u != "" {
+				sensitive = append(sensitive, u)
+			}
 		}
 	}
 	sensitive = append(sensitive, rawurl)
@@ -1225,8 +1246,8 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	})
 	hasher := sha256.New()
 	for _, b := range lines {
-		hasher.Write(b)
-		hasher.Write([]byte("\n"))
+		_, _ = hasher.Write(b)
+		_, _ = hasher.Write([]byte("\n"))
 	}
 	hash := make([]byte, hex.EncodedLen(hasher.Size()))
 	hex.Encode(hash, hasher.Sum(nil))
@@ -1281,7 +1302,16 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		}
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
+	configRemoteOpts := true
+	var cmd *exec.Cmd
+	if customCmd := customFetchCmd(ctx, url); customCmd != nil {
+		cmd = customCmd
+		configRemoteOpts = false
+	} else if useRefspecOverrides() {
+		cmd = refspecOverridesFetchCmd(ctx, url)
+	} else {
+		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
+	}
 	cmd.Dir = string(dir)
 
 	// drop temporary pack files after a fetch. this function won't
@@ -1290,7 +1320,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	if output, err := runWithRemoteOpts(ctx, cmd, nil); err != nil {
+	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to update")
 	}
@@ -1355,7 +1385,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 	}
 	// rev-parse on an OID does not check if the commit actually exists, so it
 	// is always works. So we append ^0 to force the check
-	if git.IsAbsoluteRevision(rev) {
+	if isAbsoluteRevision(rev) {
 		rev = rev + "^0"
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
@@ -1364,7 +1394,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 		return false
 	}
 	// Revision not found, update before returning.
-	s.doRepoUpdate(ctx, repo, url)
+	_ = s.doRepoUpdate(ctx, repo, url)
 	return true
 }
 
@@ -1377,7 +1407,7 @@ func quickRevParseHead(dir GitDir) (string, error) {
 		return "", err
 	}
 	head = bytes.TrimSpace(head)
-	if h := string(head); git.IsAbsoluteRevision(h) {
+	if h := string(head); isAbsoluteRevision(h) {
 		return h, nil
 	}
 
@@ -1428,4 +1458,24 @@ func errorString(err error) string {
 		return ""
 	}
 	return err.Error()
+}
+
+// IsAbsoluteRevision checks if the revision is a git OID SHA string.
+//
+// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
+// isn't a ref. Git allows 40-char hexadecimal strings to be references.
+//
+// copied from internal/vcs/git to avoid cyclic import
+func isAbsoluteRevision(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for _, r := range s {
+		if !(('0' <= r && r <= '9') ||
+			('a' <= r && r <= 'f') ||
+			('A' <= r && r <= 'F')) {
+			return false
+		}
+	}
+	return true
 }

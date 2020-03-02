@@ -140,7 +140,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
                         linkTo="/site-admin/external-services"
-                        linkText="Configure external services"
+                        linkText="Configure synced repositories"
                         linkOnClick={this.toggleIsOpen}
                         entryType="progress"
                     />
@@ -149,7 +149,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 return (
                     <StatusMessagesNavItemEntry
                         key={message.message}
-                        title={`Syncing external service "${message.externalService.displayName}" failed:`}
+                        title={`Syncing repositories from external service "${message.externalService.displayName}" failed:`}
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
                         linkTo={`/site-admin/external-services/${message.externalService.id}`}
@@ -166,7 +166,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
                         linkTo="/site-admin/external-services"
-                        linkText="Configure external services"
+                        linkText="Configure synced repositories"
                         linkOnClick={this.toggleIsOpen}
                         entryType="warning"
                     />
@@ -214,7 +214,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 </DropdownToggle>
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
-                    <h3>External service status</h3>
+                    <h3>Code host status</h3>
                     {isErrorLike(this.state.messagesOrError) ? (
                         <ErrorAlert
                             className="status-messages-nav-item__entry mb-0"
@@ -226,10 +226,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     ) : (
                         <StatusMessagesNavItemEntry
                             title="Repositories up to date"
-                            text="All repositories hosted on the configured external services are cloned."
+                            text="All repositories hosted on the configured code hosts are synced."
                             showLink={this.props.isSiteAdmin}
                             linkTo="/site-admin/external-services"
-                            linkText="Configure external services"
+                            linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
                             entryType="success"
                         />

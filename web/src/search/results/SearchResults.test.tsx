@@ -2,9 +2,8 @@ import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from '@testing-library/react'
-import { noop } from 'rxjs'
+import { noop, NEVER } from 'rxjs'
 import sinon from 'sinon'
-import { setLinkComponent } from '../../../../shared/src/components/Link'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
@@ -15,12 +14,7 @@ import { SearchResults, SearchResultsProps } from './SearchResults'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 describe('SearchResults', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-
-    afterAll(() => {
-        setLinkComponent(null as any)
-        cleanup()
-    })
+    afterAll(cleanup)
 
     const history = createBrowserHistory()
     history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
@@ -36,11 +30,18 @@ describe('SearchResults', () => {
         settingsCascade: NOOP_SETTINGS_CASCADE,
         extensionsController,
         isSourcegraphDotCom: false,
-        platformContext: { forceUpdateTooltip: sinon.spy() },
+        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
         telemetryService: { log: noop, logViewEvent: noop },
         deployType: 'dev',
         patternType: SearchPatternType.regexp,
-        togglePatternType: sinon.spy(),
+        caseSensitive: false,
+        interactiveSearchMode: false,
+        filtersInQuery: {},
+        toggleSearchMode: sinon.fake(),
+        onFiltersInQueryChange: sinon.fake(),
+        splitSearchModes: false,
+        setPatternType: sinon.spy(),
+        setCaseSensitivity: sinon.spy(),
     }
 
     it('calls the search request once', () => {

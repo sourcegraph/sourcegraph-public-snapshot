@@ -8,9 +8,9 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	githublogin "github.com/dghubble/gologin/github"
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -41,8 +41,11 @@ func TestGetOrCreateUser(t *testing.T) {
 		description     string
 		ghUser          *github.User
 		ghUserEmails    []*githubsvc.UserEmail
+		ghUserOrgs      []*githubsvc.Org
 		ghUserEmailsErr error
+		ghUserOrgsErr   error
 		allowSignup     bool
+		allowOrgs       []string
 	}
 	cases := []struct {
 		inputs        []input
@@ -122,13 +125,77 @@ func TestGetOrCreateUser(t *testing.T) {
 			}},
 			expErr: true,
 		},
+		{
+			inputs: []input{{
+				description: "ghUser, verified email, not in allowed orgs -> no session created",
+				allowOrgs:   []string{"sourcegraph"},
+				ghUser: &github.User{
+					ID:    github.Int64(101),
+					Login: github.String("alice"),
+				},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example.com",
+					Primary:  true,
+					Verified: true,
+				}},
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description: "ghUser, verified email, error getting user orgs -> no session created",
+				allowOrgs:   []string{"sourcegraph"},
+				ghUser: &github.User{
+					ID:    github.Int64(101),
+					Login: github.String("alice"),
+				},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example.com",
+					Primary:  true,
+					Verified: true,
+				}},
+				ghUserOrgs: []*githubsvc.Org{
+					{Login: "sourcegraph"},
+					{Login: "example"},
+				},
+				ghUserOrgsErr: errors.New("boom"),
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description: "ghUser, verified email, allowed orgs -> session created",
+				allowOrgs:   []string{"sourcegraph"},
+				ghUser: &github.User{
+					ID:    github.Int64(101),
+					Login: github.String("alice"),
+				},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example.com",
+					Primary:  true,
+					Verified: true,
+				}},
+				ghUserOrgs: []*githubsvc.Org{
+					{Login: "sourcegraph"},
+					{Login: "example"},
+				},
+			}},
+			expActor: &actor.Actor{UID: 1},
+			expAuthUserOp: &auth.GetAndSaveUserOp{
+				UserProps:       u("alice", "alice@example.com", true),
+				ExternalAccount: acct("github", "https://github.com/", clientID, "101"),
+			},
+		},
 	}
 	for _, c := range cases {
 		for _, ci := range c.inputs {
 			c, ci := c, ci
 			t.Run(ci.description, func(t *testing.T) {
-				githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context, token string) ([]*githubsvc.UserEmail, error) {
+				githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context) ([]*githubsvc.UserEmail, error) {
 					return ci.ghUserEmails, ci.ghUserEmailsErr
+				}
+				githubsvc.MockGetAuthenticatedUserOrgs = func(ctx context.Context) ([]*githubsvc.Org, error) {
+					return ci.ghUserOrgs, ci.ghUserOrgsErr
 				}
 				var gotAuthUserOp *auth.GetAndSaveUserOp
 				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
@@ -146,6 +213,7 @@ func TestGetOrCreateUser(t *testing.T) {
 				defer func() {
 					auth.MockGetAndSaveUser = nil
 					githubsvc.MockGetAuthenticatedUserEmails = nil
+					githubsvc.MockGetAuthenticatedUserOrgs = nil
 				}()
 
 				ctx := githublogin.WithUser(context.Background(), ci.ghUser)
@@ -153,6 +221,7 @@ func TestGetOrCreateUser(t *testing.T) {
 					CodeHost:    codeHost,
 					clientID:    clientID,
 					allowSignup: ci.allowSignup,
+					allowOrgs:   ci.allowOrgs,
 				}
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
 				actr, _, err := s.GetOrCreateUser(ctx, tok)
@@ -165,9 +234,7 @@ func TestGetOrCreateUser(t *testing.T) {
 					t.Errorf("expected no error, but was %v", err)
 				}
 				if got, exp := gotAuthUserOp, c.expAuthUserOp; !reflect.DeepEqual(got, exp) {
-					dmp := diffmatchpatch.New()
-					t.Errorf("auth.GetOrCreateUser(op) got != exp, diff(got, exp):\n%s",
-						dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(exp), spew.Sdump(got), false)))
+					t.Error(cmp.Diff(got, exp))
 				}
 			})
 		}

@@ -35,6 +35,16 @@ export const validateOptionalBoolean = (key: string): ValidationChain =>
         .toBoolean()
 
 /**
+ * Create a query string validator for an integer value.
+ *
+ * @param key The query string key.
+ */
+export const validateInt = (key: string): ValidationChain =>
+    query(key)
+        .isInt()
+        .toInt()
+
+/**
  * Create a query string validator for a possibly empty integer value.
  *
  * @param key The query string key.
@@ -49,6 +59,15 @@ export const validateOptionalInt = (key: string): ValidationChain =>
  * A validator used for a string query field.
  */
 export const validateQuery = validateOptionalString('query')
+
+/**
+ * Create a query string validator for an LSIF upload state.
+ *
+ * @param key The query string key.
+ */
+export const validateLsifUploadState = query('state')
+    .optional()
+    .isIn(['queued', 'completed', 'errored', 'processing'])
 
 /**
  * Create a validator for an integer limit field.

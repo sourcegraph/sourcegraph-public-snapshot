@@ -237,7 +237,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             label,
             id,
             run: editor => {
-                eventLogger.log('SiteConfigurationActionExecuted', { id })
+                eventLogger.log('SiteConfigurationActionExecuted')
                 editor.focus()
                 editor.pushUndoStop()
                 const { edits, selectText, cursorOffset } = run(editor.getValue())
@@ -294,6 +294,10 @@ function setDiagnosticsOptions(m: typeof monaco, jsonSchema: any): void {
             },
             {
                 uri: 'settings.schema.json#',
+                schema: settingsSchema,
+            },
+            {
+                uri: 'settings.schema.json',
                 schema: settingsSchema,
             },
         ],

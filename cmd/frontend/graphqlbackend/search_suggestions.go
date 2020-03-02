@@ -14,10 +14,10 @@ import (
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -46,7 +46,7 @@ var (
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
 	args.applyDefaultsAndConstraints()
 
-	if len(r.query.ParseTree) == 0 {
+	if len(r.parseTree) == 0 {
 		return nil, nil
 	}
 
@@ -70,7 +70,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		var effectiveRepoFieldValues []string
 		if len(r.query.Values(query.FieldDefault)) == 1 && (len(r.query.Fields) == 1 || (len(r.query.Fields) == 2 && len(r.query.Values(query.FieldRepoGroup)) == 1)) {
-			effectiveRepoFieldValues = append(effectiveRepoFieldValues, asString(r.query.Values(query.FieldDefault)[0]))
+			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.query.Values(query.FieldDefault)[0].ToString())
 		} else if len(r.query.Values(query.FieldRepo)) > 0 && ((len(r.query.Values(query.FieldRepoGroup)) > 0 && len(r.query.Fields) == 2) || (len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Fields) == 1)) {
 			effectiveRepoFieldValues, _ = r.query.RegexpPatterns(query.FieldRepo)
 		}
@@ -90,7 +90,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 			resolvers := make([]*searchSuggestionResolver, 0, len(repoRevs))
 			for _, rev := range repoRevs {
-				resolvers = append(resolvers, newSearchResultResolver(
+				resolvers = append(resolvers, newSearchSuggestionResolver(
 					&RepositoryResolver{repo: rev.Repo},
 					math.MaxInt32,
 				))
@@ -153,7 +153,6 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// Only care about the first found repository.
 		repos, err := backend.Repos.List(ctx, db.ReposListOptions{
 			IncludePatterns: validValues,
-			Enabled:         true,
 			OnlyRepoIDs:     true,
 			LimitOffset: &db.LimitOffset{
 				Limit: 1,
@@ -172,14 +171,14 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		inventory, err := backend.Repos.GetInventory(ctx, repo, commitID)
+		inventory, err := backend.Repos.GetInventory(ctx, repo, commitID, false)
 		if err != nil {
 			return nil, err
 		}
 
 		resolvers := make([]*searchSuggestionResolver, 0, len(inventory.Languages))
 		for _, l := range inventory.Languages {
-			resolvers = append(resolvers, newSearchResultResolver(
+			resolvers = append(resolvers, newSearchSuggestionResolver(
 				&languageResolver{name: strings.ToLower(l.Name)},
 				math.MaxInt32,
 			))
@@ -207,8 +206,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		fileMatches, _, err := searchSymbols(ctx, &search.Args{
-			Pattern:      p,
+		fileMatches, _, err := searchSymbols(ctx, &search.TextParameters{
+			PatternInfo:  p,
 			Repos:        repoRevs,
 			Query:        r.query,
 			Zoekt:        r.zoekt,
@@ -237,7 +236,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri().String()), strings.ToLower(sr.symbol.Name)) {
 					score++
 				}
-				results = append(results, newSearchResultResolver(sr, score))
+				results = append(results, newSearchSuggestionResolver(sr, score))
 			}
 		}
 
@@ -269,14 +268,14 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 			var suggestions []*searchSuggestionResolver
 			if results != nil {
-				if len(results.results) > int(*args.First) {
-					results.results = results.results[:*args.First]
+				if len(results.SearchResults) > int(*args.First) {
+					results.SearchResults = results.SearchResults[:*args.First]
 				}
-				suggestions = make([]*searchSuggestionResolver, 0, len(results.results))
-				for i, res := range results.results {
+				suggestions = make([]*searchSuggestionResolver, 0, len(results.SearchResults))
+				for i, res := range results.SearchResults {
 					if fm, ok := res.ToFileMatch(); ok {
 						entryResolver := fm.File()
-						suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.results)-i))
+						suggestions = append(suggestions, newSearchSuggestionResolver(entryResolver, len(results.SearchResults)-i))
 					}
 				}
 			}

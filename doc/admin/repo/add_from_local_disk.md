@@ -1,6 +1,6 @@
 # Add repositories already cloned to disk
 
-You can also add repositories to Sourcegraph that are already cloned to disk on the host machine. This is useful for repositories requiring non-standard authentication to clone, or very large repositories on which cloning exceeds the resources available to the Docker container.
+You can also add repositories to Sourcegraph that are already cloned to disk on the host machine. This is useful for repositories requiring non-standard authentication to clone, or very large repositories on which cloning exceeds the resources available to the Docker container. (It is not intended for individual users who want to set up a personal Sourcegraph instance just for searching code on their own local disk; we recommend just using a CLI tool such as ripgrep instead.) 
 
 > WARNING: Sourcegraph will alter the contents and structure of files under `/var/opt/sourcegraph` (Sourcegraph’s data volume inside the container), so do not mount repositories in use by other processes under that directory.
 

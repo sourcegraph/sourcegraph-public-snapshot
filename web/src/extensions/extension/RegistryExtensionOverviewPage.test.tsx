@@ -2,13 +2,11 @@ import { noop } from 'lodash'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
-import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 
-describe('RegistryExtensionOverviewPage', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-    afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
+jest.mock('mdi-react/GithubCircleIcon', () => 'GithubCircleIcon')
 
+describe('RegistryExtensionOverviewPage', () => {
     test('renders', () =>
         expect(
             renderer

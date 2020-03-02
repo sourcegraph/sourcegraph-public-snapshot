@@ -13,10 +13,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -54,13 +56,13 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	if err != nil {
 		return nil, err
 	}
-	baseURL = NormalizeBaseURL(baseURL)
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	originalHostname := baseURL.Hostname()
 
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	opts := []httpcli.Opt{
@@ -70,11 +72,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}
 
 	if c.Certificate != "" {
-		pool, err := httpcli.NewCertPool(c.Certificate)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
 	cli, err := cf.Doer(opts...)
@@ -147,25 +145,57 @@ func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
+var _ ChangesetSource = GithubSource{}
+
 // CreateChangeset creates the given *Changeset in the code host.
-func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
+func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	var exists bool
 	repo := c.Repo.Metadata.(*github.Repository)
 
 	pr, err := s.client.CreatePullRequest(ctx, &github.CreatePullRequestInput{
 		RepositoryID: repo.ID,
 		Title:        c.Title,
 		Body:         c.Body,
-		HeadRefName:  c.HeadRefName,
-		BaseRefName:  c.BaseRefName,
+		HeadRefName:  git.AbbreviateRef(c.HeadRef),
+		BaseRefName:  git.AbbreviateRef(c.BaseRef),
 	})
 
 	if err != nil {
-		return err
+		if err != github.ErrPullRequestAlreadyExists {
+			return exists, err
+		}
+		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+		if err != nil {
+			return exists, errors.Wrap(err, "getting repo owner and name")
+		}
+		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
+		if err != nil {
+			return exists, errors.Wrap(err, "fetching existing PR")
+		}
+		exists = true
 	}
 
 	c.Changeset.Metadata = pr
 	c.Changeset.ExternalID = strconv.FormatInt(pr.Number, 10)
 	c.Changeset.ExternalServiceType = github.ServiceType
+
+	return exists, nil
+}
+
+// CloseChangeset closes the given *Changeset on the code host and updates the
+// Metadata column in the *campaigns.Changeset to the newly closed pull request.
+func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	err := s.client.ClosePullRequest(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
 
 	return nil
 }
@@ -177,7 +207,7 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 		repo := cs[i].Repo.Metadata.(*github.Repository)
 		number, err := strconv.ParseInt(cs[i].ExternalID, 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "parsing changeset external id")
 		}
 
 		prs[i] = &github.PullRequest{
@@ -192,8 +222,33 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	}
 
 	for i := range cs {
+		cs[i].Changeset.ExternalBranch = prs[i].HeadRefName
 		cs[i].Changeset.Metadata = prs[i]
+		cs[i].Changeset.ExternalUpdatedAt = prs[i].UpdatedAt
 	}
+
+	return nil
+}
+
+// UpdateChangeset updates the given *Changeset in the code host.
+func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	updated, err := s.client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
+		PullRequestID: pr.ID,
+		Title:         c.Title,
+		Body:          c.Body,
+		BaseRefName:   git.AbbreviateRef(c.BaseRef),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = updated
 
 	return nil
 }
@@ -224,8 +279,8 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 		ExternalRepo: github.ExternalRepoSpec(r, *s.baseURL),
 		Description:  r.Description,
 		Fork:         r.IsFork,
-		Enabled:      true,
 		Archived:     r.IsArchived,
+		Private:      r.IsPrivate,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -318,7 +373,8 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 			// Catch 404 to handle
 			if page == 1 {
 				if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
-					oerr, err = err, nil
+					oerr = fmt.Errorf("organisation %q not found", org)
+					err = nil
 				}
 			}
 

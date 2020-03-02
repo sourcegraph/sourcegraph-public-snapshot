@@ -11,11 +11,7 @@ cleanup() {
 trap cleanup EXIT
 
 parallel_run() {
-    log_file=$(mktemp)
-    trap "rm -rf $log_file" EXIT
-
-    parallel --jobs 4 --keep-order --line-buffer --tag --joblog $log_file "$@"
-    cat $log_file
+    ./dev/ci/parallel_run.sh "$@"
 }
 export -f parallel_run
 
@@ -27,12 +23,13 @@ export CGO_ENABLED=0
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
-export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/management-console github.com/sourcegraph/sourcegraph/cmd/repo-updater}
+export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/repo-updater}
 
 # Overridable server package path for when this script is called externally by
 # our enterprise build scripts.
 export server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
+cp -a ./lsif "$OUTPUT"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export bindir="$OUTPUT/usr/local/bin"
 mkdir -p "$bindir"
@@ -50,7 +47,7 @@ go_build() {
 }
 export -f go_build
 
-echo "--- build go, symbols, and lsif concurrently"
+echo "--- build go and symbols concurrently"
 
 build_go_packages(){
    echo "--- go build"
@@ -80,13 +77,7 @@ build_symbols() {
 }
 export -f build_symbols
 
-build_lsif() {
-    echo "--- build lsif-server"
-    IMAGE=sourcegraph/lsif-server:ci ./lsif/build.sh
-}
-export -f build_lsif
-
-parallel_run {} ::: build_lsif build_symbols build_go_packages
+parallel_run {} ::: build_go_packages build_symbols
 
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"

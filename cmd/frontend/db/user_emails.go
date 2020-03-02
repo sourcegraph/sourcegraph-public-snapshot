@@ -8,17 +8,26 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 )
 
 // UserEmail represents a row in the `user_emails` table.
 type UserEmail struct {
-	UserID           int32
-	Email            string
-	CreatedAt        time.Time
-	VerificationCode *string
-	VerifiedAt       *time.Time
+	UserID                 int32
+	Email                  string
+	CreatedAt              time.Time
+	VerificationCode       *string
+	VerifiedAt             *time.Time
+	LastVerificationSentAt *time.Time
+}
+
+// NeedsVerificationCoolDown returns true if the verification cooled down time is behind current time.
+func (email *UserEmail) NeedsVerificationCoolDown() bool {
+	const defaultDur = 30 * time.Second
+	return email.LastVerificationSentAt != nil &&
+		time.Now().UTC().Before(email.LastVerificationSentAt.Add(defaultDur))
 }
 
 // userEmailNotFoundError is the error that is returned when a user email is not found.
@@ -121,12 +130,17 @@ func (*userEmails) Verify(ctx context.Context, userID int32, email, code string)
 	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email); err != nil {
 		return false, err
 	}
+
 	return true, nil
 }
 
 // SetVerified bypasses the normal email verification code process and manually sets the verified
 // status for an email.
 func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
+	if Mocks.UserEmails.SetVerified != nil {
+		return Mocks.UserEmails.SetVerified(ctx, userID, email, verified)
+	}
+
 	var res sql.Result
 	var err error
 	if verified {
@@ -149,11 +163,67 @@ func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, 
 	return nil
 }
 
+// SetLastVerificationSentAt sets the "last_verification_sent_at" column to now() for given email of the user.
+func (*userEmails) SetLastVerificationSentAt(ctx context.Context, userID int32, email string) error {
+	res, err := dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET last_verification_sent_at=now() WHERE user_id=$1 AND email=$2", userID, email)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errors.New("user email not found")
+	}
+	return nil
+}
+
+// GetLatestVerificationSentEmail returns the email with the lastest time of "last_verification_sent_at" column,
+// it excludes rows with "last_verification_sent_at IS NULL".
+func (*userEmails) GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error) {
+	if Mocks.UserEmails.GetLatestVerificationSentEmail != nil {
+		return Mocks.UserEmails.GetLatestVerificationSentEmail(ctx, email)
+	}
+
+	q := sqlf.Sprintf(`
+WHERE email=%s AND last_verification_sent_at IS NOT NULL
+ORDER BY last_verification_sent_at DESC
+LIMIT 1
+`, email)
+	emails, err := (&userEmails{}).getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	} else if len(emails) < 1 {
+		return nil, userEmailNotFoundError{[]interface{}{fmt.Sprintf("email %q", email)}}
+	}
+	return emails[0], nil
+}
+
+// GetVerifiedEmails returns a list of verified emails from the candidate list. Some emails are excluded
+// from the results list because of unverified or simply don't exist.
+func (*userEmails) GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error) {
+	if Mocks.UserEmails.GetVerifiedEmails != nil {
+		return Mocks.UserEmails.GetVerifiedEmails(ctx, emails...)
+	}
+
+	if len(emails) == 0 {
+		return []*UserEmail{}, nil
+	}
+
+	items := make([]*sqlf.Query, len(emails))
+	for i := range emails {
+		items[i] = sqlf.Sprintf("%s", emails[i])
+	}
+	q := sqlf.Sprintf("WHERE email IN (%s) AND verified_at IS NOT NULL", sqlf.Join(items, ","))
+	return (&userEmails{}).getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
 // getBySQL returns user emails matching the SQL query, if any exist.
 func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*UserEmail, error) {
 	rows, err := dbconn.Global.QueryContext(ctx,
 		`SELECT user_emails.user_id, user_emails.email, user_emails.created_at, user_emails.verification_code,
-				user_emails.verified_at FROM user_emails `+query, args...)
+				user_emails.verified_at, user_emails.last_verification_sent_at FROM user_emails `+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +232,7 @@ func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface
 	defer rows.Close()
 	for rows.Next() {
 		var v UserEmail
-		err := rows.Scan(&v.UserID, &v.Email, &v.CreatedAt, &v.VerificationCode, &v.VerifiedAt)
+		err := rows.Scan(&v.UserID, &v.Email, &v.CreatedAt, &v.VerificationCode, &v.VerifiedAt, &v.LastVerificationSentAt)
 		if err != nil {
 			return nil, err
 		}
@@ -174,10 +244,27 @@ func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface
 	return userEmails, nil
 }
 
-func (*userEmails) ListByUser(ctx context.Context, userID int32) ([]*UserEmail, error) {
+// UserEmailsListOptions specifies the options for listing user emails.
+type UserEmailsListOptions struct {
+	// UserID specifies the id of the user for listing emails.
+	UserID int32
+	// OnlyVerified excludes unverified emails from the list.
+	OnlyVerified bool
+}
+
+// ListByUser returns a list of emails that are associated to the given user.
+func (*userEmails) ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error) {
 	if Mocks.UserEmails.ListByUser != nil {
-		return Mocks.UserEmails.ListByUser(userID)
+		return Mocks.UserEmails.ListByUser(ctx, opt)
 	}
 
-	return (&userEmails{}).getBySQL(ctx, "WHERE user_id=$1 ORDER BY created_at ASC, email ASC", userID)
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("user_id=%s", opt.UserID),
+	}
+	if opt.OnlyVerified {
+		conds = append(conds, sqlf.Sprintf("verified_at IS NOT NULL"))
+	}
+
+	q := sqlf.Sprintf("WHERE %s ORDER BY created_at ASC, email ASC", sqlf.Join(conds, "AND"))
+	return (&userEmails{}).getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }

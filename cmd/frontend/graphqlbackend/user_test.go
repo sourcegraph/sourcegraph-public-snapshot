@@ -18,7 +18,7 @@ func TestUser(t *testing.T) {
 			t.Helper()
 			gqltesting.RunTests(t, []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t),
 					Query: `
 				{
 					user(username: "alice") {
@@ -72,7 +72,7 @@ func TestUser(t *testing.T) {
 				t.Helper()
 				gqltesting.RunTests(t, []*gqltesting.Test{
 					{
-						Schema: mustParseGraphQLSchema(t, nil),
+						Schema: mustParseGraphQLSchema(t),
 						Query: `
 				{
 					user(email: "alice@example.com") {
@@ -107,7 +107,7 @@ func TestUser(t *testing.T) {
 		t.Run("allowed on non-Sourcegraph.com", func(t *testing.T) {
 			gqltesting.RunTests(t, []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t),
 					Query: `
 				{
 					user(email: "alice@example.com") {
@@ -134,7 +134,7 @@ func TestNode_User(t *testing.T) {
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: mustParseGraphQLSchema(t, nil),
+			Schema: mustParseGraphQLSchema(t),
 			Query: `
 				{
 					node(id: "VXNlcjox") {

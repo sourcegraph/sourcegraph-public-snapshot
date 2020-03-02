@@ -1,6 +1,9 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
+import { FiltersToTypeAndValue } from '../search/interactive/util'
+import { isEmpty } from 'lodash'
+import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 
 export interface RepoSpec {
     /**
@@ -42,7 +45,7 @@ export interface FileSpec {
     filePath: string
 }
 
-export interface ComparisonSpec {
+interface ComparisonSpec {
     /**
      * a diff specifier with optional base and comparison. Examples:
      * - "master..." (implicitly: "master...HEAD")
@@ -59,7 +62,7 @@ export interface PositionSpec {
     position: Position
 }
 
-export interface RangeSpec {
+interface RangeSpec {
     /**
      * a 1-indexed range in the blob
      */
@@ -74,7 +77,7 @@ export interface ModeSpec {
     mode: string
 }
 
-export type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
+type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -90,7 +93,7 @@ export interface ViewStateSpec {
  */
 export type RenderMode = 'code' | 'rendered' | undefined
 
-export interface RenderModeSpec {
+interface RenderModeSpec {
     /**
      * How the file should be rendered.
      */
@@ -206,18 +209,6 @@ export interface RepoFile extends RepoSpec, RevSpec, Partial<ResolvedRevSpec>, F
 export interface AbsoluteRepoFile extends RepoSpec, RevSpec, ResolvedRevSpec, FileSpec {}
 
 /**
- * A position in file
- */
-export interface RepoFilePosition
-    extends RepoSpec,
-        RevSpec,
-        Partial<ResolvedRevSpec>,
-        FileSpec,
-        PositionSpec,
-        Partial<ViewStateSpec>,
-        Partial<RenderModeSpec> {}
-
-/**
  * A position in file at an exact commit
  */
 export interface AbsoluteRepoFilePosition
@@ -226,18 +217,6 @@ export interface AbsoluteRepoFilePosition
         ResolvedRevSpec,
         FileSpec,
         PositionSpec,
-        Partial<ViewStateSpec>,
-        Partial<RenderModeSpec> {}
-
-/**
- * A range in file at an exact commit
- */
-export interface AbsoluteRepoFileRange
-    extends RepoSpec,
-        RevSpec,
-        ResolvedRevSpec,
-        FileSpec,
-        RangeSpec,
         Partial<ViewStateSpec>,
         Partial<RenderModeSpec> {}
 
@@ -541,18 +520,65 @@ export function withWorkspaceRootInputRevision(
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
  * Having a `patternType:` filter in the query overrides this argument.
+ * @param filtersInQuery filters in an interactive mode query. For callers of
+ * this function requiring correct behavior in interactive mode, this param
+ * must be passed.
+ *
  */
-export function buildSearchURLQuery(query: string, patternType: SearchPatternType): string {
+export function buildSearchURLQuery(
+    query: string,
+    patternType: SearchPatternType,
+    caseSensitive: boolean,
+    filtersInQuery?: FiltersToTypeAndValue
+): string {
     const searchParams = new URLSearchParams()
-    const patternTypeInQuery = parsePatternTypeFromQuery(query)
+    let fullQuery = query
+
+    if (filtersInQuery && !isEmpty(filtersInQuery)) {
+        fullQuery = [fullQuery, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
+    }
+
+    const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
-        const newQuery = query.replace(patternTypeRegexp, '')
+        const newQuery = fullQuery.replace(
+            query.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
+            ''
+        )
         searchParams.set('q', newQuery)
-        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
+        searchParams.set('patternType', patternTypeInQuery.value)
+        fullQuery = newQuery
     } else {
-        searchParams.set('q', query)
+        searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternType)
+    }
+
+    const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
+    if (caseInQuery) {
+        const newQuery = fullQuery.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
+        searchParams.set('q', newQuery)
+
+        if (caseInQuery.value === 'yes') {
+            searchParams.set('case', caseInQuery.value)
+        } else {
+            // For now, remove case when case:no, since it's the default behavior. Avoids
+            // queries breaking when only `repo:` filters are specified.
+            //
+            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
+            searchParams.delete('case')
+        }
+
+        fullQuery = newQuery
+    } else {
+        searchParams.set('q', fullQuery)
+        if (caseSensitive) {
+            searchParams.set('case', 'yes')
+        } else {
+            // For now, remove case when case:no, since it's the default behavior. Avoids
+            // queries breaking when only `repo:` filters are specified.
+            //
+            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
+            searchParams.delete('case')
+        }
     }
 
     return searchParams
@@ -561,12 +587,52 @@ export function buildSearchURLQuery(query: string, patternType: SearchPatternTyp
         .replace(/%3A/g, ':')
 }
 
-function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
-    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
-    const matches = query.match(patternTypeRegexp)
-    if (matches?.groups?.type) {
-        return matches.groups.type as SearchPatternType
+/**
+ * Creates the raw string representation of the filters currently in the query in interactive mode.
+ *
+ * @param filtersInQuery the map representing the filters currently in an interactive mode query.
+ */
+export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
+    const fieldKeys = Object.keys(filtersInQuery)
+    return fieldKeys
+        .filter(key => filtersInQuery[key].value.trim().length > 0)
+        .map(key => `${filtersInQuery[key].negated ? '-' : ''}${filtersInQuery[key].type}:${filtersInQuery[key].value}`)
+        .join(' ')
+}
+
+function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (
+                token.type === 'filter' &&
+                token.filterType.token.value.toLowerCase() === 'patterntype' &&
+                token.filterValue
+            ) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
     }
 
+    return undefined
+}
+
+function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (token.type === 'filter' && token.filterType.token.value.toLowerCase() === 'case' && token.filterValue) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
+    }
     return undefined
 }

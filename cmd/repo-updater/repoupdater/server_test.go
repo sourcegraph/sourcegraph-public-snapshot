@@ -11,12 +11,12 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/kylelemons/godebug/pretty"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -146,8 +146,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	}
 
 	githubRepo := (&repos.Repo{
-		Name:    "github.com/foo/bar",
-		Enabled: false,
+		Name: "github.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
 			ServiceType: "github",
@@ -174,8 +173,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	}
 
 	gitlabRepo := (&repos.Repo{
-		Name:    "gitlab.com/foo/bar",
-		Enabled: false,
+		Name: "gitlab.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "1",
 			ServiceType: "gitlab",
@@ -205,8 +203,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	}
 
 	bitbucketServerRepo := (&repos.Repo{
-		Name:    "bitbucketserver.mycorp.com/foo/bar",
-		Enabled: false,
+		Name: "bitbucketserver.mycorp.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "1",
 			ServiceType: "bitbucketServer",
@@ -505,7 +502,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		repoID uint32
+		repoID api.RepoID
 		svcs   []api.ExternalService
 		err    string
 	}{{
@@ -670,8 +667,17 @@ func TestServer_StatusMessages(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			gitserverClient := &fakeGitserverClient{listClonedResponse: tc.gitserverCloned}
 
+			stored := tc.stored.Clone()
+			for i, r := range stored {
+				r.ExternalRepo = api.ExternalRepoSpec{
+					ID:          strconv.Itoa(i),
+					ServiceType: github.ServiceType,
+					ServiceID:   "https://github.com/",
+				}
+			}
+
 			store := new(repos.FakeStore)
-			err := store.UpsertRepos(ctx, tc.stored.Clone()...)
+			err := store.UpsertRepos(ctx, stored...)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -754,7 +760,6 @@ func TestRepoLookup(t *testing.T) {
 		Name:        "github.com/foo/bar",
 		Description: "The description",
 		Language:    "barlang",
-		Enabled:     true,
 		Archived:    false,
 		Fork:        false,
 		CreatedAt:   now,
@@ -783,7 +788,6 @@ func TestRepoLookup(t *testing.T) {
 		Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 		Description: "The stripe-go lib",
 		Language:    "barlang",
-		Enabled:     true,
 		Archived:    false,
 		Fork:        false,
 		CreatedAt:   now,
@@ -812,7 +816,6 @@ func TestRepoLookup(t *testing.T) {
 	gitlabRepository := &repos.Repo{
 		Name:        "gitlab.com/gitlab-org/gitaly",
 		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-		Enabled:     true,
 		URI:         "gitlab.com/gitlab-org/gitaly",
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -1107,7 +1110,7 @@ func TestRepoLookup(t *testing.T) {
 				t.Errorf("response: %s", cmp.Diff(have, want))
 			}
 
-			if diff := pretty.Compare(res, tc.result); diff != "" {
+			if diff := cmp.Diff(res, tc.result); diff != "" {
 				t.Fatalf("RepoLookup:\n%s", diff)
 			}
 
@@ -1133,8 +1136,8 @@ func (s *fakeRepoSource) GetRepo(context.Context, string) (*repos.Repo, error) {
 
 type fakeScheduler struct{}
 
-func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
-func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
+func (s *fakeScheduler) UpdateOnce(_ api.RepoID, _ api.RepoName, _ string) {}
+func (s *fakeScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult {
 	return &protocol.RepoUpdateSchedulerInfoResult{}
 }
 

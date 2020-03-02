@@ -4,14 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -313,19 +315,20 @@ func Test_detectSearchType(t *testing.T) {
 		version     string
 		patternType *string
 		input       string
-		want        SearchType
+		want        query.SearchType
 	}{
-		{"V1, no pattern type", "V1", nil, "", SearchTypeRegex},
-		{"V2, no pattern type", "V2", nil, "", SearchTypeLiteral},
-		{"V2, no pattern type, input does not produce parse error", "V2", nil, "/-/godoc", SearchTypeLiteral},
-		{"V1, regexp pattern type", "V1", &typeRegexp, "", SearchTypeRegex},
-		{"V2, regexp pattern type", "V2", &typeRegexp, "", SearchTypeRegex},
-		{"V1, literal pattern type", "V1", &typeLiteral, "", SearchTypeLiteral},
-		{"V2, override regexp pattern type", "V2", &typeLiteral, "patterntype:regexp", SearchTypeRegex},
-		{"V2, override regex variant pattern type", "V2", &typeLiteral, "patterntype:regex", SearchTypeRegex},
-		{"V2, override regex variant pattern type with double quotes", "V2", &typeLiteral, `patterntype:"regex"`, SearchTypeRegex},
-		{"V2, override regex variant pattern type with single quotes", "V2", &typeLiteral, `patterntype:'regex'`, SearchTypeRegex},
-		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", SearchTypeLiteral},
+		{"V1, no pattern type", "V1", nil, "", query.SearchTypeRegex},
+		{"V2, no pattern type", "V2", nil, "", query.SearchTypeLiteral},
+		{"V2, no pattern type, input does not produce parse error", "V2", nil, "/-/godoc", query.SearchTypeLiteral},
+		{"V1, regexp pattern type", "V1", &typeRegexp, "", query.SearchTypeRegex},
+		{"V2, regexp pattern type", "V2", &typeRegexp, "", query.SearchTypeRegex},
+		{"V1, literal pattern type", "V1", &typeLiteral, "", query.SearchTypeLiteral},
+		{"V2, override regexp pattern type", "V2", &typeLiteral, "patterntype:regexp", query.SearchTypeRegex},
+		{"V2, override regex variant pattern type", "V2", &typeLiteral, "patterntype:regex", query.SearchTypeRegex},
+		{"V2, override regex variant pattern type with double quotes", "V2", &typeLiteral, `patterntype:"regex"`, query.SearchTypeRegex},
+		{"V2, override regex variant pattern type with single quotes", "V2", &typeLiteral, `patterntype:'regex'`, query.SearchTypeRegex},
+		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", query.SearchTypeLiteral},
+		{"V1, override literal pattern type, with case-insensitive query", "V1", &typeRegexp, "pAtTErNTypE:literal", query.SearchTypeLiteral},
 	}
 
 	for _, test := range testCases {
@@ -339,4 +342,56 @@ func Test_detectSearchType(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_QuoteSuggestions(t *testing.T) {
+	t.Run("regex error", func(t *testing.T) {
+		raw := "*"
+		_, _, err := query.Process(raw, query.SearchTypeRegex)
+		if err == nil {
+			t.Fatalf("error returned from query.Process(%q) is nil", raw)
+		}
+		alert := alertForQuery(raw, err)
+		if !strings.Contains(strings.ToLower(alert.title), "regexp") {
+			t.Errorf("title is '%s', want it to contain 'regexp'", alert.title)
+		}
+		if !strings.Contains(alert.description, "regular expression") {
+			t.Errorf("description is '%s', want it to contain 'regular expression'", alert.description)
+		}
+	})
+
+	t.Run("type error that is not a regex error should show a suggestion", func(t *testing.T) {
+		raw := "-foobar"
+		_, _, alert := query.Process(raw, query.SearchTypeRegex)
+		if alert == nil {
+			t.Fatalf("alert returned from query.Process(%q) is nil", raw)
+		}
+	})
+
+	t.Run("query parse error", func(t *testing.T) {
+		raw := ":"
+		_, _, err := query.Process(raw, query.SearchTypeRegex)
+		if err == nil {
+			t.Fatalf("error returned from query.Process(%q) is nil", raw)
+		}
+		alert := alertForQuery(raw, err)
+		if strings.Contains(strings.ToLower(alert.title), "regexp") {
+			t.Errorf("title is '%s', want it not to contain 'regexp'", alert.title)
+		}
+		if strings.Contains(alert.description, "regular expression") {
+			t.Errorf("description is '%s', want it not to contain 'regular expression'", alert.description)
+		}
+	})
+
+	t.Run("negated file field with an invalid regex", func(t *testing.T) {
+		raw := "-f:(a"
+		_, _, err := query.Process(raw, query.SearchTypeRegex)
+		if err == nil {
+			t.Fatal("query.Process failed to detect the invalid regex in the f: field")
+		}
+		alert := alertForQuery(raw, err)
+		if len(alert.proposedQueries) != 1 {
+			t.Fatalf("got %d proposed queries (%v), want exactly 1", len(alert.proposedQueries), alert.proposedQueries)
+		}
+	})
 }

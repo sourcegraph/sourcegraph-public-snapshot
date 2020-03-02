@@ -36,7 +36,7 @@ const GitHubSchemaJSON = `{
       "minLength": 1
     },
     "certificate": {
-      "description": "TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
+      "description": "TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
       "type": "string",
       "pattern": "^-----BEGIN CERTIFICATE-----\n",
       "examples": ["-----BEGIN CERTIFICATE-----\n..."]
@@ -132,7 +132,7 @@ const GitHubSchemaJSON = `{
       "type": "object",
       "properties": {
         "ttl": {
-          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
+          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).\n\nPublic repositories are cached once for all users per cache TTL period.",
           "type": "string",
           "default": "3h"
         }

@@ -33,7 +33,7 @@ func TestMiddleware(t *testing.T) {
 	}))
 
 	const headerName = "x-sso-user-header"
-	conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{AuthProviders: []schema.AuthProviders{{HttpHeader: &schema.HTTPHeaderAuthProvider{UsernameHeader: headerName}}}}})
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{HttpHeader: &schema.HTTPHeaderAuthProvider{UsernameHeader: headerName}}}}})
 	defer conf.Mock(nil)
 
 	t.Run("not sent", func(t *testing.T) {
@@ -131,7 +131,7 @@ func TestMiddleware_stripPrefix(t *testing.T) {
 	}))
 
 	const headerName = "x-sso-user-header"
-	conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 		AuthProviders: []schema.AuthProviders{
 			{
 				HttpHeader: &schema.HTTPHeaderAuthProvider{

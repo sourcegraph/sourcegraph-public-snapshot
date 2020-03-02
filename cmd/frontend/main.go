@@ -9,5 +9,5 @@ import (
 // function for details.
 
 func main() {
-	shared.Main(nil)
+	shared.Main(nil, nil)
 }

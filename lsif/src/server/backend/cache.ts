@@ -1,9 +1,10 @@
-import * as dumpModels from '../../shared/models/dump'
+import * as sqliteModels from '../../shared/models/sqlite'
 import * as metrics from '../metrics'
 import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
 import { createSqliteConnection } from '../../shared/database/sqlite'
+import { Logger } from 'winston'
 
 /**
  * A wrapper around a cache value promise.
@@ -50,13 +51,13 @@ interface CacheMetrics {
      * A metric incremented on each cache insertion and decremented on
      * each cache eviction.
      */
-    sizeGauge: promClient.Gauge
+    sizeGauge: promClient.Gauge<string>
 
     /**
      * A metric incremented on each cache hit, miss, and eviction. A `type`
      * label is applied to differentiate the events.
      */
-    eventsCounter: promClient.Counter
+    eventsCounter: promClient.Counter<string>
 }
 
 /**
@@ -100,6 +101,13 @@ export class GenericCache<K, V> {
         private disposeFunction: (value: V) => Promise<void> | void,
         private cacheMetrics: CacheMetrics
     ) {}
+
+    /**
+     * Remove all values from the cache.
+     */
+    public async flush(): Promise<void> {
+        await Promise.all(Array.from(this.cache.keys()).map(key => this.bustKey(key)))
+    }
 
     /**
      * Check if `key` exists in the cache. If it does not, create a value
@@ -324,6 +332,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      *
      * @param database The database filename.
      * @param entities The set of entities to create on a new connection.
+     * @param logger The logger instance.
      * @param callback The function invoke with the SQLite connection.
      */
     public withConnection<T>(
@@ -331,9 +340,10 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         // Decorators are not possible type check
         // eslint-disable-next-line @typescript-eslint/ban-types
         entities: Function[],
+        logger: Logger,
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
-        return this.withValue(database, () => createSqliteConnection(database, entities), callback)
+        return this.withValue(database, () => createSqliteConnection(database, entities, logger), callback)
     }
 
     /**
@@ -342,6 +352,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      *
      * @param database The database filename.
      * @param entities The set of entities to create on a new connection.
+     * @param logger The logger instance.
      * @param callback The function invoke with a SQLite transaction connection.
      */
     public withTransactionalEntityManager<T>(
@@ -349,9 +360,10 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         // Decorators are not possible type check
         // eslint-disable-next-line @typescript-eslint/ban-types
         entities: Function[],
+        logger: Logger,
         callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
-        return this.withConnection(database, entities, connection => connection.transaction(callback))
+        return this.withConnection(database, entities, logger, connection => connection.transaction(callback))
     }
 }
 
@@ -389,7 +401,9 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
             max,
             v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
-            () => {},
+            () => {
+                /* noop */
+            },
             cacheMetrics
         )
     }
@@ -399,7 +413,7 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
  * A cache of deserialized `DocumentData` values indexed by a string containing
  * the database path and the path of the document.
  */
-export class DocumentCache extends EncodedJsonCache<string, dumpModels.DocumentData> {
+export class DocumentCache extends EncodedJsonCache<string, sqliteModels.DocumentData> {
     /**
      * Create a new `DocumentCache` with the given maximum (soft) size for
      * all items in the cache.
@@ -418,7 +432,7 @@ export class DocumentCache extends EncodedJsonCache<string, dumpModels.DocumentD
  * A cache of deserialized `ResultChunkData` values indexed by a string containing
  * the database path and the chunk index.
  */
-export class ResultChunkCache extends EncodedJsonCache<string, dumpModels.ResultChunkData> {
+export class ResultChunkCache extends EncodedJsonCache<string, sqliteModels.ResultChunkData> {
     /**
      * Create a new `ResultChunkCache` with the given maximum (soft) size for
      * all items in the cache.

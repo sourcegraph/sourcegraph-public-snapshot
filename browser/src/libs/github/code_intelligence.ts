@@ -27,6 +27,7 @@ import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './
 import { commentTextFieldResolver } from './text_fields'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -49,6 +50,10 @@ export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElemen
         throw new Error('Could not find GitHub file actions with selector .file-actions')
     }
 
+    // Add a class to the .file-actions element, so that we can reliably match it in
+    // stylesheets without bleeding CSS to other code hosts (GitLab also uses .file-actions elements).
+    fileActions.classList.add('sg-github-file-actions')
+
     // Old GitHub Enterprise PR views have a "☑ show comments" text that we want to insert *after*
     const showCommentsElement = codeView.querySelector('.show-file-notes')
     if (showCommentsElement) {
@@ -69,6 +74,13 @@ const diffCodeView: Omit<CodeView, 'element'> = {
     getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
+    getScrollBoundaries: codeView => {
+        const fileHeader = codeView.querySelector<HTMLElement>('.file-header')
+        if (!fileHeader) {
+            throw new Error('Could not find .file-header element in GitHub PR code view')
+        }
+        return [fileHeader]
+    },
 }
 
 const diffConversationCodeView: Omit<CodeView, 'element'> = {
@@ -270,6 +282,8 @@ const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
     resolveView: element => ({ element }),
 }
 
+const iconClassName = 'action-item__icon--github v-align-text-bottom'
+
 export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
@@ -278,8 +292,7 @@ export const githubCodeHost: CodeHost = {
     textFieldResolvers: [commentTextFieldResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
-        const header = document.querySelector('.repohead-details-container')
-        const repoHeaderHasPrivateMarker = !!header?.querySelector('.private')
+        const repoHeaderHasPrivateMarker = !!document.querySelector('.repohead .private')
         return {
             ...parseURL(),
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
@@ -288,10 +301,17 @@ export const githubCodeHost: CodeHost = {
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {
         className: 'btn btn-sm tooltipped tooltipped-s',
-        iconClassName: 'action-item__icon--github v-align-text-bottom',
+        iconClassName,
     },
     check: checkIsGitHub,
     getCommandPaletteMount,
+    notificationClassNames: {
+        [NotificationType.Log]: 'flash',
+        [NotificationType.Success]: 'flash flash-success',
+        [NotificationType.Info]: 'flash',
+        [NotificationType.Warning]: 'flash flash-warn',
+        [NotificationType.Error]: 'flash flash-error',
+    },
     commandPaletteClassProps: {
         buttonClassName: 'Header-link',
         popoverClassName: 'Box',
@@ -326,6 +346,7 @@ export const githubCodeHost: CodeHost = {
         closeButtonClassName: 'btn',
         infoAlertClassName: 'flash flash-full',
         errorAlertClassName: 'flash flash-full flash-error',
+        iconClassName,
     },
     setElementTooltip,
     linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',

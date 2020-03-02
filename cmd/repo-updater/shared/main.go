@@ -31,7 +31,11 @@ import (
 
 const port = "3182"
 
-func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
+// EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
+// created in Main are ready for use.
+type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory, server *repoupdater.Server)
+
+func Main(enterpriseInit EnterpriseInit) {
 	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
 
 	ctx := context.Background()
@@ -68,10 +72,6 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
 
-	if dbInitHook != nil {
-		go dbInitHook(db)
-	}
-
 	var store repos.Store
 	{
 		m := repos.NewStoreMetrics()
@@ -95,7 +95,8 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 		)
 	}
 
-	cf := httpcli.NewHTTPClientFactory()
+	cf := httpcli.NewExternalHTTPClientFactory()
+
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()
@@ -105,10 +106,15 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 	}
 
 	scheduler := repos.NewUpdateScheduler()
-	server := repoupdater.Server{
+	server := &repoupdater.Server{
 		Store:           store,
 		Scheduler:       scheduler,
 		GitserverClient: gitserver.DefaultClient,
+	}
+
+	// All dependencies ready
+	if enterpriseInit != nil {
+		enterpriseInit(db, store, cf, server)
 	}
 
 	var handler http.Handler
@@ -174,15 +180,11 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 		Now:              clock,
 	}
 
-	if newPreSync != nil {
-		syncer.PreSync = newPreSync(db, store, cf)
-	}
-
 	if envvar.SourcegraphDotComMode() {
 		syncer.FailFullSync = true
 	} else {
-		syncer.Synced = make(chan repos.Repos)
-		syncer.SubsetSynced = make(chan repos.Repos)
+		syncer.Synced = make(chan repos.Diff)
+		syncer.SubsetSynced = make(chan repos.Diff)
 		go watchSyncer(ctx, syncer, scheduler, gps)
 		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
 	}
@@ -227,8 +229,8 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 }
 
 type scheduler interface {
-	Set(...*repos.Repo)
-	Update(...*repos.Repo)
+	// UpdateFromDiff updates the scheduled and queued repos from the given sync diff.
+	UpdateFromDiff(repos.Diff)
 }
 
 func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps *repos.GitolitePhabricatorMetadataSyncer) {
@@ -236,20 +238,20 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 
 	for {
 		select {
-		case rs := <-syncer.Synced:
+		case diff := <-syncer.Synced:
 			if !conf.Get().DisableAutoGitUpdates {
-				sched.Set(rs...)
+				sched.UpdateFromDiff(diff)
 			}
 
 			go func() {
-				if err := gps.Sync(ctx, rs); err != nil {
+				if err := gps.Sync(ctx, diff.Repos()); err != nil {
 					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
 				}
 			}()
 
-		case rs := <-syncer.SubsetSynced:
+		case diff := <-syncer.SubsetSynced:
 			if !conf.Get().DisableAutoGitUpdates {
-				sched.Update(rs...)
+				sched.UpdateFromDiff(diff)
 			}
 		}
 	}

@@ -16,7 +16,6 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
-import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
 import { ThemeProps } from '../../../shared/src/theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -29,7 +28,7 @@ import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
-import { PatternTypeProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 
@@ -46,7 +45,8 @@ export interface RepoRevContainerContext
             RepoContainerContext,
             Exclude<keyof RepoContainerContext, 'onDidUpdateRepository' | 'onDidUpdateExternalLinks'>
         >,
-        PatternTypeProps {
+        PatternTypeProps,
+        CaseSensitivityProps {
     repo: GQL.IRepository
     rev: string
     resolvedRev: ResolvedRev
@@ -67,7 +67,8 @@ interface RepoRevContainerProps
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        CaseSensitivityProps {
     routes: readonly RepoRevContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
@@ -221,7 +222,9 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             authenticatedUser: this.props.authenticatedUser,
             settingsCascade: this.props.settingsCascade,
             patternType: this.props.patternType,
-            togglePatternType: this.props.togglePatternType,
+            setPatternType: this.props.setPatternType,
+            caseSensitive: this.props.caseSensitive,
+            setCaseSensitivity: this.props.setCaseSensitivity,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
         }
@@ -229,7 +232,6 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         return (
             <div className="repo-rev-container">
                 {IS_CHROME && <ChromeExtensionToast />}
-                <SurveyToast authenticatedUser={this.props.authenticatedUser} />
                 <RepoHeaderContributionPortal
                     position="nav"
                     priority={100}

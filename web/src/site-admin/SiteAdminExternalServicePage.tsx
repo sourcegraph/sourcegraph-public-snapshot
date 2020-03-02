@@ -1,3 +1,4 @@
+import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -10,9 +11,9 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import { getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 import { ErrorAlert } from '../components/alerts'
+import { defaultExternalServices, codeHostExternalServices } from './externalServices'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
     isLightTheme: boolean
@@ -109,7 +110,18 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 this.state.externalServiceOrError) ||
             undefined
 
-        const externalServiceCategory = externalService && getExternalService(externalService.kind)
+        let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
+        if (externalService && externalService.kind === GQL.ExternalServiceKind.GITHUB) {
+            const parsedConfig = parseJSONC(externalService.config)
+            // we have no way of finding out whether a externalservice of kind GITHUB is GitHub.com or GitHub enterprise, so we need to guess based on the url
+            if (
+                parsedConfig?.url &&
+                typeof parsedConfig.url === 'string' &&
+                !parsedConfig.url.match(/^https:\/\/github\.com/)
+            ) {
+                externalServiceCategory = codeHostExternalServices.ghe
+            }
+        }
 
         return (
             <div className="site-admin-configuration-page mt-3">
@@ -118,17 +130,14 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 ) : (
                     <PageTitle title="External service" />
                 )}
-                <h2>Update external service</h2>
+                <h2>Update synced repositories</h2>
                 {this.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
                 {isErrorLike(this.state.externalServiceOrError) && (
                     <ErrorAlert className="mb-3" error={this.state.externalServiceOrError} />
                 )}
-                {externalService && (
+                {externalServiceCategory && (
                     <div className="mb-3">
-                        <ExternalServiceCard
-                            {...getExternalService(externalService.kind)}
-                            kind={externalService.kind}
-                        />
+                        <ExternalServiceCard {...externalServiceCategory} />
                     </div>
                 )}
                 {externalService && externalServiceCategory && (

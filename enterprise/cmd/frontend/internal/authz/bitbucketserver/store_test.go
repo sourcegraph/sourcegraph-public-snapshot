@@ -47,7 +47,7 @@ func BenchmarkStore(b *testing.B) {
 		s := newStore(db, 0, DefaultHardTTL, clock)
 		s.block = true
 
-		ps := &Permissions{
+		ps := &authz.UserPermissions{
 			UserID: 99,
 			Perm:   authz.Read,
 			Type:   "repos",
@@ -65,7 +65,7 @@ func BenchmarkStore(b *testing.B) {
 		s := newStore(db, 60*time.Second, DefaultHardTTL, clock)
 		s.block = true
 
-		ps := &Permissions{
+		ps := &authz.UserPermissions{
 			UserID: 100,
 			Perm:   authz.Read,
 			Type:   "repos",
@@ -122,7 +122,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		}
 
 		s := newStore(db, ttl, hardTTL, clock)
-		s.updates = make(chan *Permissions)
+		s.updates = make(chan *authz.UserPermissions)
 
 		ids := []uint32{1, 2, 3}
 		e := error(nil)
@@ -130,8 +130,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 			return ids, &codeHost, e
 		}
 
-		ps := &Permissions{UserID: 42, Perm: authz.Read, Type: "repos"}
-		load := func(s *store) (*Permissions, error) {
+		ps := &authz.UserPermissions{UserID: 42, Perm: authz.Read, Type: "repos"}
+		load := func(s *store) (*authz.UserPermissions, error) {
 			ps := *ps
 			return &ps, s.LoadPermissions(ctx, &ps, update)
 		}
@@ -146,7 +146,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 		{
 			// No permissions cached.
 			ps, err := load(s)
-			equal(t, "err", err, &StalePermissionsError{Permissions: ps})
+			equal(t, "err", err, &authz.ErrStalePermissions{
+				UserID: ps.UserID,
+				Perm:   ps.Perm,
+				Type:   ps.Type,
+			})
 			equal(t, "ids", array(ps.IDs), []uint32(nil))
 		}
 
@@ -157,7 +161,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 			atomic.AddInt64(&now, int64(hardTTL))
 
 			ps, err := load(s)
-			equal(t, "err", err, &StalePermissionsError{Permissions: ps})
+			equal(t, "err", err, &authz.ErrStalePermissions{
+				UserID: ps.UserID,
+				Perm:   ps.Perm,
+				Type:   ps.Type,
+			})
 			equal(t, "ids", array(ps.IDs), ids)
 		}
 
@@ -208,12 +216,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			type op struct {
 				id  int
-				ps  *Permissions
+				ps  *authz.UserPermissions
 				err error
 			}
 
 			ch := make(chan op, 30)
-			updates := make(chan *Permissions)
+			updates := make(chan *authz.UserPermissions)
 
 			for i := 0; i < cap(ch); i++ {
 				go func(i int) {

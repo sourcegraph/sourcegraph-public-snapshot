@@ -9,6 +9,7 @@ import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './f
 import { getPageInfo, GitLabPageKind } from './scrape'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { subTypeOf } from '../../../../shared/src/util/types'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 
 const toolbarButtonProps = {
     className: 'btn btn-default btn-sm',
@@ -65,11 +66,20 @@ const singleFileCodeView: Omit<CodeView, 'element'> = {
     observeSelections: observeSelectionsFromHash,
 }
 
+const getFileTitle = (codeView: HTMLElement): HTMLElement[] => {
+    const fileTitle = codeView.querySelector<HTMLElement>('.js-file-title')
+    if (!fileTitle) {
+        throw new Error('Could not find .file-title element')
+    }
+    return [fileTitle]
+}
+
 const mergeRequestCodeView: Omit<CodeView, 'element'> = {
     dom: diffDOMFunctions,
     getToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
+    getScrollBoundaries: getFileTitle,
 }
 
 const commitCodeView: Omit<CodeView, 'element'> = {
@@ -77,6 +87,7 @@ const commitCodeView: Omit<CodeView, 'element'> = {
     getToolbarMount,
     resolveFileInfo: resolveCommitFileInfo,
     toolbarButtonProps,
+    getScrollBoundaries: getFileTitle,
 }
 
 const resolveView: ViewResolver<CodeView>['resolveView'] = (element: HTMLElement): CodeView | null => {
@@ -113,6 +124,14 @@ const codeViewResolver: ViewResolver<CodeView> = {
     resolveView,
 }
 
+const notificationClassNames = {
+    [NotificationType.Log]: 'alert alert-secondary',
+    [NotificationType.Success]: 'alert alert-success',
+    [NotificationType.Info]: 'alert alert-info',
+    [NotificationType.Warning]: 'alert alert-warning',
+    [NotificationType.Error]: 'alert alert-danger',
+}
+
 export const gitlabCodeHost = subTypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
@@ -135,14 +154,12 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         // Go to specific URL on this Gitlab instance.
         const url = new URL(`https://${target.rawRepoName}/blob/${target.rev}/${target.filePath}`)
         if (target.position) {
-            const { line, character } = target.position
+            const { line } = target.position
             url.hash = `#L${line}`
-            if (character) {
-                url.hash += `:${character}`
-            }
         }
         return url.href
     },
+    notificationClassNames,
     commandPaletteClassProps: {
         popoverClassName: 'dropdown-menu command-list-popover--gitlab',
         formClassName: 'dropdown-input',
@@ -161,8 +178,16 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         actionItemClassName: 'btn btn-secondary action-item--gitlab',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
-        infoAlertClassName: 'alert alert-info',
-        errorAlertClassName: 'alert alert-danger',
+        infoAlertClassName: notificationClassNames[NotificationType.Info],
+        errorAlertClassName: notificationClassNames[NotificationType.Error],
     },
     codeViewsRequireTokenization: true,
+    getHoverOverlayMountLocation: (): string | null => {
+        const { pageKind } = getPageInfo()
+        // On merge request pages only, mount the hover overlay to the diffs tab container.
+        if (pageKind === GitLabPageKind.MergeRequest) {
+            return 'div.tab-pane.diffs'
+        }
+        return null
+    },
 })

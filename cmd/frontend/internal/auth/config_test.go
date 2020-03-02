@@ -13,15 +13,15 @@ func TestValidateCustom(t *testing.T) {
 		wantProblems conf.Problems
 	}{
 		"no auth.providers": {
-			input:        conf.Unified{Critical: schema.CriticalConfiguration{}},
-			wantProblems: conf.NewCriticalProblems("no auth providers set"),
+			input:        conf.Unified{SiteConfiguration: schema.SiteConfiguration{}},
+			wantProblems: conf.NewSiteProblems("no auth providers set"),
 		},
 		"empty auth.providers": {
-			input:        conf.Unified{Critical: schema.CriticalConfiguration{AuthProviders: []schema.AuthProviders{}}},
-			wantProblems: conf.NewCriticalProblems("no auth providers set"),
+			input:        conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{}}},
+			wantProblems: conf.NewSiteProblems("no auth providers set"),
 		},
 		"single auth provider": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
+			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
 				},
@@ -29,7 +29,7 @@ func TestValidateCustom(t *testing.T) {
 			wantProblems: nil,
 		},
 		"multiple auth providers": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
+			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
 					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},

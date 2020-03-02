@@ -38,6 +38,7 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
                     avatarURL
                     viewerCanAdminister
                     siteAdmin
+                    builtinAuth
                     createdAt
                     emails {
                         email
@@ -76,7 +77,7 @@ interface UserAreaProps
         SettingsCascadeProps,
         ThemeProps,
         ActivationProps,
-        Omit<PatternTypeProps, 'togglePatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'> {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -107,7 +108,7 @@ export interface UserAreaRouteContext
         ThemeProps,
         ActivationProps,
         NamespaceProps,
-        Omit<PatternTypeProps, 'togglePatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'> {
     /** The user area main URL. */
     url: string
 

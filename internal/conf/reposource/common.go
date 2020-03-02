@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
@@ -23,18 +24,6 @@ type RepoSource interface {
 	// empty string is returned and err is nil. If there is an unrelated error, an error is
 	// returned.
 	CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error)
-}
-
-// NormalizeBaseURL modifies the input and returns a normalized form of the base URL with insignificant
-// differences (such as in presence of a trailing slash, or hostname case) eliminated. Its return value should be
-// used for the (ExternalRepoSpec).ServiceID field (and passed to XyzExternalRepoSpec) instead of a non-normalized
-// base URL.
-func NormalizeBaseURL(baseURL *url.URL) *url.URL {
-	baseURL.Host = strings.ToLower(baseURL.Host)
-	if !strings.HasSuffix(baseURL.Path, "/") {
-		baseURL.Path += "/"
-	}
-	return baseURL
 }
 
 var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git)://`)
@@ -69,7 +58,7 @@ func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL
 		if err != nil {
 			return nil, nil, false, fmt.Errorf("Error parsing baseURL: %s", err)
 		}
-		parsedBaseURL = NormalizeBaseURL(parsedBaseURL)
+		parsedBaseURL = extsvc.NormalizeBaseURL(parsedBaseURL)
 	}
 
 	parsedCloneURL, err = parseCloneURL(cloneURL)

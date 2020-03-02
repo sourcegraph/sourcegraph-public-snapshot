@@ -17,7 +17,7 @@
   },
   "scripts": {
     "tslint": "tslint -t stylish -c ../tslint.config.js -p tsconfig.json",
-    "eslint": "eslint '**/*.[jt]s?(x)'",
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
     "test": "jest",
     "graphql": "gulp graphQLTypes",

@@ -7,6 +7,10 @@ import (
 )
 
 // ExecRequest is a request to execute a command inside a git repository.
+//
+// Note that this request is deserialized by both gitserver and the frontend's
+// internal proxy route and any major change to this structure will need to
+// be reconciled in both places.
 type ExecRequest struct {
 	Repo api.RepoName `json:"repo"`
 
@@ -138,6 +142,8 @@ type CreateCommitFromPatchRequest struct {
 	Patch string
 	// TargetRef is the ref that will be created for this patch
 	TargetRef string
+	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+	UniqueRef bool
 	// CommitInfo is the information that will be used when creating the commit from a patch
 	CommitInfo PatchCommitInfo
 	// Push specifies whether the target ref will be pushed to the code host
@@ -149,10 +155,12 @@ type CreateCommitFromPatchRequest struct {
 
 // PatchCommitInfo will be used for commit information when creating a commit from a patch
 type PatchCommitInfo struct {
-	Message     string
-	AuthorName  string
-	AuthorEmail string
-	Date        time.Time
+	Message        string
+	AuthorName     string
+	AuthorEmail    string
+	CommitterName  string
+	CommitterEmail string
+	Date           time.Time
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating
@@ -173,7 +181,7 @@ func (e *CreateCommitFromPatchResponse) SetError(repo, command, out string, err 
 	e.Error.RepositoryName = repo
 	e.Error.Command = command
 	e.Error.CombinedOutput = out
-	e.Error.Err = err
+	e.Error.InternalError = err.Error()
 }
 
 // CreateCommitFromPatchError is populated on errors running
@@ -181,8 +189,10 @@ func (e *CreateCommitFromPatchResponse) SetError(repo, command, out string, err 
 type CreateCommitFromPatchError struct {
 	// RepositoryName is the name of the repository
 	RepositoryName string
-	// Error is the internal error
-	Err error
+
+	// InternalError is the internal error
+	InternalError string
+
 	// Command is the last git command that was attempted
 	Command string
 	// CombinedOutput is the combined stderr and stdout from running the command
@@ -191,13 +201,5 @@ type CreateCommitFromPatchError struct {
 
 // Error returns a detailed error conforming to the error interface
 func (e *CreateCommitFromPatchError) Error() string {
-	if e.Err == nil {
-		return ""
-	}
-	return e.Err.Error()
-}
-
-// Unwrap return the original error and satisfies the errors.Unwrap interface
-func (e *CreateCommitFromPatchError) Unwrap() error {
-	return e.Err
+	return e.InternalError
 }

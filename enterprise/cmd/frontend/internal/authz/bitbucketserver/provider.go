@@ -24,9 +24,14 @@ type Provider struct {
 	codeHost *extsvc.CodeHost
 	pageSize int // Page size to use in paginated requests.
 	store    *store
+
+	// pluginPerm enables fetching permissions from the alternative roaring
+	// bitmap endpoint provided by the Bitbucket Server Sourcegraph plugin:
+	// https://github.com/sourcegraph/bitbucket-server-plugin
+	pluginPerm bool
 }
 
-var _ authz.Provider = ((*Provider)(nil))
+var _ authz.Provider = (*Provider)(nil)
 
 var clock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }
 
@@ -34,12 +39,13 @@ var clock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond
 // the given bitbucketserver.Client to talk to a Bitbucket Server API that is
 // the source of truth for permissions. It assumes usernames of Sourcegraph accounts
 // match 1-1 with usernames of Bitbucket Server API users.
-func NewProvider(cli *bitbucketserver.Client, db *sql.DB, ttl, hardTTL time.Duration) *Provider {
+func NewProvider(cli *bitbucketserver.Client, db *sql.DB, ttl, hardTTL time.Duration, pluginPerm bool) *Provider {
 	return &Provider{
-		client:   cli,
-		codeHost: extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
-		pageSize: 1000,
-		store:    newStore(db, ttl, hardTTL, clock),
+		client:     cli,
+		codeHost:   extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
+		pageSize:   1000,
+		store:      newStore(db, ttl, hardTTL, clock),
+		pluginPerm: pluginPerm,
 	}
 }
 
@@ -102,10 +108,11 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		userName = user.Name
 	}
 
-	ps := &Permissions{
-		UserID: userID,
-		Perm:   authz.Read,
-		Type:   "repos",
+	ps := &authz.UserPermissions{
+		UserID:   userID,
+		Perm:     authz.Read,
+		Type:     authz.PermRepos,
+		Provider: authz.ProviderBitbucketServer,
 	}
 
 	err = p.store.LoadPermissions(ctx, ps, p.update(userName))
@@ -113,16 +120,17 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		return nil, err
 	}
 
-	return ps.Authorized(repos), nil
+	return ps.AuthorizedRepos(repos), nil
 }
 
 // UpdatePermissions forces an update of the permissions of the given
 // user.
 func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
-	ps := &Permissions{
-		UserID: u.ID,
-		Perm:   authz.Read,
-		Type:   "repos",
+	ps := &authz.UserPermissions{
+		UserID:   u.ID,
+		Perm:     authz.Read,
+		Type:     authz.PermRepos,
+		Provider: authz.ProviderBitbucketServer,
 	}
 
 	return p.store.UpdatePermissions(ctx, ps, p.update(u.Username))
@@ -132,6 +140,13 @@ func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
 // all the repos the user with the given userName is authorized to
 // see.
 func (p *Provider) update(userName string) PermissionsUpdateFunc {
+	if p.pluginPerm {
+		return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
+			ids, err := p.repoIDs(ctx, userName)
+			return ids, p.codeHost, err
+		}
+	}
+
 	return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
 		visible, err := p.repos(ctx, userName)
 		if err != nil && err != errNoResults {
@@ -219,6 +234,14 @@ func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucket
 	}
 
 	return all, err
+}
+
+func (p *Provider) repoIDs(ctx context.Context, username string) (ids []uint32, err error) {
+	c, err := p.client.Sudo(username)
+	if err != nil {
+		return nil, err
+	}
+	return c.RepoIDs(ctx, "read")
 }
 
 func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketserver.UserFilter) (*bitbucketserver.User, error) {

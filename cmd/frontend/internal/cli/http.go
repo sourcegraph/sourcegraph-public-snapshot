@@ -28,19 +28,23 @@ import (
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
 // external clients.
-func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook http.Handler, lsifServerProxy *httpapi.LSIFServerProxy) (http.Handler, error) {
+func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook, bitbucketServerWebhook http.Handler, lsifServerProxy *httpapi.LSIFServerProxy) (http.Handler, error) {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
 
 	// HTTP API handler.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := internalhttpapi.NewHandler(r, schema, githubWebhook, lsifServerProxy)
+	apiHandler := internalhttpapi.NewHandler(r, schema, githubWebhook, bitbucketServerWebhook, lsifServerProxy)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
 	// X-Requested-With header). Doing so would open it up to CSRF attacks.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(apiHandler)                                // API accepts access tokens
+	if hooks.PostAuthMiddleware != nil {
+		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
+		apiHandler = hooks.PostAuthMiddleware(apiHandler)
+	}
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 
 	// App handler (HTML pages).
@@ -51,6 +55,10 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook http.Handler, 
 	appHandler = authMiddlewares.App(appHandler)                       // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(appHandler)                  // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(appHandler) // app accepts access tokens
+	if hooks.PostAuthMiddleware != nil {
+		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
+		appHandler = hooks.PostAuthMiddleware(appHandler)
+	}
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
@@ -65,10 +73,6 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook http.Handler, 
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
 	h = internalauth.OverrideAuthMiddleware(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
-	// 🚨 SECURITY: These all run before the auth handler, so the client is not yet authenticated.
-	if hooks.PreAuthMiddleware != nil {
-		h = hooks.PreAuthMiddleware(h)
-	}
 	h = tracepkg.Middleware(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = middleware.BlackHole(h)
@@ -183,7 +187,7 @@ func isTrustedOrigin(r *http.Request) bool {
 		isCORSAllowedRequest = isAllowedOrigin(requestOrigin, strings.Fields(corsOrigin))
 	}
 
-	if externalURL := strings.TrimSuffix(conf.Get().Critical.ExternalURL, "/"); externalURL != "" && requestOrigin == externalURL {
+	if externalURL := strings.TrimSuffix(conf.Get().ExternalURL, "/"); externalURL != "" && requestOrigin == externalURL {
 		isCORSAllowedRequest = true
 	}
 

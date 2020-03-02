@@ -49,7 +49,7 @@ func nameWithParents(ctx context.Context, name string) (string, context.Context)
 	return name, context.WithValue(ctx, traceNameKey, name+" > ")
 }
 
-// ContextWithSpan returns a new context.Context that holds a reference to
+// ContextWithTrace returns a new context.Context that holds a reference to
 // trace's SpanContext.
 func ContextWithTrace(ctx context.Context, tr *Trace) context.Context {
 	ctx = opentracing.ContextWithSpan(ctx, tr.span)

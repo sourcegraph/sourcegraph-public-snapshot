@@ -4,16 +4,13 @@ set -exuo pipefail
 cd $(dirname "${BASH_SOURCE[0]}")/../../..
 
 parallel_run() {
-    log_file=$(mktemp)
-    trap "rm -rf $log_file" EXIT
-
-    parallel --jobs 4 --keep-order --line-buffer --tag --joblog $log_file "$@"
-    cat $log_file
+    ./dev/ci/parallel_run.sh "$@"
 }
 
 echo "--- yarn root"
 # mutex is necessary since frontend and the management-console can
 # run concurrent "yarn" installs
+# TODO: This is no longer needed since the management console was removed.
 yarn --mutex network --frozen-lockfile --network-timeout 60000
 
 build_browser() {

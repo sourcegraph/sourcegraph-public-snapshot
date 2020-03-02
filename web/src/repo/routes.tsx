@@ -94,7 +94,9 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
             resolvedRev: { commitID, defaultBranch },
             match,
             patternType,
-            togglePatternType,
+            setPatternType,
+            caseSensitive,
+            setCaseSensitivity,
             ...context
         }: RepoRevContainerContext &
             RouteComponentProps<{
@@ -128,7 +130,9 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
                 commitID,
                 filePath,
                 patternType,
-                togglePatternType,
+                setPatternType,
+                caseSensitive,
+                setCaseSensitivity,
             }
 
             return (

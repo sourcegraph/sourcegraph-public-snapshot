@@ -15,7 +15,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, fetchSiteUpdateCheck } from './backend'
 import { ErrorAlert } from '../components/alerts'
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<{}> {}
 
 interface State {
     buildVersion?: string
@@ -56,13 +56,11 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const autoUpdateCheckingEnabled = window.context.critical['update.channel'] === 'release'
+        const autoUpdateCheckingEnabled = window.context.site['update.channel'] === 'release'
         return (
             <div className="site-admin-updates-page">
                 <PageTitle title="Updates - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Updates</h2>
-                </div>
+                <h2>Updates</h2>
                 {this.state.error && (
                     <p className="site-admin-updates-page__error">Error: {upperFirst(this.state.error)}</p>
                 )}
@@ -126,7 +124,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                 </p>
                 <p>
                     {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                    <a href="https://about.sourcegraph.com/changelog" target="_blank">
+                    <a href="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
                         Sourcegraph changelog
                     </a>
                 </p>

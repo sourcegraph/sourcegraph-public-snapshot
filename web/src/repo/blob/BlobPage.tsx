@@ -32,14 +32,15 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
 import { BlobPanel } from './panel/BlobPanel'
+import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
 import { ThemeProps } from '../../../../shared/src/theme'
 
-export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
+function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
 }
 
-export const fetchBlob = memoizeObservable(
+const fetchBlob = memoizeObservable(
     (args: {
         repoName: string
         commitID: string
@@ -128,7 +129,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
     }
 
     private logViewEvent(): void {
-        eventLogger.logViewEvent('Blob', { fileShown: true })
+        eventLogger.logViewEvent('Blob')
     }
 
     public componentDidMount(): void {
@@ -192,19 +193,16 @@ export class BlobPage extends React.PureComponent<Props, State> {
     }
 
     public render(): React.ReactNode {
-        if (isErrorLike(this.state.blobOrError)) {
-            return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.blobOrError.message)} />
-            )
-        }
-
         let renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
         // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
         // - If file contains richHTML and url does not include a line number: We render in richHTML.
         // - If file does not contain richHTML or the url includes a line number: We render in code view.
         if (!renderMode) {
             renderMode =
-                this.state.blobOrError && this.state.blobOrError.richHTML && !parseHash(this.props.location.hash).line
+                this.state.blobOrError &&
+                !isErrorLike(this.state.blobOrError) &&
+                this.state.blobOrError.richHTML &&
+                !parseHash(this.props.location.hash).line
                     ? 'rendered'
                     : 'code'
         }
@@ -247,8 +245,34 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={30}
+                    element={
+                        <GoToRawAction
+                            key="raw-action"
+                            repoName={this.props.repoName}
+                            rev={this.props.rev}
+                            filePath={this.props.filePath}
+                        />
+                    }
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                />
             </>
         )
+
+        if (isErrorLike(this.state.blobOrError)) {
+            return (
+                <>
+                    {alwaysRender}
+                    <HeroPage
+                        icon={AlertCircleIcon}
+                        title="Error"
+                        subtitle={upperFirst(this.state.blobOrError.message)}
+                    />
+                </>
+            )
+        }
 
         if (!this.state.blobOrError) {
             // Render placeholder for layout before content is fetched.

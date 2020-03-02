@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"flag"
+	"io/ioutil"
+	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -18,7 +20,7 @@ func TestRepository(t *testing.T) {
 	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: mustParseGraphQLSchema(t, nil),
+			Schema: mustParseGraphQLSchema(t),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {
@@ -37,16 +39,30 @@ func TestRepository(t *testing.T) {
 	})
 }
 
-func TestNodeResolverTo(t *testing.T) {
+func TestResolverTo(t *testing.T) {
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
 	// codecov coverage reports are noisy.
-	r := &NodeResolver{}
-	typ := reflect.TypeOf(r)
-	for i := 0; i < typ.NumMethod(); i++ {
-		if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
-			reflect.ValueOf(r).MethodByName(name).Call(nil)
+	resolvers := []interface{}{
+		&FileMatchResolver{},
+		&GitTreeEntryResolver{},
+		&NamespaceResolver{},
+		&NodeResolver{},
+		&RepositoryResolver{},
+		&codemodResultResolver{},
+		&commitSearchResultResolver{},
+		&gitRevSpec{},
+		&searchSuggestionResolver{},
+		&settingsSubject{},
+		&statusMessageResolver{},
+	}
+	for _, r := range resolvers {
+		typ := reflect.TypeOf(r)
+		for i := 0; i < typ.NumMethod(); i++ {
+			if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
+				reflect.ValueOf(r).MethodByName(name).Call(nil)
+			}
 		}
 	}
 }
@@ -55,6 +71,7 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
+		log.SetOutput(ioutil.Discard)
 	}
 	os.Exit(m.Run())
 }

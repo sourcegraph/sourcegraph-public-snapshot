@@ -1,6 +1,6 @@
 package version
 
-const devVersion = "dev" // version string for unreleased development builds
+const devVersion = "0.0.0+dev" // version string for unreleased development builds
 
 // version is configured at build time via ldflags like this:
 // -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=1.2.3"

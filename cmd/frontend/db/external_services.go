@@ -1,7 +1,6 @@
 package db
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -99,16 +98,7 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 		return errors.Wrap(err, "failed to validate config against schema")
 	}
 
-	errs := &multierror.Error{
-		ErrorFormat: func(errs []error) string {
-			// Markdown bullet list of error messages.
-			var buf bytes.Buffer
-			for _, err := range errs {
-				fmt.Fprintf(&buf, "- %s\n", err)
-			}
-			return buf.String()
-		},
-	}
+	var errs *multierror.Error
 	for _, err := range res.Errors() {
 		e := err.String()
 		// Remove `(root): ` from error formatting since these errors are
@@ -224,7 +214,7 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.Bitb
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
-	ps := confGet().Critical.AuthProviders
+	ps := confGet().AuthProviders
 	if err := c.ValidateConfig(externalService.Kind, externalService.Config, ps); err != nil {
 		return err
 	}

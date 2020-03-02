@@ -20,27 +20,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	authzResolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
-	a8nResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/proxy"
 	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func main() {
 	initLicensing()
-	initAuthz()
 	initResolvers()
 	initLSIFEndpoints()
 
 	// Connect to the database.
-	if err := dbconn.ConnectToDB(""); err != nil {
-		log.Fatal(err)
+	if err := shared.InitDB(); err != nil {
+		log.Fatalf("FATAL: %v", err)
 	}
+	initAuthz(dbconn.Global)
 
 	ctx := context.Background()
 	go func() {
@@ -63,13 +65,17 @@ func main() {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
-	githubWebhook := &a8n.GitHubWebhook{
-		Store: a8n.NewStoreWithClock(dbconn.Global, clock),
-		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
-		Now:   clock,
-	}
+	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
+	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	shared.Main(githubWebhook)
+	githubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
+	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(campaignsStore, repositories, clock)
+
+	go bitbucketServerWebhook.Upsert(30 * time.Second)
+
+	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
+
+	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
 
 func initLicensing() {
@@ -108,8 +114,13 @@ func initLicensing() {
 }
 
 func initResolvers() {
-	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
+	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
 	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
+	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
+		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {
+			return time.Now().UTC().Truncate(time.Microsecond)
+		})
+	}
 }
 
 func initLSIFEndpoints() {

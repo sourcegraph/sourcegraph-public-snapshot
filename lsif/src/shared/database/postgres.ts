@@ -1,5 +1,5 @@
 import * as metrics from './metrics'
-import * as xrepoModels from '../models/xrepo'
+import * as pgModels from '../models/pg'
 import pRetry from 'p-retry'
 import { Configuration } from '../config/config'
 import { Connection, createConnection as _createConnection, EntityManager } from 'typeorm'
@@ -8,6 +8,7 @@ import { Logger } from 'winston'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from '../settings'
 import { TlsOptions } from 'tls'
+import { DatabaseLogger } from './logger'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -16,7 +17,7 @@ import { TlsOptions } from 'tls'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395616
+const MINIMUM_MIGRATION_VERSION = 1528395652
 
 /**
  * How many times to try to check the current database migration version on startup.
@@ -29,18 +30,18 @@ const MAX_SCHEMA_POLL_RETRIES = readEnvInt('MAX_SCHEMA_POLL_RETRIES', 60)
 const SCHEMA_POLL_INTERVAL = readEnvInt('SCHEMA_POLL_INTERVAL', 5)
 
 /**
- * How many times to try to connect to the cross-repository database on startup.
+ * How many times to try to connect to Postgres on startup.
  */
 const MAX_CONNECTION_RETRIES = readEnvInt('MAX_CONNECTION_RETRIES', 60)
 
 /**
- * How long to wait (in seconds) between cross-repository connection attempts.
+ * How long to wait (in seconds) between Postgres connection attempts.
  */
 const CONNECTION_RETRY_INTERVAL = readEnvInt('CONNECTION_RETRY_INTERVAL', 5)
 
 /**
  * Create a Postgres connection. This creates a typorm connection pool with the
- * name `xrepo`. The connection configuration is constructed by the method
+ * name `lsif`. The connection configuration is constructed by the method
  * `createPostgresConnectionOptions`. This method blocks (failing after a configured
  * time) until the connection is established, then blocks indefinitely while the
  * database migration state is behind the expected minimum, or dirty.
@@ -76,11 +77,11 @@ export async function createPostgresConnection(configuration: Configuration, log
 }
 
 /**
- * Create a connection to the cross-repository database. This will re-attempt to
- * access the database while the database does not exist. This is to give some
- * time to the frontend to run the migrations that create the LSIF tables. The
- * retry interval and attempt count can be tuned via `MAX_CONNECTION_RETRIES` and
- * `CONNECTION_RETRY_INTERVAL` environment variables.
+ * Create a connection to Postgres. This will re-attempt to access the database while
+ * the database does not exist. This is to give some time to the frontend to run the
+ * migrations that create the LSIF tables. The retry interval and attempt count can
+ * be tuned via `MAX_CONNECTION_RETRIES` and `CONNECTION_RETRY_INTERVAL` environment
+ * variables.
  *
  * @param connectionOptions The connection options.
  * @param logger The logger instance.
@@ -88,8 +89,8 @@ export async function createPostgresConnection(configuration: Configuration, log
 function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger: Logger): Promise<Connection> {
     return pRetry(
         () => {
-            logger.debug('Connecting to cross-repository database')
-            return connectPostgres(connectionOptions, '')
+            logger.debug('Connecting to Postgres')
+            return connectPostgres(connectionOptions, '', logger)
         },
         {
             factor: 1,
@@ -101,20 +102,22 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
 }
 
 /**
- * Create a connection to the cross-repository database.
+ * Create a connection to Postgres.
  *
  * @param connectionOptions The connection options.
  * @param suffix The database suffix (used for testing).
+ * @param logger The logger instance
  */
 export function connectPostgres(
     connectionOptions: PostgresConnectionCredentialsOptions,
-    suffix: string
+    suffix: string,
+    logger: Logger
 ): Promise<Connection> {
     return _createConnection({
         type: 'postgres',
-        name: `xrepo${suffix}`,
-        entities: xrepoModels.entities,
-        logging: ['error', 'warn'],
+        name: `lsif${suffix}`,
+        entities: pgModels.entities,
+        logger: new DatabaseLogger(logger),
         maxQueryExecutionTime: 1000,
         ...connectionOptions,
     })
@@ -133,7 +136,7 @@ function waitForMigrations(connection: Connection, logger: Logger): Promise<void
 
         const version = parseInt(await getMigrationVersion(connection), 10)
         if (isNaN(version) || version < MINIMUM_MIGRATION_VERSION) {
-            throw new Error('Cross-repository database not up to date')
+            throw new Error('Postgres database not up to date')
         }
     }
 
@@ -171,7 +174,7 @@ async function getMigrationVersion(connection: Connection): Promise<string> {
  * @param callback The function invoke with the connection.
  */
 export function instrumentQuery<T>(callback: () => Promise<T>): Promise<T> {
-    return instrument(metrics.xrepoQueryDurationHistogram, metrics.xrepoQueryErrorsCounter, callback)
+    return instrument(metrics.postgresQueryDurationHistogram, metrics.postgresQueryErrorsCounter, callback)
 }
 
 /**
@@ -186,4 +189,22 @@ export function withInstrumentedTransaction<T>(
     callback: (connection: EntityManager) => Promise<T>
 ): Promise<T> {
     return instrumentQuery(() => connection.transaction(callback))
+}
+
+/**
+ * Invokes the callback wrapped in instrumentQuery with the given entityManager, if  supplied,
+ * and runs the callback in a transaction with a fresh entityManager otherwise.
+ *
+ * @param connection The Postgres connection.
+ * @param entityManager The EntityManager to use as part of a transaction.
+ * @param callback The function invoke with the entity manager.
+ */
+export function instrumentQueryOrTransaction<T>(
+    connection: Connection,
+    entityManager: EntityManager | undefined,
+    callback: (connection: EntityManager) => Promise<T>
+): Promise<T> {
+    return entityManager
+        ? instrumentQuery(() => callback(entityManager))
+        : withInstrumentedTransaction(connection, callback)
 }

@@ -1,4 +1,4 @@
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import { TelemetryService } from '../../../shared/src/telemetry/telemetryService'
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
@@ -35,17 +35,15 @@ export class EventLogger implements TelemetryService {
      * Log a pageview.
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
-    public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true): void {
+    public logViewEvent(pageTitle: string, logAsActiveUser = true): void {
         if ((window.context && window.context.userAgentIsBot) || !pageTitle) {
             return
         }
         pageTitle = `View${pageTitle}`
 
-        const decoratedProps = {
-            ...pageViewQueryParameters(window.location.href),
-        }
+        const props = pageViewQueryParameters(window.location.href)
         serverAdmin.trackPageView(pageTitle, logAsActiveUser)
-        this.logToConsole(pageTitle, decoratedProps)
+        this.logToConsole(pageTitle, props)
 
         // Use flag to ensure URL query params are only stripped once
         if (!this.hasStrippedQueryParameters) {
@@ -62,7 +60,7 @@ export class EventLogger implements TelemetryService {
         if ((window.context && window.context.userAgentIsBot) || !eventLabel) {
             return
         }
-        serverAdmin.trackAction(eventLabel)
+        serverAdmin.trackAction(eventLabel, eventProperties)
         this.logToConsole(eventLabel, eventProperties)
     }
 

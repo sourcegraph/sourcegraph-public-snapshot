@@ -1,5 +1,4 @@
-import * as path from 'path'
-import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
+import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
@@ -20,12 +19,6 @@ if (!GHE_TOKEN) {
 }
 
 const REPO_PREFIX = new URL(GHE_BASE_URL).hostname
-
-// 1 minute test timeout. This must be greater than the default Puppeteer
-// command timeout of 30s in order to get the stack trace to point to the
-// Puppeteer command that failed instead of a cryptic Jest test timeout
-// location.
-jest.setTimeout(1000 * 60 * 1000)
 
 const { sourcegraphBaseUrl } = getConfig('sourcegraphBaseUrl')
 
@@ -70,26 +63,18 @@ async function init(driver: Driver): Promise<void> {
 describe('Sourcegraph browser extension on GitHub Enterprise', () => {
     let driver: Driver
 
-    beforeAll(async () => {
-        try {
-            driver = await createDriverForTest({ loadExtension: true, sourcegraphBaseUrl })
-            await init(driver)
-        } catch (err) {
-            console.error(err)
-            setTimeout(() => process.exit(1), 100)
-        }
-    }, 4 * 60 * 1000)
+    before(async function() {
+        this.timeout(4 * 60 * 1000)
+        driver = await createDriverForTest({ loadExtension: true, sourcegraphBaseUrl })
+        await init(driver)
+    })
 
-    afterAll(async () => {
+    after(async () => {
         await driver.close()
     })
 
     // Take a screenshot when a test fails.
-    saveScreenshotsUponFailuresAndClosePage(
-        path.resolve(__dirname, '..', '..', '..', '..'),
-        path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
-        () => driver.page
-    )
+    saveScreenshotsUponFailures(() => driver.page)
 
     testSingleFilePage({
         getDriver: () => driver,

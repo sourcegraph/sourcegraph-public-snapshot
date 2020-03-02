@@ -4,7 +4,35 @@ set -e
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-for dir in web shared browser packages/sourcegraph-extension-api packages/@sourcegraph/extension-api-types lsif dev/release; do
-    echo "--- $dir: $@"
-    (set -x; cd "$dir" && "$@")
-done
+parallel_run() {
+    ./dev/ci/parallel_run.sh "$@"
+}
+
+export ARGS="$@"
+
+DIRS=(
+   web \
+   shared \
+   browser \
+   packages/sourcegraph-extension-api \
+   packages/@sourcegraph/extension-api-types \
+   lsif \
+   dev/release
+)
+
+run_command() {
+    dir=$1
+    echo "--- $dir: $ARGS"
+    (set -x; cd "$dir" && $ARGS)
+}
+export -f run_command
+
+if [[ "${CI:-"false"}" == "true" ]]; then
+    echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"
+
+    parallel_run run_command {} ::: "${DIRS[@]}"
+else
+    for dir in "${DIRS[@]}"; do
+        run_command $dir
+    done
+fi

@@ -8,110 +8,109 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-// NewCodeIntelResolver will be set by enterprise
+// NewCodeIntelResolver will be set by enterprise.
 var NewCodeIntelResolver func() CodeIntelResolver
 
 type CodeIntelResolver interface {
-	LSIFDumpByID(ctx context.Context, id graphql.ID) (LSIFDumpResolver, error)
-	LSIFDumps(ctx context.Context, args *LSIFRepositoryDumpsQueryArgs) (LSIFDumpConnectionResolver, error)
-	LSIFJobByID(ctx context.Context, id graphql.ID) (LSIFJobResolver, error)
-	LSIFJobs(ctx context.Context, args *LSIFJobsQueryArgs) (LSIFJobConnectionResolver, error)
-	LSIFJobStats(ctx context.Context) (LSIFJobStatsResolver, error)
-	LSIFJobStatsByID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error)
-	DeleteLSIFDump(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
-	DeleteLSIFJob(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
+	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
+	LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+	DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
+	LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error)
 }
 
-type LSIFDumpsQueryArgs struct {
+var codeIntelOnlyInEnterprise = errors.New("lsif uploads and queries are only available in enterprise")
+
+type defaultCodeIntelResolver struct{}
+
+func (defaultCodeIntelResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*EmptyResponse, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (r *schemaResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	// We need to override the embedded method here as it takes slightly different arguments
+	return r.CodeIntelResolver.DeleteLSIFUpload(ctx, args.ID)
+}
+
+type LSIFUploadsQueryArgs struct {
 	graphqlutil.ConnectionArgs
 	Query           *string
+	State           *string
 	IsLatestForRepo *bool
 	After           *string
 }
 
-type LSIFRepositoryDumpsQueryArgs struct {
-	*LSIFDumpsQueryArgs
+type LSIFRepositoryUploadsQueryArgs struct {
+	*LSIFUploadsQueryArgs
 	RepositoryID graphql.ID
 }
 
-type LSIFJobsQueryArgs struct {
-	graphqlutil.ConnectionArgs
-	State string
-	Query *string
-	After *string
-}
-
-type LSIFDumpResolver interface {
+type LSIFUploadResolver interface {
 	ID() graphql.ID
-	ProjectRoot() (*GitTreeEntryResolver, error)
-	IsLatestForRepo() bool
-	UploadedAt() DateTime
-	ProcessedAt() DateTime
-}
-
-type LSIFDumpConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LSIFDumpResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
-type LSIFJobStatsResolver interface {
-	ID() graphql.ID
-	ProcessingCount() int32
-	ErroredCount() int32
-	CompletedCount() int32
-	QueuedCount() int32
-	ScheduledCount() int32
-}
-
-type LSIFJobResolver interface {
-	ID() graphql.ID
-	Type() string
-	Arguments() JSONValue
+	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	InputCommit() string
+	InputRoot() string
+	InputIndexer() string
 	State() string
-	Failure() LSIFJobFailureReasonResolver
-	QueuedAt() DateTime
+	UploadedAt() DateTime
 	StartedAt() *DateTime
-	CompletedOrErroredAt() *DateTime
+	FinishedAt() *DateTime
+	Failure() LSIFUploadFailureReasonResolver
+	IsLatestForRepo() bool
 }
 
-type LSIFJobFailureReasonResolver interface {
+type LSIFUploadFailureReasonResolver interface {
 	Summary() string
-	Stacktraces() []string
+	Stacktrace() string
 }
 
-type LSIFJobConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LSIFJobResolver, error)
+type LSIFUploadConnectionResolver interface {
+	Nodes(ctx context.Context) ([]LSIFUploadResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-var codeIntelOnlyInEnterprise = errors.New("lsif dumps and jobs are only available in enterprise")
-
-func (r *schemaResolver) LSIFJobs(ctx context.Context, args *LSIFJobsQueryArgs) (LSIFJobConnectionResolver, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
-	return EnterpriseResolvers.codeIntelResolver.LSIFJobs(ctx, args)
+type LSIFQueryResolver interface {
+	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
+	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
+	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
 }
 
-func (r *schemaResolver) LSIFJobStats(ctx context.Context) (LSIFJobStatsResolver, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
-	return EnterpriseResolvers.codeIntelResolver.LSIFJobStats(ctx)
+type LSIFQueryArgs struct {
+	Repository *RepositoryResolver
+	Commit     GitObjectID
+	Path       string
+	UploadID   int64
 }
 
-func (r *schemaResolver) DeleteLSIFDump(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
-	return EnterpriseResolvers.codeIntelResolver.DeleteLSIFDump(ctx, args.ID)
+type LSIFQueryPositionArgs struct {
+	Line      int32
+	Character int32
 }
 
-func (r *schemaResolver) DeleteLSIFJob(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
-	return EnterpriseResolvers.codeIntelResolver.DeleteLSIFJob(ctx, args.ID)
+type LSIFPagedQueryPositionArgs struct {
+	LSIFQueryPositionArgs
+	graphqlutil.ConnectionArgs
+	After *string
+}
+
+type LocationConnectionResolver interface {
+	Nodes(ctx context.Context) ([]LocationResolver, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type HoverResolver interface {
+	Markdown() MarkdownResolver
+	Range() RangeResolver
 }

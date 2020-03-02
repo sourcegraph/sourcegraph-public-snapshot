@@ -91,9 +91,10 @@ $table-hover-bg-light: #f2f4f8;
 $table-border-color-light: #e4e9f1;
 
 // Progress
-$progress-border-radius: 0;
-$progress-bg: transparent;
 $progress-height: auto;
+
+// Collapsible
+$collapsible-expand-btn-width: 1.25rem;
 
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
@@ -190,6 +191,10 @@ body,
     flex: 1;
 }
 
+.cursor-pointer {
+    cursor: pointer;
+}
+
 // Our simple popovers only need these styles. We don't want the caret or special font sizes from
 // Bootstrap's popover CSS.
 .popover-inner {
@@ -218,8 +223,9 @@ body,
 @import './global/GlobalDebug';
 @import './global/Notices';
 @import './savedSearches/index';
-@import './search/input/ScopePage';
+@import './search/ScopePage';
 @import './search/input/SearchPage';
+@import './search/queryBuilder/index';
 @import './search/results/SearchResults';
 @import './settings/SettingsFile';
 @import './site-admin/SiteInitPage';
@@ -248,8 +254,8 @@ body,
 @import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
-@import './open/OpenPage';
 @import './components/AnimatedAlert';
+@import './components/Collapsible';
 @import './components/DismissibleAlert';
 @import './marketing/SurveyPage';
 @import './components/SingleValueCard';

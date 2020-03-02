@@ -1,7 +1,7 @@
 import { noop } from 'lodash'
 import { Observable, ReplaySubject } from 'rxjs'
 import { take } from 'rxjs/operators'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { TelemetryService } from '../../../../shared/src/telemetry/telemetryService'
@@ -70,11 +70,18 @@ export class EventLogger implements TelemetryService {
      *
      * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
      */
-    public async logCodeIntelligenceEvent(event: string, userEvent: GQL.UserEvent): Promise<void> {
+    public async logCodeIntelligenceEvent(
+        event: string,
+        userEvent: GQL.UserEvent,
+        eventProperties?: any
+    ): Promise<void> {
         const anonUserId = await this.getAnonUserID()
         const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
         logUserEvent(userEvent, anonUserId, sourcegraphURL, this.requestGraphQL)
-        logEvent({ name: event, userCookieID: anonUserId, url: sourcegraphURL }, this.requestGraphQL)
+        logEvent(
+            { name: event, userCookieID: anonUserId, url: sourcegraphURL, argument: eventProperties },
+            this.requestGraphQL
+        )
     }
 
     /**
@@ -89,10 +96,10 @@ export class EventLogger implements TelemetryService {
             case 'goToDefinition':
             case 'goToDefinition.preloaded':
             case 'hover':
-                await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATION)
+                await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATION, eventProperties)
                 break
             case 'findReferences':
-                await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATIONREFS)
+                await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATIONREFS, eventProperties)
                 break
         }
     }

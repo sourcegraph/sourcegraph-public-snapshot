@@ -21,7 +21,7 @@ func NewAuthzProviders(
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		p, err := newAuthzProvider(c.Authorization, c.Url, c.Token, cfg.Critical.AuthProviders)
+		p, err := newAuthzProvider(c.Authorization, c.Url, c.Token, cfg.AuthProviders)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p != nil {
@@ -75,12 +75,22 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 			}
 		}
 		if !foundAuthProvider {
-			return nil, fmt.Errorf("Did not find authentication provider matching %q", instanceURL)
+			return nil, fmt.Errorf("Did not find authentication provider matching %q. Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %s.", instanceURL, instanceURL)
 		}
 
+		minBatchThreshold := 200
+		if idp.Oauth.MinBatchingThreshold > 0 {
+			minBatchThreshold = idp.Oauth.MinBatchingThreshold
+		}
+		maxBatchRequests := 300
+		if idp.Oauth.MaxBatchRequests > 0 {
+			maxBatchRequests = idp.Oauth.MaxBatchRequests
+		}
 		return NewOAuthProvider(OAuthAuthzProviderOp{
-			BaseURL:  glURL,
-			CacheTTL: ttl,
+			BaseURL:           glURL,
+			CacheTTL:          ttl,
+			MinBatchThreshold: minBatchThreshold,
+			MaxBatchRequests:  maxBatchRequests,
 		}), nil
 	case idp.Username != nil:
 		return NewSudoProvider(SudoProviderOp{
@@ -110,7 +120,7 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 				}), nil
 			}
 		}
-		return nil, fmt.Errorf("Did not find authentication provider matching type %s and configID %s", ext.AuthProviderType, ext.AuthProviderID)
+		return nil, fmt.Errorf("Did not find authentication provider matching type %s and configID %s. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID.", ext.AuthProviderType, ext.AuthProviderID)
 	default:
 		return nil, fmt.Errorf("No identityProvider was specified")
 	}

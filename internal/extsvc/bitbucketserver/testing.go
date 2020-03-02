@@ -32,7 +32,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	u, err := url.Parse(instanceURL)

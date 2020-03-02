@@ -28,6 +28,7 @@ func TestHorizontalSearcher(t *testing.T) {
 					Files: []zoekt.FileMatch{{
 						Repository: endpoint,
 					}},
+					RepoURLs: map[string]string{endpoint: endpoint},
 				},
 				listResult: &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{&rle}},
 			}
@@ -83,6 +84,16 @@ func TestHorizontalSearcher(t *testing.T) {
 			t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, got))
 		}
 
+		// repohasfile depends on RepoURLs aggregating
+		got = got[:0]
+		for repo := range sr.RepoURLs {
+			got = append(got, repo)
+		}
+		sort.Strings(got)
+		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
+			t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, got))
+		}
+
 		// Our list results should be one per server
 		rle, err := searcher.List(context.Background(), nil)
 		if err != nil {
@@ -99,6 +110,48 @@ func TestHorizontalSearcher(t *testing.T) {
 	}
 
 	searcher.Close()
+}
+
+func TestSyncSearchers(t *testing.T) {
+	// This test exists to ensure we test the slow path for
+	// HorizontalSearcher.searchers. The slow-path is
+	// syncSearchers. TestHorizontalSearcher tests the same code paths, but
+	// isn't guaranteed to trigger the all the parts of syncSearchers.
+	var endpoints atomicMap
+	endpoints.Store(prefixMap{"a"})
+
+	type mock struct {
+		mockSearcher
+		dialNum int
+	}
+
+	dialNumCounter := 0
+	searcher := &HorizontalSearcher{
+		Map: &endpoints,
+		Dial: func(endpoint string) zoekt.Searcher {
+			dialNumCounter++
+			return &mock{
+				dialNum: dialNumCounter,
+			}
+		},
+	}
+	defer searcher.Close()
+
+	// First call initializes the list, second should use the fast-path so
+	// should have the same dialNum.
+	for i := 0; i < 2; i++ {
+		t.Log("gen", i)
+		m, err := searcher.syncSearchers()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(m) != 1 {
+			t.Fatal(err)
+		}
+		if got, want := m["a"].(*mock).dialNum, 1; got != want {
+			t.Fatalf("expected immutable dail num %d, got %d", want, got)
+		}
+	}
 }
 
 func TestDedupper(t *testing.T) {

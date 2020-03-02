@@ -1,6 +1,6 @@
 # User authentication (SSO)
 
-> NOTE: User authentication is part of the [**critical configuration**](../config/critical_config.md), which means it must be edited from the [management console](../management_console.md).
+> NOTE: In versions before v3.11, user authentication was part of the [**critical configuration**](../config/critical_config.md), which meant it must be edited from the [management console](../management_console.md). It is now in the [site configuration](../config/site_config.md).
 
 Sourcegraph supports the following ways for users to sign in:
 
@@ -8,7 +8,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [GitHub OAuth](#github)
 - [GitLab OAuth](#gitlab)
 - [OpenID Connect](#openid-connect) (including [Google accounts on G Suite](#g-suite-google-accounts))
-- [SAML](#saml)
+- [SAML](saml/index.md)
 - [HTTP authentication proxies](#http-authentication-proxies)
 
 The authentication provider is configured in the [`auth.providers`](../config/critical_config.md#authentication-providers) critical configuration option.
@@ -86,7 +86,8 @@ Then add the following lines to your critical configuration:
       "displayName": "GitHub",
       "clientID": "replace-with-the-oauth-client-id",
       "clientSecret": "replace-with-the-oauth-client-secret",
-      "allowSignup": false  // Set to true to enable anyone with a GitHub account to sign up without invitation
+      "allowSignup": false,  // Set to true to enable anyone with a GitHub account to sign up without invitation
+      "allowOrgs": ["your-org-name"] // Restrict logins to members of these orgs.
     }
   ]
 }
@@ -101,6 +102,8 @@ Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up wi
 (typically done only for GitHub Enterprise). If `allowSignup` is `false`, a user can sign in through
 GitHub only if an account with the same verified email already exists. If none exists, a site admin
 must create one explicitly.
+
+The `allowOrgs` fields restricts logins to members of the specified GitHub organizations. Existing user sessions are **not invalidated**. Only new logins after this setting is changed are affected.
 
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../external_service/github.md#repository-syncing).
 
@@ -207,66 +210,6 @@ Example [`openidconnect` auth provider](../config/critical_config.md#openid-conn
     }
   ]
 }
-```
-
-## SAML
-
-The [`saml` auth provider](../config/critical_config.md#saml) authenticates users via SAML 2.0, which is supported by many external services, including:
-
-- [Okta](https://developer.okta.com/standards/SAML/index) - _Admin > Classic UI > Applications > Add Application > Create New App > Web / SAML 2.0_
-- [OneLogin](https://www.onelogin.com/saml) - _Administration > Apps > Add Apps > SAML Test Connector (SP)_
-- [Ping Identity](https://www.pingidentity.com/en/resources/client-library/articles/saml.html)
-- [Auth0](https://auth0.com/docs/protocols/saml)
-- [Salesforce Identity](https://help.salesforce.com/articleView?id=sso_saml_setting_up.htm&type=0)
-- [Microsoft Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-single-sign-on-protocol-reference)
-
-To configure Sourcegraph to authenticate users via SAML:
-
-1. Register Sourcegraph as a SAML Service Provider in the external SAML Identity Provider (such as one of those listed above). Use the following settings (the exact names and labels vary across services).
-    - **Assertion Consumer Service URL, Recipient URL, Destination URL, Single sign-on URL:** `https://sourcegraph.example.com/.auth/saml/acs` (substituting the `externalURL` from your [critical configuration](../config/critical_config.md))
-    - **Service Provider (issuer, entity ID, audience URI, metadata URL):** `https://sourcegraph.example.com/.auth/saml/metadata` (substituting the `externalURL` from your [critical configuration](../config/critical_config.md))
-    - **Attribute statements:**
-      - `email` (required): the user's email
-      - `login` (optional): the user's username
-      - `displayName` (optional): the full name of the user
-1. Obtain the SAML identity provider metadata URL and use it in Sourcegraph critical configuration as shown below.
-
-Example [`saml` auth provider](../config/critical_config.md#saml) configuration:
-
-```json
-{
-  // ...
-  "externalURL": "https://sourcegraph.example.com",
-  "auth.providers": [
-    {
-      "type": "saml",
-      // Find this listed in your SAML Identity Provider's admin interface after you've added your SAML app.
-      // It's sometimes called the "Identity Provider metadata URL" or "SAML metadata".
-      "identityProviderMetadataURL": "https://example.com/saml-metadata"
-    }
-  ]
-}
-```
-
-See the [`saml` auth provider documentation](../config/critical_config.md#saml) for the full set of configuration options.
-
-> WARNING: When using SAML identity provider-initiated authentication, only 1 SAML auth provider is currently supported.
-
-### SAML troubleshooting
-
-Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the `sourcegraph/server` Docker container (or the `sourcegraph-frontend` pod if Sourcegraph is deployed to a Kubernetes cluster) causes all SAML requests and responses to be logged.
-
-### Vendor-specific SAML instructions
-
-- [Configuring SAML with OneLogin](saml_with_onelogin.md)
-- [Configuring SAML with Microsoft Active Directory Federation Services (ADFS)](saml_with_microsoft_adfs.md)
-
-### SAML Service Provider metadata
-
-To make it easier to register Sourcegraph as a SAML Service Provider with your SAML Identity Provider, Sourcegraph exposes SAML Service Provider metadata at the URL path `/.auth/saml/metadata`. For example:
-
-```
-https://sourcegraph.example.com/.auth/saml/metadata
 ```
 
 ## HTTP authentication proxies

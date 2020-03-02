@@ -15,15 +15,10 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
-	"github.com/src-d/enry/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	searchquerytypes "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -31,7 +26,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -51,7 +49,7 @@ func maxReposToSearch() int {
 	}
 }
 
-type searchArgs struct {
+type SearchArgs struct {
 	Version     string
 	PatternType *string
 	Query       string
@@ -59,41 +57,37 @@ type searchArgs struct {
 	First       *int32
 }
 
-type searchImplementer interface {
-	Results(context.Context) (*searchResultsResolver, error)
+type SearchImplementer interface {
+	Results(context.Context) (*SearchResultsResolver, error)
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 }
 
-type SearchType int
-
-const (
-	SearchTypeRegex SearchType = iota
-	SearchTypeLiteral
-	SearchTypeStructural
-)
-
-// Search provides search results and suggestions.
-func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
+// NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
+func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
 	searchType, err := detectSearchType(args.Version, args.PatternType, args.Query)
 	if err != nil {
-		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
+		return nil, err
+	}
+
+	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
+		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
 	var queryString string
-	if searchType == SearchTypeLiteral {
+	if searchType == query.SearchTypeLiteral {
 		queryString = query.ConvertToLiteral(args.Query)
 	} else {
 		queryString = args.Query
 	}
 
-	q, err := query.ParseAndCheck(queryString)
+	q, p, err := query.Process(queryString, searchType)
 	if err != nil {
-		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
+		return alertForQuery(queryString, err), nil
 	}
 
 	// If the request is a paginated one, decode those arguments now.
@@ -116,6 +110,7 @@ func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
 
 	return &searchResolver{
 		query:         q,
+		parseTree:     p,
 		originalQuery: args.Query,
 		pagination:    pagination,
 		patternType:   searchType,
@@ -124,30 +119,34 @@ func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
 	}, nil
 }
 
+func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
+	return NewSearchImplementer(args)
+}
+
 // detectSearchType returns the search type to perfrom ("regexp", or
 // "literal"). The search type derives from three sources: the version and
 // patternType parameters passed to the search endpoint (literal search is the
 // default in V2), and the `patternType:` filter in the input query string which
 // overrides the searchType, if present.
-func detectSearchType(version string, patternType *string, input string) (SearchType, error) {
-	var searchType SearchType
+func detectSearchType(version string, patternType *string, input string) (query.SearchType, error) {
+	var searchType query.SearchType
 	if patternType != nil {
 		switch *patternType {
 		case "literal":
-			searchType = SearchTypeLiteral
+			searchType = query.SearchTypeLiteral
 		case "regexp":
-			searchType = SearchTypeRegex
+			searchType = query.SearchTypeRegex
 		case "structural":
-			searchType = SearchTypeStructural
+			searchType = query.SearchTypeStructural
 		default:
 			return -1, fmt.Errorf("unrecognized patternType: %v", patternType)
 		}
 	} else {
 		switch version {
 		case "V1":
-			searchType = SearchTypeRegex
+			searchType = query.SearchTypeRegex
 		case "V2":
-			searchType = SearchTypeLiteral
+			searchType = query.SearchTypeLiteral
 		default:
 			return -1, fmt.Errorf("unrecognized version: %v", version)
 		}
@@ -156,40 +155,30 @@ func detectSearchType(version string, patternType *string, input string) (Search
 	// The patterntype field is Singular, but not enforced since we do not
 	// properly parse the input. The regex extraction, takes the left-most
 	// "patterntype:value" match.
-	var patternTypeRegex = lazyregexp.New(`patterntype:([a-zA-Z"']+)`)
+	var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
 	patternFromField := patternTypeRegex.FindStringSubmatch(input)
 	if len(patternFromField) > 1 {
 		extracted := patternFromField[1]
 		if match, _ := regexp.MatchString("regex", extracted); match {
-			searchType = SearchTypeRegex
+			searchType = query.SearchTypeRegex
 		} else if match, _ := regexp.MatchString("literal", extracted); match {
-			searchType = SearchTypeLiteral
+			searchType = query.SearchTypeLiteral
 
 		} else if match, _ := regexp.MatchString("structural", extracted); match {
-			searchType = SearchTypeStructural
+			searchType = query.SearchTypeStructural
 		}
 	}
 
 	return searchType, nil
 }
 
-func asString(v *searchquerytypes.Value) string {
-	switch {
-	case v.String != nil:
-		return *v.String
-	case v.Regexp != nil:
-		return v.Regexp.String()
-	default:
-		panic("unable to get value as string")
-	}
-}
-
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query         *query.Query          // the parsed search query
+	query         *query.Query          // the validated search query
+	parseTree     syntax.ParseTree      // the parsed search query
 	originalQuery string                // the raw string of the original search query
 	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType   SearchType
+	patternType   query.SearchType
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -264,46 +253,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 		groups[name] = repos
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		sampleRepos, err := getSampleRepos(ctx)
-		if err != nil {
-			return nil, err
-		}
-		groups["sample"] = sampleRepos
-	}
-
 	return groups, nil
-}
-
-var (
-	sampleReposMu sync.Mutex
-	sampleRepos   []*types.Repo
-)
-
-func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
-	sampleReposMu.Lock()
-	defer sampleReposMu.Unlock()
-	if sampleRepos == nil {
-		sampleRepoPaths := []api.RepoName{
-			"github.com/sourcegraph/jsonrpc2",
-			"github.com/sourcegraph/javascript-typescript-langserver",
-			"github.com/gorilla/mux",
-			"github.com/gorilla/schema",
-			"github.com/golang/lint",
-			"github.com/golang/oauth2",
-			"github.com/pallets/flask",
-		}
-		repos := make([]*types.Repo, len(sampleRepoPaths))
-		for i, path := range sampleRepoPaths {
-			repo, err := backend.Repos.GetByName(ctx, path)
-			if err != nil {
-				return nil, fmt.Errorf("get %q: %s", path, err)
-			}
-			repos[i] = repo
-		}
-		sampleRepos = repos
-	}
-	return sampleRepos, nil
 }
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
@@ -535,7 +485,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			OnlyRepoIDs:     true,
 			IncludePatterns: includePatterns,
 			ExcludePattern:  unionRegExps(excludePatterns),
-			Enabled:         true,
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 			LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
 			NoForks:      op.noForks,
@@ -741,15 +690,15 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	if err != nil {
 		return nil, err
 	}
-	args := search.Args{
-		Pattern:         p,
+	args := search.TextParameters{
+		PatternInfo:     p,
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
-	if err := args.Pattern.Validate(); err != nil {
+	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -761,14 +710,14 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	var suggestions []*searchSuggestionResolver
 	for i, result := range fileResults {
 		assumedScore := len(fileResults) - i // Greater score is first, so we inverse the index.
-		suggestions = append(suggestions, newSearchResultResolver(result.File(), assumedScore))
+		suggestions = append(suggestions, newSearchSuggestionResolver(result.File(), assumedScore))
 	}
 	return suggestions, nil
 }
 
 // SearchRepos searches for the provided query but only the the unique list of
 // repositories belonging to the search results.
-// It's used by a8n to search.
+// It's used by campaigns to search.
 func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver, error) {
 	queryString := query.ConvertToLiteral(plainQuery)
 
@@ -781,7 +730,7 @@ func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver,
 		query:         q,
 		originalQuery: plainQuery,
 		pagination:    nil,
-		patternType:   SearchTypeLiteral,
+		patternType:   query.SearchTypeLiteral,
 		zoekt:         search.Indexed(),
 		searcherURLs:  search.SearcherURLs(),
 	}
@@ -874,12 +823,12 @@ func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
 	return res, ok
 }
 
-// newSearchResultResolver returns a new searchResultResolver wrapping the
+// newSearchSuggestionResolver returns a new searchSuggestionResolver wrapping the
 // given result.
 //
 // A panic occurs if the type of result is not a *RepositoryResolver, *GitTreeEntryResolver,
 // *searchSymbolResult or *languageResolver.
-func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
+func newSearchSuggestionResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *RepositoryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
@@ -914,36 +863,6 @@ func sortSearchSuggestions(s []*searchSuggestionResolver) {
 		// All else equal, sort alphabetically.
 		return a.label < b.label
 	})
-}
-
-// langIncludeExcludePatterns returns regexps for the include/exclude path patterns given the lang:
-// and -lang: filter values in a search query. For example, a query containing "lang:go" should
-// include files whose paths match /\.go$/.
-func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns, excludePatterns []string, err error) {
-	do := func(values []string, patterns *[]string) error {
-		for _, value := range values {
-			lang, ok := enry.GetLanguageByAlias(value)
-			if !ok {
-				return fmt.Errorf("unknown language: %q", value)
-			}
-			exts := enry.GetLanguageExtensions(lang)
-			extPatterns := make([]string, len(exts))
-			for i, ext := range exts {
-				// Add `\.ext$` pattern to match files with the given extension.
-				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
-			}
-			*patterns = append(*patterns, unionRegExps(extPatterns))
-		}
-		return nil
-	}
-
-	if err := do(values, &includePatterns); err != nil {
-		return nil, nil, err
-	}
-	if err := do(negatedValues, &excludePatterns); err != nil {
-		return nil, nil, err
-	}
-	return includePatterns, excludePatterns, nil
 }
 
 // handleRepoSearchResult handles the limitHit and searchErr returned by a search function,

@@ -45,7 +45,9 @@ describe('GenericCache', () => {
         const cache = new GenericCache<string, string>(
             5,
             () => 1,
-            () => {},
+            () => {
+                /* noop */
+            },
             testMetrics
         )
         for (const value of values) {
@@ -69,7 +71,9 @@ describe('GenericCache', () => {
         const cache = new GenericCache<string, string>(
             5,
             () => 1,
-            () => {},
+            () => {
+                /* noop */
+            },
             testMetrics
         )
         const p1 = cache.withValue('foo', factory, v => Promise.resolve(v))
@@ -123,7 +127,9 @@ describe('GenericCache', () => {
         const cache = new GenericCache<number, number>(
             5,
             v => v,
-            () => {},
+            () => {
+                /* noop */
+            },
             testMetrics
         )
         for (const value of values) {

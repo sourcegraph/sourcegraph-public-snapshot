@@ -18,9 +18,13 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
     <div className="container mt-4">
         {/* eslint-disable react/jsx-no-bind */}
         <Switch>
-            <Route render={props => <GlobalCampaignListPage {...props} />} path={match.url} exact={true} />
             <Route
-                path={`${match.url}/new`}
+                render={props => <GlobalCampaignListPage {...outerProps} {...props} />}
+                path={match.url}
+                exact={true}
+            />
+            <Route
+                path={`${match.url}/(new|update)`}
                 render={props => <CampaignDetails {...outerProps} {...props} />}
                 exact={true}
             />
@@ -34,4 +38,3 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
         {/* eslint-enable react/jsx-no-bind */}
     </div>
 ))
-export default GlobalCampaignsArea

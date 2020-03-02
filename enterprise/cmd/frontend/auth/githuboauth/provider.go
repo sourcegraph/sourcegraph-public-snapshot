@@ -29,7 +29,7 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 	oauth2Cfg := oauth2.Config{
 		ClientID:     p.ClientID,
 		ClientSecret: p.ClientSecret,
-		Scopes:       requestedScopes(),
+		Scopes:       requestedScopes(p),
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/authorize"}).String(),
 			TokenURL: codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/access_token"}).String(),
@@ -49,15 +49,23 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 				CodeHost:    codeHost,
 				clientID:    p.ClientID,
 				allowSignup: p.AllowSignup,
+				allowOrgs:   p.AllowOrgs,
 			}, sessionKey),
 			nil,
 		),
 	}), nil
 }
 
-func requestedScopes() []string {
-	if envvar.SourcegraphDotComMode() {
-		return []string{"user:email"}
+func requestedScopes(p *schema.GitHubAuthProvider) []string {
+	scopes := []string{"user:email"}
+	if !envvar.SourcegraphDotComMode() {
+		scopes = append(scopes, "repo")
 	}
-	return []string{"repo", "user:email"}
+
+	// Needs extra scope to check organization membership
+	if len(p.AllowOrgs) > 0 {
+		scopes = append(scopes, "read:org")
+	}
+
+	return scopes
 }

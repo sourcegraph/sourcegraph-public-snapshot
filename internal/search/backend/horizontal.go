@@ -49,7 +49,11 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 	// During rebalancing a repository can appear on more than one replica.
 	dedupper := dedupper{}
 
-	var aggregate zoekt.SearchResult
+	aggregate := &zoekt.SearchResult{
+		RepoURLs:      map[string]string{},
+		LineFragments: map[string]string{},
+	}
+
 	for range clients {
 		r := <-results
 		if r.err != nil {
@@ -58,11 +62,20 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 
 		aggregate.Files = append(aggregate.Files, dedupper.Dedup(r.sr.Files)...)
 		aggregate.Stats.Add(r.sr.Stats)
+
+		if len(r.sr.Files) > 0 {
+			for k, v := range r.sr.RepoURLs {
+				aggregate.RepoURLs[k] = v
+			}
+			for k, v := range r.sr.LineFragments {
+				aggregate.LineFragments[k] = v
+			}
+		}
 	}
 
 	aggregate.Duration = time.Since(start)
 
-	return &aggregate, nil
+	return aggregate, nil
 }
 
 // List aggregates list over every endpoint in Map.
@@ -147,11 +160,18 @@ func (s *HorizontalSearcher) searchers() (map[string]zoekt.Searcher, error) {
 	}
 
 	// Slow-path, need to remove/connect.
+	return s.syncSearchers()
+}
+
+// syncSearchers syncs the set of clients with the set of endpoints. It is the
+// slow-path of "searchers" since it obtains an write lock on the state before
+// proceeding.
+func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Searcher, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	// Double check someone didn't beat us to the update
-	eps, err = s.Map.Endpoints()
+	eps, err := s.Map.Endpoints()
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +187,7 @@ func (s *HorizontalSearcher) searchers() (map[string]zoekt.Searcher, error) {
 	}
 
 	// Use new map to avoid read conflicts
-	clients = make(map[string]zoekt.Searcher, len(eps))
+	clients := make(map[string]zoekt.Searcher, len(eps))
 	for addr := range eps {
 		// Try re-use
 		client, ok := s.clients[addr]

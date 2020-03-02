@@ -31,15 +31,46 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		return nil, errors.New("unable to delete current user")
 	}
 
+	// Collect username and verified email addresses to be used for revoking user permissions later,
+	// otherwise they will be removed from database if it's a hard delete.
+	user, err := db.Users.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	verifiedEmails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+		UserID:       user.ID,
+		OnlyVerified: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	emailStrs := make([]string, len(verifiedEmails))
+	for i := range verifiedEmails {
+		emailStrs[i] = verifiedEmails[i].Email
+	}
+
 	if args.Hard != nil && *args.Hard {
-		if err := db.Users.HardDelete(ctx, userID); err != nil {
+		if err := db.Users.HardDelete(ctx, user.ID); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := db.Users.Delete(ctx, userID); err != nil {
+		if err := db.Users.Delete(ctx, user.ID); err != nil {
 			return nil, err
 		}
 	}
+
+	// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
+	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
+	// This call is purely for the purpose of cleanup.
+	if err := db.Authz.RevokeUserPermissions(ctx, &db.RevokeUserPermissionsArgs{
+		UserID:         user.ID,
+		Username:       user.Username,
+		VerifiedEmails: emailStrs,
+	}); err != nil {
+		return nil, err
+	}
+
 	return &EmptyResponse{}, nil
 }
 

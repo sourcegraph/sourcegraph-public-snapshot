@@ -17,9 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -30,7 +30,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handler, lsifServerProxy *httpapi.LSIFServerProxy) http.Handler {
+func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, bitbucketServerWebhook http.Handler, lsifServerProxy *httpapi.LSIFServerProxy) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -48,30 +48,32 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
-	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
-
 	if githubWebhook != nil {
 		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
 	}
 
+	if bitbucketServerWebhook != nil {
+		m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.TraceRoute(bitbucketServerWebhook))
+	}
+
 	if envvar.SourcegraphDotComMode() {
-		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
+		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 
 	if lsifServerProxy != nil {
-		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(lsifServerProxy.AllRoutesHandler))
 		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(lsifServerProxy.UploadHandler))
 	} else {
-		lsifDisabledHandler := func(w http.ResponseWriter, r *http.Request) {
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("lsif endpoints are only available in enterprise"))
-		}
-
-		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(lsifDisabledHandler)))
-		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(lsifDisabledHandler)))
+			_, _ = w.Write([]byte("lsif upload is only available in enterprise"))
+		})))
 	}
+
+	// Return the minimum src-cli version that's compatible with this instance
+	m.Get(apirouter.SrcCliVersion).Handler(trace.TraceRoute(handler(srcCliVersionServe)))
+	m.Get(apirouter.SrcCliDownload).Handler(trace.TraceRoute(handler(srcCliDownloadServe)))
 
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
 
@@ -103,8 +105,6 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.TraceRoute(handler(serveExternalServiceConfigs)))
 	m.Get(apirouter.ExternalServicesList).Handler(trace.TraceRoute(handler(serveExternalServicesList)))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
-	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
-	m.Get(apirouter.ReposUpdateMetadata).Handler(trace.TraceRoute(handler(serveReposUpdateMetadata)))
 	reposList := &reposListServer{
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		Repos:                 backend.Repos,
@@ -128,6 +128,7 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	m.Get(apirouter.SendEmail).Handler(trace.TraceRoute(handler(serveSendEmail)))
 	m.Get(apirouter.GitResolveRevision).Handler(trace.TraceRoute(handler(serveGitResolveRevision)))
 	m.Get(apirouter.GitTar).Handler(trace.TraceRoute(handler(serveGitTar)))
+	m.Get(apirouter.GitExec).Handler(trace.TraceRoute(handler(serveGitExec)))
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 	m.Get(apirouter.Configuration).Handler(trace.TraceRoute(handler(serveConfiguration)))
@@ -163,6 +164,8 @@ type errorHandler struct {
 }
 
 func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int, err error) {
+	trace.SetRequestErrorCause(r.Context(), err)
+
 	// Handle custom errors
 	if ee, ok := err.(*handlerutil.URLMovedError); ok {
 		err := handlerutil.RedirectToNewRepoName(w, r, ee.NewRepo)

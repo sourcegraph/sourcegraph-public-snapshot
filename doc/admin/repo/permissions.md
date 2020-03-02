@@ -4,6 +4,8 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 
 Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions are supported. Check our [product direction](https://about.sourcegraph.com/direction) for plans to support other code hosts. If your desired code host is not yet on the roadmap, please [open a feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
 
+> NOTE: Site admin users bypass all permission checks and have access to every repository on Sourcegraph.
+
 ## GitHub
 
 Prerequisite: [Add GitHub as an authentication provider.](../auth/index.md#github)
@@ -106,7 +108,7 @@ Enforcing Bitbucket Server permissions can be configured via the `authorization`
 
 1. You have **fewer than 2500 repositories** on your Bitbucket Server instance.
 1. You have the exact same user accounts, **with matching usernames**, in Sourcegraph and Bitbucket Server. This can be accomplished by configuring an [external authentication provider](../auth/index.md) that mirrors user accounts from a central directory like LDAP or Active Directory. The same should be done on Bitbucket Server with [external user directories](https://confluence.atlassian.com/bitbucketserver/external-user-directories-776640394.html).
-1. Ensure you have set `auth.enableUsernameChanges` to **`false`** in the [Critical site config](../config/critical_config.md) to prevent users from changing their usernames and **escalating their privileges**.
+1. Ensure you have set `auth.enableUsernameChanges` to **`false`** in the [site config](../config/site_config.md) to prevent users from changing their usernames and **escalating their privileges**.
 
 
 ### Setup
@@ -167,6 +169,65 @@ Permissions for each user are cached for the configured `ttl` duration (**3h** b
 
 The default `hardTTL` is **3 days**, after which a user's cached permissions must be updated before any user action can be authorized. While the update is happening an error is returned to the user. The default `hardTTL` value was chosen so that it reduces the chances of users being forced to wait for their permissions to be updated after a weekend of inactivity.
 
+There is also an experimental feature that allows for faster permissions fetching that can be enabled via the [Bitbucket Server Sourcegraph plugin](../../../integration/bitbucket_server.md).
+
 ---
 
 Finally, **save the configuration**. You're done!
+
+## Explicit permissions API
+
+Sourcegraph exposes a GraphQL API to explicitly set repository ACLs. This will become the primary
+way to specify permissions in the future and will eventually replace the other repository
+permissions mechanisms.
+
+To enable the permissions API, add the following to the [site config](../config/site_config.md):
+
+```json
+"permissions.userMapping": {
+    "enabled": true,
+    "bindID": "email"
+},
+```
+
+> The `bindID` value is used to uniquely identify users when setting permissions. Alternatively, it
+> can be set to `"username"` if that is preferable to email.
+
+The following GraphQL calls can be tested out in the [GraphQL API
+console](../../api/graphql.md#api-console), which is accessible at the URL path `/api/console` on any
+Sourcegraph instance.
+
+Setting the permissions for a repository can be accomplished with two GraphQL API calls. First,
+obtain the ID of the repository from its name:
+
+```graphql
+{
+  repository(name:"github.com/owner/repo"){
+    id
+  }
+}
+```
+
+Next, set the list of users allowed to view the repository:
+
+```graphql
+mutation {
+  setRepositoryPermissionsForUsers(repository: "<repo ID>", bindIDs: ["user@example.com"]) {
+    alwaysNil
+  }
+}
+```
+
+You may query the set of repositories visible to a particular user with the
+`authorizedUserRepositories` endpoint, which accepts either username or email:
+
+```graphql
+query {
+  authorizedUserRepositories(email:"user@example.com", first:100) {
+    nodes {
+      name
+    }
+    totalCount
+  }
+}
+```

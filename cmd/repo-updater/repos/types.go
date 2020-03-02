@@ -12,8 +12,8 @@ import (
 	"github.com/goware/urlx"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -26,12 +26,12 @@ import (
 
 // A Changeset of an existing Repo.
 type Changeset struct {
-	Title       string
-	Body        string
-	HeadRefName string
-	BaseRefName string
+	Title   string
+	Body    string
+	HeadRef string
+	BaseRef string
 
-	*a8n.Changeset
+	*campaigns.Changeset
 	*Repo
 }
 
@@ -531,7 +531,7 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 // Repo represents a source code repository stored in Sourcegraph.
 type Repo struct {
 	// The internal Sourcegraph repo ID.
-	ID uint32
+	ID api.RepoID
 	// Name is the name for this repository (e.g., "github.com/user/repo"). It
 	// is the same as URI, unless the user configures a non-default
 	// repositoryPathPattern.
@@ -547,11 +547,10 @@ type Repo struct {
 	Language string
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
-	// Enabled is whether the repository is enabled. Disabled repositories are
-	// not accessible by users (except site admins).
-	Enabled bool
 	// Archived is whether the repository has been archived.
 	Archived bool
+	// Private is whether the repository is private.
+	Private bool
 	// CreatedAt is when this repository was created on Sourcegraph.
 	CreatedAt time.Time
 	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
@@ -645,6 +644,10 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Fork, modified = n.Fork, true
 	}
 
+	if r.Private != n.Private {
+		r.Private, modified = n.Private, true
+	}
+
 	if !reflect.DeepEqual(r.Sources, n.Sources) {
 		r.Sources, modified = n.Sources, true
 	}
@@ -717,6 +720,14 @@ func (r *Repo) Less(s *Repo) bool {
 	return sortedSliceLess(sourcesKeys(r.Sources), sourcesKeys(s.Sources))
 }
 
+func (r *Repo) String() string {
+	eid := fmt.Sprintf("{%s %s %s}", r.ExternalRepo.ServiceID, r.ExternalRepo.ServiceType, r.ExternalRepo.ID)
+	if r.IsDeleted() {
+		return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s, IsDeleted: true}", r.ID, r.Name, eid)
+	}
+	return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s}", r.ID, r.Name, eid)
+}
+
 func sourcesKeys(m map[string]*SourceInfo) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -752,8 +763,8 @@ func pick(a *Repo, b *Repo) (keep, discard *Repo) {
 type Repos []*Repo
 
 // IDs returns the list of ids from all Repos.
-func (rs Repos) IDs() []uint32 {
-	ids := make([]uint32, len(rs))
+func (rs Repos) IDs() []api.RepoID {
+	ids := make([]api.RepoID, len(rs))
 	for i := range rs {
 		ids[i] = rs[i].ID
 	}
@@ -786,9 +797,7 @@ func (rs Repos) Kinds() (kinds []string) {
 func (rs Repos) ExternalRepos() []api.ExternalRepoSpec {
 	specs := make([]api.ExternalRepoSpec, 0, len(rs))
 	for _, r := range rs {
-		if r.ExternalRepo.IsSet() {
-			specs = append(specs, r.ExternalRepo)
-		}
+		specs = append(specs, r.ExternalRepo)
 	}
 	return specs
 }

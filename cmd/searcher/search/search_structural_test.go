@@ -2,14 +2,88 @@ package search
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"reflect"
 	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
+
+func TestMatcherLookupByLanguage(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
+	input := map[string]string{
+		"file_without_extension": `
+/* This foo(plain string) {} is in a Go comment should not match in Go, but should match in plaintext */
+func foo(go string) {}
+`,
+	}
+
+	p := &protocol.PatternInfo{
+		Pattern:         "foo(:[args])",
+		IncludePatterns: []string{"file_without_extension"},
+	}
+
+	cases := []struct {
+		Name      string
+		Languages []string
+		Want      []string
+	}{
+		{
+			Name:      "Language test for no language",
+			Languages: []string{},
+			Want:      []string{"foo(plain string)", "foo(go string)"},
+		},
+		{
+			Name:      "Language test for Go",
+			Languages: []string{"go"},
+			Want:      []string{"foo(go string)"},
+		},
+		{
+			Name:      "Language test for plaintext",
+			Languages: []string{"text"},
+			Want:      []string{"foo(plain string)", "foo(go string)"},
+		},
+	}
+
+	zipData, err := testutil.CreateZip(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			p.Languages = tt.Languages
+			matches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "repo_foo")
+			if err != nil {
+				t.Fatal(err)
+			}
+			var got []string
+			for _, fileMatches := range matches {
+				for _, m := range fileMatches.LineMatches {
+					got = append(got, m.Preview)
+				}
+			}
+
+			if !reflect.DeepEqual(got, tt.Want) {
+				t.Fatalf("got file matches %v, want %v", got, tt.Want)
+			}
+		})
+	}
+}
 
 // Tests that structural search correctly infers the Go matcher from the .go
 // file extension.
@@ -45,7 +119,7 @@ func foo(real string) {}
 		Pattern:         pattern,
 		IncludePatterns: includePatterns,
 	}
-	m, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.IncludePatterns, "foo")
+	m, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,6 +130,49 @@ func foo(real string) {}
 
 	if got != want {
 		t.Fatalf("got file matches %v, want %v", got, want)
+	}
+}
+
+func TestRecordMetrics(t *testing.T) {
+	cases := []struct {
+		name            string
+		matcher         string
+		includePatterns *[]string
+		want            string
+	}{
+		{
+			name:            "Empty values",
+			matcher:         "",
+			includePatterns: &[]string{},
+			want:            "inferred:.generic",
+		},
+		{
+			name:            "Include patterns no extension",
+			matcher:         "",
+			includePatterns: &[]string{"foo", "bar.go"},
+			want:            "inferred:.generic",
+		},
+		{
+			name:            "Include patterns first extension",
+			matcher:         "",
+			includePatterns: &[]string{"foo.c", "bar.go"},
+			want:            "inferred:.c",
+		},
+		{
+			name:            "Non-empty matcher",
+			matcher:         ".xml",
+			includePatterns: &[]string{"foo.c", "bar.go"},
+			want:            ".xml",
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := languageMetric(tt.matcher, tt.includePatterns)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }
 
@@ -102,7 +219,7 @@ func TestIncludePatterns(t *testing.T) {
 		Pattern:         "",
 		IncludePatterns: includePatterns,
 	}
-	fileMatches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.IncludePatterns, "foo")
+	fileMatches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,5 +231,151 @@ func TestIncludePatterns(t *testing.T) {
 	sort.Strings(got)
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got file matches %v, want %v", got, want)
+	}
+}
+
+func TestRule(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
+	input := map[string]string{
+		"file.go": "func foo(success) {} func bar(fail) {}",
+	}
+
+	zipData, err := testutil.CreateZip(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	p := &protocol.PatternInfo{
+		Pattern:         "func :[[fn]](:[args])",
+		IncludePatterns: []string{".go"},
+		CombyRule:       `where :[args] == "success"`,
+	}
+
+	got, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "repo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []protocol.FileMatch{
+		{
+			Path:     "file.go",
+			LimitHit: false,
+			LineMatches: []protocol.LineMatch{
+				{
+					LineNumber:       0,
+					OffsetAndLengths: [][2]int{{0, 17}},
+					Preview:          "func foo(success)",
+				},
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got file matches %v, want %v", got, want)
+	}
+
+}
+
+func TestHighlightMultipleLines(t *testing.T) {
+	cases := []struct {
+		Name  string
+		Match *comby.Match
+		Want  []protocol.LineMatch
+	}{
+		{
+			Name: "Single line",
+			Match: &comby.Match{
+				Range: comby.Range{
+					Start: comby.Location{
+						Line:   1,
+						Column: 1,
+					},
+					End: comby.Location{
+						Line:   1,
+						Column: 2,
+					},
+				},
+				Matched: "this is a single line match",
+			},
+			Want: []protocol.LineMatch{
+				{
+					LineNumber: 0,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							1,
+						},
+					},
+					Preview: "this is a single line match",
+				},
+			},
+		},
+		{
+			Name: "Three lines",
+			Match: &comby.Match{
+				Range: comby.Range{
+					Start: comby.Location{
+						Line:   1,
+						Column: 1,
+					},
+					End: comby.Location{
+						Line:   3,
+						Column: 5,
+					},
+				},
+				Matched: "this is a match across\nthree\nlines",
+			},
+			Want: []protocol.LineMatch{
+				{
+					LineNumber: 0,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							22,
+						},
+					},
+					Preview: "this is a match across",
+				},
+				{
+					LineNumber: 1,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							5,
+						},
+					},
+					Preview: "three",
+				},
+				{
+					LineNumber: 2,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							4, // don't include trailing newline
+						},
+					},
+					Preview: "lines",
+				},
+			},
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			got := highlightMultipleLines(tt.Match)
+			if !reflect.DeepEqual(got, tt.Want) {
+				jsonGot, _ := json.Marshal(got)
+				jsonWant, _ := json.Marshal(tt.Want)
+				t.Errorf("got: %s, want: %s", jsonGot, jsonWant)
+			}
+		})
 	}
 }

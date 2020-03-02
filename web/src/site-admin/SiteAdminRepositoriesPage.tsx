@@ -79,7 +79,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
     }
 }
 
-interface Props extends RouteComponentProps<any>, ActivationProps {}
+interface Props extends RouteComponentProps<{}>, ActivationProps {}
 
 class FilteredRepositoryConnection extends FilteredConnection<
     GQL.IRepository,
@@ -150,12 +150,10 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         return (
             <div className="site-admin-repositories-page">
                 <PageTitle title="Repositories - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Repositories</h2>
-                </div>
+                <h2>Repositories</h2>
                 <p>
-                    Repositories are mirrored from connected{' '}
-                    <Link to="/site-admin/external-services">external services</Link>.
+                    Repositories are synced from connected{' '}
+                    <Link to="/site-admin/external-services">code host connections</Link>.
                 </p>
                 <FilteredRepositoryConnection
                     className="list-group list-group-flush mt-3"

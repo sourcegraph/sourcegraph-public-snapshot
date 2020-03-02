@@ -2,11 +2,11 @@ import * as util from '../integration-test-util'
 import { lsp } from 'lsif-protocol'
 import { MAX_TRAVERSAL_LIMIT } from '../../../shared/constants'
 import { ReferencePaginationContext } from '../../../server/backend/backend'
+import { extractRepos } from './util'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
-    const repository = 'monorepo'
-
+    const repositoryId = 100
     const c0 = util.createCommit(0)
     const c1 = util.createCommit(1)
     const c2 = util.createCommit(2)
@@ -18,7 +18,7 @@ describe('Backend', () => {
     beforeAll(async () => {
         await ctx.init()
 
-        if (!ctx.xrepoDatabase) {
+        if (!ctx.dumpManager || !ctx.dependencyManager) {
             return
         }
 
@@ -58,17 +58,18 @@ describe('Backend', () => {
         await Promise.all(
             dumps.map(({ commit, project, suffix }) =>
                 ctx.convertTestData(
-                    repository,
+                    repositoryId,
                     commit,
                     `${project}/`,
+                    'test',
                     `reference-pagination-monorepo/data/${project}${suffix}.lsif.gz`,
                     false
                 )
             )
         )
 
-        await ctx.xrepoDatabase.updateCommits(
-            repository,
+        await ctx.dumpManager.updateCommits(
+            repositoryId,
             new Map<string, Set<string>>(
                 Array.from({ length: MAX_TRAVERSAL_LIMIT * 2 + 1 }, (_, i) => [
                     util.createCommit(i),
@@ -88,42 +89,76 @@ describe('Backend', () => {
             fail('failed beforeAll')
         }
 
-        const checkRefs = (locations: lsp.Location[], root: string) => {
-            expect(locations).toContainEqual(util.createLocation(`${root}/src/index.ts`, 0, 9, 0, 12))
-            expect(locations).toContainEqual(util.createLocation(`${root}/src/index.ts`, 3, 0, 3, 3))
-            expect(locations).toContainEqual(util.createLocation(`${root}/src/index.ts`, 3, 7, 3, 10))
-            expect(locations).toContainEqual(util.createLocation(`${root}/src/index.ts`, 3, 14, 3, 17))
-            expect(locations).toContainEqual(util.createLocation(`${root}/src/index.ts`, 3, 21, 3, 24))
+        const checkRefs = (locations: lsp.Location[], commit: string, root: string) => {
+            expect(locations).toContainEqual(
+                util.createLocation(repositoryId, commit, `${root}/src/index.ts`, 0, 9, 0, 12)
+            )
+            expect(locations).toContainEqual(
+                util.createLocation(repositoryId, commit, `${root}/src/index.ts`, 3, 0, 3, 3)
+            )
+            expect(locations).toContainEqual(
+                util.createLocation(repositoryId, commit, `${root}/src/index.ts`, 3, 7, 3, 10)
+            )
+            expect(locations).toContainEqual(
+                util.createLocation(repositoryId, commit, `${root}/src/index.ts`, 3, 14, 3, 17)
+            )
+            expect(locations).toContainEqual(
+                util.createLocation(repositoryId, commit, `${root}/src/index.ts`, 3, 21, 3, 24)
+            )
         }
 
         const testCases = [
-            { commit: c1, refs: ['b', 'e'] },
-            { commit: c3, refs: ['b', 'c', 'e'] },
-            { commit: c4, refs: ['c', 'e'] },
-            { commit: cpen, refs: ['f'] },
+            {
+                commit: c1,
+                defCommit: c1,
+                refs: [
+                    { root: 'b', commit: c2 },
+                    { root: 'e', commit: c0 },
+                ],
+            },
+            {
+                commit: c3,
+                defCommit: c1,
+                refs: [
+                    { root: 'b', commit: c2 },
+                    { root: 'c', commit: c3 },
+                    { root: 'e', commit: c0 },
+                ],
+            },
+            {
+                commit: c4,
+                defCommit: c1,
+                refs: [
+                    { root: 'c', commit: c3 },
+                    { root: 'e', commit: c0 },
+                ],
+            },
+            {
+                commit: cpen,
+                defCommit: cpen,
+                refs: [{ root: 'f', commit: cmax }],
+            },
         ]
 
-        for (const { commit, refs } of testCases) {
-            const fetch = async (paginationContext?: ReferencePaginationContext) =>
+        for (const { commit, defCommit, refs } of testCases) {
+            const fetch = async () =>
                 util.filterNodeModules(
-                    (await backend.references(
-                        repository,
-                        commit,
-                        'a/src/index.ts',
-                        {
+                    util.mapLocations(
+                        (await backend.references(repositoryId, commit, 'a/src/index.ts', {
                             line: 0,
                             character: 17,
-                        },
-                        paginationContext
-                    )) || { locations: [] }
+                        })) || { locations: [] }
+                    )
                 )
 
             const { locations, cursor } = await fetch()
             expect(cursor).toBeUndefined()
 
-            expect(locations).toContainEqual(util.createLocation('a/src/index.ts', 0, 16, 0, 19))
-            for (const root of refs) {
-                checkRefs(locations, root)
+            expect(locations).toContainEqual(
+                util.createLocation(repositoryId, defCommit, 'a/src/index.ts', 0, 16, 0, 19)
+            )
+            for (const { root, commit: refCommit } of refs) {
+                checkRefs(locations, refCommit, root)
             }
             expect(locations).toHaveLength(1 + 5 * refs.length)
         }
@@ -135,23 +170,41 @@ describe('Backend', () => {
             fail('failed beforeAll')
         }
 
+        const ids = {
+            ext1: 101,
+            ext2: 103,
+            ext3: 104,
+            ext4: 105,
+            ext5: 106,
+        }
+
         // Add external references
-        const repos = ['ext1', 'ext2', 'ext3', 'ext4', 'ext5']
-        const filename = 'reference-pagination-monorepo/data/f-ref.lsif.gz'
-        await Promise.all(repos.map(r => ctx.convertTestData(r, util.createCommit(0), 'f/', filename)))
+        await Promise.all(
+            Object.values(ids).map(externalRepositoryId =>
+                ctx.convertTestData(
+                    externalRepositoryId,
+                    util.createCommit(0),
+                    'f/',
+                    'test',
+                    'reference-pagination-monorepo/data/f-ref.lsif.gz'
+                )
+            )
+        )
 
         const fetch = async (paginationContext?: ReferencePaginationContext) =>
             util.filterNodeModules(
-                (await backend.references(
-                    repository,
-                    c3,
-                    'a/src/index.ts',
-                    {
-                        line: 0,
-                        character: 17,
-                    },
-                    paginationContext
-                )) || { locations: [] }
+                util.mapLocations(
+                    (await backend.references(
+                        repositoryId,
+                        c3,
+                        'a/src/index.ts',
+                        {
+                            line: 0,
+                            character: 17,
+                        },
+                        paginationContext
+                    )) || { locations: [] }
+                )
             )
 
         const { locations: locations0, cursor: cursor0 } = await fetch({ limit: 50 }) // all local
@@ -171,17 +224,13 @@ describe('Backend', () => {
         expect(cursor1).toBeUndefined()
         expect(cursor6).toBeUndefined()
 
-        const extractRepos = (references: lsp.Location[]): string[] =>
-            // extract the repo name from git://{repo}?{commit}#{path}, or return '' (indicating a local repo)
-            Array.from(new Set(references.map(r => (r.uri.match(/git:\/\/([^?]+)\?.+/) || ['', ''])[1]))).sort()
-
         // Ensure paging gets us expected results per page
-        expect(extractRepos(locations0)).toEqual([''])
-        expect(extractRepos(locations1)).toEqual(['ext1', 'ext2', 'ext3', 'ext4', 'ext5'])
-        expect(extractRepos(locations2)).toEqual([''])
-        expect(extractRepos(locations3)).toEqual([''])
-        expect(extractRepos(locations4)).toEqual(['ext1', 'ext2'])
-        expect(extractRepos(locations5)).toEqual(['ext3', 'ext4'])
-        expect(extractRepos(locations6)).toEqual(['ext5'])
+        expect(extractRepos(locations0)).toEqual([repositoryId])
+        expect(extractRepos(locations1)).toEqual([ids.ext1, ids.ext2, ids.ext3, ids.ext4, ids.ext5])
+        expect(extractRepos(locations2)).toEqual([repositoryId])
+        expect(extractRepos(locations3)).toEqual([repositoryId])
+        expect(extractRepos(locations4)).toEqual([ids.ext1, ids.ext2])
+        expect(extractRepos(locations5)).toEqual([ids.ext3, ids.ext4])
+        expect(extractRepos(locations6)).toEqual([ids.ext5])
     })
 })

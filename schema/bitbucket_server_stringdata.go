@@ -59,10 +59,46 @@ const BitbucketServerSchemaJSON = `{
       "examples": ["ssh"]
     },
     "certificate": {
-      "description": "TLS certificate of the Bitbucket Server instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
+      "description": "TLS certificate of the Bitbucket Server instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
       "type": "string",
       "pattern": "^-----BEGIN CERTIFICATE-----\n",
       "examples": ["-----BEGIN CERTIFICATE-----\n..."]
+    },
+    "webhooks": {
+      "description": "DEPRECATED: Switch to \"plugin.webhooks\"",
+      "type": "object",
+      "properties": {
+        "secret": {
+          "description": "Secret for authenticating incoming webhook payloads",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "plugin": {
+      "title": "BitbucketServerPlugin",
+      "description": "Configuration for Bitbucket Server Sourcegraph plugin",
+      "type": "object",
+      "properties": {
+        "webhooks": {
+          "title": "BitbucketServerPluginWebhooks",
+          "type": "object",
+          "required": ["secret"],
+          "properties": {
+            "secret": {
+              "description": "Secret for authenticating incoming webhook payloads",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "permissions": {
+          "description": "Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        }
+      }
     },
     "repositoryPathPattern": {
       "description": "The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server repository.\n\n - \"{host}\" is replaced with the Bitbucket Server URL's host (such as bitbucket.example.com)\n - \"{projectKey}\" is replaced with the Bitbucket repository's parent project key (such as \"PRJ\")\n - \"{repositorySlug}\" is replaced with the Bitbucket repository's slug key (such as \"my-repo\").\n\nFor example, if your Bitbucket Server is https://bitbucket.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{projectKey}/{repositorySlug}\" would mean that a Bitbucket Server repository at https://bitbucket.example.com/projects/PRJ/repos/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.example.com/PRJ/my-repo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",

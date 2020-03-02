@@ -20,11 +20,8 @@ import (
 	// goreman is used by our local dev environment
 	_ "github.com/mattn/goreman"
 
-	// vfsgendev is used by management console
+	// vfsgendev is used for packing static assets into .go files.
 	_ "github.com/shurcooL/vfsgen/cmd/vfsgendev"
-
-	// use to build docs and in local dev env
-	_ "github.com/sourcegraph/docsite/cmd/docsite"
 
 	// used in schema pkg
 	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"

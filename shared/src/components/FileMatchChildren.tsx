@@ -11,6 +11,8 @@ import { CodeExcerpt2 } from './CodeExcerpt2'
 import { IFileMatch, IMatchItem } from './FileMatch'
 import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
+import { BadgeAttachment } from './BadgeAttachment'
+import { isErrorLike } from '../util/errors'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
@@ -29,27 +31,12 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
 const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
-    const showItems = props.items
-        .sort((a, b) => {
-            if (a.line < b.line) {
-                return -1
-            }
-            if (a.line === b.line) {
-                if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
-                    return -1
-                }
-                if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
-                    return 0
-                }
-                return 1
-            }
-            return 1
-        })
-        .filter((item, i) => props.allMatches || i < props.subsetMatches)
-
-    if (NO_SEARCH_HIGHLIGHTING) {
-        return <CodeExcerpt2 urlWithoutPosition={props.result.file.url} items={showItems} onSelect={props.onSelect} />
-    }
+    const showBadges =
+        props.settingsCascade.final &&
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final.experimentalFeatures &&
+        // Enabled if true or null
+        props.settingsCascade.final.experimentalFeatures.showBadgeAttachments !== false
 
     // The number of lines of context to show before and after each match.
     let context = 1
@@ -66,6 +53,40 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         }
     }
 
+    const sortedItems = props.items.sort((a, b) => {
+        if (a.line < b.line) {
+            return -1
+        }
+        if (a.line === b.line) {
+            if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
+                return -1
+            }
+            if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
+                return 0
+            }
+            return 1
+        }
+        return 1
+    })
+
+    // This checks the highest line number amongst the number of matches
+    // that we want to show in a collapsed result preview.
+    const highestLineNumberWithinSubsetMatches =
+        sortedItems.length > 0
+            ? sortedItems.length > props.subsetMatches
+                ? sortedItems[props.subsetMatches - 1].line
+                : sortedItems[sortedItems.length - 1].line
+            : 0
+
+    const showItems = sortedItems.filter(
+        (item, i) =>
+            props.allMatches || i < props.subsetMatches || item.line <= highestLineNumberWithinSubsetMatches + context
+    )
+
+    if (NO_SEARCH_HIGHLIGHTING) {
+        return <CodeExcerpt2 urlWithoutPosition={props.result.file.url} items={showItems} onSelect={props.onSelect} />
+    }
+
     const groupsOfItems = mergeContext(
         context,
         flatMap(showItems, item =>
@@ -73,6 +94,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 line: item.line,
                 character: range.start,
                 highlightLength: range.highlightLength,
+                badge: item.badge,
             }))
         )
     )
@@ -97,23 +119,39 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 const item = items[0]
                 const position = { line: item.line + 1, character: item.character + 1 }
                 return (
-                    <Link
-                        to={`${props.result.file.url}${toPositionOrRangeHash({ position })}`}
+                    <div
                         key={`linematch:${props.result.file.url}${position.line}:${position.character}`}
-                        className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-                        onClick={props.onSelect}
+                        className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
                     >
-                        <CodeExcerpt
-                            repoName={props.result.repository.name}
-                            commitID={props.result.file.commit.oid}
-                            filePath={props.result.file.path}
-                            context={context}
-                            highlightRanges={items}
-                            className="file-match-children__item-code-excerpt"
-                            isLightTheme={props.isLightTheme}
-                            fetchHighlightedFileLines={props.fetchHighlightedFileLines}
-                        />
-                    </Link>
+                        <Link
+                            to={`${props.result.file.url}${toPositionOrRangeHash({ position })}`}
+                            className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                            onClick={props.onSelect}
+                        >
+                            <CodeExcerpt
+                                repoName={props.result.repository.name}
+                                commitID={props.result.file.commit.oid}
+                                filePath={props.result.file.path}
+                                lastSubsetMatchLineNumber={highestLineNumberWithinSubsetMatches}
+                                context={context}
+                                highlightRanges={items}
+                                className="file-match-children__item-code-excerpt"
+                                isLightTheme={props.isLightTheme}
+                                fetchHighlightedFileLines={props.fetchHighlightedFileLines}
+                            />
+                        </Link>
+
+                        <div className="file-match-children__item-badge-row e2e-badge-row">
+                            {item.badge && showBadges && (
+                                // This div is necessary: it has block display, where the badge row
+                                // has flex display and would cause the hover tooltip to be offset
+                                // in a weird way (centered in the code context, not on the icon).
+                                <div>
+                                    <BadgeAttachment attachment={item.badge} isLightTheme={props.isLightTheme} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 )
             })}
         </div>

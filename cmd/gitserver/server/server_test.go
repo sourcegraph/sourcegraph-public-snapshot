@@ -122,8 +122,8 @@ func TestRequest(t *testing.T) {
 	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "testcommand":
-			cmd.Stdout.Write([]byte("teststdout"))
-			cmd.Stderr.Write([]byte("teststderr"))
+			_, _ = cmd.Stdout.Write([]byte("teststdout"))
+			_, _ = cmd.Stderr.Write([]byte("teststderr"))
 			return 42, nil
 		case "testerror":
 			return 0, errors.New("testerror")
@@ -292,7 +292,12 @@ func TestUrlRedactor(t *testing.T) {
 		{
 			url:      "http://user:password@github.com/foo/bar/",
 			message:  "fatal: repository 'http://user:password@github.com/foo/bar/' not found",
-			redacted: "fatal: repository 'http://<redacted>:<redacted>@github.com/foo/bar/' not found",
+			redacted: "fatal: repository 'http://user:<redacted>@github.com/foo/bar/' not found",
+		},
+		{
+			url:      "http://git:password@github.com/foo/bar/",
+			message:  "fatal: repository 'http://git:password@github.com/foo/bar/' not found",
+			redacted: "fatal: repository 'http://git:<redacted>@github.com/foo/bar/' not found",
 		},
 		{
 			url:      "http://token@github.com///repo//nick/",
@@ -311,9 +316,11 @@ func TestUrlRedactor(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		if actual := newURLRedactor(testCase.url).redact(testCase.message); actual != testCase.redacted {
-			t.Errorf("newUrlRedactor(%q).redact(%q) got %q; want %q", testCase.url, testCase.message, actual, testCase.redacted)
-		}
+		t.Run("", func(t *testing.T) {
+			if actual := newURLRedactor(testCase.url).redact(testCase.message); actual != testCase.redacted {
+				t.Fatalf("newUrlRedactor(%q).redact(%q) got %q; want %q", testCase.url, testCase.message, actual, testCase.redacted)
+			}
+		})
 	}
 }
 

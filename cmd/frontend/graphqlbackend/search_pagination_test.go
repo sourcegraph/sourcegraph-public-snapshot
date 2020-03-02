@@ -10,9 +10,9 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func TestSearchPagination_unmarshalSearchCursor(t *testing.T) {
@@ -42,17 +42,17 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 	repo := func(name string) *types.Repo {
 		return &types.Repo{Name: api.RepoName(name)}
 	}
-	result := func(repo *types.Repo, path string) *fileMatchResolver {
-		return &fileMatchResolver{JPath: path, repo: repo}
+	result := func(repo *types.Repo, path string) *FileMatchResolver {
+		return &FileMatchResolver{JPath: path, Repo: repo}
 	}
 	format := func(r slicedSearchResults) string {
 		var b bytes.Buffer
-		fmt.Fprintf(&b, "results:\n")
+		fmt.Fprintln(&b, "results:")
 		for i, result := range r.results {
 			fm, _ := result.ToFileMatch()
-			fmt.Fprintf(&b, "	[%d] %s %s\n", i, fm.repo.Name, fm.JPath)
+			fmt.Fprintf(&b, "	[%d] %s %s\n", i, fm.Repo.Name, fm.JPath)
 		}
-		fmt.Fprintf(&b, "common.repos:\n")
+		fmt.Fprintln(&b, "common.repos:")
 		for i, r := range r.common.repos {
 			fmt.Fprintf(&b, "	[%d] %s\n", i, r.Name)
 		}
@@ -61,7 +61,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		fmt.Fprintf(&b, "limitHit: %v\n", r.limitHit)
 		return b.String()
 	}
-	sharedResult := []searchResultResolver{
+	sharedResult := []SearchResultResolver{
 		result(repo("org/repo1"), "a.go"),
 		result(repo("org/repo1"), "b.go"),
 		result(repo("org/repo1"), "c.go"),
@@ -85,23 +85,23 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 	}
 	tests := []struct {
 		name          string
-		results       []searchResultResolver
+		results       []SearchResultResolver
 		common        *searchResultsCommon
 		offset, limit int
 		want          slicedSearchResults
 	}{
 		{
 			name:    "empty result set",
-			results: []searchResultResolver{},
+			results: []SearchResultResolver{},
 			common:  &searchResultsCommon{},
 			offset:  0,
 			limit:   3,
 			want: slicedSearchResults{
-				results: []searchResultResolver{},
+				results: []SearchResultResolver{},
 				common: &searchResultsCommon{
 					resultCount: 0,
 					repos:       nil,
-					partial:     nil,
+					partial:     make(map[api.RepoName]struct{}),
 				},
 				resultOffset: 0,
 				limitHit:     false,
@@ -114,7 +114,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset:  0,
 			limit:   3,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo1"), "a.go"),
 					result(repo("org/repo1"), "b.go"),
 					result(repo("org/repo1"), "c.go"),
@@ -135,7 +135,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset:  0,
 			limit:   2,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo1"), "a.go"),
 					result(repo("org/repo1"), "b.go"),
 				},
@@ -155,7 +155,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset:  3,
 			limit:   3,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo2"), "a.go"),
 					result(repo("org/repo2"), "b.go"),
 					result(repo("org/repo3"), "a.go"),
@@ -176,7 +176,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset:  2,
 			limit:   3,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo1"), "c.go"),
 					result(repo("org/repo2"), "a.go"),
 					result(repo("org/repo2"), "b.go"),
@@ -192,7 +192,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		},
 		{
 			name: "offset repo boundary fully consumed",
-			results: []searchResultResolver{
+			results: []SearchResultResolver{
 				result(repo("org/repo1"), "a.go"),
 				result(repo("org/repo1"), "b.go"),
 				result(repo("org/repo1"), "c.go"),
@@ -207,15 +207,15 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset: 3,
 			limit:  3,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo2"), "a.go"),
 					result(repo("org/repo2"), "b.go"),
 					result(repo("org/repo2"), "c.go"),
 				},
 				common: &searchResultsCommon{
 					resultCount: 3,
-					repos:       []*types.Repo{repo("org/repo1"), repo("org/repo2")},
-					partial:     nil,
+					repos:       []*types.Repo{repo("org/repo2")},
+					partial:     make(map[api.RepoName]struct{}),
 				},
 				resultOffset: 0,
 				limitHit:     false,
@@ -228,7 +228,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset:  1,
 			limit:   1,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo1"), "b.go"),
 				},
 				common: &searchResultsCommon{
@@ -272,8 +272,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 	repo := func(name string) *types.Repo {
 		return &types.Repo{Name: api.RepoName(name)}
 	}
-	result := func(repo *types.Repo, path, rev string) *fileMatchResolver {
-		return &fileMatchResolver{JPath: path, repo: repo, inputRev: &rev}
+	result := func(repo *types.Repo, path, rev string) *FileMatchResolver {
+		return &FileMatchResolver{JPath: path, Repo: repo, InputRev: &rev}
 	}
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
@@ -289,17 +289,17 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		repoRevs("5", "master"),
 	}
 	var searchedBatches [][]*search.RepositoryRevisions
-	resultsExecutor := func(batch []*search.RepositoryRevisions) (results []searchResultResolver, common *searchResultsCommon, err error) {
+	resultsExecutor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
 		searchedBatches = append(searchedBatches, batch)
 		common = &searchResultsCommon{}
 		for _, repoRev := range batch {
 			for _, rev := range repoRev.Revs {
 				rev := rev.RevSpec
 				for i := 0; i < 3; i++ {
-					results = append(results, &fileMatchResolver{
+					results = append(results, &FileMatchResolver{
 						JPath:    fmt.Sprintf("some/file%d.go", i),
-						repo:     repoRev.Repo,
-						inputRev: &rev,
+						Repo:     repoRev.Repo,
+						InputRev: &rev,
 					})
 				}
 			}
@@ -307,7 +307,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		}
 		return
 	}
-	noResultsExecutor := func(batch []*search.RepositoryRevisions) (results []searchResultResolver, common *searchResultsCommon, err error) {
+	noResultsExecutor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
 		return nil, &searchResultsCommon{}, nil
 	}
 	ctx := context.Background()
@@ -318,7 +318,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		request             *searchPaginationInfo
 		wantSearchedBatches [][]*search.RepositoryRevisions
 		wantCursor          *searchCursor
-		wantResults         []searchResultResolver
+		wantResults         []SearchResultResolver
 		wantCommon          *searchResultsCommon
 		wantErr             error
 	}{
@@ -337,7 +337,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				},
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 2, ResultOffset: 4},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("1"), "some/file0.go", "master"),
 				result(repo("1"), "some/file1.go", "master"),
 				result(repo("1"), "some/file2.go", "master"),
@@ -369,7 +369,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				},
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 5, ResultOffset: 0, Finished: true},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("3"), "some/file1.go", "feature"),
 				result(repo("3"), "some/file2.go", "feature"),
 				result(repo("4"), "some/file0.go", "master"),
@@ -399,7 +399,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				},
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 1},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("1"), "some/file0.go", "master"),
 			},
 			wantCommon: &searchResultsCommon{
@@ -423,7 +423,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				},
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 2},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("1"), "some/file1.go", "master"),
 			},
 			wantCommon: &searchResultsCommon{
@@ -490,8 +490,8 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 	repo := func(name string) *types.Repo {
 		return &types.Repo{Name: api.RepoName(name)}
 	}
-	result := func(repo *types.Repo, path string) *fileMatchResolver {
-		return &fileMatchResolver{JPath: path, repo: repo}
+	result := func(repo *types.Repo, path string) *FileMatchResolver {
+		return &FileMatchResolver{JPath: path, Repo: repo}
 	}
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
@@ -499,7 +499,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 			Revs: revs(rev...),
 		}
 	}
-	repoResults := map[string][]searchResultResolver{
+	repoResults := map[string][]SearchResultResolver{
 		"1": {
 			result(repo("1"), "a.go"),
 			result(repo("1"), "b.go"),
@@ -516,7 +516,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		repoRevs("1", "master"),
 		repoRevs("2", "master"),
 	}
-	executor := func(batch []*search.RepositoryRevisions) (results []searchResultResolver, common *searchResultsCommon, err error) {
+	executor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
 		common = &searchResultsCommon{}
 		for _, repoRev := range batch {
 			results = append(results, repoResults[string(repoRev.Repo.Name)]...)
@@ -530,7 +530,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		name        string
 		request     *searchPaginationInfo
 		wantCursor  *searchCursor
-		wantResults []searchResultResolver
+		wantResults []SearchResultResolver
 		wantErr     error
 	}{
 		{
@@ -540,7 +540,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 				limit:  3,
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 1},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("1"), "a.go"),
 				result(repo("1"), "b.go"),
 				result(repo("2"), "a.go"),
@@ -553,7 +553,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 				limit:  3,
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 4},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("2"), "b.go"),
 				result(repo("2"), "c.go"),
 				result(repo("2"), "d.go"),
@@ -566,7 +566,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 				limit:  3,
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 2, ResultOffset: 0, Finished: true},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("2"), "e.go"),
 			},
 		},
@@ -587,6 +587,177 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 			}
 			if !cmp.Equal(test.wantResults, results) {
 				t.Error("wantResults != results", cmp.Diff(test.wantResults, results))
+			}
+			if !cmp.Equal(test.wantErr, err) {
+				t.Error("wantErr != err", cmp.Diff(test.wantErr, err))
+			}
+		})
+	}
+}
+
+// TestSearchPagination_cloning_missing is a joint test for both
+// repoPaginationPlan and sliceSearchResults's handling of cloning and missing
+// repositories.
+func TestSearchPagination_cloning_missing(t *testing.T) {
+	revs := func(rev ...string) (revs []search.RevisionSpecifier) {
+		for _, r := range rev {
+			revs = append(revs, search.RevisionSpecifier{RevSpec: r})
+		}
+		return revs
+	}
+	repo := func(name string) *types.Repo {
+		return &types.Repo{Name: api.RepoName(name)}
+	}
+	result := func(repo *types.Repo, path string) *FileMatchResolver {
+		return &FileMatchResolver{JPath: path, Repo: repo}
+	}
+	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
+		return &search.RepositoryRevisions{
+			Repo: repo(name),
+			Revs: revs(rev...),
+		}
+	}
+	repoResults := map[string][]SearchResultResolver{
+		"a": {
+			result(repo("a"), "a.go"),
+		},
+		"c": {
+			result(repo("c"), "a.go"),
+		},
+		"f": {
+			result(repo("f"), "a.go"),
+		},
+	}
+	repoMissing := map[string]*types.Repo{
+		"b": repo("b"),
+		"e": repo("e"),
+	}
+	repoCloning := map[string]*types.Repo{
+		"d": repo("d"),
+	}
+	searchRepos := []*search.RepositoryRevisions{
+		repoRevs("a", "master"),
+		repoRevs("b", "master"),
+		repoRevs("c", "master"),
+		repoRevs("d", "master"),
+		repoRevs("e", "master"),
+		repoRevs("f", "master"),
+	}
+	executor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
+		common = &searchResultsCommon{}
+		for _, repoRev := range batch {
+			if res, ok := repoResults[string(repoRev.Repo.Name)]; ok {
+				results = append(results, res...)
+				common.repos = append(common.repos, repoRev.Repo)
+			}
+			if missing, ok := repoMissing[string(repoRev.Repo.Name)]; ok {
+				common.missing = append(common.missing, missing)
+			}
+			if cloning, ok := repoCloning[string(repoRev.Repo.Name)]; ok {
+				common.cloning = append(common.cloning, cloning)
+			}
+		}
+		return
+	}
+	ctx := context.Background()
+
+	tests := []struct {
+		name        string
+		request     *searchPaginationInfo
+		searchRepos []*search.RepositoryRevisions
+		wantCursor  *searchCursor
+		wantResults []SearchResultResolver
+		wantCommon  *searchResultsCommon
+		wantErr     error
+	}{
+		{
+			name: "repo a",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{},
+				limit:  1,
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0},
+			wantResults: []SearchResultResolver{
+				result(repo("a"), "a.go"),
+			},
+			wantCommon: &searchResultsCommon{
+				partial:     map[api.RepoName]struct{}{},
+				repos:       []*types.Repo{repo("a")},
+				resultCount: 1,
+			},
+		},
+		{
+			name: "missing repo b, repo c",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0},
+				limit:  1,
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 3, ResultOffset: 0},
+			wantResults: []SearchResultResolver{
+				result(repo("c"), "a.go"),
+			},
+			wantCommon: &searchResultsCommon{
+				partial: map[api.RepoName]struct{}{},
+				repos:   []*types.Repo{repo("c")},
+				missing: []*types.Repo{repo("b")},
+			},
+		},
+		{
+			name: "repo a, missing repo b, repo c",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{},
+				limit:  2,
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 3, ResultOffset: 0},
+			wantResults: []SearchResultResolver{
+				result(repo("a"), "a.go"),
+				result(repo("c"), "a.go"),
+			},
+			wantCommon: &searchResultsCommon{
+				partial: map[api.RepoName]struct{}{},
+				repos:   []*types.Repo{repo("a"), repo("c")},
+				missing: []*types.Repo{repo("b")},
+			},
+		},
+		{
+			name: "all",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{},
+				limit:  3,
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 6, ResultOffset: 0, Finished: true},
+			wantResults: []SearchResultResolver{
+				result(repo("a"), "a.go"),
+				result(repo("c"), "a.go"),
+				result(repo("f"), "a.go"),
+			},
+			wantCommon: &searchResultsCommon{
+				partial: map[api.RepoName]struct{}{},
+				repos:   []*types.Repo{repo("a"), repo("c"), repo("f")},
+				cloning: []*types.Repo{repo("d")},
+				missing: []*types.Repo{repo("b"), repo("e")},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			plan := &repoPaginationPlan{
+				pagination:          test.request,
+				repositories:        searchRepos,
+				searchBucketDivisor: 8,
+				searchBucketMin:     4,
+				searchBucketMax:     10,
+				mockNumTotalRepos:   func() int { return len(test.searchRepos) },
+			}
+			cursor, results, common, err := plan.execute(ctx, executor)
+			if !cmp.Equal(test.wantCursor, cursor) {
+				t.Error("wantCursor != cursor", cmp.Diff(test.wantCursor, cursor))
+			}
+			if !cmp.Equal(test.wantResults, results) {
+				t.Error("wantResults != results", cmp.Diff(test.wantResults, results))
+			}
+			if !cmp.Equal(test.wantCommon, common) {
+				t.Error("wantCommon != common", cmp.Diff(test.wantCommon, common))
 			}
 			if !cmp.Equal(test.wantErr, err) {
 				t.Error("wantErr != err", cmp.Diff(test.wantErr, err))

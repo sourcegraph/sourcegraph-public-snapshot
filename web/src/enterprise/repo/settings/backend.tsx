@@ -1,36 +1,61 @@
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { queryGraphQL } from '../../../backend/graphql'
+import {
+    dataOrThrowErrors,
+    gql,
+    createInvalidGraphQLMutationResponseError,
+} from '../../../../../shared/src/graphql/graphql'
+import { map } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
 
 /**
- * Fetch LSIF dumps for a repository.
+ * Fetch LSIF uploads for a repository.
  */
-export function fetchLsifDumps({
+export function fetchLsifUploads({
     repository,
+    query,
+    state,
+    isLatestForRepo,
     first,
     after,
-    query,
-    isLatestForRepo,
-}: { repository: string } & GQL.ILsifDumpsOnRepositoryArguments): Observable<GQL.ILSIFDumpConnection> {
+}: { repository: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<GQL.ILSIFUploadConnection> {
     return queryGraphQL(
         gql`
-            query LsifDumps($repository: ID!, $first: Int, $after: String, $query: String, $isLatestForRepo: Boolean) {
+            query LsifUploads(
+                $repository: ID!
+                $state: LSIFUploadState
+                $isLatestForRepo: Boolean
+                $first: Int
+                $after: String
+                $query: String
+            ) {
                 node(id: $repository) {
                     __typename
                     ... on Repository {
-                        lsifDumps(first: $first, after: $after, query: $query, isLatestForRepo: $isLatestForRepo) {
+                        lsifUploads(
+                            query: $query
+                            state: $state
+                            isLatestForRepo: $isLatestForRepo
+                            first: $first
+                            after: $after
+                        ) {
                             nodes {
                                 id
+                                state
                                 projectRoot {
                                     commit {
                                         abbreviatedOID
+                                        url
                                     }
                                     path
                                     url
                                 }
-                                processedAt
+                                inputCommit
+                                inputRoot
+                                inputIndexer
+                                uploadedAt
+                                startedAt
+                                finishedAt
                             }
 
                             totalCount
@@ -43,7 +68,7 @@ export function fetchLsifDumps({
                 }
             }
         `,
-        { repository, first, after, query, isLatestForRepo }
+        { repository, query, state, isLatestForRepo, first, after }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -54,40 +79,85 @@ export function fetchLsifDumps({
                 throw new Error(`The given ID is a ${node.__typename}, not a Repository`)
             }
 
-            return node.lsifDumps
+            return node.lsifUploads
         })
     )
 }
 
 /**
- * Fetch LSIF jobs with the given state.
+ * Fetch a single LSIF upload by id.
  */
-export function fetchLsifJobs({
-    state,
-    first,
-    query,
-}: GQL.ILsifJobsOnQueryArguments): Observable<GQL.ILSIFJobConnection> {
+export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpload | null> {
     return queryGraphQL(
         gql`
-            query LsifJobs($state: LSIFJobState!, $first: Int, $query: String) {
-                lsifJobs(state: $state, first: $first, query: $query) {
-                    nodes {
+            query LsifUpload($id: ID!) {
+                node(id: $id) {
+                    __typename
+                    ... on LSIFUpload {
                         id
-                        arguments
+                        projectRoot {
+                            commit {
+                                oid
+                                abbreviatedOID
+                                url
+                                repository {
+                                    name
+                                    url
+                                }
+                            }
+                            path
+                            url
+                        }
+                        inputCommit
+                        inputRoot
+                        inputIndexer
                         state
-                        queuedAt
+                        failure {
+                            summary
+                        }
+                        uploadedAt
                         startedAt
-                        completedOrErroredAt
-                    }
-                    pageInfo {
-                        hasNextPage
+                        finishedAt
+                        isLatestForRepo
                     }
                 }
             }
         `,
-        { state: state.toUpperCase(), first, query }
+        { id }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.lsifJobs)
+        map(({ node }) => {
+            if (!node) {
+                return null
+            }
+            if (node.__typename !== 'LSIFUpload') {
+                throw new Error(`The given ID is a ${node.__typename}, not an LSIFUpload`)
+            }
+
+            return node
+        })
+    )
+}
+
+/**
+ * Delete an LSIF upload by id.
+ */
+export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation DeleteLsifUpload($id: ID!) {
+                deleteLSIFUpload(id: $id) {
+                    alwaysNil
+                }
+            }
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.deleteLSIFUpload) {
+                throw createInvalidGraphQLMutationResponseError('DeleteLsifUpload')
+            }
+        })
     )
 }

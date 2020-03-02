@@ -1,7 +1,5 @@
-/**
- * @jest-environment node
- */
-
+import expect from 'expect'
+import { describe, test } from 'mocha'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
@@ -13,6 +11,9 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Key } from 'ts-key-enum'
+import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { editUserSettings } from './util/settings'
+import assert from 'assert'
 
 /**
  * Reads the number of results from the text at the top of the results page
@@ -75,7 +76,6 @@ describe('Search regression test suite', () => {
         'antonmedv/expr',
         'ClickHouse/clickhouse-go',
         'xwb1989/sqlparser',
-        'henrylee2cn/pholcus_lib',
         'itcloudy/ERP',
         'iovisor/kubectl-trace',
         'minio/highwayhash',
@@ -154,38 +154,37 @@ describe('Search regression test suite', () => {
         let driver: Driver
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
-        beforeAll(
-            async () => {
-                ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-                resourceManager.add(
-                    'User',
-                    testUsername,
-                    await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
-                )
-                resourceManager.add(
-                    'External service',
-                    testExternalServiceInfo.uniqueDisplayName,
-                    await ensureTestExternalService(
-                        gqlClient,
-                        {
-                            ...testExternalServiceInfo,
-                            config: {
-                                url: 'https://github.com',
-                                token: config.gitHubToken,
-                                repos: testRepoSlugs,
-                                repositoryQuery: ['none'],
-                            },
-                            waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
+        before(async function() {
+            this.timeout(3 * 60 * 1000 + 30 * 1000)
+            ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
+            resourceManager.add(
+                'User',
+                testUsername,
+                await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
+            )
+            resourceManager.add(
+                'External service',
+                testExternalServiceInfo.uniqueDisplayName,
+                await ensureTestExternalService(
+                    gqlClient,
+                    {
+                        ...testExternalServiceInfo,
+                        config: {
+                            url: 'https://github.com',
+                            token: config.gitHubToken,
+                            repos: testRepoSlugs,
+                            repositoryQuery: ['none'],
                         },
-                        { ...config, timeout: 3 * 60 * 1000, indexed: true }
-                    )
+                        waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
+                    },
+                    { ...config, timeout: 3 * 60 * 1000, indexed: true }
                 )
-            },
-            // Cloning the repositories takes ~1 minute, so give initialization ~3 minutes
-            3 * 60 * 1000 + 30 * 1000
-        )
+            )
+        })
 
-        afterAll(async () => {
+        saveScreenshotsUponFailures(() => driver.page)
+
+        after(async () => {
             if (!config.noCleanup) {
                 await resourceManager.destroyAll()
             }
@@ -267,7 +266,8 @@ describe('Search regression test suite', () => {
         })
         test('Single repository, case-sensitive search.', async () => {
             await driver.page.goto(
-                config.sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/adjust/go-wrk%24+String+case:yes'
+                config.sourcegraphBaseUrl +
+                    '/search?q=String+repo:%5Egithub.com/adjust/go-wrk%24+&patternType=regexp&case=yes'
             )
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
         })
@@ -287,7 +287,7 @@ describe('Search regression test suite', () => {
             // The string `var ExecutionEnvironment = require('ExecutionEnvironment');` occurs 10 times on this old branch, but 0 times in current master.
             await driver.page.goto(
                 config.sourcegraphBaseUrl +
-                    '/search?q=repo:%5Egithub%5C.com/facebook/react%24%400.3-stable+"var+ExecutionEnvironment+%3D+require%28%27ExecutionEnvironment%27%29%3B"'
+                    '/search?q="var+ExecutionEnvironment+%3D+require%28%27ExecutionEnvironment%27%29%3B"+repo:%5Egithub%5C.com/facebook/react%24%400.3-stable&patternType=regexp'
             )
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 10)
         })
@@ -349,7 +349,8 @@ describe('Search regression test suite', () => {
         test('Indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this',
-                GQL.SearchPatternType.regexp
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
@@ -357,7 +358,8 @@ describe('Search regression test suite', () => {
         test('Non-indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this index:no',
-                GQL.SearchPatternType.regexp
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
@@ -365,7 +367,8 @@ describe('Search regression test suite', () => {
         test('Indexed multiline search, 0 results', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\(',
-                GQL.SearchPatternType.regexp
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
@@ -373,7 +376,8 @@ describe('Search regression test suite', () => {
         test('Non-indexed multiline search, 0 results', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\( index:no',
-                GQL.SearchPatternType.regexp
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
@@ -381,26 +385,46 @@ describe('Search regression test suite', () => {
         test('Indexed-only structural search, one or more results', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebook/react$ index:only patterntype:structural toHaveYielded(:[args])',
-                GQL.SearchPatternType.structural
+                GQL.SearchPatternType.structural,
+                false
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
+        test('Structural search, return repo results if pattern is empty', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/facebook/react$',
+                GQL.SearchPatternType.structural,
+                false
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
+        test('Commit search, nonzero result', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/facebook/react$ type:commit hello world',
+                GQL.SearchPatternType.regexp,
+                false
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
+        test('Diff search, nonzero result', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/sgtest/mux$ type:diff main',
+                GQL.SearchPatternType.regexp,
+                false
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
 
-        test(
-            'Search timeout',
-            async () => {
-                const response = await search(
-                    gqlClient,
-                    'router index:no timeout:1ns',
-                    'V2',
-                    GQL.SearchPatternType.literal
-                )
-                expect(response.results.matchCount).toBe(0)
-                expect(response.results.alert && response.results.alert.title).toBe('Timeout')
-            },
-            2 * 1000
-        )
+        test('Search timeout', async function() {
+            this.timeout(2 * 1000)
+            const response = await search(gqlClient, 'router index:no timeout:1ns', 'V2', GQL.SearchPatternType.literal)
+            expect(response.results.matchCount).toBe(0)
+            expect(response.results.alert && response.results.alert.title).toBe('Timed out while searching')
+        })
 
         test('Search repo group', async () => {
             resourceManager.add(
@@ -444,12 +468,11 @@ describe('Search regression test suite', () => {
                 enterTextMethod: 'type',
             })
             await driver.page.waitForSelector('.e2e-query-suggestions')
-            await (
-                await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
-                    wait: { timeout: 5000 },
-                    selector: '.e2e-query-suggestions li',
-                })
-            ).click()
+            await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
+                action: 'click',
+                wait: { timeout: 5000 },
+                selector: '.e2e-query-suggestions li',
+            })
             await driver.waitUntilURL(`${config.sourcegraphBaseUrl}/github.com/auth0/go-jwt-middleware`)
 
             // File autocomplete from repo search bar
@@ -489,7 +512,6 @@ describe('Search regression test suite', () => {
 
         test('Search filters', async () => {
             const filterToToken = [
-                ['case:yes', 'case:yes'],
                 ['lang:go', 'lang:go'],
                 ['-file:_test\\.go$', '-file:_test\\.go$'],
             ]
@@ -498,12 +520,11 @@ describe('Search regression test suite', () => {
                 await driver.page.goto(
                     `${config.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
                 )
-                await (
-                    await driver.findElementWithText(filter, {
-                        selector: 'button',
-                        wait: { timeout: 5000 },
-                    })
-                ).click()
+                await driver.findElementWithText(filter, {
+                    action: 'click',
+                    selector: 'button',
+                    wait: { timeout: 5000 },
+                })
                 await driver.page.waitForFunction(
                     expectedQuery => {
                         const url = new URL(document.location.href)
@@ -514,6 +535,338 @@ describe('Search regression test suite', () => {
                     `${origQuery} ${token}`
                 )
             }
+        })
+    })
+
+    describe('Interactive search mode', () => {
+        let driver: Driver
+        let gqlClient: GraphQLClient
+        let resourceManager: TestResourceManager
+        before(async function() {
+            this.timeout(3 * 60 * 1000 + 30 * 1000)
+            ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
+            resourceManager.add(
+                'User',
+                testUsername,
+                await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
+            )
+            resourceManager.add(
+                'External service',
+                testExternalServiceInfo.uniqueDisplayName,
+                await ensureTestExternalService(
+                    gqlClient,
+                    {
+                        ...testExternalServiceInfo,
+                        config: {
+                            url: 'https://github.com',
+                            token: config.gitHubToken,
+                            repos: testRepoSlugs,
+                            repositoryQuery: ['none'],
+                        },
+                        waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
+                    },
+                    { ...config, timeout: 3 * 60 * 1000, indexed: true }
+                )
+            )
+
+            await editUserSettings(
+                testUsername,
+                { keyPath: [{ property: 'experimentalFeatures' }], value: { splitSearchModes: true } },
+                gqlClient
+            )
+        })
+
+        saveScreenshotsUponFailures(() => driver.page)
+
+        after(async () => {
+            if (!config.noCleanup) {
+                await resourceManager.destroyAll()
+            }
+            if (driver) {
+                await driver.close()
+            }
+        })
+
+        test('Toggling between plain and interactive mode shows correct elements', async () => {
+            await driver.page.goto(`${config.sourcegraphBaseUrl}/search`)
+            await driver.page.waitForSelector('.e2e-query-input')
+            const numQueryInputs = () =>
+                driver.page.evaluate(() => {
+                    const queryInput = document.querySelectorAll<HTMLInputElement>('.e2e-query-input')
+                    return queryInput.length
+                })
+            assert.strictEqual(await numQueryInputs(), 1)
+            await driver.page.waitForSelector('.e2e-search-mode-toggle')
+            await driver.page.click('.e2e-search-mode-toggle')
+            await driver.page.waitForSelector('.e2e-search-mode-toggle__interactive-mode')
+            await driver.page.click('.e2e-search-mode-toggle__interactive-mode')
+            await driver.page.waitForSelector('.e2e-interactive-mode-input')
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.e2e-query-input').length)).toEqual(1)
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.e2e-add-filter-row').length)).toEqual(1)
+        })
+
+        test('Clicking repo filter button displays selected filters row and repo filter input', async () => {
+            await driver.page.click('.e2e-add-filter-button-repo')
+            await driver.page.waitForSelector('.selected-filters-row')
+            await driver.page.waitForSelector('.filter-input')
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.selected-filters-row').length)).toEqual(
+                1
+            )
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.filter-input').length)).toEqual(1)
+            expect(
+                await driver.page.evaluate(() => document.querySelector('.filter-input__label')?.textContent)
+            ).toEqual('repo:')
+        })
+        test('Conducting a plain search query correctly returns results', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.e2e-query-input')
+            await driver.page.click('.e2e-query-input')
+            await driver.page.keyboard.type('error count:100')
+            await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation('/search?q=error+count:100&patternType=literal')
+            await driver.page.waitForSelector('.e2e-search-result')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+
+        test('Adding a repo filter correctly returns results', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.e2e-add-filter-button-repo')
+            await driver.page.click('.e2e-add-filter-button-repo')
+            await driver.page.waitForSelector('.filter-input')
+            await driver.page.keyboard.type('auth0/go-jwt-middleware$')
+            await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation('/search?q=repo:auth0/go-jwt-middleware%24&patternType=literal')
+            await driver.page.waitForSelector('.e2e-search-result')
+            await driver.page.waitForFunction(() => {
+                const results = document.querySelectorAll('.e2e-search-result')
+                return results.length === 1 && (results.item(0).textContent || '').includes('go-jwt-middleware')
+            })
+        })
+        test('Adding a term to query input correctly returns results', async () => {
+            await driver.page.click('.e2e-query-input')
+            await driver.page.keyboard.type('error')
+            await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation('/search?q=error+repo:auth0/go-jwt-middleware%24&patternType=literal')
+            await driver.page.waitForSelector('.e2e-search-result')
+            await driver.page.waitForFunction(() => {
+                const results = document.querySelectorAll('.e2e-file-match-children-item-wrapper')
+                return results.length > 10 && (results.item(0).textContent || '').includes('error')
+            })
+        })
+        test('Adding a file filter to query correctly returns results', async () => {
+            await driver.page.waitForSelector('.e2e-add-filter-button-file')
+            await driver.page.click('.e2e-add-filter-button-file')
+            await driver.page.waitForSelector('.filter-input__input-field')
+            await driver.page.keyboard.type('README')
+            await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation(
+                '/search?q=error+repo:auth0/go-jwt-middleware%24+file:README&patternType=literal'
+            )
+            await driver.page.waitForSelector('.e2e-search-result')
+            await driver.page.waitForFunction(() => {
+                const results = document.querySelectorAll('.e2e-search-result')
+                return results.length === 1 && (results.item(0).textContent || '').includes('README')
+            })
+        })
+
+        test('Adding a language filter from the dropdown correctly returns results', async () => {
+            await driver.page.waitForSelector('.add-filter-dropdown')
+            await driver.page.click('.add-filter-dropdown')
+            await driver.page.select('.e2e-filter-dropdown', 'lang')
+            await driver.page.waitForSelector('.filter-input__input-field')
+            await driver.page.keyboard.type('markdown')
+            await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation(
+                '/search?q=error+repo:auth0/go-jwt-middleware%24+file:README+lang:markdown&patternType=literal'
+            )
+            await driver.page.waitForSelector('.e2e-search-result')
+            await driver.page.waitForFunction(() => {
+                const results = document.querySelectorAll('.e2e-search-result')
+                return results.length === 1 && (results.item(0).textContent || '').includes('README')
+            })
+        })
+
+        test('Filters are properly parsed and displayed in the selected filters row', async () => {
+            await driver.page.waitForSelector('.selected-filters-row')
+            await driver.page.waitForSelector('.filter-input')
+            const hasCorrectFilters = () =>
+                driver.page.evaluate(() => {
+                    const filterInputs = document.querySelectorAll('.filter-input')
+                    const textContents: string[] = []
+                    for (const filter of filterInputs) {
+                        textContents.push(filter.textContent || '')
+                    }
+
+                    return (
+                        textContents.length === 3 &&
+                        textContents.includes('repo:auth0/go-jwt-middleware$') &&
+                        textContents.includes('file:README') &&
+                        textContents.includes('lang:markdown')
+                    )
+                })
+            assert.strictEqual(await hasCorrectFilters(), true)
+        })
+
+        test('Landing on search results page parses query filters properly', async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl +
+                    '/search?q=error+repo:auth0/go-jwt-middleware%24+file:README+lang:markdown&patternType=literal'
+            )
+            await driver.page.waitForSelector('.selected-filters-row')
+            await driver.page.waitForSelector('.filter-input')
+            const hasCorrectFilters = () =>
+                driver.page.evaluate(() => {
+                    const filterInputs = document.querySelectorAll('.filter-input')
+                    const textContents: string[] = []
+                    for (const filter of filterInputs) {
+                        textContents.push(filter.textContent || '')
+                    }
+
+                    return (
+                        textContents.length === 3 &&
+                        textContents.includes('repo:auth0/go-jwt-middleware$') &&
+                        textContents.includes('file:README') &&
+                        textContents.includes('lang:markdown')
+                    )
+                })
+            assert.strictEqual(await hasCorrectFilters(), true)
+        })
+
+        test('Going to search homepage from search results page clears all filters', async () => {
+            await driver.page.click('.global-navbar__logo-link')
+            await driver.assertWindowLocation('/search')
+            await driver.page.waitForFunction(() => {
+                const filterInputs = document.querySelectorAll('.filter-input')
+                return filterInputs.length === 0
+            })
+        })
+
+        test('Querying from a repository tree page produces correct query and filter values', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware')
+            await driver.page.waitForSelector('.tree-page__section-search  .query-input2 .e2e-query-input')
+            await driver.page.click('.tree-page__section-search  .query-input2 .e2e-query-input')
+            await driver.page.keyboard.type('test')
+            await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation(
+                '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middleware%24+test&patternType=literal'
+            )
+            const hasCorrectFilters = () =>
+                driver.page.evaluate(() => {
+                    const filterInputs = document.querySelectorAll('.filter-input')
+                    const textContents: string[] = []
+                    for (const filter of filterInputs) {
+                        textContents.push(filter.textContent || '')
+                    }
+
+                    return (
+                        textContents.length === 1 &&
+                        textContents.includes('repo:^github\\.com/auth0/go-jwt-middleware$')
+                    )
+                })
+            assert.strictEqual(await hasCorrectFilters(), true)
+
+            expect(
+                await driver.page.evaluate(() => {
+                    const queryInput = document.querySelector<HTMLInputElement>('.e2e-query-input')
+                    return queryInput?.value === 'test'
+                })
+            )
+        })
+
+        test('Toggling from interactive to plain text mode produces correct query', async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl +
+                    '/search?q=error+repo:auth0/go-jwt-middleware%24+file:README+lang:markdown&patternType=literal'
+            )
+            await driver.page.waitForSelector('.e2e-search-mode-toggle')
+            await driver.page.click('.e2e-search-mode-toggle')
+            await driver.page.waitForSelector('.e2e-search-mode-toggle__plain-text-mode')
+            await driver.page.click('.e2e-search-mode-toggle__plain-text-mode')
+            await driver.page.waitForSelector('.e2e-query-input')
+            expect(
+                await driver.page.evaluate(() => {
+                    const queryInput = document.querySelector<HTMLInputElement>('.e2e-query-input')
+                    return queryInput?.value === 'error repo:auth0/go-jwt-middleware file:README lang:markdown'
+                })
+            )
+        })
+
+        test('Toggling from plain text to interactive mode correctly identifies filters', async () => {
+            await driver.page.waitForSelector('.e2e-search-mode-toggle')
+            await driver.page.click('.e2e-search-mode-toggle')
+            await driver.page.waitForSelector('.e2e-search-mode-toggle__interactive-mode')
+            await driver.page.click('.e2e-search-mode-toggle__interactive-mode')
+            await driver.page.waitForSelector('.e2e-query-input')
+            expect(
+                await driver.page.evaluate(() => {
+                    const queryInput = document.querySelector<HTMLInputElement>('.e2e-query-input')
+                    return queryInput?.value === 'error'
+                })
+            )
+            await driver.page.waitForSelector('.selected-filters-row')
+            const hasCorrectFilters = () =>
+                driver.page.evaluate(() => {
+                    const filterInputs = document.querySelectorAll('.filter-input')
+                    const textContents: string[] = []
+                    for (const filter of filterInputs) {
+                        textContents.push(filter.textContent || '')
+                    }
+
+                    return (
+                        textContents.length === 3 &&
+                        textContents.includes('repo:auth0/go-jwt-middleware$') &&
+                        textContents.includes('file:README') &&
+                        textContents.includes('lang:markdown')
+                    )
+                })
+            assert.strictEqual(await hasCorrectFilters(), true)
+        })
+
+        test('Filter input suggestions', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.e2e-add-filter-button-repo', { visible: true })
+            await driver.page.click('.e2e-add-filter-button-repo')
+            await driver.page.waitForSelector('.filter-input', { visible: true })
+            await driver.page.waitForSelector('.filter-input__input-field')
+            await driver.page.keyboard.type('auth0/go-jwt-middlewa')
+            await driver.page.waitForSelector('.e2e-filter-input__suggestions')
+            await driver.page.waitForSelector('.e2e-suggestion-item')
+            await driver.page.keyboard.press('ArrowDown')
+            await driver.page.keyboard.press('Enter')
+            await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation(
+                '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middleware%24&patternType=literal'
+            )
+        })
+
+        test('Editing text filters', async () => {
+            await driver.page.waitForSelector('.filter-input')
+            await driver.page.click('.filter-input')
+            await driver.page.waitForSelector('.filter-input__input-field')
+            await driver.page.keyboard.press('Backspace')
+            await driver.page.keyboard.press('Backspace')
+            await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation(
+                '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middlewar&patternType=literal'
+            )
+        })
+        test('Adding and editing finite filters', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=test&patternType=literal')
+            await driver.page.waitForSelector('.add-filter-dropdown')
+            await driver.page.click('.add-filter-dropdown')
+            await driver.page.select('.e2e-filter-dropdown', 'fork')
+            await driver.page.waitForSelector('.e2e-filter-input-finite-form')
+            await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
+            await driver.page.click('.e2e-filter-input-radio-button-no')
+            await driver.page.click('.e2e-confirm-filter-button')
+            await driver.assertWindowLocation('/search?q=test+fork:no&patternType=literal')
+            await driver.page.waitForSelector('.filter-input')
+            await driver.page.click('.filter-input')
+            await driver.page.waitForSelector('.e2e-filter-input-finite-form')
+            await driver.page.waitForSelector('.e2e-filter-input-radio-button-only')
+            await driver.page.click('.e2e-filter-input-radio-button-only')
+            await driver.page.click('.e2e-confirm-filter-button')
+            await driver.assertWindowLocation('/search?q=test+fork:only&patternType=literal')
         })
     })
 })

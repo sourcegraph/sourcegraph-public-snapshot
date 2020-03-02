@@ -5,9 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
@@ -18,12 +21,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-func initAuthz() {
+func initAuthz(d dbutil.DB) {
 	db.ExternalServices = edb.NewExternalServicesStore()
+	db.Authz = edb.NewAuthzStore(d, func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	})
 
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
@@ -76,18 +83,50 @@ func initAuthz() {
 		return nil
 	})
 
+	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
+		// 🚨 SECURITY: Only the site admin should ever see this (all other users will see a hard-block
+		// license expiration screen) about this. Leaking this wouldn't be a security vulnerability, but
+		// just in case this method is changed to return more information, we lock it down.
+		if !args.IsSiteAdmin {
+			return nil
+		}
+
+		info, err := licensing.GetConfiguredProductLicenseInfo()
+		if err != nil {
+			log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
+			return []*graphqlbackend.Alert{{
+				TypeValue:    graphqlbackend.AlertTypeError,
+				MessageValue: "Error reading Sourcegraph license key. Check the logs for more information, or update the license key in the [**site configuration**](/site-admin/configuration).",
+			}}
+		}
+		if info != nil && info.IsExpiredWithGracePeriod() {
+			return []*graphqlbackend.Alert{{
+				TypeValue:    graphqlbackend.AlertTypeError,
+				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Core features.",
+			}}
+		}
+		return nil
+	})
+
 	// Enforce the use of a valid license key by preventing all HTTP requests if the license is invalid
 	// (due to a error in parsing or verification, or because the license has expired).
-	hooks.PreAuthMiddleware = func(next http.Handler) http.Handler {
+	hooks.PostAuthMiddleware = func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
+				// Site admins are exempt from license enforcement screens such that they can
+				// easily update the license key.
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			info, err := licensing.GetConfiguredProductLicenseInfo()
 			if err != nil {
 				log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
-				licensing.WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console).")
+				licensing.WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the [**site configuration**](/site-admin/configuration).")
 				return
 			}
 			if info != nil && info.IsExpiredWithGracePeriod() {
-				licensing.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features). Update the license key in the Sourcegraph management console.")
+				licensing.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features). Update the license key in the [**site configuration**](/site-admin/configuration).")
 				return
 			}
 
@@ -152,10 +191,24 @@ func authzProvidersFromConfig(
 		warnings = append(warnings, bbsWarnings...)
 	}
 
+	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
+	if cfg.SiteConfiguration.PermissionsUserMapping != nil &&
+		cfg.SiteConfiguration.PermissionsUserMapping.Enabled && len(providers) > 0 {
+		serviceTypes := make([]string, len(providers))
+		for i := range providers {
+			serviceTypes[i] = strconv.Quote(providers[i].ServiceType())
+		}
+		msg := fmt.Sprintf(
+			"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
+			strings.Join(serviceTypes, ", "))
+		seriousProblems = append(seriousProblems, msg)
+	}
+
 	return allowAccessByDefault, providers, seriousProblems, warnings
 }
 
 func init() {
+	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
 		_, _, seriousProblems, warnings :=
 			authzProvidersFromConfig(context.Background(), &cfg, db.ExternalServices, dbconn.Global)

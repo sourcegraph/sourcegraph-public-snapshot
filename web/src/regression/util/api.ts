@@ -394,30 +394,6 @@ export function currentProductVersion(gqlClient: GraphQLClient): Promise<string>
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export function getManagementConsoleState(gqlClient: GraphQLClient): Promise<GQL.IManagementConsoleState> {
-    return gqlClient
-        .queryGraphQL(
-            gql`
-                query ManagementConsoleState {
-                    site {
-                        managementConsoleState {
-                            plaintextPassword
-                        }
-                    }
-                }
-            `
-        )
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ site }) => site.managementConsoleState)
-        )
-        .toPromise()
-}
-
-/**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
- * dependency-injected `requestGraphQL`.
- */
 export async function setUserEmailVerified(
     gqlClient: GraphQLClient,
     username: string,
@@ -599,12 +575,7 @@ export function createOrganization(
                 eventLogger.log('NewOrgFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('NewOrgCreated', {
-                organization: {
-                    org_id: data.createOrganization.id,
-                    org_name: data.createOrganization.name,
-                },
-            })
+            eventLogger.log('NewOrgCreated')
             return concat([data.createOrganization])
         })
     )
@@ -720,11 +691,7 @@ export function addExternalService(
                 eventLogger.log('AddExternalServiceFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('AddExternalServiceSucceeded', {
-                externalService: {
-                    kind: data.addExternalService.kind,
-                },
-            })
+            eventLogger.log('AddExternalServiceSucceeded')
             return data.addExternalService
         })
     )
@@ -849,4 +816,58 @@ export function search(
             })
         )
         .toPromise()
+}
+
+/**
+ * Fetches the site and its configuration.
+ *
+ * @returns Observable that emits the site
+ */
+export function fetchSiteConfiguration({
+    requestGraphQL,
+}: Pick<PlatformContext, 'requestGraphQL'>): Observable<GQL.ISite> {
+    return requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query Site {
+                site {
+                    id
+                    configuration {
+                        id
+                        effectiveContents
+                        validationMessages
+                    }
+                }
+            }
+        `,
+        variables: {},
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.site)
+    )
+}
+
+/**
+ * Updates the site's configuration.
+ *
+ * @returns An observable indicating whether or not a service restart is
+ * required for the update to be applied.
+ */
+export function updateSiteConfiguration(
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
+    lastID: number,
+    input: string
+): Observable<boolean> {
+    return requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+                updateSiteConfiguration(lastID: $lastID, input: $input)
+            }
+        `,
+        variables: { lastID, input },
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.updateSiteConfiguration)
+    )
 }

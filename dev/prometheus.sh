@@ -11,7 +11,7 @@ CONFIG_DIR="${DIR}/../docker-images/prometheus/config"
 
 PROMETHEUS_DISK="${HOME}/.sourcegraph-dev/data/prometheus"
 
-IMAGE=sourcegraph/prometheus:10.0.4
+IMAGE=sourcegraph/prometheus:10.0.6@sha256:f681ceb9400f0d546601cbf827ac9c3db16acd37e810da0860cf05d4f42305d1
 CONTAINER=prometheus
 
 CID_FILE="${PROMETHEUS_DISK}/prometheus.cid"
@@ -49,5 +49,6 @@ docker run --rm ${NET_ARG} --cidfile ${CID_FILE} \
     -p 0.0.0.0:9090:9090 \
     -v ${PROMETHEUS_DISK}:/prometheus \
     -v ${CONFIG_DIR}:/sg_prometheus_add_ons \
+    -e PROMETHEUS_ADDITIONAL_FLAGS=--web.enable-lifecycle \
     ${IMAGE} >> ${PROMETHEUS_DISK}/logs/prometheus.log 2>&1 &
 wait $!

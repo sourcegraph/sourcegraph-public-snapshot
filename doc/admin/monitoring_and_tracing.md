@@ -27,7 +27,7 @@ This URL will show the home dashboard and from there you can add, modify and del
 If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
 you can access Grafana directly using Kubernetes port forwarding to your local machine:
 
-```bash script
+```bash
 kubectl port-forward svc/grafana 3370:30070
 ``` 
 
@@ -39,7 +39,7 @@ Therefore, if accessing Grafana locally, the URL will be http://localhost:3370/-
 such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establish a secure connection to Grafana.
 To access the remote server using `sshuttle` from your local machine:
 
-```bash script
+```bash
 sshuttle -r user@host 0/0
 ```
 
@@ -74,13 +74,23 @@ will be detected automatically while Grafana is running.
 More behavior can be controlled with
 [environmental variables](https://grafana.com/docs/installation/configuration/).
 
+## Set up alerts
+
+1. [Set up alert channels](monitoring/slack_alert_channel.md)
+1. Set up an alert
+    1. Navigate to the dashboard that contains the panel with the metric you want to alert on.
+    1. The panel title has a small dropdown next to it. Choose Edit.
+    1. On the left navigation bar choose the `Bell` icon for Alert.
+    1. Fill out the rule and add a notification by picking a channel you created before.
+    1. Verify your rule by running `Test Rule` or viewing `State History`.    
+
 ## Additional monitoring and tracing systems
 
 Sourcegraph supports forwarding internal performance and debugging information to many monitoring and tracing systems.
 
-- [Jaeger](https://github.com/jaegertracing/jaeger#readme) tracing, configured via the `useJaeger` properties in [critical configuration](config/critical_config.md)
-- [LightStep](https://lightstep.com) tracing, configured via the `lightstep*` properties in [critical configuration](config/critical_config.md) (full [OpenTracing](http://opentracing.io/) support coming soon)
-- [Sentry](https://sentry.io) logging, configured via the `sentry` property in [critical configuration](config/critical_config.md)
+- [Jaeger](https://github.com/jaegertracing/jaeger#readme) tracing, configured via the `useJaeger` properties in [site configuration](config/site_config.md)
+- [LightStep](https://lightstep.com) tracing, configured via the `lightstep*` properties in [site configuration](config/site_config.md) (full [OpenTracing](http://opentracing.io/) support coming soon)
+- [Sentry](https://sentry.io) logging, configured via the `sentry` property in [site configuration](config/site_config.md)
 - [Go net/trace](#viewing-go-net-trace-information)
 - [Honeycomb](https://honeycomb.io/)
 
@@ -116,7 +126,7 @@ If you are having issues with repository syncing, view the output of `repo-updat
 
 ### Inspecting traces (Jaeger or LightStep)
 
-If LightStep or Jaeger is configured (using the [`useJaeger` or `lightstep*` critical configuration properties](config/critical_config.md), every HTTP response will include an `X-Trace` header with a link to the trace for that request. Inspecting the spans and logs attached to the trace will help identify the problematic service or dependency.
+If LightStep or Jaeger is configured (using the [`useJaeger` or `lightstep*` site configuration properties](config/site_config.md), every HTTP response will include an `X-Trace` header with a link to the trace for that request. Inspecting the spans and logs attached to the trace will help identify the problematic service or dependency.
 
 ### Viewing Go net/trace information
 

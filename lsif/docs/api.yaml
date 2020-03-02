@@ -12,10 +12,8 @@ servers:
 tags:
   - name: LSIF
     description: LSIF operations
-  - name: Dumps
-    description: Dump operations
-  - name: Jobs
-    description: Job operations
+  - name: Uploads
+    description: Upload operations
 paths:
   /upload:
     post:
@@ -29,12 +27,12 @@ paths:
               type: string
               format: binary
       parameters:
-        - name: repository
+        - name: repositoryId
           in: query
-          description: The repository name.
+          description: The repository identifier.
           required: true
           schema:
-            type: string
+            type: number
         - name: commit
           in: query
           description: The 40-character commit hash.
@@ -43,7 +41,7 @@ paths:
             type: string
         - name: root
           in: query
-          description: The path to the directory associated with the dump, relative to the repository root.
+          description: The path to the directory associated with the upload, relative to the repository root.
           example: cmd/project1
           required: false
           schema:
@@ -56,10 +54,16 @@ paths:
             type: boolean
         - name: maxWait
           in: query
-          description: The maximum time (in seconds) that request will block. The job will continue asynchronously if this much time has elapesed.
+          description: The maximum time (in seconds) that request will block. The conversion will continue asynchronously if this much time has elapsed.
           required: false
           schema:
             type: number
+        - name: indexerName
+          in: query
+          description: The name of the indexer that generated the payload. This is required only if there is no tool info supplied in the payload's metadata vertex.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Processed (synchronously)
@@ -75,16 +79,46 @@ paths:
                 $ref: '#/components/schemas/EnqueueResponse'
   /exists:
     get:
+      description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return the LSIF upload for which definitions, references, and hover queries will use.
+      tags:
+        - LSIF
+      parameters:
+        - name: repositoryId
+          in: query
+          description: The repository identifier.
+          required: true
+          schema:
+            type: number
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: query
+          description: The file path within the repository (relative to the repository root).
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                - $ref: '#/components/schemas/Uploads'
+    post:
       description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return true if there is a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
       tags:
         - LSIF
       parameters:
-        - name: repository
+        - name: repositoryId
           in: query
-          description: The repository name.
+          description: The repository identifier.
           required: true
           schema:
-            type: string
+            type: number
         - name: commit
           in: query
           description: The 40-character commit hash.
@@ -104,27 +138,102 @@ paths:
             application/json:
               schema:
                 type: boolean
-  /request:
-    post:
-      description: Answer a definitions, references, or hover LSP request. This endpoint will use a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
+  /definitions:
+    get:
+      description: Get definitions for the symbol at a source position.
       tags:
         - LSIF
       parameters:
-        - name: repository
+        - name: repositoryId
           in: query
-          description: The repository name.
+          description: The repository identifier.
           required: true
           schema:
-            type: string
+            type: number
         - name: commit
           in: query
           description: The 40-character commit hash.
           required: true
           schema:
+            type: number
+        - name: path
+          in: query
+          description: The file path within the repository (relative to the repository root).
+          required: true
+          schema:
             type: string
+        - name: line
+          in: query
+          description: The line index (zero-indexed).
+          required: true
+          schema:
+            type: number
+        - name: character
+          in: query
+          description: The character index (zero-indexed).
+          required: true
+          schema:
+            type: number
+        - name: uploadId
+          in: query
+          description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Locations'
+        '404':
+          description: Not found
+  /references:
+    get:
+      description: Get references for the symbol at a source position.
+      tags:
+        - LSIF
+      parameters:
+        - name: repositoryId
+          in: query
+          description: The repository identifier.
+          required: true
+          schema:
+            type: number
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: number
+        - name: path
+          in: query
+          description: The file path within the repository (relative to the repository root).
+          required: true
+          schema:
+            type: string
+        - name: line
+          in: query
+          description: The line index (zero-indexed).
+          required: true
+          schema:
+            type: number
+        - name: character
+          in: query
+          description: The character index (zero-indexed).
+          required: true
+          schema:
+            type: number
+        - name: uploadId
+          in: query
+          description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
+          required: true
+          schema:
+            type: number
         - name: limit
           in: query
-          description: The maximum number of remote dumps to search for remote references per page. This parameter is only read on references request.
+          description: The maximum number of remote uploads to search for remote references per page. This parameter is only read on references request.
           required: false
           schema:
             type: number
@@ -135,89 +244,59 @@ paths:
           required: false
           schema:
             type: string
-      requestBody:
-        description: The LSP request, including the type of data being requested and the source location.
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LSPRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/Locations'
-                  - $ref: '#/components/schemas/Hover'
-  /dumps/{repository}:
-    get:
-      description: Get the LSIF dumps uploaded for a repository ordered by their upload time (newest first).
-      tags:
-        - Dumps
-      parameters:
-        - name: repository
-          in: path
-          description: The url-encoded repository name.
-          required: true
-          example: github.com%2Fsourcegraph%2Flsif-go
-          schema:
-            type: string
-        - name: query
-          in: query
-          description: A search query applied over the commit and root properties.
-          required: false
-          schema:
-            type: string
-        - name: visibleAtTip
-          in: query
-          description: If true, only show dumps visible at tip.
-          required: false
-          schema:
-            type: boolean
-        - name: limit
-          in: query
-          description: The maximum number of dumps to return in one page.
-          required: false
-          schema:
-            type: number
-            default: 50
-        - name: offset
-          in: query
-          description: The number of dumps seen on previous pages.
-          required: false
-          schema:
-            type: number
-            default: 0
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Dumps'
+                $ref: '#/components/schemas/Locations'
           headers:
             Link:
               description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
               schema:
                 type: string
-  /dumps/{repository}/{id}:
+        '404':
+          description: Not found
+  /hover:
     get:
-      description: Get an LSIF dump by its identifier.
+      description: Get hover data for the symbol at a source position.
       tags:
-        - Dumps
+        - LSIF
       parameters:
-        - name: repository
-          in: path
-          description: The url-encoded repository name.
+        - name: repositoryId
+          in: query
+          description: The repository identifier.
           required: true
-          example: github.com%2Fsourcegraph%2Flsif-go
+          schema:
+            type: number
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: number
+        - name: path
+          in: query
+          description: The file path within the repository (relative to the repository root).
+          required: true
           schema:
             type: string
-        - name: id
-          in: path
-          description: The dump identifier.
+        - name: line
+          in: query
+          description: The line index (zero-indexed).
+          required: true
+          schema:
+            type: number
+        - name: character
+          in: query
+          description: The character index (zero-indexed).
+          required: true
+          schema:
+            type: number
+        - name: uploadId
+          in: query
+          description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
           required: true
           schema:
             type: number
@@ -227,91 +306,30 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Dump'
+                $ref: '#/components/schemas/Hover'
         '404':
           description: Not found
-    delete:
-      description: Delete an LSIF dump by its identifier.
+  /uploads/repositories/{repositoryId}:
+    get:
+      description: Get LSIF uploads for a repository.
       tags:
-        - Dumps
+        - Uploads
       parameters:
-        - name: repository
-          in: path
-          description: The url-encoded repository name.
+        - name: repositoryId
+          in: query
+          description: The repository identifier.
           required: true
-          example: github.com%2Fsourcegraph%2Flsif-go
+          schema:
+            type: number
+        - name: query
+          in: query
+          description: A search query applied over commit, root, failure reason, and failure stacktrace properties.
+          required: false
           schema:
             type: string
-        - name: id
-          in: path
-          description: The dump identifier.
-          required: true
-          schema:
-            type: number
-      responses:
-        '204':
-          description: No content
-        '404':
-          description: Not found
-  /jobs:
-    post:
-      description: Immediately queue a job.
-      tags:
-        - Jobs
-      requestBody:
-        description: The job description.
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobDescription'
-      parameters:
-        - name: blocking
-          in: query
-          description: If true, block the request until the job has completed.
-          required: false
-          schema:
-            type: boolean
-        - name: maxWait
-          in: query
-          description: The maximum time (in seconds) that request will block. The job will continue asynchronously if this much time has elapesed.
-          required: false
-          schema:
-            type: number
-      responses:
-        '200':
-          description: Processed (synchronously)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnqueueResponse'
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnqueueResponse'
-  /jobs/stats:
-    get:
-      description: Get the current counts of jobs by their state.
-      tags:
-        - Jobs
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Stats'
-  /jobs/{state}:
-    get:
-      description: Get LSIF jobs by state.
-      tags:
-        - Jobs
-      parameters:
         - name: state
-          in: path
-          description: The target job state.
+          in: query
+          description: The target upload state.
           required: true
           schema:
             type: string
@@ -320,23 +338,22 @@ paths:
               - errored
               - completed
               - queued
-              - scheduled
-        - name: query
+        - name: visibleAtTip
           in: query
-          description: A search query applied over job type, job arguments, and failure (reason and stacktrace) properties.
+          description: If true, only show uploads visible at tip.
           required: false
           schema:
-            type: string
+            type: boolean
         - name: limit
           in: query
-          description: The maximum number of jobs to return in one page.
+          description: The maximum number of uploads to return in one page.
           required: false
           schema:
             type: number
             default: 50
         - name: offset
           in: query
-          description: The number of jobs seen on previous pages.
+          description: The number of uploads seen on previous pages.
           required: false
           schema:
             type: number
@@ -347,21 +364,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Jobs'
+                $ref: '#/components/schemas/PaginatedUploads'
           headers:
             Link:
               description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
               schema:
                 type: string
-  /jobs/{id}:
+  /uploads/{id}:
     get:
-      description: Get an LSIF job by its identifier.
+      description: Get an LSIF upload by its identifier.
       tags:
-        - Jobs
+        - Uploads
       parameters:
         - name: id
           in: path
-          description: The job identifier.
+          description: The upload identifier.
           required: true
           schema:
             type: string
@@ -371,17 +388,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Job'
+                $ref: '#/components/schemas/Upload'
         '404':
           description: Not Found
     delete:
-      description: Delete an LSIF job by its identifier.
+      description: Delete an LSIF upload by its identifier.
       tags:
-        - Jobs
+        - Uploads
       parameters:
         - name: id
           in: path
-          description: The job identifier.
+          description: The upload identifier.
           required: true
           schema:
             type: string
@@ -422,34 +439,22 @@ components:
       type: object
       description: A position in a file of a code base.
       properties:
-        uri:
+        repositoryId:
+          type: number
+          description: The identifier of the repository in which the location occurs.
+        commit:
+          type: string
+          description: The commit in which the location occurs.
+        path:
           type: string
           description: The root-relative path to the file.
         range:
           $ref: '#/components/schemas/Range'
       required:
-        - uri
-        - range
-      additionalProperties: false
-    LSPRequest:
-      type: object
-      description: A payload indicating the type of requested LSP data.
-      properties:
-        method:
-          type: string
-          description: The request type.
-          enum:
-            - definitions
-            - references
-            - hover
-        path:
-          type: string
-          description: The root-relative path to the file containing the hover position.
-        position:
-          $ref: '#/components/schemas/Position'
-      required:
+        - repositoryId
+        - commit
         - path
-        - position
+        - range
       additionalProperties: false
     Locations:
       type: array
@@ -460,208 +465,106 @@ components:
       type: object
       description: The text associated with a position in a source file.
       properties:
-        contents:
-          type: object
-          description: The hover text wrapper.
-          properties:
-            kind:
-              type: string
-              description: An indicator for the format of the value property. Currently only markdown is supported.
-              enum:
-                - markdown
-            value:
-              type: string
-              description: The raw markdown text.
-          required:
-            - kind
-            - value
-          additionalProperties: false
-        range:
-          $ref: '#/components/schemas/Range'
+        text:
+          type: string
+          description: The raw hover text.
       required:
-        - contents
-      additionalProperties: false
-    Dumps:
-      type: object
-      description: A paginated wrapper for a list of dumps.
-      properties:
-        dumps:
-          type: array
-          description: A list of LSIF dumps for a repository.
-          items:
-            $ref: '#/components/schemas/Dump'
-        totalCount:
-          type: number
-          descrpition: The total number of dumps in this set of results.
-      required:
-        - dumps
-        - totalCount
-      additionalProperties: false
-    Dump:
-      type: object
-      description: An LSIF dump.
-      properties:
-        id:
-          type: number
-          description: A unique identifier.
-        repository:
-          type: string
-          description: The repository name.
-        commit:
-          type: string
-          description: The 40-character commit hash.
-        root:
-          type: string
-          description: The root-relative path of the dump.
-        visibleAtTip:
-          type: boolean
-          description: Whether or not this dump can provide global reference code intelligence.
-        uploadedAt:
-          type: string
-          description: An ISO 8601-formatted time that the dump was uploaded.
-        processedAt:
-          type: string
-          description: An ISO 8601-formatted time that the dump became available for use.
-      required:
-        - id
-        - repository
-        - commit
-        - root
-        - visibleAtTip
-        - uploadedAt
-      additionalProperties: false
-    Stats:
-      type: object
-      description: An object containing the counts of jobs by state.
-      properties:
-        processingCount:
-          type: number
-          description: The number of jobs being processed.
-        erroredCount:
-          type: number
-          description: The number of errored jobs.
-        completedCount:
-          type: number
-          description: The number of completed jobs.
-        queuedCount:
-          type: number
-          description: The number of queued jobs.
-        scheduledCount:
-          type: number
-          description: The number of scheduled jobs.
-      required:
-        - processing
-        - errored
-        - completed
-        - queued
-        - scheduled
-      additionalProperties: false
-    JobDescription:
-      type: object
-      description: A payload indicating a job to enqueue.
-      properties:
-        name:
-          type: string
-          description: The job type.
-          enum:
-            - clean-old-jobs
-            - clean-failed-jobs
-      required:
-        - name
+        - text
       additionalProperties: false
     EnqueueResponse:
       type: object
-      description: A payload indicating the enqueued job.
+      description: A payload indicating the enqueued upload.
       properties:
         id:
-          type: string
-          description: The job identifier.
+          type: number
+          description: The upload identifier.
       required:
         - id
       additionalProperties: false
-    Jobs:
+    Uploads:
       type: object
-      description: A paginated wrapper for a list of jobs.
+      description: A wrapper for a list of uploads.
       properties:
-        jobs:
+        uploads:
           type: array
-          description: A list of jobs with a particular state.
+          description: A list of uploads.
           items:
-            $ref: '#/components/schemas/Job'
+            $ref: '#/components/schemas/Upload'
+    PaginatedUploads:
+      type: object
+      description: A paginated wrapper for a list of uploads.
+      properties:
+        uploads:
+          type: array
+          description: A list of uploads with a particular state.
+          items:
+            $ref: '#/components/schemas/Upload'
         totalCount:
           type: number
-          description: The total number of jobs in this set of results.
+          description: The total number of uploads in this set of results.
       required:
-        - jobs
+        - uploads
       additionalProperties: false
-    Job:
+    Upload:
       type: object
-      description: An LSIF job.
+      description: An LSIF upload.
       properties:
         id:
-          type: string
+          type: number
           description: A unique identifier.
-        type:
+        repositoryId:
+          type: number
+          description: The repository identifier argument given on upload.
+        commit:
           type: string
-          description: The type of job.
-          enum:
-            - convert
-            - clean-old-jobs
-            - clean-failed-jobs
-        arguments:
-          type: object
-          description: The arguments passed to the job.
-          additionalProperties:
-            oneOf:
-              - type: string
-              - type: number
-              - type: boolean
+          description: The commit argument given on upload.
+        root:
+          type: string
+          description: The root argument given on upload.
+        indexer:
+          type: string
+          description: The name of the indexer given on upload.
+        filename:
+          type: string
+          description: The filename where the upload was stored before conversion.
         state:
           type: string
-          description: The job's current state.
+          description: The upload's current state.
           enum:
             - processing
             - errored
             - completed
             - queued
-            - scheduled
-        failure:
-          type: object
-          description: Metadata about a failed job.
-          nullable: true
-          properties:
-            summary:
-              type: string
-              description: A brief description of why the job failed.
-            stacktraces:
-              type: array
-              description: A stacktrace for each attempt of the failed job.
-              items:
-                type: string
-          required:
-            - summary
-            - stacktraces
-          additionalProperties: false
-        queuedAt:
+        failureSummary:
           type: string
-          description: An ISO 8601-formatted time that the job was queued.
+          description: A brief description of why the upload conversion failed.
+        failureStacktrace:
+          type: string
+          description: The stacktrace of the upload error.
+        uploadedAt:
+          type: string
+          description: An RFC3339-formatted time that the upload was uploaded.
         startedAt:
           type: string
-          description: An ISO 8601-formatted time that the job was processed.
+          description: An RFC3339-formatted time that the conversion started.
           nullable: true
-        completedOrErroredAt:
+        finishedAt:
           type: string
-          description: An ISO 8601-formatted time that the job was completed.
+          description: An RFC3339-formatted time that the conversion completed or errored.
           nullable: true
+        visibleAtTip:
+          type: boolean
+          description: Whether or not this upload can provide global reference code intelligence.
       required:
         - id
-        - name
-        - args
+        - repositoryId
+        - commit
+        - root
+        - filename
         - state
-        - progress
-        - failedReason
-        - stacktrace
-        - timestamp
-        - processedOn
-        - finishedOn
+        - failureSummary
+        - failureStacktrace
+        - uploadedAt
+        - startedAt
+        - finishedAt
       additionalProperties: false

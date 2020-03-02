@@ -98,6 +98,10 @@ func generate(log *log.Logger) (string, error) {
 		return "", fmt.Errorf("ConnectToDB: %w", err)
 	}
 
+	if err := dbconn.MigrateDB(dbconn.Global, dataSource); err != nil {
+		return "", fmt.Errorf("MigrateDB: %w", err)
+	}
+
 	db, err := dbconn.Open(dataSource)
 	if err != nil {
 		return "", fmt.Errorf("Open: %w", err)
@@ -151,7 +155,9 @@ func main() {
 		log.Fatal(err)
 	}
 	if len(os.Args) > 1 {
-		ioutil.WriteFile(os.Args[1], []byte(out), 0644)
+		if err := ioutil.WriteFile(os.Args[1], []byte(out), 0644); err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		fmt.Print(out)
 	}

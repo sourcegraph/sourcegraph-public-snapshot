@@ -3,7 +3,7 @@
 exports[`LinkOrSpan render a link when "to" is set 1`] = `
 <a
   className=""
-  to="http://example.com"
+  href="http://example.com"
 >
   foo
 </a>

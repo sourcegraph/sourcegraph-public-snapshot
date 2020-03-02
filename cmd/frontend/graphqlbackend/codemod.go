@@ -17,11 +17,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"golang.org/x/net/context/ctxhttp"
@@ -50,7 +50,7 @@ type codemodResultResolver struct {
 }
 
 func (r *codemodResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
-func (r *codemodResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *codemodResultResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
 func (r *codemodResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
@@ -144,7 +144,7 @@ func validateQuery(q *query.Query) (*args, error) {
 }
 
 // Calls the codemod backend replacer service for a set of repository revisions.
-func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
+func performCodemod(ctx context.Context, args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
 	cmodArgs, err := validateQuery(args.Query)
 	if err != nil {
 		return nil, nil, err
@@ -197,7 +197,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 		return nil, nil, err
 	}
 
-	var results []searchResultResolver
+	var results []SearchResultResolver
 	for _, ur := range unflattened {
 		for _, resolver := range ur {
 			v := resolver

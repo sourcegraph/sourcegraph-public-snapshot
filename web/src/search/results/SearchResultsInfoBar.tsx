@@ -22,7 +22,7 @@ import { PatternTypeProps } from '..'
 
 interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         PatternTypeProps {
     /** The currently authenticated user or null */
@@ -161,6 +161,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
                     <ActionsNavItems
                         {...props}
+                        extraContext={{ searchQuery: props.query }}
                         menu={ContributableMenu.SearchResultsToolbar}
                         wrapInList={false}
                         showLoadingSpinnerDuringExecution={true}

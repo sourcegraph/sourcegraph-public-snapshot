@@ -1,10 +1,11 @@
 # Site administration documentation
 
-Site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users.
+Site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. They have [special privileges](privileges.md) on the Sourcegraph instance.
 
 ## [Install Sourcegraph](install/index.md)
 
 - [Install Sourcegraph with Docker](install/docker/index.md)
+- [Install Sourcegraph with Docker Compose](install/docker-compose/index.md)
 - [Install Sourcegraph on a cluster](install/cluster.md)
   
 ## Management, deployment, and configuration
@@ -12,13 +13,14 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Configuration](config/index.md)
 - [Adding Git repositories](repo/add.md) (from a code host or clone URL)
 - [NGINX HTTP and HTTPS/SSL configuration](nginx.md)
-- [Management console](management_console.md)
+- [Management console (removed in v3.11)](management_console.md)
 - [Repository webhooks](repo/webhooks.md)
 - [User authentication](auth/index.md)
 - [Upgrading Sourcegraph](updates.md)
 - [Setting the URL for your instance](url.md)
 - [Monitoring and tracing](monitoring_and_tracing.md)
     - [Troubleshooting](monitoring_and_tracing.md#troubleshooting)
+    - [Metrics reference](monitoring/metrics_reference.md)
 - [Repository permissions](repo/permissions.md)
 - [PostgreSQL configuration](postgres-conf.md)
 - [Upgrading PostgreSQL](postgres.md)

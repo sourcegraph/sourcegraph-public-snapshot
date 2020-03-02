@@ -1,6 +1,6 @@
 {
   "name": "sourcegraph",
-  "version": "23.0.1",
+  "version": "23.1.0",
   "description": "Sourcegraph extension API: build extensions that enhance reading and reviewing code in your existing tools",
   "author": "Sourcegraph",
   "bugs": {
@@ -27,6 +27,6 @@
     "prepublishOnly": "yarn run tslint && yarn run eslint && yarn run docs"
   },
   "devDependencies": {
-    "typedoc": "^0.15.0"
+    "typedoc": "^0.15.8"
   }
 }

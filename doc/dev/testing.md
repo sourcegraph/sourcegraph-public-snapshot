@@ -7,6 +7,7 @@ directly, `go test ./util/textutil`.
 
 ## TypeScript tests (web app and browser extension)
 
+- First run `yarn` in the Sourcegraph root directory if it is a fresh clone.
 - To run all unit tests, run `yarn test` from the root directory.
 - To run unit tests in development (only running the tests related to uncommitted code), run `yarn test --watch`.
   - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true` (and, if you want, `jest.showCoverageOnLoad: true`)
@@ -50,10 +51,10 @@ Retrying the Buildkite step can help determine whether the test is flaky or brok
 
 ### Running locally
 
-To run all e2e tests locally against your dev server, **create a user `test` with password `test`, promote as site admin**, then run:
+To run all e2e tests locally against your dev server, **create a user `test` with password `testtesttest`, promote as site admin**, then run:
 
 ```
-env GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
+env TEST_USER_PASSWORD=test GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
 ```
 
 > There's a test token in `../dev-private/enterprise/dev/external-services-config.json`
@@ -69,7 +70,9 @@ You can single-out one test with `test.only`:
         })
 ```
 
-Alternatively, you can use `-t` to filter tests: `env ... test-e2e -t "some test name"`.
+Alternatively, you can use `-g` to filter tests: `env ... test-e2e -g "some test name"`.
+
+Run tests selectively with a command like `yarn run test:regression:search`, which runs the tests for search functionality.
 
 ### Viewing e2e tests live in CI
 
@@ -203,11 +206,23 @@ include:
 - Dockerfile linter (hadolint)
 - Check whether the Go module folders are "tidy" (go mod tidy)
 
+### Manually trigger a CI build on Buildkite
+
+When a pull request is coming from a non-Sourcegrapher, it won't trigger a CI build on Buildkite automatically because we want to review the code before it runs on our CI infrastructure. Please review the PR to ensure it doesn't make any malicious changes to our build scripts.
+
+Here are the steps to manually trigger a build from the web (i.e. https://buildkite.com):
+
+1. Find the full length SHA of the latest commit, e.g. `ae724a83f8b6fc5628a4e8efcbb62975ed7b4c33` for [#8234](https://github.com/sourcegraph/sourcegraph/pull/8234).
+2. Find the branch name, e.g. `8160-http-warning` (trim `Akarshit:` prefix) for [#8234](https://github.com/sourcegraph/sourcegraph/pull/8234).
+3. Go to https://buildkite.com/sourcegraph/sourcegraph and click on **New Build** on the top-right menu.
+4. Fill in message (could be anything, copy the pull request title is better), commit SHA and branch.
+5. Click on **Create Build**, then the build status should be updated in the pull request checks.
+
 ## Release testing
 
 To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 
 For testing with a single Docker image, run something like
 ```
-IMAGE=sourcegraph/server:3.10.1 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.13.1 ./dev/run-server-image.sh
 ```

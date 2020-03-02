@@ -1,0 +1,6 @@
+{
+  // This is set from an environment variable
+  "experimentalFeatures": {
+    "smartSearchField": true
+  }
+}

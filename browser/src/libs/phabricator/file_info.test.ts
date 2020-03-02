@@ -179,7 +179,7 @@ describe('Phabricator file info', () => {
     })
 
     describe('resolveDiffusionFileInfo()', () => {
-        test('Diffusion - single file code view', async () => {
+        test('Resolves file info for a Diffusion code view', async () => {
             expect(
                 await resolveFileInfoFromFixture(
                     {
@@ -193,6 +193,103 @@ describe('Phabricator file info', () => {
                 commitID: 'e67b3c02c7195c052acff13261f0c9fd1ba53011',
                 filePath: 'mux.go',
                 rawRepoName: 'github.com/gorilla/mux',
+            })
+        })
+
+        test('Ignores disabled URIs', async () => {
+            expect(
+                await resolveFileInfoFromFixture(
+                    {
+                        htmlFixture: 'diffusion.html',
+                        url: 'https://phabricator.sgdev.org/source/gorilla/browse/master/mux.go',
+                        codeViewSelector: '.diffusion-source',
+                        conduitResponseMap: {
+                            '/api/diffusion.repository.search': () =>
+                                of({
+                                    data: [
+                                        {
+                                            fields: {
+                                                callsign: 'MUX',
+                                            },
+                                            attachments: {
+                                                uris: {
+                                                    uris: [
+                                                        {
+                                                            fields: {
+                                                                uri: {
+                                                                    raw: 'ssh://git@a.b/gorilla/mux',
+                                                                    normalized: 'a.b/gorilla/mux',
+                                                                    disabled: true,
+                                                                },
+                                                            },
+                                                        },
+                                                        {
+                                                            fields: {
+                                                                uri: {
+                                                                    raw: 'ssh://git@c.d/gorilla/mux',
+                                                                    normalized: 'c.d/gorilla/mux',
+                                                                    disabled: false,
+                                                                },
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                }),
+                        },
+                    },
+                    resolveDiffusionFileInfo
+                )
+            ).toEqual({
+                commitID: 'e67b3c02c7195c052acff13261f0c9fd1ba53011',
+                filePath: 'mux.go',
+                rawRepoName: 'c.d/gorilla/mux',
+            })
+        })
+
+        test('Repository hosted on phabricator instance', async () => {
+            expect(
+                await resolveFileInfoFromFixture(
+                    {
+                        htmlFixture: 'diffusion.html',
+                        url: 'https://phabricator.sgdev.org/source/gorilla/browse/master/mux.go',
+                        codeViewSelector: '.diffusion-source',
+                        conduitResponseMap: {
+                            '/api/diffusion.repository.search': () =>
+                                of({
+                                    data: [
+                                        {
+                                            fields: {
+                                                callsign: 'MUX',
+                                            },
+                                            attachments: {
+                                                uris: {
+                                                    uris: [
+                                                        {
+                                                            fields: {
+                                                                uri: {
+                                                                    raw: 'https://phabricator.sgdev.org/gorilla/mux',
+                                                                    normalized: 'phabricator.sgdev.org/gorilla/mux',
+                                                                    disabled: false,
+                                                                },
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                }),
+                        },
+                    },
+                    resolveDiffusionFileInfo
+                )
+            ).toEqual({
+                commitID: 'e67b3c02c7195c052acff13261f0c9fd1ba53011',
+                filePath: 'mux.go',
+                rawRepoName: 'phabricator.sgdev.org/gorilla/mux',
             })
         })
     })

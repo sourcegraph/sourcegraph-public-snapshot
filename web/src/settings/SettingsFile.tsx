@@ -160,23 +160,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className="settings-file e2e-settings-file d-flex flex-grow-1 flex-column">
-                <div className="site-admin-configuration-page__action-groups">
-                    <div className="site-admin-configuration-page__action-groups">
-                        <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
-                        <div className="site-admin-configuration-page__actions">
-                            {settingsActions.map(({ id, label }) => (
-                                <button
-                                    type="button"
-                                    key={id}
-                                    className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                    onClick={() => this.runAction(id)}
-                                >
-                                    {label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
                 <SaveToolbar
                     dirty={dirty}
                     disabled={this.state.saving || !dirty}
@@ -185,6 +168,20 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     onSave={this.save}
                     onDiscard={this.discard}
                 />
+                <div className="site-admin-configuration-page__action-groups">
+                    <div className="site-admin-configuration-page__actions">
+                        {settingsActions.map(({ id, label }) => (
+                            <button
+                                type="button"
+                                key={id}
+                                className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                onClick={() => this.runAction(id)}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}

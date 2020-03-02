@@ -1,8 +1,10 @@
-import LockIcon from 'mdi-react/LockIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
+import UsersIcon from 'mdi-react/UsersIcon'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 
-export const primaryGroup: SiteAdminSideBarGroup = {
+export const overviewGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Site admin',
         icon: ServerIcon,
@@ -14,21 +16,55 @@ export const primaryGroup: SiteAdminSideBarGroup = {
             exact: true,
         },
         {
-            label: 'Configuration',
+            label: 'Usage stats',
+            to: '/site-admin/usage-statistics',
+        },
+        {
+            label: 'Feedback survey',
+            to: '/site-admin/surveys',
+        },
+    ],
+}
+
+const configurationGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Configuration',
+        icon: SettingsIcon,
+    },
+    items: [
+        {
+            label: 'Site configuration',
             to: '/site-admin/configuration',
         },
         {
-            label: 'External services',
+            label: 'Global settings',
+            to: '/site-admin/global-settings',
+        },
+    ],
+}
+
+const repositoriesGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Repositories',
+        icon: SourceRepositoryIcon,
+    },
+    items: [
+        {
+            label: 'Manage repositories',
             to: '/site-admin/external-services',
         },
         {
-            label: 'Repositories',
+            label: 'Repository status',
             to: '/site-admin/repositories',
         },
     ],
 }
 
-export const secondaryGroup: SiteAdminSideBarGroup = {
+export const usersGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Users & auth',
+        icon: UsersIcon,
+    },
     items: [
         {
             label: 'Users',
@@ -38,19 +74,6 @@ export const secondaryGroup: SiteAdminSideBarGroup = {
             label: 'Organizations',
             to: '/site-admin/organizations',
         },
-        {
-            label: 'Global settings',
-            to: '/site-admin/global-settings',
-        },
-    ],
-}
-
-export const authGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'Auth',
-        icon: LockIcon,
-    },
-    items: [
         {
             label: 'Access tokens',
             to: '/site-admin/tokens',
@@ -65,14 +88,6 @@ export const otherGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/updates',
         },
         {
-            label: 'Usage stats',
-            to: '/site-admin/usage-statistics',
-        },
-        {
-            label: 'User surveys',
-            to: '/site-admin/surveys',
-        },
-        {
             label: 'Pings',
             to: '/site-admin/pings',
         },
@@ -83,4 +98,10 @@ export const otherGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [primaryGroup, secondaryGroup, authGroup, otherGroup]
+export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
+    overviewGroup,
+    configurationGroup,
+    repositoriesGroup,
+    usersGroup,
+    otherGroup,
+]
