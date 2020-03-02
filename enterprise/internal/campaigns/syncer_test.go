@@ -35,6 +35,14 @@ func TestNextSync(t *testing.T) {
 			want:       clock().Add(1 * time.Hour),
 		},
 		{
+			// Could happen due to clock skew
+			name:       "Future change",
+			clock:      clock,
+			lastSync:   clock(),
+			lastChange: clock().Add(1 * time.Hour),
+			want:       clock().Add(minSyncDelay),
+		},
+		{
 			name:       "Diff max is capped",
 			clock:      clock,
 			lastSync:   clock(),
