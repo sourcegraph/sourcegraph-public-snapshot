@@ -1,6 +1,6 @@
 {
   // This is set from an environment variable
   "experimentalFeatures": {
-    "splitSearchModes": true
+    "smartSearchField": true
   }
 }
