@@ -76,6 +76,8 @@
 // 1528395653_repo_normalize_visibility_metadata.up.sql (1.035kB)
 // 1528395654_add_external_updated_at_to_changesets.down.sql (83B)
 // 1528395654_add_external_updated_at_to_changesets.up.sql (224B)
+// 1528395655_repo_drop_enabled.down.sql (84B)
+// 1528395655_repo_drop_enabled.up.sql (65B)
 
 package migrations
 
@@ -1664,6 +1666,46 @@ func _1528395654_add_external_updated_at_to_changesetsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395655_repo_drop_enabledDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\xc1\x09\xc3\x30\x0c\x05\xd0\xbb\xa6\xf8\x7b\xf8\x24\xdb\x6a\x31\xc8\x12\x18\x69\x80\x96\xfa\x56\x92\x90\xfd\x0f\x79\x55\xde\xc3\x0a\x11\x6b\xc8\x42\x70\x55\xc1\xbd\xaf\x13\xdc\x3b\x9a\x6b\x4e\xc3\x3e\x3e\xdf\xff\xfe\xa1\xba\xab\xb0\xc1\x3c\x60\xa9\x8a\x2e\x2f\x4e\x0d\xc4\x4a\x29\x44\xcd\xe7\x1c\x51\xe8\x09\x00\x00\xff\xff\xeb\xda\x3c\xf2\x54\x00\x00\x00")
+
+func _1528395655_repo_drop_enabledDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395655_repo_drop_enabledDownSql,
+		"1528395655_repo_drop_enabled.down.sql",
+	)
+}
+
+func _1528395655_repo_drop_enabledDownSql() (*asset, error) {
+	bytes, err := _1528395655_repo_drop_enabledDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395655_repo_drop_enabled.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf5, 0xfd, 0x10, 0x31, 0x5c, 0x7a, 0x3e, 0xd8, 0x75, 0xb7, 0x99, 0x98, 0x2a, 0x42, 0x3d, 0x0, 0xdc, 0x71, 0x1, 0xf, 0xcc, 0xbb, 0x9c, 0x57, 0xed, 0x2f, 0x1f, 0xff, 0x8d, 0x34, 0x1a, 0xbe}}
+	return a, nil
+}
+
+var __1528395655_repo_drop_enabledUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xcd\x4b\x4c\xca\x49\x4d\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xc8\x9c\xfa\x17\x41\x00\x00\x00")
+
+func _1528395655_repo_drop_enabledUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395655_repo_drop_enabledUpSql,
+		"1528395655_repo_drop_enabled.up.sql",
+	)
+}
+
+func _1528395655_repo_drop_enabledUpSql() (*asset, error) {
+	bytes, err := _1528395655_repo_drop_enabledUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395655_repo_drop_enabled.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x45, 0x19, 0x44, 0xe4, 0xd6, 0xa8, 0x8e, 0x1c, 0x43, 0x22, 0x23, 0xe1, 0xce, 0x7c, 0xcb, 0xaa, 0x7c, 0xdf, 0x3c, 0xe8, 0xa3, 0x95, 0xeb, 0x6a, 0xe3, 0x13, 0x7f, 0x2f, 0xf4, 0x8c, 0xc8, 0x86}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1831,6 +1873,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395653_repo_normalize_visibility_metadata.up.sql":             _1528395653_repo_normalize_visibility_metadataUpSql,
 	"1528395654_add_external_updated_at_to_changesets.down.sql":        _1528395654_add_external_updated_at_to_changesetsDownSql,
 	"1528395654_add_external_updated_at_to_changesets.up.sql":          _1528395654_add_external_updated_at_to_changesetsUpSql,
+	"1528395655_repo_drop_enabled.down.sql":                            _1528395655_repo_drop_enabledDownSql,
+	"1528395655_repo_drop_enabled.up.sql":                              _1528395655_repo_drop_enabledUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1950,6 +1994,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395653_repo_normalize_visibility_metadata.up.sql":             {_1528395653_repo_normalize_visibility_metadataUpSql, map[string]*bintree{}},
 	"1528395654_add_external_updated_at_to_changesets.down.sql":        {_1528395654_add_external_updated_at_to_changesetsDownSql, map[string]*bintree{}},
 	"1528395654_add_external_updated_at_to_changesets.up.sql":          {_1528395654_add_external_updated_at_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395655_repo_drop_enabled.down.sql":                            {_1528395655_repo_drop_enabledDownSql, map[string]*bintree{}},
+	"1528395655_repo_drop_enabled.up.sql":                              {_1528395655_repo_drop_enabledUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
