@@ -34,12 +34,14 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
                 <div className="alert alert-danger">
                     <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
                 </div>
+            ) : !uploadOrError.projectRoot ? (
+                <div className="alert alert-danger">
+                    <ErrorAlert prefix="Error loading LSIF upload" error={{ message: 'Cannot resolve project root' }} />
+                </div>
             ) : (
-                <>
-                    <Redirect
-                        to={`${uploadOrError.projectRoot?.commit.repository.url}/-/settings/code-intelligence/lsif-uploads/${id}`}
-                    />
-                </>
+                <Redirect
+                    to={`${uploadOrError.projectRoot.commit.repository.url}/-/settings/code-intelligence/lsif-uploads/${id}`}
+                />
             )}
         </div>
     )
