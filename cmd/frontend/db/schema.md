@@ -697,7 +697,6 @@ Referenced by:
  external_id           | text                     | 
  external_service_type | text                     | 
  external_service_id   | text                     | 
- enabled               | boolean                  | not null default true
  archived              | boolean                  | not null default false
  uri                   | citext                   | 
  deleted_at            | timestamp with time zone | 
