@@ -15,7 +15,7 @@
     "express": "^4.17.1",
     "express-opentracing": "^0.1.1",
     "express-validator": "^6.4.0",
-    "express-winston": "^4.0.2",
+    "express-winston": "^4.0.3",
     "got": "^9.6.0",
     "ioredis": "^4.16.0",
     "jaeger-client": "^3.17.1",
