@@ -4,7 +4,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import ClockOutlineIcon from 'mdi-react/ClockOutlineIcon'
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { catchError } from 'rxjs/operators'
+import { catchError, takeWhile, concatMap } from 'rxjs/operators'
 import { ErrorAlert } from '../../../components/alerts'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { fetchLsifUpload, deleteLsifUpload } from './backend'
@@ -15,9 +15,21 @@ import { RouteComponentProps, Redirect } from 'react-router'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { useObservable } from '../../../util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
+import { SchedulerLike, timer } from 'rxjs'
+
+const REFRESH_INTERVAL_MS = 5000
 
 interface Props extends RouteComponentProps<{ id: string }> {
     repo: GQL.IRepository
+
+    /** Scheduler for the refresh timer */
+    scheduler?: SchedulerLike
+}
+
+const terminalStates = [GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED]
+
+function shouldReload(v: GQL.ILSIFUpload | ErrorLike | null | undefined): boolean {
+    return !isErrorLike(v) && !(v && terminalStates.includes(v.state))
 }
 
 /**
@@ -25,6 +37,7 @@ interface Props extends RouteComponentProps<{ id: string }> {
  */
 export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     repo,
+    scheduler,
     match: {
         params: { id },
     },
@@ -34,7 +47,14 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
     const uploadOrError = useObservable(
-        useMemo(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
+        useMemo(
+            () =>
+                timer(0, REFRESH_INTERVAL_MS, scheduler).pipe(
+                    concatMap(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)]))),
+                    takeWhile(shouldReload, true)
+                ),
+            [id, scheduler]
+        )
     )
 
     const deleteUpload = async (): Promise<void> => {
