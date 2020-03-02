@@ -19,19 +19,19 @@ type ChangesetSyncer struct {
 	Store       *Store
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
-	// ScheduleInterval determines how often a new schedule will be computed.
+	// ComputeScheduleInterval determines how often a new schedule will be computed.
 	// Note that it involves a DB query but no communication with codehosts
-	ScheduleInterval time.Duration
+	ComputeScheduleInterval time.Duration
 
 	queue *changesetQueue
 }
 
-// StartSyncing will start the process of changeset syncing. It is long running
+// Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
-func (s *ChangesetSyncer) StartSyncing() {
+func (s *ChangesetSyncer) Run() {
 	// TODO: Setup instrumentation here
 	ctx := context.Background()
-	scheduleInterval := s.ScheduleInterval
+	scheduleInterval := s.ComputeScheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
 	}

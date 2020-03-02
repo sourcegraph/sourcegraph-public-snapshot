@@ -42,7 +42,7 @@ func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory, serv
 		}
 
 		// Set up syncer
-		go syncer.StartSyncing()
+		go syncer.Run()
 
 		// Set up expired campaign deletion
 		go func() {
