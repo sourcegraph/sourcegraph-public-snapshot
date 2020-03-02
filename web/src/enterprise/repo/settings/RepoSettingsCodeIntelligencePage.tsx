@@ -1,58 +1,20 @@
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useState, useMemo } from 'react'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
+import {
+    FilteredConnection,
+    FilteredConnectionQueryArgs,
+    FilteredConnectionFilter,
+} from '../../../components/FilteredConnection'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageTitle } from '../../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { Collapsible } from '../../../components/Collapsible'
 import { deleteLsifUpload, fetchLsifUploads } from './backend'
-import { Toggle } from '../../../../../shared/src/components/Toggle'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { Subject } from 'rxjs'
-
-interface HideIncompleteLSIFUploadsToggleProps {
-    onlyCompleted: boolean
-    onToggle: (enabled: boolean) => void
-}
-
-const HideIncompleteLSIFUploadsToggle: FunctionComponent<HideIncompleteLSIFUploadsToggleProps> = ({
-    onlyCompleted,
-    onToggle,
-}) => (
-    <div className="lsif-uploads-filter-toggle">
-        <label className="radio-buttons__item lsif-uploads-filter-toggle-label" title="Show only processed uploads">
-            <Toggle value={onlyCompleted} onToggle={onToggle} title="Show only processed uploads" />
-
-            <small>
-                <div className="radio-buttons__label">Show only processed uploads</div>
-            </small>
-        </label>
-    </div>
-)
-
-interface HideNonVisibleLSIFUploadsToggleProps {
-    onlyVisible: boolean
-    onToggle: (enabled: boolean) => void
-}
-
-const HideNonVisibleLSIFUploadsToggle: FunctionComponent<HideNonVisibleLSIFUploadsToggleProps> = ({
-    onlyVisible,
-    onToggle,
-}) => (
-    <div className="lsif-uploads-filter-toggle">
-        <label className="radio-buttons__item lsif-uploads-filter-toggle-label" title="Show only current uploads">
-            <Toggle value={onlyVisible} onToggle={onToggle} title="Show only current uploads" />
-
-            <small>
-                <div className="radio-buttons__label">Show only current uploads</div>
-            </small>
-        </label>
-    </div>
-)
 
 const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: () => void }> = ({ node, onDelete }) => {
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
@@ -153,51 +115,35 @@ interface Props extends RouteComponentProps<{}> {
 export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ repo, ...props }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsCodeIntelligence'), [])
 
-    // State used in the toggle component shows or hides non-visible uploads
-    const [onlyVisible, setOnlyVisibleRaw] = useState(true)
-
-    // State used in the toggle component shows or hides incomplete uploads
-    const [onlyCompleted, setOnlyCompletedRaw] = useState(true)
-
-    // Ensure that if only visible is true that only completed is also true
-    const setOnlyVisible = useCallback(
-        (val: boolean): void => {
-            setOnlyVisibleRaw(val)
-            if (val) {
-                setOnlyCompletedRaw(true)
-            }
+    const filters: FilteredConnectionFilter[] = [
+        {
+            label: 'Only current',
+            id: 'current',
+            tooltip: 'Show current uploads only',
+            args: { isLatestForRepo: true },
         },
-        [setOnlyVisibleRaw, setOnlyCompletedRaw]
-    )
-
-    // Ensure that if only completed is false that only visible is false
-    const setOnlyCompleted = useCallback(
-        (val: boolean) => {
-            setOnlyCompletedRaw(val)
-            if (!val) {
-                setOnlyVisibleRaw(false)
-            }
+        {
+            label: 'Only completed',
+            id: 'completed',
+            tooltip: 'Show completed uploads only',
+            args: { state: GQL.LSIFUploadState.COMPLETED },
         },
-        [setOnlyVisibleRaw, setOnlyCompletedRaw]
-    )
+        {
+            label: 'All',
+            id: 'all',
+            tooltip: 'Show all uploads',
+            args: {},
+        },
+    ]
 
     // This observable emits values after successful deletion of an upload and
-    // force each filter connection to refresh. As these lists can share the
-    // same underlying entity, we need to refresh both at once on deletion of
-    // any upload.
+    // forces the filter connection to refresh.
     const onDeleteSubject = useMemo(() => new Subject<void>(), [])
     const onDeleteCallback = useMemo(() => onDeleteSubject.next.bind(onDeleteSubject), [onDeleteSubject])
 
     const queryUploads = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
-            onlyVisible
-                ? fetchLsifUploads({ repository: repo.id, isLatestForRepo: true, ...args })
-                : fetchLsifUploads({
-                      repository: repo.id,
-                      ...(onlyCompleted ? { state: GQL.LSIFUploadState.COMPLETED } : {}),
-                      ...args,
-                  }),
-        [repo.id, onlyVisible, onlyCompleted]
+        (args: FilteredConnectionQueryArgs) => fetchLsifUploads({ repository: repo.id, ...args }),
+        [repo.id]
     )
 
     return (
@@ -227,12 +173,7 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                 location={props.location}
                 listClassName="list-group list-group-flush"
                 cursorPaging={true}
-                additionalFilterElement={
-                    <span>
-                        <HideIncompleteLSIFUploadsToggle onlyCompleted={onlyCompleted} onToggle={setOnlyCompleted} />
-                        <HideNonVisibleLSIFUploadsToggle onlyVisible={onlyVisible} onToggle={setOnlyVisible} />
-                    </span>
-                }
+                filters={filters}
             />
         </div>
     )

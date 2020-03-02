@@ -4,7 +4,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import ClockOutlineIcon from 'mdi-react/ClockOutlineIcon'
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { catchError, flatMap, takeWhile } from 'rxjs/operators'
+import { catchError, takeWhile, concatMap } from 'rxjs/operators'
 import { ErrorAlert } from '../../../components/alerts'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { fetchLsifUpload, deleteLsifUpload } from './backend'
@@ -15,7 +15,7 @@ import { RouteComponentProps, Redirect } from 'react-router'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { useObservable } from '../../../util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import { SchedulerLike, timer, combineLatest, of } from 'rxjs'
+import { SchedulerLike, timer } from 'rxjs'
 
 const REFRESH_INTERVAL_MS = 5000
 
@@ -49,10 +49,8 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     const uploadOrError = useObservable(
         useMemo(
             () =>
-                combineLatest([timer(0, REFRESH_INTERVAL_MS, scheduler), of(id)]).pipe(
-                    flatMap(([, id]) =>
-                        fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)]))
-                    ),
+                timer(0, REFRESH_INTERVAL_MS, scheduler).pipe(
+                    concatMap(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)]))),
                     takeWhile(shouldReload, true)
                 ),
             [id, scheduler]
