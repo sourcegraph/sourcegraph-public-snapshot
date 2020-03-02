@@ -1,11 +1,81 @@
 package search
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
+
+func Test_ScanParameter(t *testing.T) {
+	cases := []struct {
+		Name  string
+		Input string
+		Want  string
+	}{
+		{
+			Name:  "Normal field:value",
+			Input: `field:value`,
+			Want:  `{"field":"field","value":"value","negated":false}`,
+		},
+		{
+			Name:  "First char is colon",
+			Input: `:value`,
+			Want:  `{"field":"","value":":value","negated":false}`,
+		},
+		{
+			Name:  "Last char is colon",
+			Input: `field:`,
+			Want:  `{"field":"field","value":"","negated":false}`,
+		},
+		{
+			Name:  "Match first colon",
+			Input: `field:value:value`,
+			Want:  `{"field":"field","value":"value:value","negated":false}`,
+		},
+		{
+			Name:  "No field, start with minus",
+			Input: `-:value`,
+			Want:  `{"field":"","value":"-:value","negated":false}`,
+		},
+		{
+			Name:  "Minus prefix on field",
+			Input: `-field:value`,
+			Want:  `{"field":"field","value":"value","negated":true}`,
+		},
+		{
+			Name:  "Double minus prefix on field",
+			Input: `--field:value`,
+			Want:  `{"field":"","value":"--field:value","negated":false}`,
+		},
+		{
+			Name:  "Minus in the middle is not a valid field",
+			Input: `fie-ld:value`,
+			Want:  `{"field":"","value":"fie-ld:value","negated":false}`,
+		},
+		{
+			Name:  "No effect on whitespace",
+			Input: `  a pattern  `,
+			Want:  `{"field":"","value":"","negated":false}`,
+		},
+		{
+			Name:  "No effect on escaped whitespace",
+			Input: `a\ pattern`,
+			Want:  `{"field":"","value":"a\\ pattern","negated":false}`,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			parser := &parser{buf: []byte(tt.Input)}
+			result := parser.ParseParameter()
+			got, _ := json.Marshal(result)
+			if diff := cmp.Diff(tt.Want, string(got)); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
 
 func Test_Parse(t *testing.T) {
 	cases := []struct {

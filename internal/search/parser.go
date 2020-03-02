@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 )
 
@@ -27,7 +28,9 @@ func (Operator) node()  {}
 
 // Parameter is a leaf node of expressions.
 type Parameter struct {
-	Value string
+	Field   string `json:"field"`
+	Value   string `json:"value"`
+	Negated bool   `json:"negated"`
 }
 
 type operatorKind int
@@ -44,7 +47,11 @@ type Operator struct {
 }
 
 func (node Parameter) String() string {
-	return node.Value
+	if node.Field == "" {
+		return node.Value
+	} else {
+		return fmt.Sprintf("%s:%s", node.Field, node.Value)
+	}
 }
 
 func (node Operator) String() string {
@@ -142,10 +149,46 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
-// scanParameter scans for leaf node values.
-func (p *parser) scanParameter() (string, error) {
+// ScanParameter returns a leaf node value usable by _any_ kind of search (e.g.,
+// literal or regexp, or...) and always succeeds.
+//
+// A parameter is a contiguous sequence characters, where the following two forms are distinguished:
+// (1) a string of syntax field:<string> where : matches the first encountered colon, and field must match ^-?[a-zA-Z0-9]+
+// (2) <string>
+//
+// When a parameter is of form (1), the string corresponds to Field:Value in type Parameter, and negated if Field starts with '-'.
+// When form (1) does not match, Value corresponds to <string> and Field is the empty string.
+//
+// The value parameter in the parse tree is only distinguished with respect to
+// the two forms above. There is no restriction on values that <string> may take
+// on. Notably, there is no interpretation of quoting or escaping, which may vary
+// depending on the search being performed. All validation with respect to such
+// properties, and how these should be interpretted, is thus context dependent
+// and handled appropriately within those contexts.
+func ScanParameter(parameter []byte) Parameter {
+	fieldValuePattern := regexp.MustCompile("(^-?[a-zA-Z0-9]+):(.*)")
+	result := fieldValuePattern.FindSubmatch(parameter)
+	if result != nil {
+		if result[1][0] == '-' {
+			return Parameter{
+				Field:   string(result[1][1:]),
+				Value:   string(result[2]),
+				Negated: true,
+			}
+		}
+		return Parameter{Field: string(result[1]), Value: string(result[2])}
+	}
+	return Parameter{Field: "", Value: string(parameter)}
+}
+
+// ParseParameter returns valid leaf node values for AND/OR queries, taking into
+// account escape sequencies for special syntax: whitespace and parentheses.
+func (p *parser) ParseParameter() Parameter {
 	start := p.pos
 	for {
+		if p.expect(`\ `) || p.expect(`\(`) || p.expect(`\)`) {
+			continue
+		}
 		if p.isKeyword() {
 			break
 		}
@@ -157,7 +200,7 @@ func (p *parser) scanParameter() (string, error) {
 		}
 		p.pos++
 	}
-	return string(p.buf[start:p.pos]), nil
+	return ScanParameter(p.buf[start:p.pos])
 }
 
 // scanParameterList scans for consecutive leaf nodes.
@@ -184,18 +227,16 @@ func (p *parser) parseParameterList() ([]Node, error) {
 				// Return a non-nil node if we parsed "()".
 				return []Node{Parameter{Value: ""}}, nil
 			}
-			return nodes, nil
+			goto Done
 		case p.match(AND), p.match(OR):
 			// Caller advances.
-			return nodes, nil
+			goto Done
 		default:
-			value, err := p.scanParameter()
-			if err != nil {
-				return nil, err
-			}
-			nodes = append(nodes, Parameter{Value: value})
+			parameter := p.ParseParameter()
+			nodes = append(nodes, parameter)
 		}
 	}
+Done:
 	return nodes, nil
 }
 
