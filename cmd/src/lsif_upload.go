@@ -20,6 +20,16 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
+func isFlagSet(fs *flag.FlagSet, name string) bool {
+	var found bool
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
+}
+
 func init() {
 	usage := `
 Examples:
@@ -96,7 +106,7 @@ Examples:
 		}
 		fmt.Println("File: " + *fileFlag)
 
-		if rootFlag == nil {
+		if !isFlagSet(flagSet, "root") {
 			checkError := func(err error) {
 				if err != nil {
 					fmt.Println(err)
@@ -115,7 +125,8 @@ Examples:
 			rel, err := filepath.Rel(strings.TrimSpace(string(topLevel)), absFile)
 			checkError(err)
 
-			*rootFlag = filepath.Dir(rel)
+			relDir := filepath.Dir(rel)
+			rootFlag = &relDir
 		}
 
 		*rootFlag = filepath.Clean(*rootFlag)
@@ -123,7 +134,7 @@ Examples:
 			fmt.Println("-root is outside the repository: " + *rootFlag)
 			os.Exit(1)
 		}
-		if *rootFlag == "." {
+		if *rootFlag == "." || *rootFlag == "/" {
 			*rootFlag = ""
 		}
 		fmt.Println("Root: " + *rootFlag)
