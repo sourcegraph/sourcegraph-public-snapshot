@@ -336,7 +336,7 @@ changed AS (
     external_id,
     external_service_type,
     external_branch,
-	external_deleted_at,
+    external_deleted_at,
     external_updated_at
   )
   SELECT
@@ -348,8 +348,8 @@ changed AS (
     external_id,
     external_service_type,
     external_branch,
-	external_deleted_at,
-	external_updated_at
+    external_deleted_at,
+    external_updated_at
   FROM batch
   ON CONFLICT ON CONSTRAINT
     changesets_repo_external_id_unique
