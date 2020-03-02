@@ -39,19 +39,21 @@ func (s *ChangesetSyncer) StartSyncing() {
 		s.clock = time.Now
 	}
 
-	queue := newChangesetQueue(100)
+	s.queue = newChangesetQueue(100)
 	// Get initial schedule
-	for {
+	attempts := 0
+	maxAttempts := 5
+	for attempts < maxAttempts {
+		attempts++
 		sched, err := s.computeSchedule(ctx)
 		if err != nil {
 			log15.Error("Computing queue", "err", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		queue.updateSchedule(sched)
+		s.queue.updateSchedule(sched)
 		break
 	}
-	s.queue = queue
 
 	// How often to refresh the schedule
 	scheduleTicker := time.NewTicker(scheduleInterval)
@@ -65,13 +67,13 @@ func (s *ChangesetSyncer) StartSyncing() {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
-			queue.updateSchedule(sched)
-		case id := <-queue.scheduled:
+			s.queue.updateSchedule(sched)
+		case id := <-s.queue.scheduled:
 			err := s.SyncChangesetByID(ctx, id)
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
 			}
-		case id := <-queue.priority:
+		case id := <-s.queue.priority:
 			err := s.SyncChangesetByID(ctx, id)
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
