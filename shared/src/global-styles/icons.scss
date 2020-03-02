@@ -8,7 +8,9 @@
 // Formats an icon so that it appears inline in the text
 // with height matching the text
 .icon-inline {
-    vertical-align: top;
+    // SVGs already include padding to account for text baseline,
+    // so align with the bottom of the text
+    vertical-align: bottom;
     display: inline-flex;
     align-items: center;
 }
