@@ -100,16 +100,42 @@ export class UploadManager {
     }
 
     /**
-     * Delete an upload. This returns true if the upload existed.
+     * Delete an upload. This returns true if the upload existed. Also remove referenced
+     * package and reference rows if the upload was successfully processed.
+     *
+     * Does not delete the file on disk directly. This will be cleaned up later as part
+     * of the `removeDeadDumps` function performed at the start of the `purgeOldDumps`
+     * task that is run on a schedule in the server context.
      *
      * @param id The upload identifier.
+     * @param updateVisibility A function that updates the dumps visible at the tip for
+     *     the given repository. This is called if the deleted dump was visible at tip,
+     *     as a previously non-visible dump may become visible after deletion.
      */
-    public async deleteUpload(id: number): Promise<boolean> {
-        const results: [{ id: number }[]] = await instrumentQuery(() =>
-            this.connection.query('DELETE FROM lsif_uploads WHERE id = $1 RETURNING id', [id])
-        )
+    public async deleteUpload(
+        id: number,
+        updateVisibility: (entityManager: EntityManager, repositoryId: number) => Promise<void>
+    ): Promise<boolean> {
+        return withInstrumentedTransaction(this.connection, async entityManager => {
+            const [affected, numAffected]: [
+                { repository_id: number; visible_at_tip: boolean }[],
+                number
+            ] = await instrumentQuery(() =>
+                entityManager.query('DELETE FROM lsif_uploads WHERE id = $1 RETURNING repository_id, visible_at_tip', [
+                    id,
+                ])
+            )
 
-        return results[0].length > 0
+            if (numAffected === 0) {
+                return false
+            }
+
+            if (affected[0].visible_at_tip) {
+                await updateVisibility(entityManager, affected[0].repository_id)
+            }
+
+            return true
+        })
     }
 
     /**
