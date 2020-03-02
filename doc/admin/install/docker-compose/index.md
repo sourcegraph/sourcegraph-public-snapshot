@@ -9,6 +9,7 @@
 | [Kubernetes](../../install/cluster.md)                   | Medium & large highly-available cluster deployments | 30 minutes | Easily         | Yes           | Yes         |
 
 * If you're just starting out, we recommend [running Sourcegraph locally](../docker/index.md). It takes only a few minutes and lets you try out all of the features.
+* If you want to migrate from the single-container server (`sourcegraph/server`) to the Docker Compose deployment, refer to this [migration guide](./migrate.md).
 * If you need scalability and high-availability beyond what a single-node [Docker Compose](https://docs.docker.com/compose/) can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), instead.
 
 ---
