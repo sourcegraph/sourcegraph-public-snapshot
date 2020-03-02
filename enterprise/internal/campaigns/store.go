@@ -547,7 +547,7 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// ListChangesetSyncHeuristics returns sync timing data on all non deleted changesets.
+// ListChangesetSyncHeuristics returns sync timing data on all non-externally-deleted changesets.
 func (s *Store) ListChangesetSyncHeuristics(ctx context.Context) ([]campaigns.ChangesetSyncHeuristics, error) {
 	q := listChangesetSyncHeuristicsQuery()
 	results := make([]campaigns.ChangesetSyncHeuristics, 0)

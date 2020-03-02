@@ -77,17 +77,17 @@ var (
 	maxSyncDelay = 8 * time.Hour
 )
 
-// nextSync computes the time we want the next sync to happen
+// nextSync computes the time we want the next sync to happen.
 func nextSync(h campaigns.ChangesetSyncHeuristics) time.Time {
 	lastSync := h.UpdatedAt
 	lastChange := maxTime(h.ExternalUpdatedAt, h.LatestEvent)
 
 	// Simple linear backoff for now
 	diff := lastSync.Sub(lastChange)
-	if diff >= maxSyncDelay {
+	if diff > maxSyncDelay {
 		diff = maxSyncDelay
 	}
-	if diff <= minSyncDelay {
+	if diff < minSyncDelay {
 		diff = minSyncDelay
 	}
 	return lastSync.Add(diff)
@@ -141,7 +141,7 @@ func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error
 	if err != nil {
 		return err
 	}
-	return s.SyncChangesets(ctx, []*campaigns.Changeset{cs}...)
+	return s.SyncChangesets(ctx, cs)
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
