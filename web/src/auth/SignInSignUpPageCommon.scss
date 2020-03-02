@@ -11,30 +11,4 @@
 .signin-signup-form {
     width: 22rem;
     max-width: calc(100vw - 2rem);
-
-    &__mode {
-        margin-bottom: 1rem;
-        display: block;
-    }
-
-    &__loader {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-    }
-}
-
-.theme-light {
-    .signin-signup-form {
-        &__mode {
-            &:hover {
-                color: $color-light-text-5;
-                text-decoration: underline;
-            }
-
-            &--active {
-                color: $color-light-text-2;
-            }
-        }
-    }
 }
