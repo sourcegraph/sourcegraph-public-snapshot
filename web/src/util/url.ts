@@ -19,9 +19,11 @@ export function toTreeURL(ctx: RepoFile): string {
  */
 export function formatHash(lpr: LineOrPositionOrRange, searchParams: URLSearchParams): string {
     if (!lpr.line) {
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return `#${searchParams.toString()}`
     }
     const anyParams = Array.from(searchParams).length > 0
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return `#L${formatLineOrPositionOrRange(lpr)}${anyParams ? '&' + searchParams.toString() : ''}`
 }
 
@@ -141,7 +143,7 @@ export interface ParsedRepoRev {
  * Parses a repo-rev string like "my/repo@my/rev" to the repo and rev components.
  */
 export function parseRepoRev(repoRev: string): ParsedRepoRev {
-    const [repo, rev] = repoRev.split('@', 2)
+    const [repo, rev] = repoRev.split('@', 2) as [string, string | undefined]
     return {
         repoName: decodeURIComponent(repo),
         rev: rev && decodeURIComponent(rev),

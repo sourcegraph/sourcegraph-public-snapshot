@@ -23,7 +23,7 @@ const CAMPAIGN_PLAN: Pick<GQL.ICampaignPlan, '__typename'> = {
 describe('CampaignStatus', () => {
     for (const viewerCanAdminister of [true, false]) {
         const campaign = { ...CAMPAIGN, viewerCanAdminister }
-        describe(`viewerCanAdminister: ${viewerCanAdminister}`, () => {
+        describe(`viewerCanAdminister: ${String(viewerCanAdminister)}`, () => {
             test('closed campaign', () =>
                 expect(
                     createRenderer().render(

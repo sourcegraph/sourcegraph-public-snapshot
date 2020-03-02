@@ -236,7 +236,7 @@ export function parseURL(loc: Pick<Location, 'host' | 'pathname'> = window.locat
     const { host, pathname } = loc
     const [user, ghRepoName, pageType, ...rest] = pathname.slice(1).split('/')
     if (!user || !ghRepoName) {
-        throw new Error(`Could not parse repoName from GitHub url: ${window.location}`)
+        throw new Error(`Could not parse repoName from GitHub url: ${window.location.href}`)
     }
     const rawRepoName = `${host}/${user}/${ghRepoName}`
     switch (pageType) {

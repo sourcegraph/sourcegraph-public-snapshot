@@ -10,7 +10,7 @@ import { PlatformContext } from '../../../../shared/src/platform/context'
 import { FileInfo } from '../code_intelligence'
 
 interface ConduitResponseMap {
-    [endpoint: string]: (params: { [key: string]: any }) => Observable<any>
+    [endpoint: string]: (params: any) => Observable<any>
 }
 
 const DEFAULT_CONDUIT_RESPONSES: ConduitResponseMap = {
@@ -44,7 +44,7 @@ const DEFAULT_CONDUIT_RESPONSES: ConduitResponseMap = {
                 repositoryPHID: '1',
             },
         }),
-    '/api/differential.querydiffs': params =>
+    '/api/differential.querydiffs': (params: { ids: string[]; revisionIDs: string[] }) =>
         of({
             [params.ids[0]]: {
                 id: params.ids[0],
@@ -394,12 +394,15 @@ describe('Phabricator file info', () => {
                         graphQLResponseMap: {
                             ResolveStagingRev: (variables: any) =>
                                 of({
-                                    data: { resolvePhabricatorDiff: { oid: `staging-rev-${variables.patch}` } },
+                                    data: {
+                                        resolvePhabricatorDiff: { oid: `staging-rev-${variables.patch as string}` },
+                                    },
                                     errors: undefined,
                                 } as SuccessGraphQLResult<IMutation>),
                         },
                         conduitResponseMap: {
-                            '/api/differential.getrawdiff': params => of(`raw-diff-for-diffid-${params.diffID}`),
+                            '/api/differential.getrawdiff': params =>
+                                of(`raw-diff-for-diffid-${params.diffID as string}`),
                         },
                     },
                     resolveDiffFileInfo

@@ -7,7 +7,7 @@ import {
     CommandListPopoverButtonProps,
 } from '../../../../shared/src/commandPalette/CommandList'
 import { Notifications } from '../../../../shared/src/notifications/Notifications'
-
+import classNames from 'classnames'
 import { DiffPart } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import { isEqual } from 'lodash'
@@ -67,7 +67,7 @@ export const renderCommandPalette = ({
         <ShortcutProvider>
             <CommandListPopoverButton
                 {...props}
-                popoverClassName={`command-list-popover ${props.popoverClassName}`}
+                popoverClassName={classNames('command-list-popover', props.popoverClassName)}
                 popoverInnerClassName={props.popoverInnerClassName}
                 menu={ContributableMenu.CommandPalette}
                 extensionsController={extensionsController}
@@ -102,7 +102,7 @@ export const renderGlobalDebug = ({
 
 const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
     codeElement.style.backgroundColor = ''
-    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${part}]`)
+    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${String(part)}]`)
     for (const attachment of previousAttachments) {
         attachment.remove()
     }

@@ -390,6 +390,9 @@ export const githubCodeHost: CodeHost = {
                 const anchorPath = header.dataset.path
                 if (anchorPath === location.filePath) {
                     const anchorUrl = header.dataset.anchor
+                    if (!anchorUrl) {
+                        throw new Error('.file-header had no data-anchor attribute')
+                    }
                     const url = `${window.location.origin}${window.location.pathname}#${anchorUrl}${
                         location.part === 'base' ? 'L' : 'R'
                     }${location.position ? location.position.line : ''}`

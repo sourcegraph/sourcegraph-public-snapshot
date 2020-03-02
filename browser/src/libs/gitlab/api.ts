@@ -73,7 +73,7 @@ const getBaseCommitIDFromDiffID = memoizeObservable(
                   buildURL(owner, projectName, `/merge_requests/${mergeRequestID}/versions/${diffID}`)
               ).pipe(map(({ base_commit_sha }) => base_commit_sha))
             : of(undefined),
-    ({ owner, projectName, mergeRequestID, diffID }) => `${owner}${projectName}${mergeRequestID}${diffID}`
+    ({ owner, projectName, mergeRequestID, diffID }) => `${owner}:${projectName}:${mergeRequestID}:${String(diffID)}`
 )
 
 /**
@@ -108,7 +108,7 @@ export const getMergeRequestDetailsFromAPI = memoizeObservable(
             )
         ),
     ({ owner, projectName, mergeRequestID, rawRepoName, diffID }) =>
-        `${owner}${projectName}${mergeRequestID}${rawRepoName}${diffID}`
+        `${owner}:${projectName}:${mergeRequestID}:${rawRepoName}:${String(diffID)}`
 )
 
 interface CommitResponse {

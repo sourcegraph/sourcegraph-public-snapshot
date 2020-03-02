@@ -183,7 +183,7 @@ const fetchHighlightedFile = memoizeObservable(
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
             })
         ),
-    ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}&sisLightTheme=${ctx.isLightTheme}`
+    ctx => makeRepoURI(ctx) + `?disableTimeout=${String(ctx.disableTimeout)}&isLightTheme=${String(ctx.isLightTheme)}`
 )
 
 /**
@@ -205,7 +205,7 @@ export const fetchHighlightedFileLines = memoizeObservable(
                 return rows
             })
         ),
-    ctx => makeRepoURI(ctx) + `?isLightTheme=${ctx.isLightTheme}`
+    ctx => makeRepoURI(ctx) + `?isLightTheme=${String(ctx.isLightTheme)}`
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
@@ -278,5 +278,5 @@ export const fetchTreeEntries = memoizeObservable(
                 return data.repository.commit.tree
             })
         ),
-    ({ first, ...args }) => `${makeRepoURI(args)}:first-${first}`
+    ({ first, ...args }) => `${makeRepoURI(args)}:first-${String(first)}`
 )

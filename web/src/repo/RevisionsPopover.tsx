@@ -66,7 +66,7 @@ const fetchRepositoryCommits = memoizeObservable(
 interface GitRefPopoverNodeProps {
     node: GQL.IGitRef
 
-    defaultBranch: string | undefined
+    defaultBranch: string
     currentRev: string | undefined
 
     location: H.Location
@@ -136,7 +136,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
 interface Props {
     repo: GQL.ID
     repoName: string
-    defaultBranch: string | undefined
+    defaultBranch: string
 
     /** The current revision, or undefined for the default branch. */
     currentRev: string | undefined
