@@ -18,15 +18,15 @@ type CodeIntelUsageStatisticsOptions struct {
 }
 
 type (
-	usagePeriod             = types.CodeIntelUsagePeriod
-	eventCategoryStatistics = types.CodeIntelEventCategoryStatistics
-	eventStatistics         = types.CodeIntelEventStatistics
-	eventLatencies          = types.CodeIntelEventLatencies
+	ciUsagePeriod             = types.CodeIntelUsagePeriod
+	ciEventCategoryStatistics = types.CodeIntelEventCategoryStatistics
+	ciEventStatistics         = types.CodeIntelEventStatistics
+	ciEventLatencies          = types.CodeIntelEventLatencies
 )
 
 var (
-	DurationField       = "durationMs"
-	DurationPercentiles = []float64{0.5, 0.9, 0.99}
+	ciDurationField       = "durationMs"
+	ciDurationPercentiles = []float64{0.5, 0.9, 0.99}
 )
 
 // GetCodeIntelUsageStatistics returns the current site's code intel activity.
@@ -75,23 +75,23 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 
 	activityPeriods := []*types.CodeIntelUsagePeriod{}
 	for i := 0; i < periods; i++ {
-		activityPeriods = append(activityPeriods, &usagePeriod{
-			Hover:       newEventCategory(),
-			Definitions: newEventCategory(),
-			References:  newEventCategory(),
+		activityPeriods = append(activityPeriods, &ciUsagePeriod{
+			Hover:       newCodeIntelEventCategory(),
+			Definitions: newCodeIntelEventCategory(),
+			References:  newCodeIntelEventCategory(),
 		})
 	}
 
-	eventStatisticByName := map[string]func(p *usagePeriod) *eventStatistics{
-		"codeintel.lsifHover":         func(p *usagePeriod) *eventStatistics { return p.Hover.LSIF },
-		"codeintel.lspHover":          func(p *usagePeriod) *eventStatistics { return p.Hover.LSP },
-		"codeintel.searchHover":       func(p *usagePeriod) *eventStatistics { return p.Hover.Search },
-		"codeintel.lsifDefinitions":   func(p *usagePeriod) *eventStatistics { return p.Definitions.LSIF },
-		"codeintel.lspDefinitions":    func(p *usagePeriod) *eventStatistics { return p.Definitions.LSP },
-		"codeintel.searchDefinitions": func(p *usagePeriod) *eventStatistics { return p.Definitions.Search },
-		"codeintel.lsifReferences":    func(p *usagePeriod) *eventStatistics { return p.References.LSIF },
-		"codeintel.lspReferences":     func(p *usagePeriod) *eventStatistics { return p.References.LSP },
-		"codeintel.searchReferences":  func(p *usagePeriod) *eventStatistics { return p.References.Search },
+	eventStatisticByName := map[string]func(p *ciUsagePeriod) *ciEventStatistics{
+		"codeintel.lsifHover":         func(p *ciUsagePeriod) *ciEventStatistics { return p.Hover.LSIF },
+		"codeintel.lspHover":          func(p *ciUsagePeriod) *ciEventStatistics { return p.Hover.LSP },
+		"codeintel.searchHover":       func(p *ciUsagePeriod) *ciEventStatistics { return p.Hover.Search },
+		"codeintel.lsifDefinitions":   func(p *ciUsagePeriod) *ciEventStatistics { return p.Definitions.LSIF },
+		"codeintel.lspDefinitions":    func(p *ciUsagePeriod) *ciEventStatistics { return p.Definitions.LSP },
+		"codeintel.searchDefinitions": func(p *ciUsagePeriod) *ciEventStatistics { return p.Definitions.Search },
+		"codeintel.lsifReferences":    func(p *ciUsagePeriod) *ciEventStatistics { return p.References.LSIF },
+		"codeintel.lspReferences":     func(p *ciUsagePeriod) *ciEventStatistics { return p.References.LSP },
+		"codeintel.searchReferences":  func(p *ciUsagePeriod) *ciEventStatistics { return p.References.Search },
 	}
 
 	for eventName, getEventStatistic := range eventStatisticByName {
@@ -124,7 +124,7 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 		}
 
 		if includeEventLatencies {
-			percentiles, err := db.EventLogs.PercentilesPerPeriod(ctx, periodType, timeNow().UTC(), periods, DurationField, DurationPercentiles, &db.EventFilterOptions{
+			percentiles, err := db.EventLogs.PercentilesPerPeriod(ctx, periodType, timeNow().UTC(), periods, ciDurationField, ciDurationPercentiles, &db.EventFilterOptions{
 				ByEventName: eventName,
 			})
 			if err != nil {
@@ -142,10 +142,10 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 	return activityPeriods, nil
 }
 
-func newEventCategory() *eventCategoryStatistics {
-	return &eventCategoryStatistics{
-		LSIF:   &eventStatistics{EventLatencies: &eventLatencies{}},
-		LSP:    &eventStatistics{EventLatencies: &eventLatencies{}},
-		Search: &eventStatistics{EventLatencies: &eventLatencies{}},
+func newCodeIntelEventCategory() *ciEventCategoryStatistics {
+	return &ciEventCategoryStatistics{
+		LSIF:   &ciEventStatistics{EventLatencies: &ciEventLatencies{}},
+		LSP:    &ciEventStatistics{EventLatencies: &ciEventLatencies{}},
+		Search: &ciEventStatistics{EventLatencies: &ciEventLatencies{}},
 	}
 }

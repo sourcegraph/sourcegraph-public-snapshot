@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 const (
@@ -336,8 +335,6 @@ func (l *eventLogs) PercentilesPerPeriod(
 	if !ok {
 		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
-
-	log15.Info("retrieve", "logging", fmt.Sprintf("start: %v end: %v name: %s", startDate, endDate, opt.ByEventName))
 
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {

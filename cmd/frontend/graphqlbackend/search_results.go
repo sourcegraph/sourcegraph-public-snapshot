@@ -1302,10 +1302,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		multiErr = nil
 	}
 
-	if len(resultTypes) == 1 && resultTypes[0] == "repo" {
-		durationMs := elapsedMilliseconds(start)
-		logMsg := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
-	}
+	// if len(resultTypes) == 1 && resultTypes[0] == "repo" {
+	// 	durationMs := elapsedMilliseconds(start)
+	// 	logMsg := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
+	// }
 
 	sortResults(results)
 
