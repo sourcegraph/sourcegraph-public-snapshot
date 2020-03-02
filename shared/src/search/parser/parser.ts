@@ -237,7 +237,7 @@ const filterKeyword = pattern(/-?[a-zA-Z]+(?=:)/)
 
 const filterDelimiter = character(':')
 
-const filterValue = oneOf<Quoted | Literal>(quoted, pattern(/[^:\s'"]+/))
+const filterValue = oneOf<Quoted | Literal>(quoted, literal)
 
 /**
  * A {@link Parser} that will attempt to parse {@link Filter} tokens
