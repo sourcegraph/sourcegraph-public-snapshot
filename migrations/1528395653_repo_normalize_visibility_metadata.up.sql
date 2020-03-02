@@ -2,6 +2,9 @@ BEGIN;
 
 ALTER TABLE repo ADD COLUMN IF NOT EXISTS private BOOLEAN NOT NULL DEFAULT FALSE;
 
+-- extract private from metadata. If we fail to extract it assume it is
+-- private to avoid leaking.
+
 DO $$
 DECLARE
     t_cursor CURSOR FOR
@@ -12,15 +15,13 @@ BEGIN
     FOR t_row IN t_cursor LOOP
         val = FALSE;
         IF t_row.external_service_type = 'github' THEN
-            val = t_row.metadata ->> 'IsPrivate';
+            val = COALESCE((t_row.metadata->>'IsPrivate')::boolean, true);
         ELSIF t_row.external_service_type = 'gitlab' THEN
-            IF t_row.metadata ->> 'visibility' = 'private' THEN
-                val = TRUE;
-            END IF;
+            val = t_row.metadata->>'visibility' <> 'public';
         ELSIF t_row.external_service_type = 'bitbucketServer' THEN
-            val = NOT CAST(t_row.metadata ->> 'public' AS BOOLEAN);
+            val = not COALESCE((t_row.metadata->>'public')::boolean, false);
         ELSIF t_row.external_service_type = 'bitbucketCloud' THEN
-            val = t_row.metadata ->> 'is_private';
+            val = COALESCE((t_row.metadata->>'is_private')::boolean, true);
         END IF;
 
         UPDATE repo SET private = val WHERE CURRENT OF t_cursor;

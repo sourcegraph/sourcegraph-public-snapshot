@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -26,26 +27,22 @@ func main() {
 
 var cbOnce sync.Once
 
-func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory) {
+func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory, server *repoupdater.Server) {
 	cbOnce.Do(func() {
 		ctx := context.Background()
 		campaignsStore := campaigns.NewStore(db)
 
+		syncer := &campaigns.ChangesetSyncer{
+			Store:       campaignsStore,
+			ReposStore:  repoStore,
+			HTTPFactory: cf,
+		}
+		if server != nil {
+			server.ChangesetSyncer = syncer
+		}
+
 		// Set up syncer
-		go func() {
-			syncer := &campaigns.ChangesetSyncer{
-				Store:       campaignsStore,
-				ReposStore:  repoStore,
-				HTTPFactory: cf,
-			}
-			for {
-				err := syncer.Sync(ctx)
-				if err != nil {
-					log15.Error("Syncing Changesets", "err", err)
-				}
-				time.Sleep(2 * time.Minute)
-			}
-		}()
+		go syncer.Run()
 
 		// Set up expired campaign deletion
 		go func() {

@@ -4,7 +4,7 @@ import * as nodepath from 'path'
 import * as settings from '../settings'
 import * as validation from '../middleware/validation'
 import express from 'express'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Backend, ReferencePaginationCursor } from '../backend/backend'
 import { encodeCursor } from '../pagination/cursor'
@@ -149,11 +149,7 @@ export function createLsifRouter(
                 const { repositoryId, commit, path }: ExistsQueryArgs = req.query
                 const ctx = createTracingContext(req, { repositoryId, commit })
                 const uploads = await backend.exists(repositoryId, commit, path, ctx)
-
-                // TODO(#8384): Multiple dumps to the GraphQL API. Punting on this for now as
-                // it may cause a non-trivial change in the API shape that may also
-                // affect basic-code-intel.
-                res.json({ upload: uploads[0] })
+                res.json({ uploads })
             }
         )
     )

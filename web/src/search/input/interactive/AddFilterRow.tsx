@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { startCase } from 'lodash'
 import { AddFilterDropdown } from './AddFilterDropdown'
-import { FilterTypes } from '../../../../../shared/src/search/interactive/util'
+import { FilterType } from '../../../../../shared/src/search/interactive/util'
 
 interface RowProps {
     /**
@@ -11,17 +11,17 @@ interface RowProps {
     /**
      * Callback that adds a new filter to the SelectedFilterRow when one of the buttons are clicked.
      * */
-    onAddNewFilter: (filter: FilterTypes) => void
+    onAddNewFilter: (filter: FilterType) => void
 }
 
 // Filters that are shown as buttons, and not in the dropdown menu.
-export const defaultFilterTypes = [FilterTypes.repo, FilterTypes.file]
+export const defaultFilterTypes = [FilterType.repo, FilterType.file]
 
 /**
  * The row containing the buttons to add new filters in interactive mode.
  * */
 export const AddFilterRow: React.FunctionComponent<RowProps> = ({ isHomepage, onAddNewFilter }) => {
-    const buildOnAddFilterHandler = (filterType: FilterTypes) => (e: React.MouseEvent<HTMLButtonElement>) => {
+    const buildOnAddFilterHandler = (filterType: FilterType) => (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
 
         onAddNewFilter(filterType)

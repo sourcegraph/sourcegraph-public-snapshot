@@ -37,9 +37,9 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
         return (
             <Form className="signin-signup-form signin-form e2e-signin-form" onSubmit={this.handleSubmit}>
                 {window.context.allowSignup ? (
-                    <Link className="signin-signup-form__mode" to={`/sign-up${this.props.location.search}`}>
-                        Don't have an account? Sign up.
-                    </Link>
+                    <p>
+                        <Link to={`/sign-up${this.props.location.search}`}>Don't have an account? Sign up.</Link>
+                    </p>
                 ) : (
                     <p className="text-muted">To create an account, contact the site admin.</p>
                 )}
@@ -79,7 +79,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                     )}
                 </div>
                 {this.state.loading && (
-                    <div className="signin-signup-form__loader">
+                    <div className="w-100 text-center mb-2">
                         <LoadingSpinner className="icon-inline" />
                     </div>
                 )}

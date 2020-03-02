@@ -1,5 +1,30 @@
 import nock from 'nock'
-import { flattenCommitParents, getCommitsNear } from './gitserver'
+import { flattenCommitParents, getCommitsNear, getDirectoryChildren } from './gitserver'
+
+describe('getDirectoryChildren', () => {
+    it('should parse response from gitserver', async () => {
+        nock('http://frontend')
+            .post('/.internal/git/42/exec', {
+                args: ['ls-tree', '--name-only', 'c', '--', '.', 'foo/', 'bar/baz/'],
+            })
+            .reply(200, 'a\nb\nbar/baz/x\nbar/baz/y\nc\nfoo/1\nfoo/2\nfoo/3\n')
+
+        expect(
+            await getDirectoryChildren({
+                frontendUrl: 'frontend',
+                repositoryId: 42,
+                commit: 'c',
+                dirnames: ['', 'foo', 'bar/baz/'],
+            })
+        ).toEqual(
+            new Map([
+                ['', new Set(['a', 'b', 'c'])],
+                ['foo', new Set(['foo/1', 'foo/2', 'foo/3'])],
+                ['bar/baz/', new Set(['bar/baz/x', 'bar/baz/y'])],
+            ])
+        )
+    })
+})
 
 describe('getCommitsNear', () => {
     it('should parse response from gitserver', async () => {

@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -73,7 +73,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	defer txs.Done(&err)
 
 	for _, bindID := range bindIDs {
-		err = txs.GrantPendingPermissions(ctx, args.UserID, &iauthz.UserPendingPermissions{
+		err = txs.GrantPendingPermissions(ctx, args.UserID, &authz.UserPendingPermissions{
 			BindID: bindID,
 			Perm:   args.Perm,
 			Type:   args.Type,
@@ -93,7 +93,7 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 		return args.Repos, nil
 	}
 
-	p := &iauthz.UserPermissions{
+	p := &authz.UserPermissions{
 		UserID:   args.UserID,
 		Perm:     args.Perm,
 		Type:     args.Type,

@@ -124,7 +124,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                 </p>
                 <p>
                     {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                    <a href="https://about.sourcegraph.com/changelog" target="_blank">
+                    <a href="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
                         Sourcegraph changelog
                     </a>
                 </p>

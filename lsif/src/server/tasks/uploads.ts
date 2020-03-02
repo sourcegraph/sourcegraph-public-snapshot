@@ -10,7 +10,9 @@ import { UploadManager } from '../../shared/store/uploads'
 import { withLock } from '../../shared/store/locks'
 import { DumpManager } from '../../shared/store/dumps'
 import { dbFilename, idFromFilename } from '../../shared/paths'
-import { Connection } from 'typeorm'
+import { Connection, EntityManager } from 'typeorm'
+import { SRC_FRONTEND_INTERNAL } from '../../shared/config/settings'
+import { updateCommitsAndDumpsVisibleFromTip } from '../../shared/visibility'
 
 /**
  * Update the value of the unconverted uploads gauge.
@@ -58,6 +60,7 @@ export const cleanOldUploads = async (
  *
  * @param connection The Postgres connection.
  * @param dumpManager The dumps manager instance.
+ * @param uploadManager The uploads manager instance.
  * @param storageRoot The path where SQLite databases are stored.
  * @param maximumSizeBytes The maximum number of bytes.
  * @param ctx The tracing context.
@@ -65,9 +68,10 @@ export const cleanOldUploads = async (
 export function purgeOldDumps(
     connection: Connection,
     dumpManager: DumpManager,
+    uploadManager: UploadManager,
     storageRoot: string,
     maximumSizeBytes: number,
-    { logger = createSilentLogger() }: TracingContext = {}
+    { logger = createSilentLogger(), span }: TracingContext = {}
 ): Promise<void> {
     const purge = async (): Promise<void> => {
         // First, remove all the files in the DB dir that don't have a corresponding
@@ -106,7 +110,17 @@ export function purgeOldDumps(
             currentSizeBytes -= await filesize(filename)
 
             // This delete cascades to the packages and references tables as well
-            await dumpManager.deleteDump(dump)
+            await uploadManager.deleteUpload(
+                dump.id,
+                (entityManager: EntityManager, repositoryId: number): Promise<void> =>
+                    updateCommitsAndDumpsVisibleFromTip({
+                        entityManager,
+                        dumpManager,
+                        frontendUrl: SRC_FRONTEND_INTERNAL,
+                        repositoryId,
+                        ctx: { logger, span },
+                    })
+            )
         }
     }
 

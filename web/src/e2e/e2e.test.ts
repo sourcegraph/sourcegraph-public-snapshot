@@ -133,11 +133,11 @@ describe('e2e test suite', () => {
             ).jsonValue()
 
             const resp = await got.post('/.api/graphql', {
-                baseUrl: sourcegraphBaseUrl,
+                prefixUrl: sourcegraphBaseUrl,
                 headers: {
                     Authorization: 'token ' + token,
                 },
-                body: {
+                body: JSON.stringify({
                     query: gql`
                         query {
                             currentUser {
@@ -146,11 +146,10 @@ describe('e2e test suite', () => {
                         }
                     `,
                     variables: {},
-                },
-                json: true,
+                }),
             })
 
-            const username = resp.body.data.currentUser.username
+            const username = JSON.parse(resp.body).data.currentUser.username
             expect(username).toBe('test')
 
             await Promise.all([
@@ -1390,18 +1389,6 @@ describe('e2e test suite', () => {
                     () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
                 )
             ).toEqual('test query 2 edited')
-        })
-    })
-
-    describe('Literal search by default toast', () => {
-        test('Dismiss literal search toast', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-literal-search-toast')
-            await driver.page.click('.e2e-close-toast')
-            const nodes = await driver.page.evaluate(
-                () => document.querySelectorAll('.e2e-literal-search-toast').length
-            )
-            expect(nodes).toEqual(0)
         })
     })
 

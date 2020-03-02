@@ -8,8 +8,8 @@ import promClient from 'prom-client'
  * @param fn The function to instrument.
  */
 export async function instrument<T>(
-    durationHistogram: promClient.Histogram,
-    errorsCounter: promClient.Counter,
+    durationHistogram: promClient.Histogram<string>,
+    errorsCounter: promClient.Counter<string>,
     fn: () => Promise<T>
 ): Promise<T> {
     const end = durationHistogram.startTimer()
