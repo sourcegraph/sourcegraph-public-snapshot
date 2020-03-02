@@ -15,21 +15,18 @@ func TestNextSync(t *testing.T) {
 	}
 	tests := []struct {
 		name       string
-		clock      func() time.Time
 		lastSync   time.Time
 		lastChange time.Time
 		want       time.Time
 	}{
 		{
 			name:       "No time passed",
-			clock:      clock,
 			lastSync:   clock(),
 			lastChange: clock(),
 			want:       clock().Add(minSyncDelay),
 		},
 		{
 			name:       "Linear backoff",
-			clock:      clock,
 			lastSync:   clock(),
 			lastChange: clock().Add(-1 * time.Hour),
 			want:       clock().Add(1 * time.Hour),
@@ -37,21 +34,18 @@ func TestNextSync(t *testing.T) {
 		{
 			// Could happen due to clock skew
 			name:       "Future change",
-			clock:      clock,
 			lastSync:   clock(),
 			lastChange: clock().Add(1 * time.Hour),
 			want:       clock().Add(minSyncDelay),
 		},
 		{
 			name:       "Diff max is capped",
-			clock:      clock,
 			lastSync:   clock(),
 			lastChange: clock().Add(-2 * maxSyncDelay),
 			want:       clock().Add(maxSyncDelay),
 		},
 		{
 			name:       "Diff min is capped",
-			clock:      clock,
 			lastSync:   clock(),
 			lastChange: clock().Add(-1 * minSyncDelay / 2),
 			want:       clock().Add(minSyncDelay),
@@ -59,7 +53,7 @@ func TestNextSync(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := nextSync(tt.clock, tt.lastSync, tt.lastChange)
+			got := nextSync(tt.lastSync, tt.lastChange)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Fatal(diff)
 			}

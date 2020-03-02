@@ -23,7 +23,6 @@ type ChangesetSyncer struct {
 	// Note that it involves a DB query but no communication with codehosts
 	ScheduleInterval time.Duration
 
-	clock func() time.Time
 	queue *changesetQueue
 }
 
@@ -35,9 +34,6 @@ func (s *ChangesetSyncer) StartSyncing() {
 	scheduleInterval := s.ScheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
-	}
-	if s.clock == nil {
-		s.clock = time.Now
 	}
 
 	s.queue = newChangesetQueue(100)
@@ -82,7 +78,7 @@ var (
 )
 
 // nextSync computes the time we want the next sync to happen
-func nextSync(clock func() time.Time, lastSync, lastChange time.Time) time.Time {
+func nextSync(lastSync, lastChange time.Time) time.Time {
 	// Simple linear backoff for now
 	diff := lastSync.Sub(lastChange)
 	if diff >= maxSyncDelay {
@@ -102,7 +98,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, 
 
 	ss := make([]syncSchedule, len(hs))
 	for i := range hs {
-		nextSync := nextSync(s.clock, hs[i].UpdatedAt, maxTime(hs[i].ExternalUpdatedAt, hs[i].LatestEvent))
+		nextSync := nextSync(hs[i].UpdatedAt, maxTime(hs[i].ExternalUpdatedAt, hs[i].LatestEvent))
 
 		ss[i] = syncSchedule{
 			changesetID: hs[i].ChangesetID,
