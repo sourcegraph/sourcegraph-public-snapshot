@@ -547,10 +547,14 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
+// ChangesetSyncHeuristics represents data about the sync status of a changeset
 type ChangesetSyncHeuristics struct {
-	ChangesetID       int64
-	UpdatedAt         time.Time
-	LatestEvent       time.Time
+	ChangesetID int64
+	// UpdatedAt is the time we last updated / synced the changeset in our DB
+	UpdatedAt time.Time
+	// LatestEvent is the time we received the most recent changeset event
+	LatestEvent time.Time
+	// ExternalUpdatedAt is the time the external changeset last changed
 	ExternalUpdatedAt time.Time
 }
 

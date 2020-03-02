@@ -19,7 +19,8 @@ type ChangesetSyncer struct {
 	Store       *Store
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
-
+	// ScheduleInterval determines how often a new schedule will be computed.
+	// Note that it involves a DB query but no communication with codehosts
 	ScheduleInterval time.Duration
 
 	clock func() time.Time
@@ -51,7 +52,7 @@ func (s *ChangesetSyncer) StartSyncing() {
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		s.queue.updateSchedule(sched)
+		s.queue.reschedule(sched)
 		break
 	}
 
@@ -67,7 +68,7 @@ func (s *ChangesetSyncer) StartSyncing() {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
-			s.queue.updateSchedule(sched)
+			s.queue.reschedule(sched)
 		case id := <-s.queue.scheduled:
 			err := s.SyncChangesetByID(ctx, id)
 			if err != nil {
@@ -318,10 +319,14 @@ type changesetQueue struct {
 	scheduled chan int64
 	priority  chan int64
 
-	// ordered slice of scheduled syncs
 	cancel context.CancelFunc
 }
 
+// newChangesetQueue creates a new queue for holding changeset sync instructions in chronological order.
+// The queue also has a high priority channel for items that should be synced ASAP.
+// priorityCapacity specifies the number of items that can be in the priority channel
+// before newly added items will be dropped. The intention is that priority items will
+// be added by a user action so does not need to be particularly large.
 func newChangesetQueue(priorityCapacity int) *changesetQueue {
 	return &changesetQueue{
 		scheduled: make(chan int64),
@@ -329,7 +334,9 @@ func newChangesetQueue(priorityCapacity int) *changesetQueue {
 	}
 }
 
-func (q *changesetQueue) updateSchedule(schedule []syncSchedule) {
+// reschedule replaces the current schedule with a new one and will cancel
+// the old worker routine if it exists.
+func (q *changesetQueue) reschedule(schedule []syncSchedule) {
 	// cancel existing goroutine if running
 	if q.cancel != nil {
 		// cancel closes the done chan on the existing context
