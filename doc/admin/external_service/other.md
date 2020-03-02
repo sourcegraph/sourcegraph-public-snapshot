@@ -1,6 +1,6 @@
 # Other Git repository hosts
 
-Site admins can sync Git repositories on any Git repository host (by Git clone URL) with Sourcegraph so that users can search and navigate the repositories. Use this method only when your repository host is not named as a supported [external service](index.md).
+Site admins can sync Git repositories on any Git repository host (by Git clone URL) with Sourcegraph so that users can search and navigate the repositories. Use this method only when your repository host is not named as a supported [code host](index.md).
 
 To connect generic Git host to Sourcegraph:
 
@@ -86,7 +86,7 @@ chmod +x src-expose
 }
 ```
 
-Go to Admin > External services > Add external service > Single Git repositories. Input the above configuration. Your directories should now be syncing in Sourcegraph.
+Go to Admin > Manage Repositories > Add repositories > Single Git repositories. Input the above configuration. Your directories should now be syncing in Sourcegraph.
 
 ### Advanced configuration
 

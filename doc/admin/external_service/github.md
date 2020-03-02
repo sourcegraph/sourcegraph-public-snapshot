@@ -67,7 +67,7 @@ To set up a organization webhook on GitHub, go to the settings page of your orga
 
 Fill in your Sourcegraph external URL with `/.api/github-webhooks` as the path and make sure it is publicly available.
 
-The **Content Type** of the webhook should be `application/json`. Generate the secret with `openssl rand -hex 32` and paste it in the respective field. This value is what you need to specify in the external service config.
+The **Content Type** of the webhook should be `application/json`. Generate the secret with `openssl rand -hex 32` and paste it in the respective field. This value is what you need to specify in the GitHub config.
 
 Click on **Enable SSL verification** if you have configured SSL with a valid certificate in your Sourcegraph instance.
 
@@ -75,7 +75,7 @@ Select **the events mentioned above** on the events section, ensure **Active** i
 
 ## Configuration
 
-GitHub external service connections support the following configuration options, which are specified in the JSON editor in the site admin external services area.
+GitHub connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/github.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/github) to see rendered content.</div>
 
