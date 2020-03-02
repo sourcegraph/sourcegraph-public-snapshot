@@ -51,13 +51,13 @@ interface CacheMetrics {
      * A metric incremented on each cache insertion and decremented on
      * each cache eviction.
      */
-    sizeGauge: promClient.Gauge
+    sizeGauge: promClient.Gauge<string>
 
     /**
      * A metric incremented on each cache hit, miss, and eviction. A `type`
      * label is applied to differentiate the events.
      */
-    eventsCounter: promClient.Counter
+    eventsCounter: promClient.Counter<string>
 }
 
 /**

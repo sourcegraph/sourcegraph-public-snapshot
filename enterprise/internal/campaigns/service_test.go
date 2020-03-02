@@ -767,7 +767,6 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				if !j.StartedAt.IsZero() {
 					t.Fatalf("ChangesetJob StartedAt is set. have=%v", j.StartedAt)
 				}
-
 				if !j.FinishedAt.IsZero() {
 					t.Fatalf("ChangesetJob FinishedAt is set. have=%v", j.FinishedAt)
 				}
@@ -787,7 +786,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				t.Fatal(err)
 			}
 			if have, want := len(changesets), len(wantAttachedChangesetIDs); have != want {
-				t.Fatalf("wrong number of changesets. want=%d, have=%d", have, want)
+				t.Fatalf("wrong number of changesets. want=%d, have=%d", want, have)
 			}
 			for _, c := range changesets {
 				if len(c.CampaignIDs) != 1 || c.CampaignIDs[0] != campaign.ID {
@@ -829,7 +828,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			sort.Slice(wantIDs, func(i, j int) bool { return wantIDs[i] < wantIDs[j] })
 			sort.Slice(haveIDs, func(i, j int) bool { return haveIDs[i] < haveIDs[j] })
 
-			if diff := cmp.Diff(haveIDs, wantIDs); diff != "" {
+			if diff := cmp.Diff(wantIDs, haveIDs); diff != "" {
 				t.Fatal(diff)
 			}
 		})

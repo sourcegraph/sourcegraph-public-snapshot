@@ -6,14 +6,39 @@ import { nextLink } from '../pagination/link'
 import { wrap } from 'async-middleware'
 import { extractLimitOffset } from '../pagination/limit-offset'
 import { UploadManager } from '../../shared/store/uploads'
+import { DumpManager } from '../../shared/store/dumps'
+import { EntityManager } from 'typeorm'
+import { SRC_FRONTEND_INTERNAL } from '../../shared/config/settings'
+import { TracingContext, addTags } from '../../shared/tracing'
+import { Span } from 'opentracing'
+import { Logger } from 'winston'
+import { updateCommitsAndDumpsVisibleFromTip } from '../../shared/visibility'
 
 /**
  * Create a router containing the upload endpoints.
  *
+ * @param dumpManager The dumps manager instance.
  * @param uploadManager The uploads manager instance.
+ * @param logger The logger instance.
  */
-export function createUploadRouter(uploadManager: UploadManager): express.Router {
+export function createUploadRouter(
+    dumpManager: DumpManager,
+    uploadManager: UploadManager,
+    logger: Logger
+): express.Router {
     const router = express.Router()
+
+    /**
+     * Create a tracing context from the request logger and tracing span
+     * tagged with the given values.
+     *
+     * @param req The express request.
+     * @param tags The tags to apply to the logger and span.
+     */
+    const createTracingContext = (
+        req: express.Request & { span?: Span },
+        tags: { [K: string]: unknown }
+    ): TracingContext => addTags({ logger, span: req.span }, tags)
 
     interface UploadsQueryArgs {
         query: string
@@ -42,7 +67,19 @@ export function createUploadRouter(uploadManager: UploadManager): express.Router
         '/uploads/:id([0-9]+)',
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                if (await uploadManager.deleteUpload(parseInt(req.params.id, 10))) {
+                const id = parseInt(req.params.id, 10)
+                const ctx = createTracingContext(req, { id })
+
+                const updateVisibility = (entityManager: EntityManager, repositoryId: number): Promise<void> =>
+                    updateCommitsAndDumpsVisibleFromTip({
+                        entityManager,
+                        dumpManager,
+                        frontendUrl: SRC_FRONTEND_INTERNAL,
+                        repositoryId,
+                        ctx,
+                    })
+
+                if (await uploadManager.deleteUpload(id, updateVisibility)) {
                     res.status(204).send()
                     return
                 }

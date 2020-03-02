@@ -274,6 +274,7 @@ type Changeset struct {
 	ExternalServiceType string
 	ExternalBranch      string
 	ExternalDeletedAt   time.Time
+	ExternalUpdatedAt   time.Time
 }
 
 // Clone returns a clone of a Changeset.
@@ -1452,6 +1453,17 @@ const (
 	ChangesetEventKindBitbucketServerCommented  ChangesetEventKind = "bitbucketserver:commented"
 	ChangesetEventKindBitbucketServerMerged     ChangesetEventKind = "bitbucketserver:merged"
 )
+
+// ChangesetSyncHeuristics represents data about the sync status of a changeset
+type ChangesetSyncHeuristics struct {
+	ChangesetID int64
+	// UpdatedAt is the time we last updated / synced the changeset in our DB
+	UpdatedAt time.Time
+	// LatestEvent is the time we received the most recent changeset event
+	LatestEvent time.Time
+	// ExternalUpdatedAt is the time the external changeset last changed
+	ExternalUpdatedAt time.Time
+}
 
 func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))

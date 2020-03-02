@@ -107,9 +107,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/Upload'
-                  - type: null
+                - $ref: '#/components/schemas/Uploads'
     post:
       description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return true if there is a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
       tags:
@@ -366,7 +364,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Uploads'
+                $ref: '#/components/schemas/PaginatedUploads'
           headers:
             Link:
               description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
@@ -484,6 +482,15 @@ components:
         - id
       additionalProperties: false
     Uploads:
+      type: object
+      description: A wrapper for a list of uploads.
+      properties:
+        uploads:
+          type: array
+          description: A list of uploads.
+          items:
+            $ref: '#/components/schemas/Upload'
+    PaginatedUploads:
       type: object
       description: A paginated wrapper for a list of uploads.
       properties:

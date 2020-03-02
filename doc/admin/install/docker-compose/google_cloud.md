@@ -6,6 +6,12 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 
 ---
 
+## (optional, recommended) Create a fork for customizations
+
+We **strongly** recommend that you create your own fork of [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). This will make upgrades far easier.
+
+See ["Store customizations in a fork"](./index.md#optional-recommended-store-customizations-in-a-fork) for full instructions.
+
 ## Deploy to Google Cloud VM
 
 * [Open your Google Cloud console](https://console.cloud.google.com/compute/instances) to create a new VM instance and click **Create Instance**
@@ -19,6 +25,9 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 * Check the boxes for **Allow HTTP traffic** and **Allow HTTPS traffic** in the **Firewall** section
 * Open the **Management, disks, networking, and SSH keys** dropdown section
 * Under the **Management** section, add the following in the **Startup script** field:
+  * (optional) If you [created a fork as recommended above](#optional-recommended-create-a-fork-for-customizations), update the following environment variables in the script below:
+    * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
+    * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose yaml. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in ["Store customizations in a fork"](./index.md#optional-recommended-store-customizations-in-a-fork).
 
 ```bash
 #!/usr/bin/env bash
@@ -29,17 +38,20 @@ PERSISTENT_DISK_DEVICE_NAME='/dev/sdb'
 DOCKER_DATA_ROOT='/mnt/docker-data'
 
 DOCKER_COMPOSE_VERSION='1.25.3'
-SOURCEGRAPH_VERSION='v3.12.5'
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
+
+# 🚨 Update these variables with the correct values from your fork!
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.12.5'
 
 # Install git
 sudo apt-get update -y
 sudo apt-get install -y git
 
 # Clone Docker Compose definition
-git clone "https://github.com/sourcegraph/deploy-sourcegraph-docker.git" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
+git clone "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL}" "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
 cd "${DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT}"
-git checkout ${SOURCEGRAPH_VERSION}
+git checkout "${DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION}"
 
 # Format (if necessary) and mount GCP persistent disk
 device_fs=$(sudo lsblk "${PERSISTENT_DISK_DEVICE_NAME}" --noheadings --output fsType)

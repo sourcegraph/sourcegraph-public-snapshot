@@ -1,7 +1,7 @@
 import { Filter } from './parser'
 import { SearchSuggestion } from '../../graphql/schema'
 import {
-    FilterTypes,
+    FilterType,
     isNegatedFilter,
     resolveNegatedFilter,
     NegatableFilter,
@@ -16,6 +16,8 @@ interface BaseFilterDefinition {
     discreteValues?: string[]
     suggestions?: SearchSuggestion['__typename'] | string[]
     default?: string
+    /** Whether the filter may only be used 0 or 1 times in a query. */
+    singular?: boolean
 }
 
 interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'description'> {
@@ -50,76 +52,85 @@ const LANGUAGES: string[] = [
 ]
 
 export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
-    Record<Exclude<FilterTypes, NegatableFilter>, BaseFilterDefinition> = {
-    [FilterTypes.after]: {
+    Record<Exclude<FilterType, NegatableFilter>, BaseFilterDefinition> = {
+    [FilterType.after]: {
         description: 'Commits made after a certain date',
     },
-    [FilterTypes.archived]: {
+    [FilterType.archived]: {
         description: 'Include results from archived repositories.',
+        singular: true,
     },
-    [FilterTypes.author]: {
+    [FilterType.author]: {
         description: 'The author of a commit',
     },
-    [FilterTypes.before]: {
+    [FilterType.before]: {
         description: 'Commits made before a certain date',
     },
-    [FilterTypes.case]: {
+    [FilterType.case]: {
         description: 'Treat the search pattern as case-sensitive.',
         discreteValues: ['yes', 'no'],
         default: 'no',
+        singular: true,
     },
-    [FilterTypes.content]: {
+    [FilterType.content]: {
         description:
             'Explicitly overrides the search pattern. Used for explicitly delineating the search pattern to search for in case of clashes.',
+        singular: true,
     },
-    [FilterTypes.count]: {
+    [FilterType.count]: {
         description: 'Number of results to fetch (integer)',
+        singular: true,
     },
-    [FilterTypes.file]: {
+    [FilterType.file]: {
         alias: 'f',
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from files matching the given regex pattern.`,
         suggestions: 'File',
     },
-    [FilterTypes.fork]: {
+    [FilterType.fork]: {
         discreteValues: ['yes', 'no', 'only'],
         description: 'Include results from forked repositories.',
+        singular: true,
     },
-    [FilterTypes.lang]: {
+    [FilterType.lang]: {
         negatable: true,
         description: negated => `${negated ? 'Exclude' : 'Include only'} results from the given language`,
         suggestions: LANGUAGES,
     },
-    [FilterTypes.message]: {
+    [FilterType.message]: {
         description: 'Commits with messages matching a certain string',
     },
-    [FilterTypes.patterntype]: {
+    [FilterType.patterntype]: {
         discreteValues: ['regexp', 'literal', 'structural'],
         description: 'The pattern type (regexp, literal, structural) in use',
+        singular: true,
     },
-    [FilterTypes.repo]: {
+    [FilterType.repo]: {
         alias: 'r',
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given regex pattern.`,
         suggestions: 'Repository',
     },
-    [FilterTypes.repogroup]: {
+    [FilterType.repogroup]: {
         description: 'group-name (include results from the named group)',
+        singular: true,
     },
-    [FilterTypes.repohascommitafter]: {
+    [FilterType.repohascommitafter]: {
         description: '"string specifying time frame" (filter out stale repositories without recent commits)',
+        singular: true,
     },
-    [FilterTypes.repohasfile]: {
+    [FilterType.repohasfile]: {
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repos that contain a matching file`,
     },
-    [FilterTypes.timeout]: {
+    [FilterType.timeout]: {
         description: 'Duration before timeout',
+        singular: true,
     },
-    [FilterTypes.type]: {
+    [FilterType.type]: {
         description: 'Limit results to the specified type.',
         discreteValues: ['code', 'diff', 'commit', 'symbol', 'repo', 'path'],
     },
@@ -132,7 +143,7 @@ export const resolveFilter = (
     filterType: string
 ):
     | { type: NegatableFilter; negated: boolean; definition: NegatableFilterDefinition }
-    | { type: Exclude<FilterTypes, NegatableFilter>; definition: BaseFilterDefinition }
+    | { type: Exclude<FilterType, NegatableFilter>; definition: BaseFilterDefinition }
     | undefined => {
     filterType = filterType.toLowerCase()
     if (isNegatedFilter(filterType)) {
@@ -155,10 +166,10 @@ export const resolveFilter = (
             return { type: filterType, definition: FILTERS[filterType] }
         }
     }
-    for (const [type, definition] of Object.entries(FILTERS as Record<FilterTypes, FilterDefinition>)) {
+    for (const [type, definition] of Object.entries(FILTERS as Record<FilterType, FilterDefinition>)) {
         if (definition.alias && filterType === definition.alias) {
             return {
-                type: type as Exclude<FilterTypes, NegatableFilter>,
+                type: type as Exclude<FilterType, NegatableFilter>,
                 definition: definition as BaseFilterDefinition,
             }
         }
@@ -191,3 +202,9 @@ export const validateFilter = (
     }
     return { valid: true }
 }
+
+/** Whether a given filter type may only be used 0 or 1 times in a query. */
+export const isSingularFilter = (filter: string): boolean =>
+    Object.keys(FILTERS)
+        .filter(key => FILTERS[key as FilterType].singular)
+        .includes(filter)

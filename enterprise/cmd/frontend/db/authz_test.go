@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -118,7 +117,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			globals.SetPermissionsUserMapping(test.config)
 
 			for _, update := range test.updates {
-				err := s.store.SetRepoPendingPermissions(ctx, update.bindIDs, &iauthz.RepoPermissions{
+				err := s.store.SetRepoPendingPermissions(ctx, update.bindIDs, &authz.RepoPermissions{
 					RepoID:   update.repoID,
 					Perm:     authz.Read,
 					Provider: authz.ProviderSourcegraph,
@@ -133,7 +132,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			p := &iauthz.UserPermissions{
+			p := &authz.UserPermissions{
 				UserID:   user.ID,
 				Perm:     authz.Read,
 				Type:     authz.PermRepos,
@@ -230,7 +229,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			defer cleanupPermsTables(t, s.store)
 
 			for _, update := range test.updates {
-				err := s.store.SetRepoPermissions(ctx, &iauthz.RepoPermissions{
+				err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 					RepoID:   update.repoID,
 					Perm:     authz.Read,
 					UserIDs:  toBitmap(update.userIDs...),
@@ -261,7 +260,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	s := NewAuthzStore(dbconn.Global, clock).(*authzStore)
 
 	// Set both effective and pending permissions for a user
-	if err := s.store.SetRepoPermissions(ctx, &iauthz.RepoPermissions{
+	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 		RepoID:   1,
 		Perm:     authz.Read,
 		UserIDs:  toBitmap(1),
@@ -271,7 +270,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	}
 
 	bindIDs := []string{"alice", "alice@example.com"}
-	if err := s.store.SetRepoPendingPermissions(ctx, bindIDs, &iauthz.RepoPermissions{
+	if err := s.store.SetRepoPendingPermissions(ctx, bindIDs, &authz.RepoPermissions{
 		RepoID: 1,
 		Perm:   authz.Read,
 	}); err != nil {
@@ -288,7 +287,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	}
 
 	// The user should not have any permissions now
-	err := s.store.LoadUserPermissions(ctx, &iauthz.UserPermissions{
+	err := s.store.LoadUserPermissions(ctx, &authz.UserPermissions{
 		UserID:   1,
 		Perm:     authz.Read,
 		Type:     authz.PermRepos,
@@ -299,7 +298,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	}
 
 	for _, bindID := range bindIDs {
-		err = s.store.LoadUserPendingPermissions(ctx, &iauthz.UserPendingPermissions{
+		err = s.store.LoadUserPendingPermissions(ctx, &authz.UserPendingPermissions{
 			BindID: bindID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,

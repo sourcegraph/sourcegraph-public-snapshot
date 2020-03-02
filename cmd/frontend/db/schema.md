@@ -179,6 +179,7 @@ Foreign-key constraints:
  external_service_type | text                     | not null
  external_deleted_at   | timestamp with time zone | 
  external_branch       | text                     | 
+ external_updated_at   | timestamp with time zone | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -696,7 +697,6 @@ Referenced by:
  external_id           | text                     | 
  external_service_type | text                     | 
  external_service_id   | text                     | 
- enabled               | boolean                  | not null default true
  archived              | boolean                  | not null default false
  uri                   | citext                   | 
  deleted_at            | timestamp with time zone | 

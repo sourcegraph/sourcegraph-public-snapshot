@@ -15,6 +15,7 @@ import { readEnvInt } from '../../shared/settings'
 import { readGzippedJsonElementsFromFile } from '../../shared/input'
 import { TableInserter } from '../../shared/database/inserter'
 import { createSilentLogger } from '../../shared/logging'
+import { PathExistenceChecker } from './existence'
 
 /**
  * The insertion metrics for the database.
@@ -48,22 +49,35 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  * Populate a SQLite database with the given input stream. Returns the
  * data required to populate the dependency tables in Postgres.
  *
- * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
- * @param database The filepath of the database to populate.
- * @param ctx The tracing context.
+ * @param args Parameter bag.
  */
-export async function convertLsif(
-    path: string,
-    database: string,
-    { logger = createSilentLogger(), span }: TracingContext = {}
-): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+export async function convertLsif({
+    path,
+    root,
+    database,
+    pathExistenceChecker,
+    ctx: { logger = createSilentLogger(), span } = {},
+}: {
+    /** The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump. */
+    path: string
+    /** The root of all files that are in the dump. */
+    root: string
+    /** The filepath of the database to populate. */
+    database: string
+    /** An object that tracks whether a path is visible within the LSIF dump. */
+    pathExistenceChecker: PathExistenceChecker
+    /** The tracing context. */
+    ctx?: TracingContext
+}): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const connection = await createSqliteConnection(database, sqliteModels.entities, logger)
 
     try {
         await connection.query('PRAGMA synchronous = OFF')
         await connection.query('PRAGMA journal_mode = OFF')
 
-        return await connection.transaction(entityManager => importLsif(entityManager, path, { logger, span }))
+        return await connection.transaction(entityManager =>
+            importLsif(entityManager, path, root, pathExistenceChecker, { logger, span })
+        )
     } finally {
         await connection.close()
     }
@@ -76,15 +90,19 @@ export async function convertLsif(
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
+ * @param root The root of all files that are in the dump.
+ * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
  * @param ctx The tracing context.
  */
 export async function importLsif(
     entityManager: EntityManager,
     path: string,
+    root: string,
+    pathExistenceChecker: PathExistenceChecker,
     ctx: TracingContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     // Correlate input data into in-memory maps
-    const correlator = new Correlator(ctx.logger)
+    const correlator = new Correlator(root, ctx.logger)
     await logAndTraceCall(ctx, 'Correlating LSIF data', async () => {
         for await (const element of readGzippedJsonElementsFromFile(path) as AsyncIterable<lsif.Vertex | lsif.Edge>) {
             correlator.insert(element)
@@ -100,16 +118,21 @@ export async function importLsif(
     // dump as the target project. For each set of documents that share a path, we
     // choose one document to be the canonical representative and merge the contains,
     // definition, and reference data into the unique canonical document.
-
-    await logAndTraceCall(ctx, 'Canonicalizing documents', () => mergeDocuments(correlator))
+    await logAndTraceCall(ctx, 'Merging documents', () => mergeDocuments(correlator))
 
     // Determine which reference results are linked together. Determine a canonical
     // reference result for each set so that we can remap all identifiers to the
     // chosen one.
-
     const canonicalReferenceResultIds = await logAndTraceCall(ctx, 'Canonicalizing reference results', () =>
         canonicalizeReferenceResults(correlator)
     )
+
+    // Make all necessary visibility queries to gitserver here. This allows us to batch
+    // the requests to reduce the number of network roundtrips, and also allows us to
+    // time the total cost of fetching this data from gitserver by doing it all in one
+    // place. If we perform the queries lazily, we would need to add the timings for
+    // each individual span in the resulting trace.
+    await pathExistenceChecker.warmCache(Array.from(correlator.documentPaths.values()))
 
     // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
@@ -133,7 +156,7 @@ export async function importLsif(
             sqliteModels.DocumentModel.BatchSize,
             inserterMetrics
         )
-        await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
+        await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds, pathExistenceChecker)
         await documentInserter.flush()
     })
 
@@ -145,7 +168,7 @@ export async function importLsif(
             sqliteModels.ResultChunkModel.BatchSize,
             inserterMetrics
         )
-        await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
+        await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks, pathExistenceChecker)
         await resultChunkInserter.flush()
     })
 
@@ -163,7 +186,12 @@ export async function importLsif(
             sqliteModels.ReferenceModel.BatchSize,
             inserterMetrics
         )
-        await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
+        await populateDefinitionsAndReferencesTables(
+            correlator,
+            definitionInserter,
+            referenceInserter,
+            pathExistenceChecker
+        )
         await definitionInserter.flush()
         await referenceInserter.flush()
     })
@@ -178,11 +206,13 @@ export async function importLsif(
  * @param correlator The correlator with all vertices and edges inserted.
  * @param documentInserter The inserter for the documents table.
  * @param canonicalReferenceResultIds A map from reference result identifiers to its canonical identifier.
+ * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
  */
 async function populateDocumentsTable(
     correlator: Correlator,
     documentInserter: TableInserter<sqliteModels.DocumentModel, new () => sqliteModels.DocumentModel>,
-    canonicalReferenceResultIds: Map<sqliteModels.ReferenceResultId, sqliteModels.ReferenceResultId>
+    canonicalReferenceResultIds: Map<sqliteModels.ReferenceResultId, sqliteModels.ReferenceResultId>,
+    pathExistenceChecker: PathExistenceChecker
 ): Promise<void> {
     // Collapse result sets data into the ranges that can reach them. The
     // remainder of this function assumes that we can completely ignore
@@ -197,6 +227,15 @@ async function populateDocumentsTable(
     // which can be found in a result chunk, created in the next step.
 
     for (const [documentId, documentPath] of correlator.documentPaths) {
+        // Do not gather any document that is not within the dump root or does not exist
+        // in git. If the path is outside of the dump root, then it will never be queried
+        // as the current text document path and the dump root are compared to determine
+        // which dump to open. If the path does not exist in git, it will also never be
+        // queried.
+        if (!pathExistenceChecker.shouldIncludePath(documentPath)) {
+            continue
+        }
+
         // Create document record from the correlated information. This will also insert
         // external definitions and references into the maps initialized above, which are
         // inserted into the definitions and references table, respectively, below.
@@ -221,11 +260,13 @@ async function populateDocumentsTable(
  * @param correlator The correlator with all vertices and edges inserted.
  * @param resultChunkInserter The inserter for the result chunks table.
  * @param numResultChunks The number of result chunks used to hash compute the result identifier hash.
+ * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
  */
 async function populateResultChunksTable(
     correlator: Correlator,
     resultChunkInserter: TableInserter<sqliteModels.ResultChunkModel, new () => sqliteModels.ResultChunkModel>,
-    numResultChunks: number
+    numResultChunks: number,
+    pathExistenceChecker: PathExistenceChecker
 ): Promise<void> {
     // Create all the result chunks we'll be populating and inserting up-front. Data will
     // be inserted into result chunks based on hash values (modulo the number of result chunks),
@@ -241,16 +282,29 @@ async function populateResultChunksTable(
     ): void => {
         for (const [id, documentRanges] of data) {
             // Flatten map into list of ranges
-            let documentIdRangeIds: sqliteModels.DocumentIdRangeId[] = []
+            let flattenedRangeList: (sqliteModels.DocumentIdRangeId & { documentPath: string })[] = []
             for (const [documentId, rangeIds] of documentRanges) {
-                documentIdRangeIds = documentIdRangeIds.concat(rangeIds.map(rangeId => ({ documentId, rangeId })))
+                const documentPath = mustGet(correlator.documentPaths, documentId, 'documentPath')
+
+                // Skip pointing to locations that are not available in git. This can occur
+                // with indexers that point to generated files or dependencies that are not
+                // committed (e.g. node_modules). Keeping these in the dump can cause the
+                // UI to redirect to a path that doesn't exist.
+                if (!pathExistenceChecker.shouldIncludePath(documentPath, false)) {
+                    continue
+                }
+
+                flattenedRangeList = flattenedRangeList.concat(
+                    rangeIds.map(rangeId => ({ documentId, documentPath, rangeId }))
+                )
             }
 
             // Insert ranges into target result chunk
             const resultChunk = resultChunks[hashKey(id, resultChunks.length)]
+            const documentIdRangeIds = flattenedRangeList.map(({ documentId, rangeId }) => ({ documentId, rangeId }))
             resultChunk.documentIdRangeIds.set(id, documentIdRangeIds)
 
-            for (const documentId of documentRanges.keys()) {
+            for (const { documentId } of documentIdRangeIds) {
                 // Add paths into the result chunk where they are used
                 resultChunk.paths.set(documentId, mustGet(correlator.documentPaths, documentId, 'documentPath'))
             }
@@ -283,11 +337,13 @@ async function populateResultChunksTable(
  * @param correlator The correlator with all vertices and edges inserted.
  * @param definitionInserter The inserter for the definitions table.
  * @param referenceInserter The inserter for the references table.
+ * @param pathExistenceChecker An object that tracks whether a path is visible within the LSIF dump.
  */
 async function populateDefinitionsAndReferencesTables(
     correlator: Correlator,
     definitionInserter: TableInserter<sqliteModels.DefinitionModel, new () => sqliteModels.DefinitionModel>,
-    referenceInserter: TableInserter<sqliteModels.ReferenceModel, new () => sqliteModels.ReferenceModel>
+    referenceInserter: TableInserter<sqliteModels.ReferenceModel, new () => sqliteModels.ReferenceModel>,
+    pathExistenceChecker: PathExistenceChecker
 ): Promise<void> {
     // Determine the set of monikers that are attached to a definition or a
     // reference result. Correlating information in this way has two benefits:
@@ -345,6 +401,13 @@ async function populateDefinitionsAndReferencesTables(
 
                 for (const [documentId, rangeIds] of documentRanges) {
                     const documentPath = mustGet(correlator.documentPaths, documentId, 'documentPath')
+
+                    // Skip definitions or references that point to a document that are not
+                    // present in the dump. Including this would cause a query that always
+                    // fails when it cannot resolve the missing document data.
+                    if (!pathExistenceChecker.shouldIncludePath(documentPath)) {
+                        continue
+                    }
 
                     for (const rangeId of rangeIds) {
                         const range = mustGet(correlator.rangeData, rangeId, 'range')

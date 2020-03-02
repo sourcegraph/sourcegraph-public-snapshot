@@ -332,9 +332,11 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     className="alert alert-warning site-admin-configuration-page__alert site-admin-configuration-page__alert-flex"
                 >
                     Server restart is required for the configuration to take effect.
-                    <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadSite}>
-                        Restart server
-                    </button>
+                    {(this.state.site === undefined || this.state.site?.canReloadSite) && (
+                        <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadSite}>
+                            Restart server
+                        </button>
+                    )}
                 </div>
             )
         }

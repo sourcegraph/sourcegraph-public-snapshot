@@ -1,6 +1,7 @@
 import * as React from 'react'
 import * as H from 'history'
 import RegexIcon from 'mdi-react/RegexIcon'
+import classNames from 'classnames'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import { PatternTypeProps, CaseSensitivityProps } from '../..'
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
@@ -19,6 +20,7 @@ export interface TogglesProps extends PatternTypeProps, CaseSensitivityProps, Se
     location: H.Location
     filtersInQuery?: FiltersToTypeAndValue
     hasGlobalQueryBehavior?: boolean
+    className?: string
 }
 
 interface SubmitSearchArgs {
@@ -126,7 +128,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     }
 
     return (
-        <div className="query-input2__toggle-container">
+        <div className={classNames('toggle-container', props.className)}>
             <QueryInputToggle
                 {...props}
                 title="Case sensitivity"

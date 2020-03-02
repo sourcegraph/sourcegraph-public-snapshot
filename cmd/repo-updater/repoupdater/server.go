@@ -43,6 +43,9 @@ type Server struct {
 	GitserverClient interface {
 		ListCloned(context.Context) ([]string, error)
 	}
+	ChangesetSyncer interface {
+		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
+	}
 
 	notClonedCountMu        sync.Mutex
 	notClonedCount          uint64
@@ -59,6 +62,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	mux.HandleFunc("/status-messages", s.handleStatusMessages)
+	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
 	return mux
 }
 
@@ -557,6 +561,31 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 	s.notClonedCountUpdatedAt = time.Now()
 
 	return notCloned, nil
+}
+
+func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
+	if s.ChangesetSyncer == nil {
+		log15.Warn("ChangsetSyncer is nil")
+		respond(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var req protocol.ChangesetSyncRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusBadRequest, err)
+		return
+	}
+	if len(req.IDs) == 0 {
+		respond(w, http.StatusBadRequest, errors.New("no ids provided"))
+		return
+	}
+	err := s.ChangesetSyncer.EnqueueChangesetSyncs(r.Context(), req.IDs)
+	if err != nil {
+		resp := protocol.ChangesetSyncResponse{Error: err.Error()}
+		respond(w, http.StatusInternalServerError, resp)
+		return
+	}
+	respond(w, http.StatusOK, nil)
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
