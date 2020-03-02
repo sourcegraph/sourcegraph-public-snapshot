@@ -36,7 +36,7 @@
     "opentracing": "^0.14.4",
     "p-retry": "^4.2.0",
     "pg": "^7.18.2",
-    "prom-client": "^11.5.3",
+    "prom-client": "^12.0.0",
     "redis": "^3.0.2",
     "relateurl": "^0.2.7",
     "rmfr": "^2.0.0",

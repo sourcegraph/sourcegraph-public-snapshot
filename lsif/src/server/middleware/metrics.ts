@@ -10,7 +10,7 @@ import promClient from 'prom-client'
  * presence of large uploads.
  */
 export const metricsMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction): void => {
-    let histogram: promClient.Histogram | undefined
+    let histogram: promClient.Histogram<string> | undefined
     switch (req.path) {
         case '/upload':
             histogram = metrics.httpUploadDurationHistogram
