@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -80,6 +79,7 @@ func (s *PermsSyncer) ScheduleRepo(repoID api.RepoID, priority Priority) error {
 
 // syncUserPerms processes permissions syncing request in user-centric way.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
+	// TODO(jchen): Remove the use of dbconn.Global().
 	accts, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{
 		UserID: userID,
 	})
@@ -87,8 +87,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 		return errors.Wrap(err, "list external accounts")
 	}
 
-	// Set internal actor to bypass checking permissions.
-	ctx = actor.WithActor(ctx, &actor.Actor{Internal: true})
+	var repoSpecs []api.ExternalRepoSpec
 	for _, acct := range accts {
 		fetcher := s.fetchers[acct.ServiceID]
 		if fetcher == nil {
@@ -101,27 +100,38 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 			return errors.Wrap(err, "fetch user permissions")
 		}
 
-		// Get corresponding internal database IDs
-		repos, err := db.Repos.GetByExternalIDs(ctx, fetcher.ServiceType(), fetcher.ServiceID(), extIDs...)
-		if err != nil {
-			return errors.Wrap(err, "get repositories by external IDs")
+		for i := range extIDs {
+			repoSpecs = append(repoSpecs, api.ExternalRepoSpec{
+				ID:          extIDs[i],
+				ServiceType: fetcher.ServiceType(),
+				ServiceID:   fetcher.ServiceID(),
+			})
 		}
+	}
 
-		// Save permissions to database
-		p := &authz.UserPermissions{
-			UserID: userID,
-			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-			Type:   authz.PermRepos,
-			IDs:    roaring.NewBitmap(),
-		}
-		for i := range repos {
-			p.IDs.Add(uint32(repos[i].ID))
-		}
+	// Get corresponding internal database IDs
+	rs, err := s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
+		ExternalRepos: repoSpecs,
+		PerPage:       int64(len(repoSpecs)), // We want to get all repositories in one shot
+	})
+	if err != nil {
+		return errors.Wrap(err, "list external repositories")
+	}
 
-		err = s.permsStore.SetUserPermissions(ctx, p)
-		if err != nil {
-			return errors.Wrap(err, "set user permissions")
-		}
+	// Save permissions to database
+	p := &authz.UserPermissions{
+		UserID: userID,
+		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+		Type:   authz.PermRepos,
+		IDs:    roaring.NewBitmap(),
+	}
+	for i := range rs {
+		p.IDs.Add(uint32(rs[i].ID))
+	}
+
+	err = s.permsStore.SetUserPermissions(ctx, p)
+	if err != nil {
+		return errors.Wrap(err, "set user permissions")
 	}
 
 	return nil
@@ -155,6 +165,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	// one-to-one username mapping between the internal database and the code host.
 	// See last paragraph of https://docs.sourcegraph.com/admin/auth#username-normalization
 	// for details.
+	// TODO(jchen): Ship the initial design to unblock working on authz providers,
+	// but should revisit the feasibility of using ExternalAccount before final delivery.
 
 	usernames, err := fetcher.FetchRepoPerms(ctx, &repo.ExternalRepo)
 	if err != nil {
@@ -162,6 +174,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	}
 
 	// Get corresponding internal database IDs
+	// TODO(jchen): Remove the use of dbconn.Global().
 	users, err := db.Users.GetByUsernames(ctx, usernames...)
 	if err != nil {
 		return errors.Wrap(err, "get users by usernames")
