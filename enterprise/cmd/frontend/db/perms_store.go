@@ -806,7 +806,7 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	up.IDs = roaring.Or(oldIDs, p.IDs)
 
 	up.UpdatedAt = txs.clock()
-	if q, err = upsertUserPermissionsQuery(up); err != nil {
+	if q, err = upsertUserPermissionsBatchQuery(up); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert user permissions query")
@@ -820,41 +820,6 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	}
 
 	return nil
-}
-
-func upsertUserPermissionsQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
-	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:upsertUserPermissionsQuery
-INSERT INTO user_permissions
-  (user_id, permission, object_type, object_ids, provider, updated_at)
-VALUES
-  (%s, %s, %s, %s, %s, %s)
-ON CONFLICT ON CONSTRAINT
-  user_permissions_perm_object_provider_unique
-DO UPDATE SET
-  object_ids = excluded.object_ids,
-  updated_at = excluded.updated_at
-`
-
-	p.IDs.RunOptimize()
-	ids, err := p.IDs.ToBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	if p.UpdatedAt.IsZero() {
-		return nil, ErrPermsUpdatedAtNotSet
-	}
-
-	return sqlf.Sprintf(
-		format,
-		p.UserID,
-		p.Perm.String(),
-		p.Type,
-		ids,
-		p.Provider,
-		p.UpdatedAt.UTC(),
-	), nil
 }
 
 func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, provider authz.ProviderType, lock string) *sqlf.Query {
