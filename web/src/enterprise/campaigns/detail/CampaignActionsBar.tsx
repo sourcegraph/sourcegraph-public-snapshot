@@ -49,7 +49,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                     <Link to="/campaigns">Campaigns</Link>
                 </span>
                 <span className="text-muted d-inline-block mx-2">/</span>
-                <span>{campaign?.name ?? 'New campaign'}</span>
+                <span>{campaign?.name ?? 'New manual campaign'}</span>
                 {campaign && !campaign.publishedAt && <span className="badge badge-light ml-2">Draft</span>}
             </h2>
             <span className="flex-grow-1 d-flex justify-content-end align-items-center">
