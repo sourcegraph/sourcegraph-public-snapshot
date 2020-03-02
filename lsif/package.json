@@ -43,7 +43,7 @@
   "devDependencies": {
     "@sourcegraph/tsconfig": "^4.0.0",
     "@types/bloomfilter": "0.0.0",
-    "@types/body-parser": "1.17.1",
+    "@types/body-parser": "1.19.0",
     "@types/express": "4.17.2",
     "@types/express-winston": "3.0.4",
     "@types/got": "9.6.9",
@@ -55,7 +55,7 @@
     "@types/logform": "1.2.0",
     "@types/mz": "2.7.0",
     "@types/on-finished": "2.3.1",
-    "@types/redis": "2.8.14",
+    "@types/redis": "2.8.16",
     "@types/relateurl": "0.2.28",
     "@types/rmfr": "2.0.0",
     "@types/sinon": "7.5.2",
