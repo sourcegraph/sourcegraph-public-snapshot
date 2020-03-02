@@ -4,6 +4,14 @@
   "author": "Sourcegraph",
   "license": "MIT",
   "version": "0.1.0",
+  "scripts": {
+    "build": "tsc -b .",
+    "test": "jest",
+    "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
+    "eslint": "../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
+    "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",
+    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear"
+  },
   "dependencies": {
     "@types/async-polling": "0.0.3",
     "async-middleware": "^1.2.1",
@@ -16,7 +24,7 @@
     "express-opentracing": "^0.1.1",
     "express-validator": "^6.4.0",
     "express-winston": "^4.0.3",
-    "got": "^9.6.0",
+    "got": "^10.6.0",
     "ioredis": "^4.16.0",
     "jaeger-client": "^3.17.2",
     "json5": "^2.1.1",
@@ -73,13 +81,5 @@
     "tslint": "^5.20.1",
     "typescript": "^3.7.2",
     "typescript-json-schema": "^0.42.0"
-  },
-  "scripts": {
-    "build": "tsc -b .",
-    "test": "jest",
-    "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
-    "eslint": "../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
-    "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",
-    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear"
   }
 }
