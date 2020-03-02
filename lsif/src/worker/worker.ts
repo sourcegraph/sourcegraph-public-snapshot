@@ -104,14 +104,14 @@ async function main(logger: Logger): Promise<void> {
                     await uploadManager.markComplete(upload, entityManager)
 
                     // Update visibility flag for this repository.
-                    await updateCommitsAndDumpsVisibleFromTip(
+                    await updateCommitsAndDumpsVisibleFromTip({
                         entityManager,
                         dumpManager,
-                        SRC_FRONTEND_INTERNAL,
-                        upload.repositoryId,
-                        upload.commit,
-                        ctx
-                    )
+                        frontendUrl: SRC_FRONTEND_INTERNAL,
+                        repositoryId: upload.repositoryId,
+                        commit: upload.commit,
+                        ctx,
+                    })
                 })
         )
     }

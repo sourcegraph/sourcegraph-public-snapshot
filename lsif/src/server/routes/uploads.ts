@@ -71,14 +71,13 @@ export function createUploadRouter(
                 const ctx = createTracingContext(req, { id })
 
                 const updateVisibility = (entityManager: EntityManager, repositoryId: number): Promise<void> =>
-                    updateCommitsAndDumpsVisibleFromTip(
+                    updateCommitsAndDumpsVisibleFromTip({
                         entityManager,
                         dumpManager,
-                        SRC_FRONTEND_INTERNAL,
+                        frontendUrl: SRC_FRONTEND_INTERNAL,
                         repositoryId,
-                        undefined,
-                        ctx
-                    )
+                        ctx,
+                    })
 
                 if (await uploadManager.deleteUpload(id, updateVisibility)) {
                     res.status(204).send()

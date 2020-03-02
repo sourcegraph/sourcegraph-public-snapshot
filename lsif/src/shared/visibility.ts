@@ -7,23 +7,33 @@ import { TracingContext } from './tracing'
  * of this repository. This will query for commits starting from both the current tip
  * of the repo and from given commit.
  *
- * @param entityManager The EntityManager to use as part of a transaction.
- * @param dumpManager The dumps manager instance.
- * @param frontendUrl The url of the frontend internal API.
- * @param repositoryId The repository id.
- * @param commit An optional commit. This should be supplied if an upload was just
- *     processed. If no commit is supplied, then the commits will be queried only
- *     from the tip commit of the default branch.
- * @param ctx The tracing context.
+ * @param args Parameter bag.
  */
-export async function updateCommitsAndDumpsVisibleFromTip(
-    entityManager: EntityManager,
-    dumpManager: DumpManager,
-    frontendUrl: string,
-    repositoryId: number,
-    commit?: string,
-    ctx: TracingContext = {}
-): Promise<void> {
+export async function updateCommitsAndDumpsVisibleFromTip({
+    entityManager,
+    dumpManager,
+    frontendUrl,
+    repositoryId,
+    commit,
+    ctx = {},
+}: {
+    /** The EntityManager to use as part of a transaction. */
+    entityManager: EntityManager
+    /** The dumps manager instance. */
+    dumpManager: DumpManager
+    /** The url of the frontend internal API. */
+    frontendUrl: string
+    /** The repository id. */
+    repositoryId: number
+    /**
+     * An optional commit. This should be supplied if an upload was just
+     * processed. If no commit is supplied, then the commits will be queried
+     * only from the tip commit of the default branch.
+     */
+    commit?: string
+    /** The tracing context. */
+    ctx?: TracingContext
+}): Promise<void> {
     const tipCommit = await dumpManager.discoverTip({
         repositoryId,
         frontendUrl,

@@ -113,14 +113,13 @@ export function purgeOldDumps(
             await uploadManager.deleteUpload(
                 dump.id,
                 (entityManager: EntityManager, repositoryId: number): Promise<void> =>
-                    updateCommitsAndDumpsVisibleFromTip(
+                    updateCommitsAndDumpsVisibleFromTip({
                         entityManager,
                         dumpManager,
-                        SRC_FRONTEND_INTERNAL,
+                        frontendUrl: SRC_FRONTEND_INTERNAL,
                         repositoryId,
-                        undefined,
-                        { logger, span }
-                    )
+                        ctx: { logger, span },
+                    })
             )
         }
     }
