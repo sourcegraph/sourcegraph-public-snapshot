@@ -24,17 +24,21 @@ func init() {
 	usage := `
 Examples:
 
-  Upload an LSIF dump:
+  Upload an LSIF dump with explicit repo, commit, and upload files:
 
     	$ src lsif upload -repo=FOO -commit=BAR -file=dump.lsif
 
   Upload an LSIF dump for a subproject:
 
-    	$ src lsif upload -repo=FOO -commit=BAR -file=dump.lsif -root=cmd/
+    	$ src lsif upload -root=cmd/
 
   Upload an LSIF dump when lsifEnforceAuth is enabled:
 
-    	$ src lsif upload -repo=FOO -commit=BAR -file=dump.lsif -github-token=BAZ
+    	$ src lsif upload -github-token=BAZ
+
+  Upload an LSIF dump when the LSIF indexer does not not declare a tool name.
+
+    	$ src lsif upload -indexerName=lsif-elixir
 `
 
 	flagSet := flag.NewFlagSet("upload", flag.ExitOnError)
@@ -49,6 +53,7 @@ Examples:
 		fileFlag        = flagSet.String("file", "./dump.lsif", `The path to the LSIF dump file.`)
 		githubTokenFlag = flagSet.String("github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
 		rootFlag        = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the empty string, which refers to the top level of the repository.`)
+		indexerName     = flagSet.String("indexerName", "", `The name of the indexer that generated the dump. This will override the 'toolInfo.name' field in the metadata vertex of the LSIF dump file. This must be supplied if the indexer does not set this field (in which case the upload will fail with an explicit message).`)
 		apiFlags        = newAPIFlags(flagSet)
 	)
 
@@ -136,6 +141,9 @@ Examples:
 		}
 		if *rootFlag != "" {
 			qs.Add("root", *rootFlag)
+		}
+		if *indexerName != "" {
+			qs.Add("indexerName", *indexerName)
 		}
 
 		url, err := url.Parse(cfg.Endpoint + "/.api/lsif/upload")
