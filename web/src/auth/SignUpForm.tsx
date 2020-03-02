@@ -100,7 +100,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                                 />
                                 Try Sourcegraph Enterprise free for 30 days{' '}
                                 {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                                <a target="_blank" href="https://about.sourcegraph.com/pricing">
+                                <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
                                     <HelpCircleOutlineIcon className="icon-inline" />
                                 </a>
                             </label>
@@ -127,11 +127,11 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         <small className="form-text text-muted">
                             By signing up, you agree to our
                             {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a href="https://about.sourcegraph.com/terms" target="_blank">
+                            <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
                                 Terms of Service
                             </a>{' '}
                             and {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a href="https://about.sourcegraph.com/privacy" target="_blank">
+                            <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
                                 Privacy Policy
                             </a>
                             .

@@ -79,7 +79,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                     )}
                 </div>
                 {this.state.loading && (
-                    <div className="w-100 text-center mb-1">
+                    <div className="w-100 text-center mb-2">
                         <LoadingSpinner className="icon-inline" />
                     </div>
                 )}

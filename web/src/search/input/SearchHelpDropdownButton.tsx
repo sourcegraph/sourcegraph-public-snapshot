@@ -94,11 +94,12 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                 <a
                     // eslint-disable-next-line react/jsx-no-target-blank
                     target="_blank"
+                    rel="noopener"
                     href={`${docsURLPrefix}/user/search/queries`}
-                    className="dropdown-item d-flex align-items-center"
+                    className="dropdown-item"
                     onClick={toggleIsOpen}
                 >
-                    <ExternalLinkIcon className="icon-inline small mr-1 mb-1" /> All search keywords
+                    <ExternalLinkIcon className="icon-inline small" /> All search keywords
                 </a>
                 {window.context?.sourcegraphDotComMode && (
                     <div className="p-2 alert alert-info small rounded-0 mb-0 mt-1">
