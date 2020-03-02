@@ -31,7 +31,7 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 	}
 
 	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := Repos.GetByName(ctx, "myrepo")
@@ -92,7 +92,7 @@ func TestDiscussionThreads_Update(t *testing.T) {
 	}
 
 	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := Repos.GetByName(ctx, "myrepo")
@@ -150,7 +150,7 @@ func TestDiscussionThreads_Count(t *testing.T) {
 	}
 
 	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := Repos.GetByName(ctx, "myrepo")
@@ -215,7 +215,7 @@ func TestDiscussionThreads_List(t *testing.T) {
 	}
 
 	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := Repos.GetByName(ctx, "myrepo")
@@ -280,7 +280,7 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 	}
 
 	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := Repos.GetByName(ctx, "myrepo")

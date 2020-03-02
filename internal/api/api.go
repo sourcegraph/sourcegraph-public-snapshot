@@ -44,7 +44,6 @@ type InsertRepoOp struct {
 	Description  string
 	Fork         bool
 	Archived     bool
-	Enabled      bool
 	ExternalRepo ExternalRepoSpec
 }
 
