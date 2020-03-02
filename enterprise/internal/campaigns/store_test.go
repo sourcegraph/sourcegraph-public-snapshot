@@ -998,6 +998,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 					UpdatedAt:   clock(),
 					LatestEvent: clock(),
 				},
+				{
+					// No events
+					ChangesetID: 3,
+					UpdatedAt:   clock(),
+				},
 			}
 			if diff := cmp.Diff(want, hs); diff != "" {
 				t.Fatal(diff)

@@ -581,8 +581,8 @@ SELECT changesets.id,
        max(ce.updated_at) as latest_event,
        changesets.external_updated_at
 FROM changesets
-JOIN changeset_events ce ON changesets.id = ce.changeset_id
-GROUP by changesets.id
+LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
+GROUP BY changesets.id
 `)
 }
 
