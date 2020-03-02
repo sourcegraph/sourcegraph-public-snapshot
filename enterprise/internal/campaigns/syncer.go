@@ -41,19 +41,13 @@ func (s *ChangesetSyncer) StartSyncing() {
 	}
 
 	s.queue = newChangesetQueue(100)
+
 	// Get initial schedule
-	attempts := 0
-	maxAttempts := 5
-	for attempts < maxAttempts {
-		attempts++
-		sched, err := s.computeSchedule(ctx)
-		if err != nil {
-			log15.Error("Computing queue", "err", err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
+	if sched, err := s.computeSchedule(ctx); err != nil {
+		// Non fatal as we'll try again later in the main loop
+		log15.Error("Computing queue", "err", err)
+	} else {
 		s.queue.reschedule(sched)
-		break
 	}
 
 	// How often to refresh the schedule
@@ -62,7 +56,6 @@ func (s *ChangesetSyncer) StartSyncing() {
 	for {
 		select {
 		case <-scheduleTicker.C:
-			// TODO: Retries?
 			sched, err := s.computeSchedule(ctx)
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
