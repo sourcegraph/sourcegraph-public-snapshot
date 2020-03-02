@@ -78,7 +78,10 @@ var (
 )
 
 // nextSync computes the time we want the next sync to happen
-func nextSync(lastSync, lastChange time.Time) time.Time {
+func nextSync(h campaigns.ChangesetSyncHeuristics) time.Time {
+	lastSync := h.UpdatedAt
+	lastChange := maxTime(h.ExternalUpdatedAt, h.LatestEvent)
+
 	// Simple linear backoff for now
 	diff := lastSync.Sub(lastChange)
 	if diff >= maxSyncDelay {
@@ -90,6 +93,13 @@ func nextSync(lastSync, lastChange time.Time) time.Time {
 	return lastSync.Add(diff)
 }
 
+func maxTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
+}
+
 func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, error) {
 	hs, err := s.Store.ListChangesetSyncHeuristics(ctx)
 	if err != nil {
@@ -98,7 +108,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, 
 
 	ss := make([]syncSchedule, len(hs))
 	for i := range hs {
-		nextSync := nextSync(hs[i].UpdatedAt, maxTime(hs[i].ExternalUpdatedAt, hs[i].LatestEvent))
+		nextSync := nextSync(hs[i])
 
 		ss[i] = syncSchedule{
 			changesetID: hs[i].ChangesetID,
@@ -112,13 +122,6 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, 
 	})
 
 	return ss, nil
-}
-
-func maxTime(a, b time.Time) time.Time {
-	if a.After(b) {
-		return a
-	}
-	return b
 }
 
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
