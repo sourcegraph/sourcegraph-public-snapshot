@@ -1,4 +1,4 @@
-# High level overview
+# Migrate from the single Docker image to Docker Compose
 
 Sourcegraph's user data can be migrated from the single Docker image (`sourcegraph/server`) to the Docker Compose deployment by dumping and restoring the Postgres database.
 
