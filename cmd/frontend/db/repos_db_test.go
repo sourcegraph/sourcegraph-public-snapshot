@@ -36,7 +36,7 @@ func repoNames(repos []*types.Repo) []api.RepoName {
 }
 
 func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
-	op := api.InsertRepoOp{Name: repo.Name}
+	op := InsertRepoOp{Name: repo.Name}
 
 	if repo.RepoFields != nil {
 		op.Description = repo.Description
@@ -67,6 +67,15 @@ func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 	q := sqlf.Sprintf("DELETE FROM repo WHERE id=%d", repo)
 	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
+}
+
+// InsertRepoOp represents an operation to insert a repository.
+type InsertRepoOp struct {
+	Name         api.RepoName
+	Description  string
+	Fork         bool
+	Archived     bool
+	ExternalRepo api.ExternalRepoSpec
 }
 
 const upsertSQL = `
@@ -121,7 +130,7 @@ INSERT INTO repo (
 //
 // Upsert exists for testing purposes only. Repository mutations are managed
 // by repo-updater.
-func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
+func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
 	insert := false
 	language := ""
 
