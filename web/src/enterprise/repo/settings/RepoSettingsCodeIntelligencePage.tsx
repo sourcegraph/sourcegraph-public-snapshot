@@ -209,6 +209,12 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                 <a href="https://docs.sourcegraph.com/user/code_intelligence/lsif">uploading LSIF data</a>.
             </p>
 
+            <p>
+                Current uploads provide code intelligence for the latest commit on the default branch and are used in
+                cross-repository <em>Find References</em> requests. Non-current uploads may still provide code
+                intelligence for historic and branch commits.
+            </p>
+
             <FilteredConnection<GQL.ILSIFUpload, { onDelete: () => void }>
                 className="list-group list-group-flush mt-3"
                 noun="upload"
