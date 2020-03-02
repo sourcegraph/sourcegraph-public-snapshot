@@ -554,7 +554,7 @@ type ChangesetSyncHeuristics struct {
 	ExternalUpdatedAt time.Time
 }
 
-// ListChangesetSyncHeuristics returns sync timing data on all non deleted changesets
+// ListChangesetSyncHeuristics returns sync timing data on all non deleted changesets.
 func (s *Store) ListChangesetSyncHeuristics(ctx context.Context) ([]ChangesetSyncHeuristics, error) {
 	q := listChangesetSyncHeuristicsQuery()
 	results := make([]ChangesetSyncHeuristics, 0)
