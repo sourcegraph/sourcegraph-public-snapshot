@@ -73,12 +73,14 @@ func (a *actionLogger) ActionFailed(err error, patches []CampaignPlanPatch) {
 		} else {
 			yellow.Fprintf(os.Stderr, "✗  Action failed with %d errors.\n", len(perr))
 		}
-	} else {
+	} else if err != nil {
 		if len(patches) > 0 {
 			yellow.Fprintf(os.Stderr, "✗  Action produced %d patches but failed with error: %s\n\n", len(patches), err)
 		} else {
 			yellow.Fprintf(os.Stderr, "✗  Action failed with error: %s\n\n", err)
 		}
+	} else {
+		grey.Fprintf(os.Stderr, "✗  Action did not produce any patches.\n\n")
 	}
 }
 
@@ -106,7 +108,7 @@ func (a *actionLogger) RepoCacheHit(repo ActionRepo, patchProduced bool) {
 			return
 		}
 
-		fmt.Fprintf(os.Stderr, "%s -> Cached result found: no diff produced for this repository.\n", green.Sprint(repo.Name))
+		fmt.Fprintf(os.Stderr, "%s -> Cached result found: no diff produced for this repository.\n", grey.Sprint(repo.Name))
 	}
 }
 
