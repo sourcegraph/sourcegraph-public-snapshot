@@ -1,4 +1,4 @@
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
