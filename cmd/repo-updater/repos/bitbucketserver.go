@@ -203,8 +203,7 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 		}
 
 		cs[i].Changeset.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
-		// Bitbucket Server timestamps are in milliseconds
-		cs[i].Changeset.ExternalUpdatedAt = time.Unix(0, int64(pr.UpdatedDate*1000000))
+		cs[i].Changeset.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 		cs[i].Changeset.Metadata = pr
 	}
 
@@ -465,4 +464,8 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 		next = page
 	}
 	return ids, nil
+}
+
+func unixMilliToTime(ms int64) time.Time {
+	return time.Unix(0, ms*int64(time.Millisecond))
 }
