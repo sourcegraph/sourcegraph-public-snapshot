@@ -339,14 +339,13 @@ func (q *changesetQueue) updateSchedule(schedule []syncSchedule) {
 
 	ctx := context.Background()
 	ctx, q.cancel = context.WithCancel(ctx)
-	var timer *time.Timer
 	go func() {
 		for i := range schedule {
 			// Get most urgent changeset and sleep until it should be synced
 			now := time.Now()
 			nextSync := schedule[i].nextSync
 			d := nextSync.Sub(now)
-			timer = time.NewTimer(d)
+			timer := time.NewTimer(d)
 			select {
 			case <-ctx.Done():
 				timer.Stop()
