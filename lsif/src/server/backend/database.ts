@@ -511,8 +511,7 @@ export function comparePosition(range: sqliteModels.RangeData, position: lsp.Pos
 }
 
 /**
- * Sort the monikers by kind, then scheme in order of the following
- * preferences.
+ * Sort the monikers by kind, then scheme in order of the following preferences.
  *
  *   - kind: import, local, export
  *   - scheme: npm, tsc
@@ -532,7 +531,7 @@ export function sortMonikers(monikers: sqliteModels.MonikerData[]): sqliteModels
         return monikerSchemePreferences.indexOf(a.scheme) - monikerSchemePreferences.indexOf(b.scheme)
     })
 
-    return monikers
+    return uniqWith(monikers, isEqual)
 }
 
 /**
