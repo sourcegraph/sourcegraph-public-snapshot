@@ -991,6 +991,7 @@ changed AS (
   SET
     metadata   = excluded.metadata,
     updated_at = excluded.updated_at
+  WHERE changeset_events.metadata != excluded.metadata
   RETURNING changeset_events.*
 )
 ` + batchChangesetEventsQuerySuffix
@@ -1003,6 +1004,7 @@ func (s *Store) upsertChangesetEventsQuery(es []*campaigns.ChangesetEvent) (*sql
 		}
 
 		if !e.UpdatedAt.After(e.CreatedAt) {
+			fmt.Printf("Setting updatedAt\n")
 			e.UpdatedAt = now
 		}
 	}
@@ -2681,6 +2683,7 @@ func scanChangesetEvent(e *campaigns.ChangesetEvent, s scanner) error {
 		&e.UpdatedAt,
 		&metadata,
 	)
+	fmt.Printf("scanChangesetEvent. e.UpdatedAt=%v\n", e.UpdatedAt)
 	if err != nil {
 		return err
 	}

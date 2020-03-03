@@ -803,6 +803,61 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
+			t.Run("UpsertWithoutChangesInMetadata", func(t *testing.T) {
+				e := &cmpgn.ChangesetEvent{
+					ChangesetID: int64(999),
+					Kind:        cmpgn.ChangesetEventKindGitHubCommented,
+					Key:         issueComment.Key(),
+					CreatedAt:   now,
+					Metadata:    issueComment,
+				}
+
+				err := s.UpsertChangesetEvents(ctx, e)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// This was saved to database and should not change
+				// if there is no update to the Metadata
+				oldUpdatedAt := e.UpdatedAt
+
+				// Reset UpdatedAt as if its a new ChangesetEvent
+				e.UpdatedAt = time.Time{}
+
+				// Advance clock
+				now = now.Add(time.Second)
+
+				err = s.UpsertChangesetEvents(ctx, e)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// TODO: This assertion fails because e.UpdatedAt changed,
+				// but not because it was updated in the database, but because
+				// I changed it here in the test and the database doesn't modify the row (great!)
+				// and doesn't return it! Which means that the `scanChangesetEvent` method is never called
+				// and doesn't overwrite the e.UpdatedAt with the one in the database.
+				if !e.UpdatedAt.Equal(oldUpdatedAt) {
+					t.Errorf("UpdatedAt changed even though metadata did not. IsZero=%t", e.UpdatedAt.IsZero())
+				}
+
+				// Change metadata
+				issueComment.UpdatedAt = issueComment.UpdatedAt.Add(1 * time.Second)
+				e.Metadata = issueComment
+
+				// Reset UpdatedAt as if its a new ChangesetEvent
+				e.UpdatedAt = time.Time{}
+
+				err = s.UpsertChangesetEvents(ctx, e)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if e.UpdatedAt.Equal(oldUpdatedAt) {
+					t.Errorf("UpdatedAt did not change but metadata did")
+				}
+			})
+
 			t.Run("Count", func(t *testing.T) {
 				count, err := s.CountChangesetEvents(ctx, CountChangesetEventsOpts{})
 				if err != nil {
