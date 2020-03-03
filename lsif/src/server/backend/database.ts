@@ -14,9 +14,7 @@ import { mustGet } from '../../shared/maps'
 import { Logger } from 'winston'
 import { createSilentLogger } from '../../shared/logging'
 
-/**
- * A location with the dump that contains it.
- */
+/** A location with the dump that contains it. */
 export interface InternalLocation {
     dump: pgModels.LsifDump
     path: string
@@ -88,7 +86,7 @@ export class Database {
     }
 
     /**
-     * Return the locations for the symbol at the given position.
+     * Return a list of locations that define the symbol at the given position.
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -130,7 +128,7 @@ export class Database {
     }
 
     /**
-     * Return a list of locations which reference the symbol at the given position.
+     * Return a list of locations that reference the symbol at the given position.
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -271,6 +269,42 @@ export class Database {
         })
     }
 
+    /**
+     * Return a parsed document that describes the given path. The result of this
+     * method is cached across all database instances.
+     *
+     * @param path The path of the document.
+     * @param ctx The tracing context.
+     */
+    public async getDocumentByPath(
+        path: string,
+        ctx: TracingContext = {}
+    ): Promise<sqliteModels.DocumentData | undefined> {
+        const factory = async (): Promise<cache.EncodedJsonCacheValue<sqliteModels.DocumentData>> => {
+            const document = await this.withConnection(
+                connection => connection.getRepository(sqliteModels.DocumentModel).findOneOrFail(path),
+                ctx.logger
+            )
+
+            return {
+                size: document.data.length,
+                data: await gunzipJSON<sqliteModels.DocumentData>(document.data),
+            }
+        }
+
+        try {
+            return await this.documentCache.withValue(`${this.databasePath}::${path}`, factory, document =>
+                Promise.resolve(document.data)
+            )
+        } catch (error) {
+            if (error.name === 'EntityNotFound') {
+                return undefined
+            }
+
+            throw error
+        }
+    }
+
     //
     // Helper Functions
 
@@ -316,42 +350,6 @@ export class Database {
         }
 
         return results
-    }
-
-    /**
-     * Return a parsed document that describes the given path. The result of this
-     * method is cached across all database instances.
-     *
-     * @param path The path of the document.
-     * @param ctx The tracing context.
-     */
-    private async getDocumentByPath(
-        path: string,
-        ctx: TracingContext = {}
-    ): Promise<sqliteModels.DocumentData | undefined> {
-        const factory = async (): Promise<cache.EncodedJsonCacheValue<sqliteModels.DocumentData>> => {
-            const document = await this.withConnection(
-                connection => connection.getRepository(sqliteModels.DocumentModel).findOneOrFail(path),
-                ctx.logger
-            )
-
-            return {
-                size: document.data.length,
-                data: await gunzipJSON<sqliteModels.DocumentData>(document.data),
-            }
-        }
-
-        try {
-            return await this.documentCache.withValue(`${this.databasePath}::${path}`, factory, document =>
-                Promise.resolve(document.data)
-            )
-        } catch (error) {
-            if (error.name === 'EntityNotFound') {
-                return undefined
-            }
-
-            throw error
-        }
     }
 
     /**
