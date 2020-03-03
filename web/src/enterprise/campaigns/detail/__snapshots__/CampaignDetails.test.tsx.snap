@@ -154,7 +154,7 @@ Array [
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mt-3"
+    className="mt-3 mb-2"
   >
     Changesets
   </h3>,
@@ -314,28 +314,17 @@ Array [
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mt-3"
+    className="mb-2"
   >
     Progress
   </h3>,
-  <div
-    className="d-flex my-3"
-  >
-    <svg
-      className="mdi-icon icon-inline text-info mr-1"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-      />
-    </svg>
-     Burndown chart will be shown when there is more than 1 day of data.
-  </div>,
+  <p>
+    <em>
+      Burndown chart will be shown when there is more than 1 day of data.
+    </em>
+  </p>,
   <h3
-    className="mt-3"
+    className="mt-3 mb-2"
   >
     Changesets
   </h3>,
@@ -10783,28 +10772,17 @@ Array [
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mt-3"
+    className="mb-2"
   >
     Progress
   </h3>,
-  <div
-    className="d-flex my-3"
-  >
-    <svg
-      className="mdi-icon icon-inline text-info mr-1"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-      />
-    </svg>
-     Burndown chart will be shown when there is more than 1 day of data.
-  </div>,
+  <p>
+    <em>
+      Burndown chart will be shown when there is more than 1 day of data.
+    </em>
+  </p>,
   <h3
-    className="mt-3"
+    className="mt-3 mb-2"
   >
     Changesets
   </h3>,
@@ -21376,28 +21354,17 @@ Array [
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mt-3"
+    className="mb-2"
   >
     Progress
   </h3>,
-  <div
-    className="d-flex my-3"
-  >
-    <svg
-      className="mdi-icon icon-inline text-info mr-1"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-      />
-    </svg>
-     Burndown chart will be shown when there is more than 1 day of data.
-  </div>,
+  <p>
+    <em>
+      Burndown chart will be shown when there is more than 1 day of data.
+    </em>
+  </p>,
   <h3
-    className="mt-3"
+    className="mt-3 mb-2"
   >
     Changesets
   </h3>,
