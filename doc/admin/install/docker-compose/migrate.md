@@ -2,109 +2,182 @@
 
 Sourcegraph's user data can be migrated from the single Docker image (`sourcegraph/server`) to the Docker Compose deployment by dumping and restoring the Postgres database.
 
-## Notes
+## Notes before you begin
 
 ### Version requirements
 
-* This migration can only be done with Sourcegraph `3.13.0` and above (e.g. `sourcegraph/server:3.13.0` and [v3.13.0 (TODO FILL IN RELEASE HERE) Docker Compose](TODO) ).
-* Sourcegraph's user data can only be transferred between deployments that are running the same Sourcegraph verion (e.g. `sourcegraph/server:3.13.0` can only transfer its data to `v3.13.0` of the Docker Compose definition). If you're running a version of Sourcegraph server that's older than the Docker Compose deployment version, you **must** upgrade to a newer `sourcegraph/server` version before continuing.
+* This migration can only be done with Sourcegraph `3.13.1` and above (e.g. `sourcegraph/server:3.13.1` and [v3.13.1 (TODO FILL IN RELEASE HERE) Docker Compose](TODO) ).
+* Sourcegraph's user data can only be transferred between deployments that are running the same Sourcegraph version (e.g. `sourcegraph/server:3.13.1` can only transfer its data to `v3.13.1` of the Docker Compose definition). If you're running a version of Sourcegraph server that's older than the Docker Compose deployment version, you **must** upgrade to a newer `sourcegraph/server` version before continuing.
 
 ### Storage location
 
-Note that after this process, Sourcegraph's data will be stored in Docker volumes instead of `~/.sourcegraph/`. For more information, see the cloud-provider documentation referred to in [Create the new Docker Compose instance](#create-the-new-docker-compose-instance).
+After this process, Sourcegraph's data will be stored in Docker volumes instead of `~/.sourcegraph/`. For more information, see the cloud-provider documentation referred to in ["Create the new Docker Compose instance"](#create-the-new-docker-compose-instance).
 
 ### Only user data will be migrated
 
-While this process will migrate your user data, the new Docker Compose deployment will need to regenerate all the other ephemeral data:
+While this process will migrate your user data, the new Docker Compose deployment will need to  regenerate all the other ephemeral data:
 
 * repositories will need to be re-cloned
 * search indexes will need to be recreated
 * etc.
 
-## Backup Postgres database
+## Migration guide
 
-* `ssh` into the instance running the `sourcegraph/server` container
-* find the `CONTAINER_ID` of the `sourcegraph/server` image from the `docker ps` output:
+### Backup single Docker image database
 
+#### Find single Docker image's `CONTAINER_ID`
+
+* `ssh` from your local machine into the instance hosting the `sourcegraph/server` container
+* Run the following command to find the `sourcegraph/server`'s `CONTAINER_ID`:
+  
 ```bash
 > docker ps
 CONTAINER ID        IMAGE
 ...                 sourcegraph/server
 ```
 
-* Generate Postgres dump inside `sourcegraph/server` container:
+#### Generate database dump
+
+* Open a shell inside the `sourcegraph/server` container
 
 ```bash
-# Open a shell inside sourcegraph/server using the CONTAINER_ID found in the previous step
-> docker exec -it "$CONTAINER_ID" /bin/sh
-
-# Dump Postgres database to db.out file 
-> pg_dumpall --verbose --username=postgres > /tmp/db.out
-
-# Exit container shell session
-> exit
+# Use the CONTAINER_ID found in the previous step
+docker exec -it "$CONTAINER_ID" /bin/sh
 ```
 
-* Copy Postgres dump from the `sourcegraph/server` container onto the host machine:
+* Dump Postgres database to `/tmp/db.out`
 
 ```bash
-> docker cp "$CONTAINER_ID":/tmp/db.out ~/db.out
-
-# You can run "less ~/db.out" to verify that it has the contents that you expect
+pg_dumpall --verbose --username=postgres > /tmp/db.out
 ```
 
-* TODO: Copy `~db.out` to local laptop since you'll be spinning down the `sourcegraph/server` machine
-  * `scp`? `gcloud compute scp`?
+* End the `sourcegraph/server` container shell session
 
+```bash
+exit
+```
 
-## Create the new Docker Compose instance
+* Copy Postgres dump from the `sourcegraph/server` container to the host machine
 
-Follow the installation guide for your cloud provider to create the new Docker Compose instance:
+```bash
+docker cp "$CONTAINER_ID":/tmp/db.out /tmp/db.out
+```
+
+#### Copy database dump to your local machine
+
+* End your `ssh` session with the `sourcegraph/server` host machine
+
+* Copy the Postgres dump from the `sourcegraph/server` host to your local machine:
+
+```bash
+# Modify this command with your authentication information
+scp example_user@example_docker_host.com:/tmp/db.out db.out
+```
+
+* (optional) You can run `less "/tmp/db.out"` to verify that the database dump has the contents that you expect
+
+### Create the new Docker Compose instance
+
+Follow your cloud provider's installation guide to create the new Docker Compose instance:
 
 * [Install Sourcegraph with Docker Compose on AWS](../../install/docker-compose/aws.md)
 * [Install Sourcegraph with Docker Compose on Google Cloud](../../install/docker-compose/google_cloud.md)
 * [Install Sourcegraph with Docker Compose on DigitalOcean](../../install/docker-compose/digitalocean.md)
 
-## Bring up the Postgres database on its own
+### Restore database backup to the Docker Compose instance
+
+#### Prepare the Postgres instance
+
+* `ssh` from your local machine into the new instance running the Docker Compose deployment
+
+* Navigate to the directory containing the Docker Compose definition:
 
 ```bash
-> cd "$DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT"/docker-compose # refer to cloud provider script for DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT value
+# Refer to the script in your cloud provider's installation guide
+# to find the value for "DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT"
 
-# Tear down existing instance (including volumes) so that we don't encounter conflicting transactions
-> docker-compose down --volumes
-
-# Bring up the Postgres database on its own
-> docker-compose -f pgsql-only-migrate.docker-compose.yaml up -d
+cd "$DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT"/docker-compose
 ```
 
-## TODO: copy database dump from local laptop to Docker Compose instance
-
-## Restore database dump
+* Tear down the existing Docker Compose containers (and associated volumes) so that we avoid conflicting transactions while modifying the database
 
 ```bash
-
-# Copy database dump from host to Postgres container
-> docker cp ~/db.out pgsql:/tmp/db.out
-
-# Open up a shell session inside the Postgres container
-> docker exec -it pgsql /bin/sh
-
-# Restore the database dump
-> psql --username=sg -f /tmp/db.out postgres
-
-# Open up a psql session inside the Postgres container
-> psql --username=sg
-
-# Apply tweaks to transform sourcegraph/server's DB schema into Docker Compose's
-> DROP DATABASE sg;
-> ALTER DATABASE sourcegraph RENAME TO sg;
-> ALTER DATABASE sg OWNER TO sg;
+ docker-compose down --volumes
 ```
 
-## Start the rest of the sourcegraph containers
+* Start the Postgres instance on its own
 
 ```bash
-> docker-compose -f docker-compose.yaml up -d
+docker-compose -f pgsql-only-migrate.docker-compose.yaml up -d
 ```
 
-The migration process is now complete. You should be able to log into your instance and verify that all your users and configuration are still present. It is now safe to tear down the `sourcegraph/server` instance.
+* End your `ssh` session with the new Docker Compose deployment host
+
+#### Apply database dump to Postgres instance
+
+* Copy the Postgres dump from your local machine to the Docker Compose host:
+
+```bash
+# Modify this command with your authentication information
+scp db.out example_user@example_docker_compose_host.com:/tmp/db.out
+```
+
+* `ssh` from your local machine into the Docker Compose deployment host
+
+* Copy database dump from the Docker Compose host to the Postgres container
+
+```bash
+docker cp /tmp/db.out pgsql:/tmp/db.out
+```
+
+* Create a shell session inside the Postgres container
+
+```bash
+docker exec -it pgsql /bin/sh
+```
+
+* Restore the database dump
+
+```bash
+psql --username=sg -f /tmp/db.out postgres
+```
+
+* Open up a psql session inside the Postgres container
+
+```bash
+psql --username=sg postgres
+```
+
+* Apply the following tweaks to transform the single Docker image's database schema into Docker Compose's
+
+```postgres
+DROP DATABASE sg;
+ALTER DATABASE sourcegraph RENAME TO sg;
+ALTER DATABASE sg OWNER TO sg;
+```
+
+* End your `psql` session
+
+```bash
+\q
+```
+
+* End your Postgres container shell session
+
+```bash
+exit
+```
+
+#### Start the rest of the Sourcegraph containers
+
+```bash
+docker-compose -f docker-compose.yaml up -d
+```
+
+## Conclusion
+
+The migration process is now complete.
+
+You should be able to log into your instance and verify that your both previous users and configuration are still present.
+
+It is now safe to tear down the host running the `sourcegraph/server` instance.
