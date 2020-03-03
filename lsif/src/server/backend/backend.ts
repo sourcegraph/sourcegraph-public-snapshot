@@ -330,25 +330,13 @@ export class Backend {
         { dump: pgModels.LsifDump; locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined
     > {
         if (paginationContext.cursor) {
-            const dump = await this.dumpManager.getDumpById(paginationContext.cursor.dumpId)
-            if (dump === undefined) {
-                return undefined
-            }
-
-            // Continue from previous page
-            const results = await this.performRemoteReferences(
+            return this.handleReferencesNextPage(
                 repositoryId,
                 commit,
                 paginationContext.limit,
                 paginationContext.cursor,
                 ctx
             )
-            if (results !== undefined) {
-                return { dump, ...results }
-            }
-
-            // Do not fall through
-            return { dump, locations: [] }
         }
 
         const closestDatabaseAndDump = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
@@ -433,7 +421,7 @@ export class Backend {
                     offset: 0,
                 }
 
-                const results = await this.performRemoteReferences(
+                const results = await this.handleReferencePaginationCursor(
                     repositoryId,
                     commit,
                     paginationContext.limit,
@@ -454,6 +442,39 @@ export class Backend {
 
         // TODO - determine source of duplication
         return { dump, locations: uniqWith(locations, isEqual) }
+    }
+
+    /**
+     * Handle a references request given a non-empty pagination cursor.
+     *
+     * @param repositoryId The repository identifier.
+     * @param commit The commit.
+     * @param limit The pagination limit.
+     * @param cursor The pagination cursor.
+     * @param ctx The tracing context.
+     */
+    private async handleReferencesNextPage(
+        repositoryId: number,
+        commit: string,
+        limit: number,
+        cursor: ReferencePaginationCursor,
+        ctx: TracingContext = {}
+    ): Promise<
+        { dump: pgModels.LsifDump; locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined
+    > {
+        const dump = await this.dumpManager.getDumpById(cursor.dumpId)
+        if (dump === undefined) {
+            return undefined
+        }
+
+        // Continue from previous page
+        const results = await this.handleReferencePaginationCursor(repositoryId, commit, limit, cursor, ctx)
+        if (results !== undefined) {
+            return { dump, ...results }
+        }
+
+        // No results remaining
+        return { dump, locations: [] }
     }
 
     /**
@@ -537,7 +558,9 @@ export class Backend {
     /**
      * Perform a remote reference lookup on the dumps of the same repository, then on dumps of
      * other repositories. The offset into the set of results (as well as the target set of dumps)
-     * depends on the exact values of the pagination cursor. This method returns the new cursor.
+     * depends on the exact values of the pagination cursor. If there are any locations in the result
+     * set, this method returns the new cursor. This method return undefined if there are no remaining
+     * results for the same repository.
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
@@ -545,7 +568,35 @@ export class Backend {
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.
      */
-    private async performRemoteReferences(
+    private async handleReferencePaginationCursor(
+        repositoryId: number,
+        commit: string,
+        limit: number,
+        cursor: ReferencePaginationCursor,
+        ctx: TracingContext = {}
+    ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
+        if (cursor.phase === 'same-repo') {
+            const results = await this.performSameRepositoryRemoteReferences(repositoryId, commit, limit, cursor, ctx)
+            if (results) {
+                return results
+            }
+        }
+
+        return this.performRemoteReferences(repositoryId, limit, cursor, ctx)
+    }
+
+    /**
+     * Perform a remote reference lookup on the dumps of the same repository. If there are any
+     * locations in the result set, this method returns the new cursor. This method return
+     * undefined if there are no remaining results for the same repository.
+     *
+     * @param repositoryId The repository identifier.
+     * @param commit The target commit.
+     * @param limit The maximum number of dumps to open.
+     * @param cursor The pagination cursor.
+     * @param ctx The tracing context.
+     */
+    private async performSameRepositoryRemoteReferences(
         repositoryId: number,
         commit: string,
         limit: number,
@@ -555,55 +606,74 @@ export class Backend {
         const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
         const packageInformation = { name: cursor.name, version: cursor.version }
 
-        if (cursor.phase === 'same-repo') {
-            const { locations, totalCount, newOffset } = await this.sameRepositoryRemoteReferences(
-                cursor.dumpId,
+        const { locations, totalCount, newOffset } = await this.sameRepositoryRemoteReferences(
+            cursor.dumpId,
+            repositoryId,
+            commit,
+            moniker,
+            packageInformation,
+            limit,
+            cursor.offset,
+            ctx
+        )
+        if (locations.length === 0) {
+            return undefined
+        }
+
+        let newCursor: ReferencePaginationCursor | undefined
+        if (newOffset < totalCount) {
+            newCursor = {
+                ...cursor,
+                offset: newOffset,
+            }
+        } else {
+            // Determine if there are any valid remote dumps we will open if
+            // we move onto a next page.
+            const { totalCount: remoteTotalCount } = await this.dependencyManager.getReferences({
                 repositoryId,
-                commit,
-                moniker,
-                packageInformation,
-                limit,
-                cursor.offset,
-                ctx
-            )
+                scheme: moniker.scheme,
+                name: packageInformation.name,
+                version: packageInformation.version,
+                identifier: moniker.identifier,
+                limit: 1,
+                offset: 0,
+            })
 
-            if (locations.length > 0) {
-                let newCursor: ReferencePaginationCursor | undefined
-                if (newOffset < totalCount) {
-                    newCursor = {
-                        ...cursor,
-                        offset: newOffset,
-                    }
-                } else {
-                    // Determine if there are any valid remote dumps we will open if
-                    // we move onto a next page.
-                    const { totalCount: remoteTotalCount } = await this.dependencyManager.getReferences({
-                        repositoryId,
-                        scheme: moniker.scheme,
-                        name: packageInformation.name,
-                        version: packageInformation.version,
-                        identifier: moniker.identifier,
-                        limit: 1,
-                        offset: 0,
-                    })
+            // Only construct a cursor that will be valid on a subsequent
+            // request. We don't want the situation where there are no uses
+            // of a symbol outside of the current repository and we give a
+            // "load more" option that yields no additional results.
 
-                    // Only construct a cursor that will be valid on a subsequent
-                    // request. We don't want the situation where there are no uses
-                    // of a symbol outside of the current repository and we give a
-                    // "load more" option that yields no additional results.
-
-                    if (remoteTotalCount > 0) {
-                        newCursor = {
-                            ...cursor,
-                            phase: 'remote-repo',
-                            offset: 0,
-                        }
-                    }
+            if (remoteTotalCount > 0) {
+                newCursor = {
+                    ...cursor,
+                    phase: 'remote-repo',
+                    offset: 0,
                 }
-
-                return { locations, cursor: newCursor }
             }
         }
+
+        return { locations, cursor: newCursor }
+    }
+
+    /**
+     * Perform a remote reference lookup on dumps of remote repositories. If there are any
+     * locations in the result set, this method returns the new cursor. This method return
+     * undefined if there are no remaining results for the same repository.
+     *
+     * @param repositoryId The repository identifier.
+     * @param limit The maximum number of dumps to open.
+     * @param cursor The pagination cursor.
+     * @param ctx The tracing context.
+     */
+    private async performRemoteReferences(
+        repositoryId: number,
+        limit: number,
+        cursor: ReferencePaginationCursor,
+        ctx: TracingContext = {}
+    ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
+        const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
+        const packageInformation = { name: cursor.name, version: cursor.version }
 
         const { locations, totalCount, newOffset } = await this.remoteReferences(
             cursor.dumpId,
@@ -614,21 +684,20 @@ export class Backend {
             cursor.offset,
             ctx
         )
-
-        if (locations.length > 0) {
-            let newCursor: ReferencePaginationCursor | undefined
-            if (newOffset < totalCount) {
-                newCursor = {
-                    ...cursor,
-                    phase: 'remote-repo',
-                    offset: newOffset,
-                }
-            }
-
-            return { locations, cursor: newCursor }
+        if (locations.length === 0) {
+            return undefined
         }
 
-        return undefined
+        let newCursor: ReferencePaginationCursor | undefined
+        if (newOffset < totalCount) {
+            newCursor = {
+                ...cursor,
+                phase: 'remote-repo',
+                offset: newOffset,
+            }
+        }
+
+        return { locations, cursor: newCursor }
     }
 
     /**
