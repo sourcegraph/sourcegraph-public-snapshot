@@ -61,7 +61,6 @@ FROM user_permissions
 WHERE user_id = %s
 AND permission = %s
 AND object_type = %s
-AND provider = %s
 `
 
 	return sqlf.Sprintf(
@@ -69,7 +68,6 @@ AND provider = %s
 		p.UserID,
 		p.Perm.String(),
 		p.Type,
-		p.Provider,
 	)
 }
 
@@ -99,14 +97,12 @@ SELECT repo_id, user_ids, updated_at
 FROM repo_permissions
 WHERE repo_id = %s
 AND permission = %s
-AND provider = %s
 `
 
 	return sqlf.Sprintf(
 		format+lock,
 		p.RepoID,
 		p.Perm.String(),
-		p.Provider,
 	)
 }
 
@@ -120,20 +116,19 @@ AND provider = %s
 //     Perm: authz.Read,
 //     Type: authz.PermRepos,
 //     IDs: bitmap{1, 2},
-//     Provider: ProviderSourcegraph,
 // }
 //
 // Table states for input:
 // 	"user_permissions":
-//   user_id | permission | object_type |  object_ids   | updated_at |  provider
-//  ---------+------------+-------------+---------------+------------+------------
-//         1 |       read |       repos |  bitmap{1, 2} | <DateTime> | sourcegraph
+//   user_id | permission | object_type |  object_ids   | updated_at
+//  ---------+------------+-------------+---------------+------------
+//         1 |       read |       repos |  bitmap{1, 2} | <DateTime>
 //
 //  "repo_permissions":
-//   repo_id | permission | user_ids  |   provider  | updated_at
-//  ---------+------------+-----------+-------------+------------
-//         1 |       read | bitmap{1} | sourcegraph | <DateTime>
-//         2 |       read | bitmap{1} | sourcegraph | <DateTime>
+//   repo_id | permission | user_ids  | updated_at
+//  ---------+------------+-----------+------------
+//         1 |       read | bitmap{1} | <DateTime>
+//         2 |       read | bitmap{1} | <DateTime>
 func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "SetUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
@@ -174,7 +169,7 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 		return nil
 	}
 
-	q := loadRepoPermissionsBatchQuery(changedIDs, p.Perm, p.Provider, "FOR UPDATE")
+	q := loadRepoPermissionsBatchQuery(changedIDs, p.Perm, "FOR UPDATE")
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load repo permissions")
@@ -201,7 +196,6 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 			RepoID:    repoID,
 			Perm:      p.Perm,
 			UserIDs:   userIDs,
-			Provider:  p.Provider,
 			UpdatedAt: updatedAt,
 		})
 	}
@@ -231,20 +225,19 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 //     RepoID: 1,
 //     Perm: authz.Read,
 //     UserIDs: bitmap{1, 2},
-//     Provider: ProviderSourcegraph,
 // }
 //
 // Table states for input:
 // 	"user_permissions":
-//   user_id | permission | object_type | object_ids | updated_at |  provider
-//  ---------+------------+-------------+------------+------------+------------
-//         1 |       read |       repos |  bitmap{1} | <DateTime> | sourcegraph
-//         2 |       read |       repos |  bitmap{1} | <DateTime> | sourcegraph
+//   user_id | permission | object_type | object_ids | updated_at
+//  ---------+------------+-------------+------------+------------
+//         1 |       read |       repos |  bitmap{1} | <DateTime>
+//         2 |       read |       repos |  bitmap{1} | <DateTime>
 //
 //  "repo_permissions":
-//   repo_id | permission |   user_ids   |   provider  | updated_at
-//  ---------+------------+--------------+-------------+------------
-//         1 |       read | bitmap{1, 2} | sourcegraph | <DateTime>
+//   repo_id | permission |   user_ids   | updated_at
+//  ---------+------------+--------------+------------
+//         1 |       read | bitmap{1, 2} | <DateTime>
 func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (err error) {
 	if Mocks.Perms.SetRepoPermissions != nil {
 		return Mocks.Perms.SetRepoPermissions(ctx, p)
@@ -289,7 +282,7 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 		return nil
 	}
 
-	q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, authz.PermRepos, p.Provider, "FOR UPDATE")
+	q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, authz.PermRepos, "FOR UPDATE")
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load user permissions")
@@ -317,7 +310,6 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 			Perm:      p.Perm,
 			Type:      authz.PermRepos,
 			IDs:       repoIDs,
-			Provider:  p.Provider,
 			UpdatedAt: updatedAt,
 		})
 	}
@@ -342,7 +334,6 @@ func loadUserPermissionsBatchQuery(
 	userIDs []uint32,
 	perm authz.Perms,
 	typ authz.PermType,
-	provider authz.ProviderType,
 	lock string,
 ) *sqlf.Query {
 	const format = `
@@ -352,7 +343,6 @@ FROM user_permissions
 WHERE user_id IN (%s)
 AND permission = %s
 AND object_type = %s
-AND provider = %s
 `
 
 	items := make([]*sqlf.Query, len(userIDs))
@@ -364,7 +354,6 @@ AND provider = %s
 		sqlf.Join(items, ","),
 		perm.String(),
 		typ,
-		provider,
 	)
 }
 
@@ -372,11 +361,11 @@ func upsertUserPermissionsBatchQuery(ps ...*authz.UserPermissions) (*sqlf.Query,
 	const format = `
 -- source: enterprise/cmd/frontend/db/perms_store.go:upsertUserPermissionsBatchQuery
 INSERT INTO user_permissions
-  (user_id, permission, object_type, object_ids, provider, updated_at)
+  (user_id, permission, object_type, object_ids, updated_at)
 VALUES
   %s
 ON CONFLICT ON CONSTRAINT
-  user_permissions_perm_object_provider_unique
+  user_permissions_perm_object_unique
 DO UPDATE SET
   object_ids = excluded.object_ids,
   updated_at = excluded.updated_at
@@ -394,12 +383,11 @@ DO UPDATE SET
 			return nil, ErrPermsUpdatedAtNotSet
 		}
 
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s, %s)",
+		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s)",
 			ps[i].UserID,
 			ps[i].Perm.String(),
 			ps[i].Type,
 			ids,
-			ps[i].Provider,
 			ps[i].UpdatedAt.UTC(),
 		)
 	}
@@ -859,7 +847,7 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	// Batch query all repository permissions object IDs in one go.
 	// NOTE: It is critical to always acquire row-level locks in the same order as SetRepoPermissions
 	// (i.e. repo -> user) to prevent deadlocks.
-	q := loadRepoPermissionsBatchQuery(ids, p.Perm, authz.ProviderSourcegraph, "FOR UPDATE")
+	q := loadRepoPermissionsBatchQuery(ids, p.Perm, "FOR UPDATE")
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load repo permissions")
@@ -879,7 +867,6 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 			RepoID:    repoID,
 			Perm:      p.Perm,
 			UserIDs:   oldIDs,
-			Provider:  authz.ProviderSourcegraph,
 			UpdatedAt: updatedAt,
 		})
 	}
@@ -894,10 +881,9 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	// whatever we have already in the "repo_permissions" table is all valid thus we don't
 	// need to do any clean up.
 	up := &authz.UserPermissions{
-		UserID:   userID,
-		Perm:     p.Perm,
-		Type:     p.Type,
-		Provider: authz.ProviderSourcegraph,
+		UserID: userID,
+		Perm:   p.Perm,
+		Type:   p.Type,
 	}
 	var oldIDs *roaring.Bitmap
 	vals, err = txs.load(ctx, loadUserPermissionsQuery(up, "FOR UPDATE"))
@@ -928,14 +914,13 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	return nil
 }
 
-func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, provider authz.ProviderType, lock string) *sqlf.Query {
+func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/db/perms_store.go:loadRepoPermissionsBatchQuery
 SELECT repo_id, user_ids
 FROM repo_permissions
 WHERE repo_id IN (%s)
 AND permission = %s
-AND provider = %s
 `
 
 	items := make([]*sqlf.Query, len(repoIDs))
@@ -946,7 +931,6 @@ AND provider = %s
 		format+lock,
 		sqlf.Join(items, ","),
 		perm.String(),
-		provider,
 	)
 }
 
@@ -954,11 +938,11 @@ func upsertRepoPermissionsBatchQuery(ps ...*authz.RepoPermissions) (*sqlf.Query,
 	const format = `
 -- source: enterprise/cmd/frontend/db/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
-  (repo_id, permission, user_ids, provider, updated_at)
+  (repo_id, permission, user_ids, updated_at)
 VALUES
   %s
 ON CONFLICT ON CONSTRAINT
-  repo_permissions_perm_provider_unique
+  repo_permissions_perm_unique
 DO UPDATE SET
   user_ids = excluded.user_ids,
   updated_at = excluded.updated_at
@@ -976,11 +960,10 @@ DO UPDATE SET
 			return nil, ErrPermsUpdatedAtNotSet
 		}
 
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s)",
+		items[i] = sqlf.Sprintf("(%s, %s, %s, %s)",
 			ps[i].RepoID,
 			ps[i].Perm.String(),
 			ids,
-			ps[i].Provider,
 			ps[i].UpdatedAt.UTC(),
 		)
 	}
