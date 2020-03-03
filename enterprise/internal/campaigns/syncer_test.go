@@ -1,6 +1,7 @@
 package campaigns
 
 import (
+	"container/heap"
 	"testing"
 	"time"
 
@@ -79,4 +80,73 @@ func TestNextSync(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestChangesetPriorityQueue(t *testing.T) {
+	now := time.Now()
+	q := newChangesetPriorityQueue()
+
+	items := []*syncSchedule{
+		{
+			changesetID: 1,
+			nextSync:    now,
+			priority:    priorityNormal,
+		},
+		{
+			changesetID: 2,
+			nextSync:    now,
+			priority:    priorityHigh,
+		},
+		{
+			changesetID: 3,
+			nextSync:    now.Add(-1 * time.Minute),
+			priority:    priorityNormal,
+		},
+		{
+			changesetID: 4,
+			nextSync:    now.Add(-2 * time.Hour),
+			priority:    priorityNormal,
+		},
+		{
+			changesetID: 5,
+			nextSync:    now.Add(1 * time.Hour),
+			priority:    priorityNormal,
+		},
+	}
+
+	for i := range items {
+		q.Upsert(items[i])
+	}
+
+	// Set item to high priority
+	q.Upsert(&syncSchedule{
+		changesetID: 4,
+		nextSync:    now.Add(-2 * time.Hour),
+		priority:    priorityHigh,
+	})
+
+	// Can't reduce priority of existing item
+	q.Upsert(&syncSchedule{
+		changesetID: 4,
+		nextSync:    now.Add(-2 * time.Hour),
+		priority:    priorityNormal,
+	})
+
+	if q.Len() != len(items) {
+		t.Fatalf("Expected %d, got %d", q.Len(), len(items))
+	}
+	expectedOrder := []int64{4, 2, 3, 1, 5}
+
+	for i := 0; i < len(items); i++ {
+		item := heap.Pop(q).(*syncSchedule)
+		if item.changesetID != expectedOrder[i] {
+			t.Fatalf("Expected item at index %d to be %d, got %d", i, expectedOrder[i], item.changesetID)
+		}
+	}
+
+	// Len() should be zero after all items popped
+	if q.Len() != 0 {
+		t.Fatalf("Expected %d, got %d", q.Len(), 0)
+	}
+
 }
