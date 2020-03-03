@@ -3,7 +3,6 @@ package campaigns
 import (
 	"container/heap"
 	"context"
-	"sort"
 	"sync"
 	"time"
 
@@ -95,19 +94,20 @@ func (s *ChangesetSyncer) Run() {
 				log15.Error("Syncing changeset", "err", err)
 			}
 		case ids := <-s.priorityNotify:
-			if next != nil {
-				// We need to handle the currently popped item if it was in the slice
-				for _, id := range ids {
-					if next.changesetID == id {
-						next.priority = priorityHigh
-						break
-					}
-				}
-				// We need to push the item back into the heap for the next iteration
-				s.mtx.Lock()
-				heap.Push(s.queue, next)
-				s.mtx.Unlock()
+			if next == nil {
+				continue
 			}
+			// We need to handle the currently popped item if it was in the slice
+			for _, id := range ids {
+				if next.changesetID == id {
+					next.priority = priorityHigh
+					break
+				}
+			}
+			// We need to push the item back into the heap for the next iteration
+			s.mtx.Lock()
+			heap.Push(s.queue, next)
+			s.mtx.Unlock()
 		}
 	}
 }
@@ -163,22 +163,18 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, 
 		}
 	}
 
-	// This will happen in the db later, for now we'll grab everything and order in code
-	sort.Slice(ss, func(i, j int) bool {
-		return ss[i].nextSync.Before(ss[j].nextSync)
-	})
-
 	return ss, nil
 }
 
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
 // An error indicates that no changesets have been synced
 func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
 	if s.queue == nil {
 		return errors.New("background syncing not initialised")
 	}
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
 	for _, id := range ids {
 		item, ok := s.queue.Get(id)
 		if !ok {
