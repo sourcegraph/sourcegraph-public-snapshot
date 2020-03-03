@@ -284,16 +284,6 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             editor.addCommand(keybinding, noop)
         }
 
-        // Prevent inserting newlines.
-        this.subscriptions.add(
-            toUnsubscribable(
-                editor.onKeyDown(e => {
-                    if (e.keyCode === Monaco.KeyCode.Enter) {
-                        e.preventDefault()
-                    }
-                })
-            )
-        )
         // Trigger a layout of the Monaco editor when its container gets resized.
         // The Monaco editor doesn't auto-resize with its container:
         // https://github.com/microsoft/monaco-editor/issues/28
