@@ -558,7 +558,9 @@ export function buildSearchURLQuery(
         searchParams.set('q', newQuery)
 
         if (caseInQuery.value === 'yes') {
+            const newQuery = fullQuery.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
             searchParams.set('case', caseInQuery.value)
+            fullQuery = newQuery
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
             // queries breaking when only `repo:` filters are specified.
@@ -600,7 +602,7 @@ export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): str
         .join(' ')
 }
 
-function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+export function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
     const parsedQuery = parseSearchQuery(query)
     if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {
@@ -621,7 +623,7 @@ function parsePatternTypeFromQuery(query: string): { range: CharacterRange; valu
     return undefined
 }
 
-function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+export function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
     const parsedQuery = parseSearchQuery(query)
     if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {
