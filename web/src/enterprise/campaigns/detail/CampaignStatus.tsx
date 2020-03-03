@@ -7,7 +7,7 @@ import { ErrorAlert } from '../../../components/alerts'
 import InformationIcon from 'mdi-react/InformationIcon'
 import { parseISO, isBefore, addMinutes } from 'date-fns'
 
-interface Props {
+export interface CampaignStatusProps {
     campaign:
         | (Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
               changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
@@ -26,7 +26,12 @@ interface Props {
 /**
  * The status of a campaign's jobs, plus its closed state and errors.
  */
-export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, status, onPublish, onRetry }) => {
+export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
+    campaign,
+    status,
+    onPublish,
+    onRetry,
+}) => {
     /* For completed campaigns that have been published, hide the creation complete status 1 day after the time of publication */
     const creationCompletedLongAgo =
         status.state === GQL.BackgroundProcessState.COMPLETED &&

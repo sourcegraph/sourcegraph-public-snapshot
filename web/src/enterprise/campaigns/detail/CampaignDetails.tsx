@@ -203,7 +203,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     )
 
     const selectCampaign = useCallback<(campaign: Pick<GQL.ICampaign, 'id'>) => void>(
-        campaign => history.push(`/campaigns/${campaign.id}?plan=${planID}`),
+        campaign => history.push(`/campaigns/${campaign.id}?plan=${planID!}`),
         [history, planID]
     )
 

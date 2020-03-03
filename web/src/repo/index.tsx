@@ -8,5 +8,6 @@ export function redirectToExternalHost(externalRedirectURL: string): void {
     redirectURL.host = externalHostURL.host
     redirectURL.port = externalHostURL.port
     redirectURL.protocol = externalHostURL.protocol
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     window.location.replace(redirectURL.toString())
 }

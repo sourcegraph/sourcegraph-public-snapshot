@@ -7,7 +7,7 @@ const getSingleFileLineElementFromLineNumber = (codeView: HTMLElement, line: num
         throw new Error(`Line ${line} not found in code view`)
     }
 
-    const lineElem = lineNumElem.closest('.line') as HTMLElement | null
+    const lineElem = lineNumElem.closest<HTMLElement>('.line')
     if (!lineElem) {
         throw new Error('Could not find line elem for line element')
     }
@@ -17,12 +17,12 @@ const getSingleFileLineElementFromLineNumber = (codeView: HTMLElement, line: num
 
 export const singleFileDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: target => {
-        const container = target.closest('.CodeMirror-line') as HTMLElement | null
+        const container = target.closest('.CodeMirror-line')
 
         return container ? container.querySelector<HTMLElement>('span[role="presentation"]') : null
     },
     getLineNumberFromCodeElement: codeElement => {
-        const line = codeElement.closest('.line') as HTMLElement | null
+        const line = codeElement.closest('.line')
         if (!line) {
             throw new Error('Could not find line containing code element')
         }
@@ -50,7 +50,7 @@ const getDiffLineElementFromLineNumber = (codeView: HTMLElement, line: number, p
     for (const lineNumElem of codeView.getElementsByClassName(`line-number-${part === 'head' ? 'to' : 'from'}`)) {
         const lineNum = parseInt((lineNumElem.textContent || '').trim(), 10)
         if (!isNaN(lineNum) && lineNum === line) {
-            const lineElem = lineNumElem.closest('.line') as HTMLElement | null
+            const lineElem = lineNumElem.closest<HTMLElement>('.line')
             if (!lineElem) {
                 throw new Error('Could not find lineElem from lineNumElem')
             }
@@ -59,13 +59,13 @@ const getDiffLineElementFromLineNumber = (codeView: HTMLElement, line: number, p
         }
     }
 
-    throw new Error(`Could not locate line number element for line ${line}, part: ${part}`)
+    throw new Error(`Could not locate line number element for line ${line}, part: ${String(part)}`)
 }
 
 export const diffDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: singleFileDOMFunctions.getCodeElementFromTarget,
     getLineNumberFromCodeElement: codeElement => {
-        const line = codeElement.closest('.line') as HTMLElement | null
+        const line = codeElement.closest('.line')
         if (!line) {
             throw new Error('Could not find line containing code element')
         }

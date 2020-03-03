@@ -128,7 +128,7 @@ const fetchTreeCommits = memoizeObservable(
                 return repo.commit.ancestors
             })
         ),
-    args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}:${args.after}`
+    args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
 )
 
 interface Props
@@ -389,7 +389,9 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         className: 'list-group-item',
                                         compact: true,
                                     }}
-                                    updateOnChange={`${this.props.repoName}:${this.props.rev}:${this.props.filePath}:${this.state.showOlderCommits}`}
+                                    updateOnChange={`${this.props.repoName}:${this.props.rev}:${
+                                        this.props.filePath
+                                    }:${String(this.state.showOlderCommits)}`}
                                     defaultFirst={7}
                                     useURLQuery={false}
                                     hideSearch={true}

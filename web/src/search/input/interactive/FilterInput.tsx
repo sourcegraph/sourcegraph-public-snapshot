@@ -462,7 +462,7 @@ export class FilterInput extends React.Component<Props, State> {
                                                 ) : (
                                                     this.state.suggestions.values.map((suggestion, index) => {
                                                         const isSelected = highlightedIndex === index
-                                                        const key = `${index}-${suggestion}`
+                                                        const key = `${index}-${suggestion.value}`
                                                         return (
                                                             <SuggestionItem
                                                                 key={key}

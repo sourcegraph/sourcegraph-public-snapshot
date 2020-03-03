@@ -163,7 +163,7 @@ describe('e2e test suite', () => {
             ])
 
             await driver.page.waitFor(
-                name => !document.querySelector(`[data-e2e-access-token-description="${name}"]`),
+                (name: string) => !document.querySelector(`[data-e2e-access-token-description="${name}"]`),
                 {},
                 name
             )

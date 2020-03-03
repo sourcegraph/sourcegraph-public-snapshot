@@ -50,5 +50,23 @@
       "isBackground": true,
       "problemMatcher": [],
     },
+    {
+      "type": "npm",
+      "script": "eslint",
+      "path": "lsif/",
+      "problemMatcher": ["$eslint-stylish"],
+    },
+    {
+      "type": "npm",
+      "script": "eslint",
+      "path": "dev/release/",
+      "problemMatcher": ["$eslint-stylish"],
+    },
+    {
+      "type": "npm",
+      "script": "eslint",
+      "path": "packages/sourcegraph-extension-api/",
+      "problemMatcher": ["$eslint-stylish"],
+    },
   ],
 }
