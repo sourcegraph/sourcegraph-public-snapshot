@@ -200,12 +200,8 @@ func (a *actionLogger) CommandStepDone(repoName string, step int) {
 	a.write(repoName, yellow, "[Step %d] Done.\n", step)
 }
 
-func (a *actionLogger) DockerStepStarted(repoName string, step int, dockerfile, image string) {
-	var fromDockerfile string
-	if dockerfile != "" {
-		fromDockerfile = " (built from inline Dockerfile)"
-	}
-	a.write(repoName, yellow, "[Step %d] docker run %v%s\n", step, image, fromDockerfile)
+func (a *actionLogger) DockerStepStarted(repoName string, step int, image string) {
+	a.write(repoName, yellow, "[Step %d] docker run %s\n", step, image)
 }
 
 func (a *actionLogger) DockerStepErrored(repoName string, step int, err error, elapsed time.Duration) {

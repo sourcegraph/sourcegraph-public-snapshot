@@ -165,7 +165,7 @@ func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps 
 			logger.CommandStepDone(repoName, i)
 
 		case "docker":
-			logger.DockerStepStarted(repoName, i, step.Dockerfile, step.Image)
+			logger.DockerStepStarted(repoName, i, step.Image)
 
 			cidFile, err := ioutil.TempFile(tempDirPrefix, prefix+"-container-id")
 			if err != nil {
@@ -242,7 +242,7 @@ func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps 
 	// As of Sourcegraph 3.14 we only support unified diff format.
 	// That means we need to strip away the `a/` and `/b` prefixes with `--no-prefix`.
 	// See: https://github.com/sourcegraph/sourcegraph/blob/82d5e7e1562fef6be5c0b17f18631040fd330835/enterprise/internal/campaigns/service.go#L324-L329
-	// 
+	//
 	diffOut, err := runGitCmd("diff", "--cached", "--no-prefix")
 	if err != nil {
 		return nil, errors.Wrap(err, "git diff failed")
