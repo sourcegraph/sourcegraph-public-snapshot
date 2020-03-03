@@ -52,7 +52,8 @@ type syncRequest struct {
 }
 
 // requestQueue is a priority queue of permissions syncing requests.
-// A request can't have more than one location in the queue.
+// Requests with same requestType and id are guaranteed to only have
+// one instance in the queue.
 type requestQueue struct {
 	mu    sync.Mutex
 	heap  []*syncRequest
