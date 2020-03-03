@@ -522,7 +522,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
                     {campaign && !updateMode && (
                         <>
-                            <h3 className="mt-3">Progress</h3>
+                            <h3 className="mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
                                 history={history}
@@ -536,7 +536,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
                     {!updateMode && (
                         <>
-                            <h3 className="mt-3">Changesets</h3>
+                            <h3 className="mt-3 mb-2">Changesets</h3>
                             {(campaign?.changesets.totalCount ?? 0) +
                             (campaignPlan || campaign)!.changesetPlans.totalCount ? (
                                 <CampaignTabs

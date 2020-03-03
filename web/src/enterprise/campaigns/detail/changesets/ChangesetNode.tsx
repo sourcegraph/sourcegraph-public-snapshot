@@ -34,6 +34,7 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import { asError } from '../../../../../../shared/src/util/errors'
 import { ChangesetLabel } from './ChangesetLabel'
 import classNames from 'classnames'
+import { DraftBadge } from '../../DraftBadge'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
@@ -147,9 +148,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             >
                                 {node.repository.name}
                             </Link>
-                            {node.__typename === 'ChangesetPlan' && (
-                                <span className="badge badge-light ml-2">Draft</span>
-                            )}
+                            {node.__typename === 'ChangesetPlan' && <DraftBadge className="ml-2" />}
                         </div>
                     </div>
                 </h3>
