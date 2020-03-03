@@ -16,48 +16,44 @@ func Test_ScanParameter(t *testing.T) {
 	}{
 		{
 			Name:  "Normal field:value",
-			Input: `field:value`,
-			Want:  `{"field":"field","value":"value","negated":false}`,
+			Input: `file:README.md`,
+			Want:  `{"field":"file","value":"README.md","negated":false}`,
 		},
+
 		{
 			Name:  "First char is colon",
-			Input: `:value`,
-			Want:  `{"field":"","value":":value","negated":false}`,
+			Input: `:foo`,
+			Want:  `{"field":"","value":":foo","negated":false}`,
 		},
 		{
 			Name:  "Last char is colon",
-			Input: `field:`,
-			Want:  `{"field":"field","value":"","negated":false}`,
+			Input: `foo:`,
+			Want:  `{"field":"foo","value":"","negated":false}`,
 		},
 		{
 			Name:  "Match first colon",
-			Input: `field:value:value`,
-			Want:  `{"field":"field","value":"value:value","negated":false}`,
+			Input: `foo:bar:baz`,
+			Want:  `{"field":"foo","value":"bar:baz","negated":false}`,
 		},
 		{
 			Name:  "No field, start with minus",
-			Input: `-:value`,
-			Want:  `{"field":"","value":"-:value","negated":false}`,
+			Input: `-:foo`,
+			Want:  `{"field":"","value":"-:foo","negated":false}`,
 		},
 		{
 			Name:  "Minus prefix on field",
-			Input: `-field:value`,
-			Want:  `{"field":"field","value":"value","negated":true}`,
+			Input: `-file:README.md`,
+			Want:  `{"field":"file","value":"README.md","negated":true}`,
 		},
 		{
 			Name:  "Double minus prefix on field",
-			Input: `--field:value`,
-			Want:  `{"field":"","value":"--field:value","negated":false}`,
+			Input: `--foo:bar`,
+			Want:  `{"field":"","value":"--foo:bar","negated":false}`,
 		},
 		{
 			Name:  "Minus in the middle is not a valid field",
-			Input: `fie-ld:value`,
-			Want:  `{"field":"","value":"fie-ld:value","negated":false}`,
-		},
-		{
-			Name:  "No effect on whitespace",
-			Input: `  a pattern  `,
-			Want:  `{"field":"","value":"","negated":false}`,
+			Input: `fie-ld:bar`,
+			Want:  `{"field":"","value":"fie-ld:bar","negated":false}`,
 		},
 		{
 			Name:  "No effect on escaped whitespace",

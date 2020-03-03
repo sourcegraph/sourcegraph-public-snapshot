@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"regexp"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 /*
@@ -28,9 +29,9 @@ func (Operator) node()  {}
 
 // Parameter is a leaf node of expressions.
 type Parameter struct {
-	Field   string `json:"field"`
-	Value   string `json:"value"`
-	Negated bool   `json:"negated"`
+	Field   string `json:"field"`   // The repo part in repo:sourcegraph.
+	Value   string `json:"value"`   // The sourcegraph part in repo:sourcegraph.
+	Negated bool   `json:"negated"` // True if the - prefix exists, as in -repo:sourcegraph.
 }
 
 type operatorKind int
@@ -49,9 +50,11 @@ type Operator struct {
 func (node Parameter) String() string {
 	if node.Field == "" {
 		return node.Value
-	} else {
-		return fmt.Sprintf("%s:%s", node.Field, node.Value)
 	}
+	if node.Negated {
+		return fmt.Sprintf("-%s:%s", node.Field, node.Value)
+	}
+	return fmt.Sprintf("%s:%s", node.Field, node.Value)
 }
 
 func (node Operator) String() string {
@@ -149,14 +152,16 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
+var fieldValuePattern = lazyregexp.New("(^-?[a-zA-Z0-9]+):(.*)")
+
 // ScanParameter returns a leaf node value usable by _any_ kind of search (e.g.,
 // literal or regexp, or...) and always succeeds.
 //
-// A parameter is a contiguous sequence characters, where the following two forms are distinguished:
+// A parameter is a contiguous sequence of characters, where the following two forms are distinguished:
 // (1) a string of syntax field:<string> where : matches the first encountered colon, and field must match ^-?[a-zA-Z0-9]+
 // (2) <string>
 //
-// When a parameter is of form (1), the string corresponds to Field:Value in type Parameter, and negated if Field starts with '-'.
+// When a parameter is of form (1), the <string> corresponds to Parameter.Value, field corresponds to Parameter.Field and Parameter.Negated is set if Field starts with '-'.
 // When form (1) does not match, Value corresponds to <string> and Field is the empty string.
 //
 // The value parameter in the parse tree is only distinguished with respect to
@@ -166,7 +171,6 @@ func (p *parser) skipSpaces() error {
 // properties, and how these should be interpretted, is thus context dependent
 // and handled appropriately within those contexts.
 func ScanParameter(parameter []byte) Parameter {
-	fieldValuePattern := regexp.MustCompile("(^-?[a-zA-Z0-9]+):(.*)")
 	result := fieldValuePattern.FindSubmatch(parameter)
 	if result != nil {
 		if result[1][0] == '-' {
@@ -182,7 +186,7 @@ func ScanParameter(parameter []byte) Parameter {
 }
 
 // ParseParameter returns valid leaf node values for AND/OR queries, taking into
-// account escape sequencies for special syntax: whitespace and parentheses.
+// account escape sequences for special syntax: whitespace and parentheses.
 func (p *parser) ParseParameter() Parameter {
 	start := p.pos
 	for {
@@ -227,16 +231,15 @@ func (p *parser) parseParameterList() ([]Node, error) {
 				// Return a non-nil node if we parsed "()".
 				return []Node{Parameter{Value: ""}}, nil
 			}
-			goto Done
+			return nodes, nil
 		case p.match(AND), p.match(OR):
 			// Caller advances.
-			goto Done
+			return nodes, nil
 		default:
 			parameter := p.ParseParameter()
 			nodes = append(nodes, parameter)
 		}
 	}
-Done:
 	return nodes, nil
 }
 
