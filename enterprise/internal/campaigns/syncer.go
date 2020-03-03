@@ -52,9 +52,9 @@ func (s *ChangesetSyncer) Run() {
 
 	for {
 		// Sync high priority items first
-		p, ok := s.queue.popPriority()
+		id, ok := s.queue.popPriority()
 		if ok {
-			err := s.SyncChangesetByID(ctx, p)
+			err := s.SyncChangesetByID(ctx, id)
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
 			}
@@ -133,7 +133,10 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, 
 
 	// This will happen in the db later, for now we'll grab everything and order in code
 	sort.Slice(ss, func(i, j int) bool {
-		return ss[i].nextSync.Before(ss[j].nextSync)
+		if !ss[i].nextSync.Equal(ss[j].nextSync) {
+			return ss[i].nextSync.Before(ss[j].nextSync)
+		}
+		return ss[i].changesetID < ss[j].changesetID
 	})
 
 	return ss, nil
@@ -357,30 +360,27 @@ func (q *changesetQueue) reschedule(schedule []syncSchedule) {
 	ctx := context.Background()
 	ctx, q.cancel = context.WithCancel(ctx)
 	go func() {
-		for i := range schedule {
+		for _, s := range schedule {
+			var ok bool
+			q.mtx.Lock()
+			_, ok = q.priority[s.changesetID]
+			q.mtx.Unlock()
+			if ok {
+				continue
+			}
 			// Get most urgent changeset and sleep until it should be synced
 			now := time.Now()
-			nextSync := schedule[i].nextSync
+			nextSync := s.nextSync
 			d := nextSync.Sub(now)
 			sleep(ctx, d)
 
 			select {
 			case <-ctx.Done():
 				return
-			case q.scheduled <- schedule[i].changesetID:
+			case q.scheduled <- s.changesetID:
 			}
 		}
 	}()
-}
-
-// sleep is a context aware time.Sleep
-func sleep(ctx context.Context, d time.Duration) {
-	t := time.NewTimer(d)
-	select {
-	case <-ctx.Done():
-		t.Stop()
-	case <-t.C:
-	}
 }
 
 func (q *changesetQueue) enqueuePriority(ids []int64) {
@@ -420,4 +420,14 @@ type syncSchedule struct {
 type SourceChangesets struct {
 	repos.ChangesetSource
 	Changesets []*repos.Changeset
+}
+
+// sleep is a context aware time.Sleep
+func sleep(ctx context.Context, d time.Duration) {
+	t := time.NewTimer(d)
+	select {
+	case <-ctx.Done():
+		t.Stop()
+	case <-t.C:
+	}
 }
