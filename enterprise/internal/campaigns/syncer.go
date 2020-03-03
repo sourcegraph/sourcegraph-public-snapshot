@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -36,7 +37,7 @@ func (s *ChangesetSyncer) Run() {
 		scheduleInterval = 2 * time.Minute
 	}
 
-	s.queue = newChangesetQueue(100)
+	s.queue = newChangesetQueue()
 
 	// Get initial schedule
 	if sched, err := s.computeSchedule(ctx); err != nil {
@@ -50,6 +51,16 @@ func (s *ChangesetSyncer) Run() {
 	scheduleTicker := time.NewTicker(scheduleInterval)
 
 	for {
+		// Sync high priority items first
+		p, ok := s.queue.popPriority()
+		if ok {
+			err := s.SyncChangesetByID(ctx, p)
+			if err != nil {
+				log15.Error("Syncing changeset", "err", err)
+			}
+			continue
+		}
+
 		select {
 		case <-scheduleTicker.C:
 			sched, err := s.computeSchedule(ctx)
@@ -63,11 +74,8 @@ func (s *ChangesetSyncer) Run() {
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
 			}
-		case id := <-s.queue.priority:
-			err := s.SyncChangesetByID(ctx, id)
-			if err != nil {
-				log15.Error("Syncing changeset", "err", err)
-			}
+		case <-s.queue.notify:
+			// A priority item has been added
 		}
 	}
 }
@@ -80,7 +88,14 @@ var (
 // nextSync computes the time we want the next sync to happen.
 func nextSync(h campaigns.ChangesetSyncHeuristics) time.Time {
 	lastSync := h.UpdatedAt
-	lastChange := maxTime(h.ExternalUpdatedAt, h.LatestEvent)
+	var lastChange time.Time
+	// When we perform a sync, event timestamps are all updated.
+	// We should fall back to h.ExternalUpdated if the diff is small
+	if diff := h.LatestEvent.Sub(lastSync); !h.LatestEvent.IsZero() && diff < minSyncDelay {
+		lastChange = h.ExternalUpdatedAt
+	} else {
+		lastChange = maxTime(h.ExternalUpdatedAt, h.LatestEvent)
+	}
 
 	// Simple linear backoff for now
 	diff := lastSync.Sub(lastChange)
@@ -130,11 +145,13 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 	if s.queue == nil {
 		return errors.New("background syncing not initialised")
 	}
-	return s.queue.enqueuePriority(ids)
+	s.queue.enqueuePriority(ids)
+	return nil
 }
 
 // SyncChangesetByID will sync a single changeset given its id
 func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
+	log15.Info("SyncChangesetByID", "id", id)
 	cs, err := s.Store.GetChangeset(ctx, GetChangesetOpts{
 		ID: id,
 	})
@@ -309,20 +326,21 @@ func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all 
 
 type changesetQueue struct {
 	scheduled chan int64
-	priority  chan int64
+	notify    chan struct{}
 
 	cancel context.CancelFunc
+
+	mtx      sync.Mutex
+	priority map[int64]struct{}
 }
 
 // newChangesetQueue creates a new queue for holding changeset sync instructions in chronological order.
 // The queue also has a high priority channel for items that should be synced ASAP.
-// priorityCapacity specifies the number of items that can be in the priority channel
-// before newly added items will be dropped. The intention is that priority items will
-// be added by a user action so does not need to be particularly large.
-func newChangesetQueue(priorityCapacity int) *changesetQueue {
+func newChangesetQueue() *changesetQueue {
 	return &changesetQueue{
 		scheduled: make(chan int64),
-		priority:  make(chan int64, priorityCapacity),
+		priority:  make(map[int64]struct{}),
+		notify:    make(chan struct{}),
 	}
 }
 
@@ -362,18 +380,31 @@ func (q *changesetQueue) reschedule(schedule []syncSchedule) {
 	}()
 }
 
-func (q *changesetQueue) enqueuePriority(ids []int64) error {
-	// q.priority will be buffered so that we allow
-	// a fixed depth in the high priority queue and
-	// can perform a non blocking add here
+func (q *changesetQueue) enqueuePriority(ids []int64) {
+	q.mtx.Lock()
+	defer q.mtx.Unlock()
+
 	for _, id := range ids {
-		select {
-		case q.priority <- id:
-		default:
-			return errors.New("queue capacity for priority syncing reached")
-		}
+		q.priority[id] = struct{}{}
 	}
-	return nil
+
+	select {
+	case q.notify <- struct{}{}:
+	default:
+	}
+}
+
+func (q *changesetQueue) popPriority() (int64, bool) {
+	q.mtx.Lock()
+	defer q.mtx.Unlock()
+	if len(q.priority) == 0 {
+		return 0, false
+	}
+	for id := range q.priority {
+		delete(q.priority, id)
+		return id, true
+	}
+	return 0, false
 }
 
 type syncSchedule struct {
