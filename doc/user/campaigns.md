@@ -11,7 +11,7 @@ You provide the code to make the change and Campaigns provide the plumbing to tu
 ## Getting started with Campaigns
 
 1. Make sure that the Campaigns feature flag is enabled: [Configuration](#Configuration)
-1. For optimal syncing performance between your code host and Sourcegraph, setup the webhook integration:
+1. Optional, but highly recommended for optimal syncing performance between your code host and Sourcegraph, setup the webhook integration:
   * GitHub: [Configuring GitHub webhooks](https://docs.sourcegraph.com/admin/external_service/github#webhooks).
   * Bitbucket Server: [Setup the `bitbucket-server-plugin`](https://github.com/sourcegraph/bitbucket-server-plugin), [create a webhook](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/java/com/sourcegraph/webhook/README.md#create) and configure the `"plugin"` settings for your [Bitbucket Server code host connection](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration).
 1. Setup the `src` CLI on your machine: [Installation and setup instructions](https://github.com/sourcegraph/src-cli/#installation)
