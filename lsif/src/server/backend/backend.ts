@@ -291,6 +291,7 @@ export class Backend {
                         document,
                         moniker,
                         sqliteModels.DefinitionModel,
+                        {},
                         ctx
                     )
                     if (remoteDefinitions.length > 0) {
@@ -301,7 +302,12 @@ export class Backend {
                     // table of our own database in case there was a definition that wasn't properly
                     // attached to a result set but did have the correct monikers attached.
 
-                    const monikerResults = await database.monikerResults(sqliteModels.DefinitionModel, moniker, ctx)
+                    const { locations: monikerResults } = await database.monikerResults(
+                        sqliteModels.DefinitionModel,
+                        moniker,
+                        {},
+                        ctx
+                    )
                     const localDefinitions = monikerResults.map(loc => locationFromDatabase(dump.root, loc))
                     if (localDefinitions.length > 0) {
                         return { dump, locations: localDefinitions }
@@ -382,7 +388,12 @@ export class Backend {
             // in the LSIF data.
 
             for (const moniker of monikers) {
-                const monikerResults = await database.monikerResults(sqliteModels.ReferenceModel, moniker, ctx)
+                const { locations: monikerResults } = await database.monikerResults(
+                    sqliteModels.ReferenceModel,
+                    moniker,
+                    {},
+                    ctx
+                )
                 locations = locations.concat(monikerResults.map(loc => locationFromDatabase(dump.root, loc)))
             }
 
@@ -397,6 +408,7 @@ export class Backend {
                         document,
                         moniker,
                         sqliteModels.ReferenceModel,
+                        {},
                         ctx
                     )
                     locations = locations.concat(monikerLocations)
@@ -482,12 +494,14 @@ export class Backend {
      * @param document The document containing the definition.
      * @param moniker The target moniker.
      * @param model The target model.
+     * @param pagination A limit and offset to use for the query.
      * @param ctx The tracing context.
      */
     private async lookupMoniker(
         document: sqliteModels.DocumentData,
         moniker: sqliteModels.MonikerData,
         model: typeof sqliteModels.DefinitionModel | typeof sqliteModels.ReferenceModel,
+        pagination: { skip?: number; take?: number },
         ctx: TracingContext = {}
     ): Promise<InternalLocation[]> {
         const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
@@ -511,9 +525,13 @@ export class Backend {
             packageCommit: packageEntity.dump.commit,
         })
 
-        return (await this.createDatabase(packageEntity.dump).monikerResults(model, moniker, ctx)).map(loc =>
-            locationFromDatabase(packageEntity.dump.root, loc)
+        const { locations: monikerResults } = await this.createDatabase(packageEntity.dump).monikerResults(
+            model,
+            moniker,
+            pagination,
+            ctx
         )
+        return monikerResults.map(loc => locationFromDatabase(packageEntity.dump.root, loc))
     }
 
     /**
@@ -718,9 +736,13 @@ export class Backend {
                 continue
             }
 
-            const references = (
-                await this.createDatabase(dump).monikerResults(sqliteModels.ReferenceModel, moniker, ctx)
-            ).map(loc => locationFromDatabase(dump.root, loc))
+            const { locations: monikerResults } = await this.createDatabase(dump).monikerResults(
+                sqliteModels.ReferenceModel,
+                moniker,
+                {},
+                ctx
+            )
+            const references = monikerResults.map(loc => locationFromDatabase(dump.root, loc))
             locations = locations.concat(references)
         }
 

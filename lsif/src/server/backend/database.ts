@@ -236,31 +236,38 @@ export class Database {
      *
      * @param model The constructor for the model type.
      * @param moniker The target moniker.
+     * @param pagination A limit and offset to use for the query.
      * @param ctx The tracing context.
      */
     public monikerResults(
         model: typeof sqliteModels.DefinitionModel | typeof sqliteModels.ReferenceModel,
         moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>,
+        pagination: { skip?: number; take?: number },
         ctx: TracingContext
-    ): Promise<InternalLocation[]> {
+    ): Promise<{ locations: InternalLocation[]; count: number }> {
         return this.logAndTraceCall(ctx, 'Fetching moniker results', async ctx => {
-            const results = await this.withConnection(
+            const [results, count] = await this.withConnection(
                 connection =>
-                    connection.getRepository<sqliteModels.DefinitionModel | sqliteModels.ReferenceModel>(model).find({
-                        where: {
-                            scheme: moniker.scheme,
-                            identifier: moniker.identifier,
-                        },
-                    }),
+                    connection
+                        .getRepository<sqliteModels.DefinitionModel | sqliteModels.ReferenceModel>(model)
+                        .findAndCount({
+                            where: {
+                                scheme: moniker.scheme,
+                                identifier: moniker.identifier,
+                            },
+                            ...pagination,
+                        }),
                 ctx.logger
             )
 
             this.logSpan(ctx, 'symbol_results', { moniker, symbol: results })
-            return results.map(result => ({
+            const locations = results.map(result => ({
                 dump: this.dump,
                 path: result.documentPath,
                 range: createRange(result),
             }))
+
+            return { locations, count }
         })
     }
 
