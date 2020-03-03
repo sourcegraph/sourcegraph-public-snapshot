@@ -1939,13 +1939,13 @@
   resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.7.tgz#e1d0bb1c13e6e8051cf3e0471c6aee0ca24dec45"
   integrity sha512-F4GMp+8XhlRQzEngc+CwbalT8zy8vXMxMrUjhm2cslTjWgWuSft0vSNCmCJDVPshpG/B+Ehb/OzpLLAzsG2JKg==
 
-"@sourcegraph/stylelint-config@^1.1.7":
-  version "1.1.7"
-  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.1.7.tgz#0b53aba851ccd3e38c206c828fa0e531e38437b3"
-  integrity sha512-HutTTZlpJMIf3vM2kp7m4NmcjRNjhdMSl99q1UuWunyBdZiFpDbdkSoNXwxj0X2A8aHWzoj85W9WVettVfC7jg==
+"@sourcegraph/stylelint-config@^1.1.8":
+  version "1.1.8"
+  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.1.8.tgz#5bb832b83c6239659bd099fc7a040c0289a8259e"
+  integrity sha512-aqKZ+InfX7niHAZcn1ivmvq34wEZUu7esPWO3RVW4AZpfgfSXEUEfUpuGP3dqXVQcvuY4HT9dRb5c90XtsHROA==
   dependencies:
     stylelint-config-prettier "^8.0.1"
-    stylelint-config-standard "^19.0.0"
+    stylelint-config-standard "^20.0.0"
     stylelint-scss "^3.14.2"
 
 "@sourcegraph/tsconfig@^4.0.0":
@@ -18944,10 +18944,10 @@ stylelint-config-recommended@^3.0.0:
   resolved "https://registry.npmjs.org/stylelint-config-recommended/-/stylelint-config-recommended-3.0.0.tgz#e0e547434016c5539fe2650afd58049a2fd1d657"
   integrity sha512-F6yTRuc06xr1h5Qw/ykb2LuFynJ2IxkKfCMf+1xqPffkxh0S09Zc902XCffcsw/XMFq/OzQ1w54fLIDtmRNHnQ==
 
-stylelint-config-standard@^19.0.0:
-  version "19.0.0"
-  resolved "https://registry.npmjs.org/stylelint-config-standard/-/stylelint-config-standard-19.0.0.tgz#66f0cf13f33b8a9e34965881493b38fc1313693a"
-  integrity sha512-VvcODsL1PryzpYteWZo2YaA5vU/pWfjqBpOvmeA8iB2MteZ/ZhI1O4hnrWMidsS4vmEJpKtjdhLdfGJmmZm6Cg==
+stylelint-config-standard@^20.0.0:
+  version "20.0.0"
+  resolved "https://registry.npmjs.org/stylelint-config-standard/-/stylelint-config-standard-20.0.0.tgz#06135090c9e064befee3d594289f50e295b5e20d"
+  integrity sha512-IB2iFdzOTA/zS4jSVav6z+wGtin08qfj+YyExHB3LF9lnouQht//YyB0KZq9gGz5HNPkddHOzcY8HsUey6ZUlA==
   dependencies:
     stylelint-config-recommended "^3.0.0"
 
