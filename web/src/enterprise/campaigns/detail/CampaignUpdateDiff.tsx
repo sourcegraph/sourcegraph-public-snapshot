@@ -11,6 +11,7 @@ import classNames from 'classnames'
 import { Connection } from '../../../components/FilteredConnection'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { pluralize } from '../../../../../shared/src/util/strings'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 interface Props extends ThemeProps {
     campaign: Pick<GQL.ICampaign, 'id' | 'publishedAt'> & {
@@ -164,6 +165,10 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                         {deleted.length === 0 && <span className="text-muted">No changesets</span>}
                     </div>
                 </TabsWithLocalStorageViewStatePersistence>
+                <div className="alert alert-info mt-3">
+                    <AlertCircleIcon className="icon-inline" /> You are updating an existing campaign. By clicking
+                    'Update', all already published changesets will be updated on the codehost.
+                </div>
             </>
         )
     }

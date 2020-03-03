@@ -8,7 +8,7 @@ import {
     ChangesetState,
     ChangesetCheckState,
 } from '../../../../../../shared/src/graphql/schema'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     changesetReviewStateColors,
     changesetReviewStateIcons,
@@ -33,6 +33,8 @@ import { Subject } from 'rxjs'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import { asError } from '../../../../../../shared/src/util/errors'
 import { ChangesetLabel } from './ChangesetLabel'
+import classNames from 'classnames'
+import { DraftBadge } from '../../DraftBadge'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
@@ -51,7 +53,10 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     location,
     enablePublishing,
 }) => {
-    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>()
+    useEffect(() => {
+        setIsLoading(node.__typename === 'ChangesetPlan' && node.publicationEnqueued)
+    }, [node])
     const [publishError, setPublishError] = useState<Error>()
     const publishChangeset: React.MouseEventHandler = async () => {
         try {
@@ -82,16 +87,81 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             ? changesetCheckStateIcons[node.checkState]
             : changesetCheckStateIcons[ChangesetCheckState.PENDING]
     const changesetState = node.__typename === 'ExternalChangeset' ? node.state : ChangesetState.OPEN
+
+    const stateIcon = (
+        <ChangesetStateIcon
+            className={classNames(
+                'mr-1',
+                node.__typename === 'ExternalChangeset'
+                    ? `text-${changesetStatusColorClasses[changesetState]}`
+                    : 'text-muted'
+            )}
+            data-tooltip={changesetStageLabels[changesetState]}
+        ></ChangesetStateIcon>
+    )
+
     const changesetNodeRow = (
-        <div className="d-flex align-items-center m-1">
-            <div className="flex-shrink-0 flex-grow-0 my-1 mr-1">
-                <ChangesetStateIcon
-                    className={`text-${changesetStatusColorClasses[changesetState]}`}
-                    data-tooltip={changesetStageLabels[changesetState]}
-                ></ChangesetStateIcon>
+        <div className="d-flex align-items-center m-1 ml-2">
+            <div className="changeset-node__content flex-fill">
+                <h3 className="m-0">
+                    <div className="d-flex flex-column">
+                        {node.__typename === 'ExternalChangeset' && (
+                            <div>
+                                {stateIcon}
+                                <LinkOrSpan
+                                    /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
+                                    to={
+                                        node.externalURL && node.state !== ChangesetState.DELETED
+                                            ? node.externalURL.url
+                                            : undefined
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {node.title}
+                                </LinkOrSpan>
+                                {node.__typename === 'ExternalChangeset' && node.checkState && (
+                                    <ChangesetCheckStateIcon
+                                        className={classNames(
+                                            'ml-1 changeset-node__check-state',
+                                            changesetCheckStateColors[node.checkState]
+                                        )}
+                                        data-tooltip={changesetCheckStateTooltips[node.checkState]}
+                                    />
+                                )}
+                                {node.labels.length > 0 && (
+                                    <span className="ml-2">
+                                        {node.labels.map(label => (
+                                            <ChangesetLabel label={label} key={label.text} />
+                                        ))}
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                        <div>
+                            {node.__typename === 'ChangesetPlan' && stateIcon}
+                            <Link
+                                to={node.repository.url}
+                                className="text-muted"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {node.repository.name}
+                            </Link>
+                            {node.__typename === 'ChangesetPlan' && <DraftBadge className="ml-2" />}
+                        </div>
+                    </div>
+                </h3>
+                {node.__typename === 'ExternalChangeset' && (
+                    <Markdown
+                        className="text-truncate"
+                        dangerousInnerHTML={renderMarkdown(node.body, { plainText: true })}
+                    />
+                )}
             </div>
-            {node.__typename === 'ExternalChangeset' && (
-                <div className="flex-shrink-0 flex-grow-0 ml-1 mr-3">
+            <div className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end">
+                {fileDiffs && <DiffStat {...fileDiffs.diffStat} expandedCounts={true} />}
+                {node.__typename === 'ExternalChangeset' && (
                     <ReviewStateIcon
                         className={
                             node.state === ChangesetState.DELETED
@@ -100,62 +170,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                         }
                         data-tooltip={changesetStageLabels[node.reviewState]}
                     />
-                </div>
-            )}
-            <div className="changeset-node__content flex-fill">
-                <h3 className="m-0">
-                    <Link to={node.repository.url} className="text-muted" target="_blank" rel="noopener noreferrer">
-                        {node.repository.name}
-                    </Link>{' '}
-                    {node.__typename === 'ChangesetPlan' && enablePublishing && (
-                        <span className="badge badge-light">{node.publicationEnqueued ? 'Publishing' : 'Draft'}</span>
-                    )}
-                    <span className="mx-1"></span>{' '}
-                    {node.__typename === 'ExternalChangeset' && (
-                        <>
-                            <LinkOrSpan
-                                /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
-                                to={
-                                    node.externalURL && node.state !== ChangesetState.DELETED
-                                        ? node.externalURL.url
-                                        : undefined
-                                }
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                {node.title}
-                            </LinkOrSpan>
-                            {node.labels.length > 0 && (
-                                <span className="ml-2">
-                                    {node.labels.map(label => (
-                                        <ChangesetLabel label={label} key={label.text} />
-                                    ))}
-                                </span>
-                            )}
-                        </>
-                    )}
-                </h3>
-                {node.__typename === 'ExternalChangeset' && (
-                    <Markdown
-                        className="text-truncate"
-                        dangerousInnerHTML={renderMarkdown(node.body, { plainText: true })}
-                    ></Markdown>
                 )}
             </div>
-            {fileDiffs && (
-                <span className="flex-shrink-0 flex-grow-0">
-                    <DiffStat {...fileDiffs.diffStat} expandedCounts={true}></DiffStat>
-                </span>
-            )}
-            <span className="ml-1 changeset-node__check-status d-flex justify-content-end">
-                {node.__typename === 'ExternalChangeset' && node.checkState && (
-                    <ChangesetCheckStateIcon
-                        className={changesetCheckStateColors[node.checkState]}
-                        data-tooltip={changesetCheckStateTooltips[node.checkState]}
-                    />
-                )}
-            </span>
-            {enablePublishing && node.__typename === 'ChangesetPlan' && !node.publicationEnqueued && (
+            {enablePublishing && node.__typename === 'ChangesetPlan' && (
                 <>
                     {publishError && <ErrorIcon data-tooltip={publishError.message} className="ml-2" />}
                     <button
@@ -164,7 +181,8 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                         disabled={isLoading}
                         onClick={publishChangeset}
                     >
-                        {isLoading && <LoadingSpinner className="mr-1 icon-inline"></LoadingSpinner>} Publish
+                        {isLoading && <LoadingSpinner className="mr-1 icon-inline" />}{' '}
+                        {isLoading ? 'Publishing' : 'Publish'}
                     </button>
                 </>
             )}
@@ -178,7 +196,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     title={changesetNodeRow}
                     wholeTitleClickable={false}
                 >
-                    {fileDiffNodes.map((fileDiffNode, i) => (
+                    {fileDiffNodes.map(fileDiffNode => (
                         <FileDiffNode
                             isLightTheme={isLightTheme}
                             node={fileDiffNode}
@@ -186,8 +204,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             location={location}
                             history={history}
                             persistLines={node.__typename === 'ExternalChangeset'}
-                            key={i}
-                        ></FileDiffNode>
+                            key={fileDiffNode.internalID}
+                            className="mb-1"
+                        />
                     ))}
                 </Collapsible>
             ) : (

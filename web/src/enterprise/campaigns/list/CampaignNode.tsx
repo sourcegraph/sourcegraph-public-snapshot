@@ -8,11 +8,12 @@ import classNames from 'classnames'
 import { changesetStateIcons, changesetStatusColorClasses } from '../detail/changesets/presentation'
 import formatDistance from 'date-fns/formatDistance'
 import parseISO from 'date-fns/parseISO'
+import { DraftBadge } from '../DraftBadge'
 
 export interface CampaignNodeProps {
     node: Pick<
         GQL.ICampaign,
-        'id' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt'
+        'id' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt' | 'publishedAt'
     >
     /** Renders a selection button next to the campaign, used to select a campaign for update */
     selection?: {
@@ -48,6 +49,7 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({ node,
                         <small className="ml-2 text-muted" data-tooltip={node.createdAt}>
                             created {formatDistance(parseISO(node.createdAt), now)} ago
                         </small>
+                        {!node.publishedAt && <DraftBadge className="ml-2" />}
                     </div>
                     <Markdown
                         className={classNames(

@@ -58,8 +58,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
             )}
             {campaign.__typename === 'Campaign' && !campaign.closedAt && !campaign.publishedAt && (
                 <>
-                    <div className="d-flex my-3">
-                        <InformationIcon className="icon-inline text-info mr-1" /> Campaign is a draft.{' '}
+                    <div className="d-flex my-3 alert alert-info">
+                        <InformationIcon className="icon-inline mr-1" /> Campaign is a draft.{' '}
                         {campaign.changesets.totalCount === 0
                             ? 'No changesets have'
                             : 'Only a subset of changesets has'}{' '}
@@ -87,7 +87,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                 )
             )}
             {status.state === GQL.BackgroundProcessState.ERRORED && (
-                <div>
+                <div className="mt-3">
                     <AlertCircleIcon className="icon-inline text-danger mr-1" />
                     Error creating campaign
                 </div>
