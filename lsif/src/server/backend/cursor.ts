@@ -15,7 +15,7 @@ export type ReferencePaginationCursor = SameDumpReferenceCursor | RemoteDumpRefe
 /** The cursor phase is a tag that indicates the shape of the object. */
 export type ReferencePaginationPhase = 'same-dump' | 'same-dump-monikers' | 'same-repo' | 'remote-repo'
 
-/** TODO */
+/** Fields common to all reference pagination cursors. */
 interface ReferencePaginationCursorCommon {
     /** The identifier of the dump that contains the target range. */
     dumpId: number
@@ -24,18 +24,18 @@ interface ReferencePaginationCursorCommon {
     phase: ReferencePaginationPhase
 }
 
-/** TODO */
+/** Bookkeeping data for the part of the reference result sets that deal with the initial dump. */
 export interface SameDumpReferenceCursor extends ReferencePaginationCursorCommon {
     phase: 'same-dump' | 'same-dump-monikers'
 
-    /** TODO */
+    /** The (database-relative) document path containing the symbol ranges. */
     path: string
 
-    /** TODO */
+    /** A normalized list of monikers attached to the symbol ranges. */
     monikers: sqliteModels.MonikerData[]
 }
 
-/** TODO */
+/** Bookkeeping data for the part of the reference result sets that deal with additional dumps. */
 export interface RemoteDumpReferenceCursor extends ReferencePaginationCursorCommon {
     phase: 'same-repo' | 'remote-repo'
 
@@ -55,7 +55,7 @@ export interface RemoteDumpReferenceCursor extends ReferencePaginationCursorComm
     offset: number
 }
 
-/** TODO */
+/** Create an initial pagination cursor. */
 export function makeInitialSameDumpCursor(args: {
     dumpId: number
     path: string
@@ -64,12 +64,12 @@ export function makeInitialSameDumpCursor(args: {
     return { phase: 'same-dump', ...args }
 }
 
-/** TODO */
+/** Create a pagination cursor at the beginning of the same dump monikers phase. */
 export function makeInitialSameDumpMonikersCursor(previousCursor: SameDumpReferenceCursor): ReferencePaginationCursor {
     return { ...previousCursor, phase: 'same-dump-monikers' }
 }
 
-/** TODO */
+/** Create a pagination cursor at the beginning of the same repo phase. */
 export function makeInitialSameRepoCursor(
     previousCursor: SameDumpReferenceCursor,
     { scheme, identifier }: sqliteModels.MonikerData,
@@ -86,7 +86,7 @@ export function makeInitialSameRepoCursor(
     }
 }
 
-/** TODO */
+/** Create a pagination cursor at the beginning of the remote repo phase. */
 export function makeInitialRemoteRepoCursor(previousCursor: RemoteDumpReferenceCursor): ReferencePaginationCursor {
     return { ...previousCursor, phase: 'remote-repo', offset: 0 }
 }
