@@ -2151,7 +2151,7 @@
   dependencies:
     core-js "^3.0.1"
 
-"@storybook/core@5.3.14":
+"@storybook/core@5.3.14", "@storybook/core@^5.3.14":
   version "5.3.14"
   resolved "https://registry.npmjs.org/@storybook/core/-/core-5.3.14.tgz#510f204219695045f249733bf94018e52c7b1448"
   integrity sha512-Y57cchCRw1vvZe8OhMmgAkaHciGLm2eztdfzZMUmeHH8csBt/0RO5gYzOhWDGgdC2D9HSlaysZEDJ6sH3PChlw==
