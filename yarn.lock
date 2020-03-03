@@ -1873,8 +1873,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.2":
   version "3.0.2"
@@ -6625,10 +6624,10 @@ create-react-context@^0.3.0:
     gud "^1.0.0"
     warning "^4.0.3"
 
-cross-env@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.npmjs.org/cross-env/-/cross-env-7.0.0.tgz#5a3b2ddce51ec713ea58f2fb79ce22e65b4f5479"
-  integrity sha512-rV6M9ldNgmwP7bx5u6rZsTbYidzwvrwIYZnT08hSGLcQCcggofgFW+sNe7IhA1SRauPS0QuLbbX+wdNtpqE5CQ==
+cross-env@^7.0.1:
+  version "7.0.1"
+  resolved "https://registry.npmjs.org/cross-env/-/cross-env-7.0.1.tgz#c8e03412ea0e1370fe3f0066929a70b8e1e90c39"
+  integrity sha512-1+DmLosu38kC4s1H4HzNkcolwdANifu9+5bE6uKQCV4L6jvVdV9qdRAk8vV3GoWRe0x4z+K2fFhgoDMqwNsPqQ==
   dependencies:
     cross-spawn "^7.0.1"
 
@@ -18451,8 +18450,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "23.1.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
