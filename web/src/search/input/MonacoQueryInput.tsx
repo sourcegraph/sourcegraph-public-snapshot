@@ -1,6 +1,7 @@
 import React from 'react'
 import * as H from 'history'
 import * as Monaco from 'monaco-editor'
+import { noop } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
@@ -124,6 +125,8 @@ function addSouregraphSearchCodeIntelligence(
 
     return subscriptions
 }
+
+const NOOP_KEYBINDINGS = [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_F, Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter]
 
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
@@ -275,6 +278,12 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 })
             )
         )
+
+        // Disable some default Monaco keybindings
+        for (const keybinding of NOOP_KEYBINDINGS) {
+            editor.addCommand(keybinding, noop)
+        }
+
         // Prevent inserting newlines.
         this.subscriptions.add(
             toUnsubscribable(
