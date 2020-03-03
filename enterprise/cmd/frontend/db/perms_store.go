@@ -131,7 +131,7 @@ AND provider = %s
 //
 //  "repo_permissions":
 //   repo_id | permission | user_ids  |   provider  | updated_at
-//  ---------+------------+--------------+-------------+------------
+//  ---------+------------+-----------+-------------+------------
 //         1 |       read | bitmap{1} | sourcegraph | <DateTime>
 //         2 |       read | bitmap{1} | sourcegraph | <DateTime>
 func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
@@ -149,7 +149,7 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	var oldIDs *roaring.Bitmap
 	vals, err := txs.load(ctx, loadUserPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
-		if err == ErrPermsNotFound {
+		if err == authz.ErrPermsNotFound {
 			oldIDs = roaring.NewBitmap()
 		} else {
 			return errors.Wrap(err, "load user permissions")
