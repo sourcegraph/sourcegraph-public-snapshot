@@ -6,7 +6,7 @@ import * as validation from '../middleware/validation'
 import express from 'express'
 import * as uuid from 'uuid'
 import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
-import { Backend, ReferencePaginationCursor } from '../backend/backend'
+import { Backend } from '../backend/backend'
 import { encodeCursor } from '../pagination/cursor'
 import { Logger } from 'winston'
 import { nextLink } from '../pagination/link'
@@ -18,6 +18,7 @@ import { extractLimitOffset } from '../pagination/limit-offset'
 import { UploadManager } from '../../shared/store/uploads'
 import { readGzippedJsonElementsFromFile } from '../../shared/input'
 import * as lsif from 'lsif-protocol'
+import { ReferencePaginationCursor } from '../backend/cursor'
 
 const pipeline = promisify(_pipeline)
 

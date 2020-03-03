@@ -1,6 +1,6 @@
 import * as util from '../integration-test-util'
-import { ReferencePaginationContext } from '../../../server/backend/backend'
 import { extractRepos } from './util'
+import { ReferencePaginationContext } from '../../../server/backend/cursor'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()

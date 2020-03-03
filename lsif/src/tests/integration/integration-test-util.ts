@@ -4,7 +4,7 @@ import * as path from 'path'
 import * as uuid from 'uuid'
 import rmfr from 'rmfr'
 import * as pgModels from '../../shared/models/pg'
-import { Backend, ReferencePaginationCursor } from '../../server/backend/backend'
+import { Backend } from '../../server/backend/backend'
 import { child_process } from 'mz'
 import { Connection } from 'typeorm'
 import { connectPostgres } from '../../shared/database/postgres'
@@ -17,6 +17,7 @@ import { DumpManager } from '../../shared/store/dumps'
 import { DependencyManager } from '../../shared/store/dependencies'
 import { createSilentLogger } from '../../shared/logging'
 import { PathExistenceChecker } from '../../worker/conversion/existence'
+import { ReferencePaginationCursor } from '../../server/backend/cursor'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.

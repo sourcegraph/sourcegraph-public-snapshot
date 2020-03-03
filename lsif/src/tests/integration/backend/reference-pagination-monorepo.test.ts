@@ -1,8 +1,8 @@
 import * as util from '../integration-test-util'
 import { lsp } from 'lsif-protocol'
 import { MAX_TRAVERSAL_LIMIT } from '../../../shared/constants'
-import { ReferencePaginationContext } from '../../../server/backend/backend'
 import { extractRepos } from './util'
+import { ReferencePaginationContext } from '../../../server/backend/cursor'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
