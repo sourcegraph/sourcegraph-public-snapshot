@@ -1,6 +1,6 @@
 # Campaigns
 
-> Campaigns are currently available in private beta for select enterprise customers. (This feature was previously known as "Automation".)
+> **Campaigns are currently available in private beta for select enterprise customers.** (This feature was previously known as "Automation".)
 
 ## What are Campaigns?
 
