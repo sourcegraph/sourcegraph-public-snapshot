@@ -293,8 +293,8 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 		Type:     authz.PermRepos,
 		Provider: authz.ProviderSourcegraph,
 	})
-	if err != ErrPermsNotFound {
-		t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+	if err != authz.ErrPermsNotFound {
+		t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 	}
 
 	for _, bindID := range bindIDs {
@@ -303,8 +303,8 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
 		})
-		if err != ErrPermsNotFound {
-			t.Fatalf("[%s] err: want %q but got %v", bindID, ErrPermsNotFound, err)
+		if err != authz.ErrPermsNotFound {
+			t.Fatalf("[%s] err: want %q but got %v", bindID, authz.ErrPermsNotFound, err)
 		}
 	}
 }

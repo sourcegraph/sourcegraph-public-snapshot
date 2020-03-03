@@ -73,8 +73,8 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 				Provider: authz.ProviderSourcegraph,
 			}
 			err := s.LoadUserPermissions(context.Background(), up)
-			if err != ErrPermsNotFound {
-				t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+			if err != authz.ErrPermsNotFound {
+				t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 			}
 			equal(t, "IDs", 0, len(bitmapToArray(up.IDs)))
 		})
@@ -190,8 +190,8 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 				Provider: authz.ProviderSourcegraph,
 			}
 			err := s.LoadRepoPermissions(context.Background(), rp)
-			if err != ErrPermsNotFound {
-				t.Fatalf("err: want %q but got %q", ErrPermsNotFound, err)
+			if err != authz.ErrPermsNotFound {
+				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
 			}
 			equal(t, "rp.UserIDs", 0, len(bitmapToArray(rp.UserIDs)))
 		})
@@ -446,8 +446,8 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 				Type:   authz.PermRepos,
 			}
 			err := s.LoadUserPendingPermissions(context.Background(), up)
-			if err != ErrPermsNotFound {
-				t.Fatalf("err: want %q but got %q", ErrPermsNotFound, err)
+			if err != authz.ErrPermsNotFound {
+				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
 			}
 			equal(t, "IDs", 0, len(bitmapToArray(up.IDs)))
 		})
@@ -1214,8 +1214,8 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(t *testing.T) {
 			Type:     authz.PermRepos,
 			Provider: authz.ProviderSourcegraph,
 		})
-		if err != ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+		if err != authz.ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 		}
 
 		err = s.LoadUserPermissions(ctx, &authz.UserPermissions{
@@ -1224,8 +1224,8 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(t *testing.T) {
 			Type:     authz.PermRepos,
 			Provider: authz.ProviderBitbucketServer,
 		})
-		if err != ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+		if err != authz.ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 		}
 
 		// Check user=2 shoud not be affected
@@ -1281,8 +1281,8 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(t *testing.
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
 		})
-		if err != ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+		if err != authz.ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 		}
 
 		// Check bob shoud not be affected
