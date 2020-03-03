@@ -105,10 +105,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 objectType: 'blob' | 'tree' | undefined
                 filePath: string | undefined
             }>) => {
-            // The decoding depends on the pinned `history` version.
-            // See https://github.com/sourcegraph/sourcegraph/issues/4408
-            // and https://github.com/ReactTraining/history/issues/505
-            const filePath = decodeURIComponent(match.params.filePath || '') // empty string is root
+            const filePath = match.params.filePath || '' // empty string is root
 
             // Redirect tree and blob routes pointing to the root to the repo page
             if (match.params.objectType && filePath.replace(/\/+$/g, '') === '') {

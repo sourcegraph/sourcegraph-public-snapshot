@@ -22,7 +22,7 @@ import { NavLinks } from './NavLinks'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ThemePreferenceProps } from '../theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { QueryState } from '../search/helpers'
+import { QueryState, SearchQueryLocationState } from '../search/helpers'
 import { InteractiveModeInput } from '../search/input/interactive/InteractiveModeInput'
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
@@ -48,7 +48,7 @@ interface Props
         CopyQueryButtonProps,
         VersionContextProps {
     history: H.History
-    location: H.Location<{ query: string }>
+    location: H.Location<SearchQueryLocationState>
     authenticatedUser: GQL.IUser | null
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
@@ -96,7 +96,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                 props.onNavbarQueryChange({ query, cursorPosition: query.length })
             } else {
                 // If we have no component state, then we may have gotten unmounted during a route change.
-                const query = props.location.state ? props.location.state.query : ''
+                const query = props.location?.state?.query ?? ''
                 props.onNavbarQueryChange({
                     query,
                     cursorPosition: query.length,

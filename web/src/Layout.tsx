@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { Suspense } from 'react'
-import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch, matchPath, StaticContext } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
 import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
@@ -52,7 +52,7 @@ import { SurveyToast } from './marketing/SurveyToast'
 import { ThemeProps } from '../../shared/src/theme'
 import { ThemePreferenceProps } from './theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
-import { QueryState } from './search/helpers'
+import { QueryState, SearchQueryLocationState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { VersionContextProps } from '../../shared/src/search/util'
 import { VersionContext } from './schema/site.schema'
@@ -62,7 +62,7 @@ import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../shared/src/api/contract'
 
 export interface LayoutProps
-    extends RouteComponentProps<{}>,
+    extends RouteComponentProps<{}, StaticContext, SearchQueryLocationState>,
         SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,

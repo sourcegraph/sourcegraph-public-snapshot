@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Redirect, RouteComponentProps, StaticContext } from 'react-router'
 import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
 import { lazyComponent } from './util/lazyComponent'
@@ -10,6 +10,7 @@ import { kubernetes } from './repogroups/Kubernetes'
 import { golang } from './repogroups/Golang'
 import { reactHooks } from './repogroups/ReactHooks'
 import { android } from './repogroups/Android'
+import { SearchQueryLocationState } from './search/helpers'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -17,7 +18,7 @@ const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 
 interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
-    extends RouteComponentProps<Params>,
+    extends RouteComponentProps<Params, StaticContext, SearchQueryLocationState>,
         Omit<LayoutProps, 'match'> {}
 
 export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string }> {
