@@ -456,7 +456,7 @@ INSERT INTO user_permissions
 VALUES
   (%s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
-  user_permissions_perm_object_provider_unique
+  user_permissions_perm_object_unique
 DO UPDATE SET
   object_ids = excluded.object_ids,
   updated_at = excluded.updated_at
