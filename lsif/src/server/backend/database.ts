@@ -510,28 +510,39 @@ export function comparePosition(range: sqliteModels.RangeData, position: lsp.Pos
     return 0
 }
 
+// The order to present monikers in when organized by kinds
+const monikerKindPreferences = ['import', 'local', 'export']
+
+// A map from moniker schemes to schemes that subsume them. The schemes
+// identified by keys should be removed from the sets of monikers that
+// also contain the schemed identified by that key's value.
+const subsumedMonikers = new Map([
+    ['go', 'gomod'],
+    ['tsc', 'npm'],
+])
+
 /**
- * Sort the monikers by kind, then scheme in order of the following preferences.
- *
- *   - kind: import, local, export
- *   - scheme: npm, tsc
+ * Normalize the set of monikers by filtering and sorting the list based on
+ * the moniker kind and scheme values.
  *
  * @param monikers The list of monikers.
  */
 export function sortMonikers(monikers: sqliteModels.MonikerData[]): sqliteModels.MonikerData[] {
-    const monikerKindPreferences = ['import', 'local', 'export']
-    const monikerSchemePreferences = ['npm', 'tsc']
+    // Deduplicate monikers. This can happen with long chains of result
+    // sets where monikers are applied several times to an aliased symbol.
+    monikers = uniqWith(monikers, isEqual)
 
-    monikers.sort((a, b) => {
-        const ord = monikerKindPreferences.indexOf(a.kind) - monikerKindPreferences.indexOf(b.kind)
-        if (ord !== 0) {
-            return ord
-        }
-
-        return monikerSchemePreferences.indexOf(a.scheme) - monikerSchemePreferences.indexOf(b.scheme)
+    // Remove monikers subsumed by the presence of another. For example,
+    // if we have an `npm` moniker in this list, we want to remove all
+    // `tsc` monikers as they are duplicate by construction in lsif-tsc.
+    monikers = monikers.filter(a => {
+        const by = subsumedMonikers.get(a.scheme)
+        return !(by && monikers.some(b => b.scheme === by))
     })
 
-    return uniqWith(monikers, isEqual)
+    // Sort monikers by kind
+    monikers.sort((a, b) => monikerKindPreferences.indexOf(a.kind) - monikerKindPreferences.indexOf(b.kind))
+    return monikers
 }
 
 /**
