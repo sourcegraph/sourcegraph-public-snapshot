@@ -16,10 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var (
-	ErrPermsNotFound        = errors.New("permissions not found")
-	ErrPermsUpdatedAtNotSet = errors.New("permissions UpdatedAt timestamp must be set")
-)
+var ErrPermsUpdatedAtNotSet = errors.New("permissions UpdatedAt timestamp must be set")
 
 // PermsStore is the unified interface for managing permissions explicitly in the database.
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
@@ -113,6 +110,12 @@ AND provider = %s
 	)
 }
 
+// TODO(jchen): docstring
+func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
+	// TODO(jchen): Finish in a followup PR.
+	return nil
+}
+
 // SetRepoPermissions performs a full update for p, new user IDs found in p will be upserted
 // and user IDs no longer in p will be removed. This method updates both `user_permissions`
 // and `repo_permissions` tables.
@@ -155,7 +158,7 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	var oldIDs *roaring.Bitmap
 	vals, err := txs.load(ctx, loadRepoPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
-		if err == ErrPermsNotFound {
+		if err == authz.ErrPermsNotFound {
 			oldIDs = roaring.NewBitmap()
 		} else {
 			return errors.Wrap(err, "load repo permissions")
@@ -402,7 +405,7 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, bindIDs []st
 
 	// Retrieve currently stored user IDs of this repository.
 	vals, err := txs.load(ctx, loadRepoPendingPermissionsQuery(p, "FOR UPDATE"))
-	if err != nil && err != ErrPermsNotFound {
+	if err != nil && err != authz.ErrPermsNotFound {
 		return errors.Wrap(err, "load repo pending permissions")
 	}
 	oldIDs := roaring.NewBitmap()
@@ -733,7 +736,7 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	vals, err := txs.load(ctx, loadUserPendingPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
 		// Skip the whole grant process if the user has no pending permissions.
-		if err == ErrPermsNotFound {
+		if err == authz.ErrPermsNotFound {
 			return nil
 		}
 		return errors.Wrap(err, "load user pending permissions")
@@ -793,7 +796,7 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	var oldIDs *roaring.Bitmap
 	vals, err = txs.load(ctx, loadUserPermissionsQuery(up, "FOR UPDATE"))
 	if err != nil {
-		if err != ErrPermsNotFound {
+		if err != authz.ErrPermsNotFound {
 			return errors.Wrap(err, "load user permissions")
 		}
 		oldIDs = roaring.NewBitmap()
@@ -1056,7 +1059,7 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 		// One row is expected, return ErrPermsNotFound if no other errors occurred.
 		err = rows.Err()
 		if err == nil {
-			err = ErrPermsNotFound
+			err = authz.ErrPermsNotFound
 		}
 		return nil, err
 	}
