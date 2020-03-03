@@ -53,10 +53,6 @@ export class Backend {
         return (await this.findClosestDatabases(repositoryId, commit, path, ctx)).map(({ dump }) => dump)
     }
 
-    //
-    // DEFINITIONS
-    //
-
     /**
      * Return the location for the symbol at the given position. Returns undefined if no dump can
      * be loaded to answer this query.
@@ -76,22 +72,6 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<InternalLocation[] | undefined> {
-        const result = await this.internalDefinitions(repositoryId, commit, path, position, dumpId, ctx)
-        if (result === undefined) {
-            return undefined
-        }
-
-        return result.locations
-    }
-
-    private async internalDefinitions(
-        repositoryId: number,
-        commit: string,
-        path: string,
-        position: lsp.Position,
-        dumpId?: number,
-        ctx: TracingContext = {}
-    ): Promise<{ dump: pgModels.LsifDump; locations: InternalLocation[] } | undefined> {
         const closestDatabaseAndDump = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
@@ -109,13 +89,13 @@ export class Backend {
         const dbDefinitions = await database.definitions(pathInDb, position, newCtx)
         const definitions = dbDefinitions.map(loc => locationFromDatabase(dump.root, loc))
         if (definitions.length > 0) {
-            return { dump, locations: definitions }
+            return definitions
         }
 
         // Try to find definitions in other dumps
         const { document, ranges } = await database.getRangeByPosition(pathInDb, position, ctx)
         if (!document || ranges.length === 0) {
-            return { dump, locations: [] }
+            return []
         }
 
         // First, we find the monikers for each range, from innermost to
@@ -140,7 +120,7 @@ export class Backend {
                         ctx
                     )
                     if (remoteDefinitions.length > 0) {
-                        return { dump, locations: remoteDefinitions }
+                        return remoteDefinitions
                     }
                 } else {
                     // This symbol was not imported from another database. We search the definitions
@@ -155,17 +135,13 @@ export class Backend {
                     )
                     const localDefinitions = monikerResults.map(loc => locationFromDatabase(dump.root, loc))
                     if (localDefinitions.length > 0) {
-                        return { dump, locations: localDefinitions }
+                        return localDefinitions
                     }
                 }
             }
         }
-        return { dump, locations: [] }
+        return []
     }
-
-    //
-    // REFERENCES
-    //
 
     /**
      * Return a list of locations which reference the symbol at the given position. Returns
@@ -298,6 +274,55 @@ export class Backend {
 
         // TODO - determine source of duplication
         return { locations: uniqWith(locations, isEqual) }
+    }
+
+    /**
+     * Return the hover content for the symbol at the given position. Returns undefined if no dump can
+     * be loaded to answer this query.
+     *
+     * @param repositoryId The repository identifier.
+     * @param commit The commit.
+     * @param path The path of the document to which the position belongs.
+     * @param position The current hover position.
+     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
+     * @param ctx The tracing context.
+     */
+    public async hover(
+        repositoryId: number,
+        commit: string,
+        path: string,
+        position: lsp.Position,
+        dumpId?: number,
+        ctx: TracingContext = {}
+    ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
+        const closestDatabaseAndDump = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
+        if (!closestDatabaseAndDump) {
+            if (ctx.logger) {
+                ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
+            }
+
+            return undefined
+        }
+        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
+
+        // Try to find hover in the same dump
+        const hover = await database.hover(pathToDatabase(dump.root, path), position, newCtx)
+        if (hover !== null) {
+            return hover
+        }
+
+        // If we don't have a local hover, lookup the definitions of the range and read the hover
+        // data from the remote database. This can happen when the indexer only gives a moniker but
+        // does not give hover data for externally defined symbols.
+
+        const locations = await this.definitions(repositoryId, commit, path, position, dumpId, ctx)
+        if (!locations || locations.length === 0) {
+            return null
+        }
+
+        const { dump: definitionDump, path: definitionPath, range } = locations[0]
+        const definitionDatabase = this.createDatabase(definitionDump)
+        return definitionDatabase.hover(pathToDatabase(definitionDump.root, definitionPath), range.start, newCtx)
     }
 
     /**
@@ -495,66 +520,6 @@ export class Backend {
         return locations
     }
 
-    //
-    // HOVER
-    //
-
-    /**
-     * Return the hover content for the symbol at the given position. Returns undefined if no dump can
-     * be loaded to answer this query.
-     *
-     * @param repositoryId The repository identifier.
-     * @param commit The commit.
-     * @param path The path of the document to which the position belongs.
-     * @param position The current hover position.
-     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
-     * @param ctx The tracing context.
-     */
-    public async hover(
-        repositoryId: number,
-        commit: string,
-        path: string,
-        position: lsp.Position,
-        dumpId?: number,
-        ctx: TracingContext = {}
-    ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
-        const closestDatabaseAndDump = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
-        if (!closestDatabaseAndDump) {
-            if (ctx.logger) {
-                ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
-            }
-
-            return undefined
-        }
-        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
-
-        // Try to find hover in the same dump
-        const hover = await database.hover(pathToDatabase(dump.root, path), position, newCtx)
-        if (hover !== null) {
-            return hover
-        }
-
-        // If we don't have a local hover, lookup the definitions of the
-        // range and read the hover data from the remote database. This
-        // can happen when the indexer only gives a moniker but does not
-        // give hover data for externally defined symbols.
-
-        const result = await this.internalDefinitions(repositoryId, commit, path, position, dumpId, ctx)
-        if (result === undefined || result.locations.length === 0) {
-            return null
-        }
-
-        return this.createDatabase(result.locations[0].dump).hover(
-            pathToDatabase(result.locations[0].dump.root, result.locations[0].path),
-            result.locations[0].range.start,
-            newCtx
-        )
-    }
-
-    //
-    // MONIKER HELPERS
-    //
-
     /**
      * Find the locations attached to the target moniker outside of the current database. If
      * the moniker has attached package information, then Postgres is queried for the target
@@ -632,10 +597,6 @@ export class Backend {
 
         return packageInformation
     }
-
-    //
-    // DATABASE HELPERS
-    //
 
     /**
      * Create a database instance for the dump identifier. This identifier should have ben retrieved
