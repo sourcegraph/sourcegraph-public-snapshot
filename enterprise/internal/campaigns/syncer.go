@@ -97,7 +97,14 @@ var (
 // nextSync computes the time we want the next sync to happen.
 func nextSync(h campaigns.ChangesetSyncHeuristics) time.Time {
 	lastSync := h.UpdatedAt
-	lastChange := maxTime(h.ExternalUpdatedAt, h.LatestEvent)
+	var lastChange time.Time
+	// When we perform a sync, event timestamps are all updated.
+	// We should fall back to h.ExternalUpdated if the diff is small
+	if diff := h.LatestEvent.Sub(lastSync); !h.LatestEvent.IsZero() && diff < minSyncDelay {
+		lastChange = h.ExternalUpdatedAt
+	} else {
+		lastChange = maxTime(h.ExternalUpdatedAt, h.LatestEvent)
+	}
 
 	// Simple linear backoff for now
 	diff := lastSync.Sub(lastChange)
