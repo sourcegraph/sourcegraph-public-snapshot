@@ -318,7 +318,7 @@ export class Backend {
 
             case 'same-dump-monikers': {
                 const makeCursor = async () => {
-                    const document = await this.getDocumentByPath(cursor.dumpId, cursor.path)
+                    const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
                     if (!document) {
                         return undefined
                     }
@@ -345,7 +345,7 @@ export class Backend {
 
             case 'same-repo': {
                 const makeCursor = async () => {
-                    if (await this.hasRemoteReferences(repositoryId, cursor)) {
+                    if (await this.hasRemoteReferences(repositoryId, cursor, ctx)) {
                         // If there are no remote consumers of this symbol, do not
                         // make a cursor for the next phase as it would only be a
                         // single empty page.
@@ -419,7 +419,7 @@ export class Backend {
      * fully linked in the LSIF data.
      *
      * If there are any locations in the result set, this method returns the new cursor. This
-     * method return undefined if there are no remaining results for the same repository.
+     * method returns undefined if there are no remaining results for the same repository.
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
@@ -451,35 +451,32 @@ export class Backend {
         return { locations } // TODO - cursor
     }
 
-    /**
-     * Perform a remote search for uses of each nonlocal moniker. We stop processing after the first
-     * moniker for which we received results. As we process monikers in an order that considers moniker
-     * schemes, the first one to get results should be the most desirable.
+    // TODO - fix documentation (we do not early-out monikers here - should we actually?)
 
-     * If there
-     * are any locations in the result set, this method returns the new cursor. This method return
-     * undefined if there are no remaining results for the same repository.
-     *
-     * @param repositoryId The repository identifier.
-     * @param commit The target commit.
-     * @param limit The maximum number of dumps to open.
-     * @param cursor The pagination cursor.
-     * @param ctx The tracing context.
-     */
+    /**
+ * Perform a remote search for uses of each nonlocal moniker. We stop processing after the first
+ * moniker for which we received results. As we process monikers in an order that considers moniker
+ * schemes, the first one to get results should be the most desirable.
+
+ * If there are any locations in the result set, this method returns the new cursor. This method
+ * returns undefined if there are no remaining results for the same repository.
+ *
+ * @param repositoryId The repository identifier.
+ * @param commit The target commit.
+ * @param limit The maximum number of dumps to open.
+ * @param cursor The pagination cursor.
+ * @param ctx The tracing context.
+ */
     private async performSameDumpMonikerReferences(
         cursor: SameDumpReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const document = await this.getDocumentByPath(cursor.dumpId, cursor.path)
+        const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
         if (!document) {
             return { locations: [] }
         }
 
         let locations: InternalLocation[] = []
-
-        //
-        // TODO - documentation here is wrong
-        //
 
         for (const moniker of cursor.monikers) {
             if (moniker.kind !== 'import') {
@@ -505,7 +502,7 @@ export class Backend {
      * the same repository. If the moniker has attached package information, then the dependency
      * database is queried for the packages that require this particular moniker identifier. These
      * dumps are opened, and their references tables are queried for the target moniker. If there
-     * are any locations in the result set, this method returns the new cursor. This method return
+     * are any locations in the result set, this method returns the new cursor. This method returns
      * undefined if there are no remaining results for the same repository.
      *
      * @param repositoryId The repository identifier.
@@ -526,6 +523,7 @@ export class Backend {
             repositoryId,
             commit,
             limit,
+            ctx,
         })
 
         const locations = await this.locationsFromRemoteReferences(
@@ -546,7 +544,7 @@ export class Backend {
      * has attached package information, then Postgres is queried for the packages that require
      * this particular moniker identifier. These dumps are opened, and their references tables are
      * queried for the target moniker. If there are any locations in the result set, this method
-     * returns the new cursor. This method return undefined if there are no remaining results for
+     * returns the new cursor. This method returns undefined if there are no remaining results for
      * the same repository.
      *
      * @param repositoryId The repository identifier.
@@ -564,6 +562,7 @@ export class Backend {
             ...cursor,
             repositoryId,
             limit,
+            ctx,
         })
 
         const locations = await this.locationsFromRemoteReferences(
@@ -586,14 +585,19 @@ export class Backend {
      *
      * @param repositoryId The repository identifier.
      * @param cursor The pagination cursor.
+     * @param ctx The tracing context.
      */
-    private async hasRemoteReferences(repositoryId: number, cursor: RemoteDumpReferenceCursor): Promise<boolean> {
+    private async hasRemoteReferences(
+        repositoryId: number,
+        cursor: RemoteDumpReferenceCursor,
+        ctx: TracingContext = {}
+    ): Promise<boolean> {
         const { totalCount: remoteTotalCount } = await this.dependencyManager.getReferences({
             ...cursor,
             repositoryId,
             limit: 1,
             offset: 0,
-            // TODO - why no context here (look for other similar places)?
+            ctx,
         })
 
         return remoteTotalCount > 0
@@ -819,6 +823,7 @@ export class Backend {
      * Create a database for the dump with the given identifier.
      *
      * @param dumpId The dump id.
+     * @param ctx The tracing context.
      */
     private async getDumpAndDatabaseById(
         dumpId: number
@@ -837,14 +842,20 @@ export class Backend {
      *
      * @param dumpId The dump id.
      * @param path The document path.
+     * @param ctx The tracing context.
      */
-    private async getDocumentByPath(dumpId: number, path: string): Promise<sqliteModels.DocumentData | undefined> {
+    private async getDocumentByPath(
+        dumpId: number,
+        path: string,
+        ctx: TracingContext = {}
+    ): Promise<sqliteModels.DocumentData | undefined> {
         const dumpAndDatabase = await this.getDumpAndDatabaseById(dumpId)
         if (!dumpAndDatabase) {
             return undefined
         }
+        const { database } = dumpAndDatabase
 
-        return dumpAndDatabase.database.getDocumentByPath(path)
+        return database.getDocumentByPath(path, ctx)
     }
 }
 
