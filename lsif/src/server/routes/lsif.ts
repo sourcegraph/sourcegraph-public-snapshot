@@ -238,8 +238,8 @@ export function createLsifRouter(
                     throw Object.assign(new Error('LSIF upload not found'), { status: 404 })
                 }
 
-                const { locations, cursor: endCursor } = result
-                const encodedCursor = encodeCursor<ReferencePaginationCursor>(endCursor)
+                const { locations, newCursor } = result
+                const encodedCursor = encodeCursor<ReferencePaginationCursor>(newCursor)
                 if (encodedCursor) {
                     res.set('Link', nextLink(req, { limit, cursor: encodedCursor }))
                 }

@@ -424,12 +424,12 @@ export function createCommit(base?: number): string {
  */
 export function filterNodeModules<T>({
     locations,
-    cursor,
+    newCursor,
 }: {
     /** The reference locations. */
     locations: lsp.Location[]
     /** The pagination cursor. */
-    cursor?: ReferencePaginationCursor
-}): { locations: lsp.Location[]; cursor?: ReferencePaginationCursor } {
-    return { locations: locations.filter(l => !l.uri.includes('node_modules')), cursor }
+    newCursor?: ReferencePaginationCursor
+}): { locations: lsp.Location[]; newCursor?: ReferencePaginationCursor } {
+    return { locations: locations.filter(l => !l.uri.includes('node_modules')), newCursor }
 }

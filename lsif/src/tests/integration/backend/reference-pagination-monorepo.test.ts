@@ -151,8 +151,8 @@ describe('Backend', () => {
                     )
                 )
 
-            const { locations, cursor } = await fetch()
-            expect(cursor).toBeUndefined()
+            const { locations, newCursor } = await fetch()
+            expect(newCursor).toBeUndefined()
 
             expect(locations).toContainEqual(
                 util.createLocation(repositoryId, defCommit, 'a/src/index.ts', 0, 16, 0, 19)
@@ -207,14 +207,14 @@ describe('Backend', () => {
                 )
             )
 
-        const { locations: locations0, cursor: cursor0 } = await fetch({ limit: 50 }) // all local
-        const { locations: locations1, cursor: cursor1 } = await fetch({ limit: 50, cursor: cursor0 }) // all remote
+        const { locations: locations0, newCursor: cursor0 } = await fetch({ limit: 50 }) // all local
+        const { locations: locations1, newCursor: cursor1 } = await fetch({ limit: 50, cursor: cursor0 }) // all remote
 
-        const { locations: locations2, cursor: cursor2 } = await fetch({ limit: 2 }) // b, c
-        const { locations: locations3, cursor: cursor3 } = await fetch({ limit: 2, cursor: cursor2 }) // e
-        const { locations: locations4, cursor: cursor4 } = await fetch({ limit: 2, cursor: cursor3 }) // ext1, ext2
-        const { locations: locations5, cursor: cursor5 } = await fetch({ limit: 2, cursor: cursor4 }) // ext3, ext4
-        const { locations: locations6, cursor: cursor6 } = await fetch({ limit: 2, cursor: cursor5 }) // ext5
+        const { locations: locations2, newCursor: cursor2 } = await fetch({ limit: 2 }) // b, c
+        const { locations: locations3, newCursor: cursor3 } = await fetch({ limit: 2, cursor: cursor2 }) // e
+        const { locations: locations4, newCursor: cursor4 } = await fetch({ limit: 2, cursor: cursor3 }) // ext1, ext2
+        const { locations: locations5, newCursor: cursor5 } = await fetch({ limit: 2, cursor: cursor4 }) // ext3, ext4
+        const { locations: locations6, newCursor: cursor6 } = await fetch({ limit: 2, cursor: cursor5 }) // ext5
 
         // Ensure paging through sets of results gets us everything
         expect(locations0).toEqual(locations2.concat(...locations3))

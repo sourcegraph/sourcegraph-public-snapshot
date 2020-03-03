@@ -183,7 +183,7 @@ export class Backend {
         paginationContext: ReferencePaginationContext = { limit: 10 },
         dumpId?: number,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
+    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor } | undefined> {
         return this.internalReferences(repositoryId, commit, path, position, paginationContext, dumpId, ctx)
     }
 
@@ -327,7 +327,7 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<
-        { dump: pgModels.LsifDump; locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined
+        { dump: pgModels.LsifDump; locations: InternalLocation[]; newCursor?: ReferencePaginationCursor } | undefined
     > {
         if (paginationContext.cursor) {
             return this.handleReferencesNextPage(
@@ -421,7 +421,7 @@ export class Backend {
                     offset: 0,
                 }
 
-                const results = await this.handleReferencePaginationCursor(
+                const { locations: remoteLocations, newCursor } = await this.handleReferencePaginationCursor(
                     repositoryId,
                     commit,
                     paginationContext.limit,
@@ -429,13 +429,11 @@ export class Backend {
                     ctx
                 )
 
-                if (results !== undefined) {
-                    return {
-                        dump,
-                        ...results,
-                        // TODO - determine source of duplication
-                        locations: uniqWith(locations.concat(results.locations), isEqual),
-                    }
+                return {
+                    dump,
+                    // TODO - determine source of duplication
+                    locations: uniqWith(locations.concat(remoteLocations), isEqual),
+                    newCursor,
                 }
             }
         }
@@ -460,7 +458,7 @@ export class Backend {
         cursor: ReferencePaginationCursor,
         ctx: TracingContext = {}
     ): Promise<
-        { dump: pgModels.LsifDump; locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined
+        { dump: pgModels.LsifDump; locations: InternalLocation[]; newCursor?: ReferencePaginationCursor } | undefined
     > {
         const dump = await this.dumpManager.getDumpById(cursor.dumpId)
         if (dump === undefined) {
@@ -574,15 +572,61 @@ export class Backend {
         limit: number,
         cursor: ReferencePaginationCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
-        if (cursor.phase === 'same-repo') {
-            const results = await this.performSameRepositoryRemoteReferences(repositoryId, commit, limit, cursor, ctx)
-            if (results) {
-                return results
+    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+        switch (cursor.phase) {
+            case 'same-repo': {
+                const { locations, newCursor: nextSameRepoCursor } = await this.performSameRepositoryRemoteReferences(
+                    repositoryId,
+                    commit,
+                    limit,
+                    cursor,
+                    ctx
+                )
+
+                // If we don't have a valid new cursor, see if we can move on to the next phase.
+                // Only construct a cursor that will be valid on a subsequent request. We don't
+                // want the situation where there are no uses of a symbol outside of the current
+                // repository and we give a "load more" option that  yields no additional results.
+
+                let newCursor = nextSameRepoCursor
+                if (!nextSameRepoCursor && (await this.hasRemoteReferences(repositoryId, cursor))) {
+                    newCursor = {
+                        ...cursor,
+                        phase: 'remote-repo',
+                        offset: 0,
+                    }
+                }
+
+                if (locations.length === 0 && newCursor) {
+                    return this.handleReferencePaginationCursor(repositoryId, commit, limit, newCursor, ctx)
+                }
+
+                return { locations, newCursor }
+            }
+
+            case 'remote-repo': {
+                return this.performRemoteReferences(repositoryId, limit, cursor, ctx)
             }
         }
+    }
 
-        return this.performRemoteReferences(repositoryId, limit, cursor, ctx)
+    /**
+     * Determine if the moniker and package identified by the pagination cursor has at least one
+     * remote repository. containing that definition. We use this to determine if we should move
+     * on to the next phase without doing it unconditionally and yielding an empty last page.
+     *
+     * @param repositoryId The repository identifier.
+     * @param cursor The pagination cursor.
+     */
+    private async hasRemoteReferences(repositoryId: number, cursor: ReferencePaginationCursor): Promise<boolean> {
+        const { totalCount: remoteTotalCount } = await this.dependencyManager.getReferences({
+            ...cursor,
+            repositoryId,
+            limit: 1,
+            offset: 0,
+        })
+
+        return remoteTotalCount > 0
     }
 
     /**
@@ -602,7 +646,7 @@ export class Backend {
         limit: number,
         cursor: ReferencePaginationCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
+    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
         const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
         const packageInformation = { name: cursor.name, version: cursor.version }
 
@@ -616,44 +660,11 @@ export class Backend {
             cursor.offset,
             ctx
         )
-        if (locations.length === 0) {
-            return undefined
+
+        return {
+            locations,
+            newCursor: newOffset < totalCount ? { ...cursor, phase: 'same-repo', offset: newOffset } : undefined,
         }
-
-        let newCursor: ReferencePaginationCursor | undefined
-        if (newOffset < totalCount) {
-            newCursor = {
-                ...cursor,
-                offset: newOffset,
-            }
-        } else {
-            // Determine if there are any valid remote dumps we will open if
-            // we move onto a next page.
-            const { totalCount: remoteTotalCount } = await this.dependencyManager.getReferences({
-                repositoryId,
-                scheme: moniker.scheme,
-                name: packageInformation.name,
-                version: packageInformation.version,
-                identifier: moniker.identifier,
-                limit: 1,
-                offset: 0,
-            })
-
-            // Only construct a cursor that will be valid on a subsequent
-            // request. We don't want the situation where there are no uses
-            // of a symbol outside of the current repository and we give a
-            // "load more" option that yields no additional results.
-
-            if (remoteTotalCount > 0) {
-                newCursor = {
-                    ...cursor,
-                    phase: 'remote-repo',
-                    offset: 0,
-                }
-            }
-        }
-
-        return { locations, cursor: newCursor }
     }
 
     /**
@@ -671,7 +682,7 @@ export class Backend {
         limit: number,
         cursor: ReferencePaginationCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
+    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
         const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
         const packageInformation = { name: cursor.name, version: cursor.version }
 
@@ -684,20 +695,11 @@ export class Backend {
             cursor.offset,
             ctx
         )
-        if (locations.length === 0) {
-            return undefined
-        }
 
-        let newCursor: ReferencePaginationCursor | undefined
-        if (newOffset < totalCount) {
-            newCursor = {
-                ...cursor,
-                phase: 'remote-repo',
-                offset: newOffset,
-            }
+        return {
+            locations,
+            newCursor: newOffset < totalCount ? { ...cursor, phase: 'remote-repo', offset: newOffset } : undefined,
         }
-
-        return { locations, cursor: newCursor }
     }
 
     /**

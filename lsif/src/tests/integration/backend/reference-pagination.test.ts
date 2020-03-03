@@ -62,11 +62,11 @@ describe('Backend', () => {
                 )
             )
 
-        const { locations: locations0, cursor: cursor0 } = await fetch() // everything
-        const { locations: locations1, cursor: cursor1 } = await fetch({ limit: 3 }) // a, b1, b10, b2
-        const { locations: locations2, cursor: cursor2 } = await fetch({ limit: 3, cursor: cursor1 }) // b3, b4, b5
-        const { locations: locations3, cursor: cursor3 } = await fetch({ limit: 3, cursor: cursor2 }) // b6, b7, b8
-        const { locations: locations4, cursor: cursor4 } = await fetch({ limit: 3, cursor: cursor3 }) // b9
+        const { locations: locations0, newCursor: cursor0 } = await fetch() // everything
+        const { locations: locations1, newCursor: cursor1 } = await fetch({ limit: 3 }) // a, b1, b10, b2
+        const { locations: locations2, newCursor: cursor2 } = await fetch({ limit: 3, cursor: cursor1 }) // b3, b4, b5
+        const { locations: locations3, newCursor: cursor3 } = await fetch({ limit: 3, cursor: cursor2 }) // b6, b7, b8
+        const { locations: locations4, newCursor: cursor4 } = await fetch({ limit: 3, cursor: cursor3 }) // b9
 
         // Ensure paging through sets of results gets us everything
         expect(locations0).toEqual(locations1.concat(...locations2, ...locations3, ...locations4))
