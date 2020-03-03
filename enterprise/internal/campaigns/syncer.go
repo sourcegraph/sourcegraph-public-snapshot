@@ -362,14 +362,7 @@ func (q *changesetQueue) reschedule(schedule []syncSchedule) {
 			now := time.Now()
 			nextSync := schedule[i].nextSync
 			d := nextSync.Sub(now)
-			timer := time.NewTimer(d)
-			select {
-			case <-ctx.Done():
-				timer.Stop()
-				return
-			case <-timer.C:
-				// Timer ready, try and send sync instruction
-			}
+			sleep(ctx, d)
 
 			select {
 			case <-ctx.Done():
@@ -378,6 +371,16 @@ func (q *changesetQueue) reschedule(schedule []syncSchedule) {
 			}
 		}
 	}()
+}
+
+// sleep is a context aware time.Sleep
+func sleep(ctx context.Context, d time.Duration) {
+	t := time.NewTimer(d)
+	select {
+	case <-ctx.Done():
+		t.Stop()
+	case <-t.C:
+	}
 }
 
 func (q *changesetQueue) enqueuePriority(ids []int64) {
