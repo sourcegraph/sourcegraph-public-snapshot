@@ -42,12 +42,14 @@ type PermsSyncer struct {
 type PermsFetcher interface {
 	authz.Provider
 	// FetchUserPerms returns a list of repository IDs (on code host) that the given
-	// account has read access on the code host. The returned list should only include
-	// private repositories.
+	// account has read access on the code host. The repository ID should be the same
+	// value as it would be used as api.ExternalRepoSpec.ID. The returned list should
+	// only include private repositories.
 	FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]string, error)
-	// FetchRepoPerms returns a list of (code host) usernames who have read ccess to
-	// the given repository on the code host. Including direct access and inherited
-	// from the group/organization/team membership.
+	// FetchRepoPerms returns a list of user IDs (on code host) who have read ccess to
+	// the given repository on the code host. The user ID should be the same value as it
+	// would be used as extsvc.ExternalAccount.AccountID. The returned list should include
+	// both direct access and inherited from the group/organization/team membership.
 	FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]string, error)
 }
 
@@ -63,12 +65,23 @@ func NewPermsSyncer(fetchers map[string]PermsFetcher, reposStore repos.Store, db
 
 // ScheduleUser schedules a new permissions syncing request for given user
 // in desired priority.
-func (s *PermsSyncer) ScheduleUser(priority Priority, userID int32, lastUpdated time.Time) error {
+func (s *PermsSyncer) ScheduleUser(ctx context.Context, priority Priority, userID int32) error {
+	p := &authz.UserPermissions{
+		UserID: userID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	}
+	err := s.permsStore.LoadUserPermissions(ctx, p)
+	if err != nil && err != authz.ErrPermsNotFound {
+		return errors.Wrap(err, "load user permissions")
+	}
+
+	// NOTE: It is OK to have p.UpdatedAt with zero value that gets higher priority in the queue.
 	updated := s.queue.enqueue(&requestMeta{
 		priority:    priority,
 		typ:         requestTypeUser,
 		id:          userID,
-		lastUpdated: lastUpdated,
+		lastUpdated: p.UpdatedAt,
 	})
 	log15.Debug("PermsSyncer.queue.enqueued", "userID", userID, "updated", updated)
 	return nil
@@ -76,12 +89,22 @@ func (s *PermsSyncer) ScheduleUser(priority Priority, userID int32, lastUpdated 
 
 // ScheduleRepo schedules a new permissions syncing request for given repository
 // in desired priority.
-func (s *PermsSyncer) ScheduleRepo(priority Priority, repoID api.RepoID, lastUpdated time.Time) error {
+func (s *PermsSyncer) ScheduleRepo(ctx context.Context, priority Priority, repoID api.RepoID) error {
+	p := &authz.RepoPermissions{
+		RepoID: int32(repoID),
+		Perm:   authz.Read,
+	}
+	err := s.permsStore.LoadRepoPermissions(ctx, p)
+	if err != nil && err != authz.ErrPermsNotFound {
+		return errors.Wrap(err, "load repo permissions")
+	}
+
+	// NOTE: It is OK to have p.UpdatedAt with zero value that gets higher priority in the queue.
 	updated := s.queue.enqueue(&requestMeta{
 		priority:    priority,
 		typ:         requestTypeRepo,
 		id:          int32(repoID),
-		lastUpdated: lastUpdated,
+		lastUpdated: p.UpdatedAt,
 	})
 	log15.Debug("PermsSyncer.queue.enqueued", "repoID", repoID, "updated", updated)
 	return nil
