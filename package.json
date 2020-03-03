@@ -105,7 +105,7 @@
     "@types/marked": "0.7.2",
     "@types/mini-css-extract-plugin": "0.9.1",
     "@types/mkdirp-promise": "5.0.0",
-    "@types/mocha": "7.0.1",
+    "@types/mocha": "7.0.2",
     "@types/mockdate": "2.0.0",
     "@types/mz": "2.7.0",
     "@types/node": "10.12.21",
