@@ -102,7 +102,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         ),
     },
     type: {
-        values: [{ value: 'diff' }, { value: 'commit' }, { value: 'symbol' }].map(
+        values: [{ value: 'diff' }, { value: 'commit' }, { value: 'symbol' }, { value: 'file' }].map(
             assign({
                 type: FilterType.type,
             })
