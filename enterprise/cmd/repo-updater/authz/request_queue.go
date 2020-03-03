@@ -51,13 +51,19 @@ type syncRequest struct {
 	index    int  // The index in the heap
 }
 
+// requestQueueKey is the key type for index in a requestQueue.
+type requestQueueKey struct {
+	typ requestType
+	id  int32
+}
+
 // requestQueue is a priority queue of permissions syncing requests.
 // Requests with same requestType and id are guaranteed to only have
 // one instance in the queue.
 type requestQueue struct {
 	mu    sync.Mutex
 	heap  []*syncRequest
-	index map[requestType]map[int32]*syncRequest
+	index map[requestQueueKey]*syncRequest
 
 	// The queue performs a non-blocking send on this channel
 	// when a new value is enqueued so that the update loop
@@ -66,17 +72,9 @@ type requestQueue struct {
 }
 
 func newRequestQueue() *requestQueue {
-	q := &requestQueue{
-		index: make(map[requestType]map[int32]*syncRequest),
+	return &requestQueue{
+		index: make(map[requestQueueKey]*syncRequest),
 	}
-
-	for _, typ := range []requestType{
-		requestTypeRepo,
-		requestTypeUser,
-	} {
-		q.index[typ] = make(map[int32]*syncRequest)
-	}
-	return q
 }
 
 // notify performs a non-blocking send to the channel, so the channel
@@ -104,7 +102,11 @@ func (q *requestQueue) enqueue(meta *requestMeta) (updated bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	request := q.index[meta.typ][meta.id]
+	key := requestQueueKey{
+		typ: meta.typ,
+		id:  meta.id,
+	}
+	request := q.index[key]
 	if request == nil {
 		heap.Push(q, &syncRequest{
 			requestMeta: meta,
@@ -134,7 +136,11 @@ func (q *requestQueue) remove(typ requestType, id int32, acquired bool) (removed
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	request := q.index[typ][id]
+	key := requestQueueKey{
+		typ: typ,
+		id:  id,
+	}
+	request := q.index[key]
 	if request != nil && request.acquired == acquired {
 		heap.Remove(q, request.index)
 		return true
@@ -206,7 +212,12 @@ func (q *requestQueue) Push(x interface{}) {
 	request := x.(*syncRequest)
 	request.index = n
 	q.heap = append(q.heap, request)
-	q.index[request.typ][request.id] = request
+
+	key := requestQueueKey{
+		typ: request.typ,
+		id:  request.id,
+	}
+	q.index[key] = request
 }
 
 func (q *requestQueue) Pop() interface{} {
@@ -214,6 +225,11 @@ func (q *requestQueue) Pop() interface{} {
 	request := q.heap[n-1]
 	request.index = -1 // for safety
 	q.heap = q.heap[0 : n-1]
-	delete(q.index[request.typ], request.id)
+
+	key := requestQueueKey{
+		typ: request.typ,
+		id:  request.id,
+	}
+	delete(q.index, key)
 	return request
 }
