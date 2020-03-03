@@ -3016,10 +3016,10 @@
     "@types/history" "*"
     "@types/react" "*"
 
-"@types/react-circular-progressbar@1.0.1":
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/@types/react-circular-progressbar/-/react-circular-progressbar-1.0.1.tgz#79ec9bc3a6f44e0f1f825963765dadca39839f51"
-  integrity sha512-Pjms8GK01hKXhY1ASoJmc/Sx559UhQgTlvbUri4OT32seMtSnwqgMSSxu4XS/B7cq1W8HPNBwrlr08gneEWOFw==
+"@types/react-circular-progressbar@1.0.2":
+  version "1.0.2"
+  resolved "https://registry.npmjs.org/@types/react-circular-progressbar/-/react-circular-progressbar-1.0.2.tgz#a23e2d0f4e14a89d75c7c2286f8e96702f9862f2"
+  integrity sha512-lFRfduBnlr7HhjI64fMI0Jm3uDYMbdYyTF3sCZ7aNLYmjPOM3L2+/BzKOfRzRITinOL1jA9lbenGASqowULgEw==
   dependencies:
     "@types/react" "*"
 
