@@ -78,8 +78,9 @@ func newRequestQueue() *requestQueue {
 	return q
 }
 
-// notify performs a non-blocking send on the channel.
-// The channel should be buffered.
+// notify performs a non-blocking send to the channel, so the channel
+// must be buffered. When the channel is blocked (i.e. buffer is full),
+// it skips the notify thus will not send anything to the channel.
 var notify = func(ch chan struct{}) {
 	select {
 	case ch <- struct{}{}:

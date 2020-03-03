@@ -280,8 +280,11 @@ func RunPermsSyncer(ctx context.Context, syncer *PermsSyncer) {
 	log15.Debug("started perms syncer")
 	defer log15.Info("stopped perms syncer")
 
+	// To unblock the "select" on the next loop iteration if no enqueue happened in between.
+	notifyDequeued := make(chan struct{}, 1)
 	for {
 		select {
+		case <-notifyDequeued:
 		case <-syncer.queue.notifyEnqueue:
 		case <-ctx.Done():
 			return
@@ -294,5 +297,6 @@ func RunPermsSyncer(ctx context.Context, syncer *PermsSyncer) {
 		}
 
 		syncer.syncPerms(ctx, request)
+		notify(notifyDequeued)
 	}
 }
