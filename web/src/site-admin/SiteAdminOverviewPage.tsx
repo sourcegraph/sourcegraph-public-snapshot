@@ -132,7 +132,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
                         {info.repositories !== null && (
                             <Link
                                 to="/site-admin/repositories"
-                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.repositories)}{' '}
                                 {pluralize('repository', info.repositories, 'repositories')}
@@ -141,7 +141,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
                         {info.users > 1 && (
                             <Link
                                 to="/site-admin/users"
-                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.users)} {pluralize('user', info.users)}
                             </Link>
@@ -149,7 +149,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
                         {info.orgs > 1 && (
                             <Link
                                 to="/site-admin/organizations"
-                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.orgs)} {pluralize('organization', info.orgs)}
                             </Link>
@@ -157,7 +157,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
                         {info.users > 1 && (
                             <Link
                                 to="/site-admin/surveys"
-                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.surveyResponses.totalCount)}{' '}
                                 {pluralize('user survey response', info.surveyResponses.totalCount)}
