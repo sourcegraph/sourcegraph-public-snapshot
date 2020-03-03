@@ -237,7 +237,7 @@
     "downshift": "^3.4.8",
     "focus-visible": "^5.0.2",
     "got": "^10.6.0",
-    "graphiql": "^0.13.2",
+    "graphiql": "^0.17.5",
     "he": "^1.2.0",
     "highlight.js": "^9.18.1",
     "is-absolute-url": "^3.0.3",
