@@ -59,7 +59,7 @@ env TEST_USER_PASSWORD=test GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
 
 > There's a test token in `../dev-private/enterprise/dev/external-services-config.json`
 
-This will open Chromium, create an external service, clone repositories, and execute the e2e tests.
+This will open Chromium, add a code host, clone repositories, and execute the e2e tests.
 
 You can single-out one test with `test.only`:
 

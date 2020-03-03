@@ -102,8 +102,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         ),
     },
     type: {
-        default: 'code',
-        values: [{ value: 'code' }, { value: 'diff' }, { value: 'commit' }, { value: 'symbol' }].map(
+        values: [{ value: 'diff' }, { value: 'commit' }, { value: 'symbol' }, { value: 'file' }, { value: 'path' }].map(
             assign({
                 type: FilterType.type,
             })

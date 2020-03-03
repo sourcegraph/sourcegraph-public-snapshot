@@ -37,7 +37,7 @@ Sourcegraph will mark repositories as archived if they have the `archived` label
 
 ## Configuration
 
-Bitbucket Server external service connections support the following configuration options, which are specified in the JSON editor in the site admin external services area.
+Bitbucket Server connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/bitbucket_server.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/bitbucket_server) to see rendered content.</div>
 

@@ -42,7 +42,11 @@ func main() {
 	if err := shared.InitDB(); err != nil {
 		log.Fatalf("FATAL: %v", err)
 	}
-	initAuthz(dbconn.Global)
+
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	initAuthz(dbconn.Global, clock)
 
 	ctx := context.Background()
 	go func() {
@@ -59,10 +63,6 @@ func main() {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		log.Println("enterprise edition")
-	}
-
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
 	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)

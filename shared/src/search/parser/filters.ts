@@ -132,7 +132,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.type]: {
         description: 'Limit results to the specified type.',
-        discreteValues: ['code', 'diff', 'commit', 'symbol', 'repo', 'path'],
+        discreteValues: ['diff', 'commit', 'symbol', 'repo', 'path', 'file'],
     },
 }
 

@@ -156,11 +156,11 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		err = r.store.LoadUserPendingPermissions(ctx, p)
 		ids = p.IDs
 	}
-	if err != nil && err != edb.ErrPermsNotFound {
+	if err != nil && err != authz.ErrPermsNotFound {
 		return nil, err
 	}
 	// If no row is found, we return an empty list to the consumer.
-	if err == edb.ErrPermsNotFound {
+	if err == authz.ErrPermsNotFound {
 		ids = roaring.NewBitmap()
 	}
 
@@ -201,11 +201,11 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		Provider: authz.ProviderSourcegraph,
 	}
 	err = r.store.LoadRepoPermissions(ctx, p)
-	if err != nil && err != edb.ErrPermsNotFound {
+	if err != nil && err != authz.ErrPermsNotFound {
 		return nil, err
 	}
 	// If no row is found, we return an empty list to the consumer.
-	if err == edb.ErrPermsNotFound {
+	if err == authz.ErrPermsNotFound {
 		p.UserIDs = roaring.NewBitmap()
 	}
 

@@ -13,9 +13,9 @@ To connect Phabricator to Sourcegraph:
 
 ## Repository association
 
-Sourcegraph can provide users with links to various Phabricator pages (for files, commits, branches, etc.) if you add Phabricator as an external service (in **Site admin > External services**).
+Sourcegraph can provide users with links to various Phabricator pages (for files, commits, branches, etc.) if you add Phabricator as a connection (in **Site admin > Manage repositories**).
 
-A Phabricator external service configuration consists of the following fields:
+A Phabricator configuration consists of the following fields:
 
 - `url` field that maps to the url of the Phabricator host
 - `token` an optional Conduit API token, which you may generate from the Phabricator web interface. The token is used to fetch the list of repos available on the Phabricator installation
