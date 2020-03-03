@@ -1873,12 +1873,12 @@
     "@babel/helper-module-imports" "^7.0.0"
     "@babel/traverse" "^7.4.4"
 
-"@sourcegraph/codeintellify@^6.2.2":
-  version "6.3.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-6.3.0.tgz#a4bf3df77f7ef6ee07c09bc8bcbc4be59b89d882"
-  integrity sha512-TtfhJj7HgmP+4wCcOLfxFRTnPj+Xq2aS73Fgd73I959j7by+LWjlZf4IOmrWhlKPMq4+ibtrpgP5SKOp5bhsew==
+"@sourcegraph/codeintellify@^6.3.2":
+  version "6.3.2"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-6.3.2.tgz#8b7fc0f308bf84d273161da6320a6960f4dff269"
+  integrity sha512-RJ4w5WmToIkcAeA0TKdKTcOj4dyG1TMpsrpnRfLfSw8vP5go1HtAHYz7tdJqkFZ/UGq5onuGTl56jVFeEhHnJg==
   dependencies:
-    "@sourcegraph/event-positions" "^1.0.2"
+    "@sourcegraph/event-positions" "^1.0.4"
     "@sourcegraph/extension-api-types" "^2.0.0"
     lodash "^4.17.10"
     rxjs "^6.3.3"
@@ -1905,10 +1905,10 @@
     eslint-plugin-react "^7.18.3"
     eslint-plugin-react-hooks "^2.3.0"
 
-"@sourcegraph/event-positions@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.npmjs.org/@sourcegraph/event-positions/-/event-positions-1.0.2.tgz#4c8150d14bdd25c4a2d6b2e14d589948a98ae4fc"
-  integrity sha512-EAfB5fz1AvUGw3MfHqH+i0fki8NqHLUSxNPeqTf5tnjvOyh/93tLug3HSEHfqGhCOFYTEUpXEYZ1NRNBci+XvA==
+"@sourcegraph/event-positions@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.npmjs.org/@sourcegraph/event-positions/-/event-positions-1.0.4.tgz#031541374b725cfb0cbefaa07add020b1a119a60"
+  integrity sha512-mrWIEpC9UuAZwExMQlRfLaLLwC9x8WQMAOEYFHGEdXCzXEHqaZu22aR8PtrQEMtwia6eIzvZl6uYp0gDDGLo2g==
   dependencies:
     "@sourcegraph/extension-api-types" "^2.0.0"
     lodash "^4.17.10"
