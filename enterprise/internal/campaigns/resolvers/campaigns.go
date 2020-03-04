@@ -154,14 +154,19 @@ func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.Dat
 	return &graphqlbackend.DateTime{Time: createdAt}, nil
 }
 
-func (r *campaignResolver) Changesets(ctx context.Context, args struct {
-	graphqlutil.ConnectionArgs
-}) graphqlbackend.ExternalChangesetsConnectionResolver {
+func (r *campaignResolver) Changesets(
+	ctx context.Context,
+	args *graphqlbackend.ListChangesetsArgs,
+) graphqlbackend.ExternalChangesetsConnectionResolver {
+	var limit int
+	if args.First != nil {
+		limit = int(*args.First)
+	}
 	return &changesetsConnectionResolver{
 		store: r.store,
 		opts: ee.ListChangesetsOpts{
 			CampaignID: r.Campaign.ID,
-			Limit:      int(args.ConnectionArgs.GetFirst()),
+			Limit:      limit,
 		},
 	}
 }

@@ -317,7 +317,10 @@ WITH batch AS (
       external_service_type text,
       external_branch       text,
       external_deleted_at   timestamptz,
-      external_updated_at   timestamptz
+      external_updated_at   timestamptz,
+      external_state        changeset_external_state,
+      external_review_state changeset_external_review_state,
+      external_check_state  changeset_external_check_state
     )
   )
   WITH ORDINALITY
@@ -337,7 +340,10 @@ changed AS (
     external_service_type,
     external_branch,
     external_deleted_at,
-    external_updated_at
+    external_updated_at,
+    external_state,
+    external_review_state,
+    external_check_state
   )
   SELECT
     repo_id,
@@ -349,7 +355,10 @@ changed AS (
     external_service_type,
     external_branch,
     external_deleted_at,
-    external_updated_at
+    external_updated_at,
+    external_state,
+    external_review_state,
+    external_check_state
   FROM batch
   ON CONFLICT ON CONSTRAINT
     changesets_repo_external_id_unique
@@ -370,7 +379,10 @@ SELECT
   COALESCE(changed.external_service_type, existing.external_service_type) AS external_service_type,
   COALESCE(changed.external_branch, existing.external_branch) AS external_branch,
   COALESCE(changed.external_deleted_at, existing.external_deleted_at) AS external_deleted_at,
-  COALESCE(changed.external_updated_at, existing.external_updated_at) AS external_updated_at
+  COALESCE(changed.external_updated_at, existing.external_updated_at) AS external_updated_at,
+  COALESCE(changed.external_state, existing.external_state) AS external_state,
+  COALESCE(changed.external_review_state, existing.external_review_state) AS external_review_state,
+  COALESCE(changed.external_check_state, existing.external_check_state) AS external_check_state
 FROM changed
 RIGHT JOIN batch ON batch.repo_id = changed.repo_id
 AND batch.external_id = changed.external_id
@@ -389,23 +401,38 @@ func (s *Store) createChangesetsQuery(cs []*campaigns.Changeset) (*sqlf.Query, e
 		if c.UpdatedAt.IsZero() {
 			c.UpdatedAt = c.CreatedAt
 		}
+
+		if c.ExternalState == "" {
+			c.ExternalState = campaigns.ChangesetStateUnknown
+		}
+
+		if c.ExternalReviewState == "" {
+			c.ExternalReviewState = campaigns.ChangesetReviewStateUnknown
+		}
+
+		if c.ExternalCheckState == "" {
+			c.ExternalCheckState = campaigns.ChangesetCheckStateUnknown
+		}
 	}
 	return batchChangesetsQuery(createChangesetsQueryFmtstr, cs)
 }
 
 func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query, error) {
 	type record struct {
-		ID                  int64           `json:"id"`
-		RepoID              api.RepoID      `json:"repo_id"`
-		CreatedAt           time.Time       `json:"created_at"`
-		UpdatedAt           time.Time       `json:"updated_at"`
-		Metadata            json.RawMessage `json:"metadata"`
-		CampaignIDs         json.RawMessage `json:"campaign_ids"`
-		ExternalID          string          `json:"external_id"`
-		ExternalServiceType string          `json:"external_service_type"`
-		ExternalBranch      string          `json:"external_branch"`
-		ExternalDeletedAt   *time.Time      `json:"external_deleted_at"`
-		ExternalUpdatedAt   *time.Time      `json:"external_updated_at"`
+		ID                  int64                          `json:"id"`
+		RepoID              api.RepoID                     `json:"repo_id"`
+		CreatedAt           time.Time                      `json:"created_at"`
+		UpdatedAt           time.Time                      `json:"updated_at"`
+		Metadata            json.RawMessage                `json:"metadata"`
+		CampaignIDs         json.RawMessage                `json:"campaign_ids"`
+		ExternalID          string                         `json:"external_id"`
+		ExternalServiceType string                         `json:"external_service_type"`
+		ExternalBranch      string                         `json:"external_branch"`
+		ExternalDeletedAt   *time.Time                     `json:"external_deleted_at"`
+		ExternalUpdatedAt   *time.Time                     `json:"external_updated_at"`
+		ExternalState       campaigns.ChangesetState       `json:"external_state"`
+		ExternalReviewState campaigns.ChangesetReviewState `json:"external_review_state"`
+		ExternalCheckState  campaigns.ChangesetCheckState  `json:"external_check_state"`
 	}
 
 	records := make([]record, 0, len(cs))
@@ -421,7 +448,7 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 			return nil, err
 		}
 
-		records = append(records, record{
+		r := record{
 			ID:                  c.ID,
 			RepoID:              c.RepoID,
 			CreatedAt:           c.CreatedAt,
@@ -433,7 +460,12 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 			ExternalBranch:      c.ExternalBranch,
 			ExternalDeletedAt:   nullTimeColumn(c.ExternalDeletedAt),
 			ExternalUpdatedAt:   nullTimeColumn(c.ExternalUpdatedAt),
-		})
+			ExternalState:       c.ExternalState,
+			ExternalReviewState: c.ExternalReviewState,
+			ExternalCheckState:  c.ExternalCheckState,
+		}
+
+		records = append(records, r)
 	}
 
 	batch, err := json.MarshalIndent(records, "    ", "    ")
@@ -521,7 +553,10 @@ SELECT
   external_service_type,
   external_branch,
   external_deleted_at,
-  external_updated_at
+  external_updated_at,
+  external_state,
+  external_review_state,
+  external_check_state
 FROM changesets
 WHERE %s
 LIMIT 1
@@ -631,7 +666,10 @@ SELECT
   external_service_type,
   external_branch,
   external_deleted_at,
-  external_updated_at
+  external_updated_at,
+  external_state,
+  external_review_state,
+  external_check_state
 FROM changesets
 WHERE %s
 ORDER BY id ASC
@@ -707,7 +745,10 @@ changed AS (
     external_service_type = batch.external_service_type,
     external_branch       = batch.external_branch,
 	external_deleted_at   = batch.external_deleted_at,
-	external_updated_at   = batch.external_updated_at
+	external_updated_at   = batch.external_updated_at,
+    external_state        = batch.external_state,
+    external_review_state = batch.external_review_state,
+    external_check_state  = batch.external_check_state
   FROM batch
   WHERE changesets.id = batch.id
   RETURNING changesets.*
@@ -726,7 +767,10 @@ SELECT
   changed.external_service_type,
   changed.external_branch,
   changed.external_deleted_at,
-  changed.external_updated_at
+  changed.external_updated_at,
+  changed.external_state,
+  changed.external_review_state,
+  changed.external_check_state
 FROM changed
 LEFT JOIN batch ON batch.repo_id = changed.repo_id
 AND batch.external_id = changed.external_id
@@ -2648,6 +2692,9 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.ExternalBranch,
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 		&dbutil.NullTime{Time: &t.ExternalUpdatedAt},
+		&t.ExternalState,
+		&t.ExternalReviewState,
+		&t.ExternalCheckState,
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")

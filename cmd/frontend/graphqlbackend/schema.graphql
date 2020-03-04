@@ -585,7 +585,15 @@ type Campaign implements Node {
     repositoryDiffs(first: Int): RepositoryComparisonConnection!
 
     # The changesets in this campaign, already created on the code host.
-    changesets(first: Int): ExternalChangesetConnection!
+    changesets(
+        first: Int
+        # Only include changesets with the given state
+        state: ChangesetState
+        # Only include changesets with the given review state
+        reviewState: ChangesetReviewState
+        # Only include changesets with the given check state
+        checkState: ChangesetCheckState
+    ): ExternalChangesetConnection!
 
     # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
     changesetCountsOverTime(

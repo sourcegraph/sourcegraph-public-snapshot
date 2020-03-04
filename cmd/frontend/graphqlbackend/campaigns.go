@@ -180,6 +180,13 @@ type ChangesetCountsArgs struct {
 	To   *DateTime
 }
 
+type ListChangesetsArgs struct {
+	First       *int32
+	State       *string
+	ReviewState *string
+	CheckState  *string
+}
+
 type CampaignResolver interface {
 	ID() graphql.ID
 	Name() string
@@ -191,7 +198,7 @@ type CampaignResolver interface {
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
-	Changesets(ctx context.Context, args struct{ graphqlutil.ConnectionArgs }) ExternalChangesetsConnectionResolver
+	Changesets(ctx context.Context, args *ListChangesetsArgs) ExternalChangesetsConnectionResolver
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
 	Plan(ctx context.Context) (CampaignPlanResolver, error)

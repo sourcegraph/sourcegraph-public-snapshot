@@ -124,6 +124,7 @@ type ChangesetState string
 
 // ChangesetState constants.
 const (
+	ChangesetStateUnknown ChangesetState = "UNKNOWN"
 	ChangesetStateOpen    ChangesetState = "OPEN"
 	ChangesetStateClosed  ChangesetState = "CLOSED"
 	ChangesetStateMerged  ChangesetState = "MERGED"
@@ -133,7 +134,8 @@ const (
 // Valid returns true if the given Changeset is valid.
 func (s ChangesetState) Valid() bool {
 	switch s {
-	case ChangesetStateOpen,
+	case ChangesetStateUnknown,
+		ChangesetStateOpen,
 		ChangesetStateClosed,
 		ChangesetStateMerged,
 		ChangesetStateDeleted:
@@ -198,12 +200,28 @@ type ChangesetReviewState string
 
 // ChangesetReviewState constants.
 const (
+	ChangesetReviewStateUnknown          ChangesetReviewState = "UNKNOWN"
 	ChangesetReviewStateApproved         ChangesetReviewState = "APPROVED"
 	ChangesetReviewStateChangesRequested ChangesetReviewState = "CHANGES_REQUESTED"
 	ChangesetReviewStatePending          ChangesetReviewState = "PENDING"
 	ChangesetReviewStateCommented        ChangesetReviewState = "COMMENTED"
 	ChangesetReviewStateDismissed        ChangesetReviewState = "DISMISSED"
 )
+
+// Valid returns true if the given Changeset review state is valid.
+func (s ChangesetReviewState) Valid() bool {
+	switch s {
+	case ChangesetReviewStateUnknown,
+		ChangesetReviewStateApproved,
+		ChangesetReviewStateChangesRequested,
+		ChangesetReviewStatePending,
+		ChangesetReviewStateCommented,
+		ChangesetReviewStateDismissed:
+		return true
+	default:
+		return false
+	}
+}
 
 // ChangesetCheckState constants.
 type ChangesetCheckState string
@@ -215,21 +233,20 @@ const (
 	ChangesetCheckStateFailed  ChangesetCheckState = "FAILED"
 )
 
-// Valid returns true if the given Changeset is valid.
-func (s ChangesetReviewState) Valid() bool {
+// Valid returns true if the given Changeset check state is valid.
+func (s ChangesetCheckState) Valid() bool {
 	switch s {
-	case ChangesetReviewStateApproved,
-		ChangesetReviewStateChangesRequested,
-		ChangesetReviewStatePending,
-		ChangesetReviewStateCommented,
-		ChangesetReviewStateDismissed:
+	case ChangesetCheckStateUnknown,
+		ChangesetCheckStatePending,
+		ChangesetCheckStatePassed,
+		ChangesetCheckStateFailed:
 		return true
 	default:
 		return false
 	}
 }
 
-// A ChangesetJob is the creation of a Changset on an external host from a
+// A ChangesetJob is the creation of a Changeset on an external host from a
 // local CampaignJob for a given Campaign.
 type ChangesetJob struct {
 	ID            int64
@@ -275,6 +292,9 @@ type Changeset struct {
 	ExternalBranch      string
 	ExternalDeletedAt   time.Time
 	ExternalUpdatedAt   time.Time
+	ExternalState       ChangesetState
+	ExternalReviewState ChangesetReviewState
+	ExternalCheckState  ChangesetCheckState
 }
 
 // Clone returns a clone of a Changeset.
