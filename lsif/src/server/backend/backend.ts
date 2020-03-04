@@ -702,7 +702,7 @@ export class Backend {
                 const moreDumps = i + 1 < dumps.length
                 const nextCursor = { ...cursor, skipResults: cursor.skipResults + limit }
                 const nextDumpCursor = { ...cursor, skipResults: 0, skipDumps: i + 1 }
-                const nextBatchCursor = { ...cursor, skipReferences: newOffset }
+                const nextBatchCursor = { ...cursor, skipResults: 0, skipDumps: 0, skipReferences: newOffset }
 
                 return {
                     locations: locations.map(loc => locationFromDatabase(dump.root, loc)),
