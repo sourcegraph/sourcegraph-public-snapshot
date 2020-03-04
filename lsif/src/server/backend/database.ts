@@ -13,7 +13,7 @@ import { logSpan, TracingContext, logAndTraceCall, addTags } from '../../shared/
 import { mustGet } from '../../shared/maps'
 import { Logger } from 'winston'
 import { createSilentLogger } from '../../shared/logging'
-import { InternalLocation } from './location'
+import { InternalLocation, deduplicateLocations } from './location'
 
 /** The maximum number of results in a logSpan value. */
 const MAX_SPAN_ARRAY_LENGTH = 20
@@ -124,7 +124,8 @@ export class Database {
     }
 
     /**
-     * Return a list of locations that reference the symbol at the given position.
+     * Return a list of locations that reference the symbol at the given position. The
+     * resulting list of locations does not contain duplicates.
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -150,9 +151,17 @@ export class Database {
                         referenceResults: referenceResults.slice(0, MAX_SPAN_ARRAY_LENGTH),
                         numReferenceResults: referenceResults.length,
                     })
-                    locations = locations.concat(
-                        await this.convertRangesToInternalLocations(path, document, referenceResults)
-                    )
+
+                    if (referenceResults.length > 0) {
+                        // Concat and deduplicate the union. We do this frequently so that we do not
+                        // gain large amounts of duplicates that artificially expand the list at the
+                        // end of the function.
+                        locations = deduplicateLocations(
+                            locations.concat(
+                                await this.convertRangesToInternalLocations(path, document, referenceResults)
+                            )
+                        )
+                    }
                 }
             }
 

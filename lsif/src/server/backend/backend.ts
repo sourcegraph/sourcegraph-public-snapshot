@@ -439,12 +439,11 @@ export class Backend {
         }
         const { dump, database } = dumpAndDatabase
 
-        // First get all LSIF reference result locations for the given position
-        const rawLocations = await database.references(cursor.path, cursor.position, ctx)
-
-        // Deduplicate immediately in the case that there are more edges than necessary
-        // in the index that creates multiple paths to the same set of reference locations.
-        let locations = deduplicateLocations(rawLocations).map(loc => locationFromDatabase(dump.root, loc))
+        // First get all LSIF reference result locations for the given position. Note that
+        // these results are already deduplicated.
+        let locations = (await database.references(cursor.path, cursor.position, ctx)).map(loc =>
+            locationFromDatabase(dump.root, loc)
+        )
 
         // Search the references table of the current dump. This search is necessary, but may be
         // un-intuitive. A 'Find References' operation on a reference should also return references
