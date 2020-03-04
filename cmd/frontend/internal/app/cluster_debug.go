@@ -178,7 +178,7 @@ func (ci *clusterInstrumenter) watchEndpointEvents() error {
 func (ci *clusterInstrumenter) ServeIndex(w http.ResponseWriter, r *http.Request) {
 	ci.RLock()
 	displayNames := make([]string, 0, len(ci.reverseProxies))
-	for displayName, _ := range ci.reverseProxies {
+	for displayName := range ci.reverseProxies {
 		displayNames = append(displayNames, displayName)
 	}
 	ci.RUnlock()
