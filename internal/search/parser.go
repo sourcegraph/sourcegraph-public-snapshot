@@ -133,11 +133,6 @@ func (p *parser) expect(keyword keyword) bool {
 	return true
 }
 
-// isKeyword returns whether current parser position matches a reserved keyword.
-func (p *parser) isKeyword() bool {
-	return p.match(AND) || p.match(OR) || p.match(LPAREN) || p.match(RPAREN)
-}
-
 // skipSpaces advances the input and places the parser position at the next
 // non-space value.
 func (p *parser) skipSpaces() error {
@@ -193,7 +188,7 @@ func (p *parser) ParseParameter() Parameter {
 		if p.expect(`\ `) || p.expect(`\(`) || p.expect(`\)`) {
 			continue
 		}
-		if p.isKeyword() {
+		if p.match(LPAREN) || p.match(RPAREN) {
 			break
 		}
 		if p.done() {
