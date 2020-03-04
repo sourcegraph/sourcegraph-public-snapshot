@@ -92,9 +92,9 @@ var (
 func nextSync(h campaigns.ChangesetSyncHeuristics) time.Time {
 	lastSync := h.UpdatedAt
 	var lastChange time.Time
-	// When we perform a sync, event timestamps are all updated.
+	// When we perform a sync, event timestamps are all updated, even if nothing has changed.
 	// We should fall back to h.ExternalUpdated if the diff is small
-	if diff := h.LatestEvent.Sub(lastSync); !h.LatestEvent.IsZero() && diff < minSyncDelay {
+	if diff := h.LatestEvent.Sub(lastSync); !h.LatestEvent.IsZero() && absDuration(diff) < minSyncDelay {
 		lastChange = h.ExternalUpdatedAt
 	} else {
 		lastChange = maxTime(h.ExternalUpdatedAt, h.LatestEvent)
@@ -109,6 +109,13 @@ func nextSync(h campaigns.ChangesetSyncHeuristics) time.Time {
 		diff = minSyncDelay
 	}
 	return lastSync.Add(diff)
+}
+
+func absDuration(d time.Duration) time.Duration {
+	if d > 0 {
+		return d
+	}
+	return -1 * d
 }
 
 func maxTime(a, b time.Time) time.Time {
