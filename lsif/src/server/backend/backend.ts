@@ -4,7 +4,7 @@ import * as settings from '../settings'
 import * as pgModels from '../../shared/models/pg'
 import { addTags, logSpan, TracingContext } from '../../shared/tracing'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { Database, sortMonikers, InternalLocation } from './database'
+import { Database, sortMonikers } from './database'
 import { dbFilename } from '../../shared/paths'
 import { mustGet } from '../../shared/maps'
 import { DumpManager } from '../../shared/store/dumps'
@@ -16,9 +16,9 @@ import {
     ReferencePaginationContext,
     ReferencePaginationCursor,
     RemoteDumpReferenceCursor,
-    SameDumpReferenceResultReferenceCursor,
-    SameDumpReferencesTableReferenceCursor,
+    SameDumpReferenceCursor,
 } from './cursor'
+import { InternalLocation, deduplicateLocations } from './location'
 
 /**
  * A wrapper around code intelligence operations. This class deals with logic that spans
@@ -210,7 +210,7 @@ export class Backend {
         }
 
         const cursor: ReferencePaginationCursor = {
-            phase: 'same-dump-reference-result',
+            phase: 'same-dump',
             dumpId: dump.id,
             path: pathInDb,
             position,
@@ -282,11 +282,10 @@ export class Backend {
      * Using the current state of the pagination cursor, determine what we need to query next. The
      * four major phases of a reference request are:
      *
-     *   (1) 'same-dump-reference-result': query the original dump's LSIF reference results
-     *   (2) 'same-dump-references-table': query the original dump's references table
-     *   (3) 'definition-monikers': query the monikers in the dump that defines them
-     *   (4) 'same-repo': open additional dumps that belong to the same repository
-     *   (5) 'remote-repo': open additional dumps that belong to a different repository
+     *   (1) 'same-dump': query the original dump's LSIF reference results and references table
+     *   (2) 'definition-monikers': query the monikers in the dump that defines them
+     *   (3) 'same-repo': open additional dumps that belong to the same repository
+     *   (4) 'remote-repo': open additional dumps that belong to a different repository
      *
      * This method will return any locations found in this page of results as well as a cursor
      * indicating how to execute the next page of results. If the cursor is undefined there are no
@@ -343,17 +342,10 @@ export class Backend {
         }
 
         switch (cursor.phase) {
-            case 'same-dump-reference-result': {
+            case 'same-dump': {
                 return recur(
-                    () => this.performSameDumpReferenceResultReferences(limit, cursor, ctx),
-                    () => ({ ...cursor, phase: 'same-dump-references-table', skipMonikers: 0, skipResults: 0 })
-                )
-            }
-
-            case 'same-dump-references-table': {
-                return recur(
-                    () => this.performSameDumpReferencesTableReferences(limit, cursor, ctx),
-                    () => ({ ...cursor, phase: 'definition-monikers', skipMonikers: 0, skipResults: 0 })
+                    () => this.performSameDumpReferences(limit, cursor, ctx),
+                    () => ({ ...cursor, phase: 'definition-monikers', skipResults: 0 })
                 )
             }
 
@@ -421,16 +413,24 @@ export class Backend {
     }
 
     /**
-     * Search the LSIF reference results of the current dump. This method returns a cursor
-     * if there are reference results locations remaining for a subsequent page.
+     * Search the LSIF reference results and the references table of the current dump. This method
+     * returns a cursor if there are reference results locations remaining for a subsequent page.
+     *
+     * Implementation detail: this method brings all of the LSIF and references table results into
+     * memory so that they can be reasonable deduplicated. We splice the combined results by index
+     * and return pages in this manner rather than pulling back a set of results from the SQLite
+     * database. This step turns out to be quite necessary, as a single LSIF dump can have a fair
+     * amount of reference duplication when looking at both result set edges and attached monikers.
+     * Skipping this step may return several pages of duplicated results if not batched in this
+     * manner.
      *
      * @param limit The maximum number of locations to return on this page.
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.
      */
-    private async performSameDumpReferenceResultReferences(
+    private async performSameDumpReferences(
         limit: number,
-        cursor: SameDumpReferenceResultReferenceCursor,
+        cursor: SameDumpReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
         const dumpAndDatabase = await this.getDumpAndDatabaseById(cursor.dumpId)
@@ -439,69 +439,46 @@ export class Backend {
         }
         const { dump, database } = dumpAndDatabase
 
-        const { locations, count } = await database.references(
-            cursor.path,
-            cursor.position,
-            { take: limit, skip: cursor.skipResults },
-            ctx
-        )
+        // First get all LSIF reference result locations for the given position
+        const rawLocations = await database.references(cursor.path, cursor.position, ctx)
 
-        const newOffset = cursor.skipResults + locations.length
-        const newCursor = { ...cursor, skipResults: cursor.skipResults + limit }
+        // Deduplicate immediately in the case that there are more edges than necessary
+        // in the index that creates multiple paths to the same set of reference locations.
+        let locations = deduplicateLocations(rawLocations).map(loc => locationFromDatabase(dump.root, loc))
 
-        return {
-            locations: locations.map(loc => locationFromDatabase(dump.root, loc)),
-            newCursor: newOffset < count ? newCursor : undefined,
-        }
-    }
-
-    /**
-     * Search the references table of the current dump. This search is necessary, but may be
-     * un-intuitive. A 'Find References' operation on a reference should also return references
-     * to the definition. These are not necessarily fully linked in the LSIF data. This method
-     * returns a cursor if there are reference rows remaining for a subsequent page.
-     *
-     * @param limit The maximum number of locations to return on this page.
-     * @param cursor The pagination cursor.
-     * @param ctx The tracing context.
-     */
-    private async performSameDumpReferencesTableReferences(
-        limit: number,
-        cursor: SameDumpReferencesTableReferenceCursor,
-        ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const dumpAndDatabase = await this.getDumpAndDatabaseById(cursor.dumpId)
-        if (!dumpAndDatabase) {
-            return { locations: [] }
-        }
-        const { dump, database } = dumpAndDatabase
-
-        for (const [i, moniker] of cursor.monikers.entries()) {
-            if (i < cursor.skipMonikers) {
-                continue
-            }
-
-            const { locations, count } = await database.monikerResults(
+        // Search the references table of the current dump. This search is necessary, but may be
+        // un-intuitive. A 'Find References' operation on a reference should also return references
+        // to the definition. These are not necessarily fully linked in the LSIF data. This method
+        // returns a cursor if there are reference rows remaining for a subsequent page.
+        for (const moniker of cursor.monikers) {
+            const { locations: monikerLocations } = await database.monikerResults(
                 sqliteModels.ReferenceModel,
                 moniker,
-                { take: limit, skip: cursor.skipResults },
+                {},
                 ctx
             )
 
             if (locations.length > 0) {
-                const newResultOffset = cursor.skipResults + locations.length
-                const moreMonikers = i + 1 < cursor.monikers.length
-                const nextCursor = { ...cursor, skipResults: cursor.skipResults + limit }
-                const nextMonikerCursor = { ...cursor, skipResults: 0, skipMonikers: i + 1 }
+                // We shouldn't have inserted many duplicate rows in the references table for the
+                // same moniker (but I'm a bit afraid _not_ to deduplicate here, so there we are).
+                const mapped = deduplicateLocations(monikerLocations).map(loc => locationFromDatabase(dump.root, loc))
 
-                return {
-                    locations: locations.map(loc => locationFromDatabase(dump.root, loc)),
-                    newCursor: newResultOffset < count ? nextCursor : moreMonikers ? nextMonikerCursor : undefined,
-                }
+                // Concat and deduplicate the union. We do this frequently so that we do not
+                // gain large amounts of duplicates that artificially expand the list at the
+                // end of the function.
+                locations = deduplicateLocations(locations.concat(mapped))
             }
         }
 
-        return { locations: [] }
+        // Get the page's slice of results
+        const slicedLocations = locations.slice(cursor.skipResults, cursor.skipResults + limit)
+        const newOffset = cursor.skipResults + limit
+        const newCursor = { ...cursor, skipResults: cursor.skipResults + limit }
+
+        return {
+            locations: slicedLocations,
+            newCursor: newOffset < locations.length ? newCursor : undefined,
+        }
     }
 
     /**

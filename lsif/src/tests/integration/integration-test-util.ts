@@ -12,13 +12,13 @@ import { convertLsif } from '../../worker/conversion/importer'
 import { dbFilename, ensureDirectory } from '../../shared/paths'
 import { lsp } from 'lsif-protocol'
 import { userInfo } from 'os'
-import { InternalLocation } from '../../server/backend/database'
 import { DumpManager } from '../../shared/store/dumps'
 import { DependencyManager } from '../../shared/store/dependencies'
 import { createSilentLogger } from '../../shared/logging'
 import { PathExistenceChecker } from '../../worker/conversion/existence'
 import { ReferencePaginationCursor } from '../../server/backend/cursor'
 import { isEqual, uniqWith } from 'lodash'
+import { InternalLocation } from '../../server/backend/location'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.

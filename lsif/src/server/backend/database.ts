@@ -13,13 +13,7 @@ import { logSpan, TracingContext, logAndTraceCall, addTags } from '../../shared/
 import { mustGet } from '../../shared/maps'
 import { Logger } from 'winston'
 import { createSilentLogger } from '../../shared/logging'
-
-/** A location with the dump that contains it. */
-export interface InternalLocation {
-    dump: pgModels.LsifDump
-    path: string
-    range: lsp.Range
-}
+import { InternalLocation } from './location'
 
 /** A wrapper around operations related to a single SQLite dump. */
 export class Database {
@@ -130,19 +124,17 @@ export class Database {
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
-     * @param pagination A limit and offset to use for the query.
      * @param ctx The tracing context.
      */
     public async references(
         path: string,
         position: lsp.Position,
-        { skip = 0, take }: { skip?: number; take?: number },
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; count: number }> {
+    ): Promise<InternalLocation[]> {
         return this.logAndTraceCall(ctx, 'Fetching references', async ctx => {
             const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
             if (!document || ranges.length === 0) {
-                return { locations: [], count: 0 }
+                return []
             }
 
             let locations: InternalLocation[] = []
@@ -159,9 +151,7 @@ export class Database {
                 }
             }
 
-            const uniqueLocations = uniqWith(locations, isEqual)
-            const slicedLocations = uniqueLocations.slice(skip, take ? skip + take : undefined)
-            return { locations: slicedLocations, count: uniqueLocations.length }
+            return locations
         })
     }
 
