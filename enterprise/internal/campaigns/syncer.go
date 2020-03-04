@@ -113,7 +113,7 @@ func nextSync(h campaigns.ChangesetSyncHeuristics) time.Time {
 }
 
 func absDuration(d time.Duration) time.Duration {
-	if d > 0 {
+	if d >= 0 {
 		return d
 	}
 	return -1 * d
