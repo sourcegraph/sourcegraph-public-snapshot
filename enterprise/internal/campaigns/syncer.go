@@ -57,6 +57,7 @@ func (s *ChangesetSyncer) Run() {
 			err := s.SyncChangesetByID(ctx, id)
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
+				continue
 			}
 			s.queue.mtx.Lock()
 			s.queue.prioritySynced[id] = time.Now()
