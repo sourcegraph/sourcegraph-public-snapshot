@@ -58,6 +58,9 @@ func (s *ChangesetSyncer) Run() {
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
 			}
+			s.queue.mtx.Lock()
+			s.queue.prioritySynced[id] = time.Now()
+			s.queue.mtx.Unlock()
 			continue
 		}
 
@@ -335,15 +338,18 @@ type changesetQueue struct {
 
 	mtx      sync.Mutex
 	priority map[int64]struct{}
+	// track when priority items were synced so that the scheduler doesn't resync them
+	prioritySynced map[int64]time.Time
 }
 
 // newChangesetQueue creates a new queue for holding changeset sync instructions in chronological order.
 // The queue also has a high priority channel for items that should be synced ASAP.
 func newChangesetQueue() *changesetQueue {
 	return &changesetQueue{
-		scheduled: make(chan int64),
-		priority:  make(map[int64]struct{}),
-		notify:    make(chan struct{}),
+		scheduled:      make(chan int64),
+		priority:       make(map[int64]struct{}),
+		prioritySynced: make(map[int64]time.Time),
+		notify:         make(chan struct{}),
 	}
 }
 
@@ -360,9 +366,26 @@ func (q *changesetQueue) reschedule(schedule []syncSchedule) {
 	ctx := context.Background()
 	ctx, q.cancel = context.WithCancel(ctx)
 	go func() {
+		defer func() {
+			// We can clear out prioritySynced as we'll have more up to date
+			// data from the db
+			q.mtx.Lock()
+			defer q.mtx.Unlock()
+			for k := range q.prioritySynced {
+				delete(q.prioritySynced, k)
+			}
+		}()
 		for _, s := range schedule {
 			// Get most urgent changeset and sleep until it should be synced
 			sleep(ctx, time.Until(s.nextSync))
+
+			q.mtx.Lock()
+			t, ok := q.prioritySynced[s.changesetID]
+			q.mtx.Unlock()
+			if ok && time.Since(t) < minSyncDelay {
+				// Synced recently as high priority, skip
+				continue
+			}
 
 			select {
 			case <-ctx.Done():
