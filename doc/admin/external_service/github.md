@@ -62,6 +62,9 @@ The following [webhook events](https://developer.github.com/webhooks/) are curre
 - Pull requests
 - Pull request reviews
 - Pull request review comments
+- Check runs
+- Check suites
+- Statuses
 
 To set up a organization webhook on GitHub, go to the settings page of your organization. From there, click **Webhooks**, then **Add webhook**.
 
