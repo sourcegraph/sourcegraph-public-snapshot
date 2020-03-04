@@ -216,24 +216,24 @@ describe('Backend', () => {
         const { locations: locations2, pageSizes: pageSizes2, numPages: numPages2 } = await fetch(5)
         const { locations: locations3, pageSizes: pageSizes3, numPages: numPages3 } = await fetch(100)
 
+        // Ensure we have the correct data (order is asserted here)
+        expect(extractRepos(locations1)).toEqual([repositoryId, ids.ext1, ids.ext2, ids.ext3, ids.ext4, ids.ext5])
+
         // Ensure we have the same data
         expect(locations1).toEqual(locations2)
         expect(locations1).toEqual(locations3)
 
-        // Ensure num pages decrease with page size
-        expect(numPages1).toBeGreaterThan(numPages2)
-        expect(numPages2).toBeGreaterThan(numPages3)
+        // Number of results are the same (no additional duplicates)
+        expect(pageSizes1.reduce((a, b) => a + b, 0)).toEqual(pageSizes2.reduce((a, b) => a + b, 0))
+        expect(pageSizes1.reduce((a, b) => a + b, 0)).toEqual(pageSizes3.reduce((a, b) => a + b, 0))
 
         // Ensure pages are full
         ensureSizes(pageSizes1, 1)
         ensureSizes(pageSizes2, 5)
         ensureSizes(pageSizes3, 100)
 
-        // Number of results are the same (no additional duplicates)
-        expect(pageSizes1.reduce((a, b) => a + b, 0)).toEqual(pageSizes2.reduce((a, b) => a + b, 0))
-        expect(pageSizes1.reduce((a, b) => a + b, 0)).toEqual(pageSizes3.reduce((a, b) => a + b, 0))
-
-        // Ensure we have the correct data (order is asserted here)
-        expect(extractRepos(locations1)).toEqual([repositoryId, ids.ext1, ids.ext2, ids.ext3, ids.ext4, ids.ext5])
+        // Ensure num pages decrease with page size
+        expect(numPages1).toBeGreaterThan(numPages2)
+        expect(numPages2).toBeGreaterThan(numPages3)
     })
 })

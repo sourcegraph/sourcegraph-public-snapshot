@@ -443,6 +443,7 @@ export function filterNodeModules<T extends { locations: lsp.Location[] }>(resp:
  * @param path The path of the document to which the position belongs.
  * @param position The current hover position.
  * @param limit The page limit.
+ * @param remoteDumpLimit The maximum number of remote dumps to query in one operation.
  */
 export async function queryAllReferences(
     backend: Backend,
@@ -450,14 +451,22 @@ export async function queryAllReferences(
     commit: string,
     path: string,
     position: lsp.Position,
-    limit: number
+    limit: number,
+    remoteDumpLimit?: number
 ): Promise<{ locations: InternalLocation[]; pageSizes: number[]; numPages: number }> {
     let locations: InternalLocation[] = []
     const pageSizes: number[] = []
     let cursor: ReferencePaginationCursor | undefined
 
     while (true) {
-        const result = await backend.references(repositoryId, commit, path, position, { limit, cursor })
+        const result = await backend.references(
+            repositoryId,
+            commit,
+            path,
+            position,
+            { limit, cursor },
+            remoteDumpLimit
+        )
         if (!result) {
             break
         }
