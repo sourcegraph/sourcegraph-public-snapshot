@@ -8,7 +8,7 @@ import { Database, sortMonikers } from './database'
 import { dbFilename } from '../../shared/paths'
 import { mustGet } from '../../shared/maps'
 import { DumpManager } from '../../shared/store/dumps'
-import { REFERENCES_REMOTE_DUMP_LIMIT } from '../../shared/constants'
+import { DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT } from '../../shared/constants'
 import { DependencyManager } from '../../shared/store/dependencies'
 import { isDefined } from '../../shared/util'
 import {
@@ -160,6 +160,7 @@ export class Backend {
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      * @param paginationContext Context describing the current request for paginated results.
+     * @param remoteDumpLimit The maximum number of remote dumps to query in one operation.
      * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
      * @param ctx The tracing context.
      */
@@ -169,6 +170,7 @@ export class Backend {
         path: string,
         position: lsp.Position,
         paginationContext: ReferencePaginationContext = { limit: 10 },
+        remoteDumpLimit = DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT,
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor } | undefined> {
@@ -176,7 +178,7 @@ export class Backend {
             return this.handleReferencePaginationCursor(
                 repositoryId,
                 commit,
-                REFERENCES_REMOTE_DUMP_LIMIT,
+                remoteDumpLimit,
                 paginationContext.limit,
                 paginationContext.cursor,
                 ctx
@@ -222,7 +224,7 @@ export class Backend {
         return this.handleReferencePaginationCursor(
             repositoryId,
             commit,
-            REFERENCES_REMOTE_DUMP_LIMIT,
+            remoteDumpLimit,
             paginationContext.limit,
             cursor,
             newCtx
@@ -293,7 +295,7 @@ export class Backend {
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
-     * @param remoteDumpLimit The maximum number of dumps to open.
+     * @param remoteDumpLimit The maximum number of remote dumps to query in one operation.
      * @param limit The maximum number of locations to return on this page.
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.
@@ -538,7 +540,7 @@ export class Backend {
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
-     * @param remoteDumpLimit The maximum number of dumps to open.
+     * @param remoteDumpLimit The maximum number of remote dumps to query in one operation.
      * @param limit The maximum number of locations to return on this page.
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.
@@ -583,7 +585,7 @@ export class Backend {
      * to process on a subsequent page.
      *
      * @param repositoryId The repository identifier.
-     * @param remoteDumpLimit The maximum number of dumps to open.
+     * @param remoteDumpLimit The maximum number of remote dumps to query in one operation.
      * @param limit The maximum number of locations to return on this page.
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.

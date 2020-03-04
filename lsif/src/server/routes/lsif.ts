@@ -232,6 +232,7 @@ export function createLsifRouter(
                     path,
                     { line, character },
                     { limit, cursor },
+                    constants.DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT,
                     uploadId,
                     ctx
                 )
