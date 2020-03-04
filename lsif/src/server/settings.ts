@@ -26,9 +26,9 @@ export const PURGE_OLD_DUMPS_INTERVAL = readEnvInt('PURGE_OLD_DUMPS_INTERVAL', 6
 export const DEAD_DUMP_CHUNK_SIZE = readEnvInt('DEAD_DUMP_CHUNK_SIZE', 100)
 
 /**
- * The default number of remote dumps to open when performing a global find-reference operation.
+ * The default number of location results to return when performing a find-references operation.
  */
-export const DEFAULT_REFERENCES_NUM_REMOTE_DUMPS = readEnvInt('DEFAULT_REFERENCES_NUM_REMOTE_DUMPS', 10)
+export const DEFAULT_REFERENCES_PAGE_SIZE = readEnvInt('DEFAULT_REFERENCES_PAGE_SIZE', 10)
 
 /**
  * The interval (in seconds) to invoke the cleanFailedUploads task.

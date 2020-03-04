@@ -233,7 +233,7 @@ paths:
             type: number
         - name: limit
           in: query
-          description: The maximum number of remote uploads to search for remote references per page. This parameter is only read on references request.
+          description: The maximum number of locations to return in one page.
           required: false
           schema:
             type: number

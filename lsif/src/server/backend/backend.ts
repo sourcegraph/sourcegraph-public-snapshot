@@ -20,8 +20,8 @@ import {
     SameDumpReferencesTableReferenceCursor,
 } from './cursor'
 
-// TODO - make this configurable
-const DEFAULT_LIMIT = 100
+/** The number of remote dumps we will query per page. */
+const REMOTE_DUMP_LIMIT = 20
 
 /**
  * A wrapper around code intelligence operations.
@@ -178,6 +178,7 @@ export class Backend {
             return this.handleReferencePaginationCursor(
                 repositoryId,
                 commit,
+                REMOTE_DUMP_LIMIT,
                 paginationContext.limit,
                 paginationContext.cursor,
                 ctx
@@ -220,7 +221,14 @@ export class Backend {
         }
 
         // Request the first page of results
-        return this.handleReferencePaginationCursor(repositoryId, commit, paginationContext.limit, cursor, newCtx)
+        return this.handleReferencePaginationCursor(
+            repositoryId,
+            commit,
+            REMOTE_DUMP_LIMIT,
+            paginationContext.limit,
+            cursor,
+            newCtx
+        )
     }
 
     /**
@@ -288,13 +296,15 @@ export class Backend {
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
-     * @param limit The maximum number of dumps to open.
+     * @param remoteDumpLimit The maximum number of dumps to open.
+     * @param limit The maximum number of locations to return on this page.
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.
      */
     private async handleReferencePaginationCursor(
         repositoryId: number,
         commit: string,
+        remoteDumpLimit: number,
         limit: number,
         cursor: ReferencePaginationCursor,
         ctx: TracingContext = {}
@@ -304,9 +314,9 @@ export class Backend {
                 return this.handleReferencePaginationCursorRecursive(
                     repositoryId,
                     commit,
+                    remoteDumpLimit,
                     limit,
-                    0,
-                    () => this.performSameDumpReferenceResultReferences(cursor, ctx),
+                    () => this.performSameDumpReferenceResultReferences(limit, cursor, ctx),
                     () => ({ ...cursor, phase: 'same-dump-references-table', skipMonikers: 0, skipResults: 0 }),
                     ctx
                 )
@@ -316,9 +326,9 @@ export class Backend {
                 return this.handleReferencePaginationCursorRecursive(
                     repositoryId,
                     commit,
+                    remoteDumpLimit,
                     limit,
-                    0,
-                    () => this.performSameDumpReferencesTableReferences(cursor, ctx),
+                    () => this.performSameDumpReferencesTableReferences(limit, cursor, ctx),
                     () => ({ ...cursor, phase: 'definition-monikers', skipMonikers: 0, skipResults: 0 }),
                     ctx
                 )
@@ -353,9 +363,9 @@ export class Backend {
                 return this.handleReferencePaginationCursorRecursive(
                     repositoryId,
                     commit,
+                    remoteDumpLimit,
                     limit,
-                    0,
-                    () => this.performDefinitionMonikersReferences(cursor, ctx),
+                    () => this.performDefinitionMonikersReferences(limit, cursor, ctx),
                     makeCursor,
                     ctx
                 )
@@ -376,16 +386,24 @@ export class Backend {
                 return this.handleReferencePaginationCursorRecursive(
                     repositoryId,
                     commit,
+                    remoteDumpLimit,
                     limit,
-                    0,
-                    () => this.performSameRepositoryRemoteReferences(repositoryId, commit, limit, cursor, ctx),
+                    () =>
+                        this.performSameRepositoryRemoteReferences(
+                            repositoryId,
+                            commit,
+                            remoteDumpLimit,
+                            limit,
+                            cursor,
+                            ctx
+                        ),
                     makeCursor,
                     ctx
                 )
             }
 
             case 'remote-repo': {
-                return this.performRemoteReferences(repositoryId, limit, cursor, ctx)
+                return this.performRemoteReferences(repositoryId, remoteDumpLimit, limit, cursor, ctx)
             }
         }
     }
@@ -399,9 +417,8 @@ export class Backend {
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
-     * @param limit The maximum number of dumps to open.
-     * @param threshold Request the next page of results immediately if the number of results
-     *     in the previous page is below this threshold. Concatenate the results together.
+     * @param remoteDumpLimit The maximum number of dumps to open.
+     * @param limit The maximum number of locations to return on this page.
      * @param handler The handler for the current page of results.
      * @param makeCursor A factory that creates a cursor for the next phase of pagination.
      * @param ctx The tracing context.
@@ -409,22 +426,23 @@ export class Backend {
     private async handleReferencePaginationCursorRecursive(
         repositoryId: number,
         commit: string,
+        remoteDumpLimit: number,
         limit: number,
-        threshold: number,
         handler: () => Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }>,
         makeCursor: () => Promise<ReferencePaginationCursor | undefined> | ReferencePaginationCursor | undefined,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
         const { locations, newCursor: originalCursor } = await handler()
         const newCursor = originalCursor || (await makeCursor())
-        if (locations.length > threshold || !newCursor) {
+        if (!newCursor) {
+            // TODO - fall through with different limit
             return { locations, newCursor }
         }
 
         const {
             locations: nextPageLocations,
             newCursor: nextPageNewCursor,
-        } = await this.handleReferencePaginationCursor(repositoryId, commit, limit, newCursor, ctx)
+        } = await this.handleReferencePaginationCursor(repositoryId, commit, limit, remoteDumpLimit, newCursor, ctx)
 
         return { locations: uniqWith(locations.concat(nextPageLocations), isEqual), newCursor: nextPageNewCursor }
     }
@@ -433,10 +451,12 @@ export class Backend {
      * Search the LSIF reference results of the current dump. This method returns a cursor
      * if there are reference results locations remaining for a subsequent page.
      *
+     * @param limit The maximum number of locations to return on this page.
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.
      */
     private async performSameDumpReferenceResultReferences(
+        limit: number,
         cursor: SameDumpReferenceResultReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
@@ -449,12 +469,12 @@ export class Backend {
         const { locations, count } = await database.references(
             cursor.path,
             cursor.position,
-            { take: DEFAULT_LIMIT, skip: cursor.skipResults },
+            { take: limit, skip: cursor.skipResults },
             ctx
         )
 
         const newOffset = cursor.skipResults + locations.length
-        const newCursor = { ...cursor, skipResults: cursor.skipResults + DEFAULT_LIMIT }
+        const newCursor = { ...cursor, skipResults: cursor.skipResults + limit }
 
         return {
             locations: locations.map(loc => locationFromDatabase(dump.root, loc)),
@@ -468,13 +488,12 @@ export class Backend {
      * to the definition. These are not necessarily fully linked in the LSIF data. This method
      * returns a cursor if there are reference rows remaining for a subsequent page.
      *
-     * @param repositoryId The repository identifier.
-     * @param commit The target commit.
-     * @param limit The maximum number of dumps to open.
+     * @param limit The maximum number of locations to return on this page.
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.
      */
     private async performSameDumpReferencesTableReferences(
+        limit: number,
         cursor: SameDumpReferencesTableReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
@@ -492,14 +511,14 @@ export class Backend {
             const { locations, count } = await database.monikerResults(
                 sqliteModels.ReferenceModel,
                 moniker,
-                { take: DEFAULT_LIMIT, skip: cursor.skipResults },
+                { take: limit, skip: cursor.skipResults },
                 ctx
             )
 
             if (locations.length > 0) {
                 const newResultOffset = cursor.skipResults + locations.length
                 const moreMonikers = i + 1 < cursor.monikers.length
-                const nextCursor = { ...cursor, skipResults: cursor.skipResults + DEFAULT_LIMIT }
+                const nextCursor = { ...cursor, skipResults: cursor.skipResults + limit }
                 const nextMonikerCursor = { ...cursor, skipResults: 0, skipMonikers: i + 1 }
 
                 return {
@@ -519,13 +538,12 @@ export class Backend {
      * order that considers moniker schemes, the first one to get results should be the most desirable.
      * This method returns a cursor if there are additional monikers to process on a subsequent page.
      *
-     * @param repositoryId The repository identifier.
-     * @param commit The target commit.
-     * @param limit The maximum number of dumps to open.
+     * @param limit The maximum number of locations to return on this page.
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.
      */
     private async performDefinitionMonikersReferences(
+        limit: number,
         cursor: DefinitionMonikersReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
@@ -544,13 +562,13 @@ export class Backend {
                 document,
                 moniker,
                 sqliteModels.ReferenceModel,
-                { take: DEFAULT_LIMIT, skip: cursor.skipResults },
+                { take: limit, skip: cursor.skipResults },
                 ctx
             )
 
             if (locations.length > 0) {
                 const newOffset = cursor.skipResults + locations.length
-                const newCursor = { ...cursor, skipResults: cursor.skipResults + DEFAULT_LIMIT }
+                const newCursor = { ...cursor, skipResults: cursor.skipResults + limit }
 
                 return {
                     locations,
@@ -571,13 +589,15 @@ export class Backend {
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
-     * @param limit The maximum number of dumps to open.
+     * @param remoteDumpLimit The maximum number of dumps to open.
+     * @param limit The maximum number of locations to return on this page.
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.
      */
     private async performSameRepositoryRemoteReferences(
         repositoryId: number,
         commit: string,
+        remoteDumpLimit: number,
         limit: number,
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
@@ -589,7 +609,7 @@ export class Backend {
             name: cursor.name,
             version: cursor.version,
             identifier: cursor.identifier,
-            limit,
+            limit: remoteDumpLimit,
             offset: cursor.skipReferences,
             ctx,
         })
@@ -598,6 +618,7 @@ export class Backend {
             dumpId: cursor.dumpId,
             moniker: { scheme: cursor.scheme, identifier: cursor.identifier },
             dumps: references.map(r => r.dump),
+            limit,
             cursor,
             newOffset,
             totalCount,
@@ -613,12 +634,14 @@ export class Backend {
      * to process on a subsequent page.
      *
      * @param repositoryId The repository identifier.
-     * @param limit The maximum number of dumps to open.
+     * @param remoteDumpLimit The maximum number of dumps to open.
+     * @param limit The maximum number of locations to return on this page.
      * @param cursor The pagination cursor.
      * @param ctx The tracing context.
      */
     private async performRemoteReferences(
         repositoryId: number,
+        remoteDumpLimit: number,
         limit: number,
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
@@ -629,7 +652,7 @@ export class Backend {
             name: cursor.name,
             version: cursor.version,
             identifier: cursor.identifier,
-            limit,
+            limit: remoteDumpLimit,
             offset: cursor.skipReferences,
             ctx,
         })
@@ -638,6 +661,7 @@ export class Backend {
             dumpId: cursor.dumpId,
             moniker: { scheme: cursor.scheme, identifier: cursor.identifier },
             dumps: references.map(r => r.dump),
+            limit,
             cursor,
             newOffset,
             totalCount,
@@ -679,6 +703,7 @@ export class Backend {
         dumpId,
         moniker,
         dumps,
+        limit,
         cursor,
         newOffset,
         totalCount,
@@ -690,8 +715,13 @@ export class Backend {
         moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>
         /** The dumps to open. */
         dumps: pgModels.LsifDump[]
+        /** The maximum number of locations to return on this page. */
+        limit: number
+        /** The paginatino cursor. */
         cursor: RemoteDumpReferenceCursor
+        /** The dump offset for the next page of results. */
         newOffset: number
+        /** The total count of candidate dumps. */
         totalCount: number
         /** The tracing context. */
         ctx: TracingContext
@@ -714,14 +744,14 @@ export class Backend {
             const { locations, count } = await this.createDatabase(dump).monikerResults(
                 sqliteModels.ReferenceModel,
                 moniker,
-                { take: DEFAULT_LIMIT, skip: cursor.skipResults },
+                { take: limit, skip: cursor.skipResults },
                 ctx
             )
 
             if (locations.length > 0) {
                 const newResultOffset = cursor.skipResults + locations.length
                 const moreDumps = i + 1 < dumps.length
-                const nextCursor = { ...cursor, skipResults: cursor.skipResults + DEFAULT_LIMIT }
+                const nextCursor = { ...cursor, skipResults: cursor.skipResults + limit }
                 const nextDumpCursor = { ...cursor, skipResults: 0, skipDumps: i + 1 }
                 const nextBatchCursor = { ...cursor, skipReferences: newOffset }
 
@@ -922,7 +952,6 @@ export class Backend {
      * Create a database for the dump with the given identifier.
      *
      * @param dumpId The dump id.
-     * @param ctx The tracing context.
      */
     private async getDumpAndDatabaseById(
         dumpId: number

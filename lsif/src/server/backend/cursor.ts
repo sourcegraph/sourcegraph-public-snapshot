@@ -3,7 +3,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 
 /** Context describing the current request for paginated results. */
 export interface ReferencePaginationContext {
-    /** The maximum number of remote dumps to search. */
+    /** The maximum number of locations to return on this page. */
     limit: number
 
     /** Context describing the next page of results. */

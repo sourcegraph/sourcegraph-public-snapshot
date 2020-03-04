@@ -223,7 +223,7 @@ export function createLsifRouter(
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repositoryId, commit, path, line, character, uploadId, cursor }: ReferencesQueryArgs = req.query
-                const { limit } = extractLimitOffset(req.query, settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
+                const { limit } = extractLimitOffset(req.query, settings.DEFAULT_REFERENCES_PAGE_SIZE)
                 const ctx = createTracingContext(req, { repositoryId, commit, path })
 
                 const result = await backend.references(
