@@ -17,9 +17,10 @@ After this process, Sourcegraph's data will be stored in Docker volumes instead 
 
 While this process will migrate your user data, the new Docker Compose deployment will need to  regenerate all the other ephemeral data:
 
-* repositories will need to be re-cloned
-* search indexes will need to be recreated
-* etc.
+* Repositories are re-cloned
+* Search indexes are recreated
+
+This ephemeral data may take awhile to regenerate if you have a lot of repositories.
 
 ## Migration guide
 
@@ -178,6 +179,6 @@ docker-compose -f docker-compose.yaml up -d
 
 The migration process is now complete.
 
-You should be able to log into your instance and verify that your both previous users and configuration are still present.
+You should be able to log into your instance and verify that previous users and configuration are still present. Repositories may take awhile to clone and index, but their names should be immediately visible in the site admin repositories list. Wait for repositories to clone and verify the new Sourcegraph instance works as expected.
 
-It is now safe to tear down the host running the `sourcegraph/server` instance.
+After verifying the new instance is functional, you can tear down the old `sourcegraph/server` single Docker container Sourcegraph instance.
