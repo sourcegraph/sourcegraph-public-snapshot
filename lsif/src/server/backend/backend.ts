@@ -823,9 +823,8 @@ export class Backend {
         if (!dumpAndDatabase) {
             return undefined
         }
-        const { dump, database } = dumpAndDatabase
 
-        return { dump, database, ctx: addTags(ctx, { closestCommit: dump.commit }) }
+        return { ...dumpAndDatabase, ctx: addTags(ctx, { closestCommit: dumpAndDatabase.dump.commit }) }
     }
 
     /**
