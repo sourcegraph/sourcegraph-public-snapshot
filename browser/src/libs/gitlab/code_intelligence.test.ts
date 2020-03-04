@@ -20,6 +20,7 @@ describe('gitlab/code_intelligence', () => {
         beforeAll(async () => {
             document.documentElement.innerHTML = await readFile(__dirname + '/__fixtures__/merge-request.html', 'utf-8')
             jsdom.reconfigure({ url: 'https://gitlab.com/sourcegraph/jsonrpc2/merge_requests/1/diffs' })
+            globalThis.gon = { gitlab_url: 'https://gitlab.com' }
         })
         it('returns an URL to the Sourcegraph instance if the location has a viewState', () => {
             expect(
