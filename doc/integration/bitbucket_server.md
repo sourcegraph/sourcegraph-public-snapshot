@@ -5,8 +5,9 @@ You can use Sourcegraph with Git repositories hosted on [Bitbucket Server](https
 Feature | Supported?
 ------- | ----------
 [Repository syncing](../admin/external_service/bitbucket_server.md) | ✅
+[Webhooks](../admin/external_service/bitbucket_server.md#webhooks) | ✅
 [Repository permissions](../admin/external_service/bitbucket_server.md#repository-permissions) | ✅
-[Sourcegraph native code intelligence plugin](#sourcegraph-native-code-intelligence-plugin) | ✅
+[Sourcegraph Bitbucket Server plugin](#sourcegraph-bitbucket-server-plugin) | ✅
 [Browser extension](#browser-extension) | ✅
 
 ## Repository syncing
@@ -17,26 +18,35 @@ Site admins can [add Bitbucket Server repositories to Sourcegraph](../admin/exte
 
 Site admins can [configure Sourcegraph to respect Bitbucket Server's repository access permissions](../admin/external_service/bitbucket_server.md#repository-permissions).
 
-## Sourcegraph native code intelligence plugin
+## Sourcegraph Bitbucket Server Plugin
+
+We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) so users don't need to install and configure the browser extension to get code intelligence when browsing code or reviewing pull requests on Bitbucket Server.
+
+The plugin also enables **faster ACL permission syncing between Sourcegraph and Bitbucket Server** and adds **webhooks to Bitbucket Server**, which are used by and highly recommended for [Campaigns](../user/campaigns.md).
 
 ![Bitbucket Server code intelligence](https://storage.googleapis.com/sourcegraph-assets/bitbucket-code-intel-pr-short.gif)
 
-We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) so each user doesn't need to install and configure the browser extension.
+### Installation and requirements
 
-This involves adding a new add-on to your Bitbucket Server instance and see the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository for installation instructions and configuration settings.
+See the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository for instructions on how to install the plugin on your Bitbucket Server instance.
 
-> NOTE: For the Bitbucket Server plugin to communicate with the Sourcegraph instance, the Sourcegraph site configuration must be updated to add the Bitbucket Server URL to the [`corsOrigin` property](../admin/config/site_config.md)
+For the Bitbucket Server plugin to then communicate with the Sourcegraph instance, the Sourcegraph site configuration must be updated to include the [`corsOrigin` property](../admin/config/site_config.md) with the Bitbucket Server URL
 
 ```json
 {
   // ...
-  "corsOrigin":
-    "https://my-bitbucket.example.com"
+  "corsOrigin": "https://my-bitbucket.example.com"
   // ...
 }
 ```
 
-### Experimental Faster ACL permissions fetching
+### Webhooks
+
+Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** to see a list of all configured webhooks and to create a new one.
+
+Sourcegraph automatically creates a webhook for usage with [Campaigns](../user/campaigns.md) once the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md) is configured in Sourcegraph.
+
+### Experimental: faster ACL permissions fetching
 
 The plugin also supports an experimental method of faster ACL permissions fetching that aims to improve search speed. You can enable this in the experimental section of the [site configuration](../admin/config/site_config.md):
 
