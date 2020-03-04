@@ -553,26 +553,29 @@ export class Backend {
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const { references, newOffset, totalCount } = await this.dependencyManager.getSameRepoRemoteReferences({
-            repositoryId,
-            commit,
-            scheme: cursor.scheme,
-            name: cursor.name,
-            version: cursor.version,
-            identifier: cursor.identifier,
-            limit: remoteDumpLimit,
-            offset: cursor.skipReferences,
-            ctx,
-        })
+        const getReferences = (): Promise<{
+            references: pgModels.ReferenceModel[]
+            totalCount: number
+            newOffset: number
+        }> =>
+            this.dependencyManager.getSameRepoRemoteReferences({
+                repositoryId,
+                commit,
+                scheme: cursor.scheme,
+                name: cursor.name,
+                version: cursor.version,
+                identifier: cursor.identifier,
+                limit: remoteDumpLimit,
+                offset: cursor.skipReferences,
+                ctx,
+            })
 
         return this.locationsFromRemoteReferences({
             dumpId: cursor.dumpId,
             moniker: { scheme: cursor.scheme, identifier: cursor.identifier },
-            dumps: references.map(r => r.dump),
+            getReferences,
             limit,
             cursor,
-            newOffset,
-            totalCount,
             ctx,
         })
     }
@@ -597,25 +600,28 @@ export class Backend {
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const { references, newOffset, totalCount } = await this.dependencyManager.getReferences({
-            repositoryId,
-            scheme: cursor.scheme,
-            name: cursor.name,
-            version: cursor.version,
-            identifier: cursor.identifier,
-            limit: remoteDumpLimit,
-            offset: cursor.skipReferences,
-            ctx,
-        })
+        const getReferences = (): Promise<{
+            references: pgModels.ReferenceModel[]
+            totalCount: number
+            newOffset: number
+        }> =>
+            this.dependencyManager.getReferences({
+                repositoryId,
+                scheme: cursor.scheme,
+                name: cursor.name,
+                version: cursor.version,
+                identifier: cursor.identifier,
+                limit: remoteDumpLimit,
+                offset: cursor.skipReferences,
+                ctx,
+            })
 
         return this.locationsFromRemoteReferences({
             dumpId: cursor.dumpId,
             moniker: { scheme: cursor.scheme, identifier: cursor.identifier },
-            dumps: references.map(r => r.dump),
+            getReferences,
             limit,
             cursor,
-            newOffset,
-            totalCount,
             ctx,
         })
     }
@@ -653,30 +659,27 @@ export class Backend {
     private async locationsFromRemoteReferences({
         dumpId,
         moniker,
-        dumps,
+        getReferences,
         limit,
         cursor,
-        newOffset,
-        totalCount,
         ctx = {},
     }: {
         /** The ID of the dump for which this database answers queries. */
         dumpId: pgModels.DumpId
         /** The target moniker. */
         moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>
-        /** The dumps to open. */
-        dumps: pgModels.LsifDump[]
+        /** A function that retrieves the next batch of references. */
+        getReferences: () => Promise<{ references: pgModels.ReferenceModel[]; newOffset: number; totalCount: number }>
         /** The maximum number of locations to return on this page. */
         limit: number
-        /** The paginatino cursor. */
+        /** The pagination cursor. */
         cursor: RemoteDumpReferenceCursor
-        /** The dump offset for the next page of results. */
-        newOffset: number
-        /** The total count of candidate dumps. */
-        totalCount: number
         /** The tracing context. */
         ctx: TracingContext
     }): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+        const { references, newOffset, totalCount } = await getReferences()
+        const dumps = references.map(r => r.dump)
+
         logSpan(ctx, 'package_references', {
             references: dumps.map(d => ({ repositoryId: d.repositoryId, commit: d.commit })),
         })
