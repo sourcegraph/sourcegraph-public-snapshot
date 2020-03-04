@@ -5,6 +5,7 @@ You can use Sourcegraph with Git repositories hosted on [Bitbucket Server](https
 Feature | Supported?
 ------- | ----------
 [Repository syncing](../admin/external_service/bitbucket_server.md) | ✅
+[Webhooks](../admin/external_service/bitbucket_server.md#webhooks) | ✅
 [Repository permissions](../admin/external_service/bitbucket_server.md#repository-permissions) | ✅
 [Sourcegraph Bitbucket Server plugin](#sourcegraph-bitbucket-server-plugin) | ✅
 [Browser extension](#browser-extension) | ✅
@@ -39,7 +40,13 @@ For the Bitbucket Server plugin to then communicate with the Sourcegraph instanc
 }
 ```
 
-### Experimental Faster ACL permissions fetching
+### Webhooks
+
+Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** to see a list of all configured webhooks and to create a new one.
+
+Sourcegraph automatically creates a webhook for usage with [Campaigns](../user/campaigns.md) once the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md) is configured in Sourcegraph.
+
+### Experimental: faster ACL permissions fetching
 
 The plugin also supports an experimental method of faster ACL permissions fetching that aims to improve search speed. You can enable this in the experimental section of the [site configuration](../admin/config/site_config.md):
 
