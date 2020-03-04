@@ -1,6 +1,5 @@
 import * as sqliteModels from '../../shared/models/sqlite'
 import * as lsp from 'vscode-languageserver-protocol'
-import { isEqual, uniqWith } from 'lodash'
 import * as settings from '../settings'
 import * as pgModels from '../../shared/models/pg'
 import { addTags, logSpan, TracingContext } from '../../shared/tracing'
@@ -308,85 +307,88 @@ export class Backend {
         cursor: ReferencePaginationCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+        /**
+         * This method takes a handler that executes the current page of results and returns a new
+         * cursor for the **same phase** of results. If there are no more results in that phase of
+         * the result set, the cursor is undefined. In this case, we call the `makeCursor` factory
+         * function to construct the cursor for the next phase of pagination.
+         *
+         * If the locations from the handler function do not produce a full page of results, the
+         * next page of results are evaluated with a modified limit.
+         *
+         * @param handler The handler for the current page of results.
+         * @param makeCursor A factory that creates a cursor for the next phase of pagination.
+         */
+        const recur = async (
+            handler: () => Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }>,
+            makeCursor: () => Promise<ReferencePaginationCursor | undefined> | ReferencePaginationCursor | undefined
+        ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> => {
+            const { locations, newCursor: originalCursor } = await handler()
+            const newCursor = originalCursor || (await makeCursor())
+            if (!newCursor) {
+                return { locations }
+            }
+
+            limit -= locations.length
+            if (limit <= 0) {
+                return { locations, newCursor }
+            }
+
+            const {
+                locations: nextPageLocations,
+                newCursor: nextPageNewCursor,
+            } = await this.handleReferencePaginationCursor(repositoryId, commit, remoteDumpLimit, limit, newCursor, ctx)
+
+            return { locations: locations.concat(nextPageLocations), newCursor: nextPageNewCursor }
+        }
+
         switch (cursor.phase) {
             case 'same-dump-reference-result': {
-                return this.handleReferencePaginationCursorRecursive(
-                    repositoryId,
-                    commit,
-                    remoteDumpLimit,
-                    limit,
+                return recur(
                     () => this.performSameDumpReferenceResultReferences(limit, cursor, ctx),
-                    () => ({ ...cursor, phase: 'same-dump-references-table', skipMonikers: 0, skipResults: 0 }),
-                    ctx
+                    () => ({ ...cursor, phase: 'same-dump-references-table', skipMonikers: 0, skipResults: 0 })
                 )
             }
 
             case 'same-dump-references-table': {
-                return this.handleReferencePaginationCursorRecursive(
-                    repositoryId,
-                    commit,
-                    remoteDumpLimit,
-                    limit,
+                return recur(
                     () => this.performSameDumpReferencesTableReferences(limit, cursor, ctx),
-                    () => ({ ...cursor, phase: 'definition-monikers', skipMonikers: 0, skipResults: 0 }),
-                    ctx
+                    () => ({ ...cursor, phase: 'definition-monikers', skipMonikers: 0, skipResults: 0 })
                 )
             }
 
             case 'definition-monikers': {
-                const makeCursor = async (): Promise<ReferencePaginationCursor | undefined> => {
-                    const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
-                    if (!document) {
-                        return undefined
-                    }
+                return recur(
+                    () => this.performDefinitionMonikersReferences(limit, cursor, ctx),
+                    async (): Promise<ReferencePaginationCursor | undefined> => {
+                        const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
+                        if (!document) {
+                            return undefined
+                        }
 
-                    for (const moniker of cursor.monikers) {
-                        const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
-                        if (packageInformation) {
-                            return {
-                                ...cursor,
-                                phase: 'same-repo',
-                                scheme: moniker.scheme,
-                                identifier: moniker.identifier,
-                                name: packageInformation.name,
-                                version: packageInformation.version,
-                                skipReferences: 0,
-                                skipDumps: 0,
-                                skipResults: 0,
+                        for (const moniker of cursor.monikers) {
+                            const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
+                            if (packageInformation) {
+                                return {
+                                    ...cursor,
+                                    phase: 'same-repo',
+                                    scheme: moniker.scheme,
+                                    identifier: moniker.identifier,
+                                    name: packageInformation.name,
+                                    version: packageInformation.version,
+                                    skipReferences: 0,
+                                    skipDumps: 0,
+                                    skipResults: 0,
+                                }
                             }
                         }
+                        return undefined
                     }
-                    return undefined
-                }
-
-                return this.handleReferencePaginationCursorRecursive(
-                    repositoryId,
-                    commit,
-                    remoteDumpLimit,
-                    limit,
-                    () => this.performDefinitionMonikersReferences(limit, cursor, ctx),
-                    makeCursor,
-                    ctx
                 )
             }
 
             case 'same-repo': {
-                const makeCursor = async (): Promise<ReferencePaginationCursor | undefined> => {
-                    if (await this.hasRemoteReferences(repositoryId, cursor, ctx)) {
-                        // If there are no remote consumers of this symbol, do not
-                        // make a cursor for the next phase as it would only be a
-                        // single empty page.
-                        return { ...cursor, phase: 'remote-repo', skipReferences: 0, skipDumps: 0, skipResults: 0 }
-                    }
-
-                    return undefined
-                }
-
-                return this.handleReferencePaginationCursorRecursive(
-                    repositoryId,
-                    commit,
-                    remoteDumpLimit,
-                    limit,
+                return recur(
                     () =>
                         this.performSameRepositoryRemoteReferences(
                             repositoryId,
@@ -396,61 +398,26 @@ export class Backend {
                             cursor,
                             ctx
                         ),
-                    makeCursor,
-                    ctx
+                    async (): Promise<ReferencePaginationCursor | undefined> => {
+                        if (await this.hasRemoteReferences(repositoryId, cursor, ctx)) {
+                            // If there are no remote consumers of this symbol, do not
+                            // make a cursor for the next phase as it would only be a
+                            // single empty page.
+                            return { ...cursor, phase: 'remote-repo', skipReferences: 0, skipDumps: 0, skipResults: 0 }
+                        }
+
+                        return undefined
+                    }
                 )
             }
 
             case 'remote-repo': {
-                return this.performRemoteReferences(repositoryId, remoteDumpLimit, limit, cursor, ctx)
+                return recur(
+                    () => this.performRemoteReferences(repositoryId, remoteDumpLimit, limit, cursor, ctx),
+                    () => undefined
+                )
             }
         }
-    }
-
-    /**
-     * A helper function used by `handleReferencePaginationCursor`. This method takes a handler
-     * that executes the current page of results and returns a new cursor for the **same phase**
-     * of results. If there are no more results in that phase of the result set, the cursor is
-     * undefined. In this case, we call the `makeCursor` factory function to construct the cursor
-     * for the next phase of pagination.
-     *
-     * If the locations from the handler function do not produce a full page of results, the next
-     * page of results are evaluated with a modified limit.
-     *
-     * @param repositoryId The repository identifier.
-     * @param commit The target commit.
-     * @param remoteDumpLimit The maximum number of dumps to open.
-     * @param limit The maximum number of locations to return on this page.
-     * @param handler The handler for the current page of results.
-     * @param makeCursor A factory that creates a cursor for the next phase of pagination.
-     * @param ctx The tracing context.
-     */
-    private async handleReferencePaginationCursorRecursive(
-        repositoryId: number,
-        commit: string,
-        remoteDumpLimit: number,
-        limit: number,
-        handler: () => Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }>,
-        makeCursor: () => Promise<ReferencePaginationCursor | undefined> | ReferencePaginationCursor | undefined,
-        ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const { locations, newCursor: originalCursor } = await handler()
-        const newCursor = originalCursor || (await makeCursor())
-        if (!newCursor) {
-            return { locations }
-        }
-
-        limit -= locations.length
-        if (limit <= 0) {
-            return { locations, newCursor }
-        }
-
-        const {
-            locations: nextPageLocations,
-            newCursor: nextPageNewCursor,
-        } = await this.handleReferencePaginationCursor(repositoryId, commit, limit, remoteDumpLimit, newCursor, ctx)
-
-        return { locations: uniqWith(locations.concat(nextPageLocations), isEqual), newCursor: nextPageNewCursor }
     }
 
     /**
