@@ -540,13 +540,9 @@ export function buildSearchURLQuery(
 
     const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        const newQuery = fullQuery.replace(
-            query.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
-            ''
-        )
-        searchParams.set('q', newQuery)
+        fullQuery = fullQuery.slice(0, patternTypeInQuery.range.start) + fullQuery.slice(patternTypeInQuery.range.end)
+        searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternTypeInQuery.value)
-        fullQuery = newQuery
     } else {
         searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternType)
@@ -554,13 +550,12 @@ export function buildSearchURLQuery(
 
     const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
     if (caseInQuery) {
-        const newQuery = fullQuery.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
-        searchParams.set('q', newQuery)
+        fullQuery = fullQuery.slice(0, caseInQuery.range.start) + fullQuery.slice(caseInQuery.range.end)
+        searchParams.set('q', fullQuery)
 
         if (caseInQuery.value === 'yes') {
-            const newQuery = fullQuery.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
+            fullQuery = fullQuery.slice(0, caseInQuery.range.start) + fullQuery.slice(caseInQuery.range.end)
             searchParams.set('case', caseInQuery.value)
-            fullQuery = newQuery
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
             // queries breaking when only `repo:` filters are specified.
@@ -568,8 +563,6 @@ export function buildSearchURLQuery(
             // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
             searchParams.delete('case')
         }
-
-        fullQuery = newQuery
     } else {
         searchParams.set('q', fullQuery)
         if (caseSensitive) {

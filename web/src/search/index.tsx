@@ -66,25 +66,21 @@ export function parseSearchURL(
     const patternTypeInQuery = parsePatternTypeFromQuery(finalQuery)
     if (patternTypeInQuery) {
         // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
-        const newQuery = finalQuery.replace(
-            finalQuery.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
-            ''
-        )
-        finalQuery = newQuery
+        finalQuery =
+            finalQuery.slice(0, patternTypeInQuery.range.start) + finalQuery.slice(patternTypeInQuery.range.end)
         patternType = patternTypeInQuery.value as SearchPatternType
     }
 
     const caseInQuery = parseCaseSensitivityFromQuery(finalQuery)
     if (caseInQuery) {
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
-        const newQuery = finalQuery.replace(finalQuery.substring(caseInQuery.range.start, caseInQuery.range.end), '')
+        finalQuery = finalQuery.slice(0, caseInQuery.range.start) + finalQuery.slice(caseInQuery.range.end)
 
         if (caseInQuery.value === 'yes') {
             caseSensitive = true
         } else if (caseInQuery.value === 'no') {
             caseSensitive = false
         }
-        finalQuery = newQuery
     }
 
     return { query: finalQuery, patternType, caseSensitive }
