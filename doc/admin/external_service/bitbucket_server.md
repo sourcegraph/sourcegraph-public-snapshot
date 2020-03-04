@@ -26,7 +26,7 @@ The [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#
 
 Using webhooks is highly recommended when using [Campaigns](../user/campaigns.md), since they speed up the syncing of pull request data between Bitbucket Server and Sourcegraph and make it more efficient.
 
-To setup webhooks:
+To set up webhooks:
 
 1. Connect Bitbucket Server to Sourcegraph (_see instructions above_)
 1. Install the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server instance
