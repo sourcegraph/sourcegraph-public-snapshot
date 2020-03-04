@@ -19,9 +19,12 @@ While this process will migrate your core data (including user accounts, configu
 
 * Repositories are re-cloned
 * Search indexes are recreated
-* Site usage statistics will only reflect usage on the new Docker Compose deployment
 
 This derived data may take awhile to regenerate if you have a lot of repositories.
+
+### Monthly-usage based pricing
+
+If you are on a monthly-based usage pricing model, please check first with your Sourcegraph point of contact before continuing with these migration steps.
 
 ## Migration guide
 
