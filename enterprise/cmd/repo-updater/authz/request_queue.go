@@ -73,14 +73,15 @@ type requestQueue struct {
 
 func newRequestQueue() *requestQueue {
 	return &requestQueue{
-		index: make(map[requestQueueKey]*syncRequest),
+		index:         make(map[requestQueueKey]*syncRequest),
+		notifyEnqueue: make(chan struct{}, 1),
 	}
 }
 
 // notify performs a non-blocking send to the channel, so the channel
 // must be buffered. When the channel is blocked (i.e. buffer is full),
 // it skips the notify thus will not send anything to the channel.
-var notify = func(ch chan struct{}) {
+func notify(ch chan struct{}) {
 	select {
 	case ch <- struct{}{}:
 	default:
