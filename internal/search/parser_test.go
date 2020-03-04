@@ -100,6 +100,14 @@ func Test_Parse(t *testing.T) {
 			Want:  "(and a b c)",
 		},
 		{
+			Input: "aorb",
+			Want:  "aorb",
+		},
+		{
+			Input: "aANDb",
+			Want:  "aANDb",
+		},
+		{
 			Name:  "Reduced complex query mixed caps",
 			Input: "a and b AND c or d and (e OR f) g h i or j",
 			Want:  "(or (and a b c) (and d (or e f) g h i) j)",
