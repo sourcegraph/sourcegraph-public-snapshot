@@ -361,18 +361,8 @@ func (q *changesetQueue) reschedule(schedule []syncSchedule) {
 	ctx, q.cancel = context.WithCancel(ctx)
 	go func() {
 		for _, s := range schedule {
-			var ok bool
-			q.mtx.Lock()
-			_, ok = q.priority[s.changesetID]
-			q.mtx.Unlock()
-			if ok {
-				continue
-			}
 			// Get most urgent changeset and sleep until it should be synced
-			now := time.Now()
-			nextSync := s.nextSync
-			d := nextSync.Sub(now)
-			sleep(ctx, d)
+			sleep(ctx, time.Until(s.nextSync))
 
 			select {
 			case <-ctx.Done():
