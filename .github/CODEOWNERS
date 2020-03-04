@@ -154,30 +154,28 @@ tslint.config.js @sourcegraph/web
 
 # Core Services
 *git*/* @sourcegraph/core-services
+/cmd/frontend/authz/ @sourcegraph/core-services
+/cmd/frontend/db/ @sourcegraph/core-services
+/cmd/frontend/globals/ @sourcegraph/core-services @slimsag
+/cmd/frontend/graphqlbackend/ @sourcegraph/core-services @slimsag
+/cmd/frontend/internal/bg/ @sourcegraph/core-services @slimsag
+/cmd/github-proxy/ @sourcegraph/core-services
 /cmd/gitserver/ @sourcegraph/core-services
 /cmd/repo-updater/ @sourcegraph/core-services
-/migrations/ @sourcegraph/core-services
+/enterprise/cmd/frontend/db/ @sourcegraph/core-services
+/enterprise/cmd/frontend/internal/authz/ @sourcegraph/core-services
+/enterprise/cmd/frontend/internal/graphqlbackend/ @sourcegraph/core-services @slimsag
+/enterprise/cmd/repo-updater/ @sourcegraph/core-services
+/internal/api/ @sourcegraph/core-services
+/internal/extsvc/ @sourcegraph/core-services
 /internal/gitserver/ @sourcegraph/core-services
+/internal/jsonc/ @tsenart @slimsag
 /internal/repoupdater/ @sourcegraph/core-services
 /internal/trace/ @sourcegraph/core-services
 /internal/tracer/ @sourcegraph/core-services
 /internal/vcs/ @sourcegraph/core-services
-/cmd/frontend/db @sourcegraph/core-services
-/cmd/frontend/graphqlbackend @sourcegraph/core-services @slimsag
-/cmd/frontend/globals @sourcegraph/core-services @slimsag
-/enterprise/cmd/frontend/internal/graphqlbackend @sourcegraph/core-services @slimsag
-/enterprise/cmd/frontend/db @sourcegraph/core-services
-/schema @sourcegraph/core-services
-/cmd/frontend/internal/bg @sourcegraph/core-services @slimsag
-/cmd/github-proxy @sourcegraph/core-services
-/internal/api/ @sourcegraph/core-services
-/internal/jsonc @tsenart @slimsag
-/internal/extsvc @sourcegraph/core-services
-/cmd/frontend/authz/ @sourcegraph/core-services
-/enterprise/cmd/frontend/internal/authz @sourcegraph/core-services
-# authz overrides (still owned by beyang for now)
-/enterprise/cmd/frontend/internal/authz/*github* @beyang @unknwon
-/enterprise/cmd/frontend/internal/authz/*gitlab* @beyang @unknwon
+/migrations/ @sourcegraph/core-services
+/schema/ @sourcegraph/core-services
 
 # Symbols
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel
