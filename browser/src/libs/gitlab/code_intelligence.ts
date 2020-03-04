@@ -168,7 +168,7 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
                 }
                 const partSelector = context.part ? { head: '.new_line', base: '.old_line' }[context.part] : ''
                 const link = codeView.querySelector<HTMLAnchorElement>(
-                    `${partSelector} a[data-linenumber=${target.position.line}]`
+                    `${partSelector} a[data-linenumber="${target.position.line}"]`
                 )
                 if (!link) {
                     break
