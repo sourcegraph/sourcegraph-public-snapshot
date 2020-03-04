@@ -1,5 +1,5 @@
 import express from 'express'
-import { query, ValidationChain, validationResult } from 'express-validator'
+import { query, ValidationChain, validationResult, ValidationError } from 'express-validator'
 import { parseCursor } from '../pagination/cursor'
 
 /**
@@ -91,7 +91,7 @@ export const validateCursor = <T>(): ValidationChain =>
  */
 export const validationMiddleware = (chains: ValidationChain[]) => async (
     req: express.Request,
-    res: express.Response,
+    res: express.Response<{ errors: Record<string, ValidationError> }>,
     next: express.NextFunction
 ): Promise<void> => {
     await Promise.all(chains.map(chain => chain.run(req)))
