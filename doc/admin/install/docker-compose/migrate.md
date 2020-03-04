@@ -19,6 +19,7 @@ While this process will migrate your core data (including user accounts, configu
 
 * Repositories are re-cloned
 * Search indexes are recreated
+* Site usage statistics will only reflect usage on the new Docker Compose deployment
 
 This derived data may take awhile to regenerate if you have a lot of repositories.
 
