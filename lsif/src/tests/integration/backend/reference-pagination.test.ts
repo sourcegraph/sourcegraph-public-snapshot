@@ -1,5 +1,6 @@
 import * as util from '../integration-test-util'
 import { extractRepos } from './util'
+import { lsp } from 'lsif-protocol'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
@@ -45,15 +46,39 @@ describe('Backend', () => {
             fail('failed beforeAll')
         }
 
-        const { locations } = util.filterNodeModules(
-            util.mapLocations(
-                await util.queryAllReferences(backend, ids.a, commit, 'src/index.ts', { line: 0, character: 17 }, 50)
+        const fetch = async (
+            limit: number
+        ): Promise<{ locations: lsp.Location[]; pageSizes: number[]; numPages: number }> =>
+            util.filterNodeModules(
+                util.mapLocations(
+                    await util.queryAllReferences(
+                        backend,
+                        ids.a,
+                        commit,
+                        'src/index.ts',
+                        { line: 0, character: 17 },
+                        limit
+                    )
+                )
             )
-        )
 
-        // TODO - test page sizes
+        const { locations: locations1, pageSizes: pageSizes1, numPages: numPages1 } = await fetch(1)
+        const { locations: locations2, pageSizes: pageSizes2, numPages: numPages2 } = await fetch(5)
+        const { locations: locations3, pageSizes: pageSizes3, numPages: numPages3 } = await fetch(100)
 
-        expect(extractRepos(locations)).toEqual([
+        // TODO - these don't seem right
+        console.log({ pageSizes1, pageSizes2, pageSizes3 })
+
+        // Ensure we have the same data
+        expect(locations1).toEqual(locations2)
+        expect(locations1).toEqual(locations3)
+
+        // Ensure num pages decrease with page size
+        expect(numPages1).toBeGreaterThan(numPages2)
+        expect(numPages2).toBeGreaterThan(numPages3)
+
+        // Ensure we have the correct data (order is asserted here)
+        expect(extractRepos(locations1)).toEqual([
             ids.a,
             ids.b1,
             ids.b10,

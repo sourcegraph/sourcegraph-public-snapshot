@@ -414,6 +414,9 @@ export class Backend {
      * undefined. In this case, we call the `makeCursor` factory function to construct the cursor
      * for the next phase of pagination.
      *
+     * If the locations from the handler function do not produce a full page of results, the next
+     * page of results are evaluated with a modified limit.
+     *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
      * @param remoteDumpLimit The maximum number of dumps to open.
@@ -434,7 +437,11 @@ export class Backend {
         const { locations, newCursor: originalCursor } = await handler()
         const newCursor = originalCursor || (await makeCursor())
         if (!newCursor) {
-            // TODO - fall through with different limit
+            return { locations }
+        }
+
+        limit -= locations.length
+        if (limit <= 0) {
             return { locations, newCursor }
         }
 

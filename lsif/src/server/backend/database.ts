@@ -21,7 +21,7 @@ export interface InternalLocation {
     range: lsp.Range
 }
 
-/** A wrapper around operations for single repository/commit pair. */
+/** A wrapper around operations related to a single SQLite dump. */
 export class Database {
     /**
      * A static map of database paths to the `numResultChunks` value of their

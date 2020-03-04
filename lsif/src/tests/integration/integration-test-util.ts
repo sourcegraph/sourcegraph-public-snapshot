@@ -422,23 +422,15 @@ export function createCommit(base?: number): string {
 /**
  * Remove all node_modules locations from the output of a references result.
  *
- * @param args Parameter bag.
+ * @param resp The input containing a locations array.
  */
-export function filterNodeModules({
-    locations,
-    newCursor,
-}: {
-    /** The reference locations. */
-    locations: lsp.Location[]
-    /** The pagination cursor. */
-    newCursor?: ReferencePaginationCursor
-}): { locations: lsp.Location[]; newCursor?: ReferencePaginationCursor } {
+export function filterNodeModules<T extends { locations: lsp.Location[] }>(resp: T): T {
     return {
+        ...resp,
         locations: uniqWith(
-            locations.filter(l => !l.uri.includes('node_modules')),
+            resp.locations.filter(l => !l.uri.includes('node_modules')),
             isEqual
         ),
-        newCursor,
     }
 }
 
@@ -459,8 +451,9 @@ export async function queryAllReferences(
     path: string,
     position: lsp.Position,
     limit: number
-): Promise<{ locations: InternalLocation[] }> {
+): Promise<{ locations: InternalLocation[]; pageSizes: number[]; numPages: number }> {
     let locations: InternalLocation[] = []
+    const pageSizes: number[] = []
     let cursor: ReferencePaginationCursor | undefined
 
     while (true) {
@@ -470,11 +463,13 @@ export async function queryAllReferences(
         }
 
         locations = locations.concat(result.locations)
+        pageSizes.push(result.locations.length)
+
         if (!result.newCursor) {
             break
         }
         cursor = result.newCursor
     }
 
-    return { locations }
+    return { locations, pageSizes, numPages: pageSizes.length }
 }
