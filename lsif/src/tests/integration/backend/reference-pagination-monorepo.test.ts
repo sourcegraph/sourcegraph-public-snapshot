@@ -147,10 +147,7 @@ describe('Backend', () => {
                         repositoryId,
                         commit,
                         'a/src/index.ts',
-                        {
-                            line: 0,
-                            character: 17,
-                        },
+                        { line: 0, character: 17 },
                         50
                     )
                 )
