@@ -15,6 +15,9 @@ import { Logger } from 'winston'
 import { createSilentLogger } from '../../shared/logging'
 import { InternalLocation } from './location'
 
+/** The maximum number of results in a logSpan value. */
+const MAX_SPAN_ARRAY_LENGTH = 20
+
 /** A wrapper around operations related to a single SQLite dump. */
 export class Database {
     /**
@@ -103,7 +106,8 @@ export class Database {
                 const definitionResults = await this.getResultById(range.definitionResultId)
                 this.logSpan(ctx, 'definition_results', {
                     definitionResultId: range.definitionResultId,
-                    definitionResults,
+                    definitionResults: definitionResults.slice(0, MAX_SPAN_ARRAY_LENGTH),
+                    numDefinitionResults: definitionResults.length,
                 })
 
                 // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
@@ -143,7 +147,8 @@ export class Database {
                     const referenceResults = await this.getResultById(range.referenceResultId)
                     this.logSpan(ctx, 'reference_results', {
                         referenceResultId: range.referenceResultId,
-                        referenceResults,
+                        referenceResults: referenceResults.slice(0, MAX_SPAN_ARRAY_LENGTH),
+                        numReferenceResults: referenceResults.length,
                     })
                     locations = locations.concat(
                         await this.convertRangesToInternalLocations(path, document, referenceResults)
@@ -250,7 +255,12 @@ export class Database {
                 ctx.logger
             )
 
-            this.logSpan(ctx, 'symbol_results', { moniker, symbol: results })
+            this.logSpan(ctx, 'symbol_results', {
+                moniker,
+                results: results.slice(0, MAX_SPAN_ARRAY_LENGTH),
+                numResults: results.length,
+            })
+
             const locations = results.map(result => ({
                 dump: this.dump,
                 path: result.documentPath,
