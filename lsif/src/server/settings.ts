@@ -28,7 +28,7 @@ export const DEAD_DUMP_CHUNK_SIZE = readEnvInt('DEAD_DUMP_CHUNK_SIZE', 100)
 /**
  * The default number of location results to return when performing a find-references operation.
  */
-export const DEFAULT_REFERENCES_PAGE_SIZE = readEnvInt('DEFAULT_REFERENCES_PAGE_SIZE', 10)
+export const DEFAULT_REFERENCES_PAGE_SIZE = readEnvInt('DEFAULT_REFERENCES_PAGE_SIZE', 100)
 
 /**
  * The interval (in seconds) to invoke the cleanFailedUploads task.
