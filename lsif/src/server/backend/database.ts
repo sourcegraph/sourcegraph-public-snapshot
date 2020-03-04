@@ -138,19 +138,18 @@ export class Database {
     public async references(
         path: string,
         position: lsp.Position,
-        // pagination: { skip?: number; take?: number },
+        { skip = 0, take }: { skip?: number; take?: number },
         ctx: TracingContext = {}
-    ): Promise<InternalLocation[]> {
+    ): Promise<{ locations: InternalLocation[]; count: number }> {
         return this.logAndTraceCall(ctx, 'Fetching references', async ctx => {
             const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
             if (!document || ranges.length === 0) {
-                return []
+                return { locations: [], count: 0 }
             }
 
             let locations: InternalLocation[] = []
             for (const range of ranges) {
                 if (range.referenceResultId) {
-                    //  - could be massive, should splice here
                     const referenceResults = await this.getResultById(range.referenceResultId)
                     this.logSpan(ctx, 'reference_results', {
                         referenceResultId: range.referenceResultId,
@@ -162,7 +161,9 @@ export class Database {
                 }
             }
 
-            return uniqWith(locations, isEqual)
+            const uniqueLocations = uniqWith(locations, isEqual)
+            const slicedLocations = uniqueLocations.slice(skip, take ? skip + take : undefined)
+            return { locations: slicedLocations, count: uniqueLocations.length }
         })
     }
 

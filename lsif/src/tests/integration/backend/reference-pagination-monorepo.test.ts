@@ -2,7 +2,6 @@ import * as util from '../integration-test-util'
 import { lsp } from 'lsif-protocol'
 import { MAX_TRAVERSAL_LIMIT } from '../../../shared/constants'
 import { extractRepos } from './util'
-import { ReferencePaginationContext } from '../../../server/backend/cursor'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
@@ -141,18 +140,21 @@ describe('Backend', () => {
         ]
 
         for (const { commit, defCommit, refs } of testCases) {
-            const fetch = async () =>
-                util.filterNodeModules(
-                    util.mapLocations(
-                        (await backend.references(repositoryId, commit, 'a/src/index.ts', {
+            const { locations } = util.filterNodeModules(
+                util.mapLocations(
+                    await util.queryAllReferences(
+                        backend,
+                        repositoryId,
+                        commit,
+                        'a/src/index.ts',
+                        {
                             line: 0,
                             character: 17,
-                        })) || { locations: [] }
+                        },
+                        50
                     )
                 )
-
-            const { locations, newCursor } = await fetch()
-            expect(newCursor).toBeUndefined()
+            )
 
             expect(locations).toContainEqual(
                 util.createLocation(repositoryId, defCommit, 'a/src/index.ts', 0, 16, 0, 19)
@@ -191,46 +193,24 @@ describe('Backend', () => {
             )
         )
 
-        const fetch = async (paginationContext?: ReferencePaginationContext) =>
-            util.filterNodeModules(
-                util.mapLocations(
-                    (await backend.references(
-                        repositoryId,
-                        c3,
-                        'a/src/index.ts',
-                        {
-                            line: 0,
-                            character: 17,
-                        },
-                        paginationContext
-                    )) || { locations: [] }
+        const { locations } = util.filterNodeModules(
+            util.mapLocations(
+                await util.queryAllReferences(
+                    backend,
+                    repositoryId,
+                    c3,
+                    'a/src/index.ts',
+                    {
+                        line: 0,
+                        character: 17,
+                    },
+                    50
                 )
             )
+        )
 
-        const { locations: locations0, newCursor: cursor0 } = await fetch({ limit: 50 }) // all local
-        const { locations: locations1, newCursor: cursor1 } = await fetch({ limit: 50, cursor: cursor0 }) // all remote
+        // TODO - test page sizes
 
-        const { locations: locations2, newCursor: cursor2 } = await fetch({ limit: 2 }) // b, c
-        const { locations: locations3, newCursor: cursor3 } = await fetch({ limit: 2, cursor: cursor2 }) // e
-        const { locations: locations4, newCursor: cursor4 } = await fetch({ limit: 2, cursor: cursor3 }) // ext1, ext2
-        const { locations: locations5, newCursor: cursor5 } = await fetch({ limit: 2, cursor: cursor4 }) // ext3, ext4
-        const { locations: locations6, newCursor: cursor6 } = await fetch({ limit: 2, cursor: cursor5 }) // ext5
-
-        // Ensure paging through sets of results gets us everything
-        expect(locations0).toEqual(locations2.concat(...locations3))
-        expect(locations1).toEqual(locations4.concat(...locations5, ...locations6))
-
-        // Ensure cursor is not provided at the end of a set of results
-        expect(cursor1).toBeUndefined()
-        expect(cursor6).toBeUndefined()
-
-        // Ensure paging gets us expected results per page
-        expect(extractRepos(locations0)).toEqual([repositoryId])
-        expect(extractRepos(locations1)).toEqual([ids.ext1, ids.ext2, ids.ext3, ids.ext4, ids.ext5])
-        expect(extractRepos(locations2)).toEqual([repositoryId])
-        expect(extractRepos(locations3)).toEqual([repositoryId])
-        expect(extractRepos(locations4)).toEqual([ids.ext1, ids.ext2])
-        expect(extractRepos(locations5)).toEqual([ids.ext3, ids.ext4])
-        expect(extractRepos(locations6)).toEqual([ids.ext5])
+        expect(extractRepos(locations)).toEqual([repositoryId, ids.ext1, ids.ext2, ids.ext3, ids.ext4, ids.ext5])
     })
 })

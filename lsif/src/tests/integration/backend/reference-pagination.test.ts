@@ -1,6 +1,5 @@
 import * as util from '../integration-test-util'
 import { extractRepos } from './util'
-import { ReferencePaginationContext } from '../../../server/backend/cursor'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
@@ -40,45 +39,32 @@ describe('Backend', () => {
         await ctx.teardown()
     })
 
-    it('should find all defs of `add` from repo a', async () => {
+    it('should find all refs of `add` from repo a', async () => {
         const backend = ctx.backend
         if (!backend) {
             fail('failed beforeAll')
         }
 
-        const fetch = async (paginationContext?: ReferencePaginationContext) =>
-            util.filterNodeModules(
-                util.mapLocations(
-                    (await backend.references(
-                        ids.a,
-                        commit,
-                        'src/index.ts',
-                        {
-                            line: 0,
-                            character: 17,
-                        },
-                        paginationContext
-                    )) || { locations: [] }
-                )
+        const { locations } = util.filterNodeModules(
+            util.mapLocations(
+                await util.queryAllReferences(backend, ids.a, commit, 'src/index.ts', { line: 0, character: 17 }, 50)
             )
+        )
 
-        const { locations: locations0, newCursor: cursor0 } = await fetch() // everything
-        const { locations: locations1, newCursor: cursor1 } = await fetch({ limit: 3 }) // a, b1, b10, b2
-        const { locations: locations2, newCursor: cursor2 } = await fetch({ limit: 3, cursor: cursor1 }) // b3, b4, b5
-        const { locations: locations3, newCursor: cursor3 } = await fetch({ limit: 3, cursor: cursor2 }) // b6, b7, b8
-        const { locations: locations4, newCursor: cursor4 } = await fetch({ limit: 3, cursor: cursor3 }) // b9
+        // TODO - test page sizes
 
-        // Ensure paging through sets of results gets us everything
-        expect(locations0).toEqual(locations1.concat(...locations2, ...locations3, ...locations4))
-
-        // Ensure cursor is not provided at the end of a set of results
-        expect(cursor0).toBeUndefined()
-        expect(cursor4).toBeUndefined()
-
-        // Ensure paging gets us expected results per page
-        expect(extractRepos(locations1)).toEqual([ids.a, ids.b1, ids.b10, ids.b2])
-        expect(extractRepos(locations2)).toEqual([ids.b3, ids.b4, ids.b5])
-        expect(extractRepos(locations3)).toEqual([ids.b6, ids.b7, ids.b8])
-        expect(extractRepos(locations4)).toEqual([ids.b9])
+        expect(extractRepos(locations)).toEqual([
+            ids.a,
+            ids.b1,
+            ids.b10,
+            ids.b2,
+            ids.b3,
+            ids.b4,
+            ids.b5,
+            ids.b6,
+            ids.b7,
+            ids.b8,
+            ids.b9,
+        ])
     })
 })

@@ -1,6 +1,6 @@
 import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
-import * as path from 'path'
+import * as nodepath from 'path'
 import * as uuid from 'uuid'
 import rmfr from 'rmfr'
 import * as pgModels from '../../shared/models/pg'
@@ -18,13 +18,14 @@ import { DependencyManager } from '../../shared/store/dependencies'
 import { createSilentLogger } from '../../shared/logging'
 import { PathExistenceChecker } from '../../worker/conversion/existence'
 import { ReferencePaginationCursor } from '../../server/backend/cursor'
+import { isEqual, uniqWith } from 'lodash'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.
  */
 export async function createStorageRoot(): Promise<string> {
     const tempPath = await fs.mkdtemp('test-', { encoding: 'utf8' })
-    await ensureDirectory(path.join(tempPath, constants.DBS_DIR))
+    await ensureDirectory(nodepath.join(tempPath, constants.DBS_DIR))
     return tempPath
 }
 
@@ -48,8 +49,8 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
 
     // Determine the path of the migrate script. This will cover the case
     // where `yarn test` is run from within the root or from the lsif directory.
-    // const migrateScriptPath = path.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
-    const migrationsPath = path.join((await fs.exists('migrations')) ? '' : '..', 'migrations')
+    // const migrateScriptPath = nodepath.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
+    const migrationsPath = nodepath.join((await fs.exists('migrations')) ? '' : '..', 'migrations')
 
     // Ensure environment gets passed to child commands
     const env = {
@@ -201,9 +202,9 @@ export async function convertTestData(
 ): Promise<void> {
     // Create a filesystem read stream for the given test file. This will cover
     // the cases where `yarn test` is run from the root or from the lsif directory.
-    const fullFilename = path.join((await fs.exists('lsif')) ? 'lsif' : '', 'src/tests/integration/data', filename)
+    const fullFilename = nodepath.join((await fs.exists('lsif')) ? 'lsif' : '', 'src/tests/integration/data', filename)
 
-    const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
+    const tmp = nodepath.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const pathExistenceChecker = new PathExistenceChecker({ repositoryId, commit, root })
 
     const { packages, references } = await convertLsif({
@@ -338,7 +339,7 @@ export class BackendTestContext {
  *
  * @param repositoryId The repository identifier.
  * @param commit The commit.
- * @param documentPath The document path.
+ * @param documentPath The document nodepath.
  * @param startLine The starting line.
  * @param startCharacter The starting character.
  * @param endLine The ending line.
@@ -423,7 +424,7 @@ export function createCommit(base?: number): string {
  *
  * @param args Parameter bag.
  */
-export function filterNodeModules<T>({
+export function filterNodeModules({
     locations,
     newCursor,
 }: {
@@ -432,5 +433,48 @@ export function filterNodeModules<T>({
     /** The pagination cursor. */
     newCursor?: ReferencePaginationCursor
 }): { locations: lsp.Location[]; newCursor?: ReferencePaginationCursor } {
-    return { locations: locations.filter(l => !l.uri.includes('node_modules')), newCursor }
+    return {
+        locations: uniqWith(
+            locations.filter(l => !l.uri.includes('node_modules')),
+            isEqual
+        ),
+        newCursor,
+    }
+}
+
+/**
+ * Query all pages of references from the given backend.
+ *
+ * @param backend The backend instance.
+ * @param repositoryId The repository identifier.
+ * @param commit The commit.
+ * @param path The path of the document to which the position belongs.
+ * @param position The current hover position.
+ * @param limit The page limit.
+ */
+export async function queryAllReferences(
+    backend: Backend,
+    repositoryId: number,
+    commit: string,
+    path: string,
+    position: lsp.Position,
+    limit: number
+): Promise<{ locations: InternalLocation[] }> {
+    let locations: InternalLocation[] = []
+    let cursor: ReferencePaginationCursor | undefined
+
+    while (true) {
+        const result = await backend.references(repositoryId, commit, path, position, { limit, cursor })
+        if (!result) {
+            break
+        }
+
+        locations = locations.concat(result.locations)
+        if (!result.newCursor) {
+            break
+        }
+        cursor = result.newCursor
+    }
+
+    return { locations }
 }
