@@ -10,10 +10,13 @@ export interface ReferencePaginationContext {
 }
 
 /** Context describing the next page of results. */
-export type ReferencePaginationCursor = SameDumpReferenceCursor | RemoteDumpReferenceCursor
+export type ReferencePaginationCursor =
+    | SameDumpReferenceCursor
+    | DefinitionMonikersReferenceCursor
+    | RemoteDumpReferenceCursor
 
 /** The cursor phase is a tag that indicates the shape of the object. */
-export type ReferencePaginationPhase = 'same-dump' | 'same-dump-monikers' | 'same-repo' | 'remote-repo'
+export type ReferencePaginationPhase = 'same-dump' | 'definition-monikers' | 'same-repo' | 'remote-repo'
 
 /** Fields common to all reference pagination cursors. */
 interface ReferencePaginationCursorCommon {
@@ -24,18 +27,38 @@ interface ReferencePaginationCursorCommon {
     phase: ReferencePaginationPhase
 }
 
-/** Bookkeeping data for the part of the reference result sets that deal with the initial dump. */
+/** Bookkeeping data for the part of the reference result set that deals with the initial dump. */
 export interface SameDumpReferenceCursor extends ReferencePaginationCursorCommon {
-    phase: 'same-dump' | 'same-dump-monikers'
+    phase: 'same-dump'
 
     /** The (database-relative) document path containing the symbol ranges. */
     path: string
 
     /** A normalized list of monikers attached to the symbol ranges. */
     monikers: sqliteModels.MonikerData[]
+
+    /** The number of monikers to skip processing. */
+    skipMonikers: number
+
+    /** The number of location results to skip for the current moniker. */
+    skipResults: number
 }
 
-/** Bookkeeping data for the part of the reference result sets that deal with additional dumps. */
+/** Bookkeeping data for the part of the reference result set that deals with the dumps that defines a moniker. */
+export interface DefinitionMonikersReferenceCursor extends ReferencePaginationCursorCommon {
+    phase: 'definition-monikers'
+
+    /** The (database-relative) document path containing the symbol ranges. */
+    path: string
+
+    /** A normalized list of monikers attached to the symbol ranges. */
+    monikers: sqliteModels.MonikerData[]
+
+    /** The number of location results to skip for the current moniker. */
+    skipResults: number
+}
+
+/** Bookkeeping data for the part of the reference result set that deals with additional dumps. */
 export interface RemoteDumpReferenceCursor extends ReferencePaginationCursorCommon {
     phase: 'same-repo' | 'remote-repo'
 
@@ -51,42 +74,12 @@ export interface RemoteDumpReferenceCursor extends ReferencePaginationCursorComm
     /** The version of the package that has remote results. */
     version: string | null
 
-    /** The number of dumps to skip. */
-    offset: number
-}
+    /** The number of dump batches we have already completed. */
+    skipReferences: number
 
-/** Create an initial pagination cursor. */
-export function makeInitialSameDumpCursor(args: {
-    dumpId: number
-    path: string
-    monikers: sqliteModels.MonikerData[]
-}): ReferencePaginationCursor {
-    return { phase: 'same-dump', ...args }
-}
+    /** The number of dumps we have already completed in the current batch. */
+    skipDumps: number
 
-/** Create a pagination cursor at the beginning of the same dump monikers phase. */
-export function makeInitialSameDumpMonikersCursor(previousCursor: SameDumpReferenceCursor): ReferencePaginationCursor {
-    return { ...previousCursor, phase: 'same-dump-monikers' }
-}
-
-/** Create a pagination cursor at the beginning of the same repo phase. */
-export function makeInitialSameRepoCursor(
-    previousCursor: SameDumpReferenceCursor,
-    { scheme, identifier }: sqliteModels.MonikerData,
-    { name, version }: sqliteModels.PackageInformationData
-): ReferencePaginationCursor {
-    return {
-        ...previousCursor,
-        phase: 'same-repo',
-        scheme,
-        identifier,
-        name,
-        version,
-        offset: 0,
-    }
-}
-
-/** Create a pagination cursor at the beginning of the remote repo phase. */
-export function makeInitialRemoteRepoCursor(previousCursor: RemoteDumpReferenceCursor): ReferencePaginationCursor {
-    return { ...previousCursor, phase: 'remote-repo', offset: 0 }
+    /** The number of location results to skip for the current dump. */
+    skipResults: number
 }

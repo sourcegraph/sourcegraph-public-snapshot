@@ -14,13 +14,12 @@ import {
     ReferencePaginationContext,
     ReferencePaginationCursor,
     RemoteDumpReferenceCursor,
-    makeInitialSameDumpCursor,
-    makeInitialSameDumpMonikersCursor,
-    makeInitialSameRepoCursor,
-    makeInitialRemoteRepoCursor,
     SameDumpReferenceCursor,
+    DefinitionMonikersReferenceCursor,
 } from './cursor'
 import { uniqWith, isEqual } from 'lodash'
+
+const DEFAULT_LIMIT = 100
 
 /**
  * A wrapper around code intelligence operations.
@@ -121,7 +120,7 @@ export class Backend {
                     // This symbol was imported from another database. See if we have
                     // an remote definition for it.
 
-                    const remoteDefinitions = await this.lookupMoniker(
+                    const { locations: remoteDefinitions } = await this.lookupMoniker(
                         document,
                         moniker,
                         sqliteModels.DefinitionModel,
@@ -214,17 +213,25 @@ export class Backend {
             }
         }
 
+        const cursor: ReferencePaginationCursor = {
+            phase: 'same-dump',
+            dumpId: dump.id,
+            path: pathInDb,
+            monikers: sortMonikers(monikers),
+            skipMonikers: 0,
+            skipResults: 0,
+        }
+
         // Immediately request the next page of results
         const { locations: remoteLocations, newCursor } = await this.handleReferencePaginationCursor(
             repositoryId,
             commit,
             paginationContext.limit,
-            makeInitialSameDumpCursor({ dumpId: dump.id, path: pathInDb, monikers: sortMonikers(monikers) }),
+            cursor,
             ctx
         )
 
-        // TODO - is this still a problem?
-        // TODO - find out where else we're calling uniqWith
+        // TODO - determine source of duplication
         return { locations: uniqWith(locations.concat(remoteLocations), isEqual), newCursor }
     }
 
@@ -282,7 +289,7 @@ export class Backend {
      * four major phases of a reference request are:
      *
      *   (1) 'same-dump': query the original dump's references table
-     *   (2) 'same-dump-monikers': query the original dump's monikers
+     *   (2) 'definition-monikers': query the monikers in the dump that defines them
      *   (3) 'same-repo': open additional dumps that belong to the same repository
      *   (4) 'remote-repo': open additional dumps that belong to a different repository
      *
@@ -311,13 +318,13 @@ export class Backend {
                     limit,
                     50,
                     () => this.performSameDumpReferences(cursor, ctx),
-                    () => makeInitialSameDumpMonikersCursor(cursor),
+                    () => ({ ...cursor, phase: 'definition-monikers', skipMonikers: 0, skipResults: 0 }),
                     ctx
                 )
             }
 
-            case 'same-dump-monikers': {
-                const makeCursor = async () => {
+            case 'definition-monikers': {
+                const makeCursor = async (): Promise<ReferencePaginationCursor | undefined> => {
                     const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
                     if (!document) {
                         return undefined
@@ -326,7 +333,17 @@ export class Backend {
                     for (const moniker of cursor.monikers) {
                         const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
                         if (packageInformation) {
-                            return makeInitialSameRepoCursor(cursor, moniker, packageInformation)
+                            return {
+                                ...cursor,
+                                phase: 'same-repo',
+                                scheme: moniker.scheme,
+                                identifier: moniker.identifier,
+                                name: packageInformation.name,
+                                version: packageInformation.version,
+                                skipReferences: 0,
+                                skipDumps: 0,
+                                skipResults: 0,
+                            }
                         }
                     }
                     return undefined
@@ -337,19 +354,19 @@ export class Backend {
                     commit,
                     limit,
                     50,
-                    () => this.performSameDumpMonikerReferences(cursor, ctx),
+                    () => this.performDefinitionMonikersReferences(cursor, ctx),
                     makeCursor,
                     ctx
                 )
             }
 
             case 'same-repo': {
-                const makeCursor = async () => {
+                const makeCursor = async (): Promise<ReferencePaginationCursor | undefined> => {
                     if (await this.hasRemoteReferences(repositoryId, cursor, ctx)) {
                         // If there are no remote consumers of this symbol, do not
                         // make a cursor for the next phase as it would only be a
                         // single empty page.
-                        return makeInitialRemoteRepoCursor(cursor)
+                        return { ...cursor, phase: 'remote-repo', skipReferences: 0, skipDumps: 0, skipResults: 0 }
                     }
 
                     return undefined
@@ -407,19 +424,15 @@ export class Backend {
             locations: nextPageLocations,
             newCursor: nextPageNewCursor,
         } = await this.handleReferencePaginationCursor(repositoryId, commit, limit, newCursor, ctx)
-
         return { locations: locations.concat(nextPageLocations), newCursor: nextPageNewCursor }
     }
 
     /**
-     * Search the references table of the current dump.
-     *
-     * This search is necessary, but may be un-intuitive. A 'Find References' operation on a
-     * reference should also return references to the definition. These are not necessarily
-     * fully linked in the LSIF data.
-     *
-     * If there are any locations in the result set, this method returns the new cursor. This
-     * method returns undefined if there are no remaining results for the same repository.
+     * Search the references table of the current dump. This search is necessary, but may be
+     * un-intuitive. A 'Find References' operation on a reference should also return references
+     * to the definition. These are not necessarily fully linked in the LSIF data. If there are
+     * any locations in the result set, this method returns the new cursor. This method returns
+     * undefined if there are no remaining results for the same repository.
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
@@ -437,38 +450,50 @@ export class Backend {
         }
         const { dump, database } = dumpAndDatabase
 
-        let locations: InternalLocation[] = []
-        for (const moniker of cursor.monikers) {
-            const { locations: monikerResults } = await database.monikerResults(
+        for (const [i, moniker] of cursor.monikers.entries()) {
+            if (i < cursor.skipMonikers) {
+                continue
+            }
+
+            const { locations, count } = await database.monikerResults(
                 sqliteModels.ReferenceModel,
                 moniker,
-                {}, // TODO - paginate
+                { take: DEFAULT_LIMIT, skip: cursor.skipResults },
                 ctx
             )
-            locations = locations.concat(monikerResults.map(loc => locationFromDatabase(dump.root, loc)))
+
+            if (locations.length > 0) {
+                const newResultOffset = cursor.skipResults + locations.length
+                const moreMonikers = i + 1 < cursor.monikers.length
+                const nextCursor = { ...cursor, skipResults: cursor.skipResults + DEFAULT_LIMIT }
+                const nextMonikerCursor = { ...cursor, skipResults: 0, skipMonikers: i + 1 }
+
+                return {
+                    locations: locations.map(loc => locationFromDatabase(dump.root, loc)),
+                    newCursor: newResultOffset < count ? nextCursor : moreMonikers ? nextMonikerCursor : undefined,
+                }
+            }
         }
 
-        return { locations } // TODO - cursor
+        return { locations: [] }
     }
 
-    // TODO - fix documentation (we do not early-out monikers here - should we actually?)
-
     /**
- * Perform a remote search for uses of each nonlocal moniker. We stop processing after the first
- * moniker for which we received results. As we process monikers in an order that considers moniker
- * schemes, the first one to get results should be the most desirable.
-
- * If there are any locations in the result set, this method returns the new cursor. This method
- * returns undefined if there are no remaining results for the same repository.
- *
- * @param repositoryId The repository identifier.
- * @param commit The target commit.
- * @param limit The maximum number of dumps to open.
- * @param cursor The pagination cursor.
- * @param ctx The tracing context.
- */
-    private async performSameDumpMonikerReferences(
-        cursor: SameDumpReferenceCursor,
+     *
+     * Perform a search for uses of each nonlocal moniker in the dump where they are defined. We stop
+     * processing after the first moniker for which we received results. As we process monikers in an
+     * order that considers moniker schemes, the first one to get results should be the most desirable.
+     * If there are any locations in the result set, this method returns the new cursor. This method
+     * returns undefined if there are no remaining results for the same repository.
+     *
+     * @param repositoryId The repository identifier.
+     * @param commit The target commit.
+     * @param limit The maximum number of dumps to open.
+     * @param cursor The pagination cursor.
+     * @param ctx The tracing context.
+     */
+    private async performDefinitionMonikersReferences(
+        cursor: DefinitionMonikersReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
         const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
@@ -476,25 +501,32 @@ export class Backend {
             return { locations: [] }
         }
 
-        let locations: InternalLocation[] = []
-
         for (const moniker of cursor.monikers) {
             if (moniker.kind !== 'import') {
                 continue
             }
 
             // Get locations in the defining package
-            const monikerLocations = await this.lookupMoniker(
+            const { locations, count } = await this.lookupMoniker(
                 document,
                 moniker,
                 sqliteModels.ReferenceModel,
-                {}, // TODO - paginate
+                { take: DEFAULT_LIMIT, skip: cursor.skipResults },
                 ctx
             )
-            locations = locations.concat(monikerLocations)
+
+            if (locations.length > 0) {
+                const newOffset = cursor.skipResults + locations.length
+                const newCursor = { ...cursor, skipResults: cursor.skipResults + DEFAULT_LIMIT }
+
+                return {
+                    locations,
+                    newCursor: newOffset < count ? newCursor : undefined,
+                }
+            }
         }
 
-        return { locations } // TODO - cursor
+        return { locations: [] }
     }
 
     /**
@@ -518,25 +550,27 @@ export class Backend {
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const { references, totalCount, newOffset } = await this.dependencyManager.getSameRepoRemoteReferences({
-            ...cursor,
+        const { references, newOffset, totalCount } = await this.dependencyManager.getSameRepoRemoteReferences({
             repositoryId,
             commit,
+            scheme: cursor.scheme,
+            name: cursor.name,
+            version: cursor.version,
+            identifier: cursor.identifier,
             limit,
+            offset: cursor.skipReferences,
             ctx,
         })
 
-        const locations = await this.locationsFromRemoteReferences(
-            cursor.dumpId,
-            { scheme: cursor.scheme, identifier: cursor.identifier },
-            references.map(r => r.dump),
-            ctx
-        )
-
-        return {
-            locations,
-            newCursor: newOffset < totalCount ? { ...cursor, phase: 'same-repo', offset: newOffset } : undefined,
-        }
+        return this.locationsFromRemoteReferences({
+            dumpId: cursor.dumpId,
+            moniker: { scheme: cursor.scheme, identifier: cursor.identifier },
+            dumps: references.map(r => r.dump),
+            cursor,
+            newOffset,
+            totalCount,
+            ctx,
+        })
     }
 
     /**
@@ -558,24 +592,26 @@ export class Backend {
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const { references, totalCount, newOffset } = await this.dependencyManager.getReferences({
-            ...cursor,
+        const { references, newOffset, totalCount } = await this.dependencyManager.getReferences({
             repositoryId,
+            scheme: cursor.scheme,
+            name: cursor.name,
+            version: cursor.version,
+            identifier: cursor.identifier,
             limit,
+            offset: cursor.skipReferences,
             ctx,
         })
 
-        const locations = await this.locationsFromRemoteReferences(
-            cursor.dumpId,
-            { scheme: cursor.scheme, identifier: cursor.identifier },
-            references.map(r => r.dump),
-            ctx
-        )
-
-        return {
-            locations,
-            newCursor: newOffset < totalCount ? { ...cursor, phase: 'remote-repo', offset: newOffset } : undefined,
-        }
+        return this.locationsFromRemoteReferences({
+            dumpId: cursor.dumpId,
+            moniker: { scheme: cursor.scheme, identifier: cursor.identifier },
+            dumps: references.map(r => r.dump),
+            cursor,
+            newOffset,
+            totalCount,
+            ctx,
+        })
     }
 
     /**
@@ -606,47 +642,80 @@ export class Backend {
     /**
      * Query the given dumps for references to the given moniker.
      *
-     * @param dumpId The ID of the dump for which this database answers queries.
-     * @param moniker The target moniker.
-     * @param dumps The dumps to open.
-     * @param ctx The tracing context.
+     * @param args Parameter bag.
      */
-    private async locationsFromRemoteReferences(
-        dumpId: pgModels.DumpId,
-        moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>,
-        dumps: pgModels.LsifDump[],
-        ctx: TracingContext = {}
-    ): Promise<InternalLocation[]> {
+    private async locationsFromRemoteReferences({
+        dumpId,
+        moniker,
+        dumps,
+        cursor,
+        newOffset,
+        totalCount,
+        ctx = {},
+    }: {
+        /** The ID of the dump for which this database answers queries. */
+        dumpId: pgModels.DumpId
+        /** The target moniker. */
+        moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>
+        /** The dumps to open. */
+        dumps: pgModels.LsifDump[]
+        cursor: RemoteDumpReferenceCursor
+        newOffset: number
+        totalCount: number
+        /** The tracing context. */
+        ctx: TracingContext
+    }): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
         logSpan(ctx, 'package_references', {
             references: dumps.map(d => ({ repositoryId: d.repositoryId, commit: d.commit })),
         })
 
-        let locations: InternalLocation[] = []
-        for (const dump of dumps) {
+        for (const [i, dump] of dumps.entries()) {
+            if (i < cursor.skipDumps) {
+                continue
+            }
+
             // Skip the remote reference that show up for ourselves - we've already gathered
             // these in the previous step of the references query.
             if (dump.id === dumpId) {
                 continue
             }
 
-            const { locations: monikerResults } = await this.createDatabase(dump).monikerResults(
+            const { locations, count } = await this.createDatabase(dump).monikerResults(
                 sqliteModels.ReferenceModel,
                 moniker,
-                {}, // TODO - paginate
+                { take: DEFAULT_LIMIT, skip: cursor.skipResults },
                 ctx
             )
-            const references = monikerResults.map(loc => locationFromDatabase(dump.root, loc))
-            locations = locations.concat(references)
+
+            if (locations.length > 0) {
+                const newResultOffset = cursor.skipResults + locations.length
+                const moreDumps = i + 1 < dumps.length
+                const nextCursor = { ...cursor, skipResults: cursor.skipResults + DEFAULT_LIMIT }
+                const nextDumpCursor = { ...cursor, skipResults: 0, skipDumps: i + 1 }
+                const nextBatchCursor = { ...cursor, skipReferences: newOffset }
+
+                return {
+                    locations: locations.map(loc => locationFromDatabase(dump.root, loc)),
+                    newCursor:
+                        newResultOffset < count
+                            ? nextCursor
+                            : moreDumps
+                            ? nextDumpCursor
+                            : newOffset < totalCount
+                            ? nextBatchCursor
+                            : undefined,
+                }
+            }
         }
 
-        return locations
+        return { locations: [] }
     }
 
     /**
      * Find the locations attached to the target moniker outside of the current database. If
      * the moniker has attached package information, then Postgres is queried for the target
-     * package. That database is opened, and its definitions table is queried for the target
-     * moniker.
+     * package. That database is opened, and its definitions or references table is queried
+     * for the target moniker (depending on the given model).
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.
@@ -660,10 +729,10 @@ export class Backend {
         model: typeof sqliteModels.DefinitionModel | typeof sqliteModels.ReferenceModel,
         pagination: { skip?: number; take?: number },
         ctx: TracingContext = {}
-    ): Promise<InternalLocation[]> {
+    ): Promise<{ locations: InternalLocation[]; count: number }> {
         const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
         if (!packageInformation) {
-            return []
+            return { locations: [], count: 0 }
         }
 
         const packageEntity = await this.dependencyManager.getPackage(
@@ -672,7 +741,7 @@ export class Backend {
             packageInformation.version
         )
         if (!packageEntity) {
-            return []
+            return { locations: [], count: 0 }
         }
 
         logSpan(ctx, 'package_entity', {
@@ -682,13 +751,13 @@ export class Backend {
             packageCommit: packageEntity.dump.commit,
         })
 
-        const { locations: monikerResults } = await this.createDatabase(packageEntity.dump).monikerResults(
+        const { locations, count } = await this.createDatabase(packageEntity.dump).monikerResults(
             model,
             moniker,
             pagination,
             ctx
         )
-        return monikerResults.map(loc => locationFromDatabase(packageEntity.dump.root, loc))
+        return { locations: locations.map(loc => locationFromDatabase(packageEntity.dump.root, loc)), count }
     }
 
     /**

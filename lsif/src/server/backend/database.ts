@@ -132,11 +132,13 @@ export class Database {
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
+     * @param pagination A limit and offset to use for the query.
      * @param ctx The tracing context.
      */
     public async references(
         path: string,
         position: lsp.Position,
+        // pagination: { skip?: number; take?: number },
         ctx: TracingContext = {}
     ): Promise<InternalLocation[]> {
         return this.logAndTraceCall(ctx, 'Fetching references', async ctx => {
@@ -148,6 +150,7 @@ export class Database {
             let locations: InternalLocation[] = []
             for (const range of ranges) {
                 if (range.referenceResultId) {
+                    //  - could be massive, should splice here
                     const referenceResults = await this.getResultById(range.referenceResultId)
                     this.logSpan(ctx, 'reference_results', {
                         referenceResultId: range.referenceResultId,
