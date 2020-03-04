@@ -20,7 +20,7 @@ Site admins can [configure Sourcegraph to respect Bitbucket Server's repository 
 
 ## Sourcegraph Bitbucket Server Plugin
 
-We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) so user doesn't need to install and configure the browser extension to get code intelligence when browsing code or reviewing pull requests on Bitbucket Server.
+We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) so users don't need to install and configure the browser extension to get code intelligence when browsing code or reviewing pull requests on Bitbucket Server.
 
 The plugin also enables **faster ACL permission syncing between Sourcegraph and Bitbucket Server** and adds **webhooks to Bitbucket Server**, which are used by and highly recommended for [Campaigns](../user/campaigns.md).
 
@@ -35,7 +35,7 @@ For the Bitbucket Server plugin to then communicate with the Sourcegraph instanc
 ```json
 {
   // ...
-  "corsOrigin":"https://my-bitbucket.example.com"
+  "corsOrigin": "https://my-bitbucket.example.com"
   // ...
 }
 ```
