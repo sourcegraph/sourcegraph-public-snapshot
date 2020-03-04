@@ -9,6 +9,7 @@ import { Database, sortMonikers, InternalLocation } from './database'
 import { dbFilename } from '../../shared/paths'
 import { mustGet } from '../../shared/maps'
 import { DumpManager } from '../../shared/store/dumps'
+import { REFERENCES_REMOTE_DUMP_LIMIT } from '../../shared/constants'
 import { DependencyManager } from '../../shared/store/dependencies'
 import { isDefined } from '../../shared/util'
 import {
@@ -20,11 +21,9 @@ import {
     SameDumpReferencesTableReferenceCursor,
 } from './cursor'
 
-/** The number of remote dumps we will query per page. */
-const REMOTE_DUMP_LIMIT = 20
-
 /**
- * A wrapper around code intelligence operations.
+ * A wrapper around code intelligence operations. This class deals with logic that spans
+ * multiple repositories or commits. For single-dump logic, see the `Database` class.
  */
 export class Backend {
     private connectionCache = new ConnectionCache(settings.CONNECTION_CACHE_CAPACITY)
@@ -178,7 +177,7 @@ export class Backend {
             return this.handleReferencePaginationCursor(
                 repositoryId,
                 commit,
-                REMOTE_DUMP_LIMIT,
+                REFERENCES_REMOTE_DUMP_LIMIT,
                 paginationContext.limit,
                 paginationContext.cursor,
                 ctx
@@ -224,7 +223,7 @@ export class Backend {
         return this.handleReferencePaginationCursor(
             repositoryId,
             commit,
-            REMOTE_DUMP_LIMIT,
+            REFERENCES_REMOTE_DUMP_LIMIT,
             paginationContext.limit,
             cursor,
             newCtx
@@ -773,7 +772,7 @@ export class Backend {
     }
 
     /**
-     * Find the locations attached to the target moniker outside of the current database. If
+     * Find the locations attached to the target moniker in the dump where it is defined. If
      * the moniker has attached package information, then Postgres is queried for the target
      * package. That database is opened, and its definitions or references table is queried
      * for the target moniker (depending on the given model).
@@ -822,7 +821,7 @@ export class Backend {
     }
 
     /**
-     * Retrieve the package information from associated with the given moniker.
+     * Retrieve the package information associated with the given moniker.
      *
      * @param document The document containing an instance of the moniker.
      * @param moniker The target moniker.
@@ -861,6 +860,8 @@ export class Backend {
      * If no dumpId is supplied, the first database from `findClosestDatabase` is used. Note that this
      * functionality does not happen in the application and only in tests, as an uploadId is a required
      * parameter on all routes into the API.
+     *
+     * TODO - remove test-specific logic
      *
      * @param repositoryId The repository identifier.
      * @param commit The target commit.
@@ -978,12 +979,7 @@ export class Backend {
         ctx: TracingContext = {}
     ): Promise<sqliteModels.DocumentData | undefined> {
         const dumpAndDatabase = await this.getDumpAndDatabaseById(dumpId)
-        if (!dumpAndDatabase) {
-            return undefined
-        }
-        const { database } = dumpAndDatabase
-
-        return database.getDocumentByPath(path, ctx)
+        return dumpAndDatabase?.database.getDocumentByPath(path, ctx)
     }
 }
 

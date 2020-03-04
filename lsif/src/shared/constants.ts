@@ -35,3 +35,8 @@ export const ADVISORY_LOCK_ID_SALT = 1688730858
  * limit.
  */
 export const MAX_COMMITS_PER_UPDATE = MAX_TRAVERSAL_LIMIT * 1.5
+
+/**
+ * The number of remote dumps we will query per page of reference results.
+ */
+export const REFERENCES_REMOTE_DUMP_LIMIT = 20
