@@ -9,6 +9,8 @@ To connect Bitbucket Server to Sourcegraph:
 1. Configure the connection to Bitbucket Server using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
 
+Also consider installing the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) which enables native code intelligence for every Bitbucket user when browsing code and reviewing pull requests, allows for faster permission syncing between Sourcegraph and Bitbucket Server and adds support for webhooks to Bitbucket Server.
+
 ## Repository syncing
 
 There are four fields for configuring which repositories are mirrored:
@@ -40,7 +42,3 @@ Sourcegraph will mark repositories as archived if they have the `archived` label
 Bitbucket Server connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/bitbucket_server.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/bitbucket_server) to see rendered content.</div>
-
-## Sourcegraph native code intelligence plugin
-
-Learn more about the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-native-code-intelligence-plugin) for enabling native code intelligence for every Bitbucket user when browsing code and reviewing pull requests.
