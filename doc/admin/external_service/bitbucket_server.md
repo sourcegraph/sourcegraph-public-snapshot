@@ -24,7 +24,7 @@ There are four fields for configuring which repositories are mirrored:
 
 The [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) enables the Bitbucket Server instance to send webhooks to Sourcegraph.
 
-Using webhooks is highly recommend when using [Campaigns](../user/campaigns.md), since they speed up the syncing of pull request data between Bitbucket Server and Sourcegraph and make it more efficient.
+Using webhooks is highly recommended when using [Campaigns](../user/campaigns.md), since they speed up the syncing of pull request data between Bitbucket Server and Sourcegraph and make it more efficient.
 
 To setup webhooks:
 
