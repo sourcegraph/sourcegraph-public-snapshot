@@ -252,18 +252,18 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 		return right, true
 	}
 
-	switch right[0].(type) {
+	switch term := right[0].(type) {
 	case Operator:
-		if kind == right[0].(Operator).Kind {
+		if kind == term.Kind {
 			// Reduce right node.
-			left = append(left, right[0].(Operator).Operands...)
+			left = append(left, term.Operands...)
 			if len(right) > 1 {
 				left = append(left, right[1:]...)
 			}
 			return left, true
 		}
 	case Parameter:
-		if right[0].(Parameter).Value == "" {
+		if term.Value == "" {
 			// Remove empty string parameter.
 			if len(right) > 1 {
 				return append(left, right[1:]...), true
@@ -272,7 +272,7 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 		}
 		if operator, ok := left[0].(Operator); ok && operator.Kind == kind {
 			// Reduce left node.
-			return append(left[0].(Operator).Operands, right...), true
+			return append(operator.Operands, right...), true
 
 		}
 	}
