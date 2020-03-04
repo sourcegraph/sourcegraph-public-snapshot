@@ -162,11 +162,10 @@ tslint.config.js @sourcegraph/web
 /cmd/github-proxy/ @sourcegraph/core-services
 /cmd/gitserver/ @sourcegraph/core-services
 /cmd/repo-updater/ @sourcegraph/core-services
-/enterprise/cmd/frontend/internal/authz/*github* @beyang @unknwon
-/enterprise/cmd/frontend/internal/authz/*gitlab* @beyang @unknwon
 /enterprise/cmd/frontend/db/ @sourcegraph/core-services
 /enterprise/cmd/frontend/internal/authz/ @sourcegraph/core-services
 /enterprise/cmd/frontend/internal/graphqlbackend/ @sourcegraph/core-services @slimsag
+/enterprise/cmd/repo-updater/ @sourcegraph/core-services
 /internal/api/ @sourcegraph/core-services
 /internal/extsvc/ @sourcegraph/core-services
 /internal/gitserver/ @sourcegraph/core-services
