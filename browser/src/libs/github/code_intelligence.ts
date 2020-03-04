@@ -324,6 +324,7 @@ export const githubCodeHost: CodeHost = {
         actionItemClassName:
             'command-palette-action-item--github no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
         noResultsClassName: 'd-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
+        iconClassName,
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--github',

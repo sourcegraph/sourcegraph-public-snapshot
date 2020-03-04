@@ -167,6 +167,7 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         resultsContainerClassName: 'dropdown-content',
         selectedActionItemClassName: 'is-focused',
         noResultsClassName: 'px-3',
+        iconClassName: 's16 align-bottom',
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--gitlab',
