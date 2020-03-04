@@ -12170,10 +12170,10 @@ json-schema-ref-parser@^6.1.0:
     js-yaml "^3.12.1"
     ono "^4.0.11"
 
-json-schema-ref-parser@^7.1.3:
-  version "7.1.3"
-  resolved "https://registry.npmjs.org/json-schema-ref-parser/-/json-schema-ref-parser-7.1.3.tgz#21468cd180b2f1939ce93fe291f743b441e97d49"
-  integrity sha512-/Lmyl0PW27dOmCO03PI339+1gs4Z2PlqIyUgzIOtoRp08zkkMCB30TRbdppbPO7WWzZX0uT98HqkDiZSujkmbA==
+json-schema-ref-parser@^7.1.4:
+  version "7.1.4"
+  resolved "https://registry.npmjs.org/json-schema-ref-parser/-/json-schema-ref-parser-7.1.4.tgz#abb3f2613911e9060dc2268477b40591753facf0"
+  integrity sha512-AD7bvav0vak1/63w3jH8F7eHId/4E4EPdMAEZhGxtjktteUv9dnNB/cJy6nVnMyoTPBJnLwFK6tiQPSTeleCtQ==
   dependencies:
     call-me-maybe "^1.0.1"
     js-yaml "^3.13.1"
