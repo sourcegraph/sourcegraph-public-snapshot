@@ -209,12 +209,15 @@ describe('Backend', () => {
                 )
             )
 
+        const ensureSizes = (sizes: number[], expectedSize: number): void => {
+            const copy = Array.from(sizes)
+            expect(copy.pop()).toBeLessThanOrEqual(expectedSize)
+            expect(copy.every(v => v === expectedSize)).toBeTruthy()
+        }
+
         const { locations: locations1, pageSizes: pageSizes1, numPages: numPages1 } = await fetch(1)
         const { locations: locations2, pageSizes: pageSizes2, numPages: numPages2 } = await fetch(5)
         const { locations: locations3, pageSizes: pageSizes3, numPages: numPages3 } = await fetch(100)
-
-        // TODO - these don't seem right
-        console.log({ pageSizes1, pageSizes2, pageSizes3 })
 
         // Ensure we have the same data
         expect(locations1).toEqual(locations2)
@@ -223,6 +226,15 @@ describe('Backend', () => {
         // Ensure num pages decrease with page size
         expect(numPages1).toBeGreaterThan(numPages2)
         expect(numPages2).toBeGreaterThan(numPages3)
+
+        // Ensure pages are full
+        ensureSizes(pageSizes1, 1)
+        ensureSizes(pageSizes2, 5)
+        ensureSizes(pageSizes3, 100)
+
+        // Number of results are the same (no additional duplicates)
+        expect(pageSizes1.reduce((a, b) => a + b, 0)).toEqual(pageSizes2.reduce((a, b) => a + b, 0))
+        expect(pageSizes1.reduce((a, b) => a + b, 0)).toEqual(pageSizes3.reduce((a, b) => a + b, 0))
 
         // Ensure we have the correct data (order is asserted here)
         expect(extractRepos(locations1)).toEqual([repositoryId, ids.ext1, ids.ext2, ids.ext3, ids.ext4, ids.ext5])
