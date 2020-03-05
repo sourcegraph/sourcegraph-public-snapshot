@@ -129,12 +129,6 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{"GITHUB"}}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
-	if err != nil {
-		return nil, &httpError{http.StatusInternalServerError, err}
-	}
-
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, &httpError{http.StatusInternalServerError, err}
@@ -145,6 +139,11 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
 	// it's ok for this to be have linear complexity.
 	// If there are no secrets or no secret managed to authenticate the request,
 	// we return a 401 to the client.
+	args := repos.StoreListExternalServicesArgs{Kinds: []string{"GITHUB"}}
+	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	if err != nil {
+		return nil, &httpError{http.StatusInternalServerError, err}
+	}
 
 	var secrets [][]byte
 	for _, e := range es {
@@ -593,13 +592,13 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, &httpError{http.StatusInternalServerError, err}
 	}
 
-	payload, err := ioutil.ReadAll(r.Body)
+	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
+	es, err := h.Repos.ListExternalServices(r.Context(), args)
 	if err != nil {
 		return nil, &httpError{http.StatusInternalServerError, err}
 	}
