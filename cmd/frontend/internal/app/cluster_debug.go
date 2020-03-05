@@ -20,7 +20,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// proxyEndpoint couples the reverse proxy with the endpoint it proxies
+// proxyEndpoint couples the reverse proxy with the endpoint it proxies.
 type proxyEndpoint struct {
 	reverseProxy http.Handler
 	service      string
