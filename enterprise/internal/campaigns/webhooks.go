@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -93,14 +92,18 @@ type GitHubWebhook struct {
 
 type BitbucketServerWebhook struct {
 	*Webhook
+	Name string
 }
 
 func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
 	return &GitHubWebhook{&Webhook{store, repos, now, github.ServiceType}}
 }
 
-func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time) *BitbucketServerWebhook {
-	return &BitbucketServerWebhook{&Webhook{store, repos, now, bbs.ServiceType}}
+func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
+	return &BitbucketServerWebhook{
+		Webhook: &Webhook{store, repos, now, bbs.ServiceType},
+		Name:    name,
+	}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -612,17 +615,10 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				continue
 			}
 
-			globalState, err := globalstatedb.Get(context.Background())
-			if err != nil {
-				log15.Error("Upserting BBS Webhook [Getting global site id]", "err", err)
-				continue
-			}
-
-			name := "sourcegraph-" + globalState.SiteID
 			endpoint := globals.ExternalURL().String() + "/.api/bitbucket-server-webhooks"
 
 			wh := bbs.Webhook{
-				Name:     name,
+				Name:     h.Name,
 				Scope:    "global",
 				Events:   []string{"pr"},
 				Endpoint: endpoint,
