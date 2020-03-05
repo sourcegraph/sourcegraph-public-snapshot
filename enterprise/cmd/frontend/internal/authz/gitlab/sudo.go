@@ -38,7 +38,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exter
 }
 
 // listProjects is a helper function to request for all private projects that are accessible
-// (20 => Reporter access) by the authenticated or impersonated user in the client. It may
+// (access level: 20 => Reporter access) by the authenticated or impersonated user in the client. It may
 // return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
 func listProjects(ctx context.Context, client *gitlab.Client) ([]string, error) {

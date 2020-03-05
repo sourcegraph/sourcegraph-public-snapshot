@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
-// FetchUserPerms returns a list of project IDs (on code host) that the given account
-// has read access on the code host. The project ID has the same value as it would be
+// FetchUserPerms returns a list of private project IDs (on code host) that the given account
+// has read access to. The project ID has the same value as it would be
 // used as api.ExternalRepoSpec.ID. The returned list only includes private project IDs.
 //
 // This method may return partial but valid results in case of error, and it is up to
