@@ -54,7 +54,7 @@ func (ci *clusterInstrumenter) runEventLoop() {
 	}
 }
 
-// hostInfo couples a service with the displayName of one endpoint
+// hostInfo couples a service with the displayName of one endpoint.
 type hostInfo struct {
 	service     string
 	displayName string
