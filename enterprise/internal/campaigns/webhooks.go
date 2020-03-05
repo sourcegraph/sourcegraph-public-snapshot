@@ -129,12 +129,6 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{"GITHUB"}}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
-	if err != nil {
-		return nil, &httpError{http.StatusInternalServerError, err}
-	}
-
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, &httpError{http.StatusInternalServerError, err}
@@ -145,6 +139,11 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
 	// it's ok for this to be have linear complexity.
 	// If there are no secrets or no secret managed to authenticate the request,
 	// we return a 401 to the client.
+	args := repos.StoreListExternalServicesArgs{Kinds: []string{"GITHUB"}}
+	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	if err != nil {
+		return nil, &httpError{http.StatusInternalServerError, err}
+	}
 
 	var secrets [][]byte
 	for _, e := range es {
@@ -174,7 +173,7 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
 }
 
 func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (prs []int64, ours interface{ Key() string }) {
-	log15.Info("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
+	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
 		prs = append(prs, int64(*e.Issue.Number))
@@ -583,6 +582,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	pr, ev := h.convertEvent(e)
 	if pr == 0 || ev == nil {
+		log15.Debug("Dropping Bitbucket Server webhook event: %T", e)
 		respond(w, http.StatusOK, nil) // Nothing to do
 		return
 	}
@@ -593,13 +593,13 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, &httpError{http.StatusInternalServerError, err}
 	}
 
-	payload, err := ioutil.ReadAll(r.Body)
+	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
+	es, err := h.Repos.ListExternalServices(r.Context(), args)
 	if err != nil {
 		return nil, &httpError{http.StatusInternalServerError, err}
 	}
@@ -628,7 +628,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 		return nil, &httpError{http.StatusUnauthorized, err}
 	}
 
-	e, err := bbs.ParseWebHook(bbs.WebHookType(r), payload)
+	e, err := bbs.ParseWebhookEvent(bbs.WebhookEventType(r), payload)
 	if err != nil {
 		return nil, &httpError{http.StatusBadRequest, err}
 	}
@@ -636,6 +636,8 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 }
 
 func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (pr int64, ours interface{ Key() string }) {
+	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
+
 	switch e := theirs.(type) {
 	case *bbs.PullRequestEvent:
 		return int64(e.PullRequest.ID), e.Activity
