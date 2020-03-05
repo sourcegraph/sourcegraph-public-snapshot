@@ -186,12 +186,8 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
-func elapsedMilliseconds(start time.Time) int32 {
-	return int32(time.Since(start).Nanoseconds() / int64(time.Millisecond))
-}
-
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
-	return elapsedMilliseconds(sr.start)
+	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
 }
 
 // commonFileFilters are common filters used. It is used by DynamicFilters to
@@ -1301,11 +1297,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		log15.Error("Errors during search", "error", multiErr)
 		multiErr = nil
 	}
-
-	// if len(resultTypes) == 1 && resultTypes[0] == "repo" {
-	// 	durationMs := elapsedMilliseconds(start)
-	// 	logMsg := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
-	// }
 
 	sortResults(results)
 
