@@ -178,7 +178,13 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 	for _, id := range ids {
 		item, ok := s.queue.Get(id)
 		if !ok {
-			continue
+			// Item has been recently synced and removed or we have an invalid id
+			// We have no way of telling the difference without making a DB call so
+			// add a new item anyway which will just lead to a harmless error later
+			item = syncSchedule{
+				changesetID: id,
+				nextSync:    time.Time{},
+			}
 		}
 		item.priority = priorityHigh
 		s.queue.Upsert(item)
