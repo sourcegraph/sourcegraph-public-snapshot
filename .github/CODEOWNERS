@@ -187,11 +187,11 @@ tslint.config.js @sourcegraph/web
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
 /cmd/frontend/internal/pkg/search @sourcegraph/code-search
-/cmd/query-runner @sourcegraph/code-search
-/cmd/replacer @rvantonder
+/cmd/query-runner/ @sourcegraph/code-search
+/cmd/replacer/ @rvantonder
 /cmd/searcher/ @sourcegraph/code-search
-/cmd/symbols @sourcegraph/code-search
-/internal/search @sourcegraph/code-search
+/cmd/symbols/ @sourcegraph/code-search
+/internal/search/ @sourcegraph/code-search
 /internal/symbols/ @sourcegraph/code-search
 
 # Saved searches
