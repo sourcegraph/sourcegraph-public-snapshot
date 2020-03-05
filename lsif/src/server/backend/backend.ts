@@ -466,10 +466,10 @@ export class Backend {
         // First get all LSIF reference result locations for the given position.
         const locationSet = await database.references(cursor.path, cursor.position, ctx)
 
-        // Search the references table of the current dump. This search is necessary because we
-        // want a 'Find References' operation on a reference to also return references to
-        // the governing definition, and those may not be fully linked in the LSIF data.
-        // This method returns a cursor if there are reference rows remaining for a subsequent page.
+        // Search the references table of the current dump. This search is necessary because
+        // we want a 'Find References' operation on a reference to also return references to
+        // the governing definition, and those may not be fully linked in the LSIF data. This
+        // method returns a cursor if there are reference rows remaining for a subsequent page.
         for (const moniker of cursor.monikers) {
             const { locations: monikerLocations } = await database.monikerResults(
                 sqliteModels.ReferenceModel,
