@@ -45,23 +45,11 @@ CONTAINER ID        IMAGE
 
 #### Generate database dump
 
-* Open a shell inside the `sourcegraph/server` container
-
-```bash
-# Use the CONTAINER_ID found in the previous step
-docker exec -it "$CONTAINER_ID" /bin/sh
-```
-
 * Dump Postgres database to `/tmp/db.out`
 
 ```bash
-pg_dumpall --verbose --username=postgres > /tmp/db.out
-```
-
-* End the `sourcegraph/server` container shell session
-
-```bash
-exit
+# Use the CONTAINER_ID found in the previous step
+docker exec -it "$CONTAINER_ID" sh -c 'pg_dumpall --verbose --username=postgres' > /tmp/db.out
 ```
 
 * Copy Postgres dump from the `sourcegraph/server` container to the host machine
