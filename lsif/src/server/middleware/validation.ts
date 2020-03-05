@@ -77,13 +77,17 @@ export const validateOffset = validateOptionalInt('offset')
 export const validateCursor = <T>(): ValidationChain =>
     validateOptionalString('cursor').customSanitizer(value => parseCursor<T>(value))
 
+interface ValidationErrorResponse {
+    errors: Record<string, ValidationError>
+}
+
 /**
  * Middleware function used to apply a sequence of validators and then return
  * an unprocessable entity response with an error message if validation fails.
  */
 export const validationMiddleware = (chains: ValidationChain[]) => async (
     req: express.Request,
-    res: express.Response<{ errors: Record<string, ValidationError> }>,
+    res: express.Response<ValidationErrorResponse>,
     next: express.NextFunction
 ): Promise<void> => {
     await Promise.all(chains.map(chain => chain.run(req)))
