@@ -45,7 +45,7 @@ export interface SameDumpReferenceCursor extends ReferencePaginationCursorCommon
     skipResults: number
 }
 
-/** Bookkeeping data for the part of the reference result set that deals with the dumps that defines a moniker. */
+/** Bookkeeping data for the reference results that come from dumps defining a moniker. */
 export interface DefinitionMonikersReferenceCursor extends ReferencePaginationCursorCommon {
     phase: 'definition-monikers'
 
