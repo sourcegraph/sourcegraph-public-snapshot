@@ -466,10 +466,10 @@ export class Backend {
         // First get all LSIF reference result locations for the given position.
         const locationSet = await database.references(cursor.path, cursor.position, ctx)
 
-        // Search the references table of the current dump. This search is necessary, but may be
-        // un-intuitive. A 'Find References' operation on a reference should also return references
-        // to the definition. These are not necessarily fully linked in the LSIF data. This method
-        // returns a cursor if there are reference rows remaining for a subsequent page.
+        // Search the references table of the current dump. This search is necessary because we
+        // want a 'Find References' operation on a reference to also return references to
+        // the governing definition, and those may not be fully linked in the LSIF data.
+        // This method returns a cursor if there are reference rows remaining for a subsequent page.
         for (const moniker of cursor.monikers) {
             const { locations: monikerLocations } = await database.monikerResults(
                 sqliteModels.ReferenceModel,
@@ -640,7 +640,7 @@ export class Backend {
 
     /**
      * Determine if the moniker and package identified by the pagination cursor has at least one
-     * remote repository. containing that definition. We use this to determine if we should move
+     * remote repository containing that definition. We use this to determine if we should move
      * on to the next phase without doing it unconditionally and yielding an empty last page.
      *
      * @param repositoryId The repository identifier.
@@ -756,9 +756,9 @@ export class Backend {
 
     /**
      * Find the locations attached to the target moniker in the dump where it is defined. If
-     * the moniker has attached package information, then Postgres is queried for the target
-     * package. That database is opened, and its definitions or references table is queried
-     * for the target moniker (depending on the given model).
+     * the moniker has attached package information, then query Postgres for the target
+     * package. Open that package's database and query its definitions or references
+     * table for the target moniker (depending on the given model).
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.

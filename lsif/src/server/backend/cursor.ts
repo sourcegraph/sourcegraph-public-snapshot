@@ -16,7 +16,7 @@ export type ReferencePaginationCursor =
     | DefinitionMonikersReferenceCursor
     | RemoteDumpReferenceCursor
 
-/** The cursor phase is a tag that indicates the shape of the object. */
+/** A label that indicates which pagination phase is being expanded. */
 export type ReferencePaginationPhase = 'same-dump' | 'definition-monikers' | 'same-repo' | 'remote-repo'
 
 /** Fields common to all reference pagination cursors. */
@@ -28,7 +28,7 @@ interface ReferencePaginationCursorCommon {
     phase: ReferencePaginationPhase
 }
 
-/** Bookkeeping data for the part of the reference result set that comes from the initial dump. */
+/** Bookkeeping data for the reference results that come from the initial dump. */
 export interface SameDumpReferenceCursor extends ReferencePaginationCursorCommon {
     phase: 'same-dump'
 
@@ -45,7 +45,7 @@ export interface SameDumpReferenceCursor extends ReferencePaginationCursorCommon
     skipResults: number
 }
 
-/** Bookkeeping data for the part of the reference result set that deals with the dumps that defines a moniker. */
+/** Bookkeeping data for the reference results that come from dumps defining a moniker. */
 export interface DefinitionMonikersReferenceCursor extends ReferencePaginationCursorCommon {
     phase: 'definition-monikers'
 
@@ -59,7 +59,7 @@ export interface DefinitionMonikersReferenceCursor extends ReferencePaginationCu
     skipResults: number
 }
 
-/** Bookkeeping data for the part of the reference result set that deals with additional dumps. */
+/** Bookkeeping data for the reference results that come from additional (remote) dumps. */
 export interface RemoteDumpReferenceCursor extends ReferencePaginationCursorCommon {
     phase: 'same-repo' | 'remote-repo'
 

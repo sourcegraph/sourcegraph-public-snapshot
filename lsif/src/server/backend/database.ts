@@ -124,8 +124,7 @@ export class Database {
     }
 
     /**
-     * Return a list of locations that reference the symbol at the given position. The
-     * resulting list of locations does not contain duplicates.
+     * Return a list of unique locations that reference the symbol at the given position.
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -281,7 +280,8 @@ export class Database {
 
     /**
      * Return a parsed document that describes the given path. The result of this
-     * method is cached across all database instances.
+     * method is cached across all database instances. If the document is not found
+     * it returns undefined; other errors will throw.
      *
      * @param path The path of the document.
      * @param ctx The tracing context.
