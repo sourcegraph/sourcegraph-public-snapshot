@@ -151,7 +151,8 @@ const queryRepositoryContributors = memoizeObservable(
                 return (data.node as GQL.IRepository).contributors
             })
         ),
-    args => `${args.repo}:${args.first}:${args.revisionRange}:${args.after}:${args.path}`
+    args =>
+        `${args.repo}:${String(args.first)}:${String(args.revisionRange)}:${String(args.after)}:${String(args.path)}`
 )
 
 interface Props
@@ -414,6 +415,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
         if (spec.path) {
             query.set('path', spec.path)
         }
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return query.toString()
     }
 

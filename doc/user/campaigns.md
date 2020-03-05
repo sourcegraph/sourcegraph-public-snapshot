@@ -1,16 +1,26 @@
 # Campaigns
 
-> The campaigns feature was formerly known as "automation".
+> **Campaigns are currently available in private beta for select enterprise customers.** (This feature was previously known as "Automation".)
 
-> Campaigns are currently available in private beta for select enterprise customers.
+## What are Campaigns?
 
-[Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) lets you make large-scale code changes across many repositories and different code hosts.
+Campaigns are part of [Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) and let you make large-scale code changes across many repositories and different code hosts.
 
-**Important**: If you're on Sourcegraph 3.12 or older, you might also want to look at the old documentation: "[Campaigns documentation for Sourcegraph 3.12](https://docs.sourcegraph.com/@3.12/user/automation)"
+You provide the code to make the change and Campaigns provide the plumbing to turn it into a large-scale code change campaign and monitor its progress.
+
+## Getting started with Campaigns
+
+1. Make sure that the Campaigns feature flag is enabled: [Configuration](#Configuration)
+1. Optional, but highly recommended for optimal syncing performance between your code host and Sourcegraph, setup the webhook integration:
+  * GitHub: [Configuring GitHub webhooks](https://docs.sourcegraph.com/admin/external_service/github#webhooks).
+  * Bitbucket Server: [Setup the `bitbucket-server-plugin`](https://github.com/sourcegraph/bitbucket-server-plugin), [create a webhook](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/java/com/sourcegraph/webhook/README.md#create) and configure the `"plugin"` settings for your [Bitbucket Server code host connection](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration).
+1. Setup the `src` CLI on your machine: [Installation and setup instructions](https://github.com/sourcegraph/src-cli/#installation)
+1. Create your first campaign: [Creating campaigns](#creating-campaigns)
+1. Take a look at example campaigns: [Example campaigns](#example-campaigns)
 
 ## Configuration
 
-In order to use code campaigns, a site-admin of your Sourcegraph instance must enable it in the site configuration settings e.g. `sourcegraph.example.com/site-admin/configuration`
+In order to use Campaigns, a site-admin of your Sourcegraph instance must enable it in the site configuration settings e.g. `sourcegraph.example.com/site-admin/configuration`
 
 ```json
 {
@@ -32,10 +42,17 @@ Without any further configuration, campaigns are **only accessible to site-admin
 
 There are two types of campaigns:
 
-- Manual campaigns to which you can manually add changesets (pull requests) and track their progress.
-- Campaigns created from a set of patches. With the `src` CLI tool, you can not only create the campaign from an existing set of patches, but you can also _generate the patches_ for a number of repositories.
+### Campaigns created from a set of patches
 
-## Creating a campaign manually
+When a Campaign is created from a set of patches, one per repository, Sourcegraph will create changesets (pull requests) on the associated code hosts and track their progress in the newly created campaign, where you can manage them.
+
+With the `src` CLI tool, you can not only create the campaign from an existing set of patches, but you can also _generate the patches_ for a number of repositories.
+
+### Manual campaigns
+
+Manual campaigns provide the ability to manage and monitor changesets (pull requests) that already exist on code hosts by manually adding them to a campaign.
+
+## Creating a manual campaign
 
 1. Go to `/campaigns` on your Sourcegraph instance and click on the "New campaign" button
 2. Fill in a name for the campaign and a description
@@ -444,7 +461,3 @@ CMD yarn -s --non-interactive --pure-lockfile --ignore-optional --ignore-scripts
 This uses `/cache` as the `YARN_CACHE_FOLDER` and `NPM_CONFIG_CACHE` folder. It installs the dependencies with `yarn`, thus populating the `/cache` folder.
 
 Subsequent action steps that use this preamble in their `Dockerfile` will run faster because they can leverage the cache folder.
-
-## Note for developers
-
-If you are looking to use campaigns in your local dev environment, follow the [guide on campaigns development](../dev/campaigns_development.md).

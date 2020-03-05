@@ -13,19 +13,12 @@ import { logSpan, TracingContext, logAndTraceCall, addTags } from '../../shared/
 import { mustGet } from '../../shared/maps'
 import { Logger } from 'winston'
 import { createSilentLogger } from '../../shared/logging'
+import { InternalLocation, OrderedLocationSet } from './location'
 
-/**
- * A location with the dump that contains it.
- */
-export interface InternalLocation {
-    dump: pgModels.LsifDump
-    path: string
-    range: lsp.Range
-}
+/** The maximum number of results in a logSpan value. */
+const MAX_SPAN_ARRAY_LENGTH = 20
 
-/**
- * A wrapper around operations for single repository/commit pair.
- */
+/** A wrapper around operations related to a single SQLite dump. */
 export class Database {
     /**
      * A static map of database paths to the `numResultChunks` value of their
@@ -88,7 +81,7 @@ export class Database {
     }
 
     /**
-     * Return the locations for the symbol at the given position.
+     * Return a list of locations that define the symbol at the given position.
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -113,7 +106,8 @@ export class Database {
                 const definitionResults = await this.getResultById(range.definitionResultId)
                 this.logSpan(ctx, 'definition_results', {
                     definitionResultId: range.definitionResultId,
-                    definitionResults,
+                    definitionResults: definitionResults.slice(0, MAX_SPAN_ARRAY_LENGTH),
+                    numDefinitionResults: definitionResults.length,
                 })
 
                 // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
@@ -130,7 +124,7 @@ export class Database {
     }
 
     /**
-     * Return a list of locations which reference the symbol at the given position.
+     * Return a list of unique locations that reference the symbol at the given position.
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -140,28 +134,36 @@ export class Database {
         path: string,
         position: lsp.Position,
         ctx: TracingContext = {}
-    ): Promise<InternalLocation[]> {
+    ): Promise<OrderedLocationSet> {
         return this.logAndTraceCall(ctx, 'Fetching references', async ctx => {
             const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
             if (!document || ranges.length === 0) {
-                return []
+                return new OrderedLocationSet()
             }
 
-            let locations: InternalLocation[] = []
+            const locationSet = new OrderedLocationSet()
             for (const range of ranges) {
                 if (range.referenceResultId) {
                     const referenceResults = await this.getResultById(range.referenceResultId)
                     this.logSpan(ctx, 'reference_results', {
                         referenceResultId: range.referenceResultId,
-                        referenceResults,
+                        referenceResults: referenceResults.slice(0, MAX_SPAN_ARRAY_LENGTH),
+                        numReferenceResults: referenceResults.length,
                     })
-                    locations = locations.concat(
-                        await this.convertRangesToInternalLocations(path, document, referenceResults)
-                    )
+
+                    if (referenceResults.length > 0) {
+                        for (const location of await this.convertRangesToInternalLocations(
+                            path,
+                            document,
+                            referenceResults
+                        )) {
+                            locationSet.push(location)
+                        }
+                    }
                 }
             }
 
-            return uniqWith(locations, isEqual)
+            return locationSet
         })
     }
 
@@ -236,32 +238,81 @@ export class Database {
      *
      * @param model The constructor for the model type.
      * @param moniker The target moniker.
+     * @param pagination A limit and offset to use for the query.
      * @param ctx The tracing context.
      */
     public monikerResults(
         model: typeof sqliteModels.DefinitionModel | typeof sqliteModels.ReferenceModel,
         moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>,
+        pagination: { skip?: number; take?: number },
         ctx: TracingContext
-    ): Promise<InternalLocation[]> {
+    ): Promise<{ locations: InternalLocation[]; count: number }> {
         return this.logAndTraceCall(ctx, 'Fetching moniker results', async ctx => {
-            const results = await this.withConnection(
+            const [results, count] = await this.withConnection(
                 connection =>
-                    connection.getRepository<sqliteModels.DefinitionModel | sqliteModels.ReferenceModel>(model).find({
-                        where: {
-                            scheme: moniker.scheme,
-                            identifier: moniker.identifier,
-                        },
-                    }),
+                    connection
+                        .getRepository<sqliteModels.DefinitionModel | sqliteModels.ReferenceModel>(model)
+                        .findAndCount({
+                            where: {
+                                scheme: moniker.scheme,
+                                identifier: moniker.identifier,
+                            },
+                            ...pagination,
+                        }),
                 ctx.logger
             )
 
-            this.logSpan(ctx, 'symbol_results', { moniker, symbol: results })
-            return results.map(result => ({
+            this.logSpan(ctx, 'symbol_results', {
+                moniker,
+                results: results.slice(0, MAX_SPAN_ARRAY_LENGTH),
+                numResults: results.length,
+            })
+
+            const locations = results.map(result => ({
                 dump: this.dump,
                 path: result.documentPath,
                 range: createRange(result),
             }))
+
+            return { locations, count }
         })
+    }
+
+    /**
+     * Return a parsed document that describes the given path. The result of this
+     * method is cached across all database instances. If the document is not found
+     * it returns undefined; other errors will throw.
+     *
+     * @param path The path of the document.
+     * @param ctx The tracing context.
+     */
+    public async getDocumentByPath(
+        path: string,
+        ctx: TracingContext = {}
+    ): Promise<sqliteModels.DocumentData | undefined> {
+        const factory = async (): Promise<cache.EncodedJsonCacheValue<sqliteModels.DocumentData>> => {
+            const document = await this.withConnection(
+                connection => connection.getRepository(sqliteModels.DocumentModel).findOneOrFail(path),
+                ctx.logger
+            )
+
+            return {
+                size: document.data.length,
+                data: await gunzipJSON<sqliteModels.DocumentData>(document.data),
+            }
+        }
+
+        try {
+            return await this.documentCache.withValue(`${this.databasePath}::${path}`, factory, document =>
+                Promise.resolve(document.data)
+            )
+        } catch (error) {
+            if (error.name === 'EntityNotFound') {
+                return undefined
+            }
+
+            throw error
+        }
     }
 
     //
@@ -309,42 +360,6 @@ export class Database {
         }
 
         return results
-    }
-
-    /**
-     * Return a parsed document that describes the given path. The result of this
-     * method is cached across all database instances.
-     *
-     * @param path The path of the document.
-     * @param ctx The tracing context.
-     */
-    private async getDocumentByPath(
-        path: string,
-        ctx: TracingContext = {}
-    ): Promise<sqliteModels.DocumentData | undefined> {
-        const factory = async (): Promise<cache.EncodedJsonCacheValue<sqliteModels.DocumentData>> => {
-            const document = await this.withConnection(
-                connection => connection.getRepository(sqliteModels.DocumentModel).findOneOrFail(path),
-                ctx.logger
-            )
-
-            return {
-                size: document.data.length,
-                data: await gunzipJSON<sqliteModels.DocumentData>(document.data),
-            }
-        }
-
-        try {
-            return await this.documentCache.withValue(`${this.databasePath}::${path}`, factory, document =>
-                Promise.resolve(document.data)
-            )
-        } catch (error) {
-            if (error.name === 'EntityNotFound') {
-                return undefined
-            }
-
-            throw error
-        }
     }
 
     /**
@@ -510,28 +525,38 @@ export function comparePosition(range: sqliteModels.RangeData, position: lsp.Pos
     return 0
 }
 
+// The order to present monikers in when organized by kinds
+const monikerKindPreferences = ['import', 'local', 'export']
+
+// A map from moniker schemes to schemes that subsume them. The schemes
+// identified by keys should be removed from the sets of monikers that
+// also contain the scheme identified by that key's value.
+const subsumedMonikers = new Map([
+    ['go', 'gomod'],
+    ['tsc', 'npm'],
+])
+
 /**
- * Sort the monikers by kind, then scheme in order of the following
- * preferences.
- *
- *   - kind: import, local, export
- *   - scheme: npm, tsc
+ * Normalize the set of monikers by filtering, sorting, and removing
+ * duplicates from the list based on the moniker kind and scheme values.
  *
  * @param monikers The list of monikers.
  */
 export function sortMonikers(monikers: sqliteModels.MonikerData[]): sqliteModels.MonikerData[] {
-    const monikerKindPreferences = ['import', 'local', 'export']
-    const monikerSchemePreferences = ['npm', 'tsc']
+    // Deduplicate monikers. This can happen with long chains of result
+    // sets where monikers are applied several times to an aliased symbol.
+    monikers = uniqWith(monikers, isEqual)
 
-    monikers.sort((a, b) => {
-        const ord = monikerKindPreferences.indexOf(a.kind) - monikerKindPreferences.indexOf(b.kind)
-        if (ord !== 0) {
-            return ord
-        }
-
-        return monikerSchemePreferences.indexOf(a.scheme) - monikerSchemePreferences.indexOf(b.scheme)
+    // Remove monikers subsumed by the presence of another. For example,
+    // if we have an `npm` moniker in this list, we want to remove all
+    // `tsc` monikers as they are duplicate by construction in lsif-tsc.
+    monikers = monikers.filter(a => {
+        const by = subsumedMonikers.get(a.scheme)
+        return !(by && monikers.some(b => b.scheme === by))
     })
 
+    // Sort monikers by kind
+    monikers.sort((a, b) => monikerKindPreferences.indexOf(a.kind) - monikerKindPreferences.indexOf(b.kind))
     return monikers
 }
 

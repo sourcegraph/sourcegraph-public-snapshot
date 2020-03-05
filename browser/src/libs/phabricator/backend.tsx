@@ -106,7 +106,7 @@ function createConduitRequestForm(): FormData {
  * To get around this we fetch the bundled CSS contents and append it to the DOM.
  */
 export async function getPhabricatorCSS(sourcegraphURL: string): Promise<string> {
-    const bundleUID = process.env.BUNDLE_UID
+    const bundleUID = process.env.BUNDLE_UID!
     const resp = await fetch(sourcegraphURL + `/.assets/extension/css/style.bundle.css?v=${bundleUID}`, {
         method: 'GET',
         credentials: 'include',

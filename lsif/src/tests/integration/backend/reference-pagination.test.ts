@@ -1,6 +1,7 @@
 import * as util from '../integration-test-util'
-import { ReferencePaginationContext } from '../../../server/backend/backend'
 import { extractRepos } from './util'
+import { lsp } from 'lsif-protocol'
+import { Backend } from '../../../server/backend/backend'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
@@ -40,45 +41,90 @@ describe('Backend', () => {
         await ctx.teardown()
     })
 
-    it('should find all defs of `add` from repo a', async () => {
+    const fetch = async (
+        backend: Backend,
+        limit: number,
+        remoteDumpLimit?: number
+    ): Promise<{ locations: lsp.Location[]; pageSizes: number[]; numPages: number }> =>
+        util.filterNodeModules(
+            util.mapLocations(
+                await util.queryAllReferences(
+                    backend,
+                    ids.a,
+                    commit,
+                    'src/index.ts',
+                    { line: 0, character: 17 },
+                    limit,
+                    remoteDumpLimit
+                )
+            )
+        )
+
+    const ensureSizes = (sizes: number[], expectedSize: number): void => {
+        const copy = Array.from(sizes)
+        expect(copy.pop()).toBeLessThanOrEqual(expectedSize)
+        expect(copy.every(v => v === expectedSize)).toBeTruthy()
+    }
+
+    it('should find all refs of `add` from repo a', async () => {
         const backend = ctx.backend
         if (!backend) {
             fail('failed beforeAll')
         }
 
-        const fetch = async (paginationContext?: ReferencePaginationContext) =>
-            util.filterNodeModules(
-                util.mapLocations(
-                    (await backend.references(
-                        ids.a,
-                        commit,
-                        'src/index.ts',
-                        {
-                            line: 0,
-                            character: 17,
-                        },
-                        paginationContext
-                    )) || { locations: [] }
-                )
-            )
+        const { locations: locations1, pageSizes: pageSizes1, numPages: numPages1 } = await fetch(backend, 1)
+        const { locations: locations2, pageSizes: pageSizes2, numPages: numPages2 } = await fetch(backend, 5)
+        const { locations: locations3, pageSizes: pageSizes3, numPages: numPages3 } = await fetch(backend, 100)
 
-        const { locations: locations0, cursor: cursor0 } = await fetch() // everything
-        const { locations: locations1, cursor: cursor1 } = await fetch({ limit: 3 }) // a, b1, b10, b2
-        const { locations: locations2, cursor: cursor2 } = await fetch({ limit: 3, cursor: cursor1 }) // b3, b4, b5
-        const { locations: locations3, cursor: cursor3 } = await fetch({ limit: 3, cursor: cursor2 }) // b6, b7, b8
-        const { locations: locations4, cursor: cursor4 } = await fetch({ limit: 3, cursor: cursor3 }) // b9
+        // Ensure we have the correct data (order is asserted here)
+        expect(extractRepos(locations1)).toEqual([
+            ids.a,
+            ids.b1,
+            ids.b10,
+            ids.b2,
+            ids.b3,
+            ids.b4,
+            ids.b5,
+            ids.b6,
+            ids.b7,
+            ids.b8,
+            ids.b9,
+        ])
 
-        // Ensure paging through sets of results gets us everything
-        expect(locations0).toEqual(locations1.concat(...locations2, ...locations3, ...locations4))
+        // Ensure we have the same data
+        expect(locations1).toEqual(locations2)
+        expect(locations1).toEqual(locations3)
 
-        // Ensure cursor is not provided at the end of a set of results
-        expect(cursor0).toBeUndefined()
-        expect(cursor4).toBeUndefined()
+        // Number of results are the same (no additional duplicates)
+        expect(pageSizes1.reduce((a, b) => a + b, 0)).toEqual(pageSizes2.reduce((a, b) => a + b, 0))
+        expect(pageSizes1.reduce((a, b) => a + b, 0)).toEqual(pageSizes3.reduce((a, b) => a + b, 0))
 
-        // Ensure paging gets us expected results per page
-        expect(extractRepos(locations1)).toEqual([ids.a, ids.b1, ids.b10, ids.b2])
-        expect(extractRepos(locations2)).toEqual([ids.b3, ids.b4, ids.b5])
-        expect(extractRepos(locations3)).toEqual([ids.b6, ids.b7, ids.b8])
-        expect(extractRepos(locations4)).toEqual([ids.b9])
+        // Ensure pages are full
+        ensureSizes(pageSizes1, 1)
+        ensureSizes(pageSizes2, 5)
+        ensureSizes(pageSizes3, 100)
+
+        // Ensure num pages decrease with page size
+        expect(numPages1).toBeGreaterThan(numPages2)
+        expect(numPages2).toBeGreaterThan(numPages3)
+    })
+
+    it('should not be externally affected by remote dump limit', async () => {
+        const backend = ctx.backend
+        if (!backend) {
+            fail('failed beforeAll')
+        }
+
+        const { locations: locations1, pageSizes: pageSizes1 } = await fetch(backend, 5, 1)
+        const { locations: locations2, pageSizes: pageSizes2 } = await fetch(backend, 5, 5)
+        const { locations: locations3, pageSizes: pageSizes3 } = await fetch(backend, 5, 10)
+
+        // Ensure we have the same data
+        expect(locations1).toEqual(locations2)
+        expect(locations1).toEqual(locations3)
+
+        // Ensure we have the same page distribution
+        expect(pageSizes1).toEqual(pageSizes2)
+        expect(pageSizes1).toEqual(pageSizes3)
     })
 })

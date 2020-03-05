@@ -332,6 +332,7 @@ export class QueryInput extends React.Component<Props, State> {
                         this.focusInputAndPositionCursorAtEnd()
                         const q = new URLSearchParams(props.location.search)
                         q.delete('focus')
+                        // eslint-disable-next-line @typescript-eslint/no-base-to-string
                         this.props.history.replace({ search: q.toString() })
                     })
             )
@@ -417,7 +418,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     <ul className="query-input2__suggestions e2e-query-suggestions" {...getMenuProps()}>
                                         {this.state.suggestions.values.map((suggestion, index) => {
                                             const isSelected = highlightedIndex === index
-                                            const key = `${index}-${suggestion}`
+                                            const key = `${index}-${suggestion.value}`
                                             return (
                                                 <SuggestionItem
                                                     key={key}

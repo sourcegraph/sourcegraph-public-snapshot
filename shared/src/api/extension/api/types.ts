@@ -20,7 +20,7 @@ export function fromLocation(
     location: sourcegraph.Badged<sourcegraph.Location>
 ): sourcegraph.Badged<clientType.Location> {
     return {
-        uri: location.uri.toString(),
+        uri: location.uri.href,
         range: fromRange(location.range),
         badge: location.badge,
     }

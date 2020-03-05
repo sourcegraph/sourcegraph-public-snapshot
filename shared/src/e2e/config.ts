@@ -219,7 +219,7 @@ export function getConfig<T extends keyof Config>(...required: T[]): Pick<Config
             }
             const info = [field.envVar]
             if (field.defaultValue) {
-                info.push(`default value: ${field.defaultValue}`)
+                info.push(`default value: ${String(field.defaultValue)}`)
             }
             if (field.description) {
                 info.push(`description: ${field.description}`)

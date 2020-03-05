@@ -5,11 +5,14 @@ import { CampaignDetails } from './CampaignDetails'
 import * as H from 'history'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
+import { CampaignStatusProps } from './CampaignStatus'
 
 jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-jest.mock('./CampaignStatus', () => ({ CampaignStatus: (props: any) => `CampaignStatus(state=${props.status.state})` }))
+jest.mock('./CampaignStatus', () => ({
+    CampaignStatus: (props: CampaignStatusProps) => `CampaignStatus(state=${props.status.state})`,
+}))
 jest.mock('./CampaignTabs', () => ({ CampaignTabs: 'CampaignTabs' }))
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
@@ -94,7 +97,7 @@ describe('CampaignDetails', () => {
     )
 
     for (const viewerCanAdminister of [true, false]) {
-        describe(`viewerCanAdminister: ${viewerCanAdminister}`, () => {
+        describe(`viewerCanAdminister: ${String(viewerCanAdminister)}`, () => {
             test('viewing existing', () => {
                 const component = renderer.create(renderCampaignDetails({ viewerCanAdminister }))
                 act(() => undefined) // eslint-disable-line @typescript-eslint/no-floating-promises

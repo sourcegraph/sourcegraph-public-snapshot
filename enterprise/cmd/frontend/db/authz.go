@@ -100,7 +100,7 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 		Provider: args.Provider,
 	}
 	if err := s.store.LoadUserPermissions(ctx, p); err != nil {
-		if err == ErrPermsNotFound {
+		if err == authz.ErrPermsNotFound {
 			return []*types.Repo{}, nil
 		}
 		return nil, err

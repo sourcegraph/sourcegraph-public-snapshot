@@ -1,6 +1,6 @@
-# External services
+# Code host connections
 
-Sourcegraph can sync repositories from code hosts and other similar external services.
+Sourcegraph can sync repositories from code hosts and other similar services.
 
 - [GitHub](github.md)
 - [GitLab](gitlab.md)

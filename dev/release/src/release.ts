@@ -146,7 +146,7 @@ const steps: Step[] = [
             ]
 
             for (const event of events) {
-                console.log(`Create calendar event: ${event.title}: ${event.startDateTime}`)
+                console.log(`Create calendar event: ${event.title}: ${event.startDateTime!}`)
                 await ensureEvent(event, googleCalendar)
             }
         },

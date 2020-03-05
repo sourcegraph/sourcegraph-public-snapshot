@@ -482,7 +482,7 @@ func TestCampaigns(t *testing.T) {
 					URL:         "https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/pull-requests/2",
 					ServiceType: "bitbucketServer",
 				},
-				ReviewState: "PENDING",
+				ReviewState: "APPROVED",
 				CheckState:  "PENDING",
 				Events: ChangesetEventConnection{
 					TotalCount: 9,

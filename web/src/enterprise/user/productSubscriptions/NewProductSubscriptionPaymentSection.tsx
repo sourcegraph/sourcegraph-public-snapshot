@@ -143,7 +143,7 @@ export class NewProductSubscriptionPaymentSection extends React.PureComponent<Pr
                                     Self-service downgrades are not yet supported.{' '}
                                     <a
                                         href={mailtoSales({
-                                            subject: `Downgrade subscription ${this.props.subscriptionID}`,
+                                            subject: `Downgrade subscription ${this.props.subscriptionID!}`,
                                         })}
                                     >
                                         Contact sales

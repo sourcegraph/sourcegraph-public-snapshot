@@ -31,6 +31,7 @@ import {
 import { first } from 'lodash'
 import { overwriteSettings } from '../../../../shared/src/settings/edit'
 import { retry } from '../../../../shared/src/e2e/e2e-test-utils'
+import { asError } from '../../../../shared/src/util/errors'
 
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.
@@ -61,7 +62,9 @@ export async function ensureLoggedInOrCreateTestUser(
             await driver.ensureLoggedIn({ username, password: testUserPassword })
             return userDestructor
         } catch (err) {
-            console.log(`Login failed (error: ${err.message}), will attempt to create user ${JSON.stringify(username)}`)
+            console.log(
+                `Login failed (error: ${asError(err).message}), will attempt to create user ${JSON.stringify(username)}`
+            )
         }
     }
 
@@ -90,7 +93,7 @@ async function createTestUser(
         .pipe(
             map(dataOrThrowErrors),
             catchError(err =>
-                throwError(new Error(`Could not create user ${JSON.stringify(username)}: ${err.message})`))
+                throwError(new Error(`Could not create user ${JSON.stringify(username)}: ${asError(err).message})`))
             ),
             map(({ createUser }) => createUser.resetPasswordURL)
         )

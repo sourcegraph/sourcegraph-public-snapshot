@@ -292,11 +292,6 @@ func RunChangesetJob(
 	}
 	repo := rs[0]
 
-	// TODO: The "campaign" is just here so that updates don't create new
-	// branches and new changesets.
-	// We should probably persist the `headRefName` on `ChangesetJob` and keep
-	// it stable across retries and only set it the first time.
-
 	branch := c.Branch
 	ensureUniqueRef := true
 	if job.Branch != "" {
@@ -329,17 +324,17 @@ func RunChangesetJob(
 		GitApplyArgs: []string{"-p0", "--unidiff-zero"},
 		Push:         true,
 	})
+	if err != nil {
+		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
+			return errors.Errorf("creating commit from patch for repo %q: %q (command: %q, output: %q)",
+				diffErr.RepositoryName, diffErr.InternalError, diffErr.Command, diffErr.CombinedOutput)
+		}
+		return err
+	}
 	if job.Branch != "" && job.Branch != ref {
 		return fmt.Errorf("ref %q doesn't match ChangesetJob's branch %q", ref, job.Branch)
 	}
 	job.Branch = ref
-
-	if err != nil {
-		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
-			return errors.Errorf("creating commit from patch for repo %q: %q (command: %q)", diffErr.RepositoryName, diffErr.InternalError, diffErr.Command)
-		}
-		return err
-	}
 
 	var externalService *repos.ExternalService
 	{

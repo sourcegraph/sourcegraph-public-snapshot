@@ -30,6 +30,7 @@ import (
 	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
@@ -42,7 +43,11 @@ func main() {
 	if err := shared.InitDB(); err != nil {
 		log.Fatalf("FATAL: %v", err)
 	}
-	initAuthz(dbconn.Global)
+
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	initAuthz(dbconn.Global, clock)
 
 	ctx := context.Background()
 	go func() {
@@ -61,15 +66,23 @@ func main() {
 		log.Println("enterprise edition")
 	}
 
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
+	globalState, err := globalstatedb.Get(ctx)
+	if err != nil {
+		log.Fatalf("FATAL: %v", err)
 	}
 
 	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
 	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	githubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
-	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(campaignsStore, repositories, clock)
+
+	bitbucketWebhookName := "sourcegraph-" + globalState.SiteID
+	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(
+		campaignsStore,
+		repositories,
+		clock,
+		bitbucketWebhookName,
+	)
 
 	go bitbucketServerWebhook.Upsert(30 * time.Second)
 

@@ -49,7 +49,17 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
         )}
 
         <FilteredConnection<
-            Pick<ICampaign, 'id' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt'>
+            Pick<
+                ICampaign,
+                | 'id'
+                | 'closedAt'
+                | 'name'
+                | 'description'
+                | 'changesets'
+                | 'changesetPlans'
+                | 'createdAt'
+                | 'publishedAt'
+            >
         >
             {...props}
             nodeComponent={CampaignNode}

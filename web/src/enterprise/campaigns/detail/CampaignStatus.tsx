@@ -7,7 +7,7 @@ import { ErrorAlert } from '../../../components/alerts'
 import InformationIcon from 'mdi-react/InformationIcon'
 import { parseISO, isBefore, addMinutes } from 'date-fns'
 
-interface Props {
+export interface CampaignStatusProps {
     campaign:
         | (Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
               changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
@@ -26,7 +26,12 @@ interface Props {
 /**
  * The status of a campaign's jobs, plus its closed state and errors.
  */
-export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, status, onPublish, onRetry }) => {
+export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
+    campaign,
+    status,
+    onPublish,
+    onRetry,
+}) => {
     /* For completed campaigns that have been published, hide the creation complete status 1 day after the time of publication */
     const creationCompletedLongAgo =
         status.state === GQL.BackgroundProcessState.COMPLETED &&
@@ -53,8 +58,8 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
             )}
             {campaign.__typename === 'Campaign' && !campaign.closedAt && !campaign.publishedAt && (
                 <>
-                    <div className="d-flex my-3">
-                        <InformationIcon className="icon-inline text-info mr-1" /> Campaign is a draft.{' '}
+                    <div className="d-flex my-3 alert alert-info">
+                        <InformationIcon className="icon-inline mr-1" /> Campaign is a draft.{' '}
                         {campaign.changesets.totalCount === 0
                             ? 'No changesets have'
                             : 'Only a subset of changesets has'}{' '}
@@ -82,7 +87,7 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                 )
             )}
             {status.state === GQL.BackgroundProcessState.ERRORED && (
-                <div>
+                <div className="mt-3">
                     <AlertCircleIcon className="icon-inline text-danger mr-1" />
                     Error creating campaign
                 </div>
