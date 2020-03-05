@@ -213,10 +213,6 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) (campaigns.ChangesetReviewState, error) {
-	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
-		return r.Changeset.ReviewState()
-	}
-
 	es, err := r.computeEvents(ctx)
 	if err != nil {
 		return campaigns.ChangesetReviewStatePending, err
