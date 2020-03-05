@@ -580,8 +580,15 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if e == nil {
+		log15.Info("Dropping unrecognized Bitbucket Server webhook event")
+		respond(w, http.StatusOK, nil)
+		return
+	}
+
 	pr, ev := h.convertEvent(e)
 	if pr == 0 || ev == nil {
+		log15.Info("Dropping unrecognized Bitbucket Server webhook event")
 		respond(w, http.StatusOK, nil) // Nothing to do
 		return
 	}
@@ -635,6 +642,8 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 }
 
 func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (pr int64, ours interface{ Key() string }) {
+	log15.Info("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
+
 	switch e := theirs.(type) {
 	case *bbs.PullRequestEvent:
 		return int64(e.PullRequest.ID), e.Activity
