@@ -9,7 +9,7 @@ Sourcegraph's core data (including user accounts, configuration, repository-meta
 ### Version requirements
 
 * This migration can only be done with Sourcegraph `3.13.1` and above (e.g. `sourcegraph/server:3.13.1` and [v3.13.1 (TODO FILL IN RELEASE HERE) Docker Compose](TODO) ).
-* Sourcegraph's core data can only be transferred between deployments that are running the same Sourcegraph version (e.g. `sourcegraph/server:3.13.1` can only transfer its data to `v3.13.1` of the Docker Compose definition). If you're running a version of Sourcegraph server that's older than the Docker Compose deployment version, you **must** upgrade to a newer `sourcegraph/server` version before continuing.
+* Do NOT attempt to upgrade at the same time as migrating to docker-compose. Use the docker-compose version corresponding to your current version. For example, if you are running `sourcegraph/server:3.13.1` you must follow this guide using the Docker Compose deployment version `v3.13.1`.
 
 ### Storage location change
 
