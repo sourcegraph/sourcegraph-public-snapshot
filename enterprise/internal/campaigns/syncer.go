@@ -184,6 +184,8 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 		s.queue.Upsert(item)
 	}
 
+	// Non blocking send here in order not to hold the mutex and
+	// also because this is likely to have been triggered by a user action
 	select {
 	case s.priorityNotify <- struct{}{}:
 	default:
