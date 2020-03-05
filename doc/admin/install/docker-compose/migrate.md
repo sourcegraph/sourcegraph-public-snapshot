@@ -81,7 +81,7 @@ docker cp "$CONTAINER_ID":/tmp/db.out /tmp/db.out
 scp example_user@example_docker_host.com:/tmp/db.out db.out
 ```
 
-* (optional) You can run `less "/tmp/db.out"` to verify that the database dump has the contents that you expect
+* Run `less "/tmp/db.out"` and verify that the database dump has contents that you expect (e.g. that some of your repository names appear)
 
 ### Create the new Docker Compose instance
 
