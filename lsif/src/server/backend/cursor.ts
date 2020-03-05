@@ -16,7 +16,7 @@ export type ReferencePaginationCursor =
     | DefinitionMonikersReferenceCursor
     | RemoteDumpReferenceCursor
 
-/** The cursor phase is a tag that indicates the shape of the object. */
+/** A label that indicates which pagination phase is being expanded. */
 export type ReferencePaginationPhase = 'same-dump' | 'definition-monikers' | 'same-repo' | 'remote-repo'
 
 /** Fields common to all reference pagination cursors. */
