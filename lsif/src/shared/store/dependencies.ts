@@ -8,9 +8,7 @@ import { logAndTraceCall, logSpan, TracingContext } from '../tracing'
 import { TableInserter } from '../database/inserter'
 import { visibleDumps, bidirectionalLineage } from '../models/queries'
 
-/**
- * The insertion metrics for Postgres.
- */
+/** The insertion metrics for Postgres. */
 const insertionMetrics = {
     durationHistogram: sharedMetrics.postgresInsertionDurationHistogram,
     errorsCounter: sharedMetrics.postgresQueryErrorsCounter,
@@ -21,19 +19,13 @@ const insertionMetrics = {
  * of a project, depending on its use.
  */
 export interface Package {
-    /**
-     * The scheme of the package (e.g. npm, pip).
-     */
+    /** The scheme of the package (e.g. npm, pip). */
     scheme: string
 
-    /**
-     * The name of the package.
-     */
+    /** The name of the package. */
     name: string
 
-    /**
-     * The version of the package.
-     */
+    /** The version of the package. */
     version: string | null
 }
 
@@ -42,14 +34,10 @@ export interface Package {
  * a project.
  */
 export interface SymbolReferences {
-    /**
-     * The package from which the symbols are imported.
-     */
+    /** The package from which the symbols are imported. */
     package: Package
 
-    /**
-     * The unique identifiers of the symbols imported from the package.
-     */
+    /** The unique identifiers of the symbols imported from the package. */
     identifiers: string[]
 }
 

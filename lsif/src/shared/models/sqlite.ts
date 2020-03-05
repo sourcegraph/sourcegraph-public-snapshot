@@ -12,9 +12,7 @@ export type HoverResultId = lsif.Id
 export type MonikerId = lsif.Id
 export type PackageInformationId = lsif.Id
 
-/**
- * A type that describes a gzipped and JSON-encoded value of type `T`.
- */
+/** A type that describes a gzipped and JSON-encoded value of type `T`. */
 export type JSONEncoded<T> = Buffer
 
 /**
@@ -30,26 +28,18 @@ n entity within the database describing LSIF data for a single repository
  */
 @Entity({ name: 'meta' })
 export class MetaModel {
-    /**
-     * The number of model instances that can be inserted at once.
-     */
+    /** The number of model instances that can be inserted at once. */
     public static BatchSize = calcSqliteBatchSize(4)
 
-    /**
-     * A unique ID required by typeorm entities: always zero here.
-     */
+    /** A unique ID required by typeorm entities: always zero here. */
     @PrimaryColumn('int')
     public id!: number
 
-    /**
-     * The version string of the input LSIF that created this database.
-     */
+    /** The version string of the input LSIF that created this database. */
     @Column('text')
     public lsifVersion!: string
 
-    /**
-     * The internal version of the LSIF server that created this database.
-     */
+    /** The internal version of the LSIF server that created this database. */
     @Column('text')
     public sourcegraphVersion!: string
 
@@ -70,20 +60,14 @@ export class MetaModel {
  */
 @Entity({ name: 'documents' })
 export class DocumentModel {
-    /**
-     * The number of model instances that can be inserted at once.
-     */
+    /** The number of model instances that can be inserted at once. */
     public static BatchSize = calcSqliteBatchSize(2)
 
-    /**
-     * The root-relative path of the document.
-     */
+    /** The root-relative path of the document. */
     @PrimaryColumn('text')
     public path!: DocumentPath
 
-    /**
-     * The JSON-encoded document data.
-     */
+    /** The JSON-encoded document data. */
     @Column('blob')
     public data!: JSONEncoded<DocumentData>
 }
@@ -95,9 +79,7 @@ export class DocumentModel {
  */
 @Entity({ name: 'resultChunks' })
 export class ResultChunkModel {
-    /**
-     * The number of model instances that can be inserted at once.
-     */
+    /** The number of model instances that can be inserted at once. */
     public static BatchSize = calcSqliteBatchSize(2)
 
     /**
@@ -108,9 +90,7 @@ export class ResultChunkModel {
     @PrimaryColumn('int')
     public id!: HashMod<DefinitionReferenceResultId, MetaModel['numResultChunks']>
 
-    /**
-     * The JSON-encoded chunk data.
-     */
+    /** The JSON-encoded chunk data. */
     @Column('blob')
     public data!: JSONEncoded<ResultChunkData>
 }
@@ -120,56 +100,38 @@ export class ResultChunkModel {
  * column descriptions.
  */
 class Symbols {
-    /**
-     * The number of model instances that can be inserted at once.
-     */
+    /** The number of model instances that can be inserted at once. */
     public static BatchSize = calcSqliteBatchSize(8)
 
-    /**
-     * A unique ID required by typeorm entities.
-     */
+    /** A unique ID required by typeorm entities. */
     @PrimaryColumn('int')
     public id!: number
 
-    /**
-     * The name of the package type (e.g. npm, pip).
-     */
+    /** The name of the package type (e.g. npm, pip). */
     @Column('text')
     public scheme!: string
 
-    /**
-     * The unique identifier of the moniker.
-     */
+    /** The unique identifier of the moniker. */
     @Column('text')
     public identifier!: string
 
-    /**
-     * The path of the document to which this reference belongs.
-     */
+    /** The path of the document to which this reference belongs. */
     @Column('text')
     public documentPath!: DocumentPath
 
-    /**
-     * The zero-indexed line describing the start of this range.
-     */
+    /** The zero-indexed line describing the start of this range. */
     @Column('int')
     public startLine!: number
 
-    /**
-     * The zero-indexed line describing the end of this range.
-     */
+    /** The zero-indexed line describing the end of this range. */
     @Column('int')
     public endLine!: number
 
-    /**
-     * The zero-indexed line describing the start of this range.
-     */
+    /** The zero-indexed line describing the start of this range. */
     @Column('int')
     public startCharacter!: number
 
-    /**
-     * The zero-indexed line describing the end of this range.
-     */
+    /** The zero-indexed line describing the end of this range. */
     @Column('int')
     public endCharacter!: number
 }
@@ -197,9 +159,7 @@ export class ReferenceModel extends Symbols {}
  * references, and hover queries if the results are all contained within the same document.
  */
 export interface DocumentData {
-    /**
-     * A mapping from range identifiers to range data.
-     */
+    /** A mapping from range identifiers to range data. */
     ranges: Map<RangeId, RangeData>
 
     /**
@@ -208,14 +168,10 @@ export interface DocumentData {
      */
     hoverResults: Map<HoverResultId, string>
 
-    /**
-     * A map of moniker identifiers to moniker data.
-     */
+    /** A map of moniker identifiers to moniker data. */
     monikers: Map<MonikerId, MonikerData>
 
-    /**
-     * A map of package information identifiers to package information data.
-     */
+    /** A map of package information identifiers to package information data. */
     packageInformation: Map<PackageInformationId, PackageInformationData>
 }
 
@@ -232,9 +188,7 @@ export interface DocumentIdRangeId {
      */
     documentId: DocumentId
 
-    /**
-     * The identifier of the range in the referenced document.
-     */
+    /** The identifier of the range in the referenced document. */
     rangeId: RangeId
 }
 
@@ -244,14 +198,10 @@ export interface DocumentIdRangeId {
  * `DocumentIdRangeId`.
  */
 export interface DocumentPathRangeId {
-    /**
-     * The path of the document.
-     */
+    /** The path of the document. */
     documentPath: DocumentPath
 
-    /**
-     * The identifier of the range in the referenced document.
-     */
+    /** The identifier of the range in the referenced document. */
     rangeId: RangeId
 }
 
@@ -282,24 +232,16 @@ export interface ResultChunkData {
  * import.
  */
 export interface RangeData {
-    /**
-     * The line on which the range starts (0-indexed, inclusive).
-     */
+    /** The line on which the range starts (0-indexed, inclusive). */
     startLine: number
 
-    /**
-     * The line on which the range ends (0-indexed, inclusive).
-     */
+    /** The line on which the range ends (0-indexed, inclusive). */
     startCharacter: number
 
-    /**
-     * The character on which the range starts (0-indexed, inclusive).
-     */
+    /** The character on which the range starts (0-indexed, inclusive). */
     endLine: number
 
-    /**
-     * The character on which the range ends (0-indexed, inclusive).
-     */
+    /** The character on which the range ends (0-indexed, inclusive). */
     endCharacter: number
 
     /**
@@ -331,23 +273,15 @@ export interface RangeData {
     monikerIds: Set<MonikerId>
 }
 
-/**
- * Data about a moniker attached to a range.
- */
+/** Data about a moniker attached to a range. */
 export interface MonikerData {
-    /**
-     * The kind of moniker (e.g. local, import, export).
-     */
+    /** The kind of moniker (e.g. local, import, export). */
     kind: lsif.MonikerKind
 
-    /**
-     * The name of the package type (e.g. npm, pip).
-     */
+    /** The name of the package type (e.g. npm, pip). */
     scheme: string
 
-    /**
-     * The unique identifier of the moniker.
-     */
+    /** The unique identifier of the moniker. */
     identifier: string
 
     /**
@@ -358,22 +292,14 @@ export interface MonikerData {
     packageInformationId?: PackageInformationId
 }
 
-/**
- * Additional data about a non-local moniker.
- */
+/** Additional data about a non-local moniker. */
 export interface PackageInformationData {
-    /**
-     * The name of the package the moniker describes.
-     */
+    /** The name of the package the moniker describes. */
     name: string
 
-    /**
-     * The version of the package the moniker describes.
-     */
+    /** The version of the package the moniker describes. */
     version: string | null
 }
 
-/**
- * The entities composing the SQLite database models.
- */
+/** The entities composing the SQLite database models. */
 export const entities = [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel]
