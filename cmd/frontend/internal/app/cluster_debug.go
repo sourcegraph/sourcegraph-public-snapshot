@@ -20,24 +20,32 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
+// proxyEndpoint couples the reverse proxy with the endpoint it proxies
 type proxyEndpoint struct {
 	reverseProxy http.Handler
 	service      string
-	displayName  string
-	host         string
+	// displayName is unique within the endpoints and is suitable as a key
+	displayName string
+	host        string
 }
 
 func (pe *proxyEndpoint) String() string {
 	return fmt.Sprintf("%s-%s", pe.service, pe.host)
 }
 
+// clusterInstrumenter holds the state to proxy endpoints in a cluster
+// and it handles serving the index page and routing the requests being proxied to their
+// respective reverse proxy. It knows how to scan a cluster for endpoints meeting the scraping criteria
+// (sourcegraph.prometheus/scrape=true) and knows how to keep that info uptodate.
 type clusterInstrumenter struct {
+	// protects the reverseProxies map
 	sync.RWMutex
+	// keys are the displayNames
 	reverseProxies map[string]*proxyEndpoint
 	client         *k8s.Client
-	once           sync.Once
 }
 
+// runs the k8s.Watch endpoints event loop. if something changes with endpoints it triggers a rescan of cluster.
 func (ci *clusterInstrumenter) runEventLoop() {
 	for {
 		err := ci.watchEndpointEvents()
@@ -46,11 +54,14 @@ func (ci *clusterInstrumenter) runEventLoop() {
 	}
 }
 
+// hostInfo couples a service with the displayName of one endpoint
 type hostInfo struct {
 	service     string
 	displayName string
 }
 
+// scanCluster looks for endpoints belonging to services that have annotation sourcegraph.prometheus/scrape=true.
+// It derives the appropriate port from the prometheus.io/port annotation.
 func (ci *clusterInstrumenter) scanCluster() {
 	var services corev1.ServiceList
 
@@ -107,7 +118,9 @@ func (ci *clusterInstrumenter) scanCluster() {
 	ci.populate(hostsToServices)
 }
 
-func proxyEndpointFromHost(host string, pathPrefix string) http.Handler {
+// reverseProxyFromHost creates a reverse proxy from specified host with the path prefix that will be stripped from
+// request before it gets sent to the destination endpoint.
+func reverseProxyFromHost(host string, pathPrefix string) http.Handler {
 	return adminOnly(&httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "http"
@@ -120,11 +133,13 @@ func proxyEndpointFromHost(host string, pathPrefix string) http.Handler {
 	})
 }
 
+// populate updates the clusterIntrumenter state with the scan results.
+// goroutine-safe
 func (ci *clusterInstrumenter) populate(hostsToServices map[string]hostInfo) {
 	rps := make(map[string]*proxyEndpoint, len(hostsToServices))
 	for host, hi := range hostsToServices {
 		rps[hi.displayName] = &proxyEndpoint{
-			reverseProxy: proxyEndpointFromHost(host, "/-/debug/cluster/"+hi.displayName),
+			reverseProxy: reverseProxyFromHost(host, "/-/debug/cluster/"+hi.displayName),
 			service:      hi.service,
 			displayName:  hi.displayName,
 			host:         host,
@@ -136,6 +151,7 @@ func (ci *clusterInstrumenter) populate(hostsToServices map[string]hostInfo) {
 	ci.Unlock()
 }
 
+// addrToHost converts a scanned k8s endpoint address structure into a string that is the host:port part of a URL.
 func addrToHost(addr *corev1.EndpointAddress, port int) string {
 	if addr.Ip != nil {
 		return fmt.Sprintf("%s:%d", *addr.Ip, port)
@@ -145,6 +161,8 @@ func addrToHost(addr *corev1.EndpointAddress, port int) string {
 	return ""
 }
 
+// watchEndpointEvents use the k8s watch API operation to watch for endpoint events. Spins forever unless an error
+// occurs that would necessitate creating a new watcher. The caller will then call again creating the new watcher.
 func (ci *clusterInstrumenter) watchEndpointEvents() error {
 	watcher, err := ci.client.Watch(context.Background(), ci.client.Namespace, new(corev1.Endpoints))
 	if err != nil {
@@ -169,6 +187,7 @@ func (ci *clusterInstrumenter) watchEndpointEvents() error {
 	}
 }
 
+// ServeIndex composes the simple index page with the endpoints sorted by their displayName.
 func (ci *clusterInstrumenter) ServeIndex(w http.ResponseWriter, r *http.Request) {
 	ci.RLock()
 	displayNames := make([]string, 0, len(ci.reverseProxies))
@@ -184,6 +203,8 @@ func (ci *clusterInstrumenter) ServeIndex(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// ServeReverseProxy routes the request to the appropriate reverse proxy by splitting the request path and finding
+// the displayName.
 func (ci *clusterInstrumenter) ServeReverseProxy(w http.ResponseWriter, r *http.Request) error {
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
@@ -208,6 +229,8 @@ func (ci *clusterInstrumenter) ServeReverseProxy(w http.ResponseWriter, r *http.
 	return nil
 }
 
+// newClusterInstrumenter creates the new cluster instrumenter, kicks of an initial cluster scan and starts up the
+// goroutine that watches for endpoint events.
 func newClusterInstrumenter(client *k8s.Client) *clusterInstrumenter {
 	ci := &clusterInstrumenter{
 		client: client,
