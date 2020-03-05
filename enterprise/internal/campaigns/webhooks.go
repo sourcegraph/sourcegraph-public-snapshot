@@ -276,26 +276,30 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 }
 
 func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment {
-	comment := github.IssueComment{
-		DatabaseID: *e.Comment.ID,
-		Author: github.Actor{
-			AvatarURL: *e.Comment.User.AvatarURL,
-			Login:     *e.Comment.User.Login,
-			URL:       *e.Comment.User.URL,
-		},
-		AuthorAssociation:   *e.Comment.AuthorAssociation,
-		Body:                *e.Comment.Body,
-		URL:                 *e.Comment.URL,
-		CreatedAt:           *e.Comment.CreatedAt,
-		UpdatedAt:           *e.Comment.UpdatedAt,
-		IncludesCreatedEdit: *e.Action == "edited",
+	comment := github.IssueComment{}
+
+	if c := e.GetComment(); c != nil {
+		comment.DatabaseID = c.GetID()
+
+		if u := c.GetUser(); u != nil {
+			comment.Author.AvatarURL = u.GetAvatarURL()
+			comment.Author.Login = u.GetLogin()
+			comment.Author.URL = u.GetURL()
+		}
+
+		comment.AuthorAssociation = c.GetAuthorAssociation()
+		comment.Body = c.GetBody()
+		comment.URL = c.GetURL()
+		comment.CreatedAt = c.GetCreatedAt()
+		comment.UpdatedAt = c.GetUpdatedAt()
 	}
 
-	if comment.IncludesCreatedEdit {
+	comment.IncludesCreatedEdit = e.GetAction() == "edited"
+	if s := e.GetSender(); s != nil && comment.IncludesCreatedEdit {
 		comment.Editor = &github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
+			AvatarURL: s.GetAvatarURL(),
+			Login:     s.GetLogin(),
+			URL:       s.GetURL(),
 		}
 	}
 
@@ -303,77 +307,99 @@ func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment
 }
 
 func (*GitHubWebhook) labeledEvent(e *gh.PullRequestEvent) *github.LabelEvent {
-	return &github.LabelEvent{
-		Actor: github.Actor{
-			AvatarURL: e.GetSender().GetAvatarURL(),
-			Login:     e.GetSender().GetLogin(),
-			URL:       e.GetSender().GetURL(),
-		},
-		Label: github.Label{
-			Color:       e.Label.GetColor(),
-			Description: e.Label.GetDescription(),
-			Name:        e.Label.GetName(),
-			ID:          e.Label.GetNodeID(),
-		},
-		CreatedAt: e.GetPullRequest().GetUpdatedAt(),
-		Removed:   e.GetAction() == "unlabeled",
+	labelEvent := &github.LabelEvent{
+		Removed: e.GetAction() == "unlabeled",
 	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		labelEvent.CreatedAt = pr.GetUpdatedAt()
+	}
+
+	if l := e.GetLabel(); l != nil {
+		labelEvent.Label.Color = l.GetColor()
+		labelEvent.Label.Description = l.GetDescription()
+		labelEvent.Label.Name = l.GetName()
+		labelEvent.Label.ID = l.GetNodeID()
+	}
+
+	if s := e.GetSender(); s != nil {
+		labelEvent.Actor.AvatarURL = s.GetAvatarURL()
+		labelEvent.Actor.Login = s.GetLogin()
+		labelEvent.Actor.URL = s.GetURL()
+	}
+
+	return labelEvent
 }
 
 func (*GitHubWebhook) assignedEvent(e *gh.PullRequestEvent) *github.AssignedEvent {
-	return &github.AssignedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		Assignee: github.Actor{
-			AvatarURL: *e.Assignee.AvatarURL,
-			Login:     *e.Assignee.Login,
-			URL:       *e.Assignee.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	assignedEvent := &github.AssignedEvent{}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		assignedEvent.CreatedAt = pr.GetUpdatedAt()
 	}
+
+	if s := e.GetSender(); s != nil {
+		assignedEvent.Actor.AvatarURL = s.GetAvatarURL()
+		assignedEvent.Actor.Login = s.GetLogin()
+		assignedEvent.Actor.URL = s.GetURL()
+	}
+
+	if a := e.GetAssignee(); a != nil {
+		assignedEvent.Assignee.AvatarURL = a.GetAvatarURL()
+		assignedEvent.Assignee.Login = a.GetLogin()
+		assignedEvent.Assignee.URL = a.GetURL()
+	}
+
+	return assignedEvent
 }
 
 func (*GitHubWebhook) unassignedEvent(e *gh.PullRequestEvent) *github.UnassignedEvent {
-	return &github.UnassignedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		Assignee: github.Actor{
-			AvatarURL: *e.Assignee.AvatarURL,
-			Login:     *e.Assignee.Login,
-			URL:       *e.Assignee.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	unassignedEvent := &github.UnassignedEvent{}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		unassignedEvent.CreatedAt = pr.GetUpdatedAt()
 	}
+
+	if s := e.GetSender(); s != nil {
+		unassignedEvent.Actor.AvatarURL = s.GetAvatarURL()
+		unassignedEvent.Actor.Login = s.GetLogin()
+		unassignedEvent.Actor.URL = s.GetURL()
+	}
+
+	if a := e.GetAssignee(); a != nil {
+		unassignedEvent.Assignee.AvatarURL = a.GetAvatarURL()
+		unassignedEvent.Assignee.Login = a.GetLogin()
+		unassignedEvent.Assignee.URL = a.GetURL()
+	}
+
+	return unassignedEvent
 }
 
 func (*GitHubWebhook) reviewRequestedEvent(e *gh.PullRequestEvent) *github.ReviewRequestedEvent {
-	event := &github.ReviewRequestedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	event := &github.ReviewRequestedEvent{}
+
+	if s := e.GetSender(); s != nil {
+		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.Login = s.GetLogin()
+		event.Actor.URL = s.GetURL()
+	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		event.CreatedAt = pr.GetUpdatedAt()
 	}
 
 	if e.RequestedReviewer != nil {
 		event.RequestedReviewer = github.Actor{
-			AvatarURL: *e.RequestedReviewer.AvatarURL,
-			Login:     *e.RequestedReviewer.Login,
-			URL:       *e.RequestedReviewer.URL,
+			AvatarURL: e.RequestedReviewer.GetAvatarURL(),
+			Login:     e.RequestedReviewer.GetLogin(),
+			URL:       e.RequestedReviewer.GetURL(),
 		}
 	}
 
 	if e.RequestedTeam != nil {
 		event.RequestedTeam = github.Team{
-			Name: *e.RequestedTeam.Name,
-			URL:  *e.RequestedTeam.URL,
+			Name: e.RequestedTeam.GetName(),
+			URL:  e.RequestedTeam.GetURL(),
 		}
 	}
 
@@ -381,27 +407,30 @@ func (*GitHubWebhook) reviewRequestedEvent(e *gh.PullRequestEvent) *github.Revie
 }
 
 func (*GitHubWebhook) reviewRequestRemovedEvent(e *gh.PullRequestEvent) *github.ReviewRequestRemovedEvent {
-	event := &github.ReviewRequestRemovedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	event := &github.ReviewRequestRemovedEvent{}
+
+	if s := e.GetSender(); s != nil {
+		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.Login = s.GetLogin()
+		event.Actor.URL = s.GetURL()
+	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		event.CreatedAt = pr.GetUpdatedAt()
 	}
 
 	if e.RequestedReviewer != nil {
 		event.RequestedReviewer = github.Actor{
-			AvatarURL: *e.RequestedReviewer.AvatarURL,
-			Login:     *e.RequestedReviewer.Login,
-			URL:       *e.RequestedReviewer.URL,
+			AvatarURL: e.RequestedReviewer.GetAvatarURL(),
+			Login:     e.RequestedReviewer.GetLogin(),
+			URL:       e.RequestedReviewer.GetURL(),
 		}
 	}
 
 	if e.RequestedTeam != nil {
 		event.RequestedTeam = github.Team{
-			Name: *e.RequestedTeam.Name,
-			URL:  *e.RequestedTeam.URL,
+			Name: e.RequestedTeam.GetName(),
+			URL:  e.RequestedTeam.GetURL(),
 		}
 	}
 
@@ -409,84 +438,112 @@ func (*GitHubWebhook) reviewRequestRemovedEvent(e *gh.PullRequestEvent) *github.
 }
 
 func (*GitHubWebhook) renamedTitleEvent(e *gh.PullRequestEvent) *github.RenamedTitleEvent {
-	return &github.RenamedTitleEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		PreviousTitle: *e.Changes.Title.From,
-		CurrentTitle:  *e.PullRequest.Title,
-		CreatedAt:     *e.PullRequest.UpdatedAt,
+	event := &github.RenamedTitleEvent{}
+
+	if s := e.GetSender(); s != nil {
+		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.Login = s.GetLogin()
+		event.Actor.URL = s.GetURL()
 	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		event.CurrentTitle = pr.GetTitle()
+		event.CreatedAt = pr.GetUpdatedAt()
+	}
+
+	if ch := e.GetChanges(); ch != nil && ch.Title != nil && ch.Title.From != nil {
+		event.PreviousTitle = *ch.Title.From
+	}
+
+	return event
 }
 
 func (*GitHubWebhook) closedEvent(e *gh.PullRequestEvent) *github.ClosedEvent {
-	return &github.ClosedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	event := &github.ClosedEvent{}
+
+	if s := e.GetSender(); s != nil {
+		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.Login = s.GetLogin()
+		event.Actor.URL = s.GetURL()
+	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		event.CreatedAt = pr.GetUpdatedAt()
+
 		// This is different from the URL returned by GraphQL because the precise
 		// event URL isn't available in this webhook payload. This means if we expose
 		// this URL in the UI, and users click it, they'll just go to the PR page, rather
 		// than the precise location of the "close" event, until the background syncing
 		// runs and updates this URL to the exact one.
-		URL: *e.PullRequest.URL,
+		event.URL = pr.GetURL()
 	}
+
+	return event
 }
 
 func (*GitHubWebhook) reopenedEvent(e *gh.PullRequestEvent) *github.ReopenedEvent {
-	return &github.ReopenedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	event := &github.ReopenedEvent{}
+
+	if s := e.GetSender(); s != nil {
+		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.Login = s.GetLogin()
+		event.Actor.URL = s.GetURL()
 	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		event.CreatedAt = pr.GetUpdatedAt()
+	}
+
+	return event
 }
 
 func (*GitHubWebhook) pullRequestReviewEvent(e *gh.PullRequestReviewEvent) *github.PullRequestReview {
-	return &github.PullRequestReview{
-		DatabaseID: *e.Review.ID,
-		Author: github.Actor{
-			AvatarURL: *e.Review.User.AvatarURL,
-			Login:     *e.Review.User.Login,
-			URL:       *e.Review.User.URL,
-		},
-		Body:      *e.Review.Body,
-		State:     *e.Review.State,
-		URL:       *e.Review.HTMLURL,
-		CreatedAt: *e.Review.SubmittedAt,
-		UpdatedAt: *e.Review.SubmittedAt,
-		Commit: github.Commit{
-			OID: *e.Review.CommitID,
-		},
+	review := &github.PullRequestReview{}
+
+	if r := e.GetReview(); r != nil {
+		review.DatabaseID = r.GetID()
+		review.Body = e.Review.GetBody()
+		review.State = e.Review.GetState()
+		review.URL = e.Review.GetHTMLURL()
+		review.CreatedAt = e.Review.GetSubmittedAt()
+		review.UpdatedAt = e.Review.GetSubmittedAt()
+
+		if u := r.GetUser(); u != nil {
+			review.Author.AvatarURL = u.GetAvatarURL()
+			review.Author.Login = u.GetLogin()
+			review.Author.URL = u.GetURL()
+		}
+
+		review.Commit.OID = r.GetCommitID()
 	}
+
+	return review
 }
 
 func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewCommentEvent) *github.PullRequestReviewComment {
-	comment := github.PullRequestReviewComment{
-		DatabaseID:        *e.Comment.ID,
-		AuthorAssociation: *e.Comment.AuthorAssociation,
-		Commit: github.Commit{
-			OID: *e.Comment.CommitID,
-		},
-		Body:                *e.Comment.Body,
-		URL:                 *e.Comment.URL,
-		CreatedAt:           *e.Comment.CreatedAt,
-		UpdatedAt:           *e.Comment.UpdatedAt,
-		IncludesCreatedEdit: *e.Action == "edited",
+	comment := github.PullRequestReviewComment{}
+
+	user := github.Actor{}
+
+	if c := e.GetComment(); c != nil {
+		comment.DatabaseID = c.GetID()
+		comment.AuthorAssociation = c.GetAuthorAssociation()
+		comment.Commit = github.Commit{
+			OID: c.GetCommitID(),
+		}
+		comment.Body = c.GetBody()
+		comment.URL = c.GetURL()
+		comment.CreatedAt = c.GetCreatedAt()
+		comment.UpdatedAt = c.GetUpdatedAt()
+
+		if u := c.GetUser(); u != nil {
+			user.AvatarURL = u.GetAvatarURL()
+			user.Login = u.GetLogin()
+			user.URL = u.GetURL()
+		}
 	}
 
-	user := github.Actor{
-		AvatarURL: *e.Comment.User.AvatarURL,
-		Login:     *e.Comment.User.Login,
-		URL:       *e.Comment.User.URL,
-	}
+	comment.IncludesCreatedEdit = e.GetAction() == "edited"
 
 	if comment.IncludesCreatedEdit {
 		comment.Editor = user
@@ -582,7 +639,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	pr, ev := h.convertEvent(e)
 	if pr == 0 || ev == nil {
-		log15.Debug("Dropping Bitbucket Server webhook event: %T", e)
+		log15.Debug("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", e))
 		respond(w, http.StatusOK, nil) // Nothing to do
 		return
 	}
