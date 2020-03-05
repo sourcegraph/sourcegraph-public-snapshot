@@ -17,7 +17,7 @@ After migration, Sourcegraph's data will be stored in Docker volumes instead of 
 
 ### Only core data will be migrated
 
-While this process will migrate your core data (including user accounts, configuration, repository-metadata, etc.), the new Docker Compose deployment will need to regenerate all the other derived data:
+The migration will bring over core data including user accounts, configuration, repository-metadata, etc. Other data will be regenerated automatically:
 
 * Repositories will be re-cloned
 * Search indexes will be rebuilt from scratch
