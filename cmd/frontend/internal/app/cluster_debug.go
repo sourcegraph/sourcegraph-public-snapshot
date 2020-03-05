@@ -134,7 +134,7 @@ func reverseProxyFromHost(host string, pathPrefix string) http.Handler {
 }
 
 // populate updates the clusterIntrumenter state with the scan results.
-// goroutine-safe
+// This method is safe for concurrent use.
 func (ci *clusterInstrumenter) populate(hostsToServices map[string]hostInfo) {
 	rps := make(map[string]*proxyEndpoint, len(hostsToServices))
 	for host, hi := range hostsToServices {
