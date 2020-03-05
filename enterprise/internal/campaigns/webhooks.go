@@ -92,14 +92,18 @@ type GitHubWebhook struct {
 
 type BitbucketServerWebhook struct {
 	*Webhook
+	Name string
 }
 
 func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
 	return &GitHubWebhook{&Webhook{store, repos, now, github.ServiceType}}
 }
 
-func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time) *BitbucketServerWebhook {
-	return &BitbucketServerWebhook{&Webhook{store, repos, now, bbs.ServiceType}}
+func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
+	return &BitbucketServerWebhook{
+		Webhook: &Webhook{store, repos, now, bbs.ServiceType},
+		Name:    name,
+	}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -612,8 +616,9 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 			}
 
 			endpoint := globals.ExternalURL().String() + "/.api/bitbucket-server-webhooks"
+
 			wh := bbs.Webhook{
-				Name:     "sourcegraph-campaigns",
+				Name:     h.Name,
 				Scope:    "global",
 				Events:   []string{"pr"},
 				Endpoint: endpoint,
