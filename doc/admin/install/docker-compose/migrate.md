@@ -22,7 +22,7 @@ While this process will migrate your core data (including user accounts, configu
 * Repositories will be re-cloned
 * Search indexes will be rebuilt from scratch
 
-This derived data may take awhile to regenerate if you have a lot of repositories.
+The above may take awhile if you have a lot of repositories. In the meantime, searches may be slow or return incomplete results. Usually this process will not take longer than 6 hours.
 
 ### Monthly-usage based pricing
 
