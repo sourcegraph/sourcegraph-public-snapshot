@@ -634,7 +634,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 		return nil, &httpError{http.StatusUnauthorized, err}
 	}
 
-	e, err := bbs.ParseWebHook(bbs.WebHookType(r), payload)
+	e, err := bbs.ParseWebhookEvent(bbs.WebhookEventType(r), payload)
 	if err != nil {
 		return nil, &httpError{http.StatusBadRequest, err}
 	}
