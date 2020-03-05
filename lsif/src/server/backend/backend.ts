@@ -466,7 +466,7 @@ export class Backend {
         const locationSet = await database.references(cursor.path, cursor.position, ctx)
 
         // Search the references table of the current dump. This search is necessary because we
-        // want a 'Find References' operation on a reference to also return references to the 
+        // want a 'Find References' operation on a reference to also return references to
         // the governing definition, and those may not be fully linked in the LSIF data.
         // This method returns a cursor if there are reference rows remaining for a subsequent page.
         for (const moniker of cursor.monikers) {
