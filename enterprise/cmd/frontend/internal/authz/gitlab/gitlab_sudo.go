@@ -44,7 +44,7 @@ type SudoProvider struct {
 	cacheTTL          time.Duration
 }
 
-var _ authz.Provider = ((*SudoProvider)(nil))
+var _ authz.Provider = (*SudoProvider)(nil)
 
 type SudoProviderOp struct {
 	// BaseURL is the URL of the GitLab instance.

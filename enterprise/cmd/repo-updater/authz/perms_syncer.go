@@ -41,15 +41,23 @@ type PermsSyncer struct {
 // user-centric and repository-centric ways.
 type PermsFetcher interface {
 	authz.Provider
-	// FetchUserPerms returns a list of repository IDs (on code host) that the given
-	// account has read access on the code host. The repository ID should be the same
-	// value as it would be used as api.ExternalRepoSpec.ID. The returned list should
-	// only include private repositories.
+	// FetchUserPerms returns a list of repository/project IDs (on code host) that the
+	// given account has read access on the code host. The repository ID should be the
+	// same value as it would be used as api.ExternalRepoSpec.ID. The returned list
+	// should only include private repositories/project IDs.
+	//
+	// Because permissions fetching APIs are often expensive, the implementation should
+	// try to return partial but valid results in case of error, and it is up to callers
+	// to decide whether to discard.
 	FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]string, error)
 	// FetchRepoPerms returns a list of user IDs (on code host) who have read ccess to
-	// the given repository on the code host. The user ID should be the same value as it
-	// would be used as extsvc.ExternalAccount.AccountID. The returned list should include
-	// both direct access and inherited from the group/organization/team membership.
+	// the given repository/project on the code host. The user ID should be the same value
+	// as it would be used as extsvc.ExternalAccount.AccountID. The returned list should
+	// include both direct access and inherited from the group/organization/team membership.
+	//
+	// Because permissions fetching APIs are often expensive, the implementation should
+	// try to return partial but valid results in case of error, and it is up to callers
+	// to decide whether to discard.
 	FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]string, error)
 }
 
