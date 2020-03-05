@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -611,9 +612,17 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				continue
 			}
 
+			globalState, err := globalstatedb.Get(context.Background())
+			if err != nil {
+				log15.Error("Upserting BBS Webhook [Getting global site id]", "err", err)
+				continue
+			}
+
+			name := "sourcegraph-" + globalState.SiteID
 			endpoint := globals.ExternalURL().String() + "/.api/bitbucket-server-webhooks"
+
 			wh := bbs.Webhook{
-				Name:     "sourcegraph-campaigns",
+				Name:     name,
 				Scope:    "global",
 				Events:   []string{"pr"},
 				Endpoint: endpoint,
