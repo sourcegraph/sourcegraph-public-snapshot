@@ -20,6 +20,11 @@ import {
 } from './cursor'
 import { InternalLocation } from './location'
 
+interface PaginatedInternalLocations {
+    locations: InternalLocation[]
+    newCursor?: ReferencePaginationCursor
+}
+
 /**
  * A wrapper around code intelligence operations. This class deals with logic that spans
  * multiple repositories or commits. For single-dump logic, see the `Database` class.
@@ -173,7 +178,7 @@ export class Backend {
         remoteDumpLimit = DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT,
         dumpId?: number,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor } | undefined> {
+    ): Promise<PaginatedInternalLocations | undefined> {
         if (paginationContext.cursor) {
             return this.handleReferencePaginationCursor(
                 repositoryId,
@@ -307,7 +312,7 @@ export class Backend {
         limit: number,
         cursor: ReferencePaginationCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+    ): Promise<PaginatedInternalLocations> {
         /**
          * This method takes a handler that executes the current page of results and returns a new
          * cursor for the **same phase** of results. If there are no more results in that phase of
@@ -322,9 +327,9 @@ export class Backend {
          * @param makeCursor A factory that creates a cursor for the next phase of pagination.
          */
         const recur = async (
-            handler: () => Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }>,
+            handler: () => Promise<PaginatedInternalLocations>,
             makeCursor: () => Promise<ReferencePaginationCursor | undefined> | ReferencePaginationCursor | undefined
-        ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> => {
+        ): Promise<PaginatedInternalLocations> => {
             const { locations, newCursor: originalCursor } = await handler()
             const newCursor = originalCursor || (await makeCursor())
             if (!newCursor) {
@@ -456,7 +461,7 @@ export class Backend {
         limit: number,
         cursor: SameDumpReferenceCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+    ): Promise<PaginatedInternalLocations> {
         const dumpAndDatabase = await this.getDumpAndDatabaseById(cursor.dumpId)
         if (!dumpAndDatabase) {
             return { locations: [] }
@@ -509,7 +514,7 @@ export class Backend {
         limit: number,
         cursor: DefinitionMonikersReferenceCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+    ): Promise<PaginatedInternalLocations> {
         const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
         if (!document) {
             return { locations: [] }
@@ -564,7 +569,7 @@ export class Backend {
         limit: number,
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+    ): Promise<PaginatedInternalLocations> {
         const getReferences = (): Promise<{
             references: pgModels.ReferenceModel[]
             totalCount: number
@@ -611,7 +616,7 @@ export class Backend {
         limit: number,
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+    ): Promise<PaginatedInternalLocations> {
         const getReferences = (): Promise<{
             references: pgModels.ReferenceModel[]
             totalCount: number
@@ -688,7 +693,7 @@ export class Backend {
         cursor: RemoteDumpReferenceCursor
         /** The tracing context. */
         ctx: TracingContext
-    }): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+    }): Promise<PaginatedInternalLocations> {
         if (cursor.dumpIds.length === 0) {
             const { references, newOffset, totalCount } = await getReferences()
 
