@@ -530,7 +530,7 @@ const monikerKindPreferences = ['import', 'local', 'export']
 
 // A map from moniker schemes to schemes that subsume them. The schemes
 // identified by keys should be removed from the sets of monikers that
-// also contain the schemed identified by that key's value.
+// also contain the scheme identified by that key's value.
 const subsumedMonikers = new Map([
     ['go', 'gomod'],
     ['tsc', 'npm'],
