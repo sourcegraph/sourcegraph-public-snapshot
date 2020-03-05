@@ -149,6 +149,9 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 			})
 		}
 	}
+	if len(repoSpecs) == 0 {
+		return nil
+	}
 
 	// Get corresponding internal database IDs
 	rs, err := s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
@@ -212,6 +215,9 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	usernames, err := fetcher.FetchRepoPerms(ctx, &repo.ExternalRepo)
 	if err != nil {
 		return errors.Wrap(err, "fetch repository permissions")
+	}
+	if len(usernames) == 0 {
+		return nil
 	}
 
 	// Get corresponding internal database IDs
