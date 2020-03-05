@@ -78,7 +78,7 @@ export interface RemoteDumpReferenceCursor extends ReferencePaginationCursorComm
     /** The current batch of dumps to open. */
     dumpIds: number[]
 
-    /** The total count of candidate dumps to open. */
+    /** The total count of candidate dumps that can be opened. */
     totalDumpsWhenBatching: number
 
     /** The number of dumps we have already processed or bloom filtered. */

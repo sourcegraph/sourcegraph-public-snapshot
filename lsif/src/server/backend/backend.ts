@@ -312,7 +312,8 @@ export class Backend {
          * This method takes a handler that executes the current page of results and returns a new
          * cursor for the **same phase** of results. If there are no more results in that phase of
          * the result set, the cursor is undefined. In this case, we call the `makeCursor` factory
-         * function to construct the cursor for the next phase of pagination.
+         * to construct the cursor for the next phase of pagination. When no further data are
+         * available in any phase, the factory returns undefined.
          *
          * If the locations from the handler function do not produce a full page of results, the
          * next page of results are evaluated with a modified limit.
