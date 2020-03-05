@@ -50,7 +50,7 @@ The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deplo
 
 ## Resource estimator
 
-Use the [resource estimator](../../resource_estimator.md) to find a good starting point for your deployment.
+Use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment.
 
 ## Cloud installation guides
 

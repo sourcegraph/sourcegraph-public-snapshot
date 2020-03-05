@@ -15,7 +15,7 @@ See ["Store customizations in a fork"](./index.md#optional-recommended-store-cus
 ## Deploy to Google Cloud VM
 
 * [Open your Google Cloud console](https://console.cloud.google.com/compute/instances) to create a new VM instance and click **Create Instance**
-* Choose an appropriate machine type (use the [resource estimator](../../resource_estimator.md) to find a good starting point for your deployment).
+* Choose an appropriate machine type (use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment).
 * Under the "Boot Disk" options, select the following:
   
   * **Operating System**: Ubuntu
