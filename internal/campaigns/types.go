@@ -350,6 +350,7 @@ func (c *Changeset) State() (s ChangesetState, err error) {
 		return ChangesetStateDeleted, nil
 	}
 
+	// TODO: We only look in the pull request's data, not in the events
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		s = ChangesetState(m.State)
@@ -543,6 +544,23 @@ func (ce ChangesetEvents) Swap(i, j int) { ce[i], ce[j] = ce[j], ce[i] }
 // Less sorts changeset events by their Timestamps
 func (ce ChangesetEvents) Less(i, j int) bool {
 	return ce[i].Timestamp().Before(ce[j].Timestamp())
+}
+
+// State returns the  state of the changeset to which the events belong
+func (ce ChangesetEvents) State() (ChangesetState, error) {
+	state := ChangesetStateOpen
+	for _, e := range ce {
+		switch e.Kind {
+
+		case ChangesetEventKindGitHubClosed, ChangesetEventKindBitbucketServerDeclined:
+			state = ChangesetStateClosed
+		case ChangesetEventKindGitHubMerged, ChangesetEventKindBitbucketServerMerged:
+			state = ChangesetStateMerged
+		case ChangesetEventKindGitHubReopened, ChangesetEventKindBitbucketServerReopened:
+			state = ChangesetStateOpen
+		}
+	}
+	return state, nil
 }
 
 // ReviewState returns the overall review state of the review events in the

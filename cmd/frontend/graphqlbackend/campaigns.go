@@ -226,7 +226,7 @@ type ExternalChangesetResolver interface {
 	UpdatedAt() DateTime
 	Title() (string, error)
 	Body() (string, error)
-	State() (campaigns.ChangesetState, error)
+	State(context.Context) (campaigns.ChangesetState, error)
 	ExternalURL() (*externallink.Resolver, error)
 	ReviewState(context.Context) (campaigns.ChangesetReviewState, error)
 	CheckState(context.Context) (*campaigns.ChangesetCheckState, error)

@@ -200,8 +200,26 @@ func (r *changesetResolver) Body() (string, error) {
 	return r.Changeset.Body()
 }
 
-func (r *changesetResolver) State() (campaigns.ChangesetState, error) {
-	return r.Changeset.State()
+func (r *changesetResolver) State(ctx context.Context) (campaigns.ChangesetState, error) {
+	es, err := r.computeEvents(ctx)
+	if err != nil {
+		return campaigns.ChangesetStateOpen, err
+	}
+	if len(es) == 0 {
+		return r.Changeset.State()
+	}
+
+	// TODO: move sort to r.computeEvents
+	// Make a copy of events so that we can safely sort it
+	events := make(campaigns.ChangesetEvents, len(es))
+	copy(events, es)
+	sort.Sort(events)
+
+	newestEvent := events[len(events)-1]
+	if r.Changeset.UpdatedAt.After(newestEvent.Timestamp()) {
+		return r.Changeset.State()
+	}
+	return events.State()
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
