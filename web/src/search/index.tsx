@@ -37,7 +37,7 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
 }
 
 export function searchURLIsCaseSensitive(query: string): boolean {
-    const queryCaseSensitivty = parseCaseSensitivityFromQuery(query)
+    const queryCaseSensitivity = parseCaseSensitivityFromQuery(query)
     if (queryCaseSensitivty) {
         // if `case:` filter exists in the query, override the existing case: query param
         return queryCaseSensitivty.value === 'yes'
