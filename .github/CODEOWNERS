@@ -182,14 +182,14 @@ tslint.config.js @sourcegraph/web
 /enterprise/cmd/frontend/internal/symbols @sourcegraph/code-intel
 
 # Search and code mod
-*/search/**/* @sourcegraph/code-search
-/cmd/frontend/internal/pkg/search @sourcegraph/code-search
-/cmd/query-runner/ @sourcegraph/code-search
+*/search/**/* @sourcegraph/core-services
+/cmd/frontend/internal/pkg/search @sourcegraph/core-services
+/cmd/query-runner/ @sourcegraph/core-services
 /cmd/replacer/ @rvantonder
-/cmd/searcher/ @sourcegraph/code-search
-/cmd/symbols/ @sourcegraph/code-search
-/internal/search/ @sourcegraph/code-search
-/internal/symbols/ @sourcegraph/code-search
+/cmd/searcher/ @sourcegraph/core-services
+/cmd/symbols/ @sourcegraph/core-services
+/internal/search/ @sourcegraph/core-services
+/internal/symbols/ @sourcegraph/core-services
 
 # Saved searches
 /web/src/SavedQuery.tsx @attfarhan
