@@ -28,7 +28,7 @@ interface ReferencePaginationCursorCommon {
     phase: ReferencePaginationPhase
 }
 
-/** Bookkeeping data for the part of the reference result set that comes from the initial dump. */
+/** Bookkeeping data for the reference results that come from the initial dump. */
 export interface SameDumpReferenceCursor extends ReferencePaginationCursorCommon {
     phase: 'same-dump'
 
