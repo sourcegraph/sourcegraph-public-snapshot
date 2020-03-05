@@ -161,7 +161,7 @@ func addrToHost(addr *corev1.EndpointAddress, port int) string {
 	return ""
 }
 
-// watchEndpointEvents use the k8s watch API operation to watch for endpoint events. Spins forever unless an error
+// watchEndpointEvents uses the k8s watch API operation to watch for endpoint events. Spins forever unless an error
 // occurs that would necessitate creating a new watcher. The caller will then call again creating the new watcher.
 func (ci *clusterInstrumenter) watchEndpointEvents() error {
 	watcher, err := ci.client.Watch(context.Background(), ci.client.Namespace, new(corev1.Endpoints))
