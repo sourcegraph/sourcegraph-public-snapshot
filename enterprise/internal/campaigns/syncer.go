@@ -433,11 +433,9 @@ func (pq *changesetPriorityQueue) Push(x interface{}) {
 
 // Pop is not to be used directly, use heap.Pop(pq)
 func (pq *changesetPriorityQueue) Pop() interface{} {
-	old := pq.items
-	n := len(old)
-	item := old[n-1]
+	item := pq.items[len(pq.items)-1]
 	delete(pq.index, item.changesetID)
-	pq.items = old[0 : n-1]
+	pq.items = pq.items[:len(pq.items)-1]
 	return item
 }
 
