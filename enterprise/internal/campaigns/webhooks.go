@@ -173,7 +173,7 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
 }
 
 func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (prs []int64, ours interface{ Key() string }) {
-	log15.Info("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
+	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
 		prs = append(prs, int64(*e.Issue.Number))
@@ -582,7 +582,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	pr, ev := h.convertEvent(e)
 	if pr == 0 || ev == nil {
-		log15.Info("Dropping Bitbucket Server webhook event: %T", e)
+		log15.Debug("Dropping Bitbucket Server webhook event: %T", e)
 		respond(w, http.StatusOK, nil) // Nothing to do
 		return
 	}
@@ -636,7 +636,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 }
 
 func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (pr int64, ours interface{ Key() string }) {
-	log15.Info("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
+	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
 
 	switch e := theirs.(type) {
 	case *bbs.PullRequestEvent:
