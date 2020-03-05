@@ -347,7 +347,14 @@ export class Backend {
             case 'same-dump': {
                 return recur(
                     () => this.performSameDumpReferences(limit, cursor, ctx),
-                    () => ({ ...cursor, phase: 'definition-monikers', skipResults: 0 })
+                    () => ({
+                        dumpId: cursor.dumpId,
+                        phase: 'definition-monikers',
+                        path: cursor.path,
+                        position: cursor.position,
+                        monikers: cursor.monikers,
+                        skipResults: 0,
+                    })
                 )
             }
 
@@ -364,12 +371,14 @@ export class Backend {
                             const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
                             if (packageInformation) {
                                 return {
-                                    ...cursor,
+                                    dumpId: cursor.dumpId,
                                     phase: 'same-repo',
                                     scheme: moniker.scheme,
                                     identifier: moniker.identifier,
                                     name: packageInformation.name,
                                     version: packageInformation.version,
+                                    dumpIds: [],
+                                    totalDumpsWhenBatching: 0,
                                     skipDumpsWhenBatching: 0,
                                     skipDumpsInBatch: 0,
                                     skipResultsInDump: 0,
@@ -398,8 +407,14 @@ export class Backend {
                             // make a cursor for the next phase as it would only be a
                             // single empty page.
                             return {
-                                ...cursor,
+                                dumpId: cursor.dumpId,
                                 phase: 'remote-repo',
+                                scheme: cursor.scheme,
+                                identifier: cursor.identifier,
+                                name: cursor.name,
+                                version: cursor.version,
+                                dumpIds: [],
+                                totalDumpsWhenBatching: 0,
                                 skipDumpsWhenBatching: 0,
                                 skipDumpsInBatch: 0,
                                 skipResultsInDump: 0,
@@ -683,25 +698,36 @@ export class Backend {
         /** The tracing context. */
         ctx: TracingContext
     }): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const { references, newOffset, totalCount } = await getReferences()
-        const dumps = references.map(r => r.dump)
+        if (cursor.dumpIds.length === 0) {
+            const { references, newOffset, totalCount } = await getReferences()
 
-        logSpan(ctx, 'package_references', {
-            references: dumps.map(d => ({ repositoryId: d.repositoryId, commit: d.commit })),
-        })
+            logSpan(ctx, 'package_references', {
+                references: references.map(r => ({ repositoryId: r.dump.repositoryId, commit: r.dump.commit })),
+            })
 
-        for (const [i, dump] of dumps.entries()) {
+            cursor.dumpIds = references.map(r => r.dump.id)
+            cursor.skipDumpsWhenBatching = newOffset
+            cursor.totalDumpsWhenBatching = totalCount
+        }
+
+        for (const [i, batchDumpId] of cursor.dumpIds.entries()) {
             if (i < cursor.skipDumpsInBatch) {
                 continue
             }
 
             // Skip the remote reference that show up for ourselves - we've already gathered
             // these in the previous step of the references query.
-            if (dump.id === dumpId) {
+            if (batchDumpId === dumpId) {
                 continue
             }
 
-            const { locations, count } = await this.createDatabase(dump).monikerResults(
+            const dumpAndDatabase = await this.getDumpAndDatabaseById(batchDumpId)
+            if (!dumpAndDatabase) {
+                continue
+            }
+            const { dump, database } = dumpAndDatabase
+
+            const { locations, count } = await database.monikerResults(
                 sqliteModels.ReferenceModel,
                 moniker,
                 { take: limit, skip: cursor.skipResultsInDump },
@@ -710,12 +736,12 @@ export class Backend {
 
             if (locations.length > 0) {
                 const newResultOffset = cursor.skipResultsInDump + locations.length
-                const moreDumps = i + 1 < dumps.length
+                const moreDumps = i + 1 < cursor.dumpIds.length
                 const nextCursor = { ...cursor, skipResultsInDump: cursor.skipResultsInDump + limit }
                 const nextDumpCursor = { ...cursor, skipDumpsInBatch: i + 1, skipResultsInDump: 0 }
                 const nextBatchCursor = {
                     ...cursor,
-                    skipDumpsWhenBatching: newOffset,
+                    dumpIds: [],
                     skipDumpsInBatch: 0,
                     skipResultsInDump: 0,
                 }
@@ -727,7 +753,7 @@ export class Backend {
                             ? nextCursor
                             : moreDumps
                             ? nextDumpCursor
-                            : newOffset < totalCount
+                            : cursor.skipDumpsWhenBatching < cursor.totalDumpsWhenBatching
                             ? nextBatchCursor
                             : undefined,
                 }
