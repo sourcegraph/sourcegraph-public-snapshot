@@ -755,9 +755,9 @@ export class Backend {
 
     /**
      * Find the locations attached to the target moniker in the dump where it is defined. If
-     * the moniker has attached package information, then Postgres is queried for the target
-     * package. That database is opened, and its definitions or references table is queried
-     * for the target moniker (depending on the given model).
+     * the moniker has attached package information, then query Postgres for the target
+     * package. Open that package's database and query its definitions or references
+     * table for the target moniker (depending on the given model).
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.
