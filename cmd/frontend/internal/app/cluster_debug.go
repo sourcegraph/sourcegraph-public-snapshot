@@ -45,7 +45,7 @@ type clusterInstrumenter struct {
 	client         *k8s.Client
 }
 
-// runs the k8s.Watch endpoints event loop. if something changes with endpoints it triggers a rescan of cluster.
+// Runs the k8s.Watch endpoints event loop, and it triggers a rescan of cluster when something changes with endpoints.
 func (ci *clusterInstrumenter) runEventLoop() {
 	for {
 		err := ci.watchEndpointEvents()
