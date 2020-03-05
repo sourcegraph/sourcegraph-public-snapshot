@@ -13,7 +13,7 @@ import { logSpan, TracingContext, logAndTraceCall, addTags } from '../../shared/
 import { mustGet } from '../../shared/maps'
 import { Logger } from 'winston'
 import { createSilentLogger } from '../../shared/logging'
-import { InternalLocation, deduplicateLocations } from './location'
+import { InternalLocation, OrderedLocationSet } from './location'
 
 /** The maximum number of results in a logSpan value. */
 const MAX_SPAN_ARRAY_LENGTH = 20
@@ -135,14 +135,14 @@ export class Database {
         path: string,
         position: lsp.Position,
         ctx: TracingContext = {}
-    ): Promise<InternalLocation[]> {
+    ): Promise<OrderedLocationSet> {
         return this.logAndTraceCall(ctx, 'Fetching references', async ctx => {
             const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
             if (!document || ranges.length === 0) {
-                return []
+                return new OrderedLocationSet()
             }
 
-            let locations: InternalLocation[] = []
+            const locationSet = new OrderedLocationSet()
             for (const range of ranges) {
                 if (range.referenceResultId) {
                     const referenceResults = await this.getResultById(range.referenceResultId)
@@ -153,19 +153,18 @@ export class Database {
                     })
 
                     if (referenceResults.length > 0) {
-                        // Concat and deduplicate the union. We do this frequently so that we do not
-                        // gain large amounts of duplicates that artificially expand the list at the
-                        // end of the function.
-                        locations = deduplicateLocations(
-                            locations.concat(
-                                await this.convertRangesToInternalLocations(path, document, referenceResults)
-                            )
-                        )
+                        for (const location of await this.convertRangesToInternalLocations(
+                            path,
+                            document,
+                            referenceResults
+                        )) {
+                            locationSet.push(location)
+                        }
                     }
                 }
             }
 
-            return locations
+            return locationSet
         })
     }
 

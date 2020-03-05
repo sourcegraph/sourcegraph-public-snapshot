@@ -8,30 +8,26 @@ export interface InternalLocation {
     range: lsp.Range
 }
 
-/**
- * Returns a new list of locations with duplicates removes. Will preserve the order
- * of the original list. The first instance of a location to be seen will remain.
- *
- * This method is used in place of lodash.uniqWith in some places due to efficiency
- * concerns. Some dumps in the query path may return tens or hundreds of thousands
- * of reference records on a moniker search. This method makes a single linear pass
- * over the elements of the array, where uniqWith is implemented with a quadratic
- * nested loop.
- *
- * @param locations The locations to deduplicate.
- */
-export function deduplicateLocations(locations: InternalLocation[]): InternalLocation[] {
-    const seen = new Set<string>()
+/** A duplicate-free list of locations ordered by time of insertion. */
+export class OrderedLocationSet {
+    private seen = new Set<string>()
+    private order: InternalLocation[] = []
 
-    return locations.filter(location => {
+    /** The deduplicated locations in insertion order. */
+    public get locations(): InternalLocation[] {
+        return this.order
+    }
+
+    /** Insert a location into the set if it hasn't been seen before. */
+    public push(location: InternalLocation): void {
         const key = makeKey(location)
-        if (seen.has(key)) {
-            return false
+        if (this.seen.has(key)) {
+            return
         }
 
-        seen.add(key)
-        return true
-    })
+        this.seen.add(key)
+        this.order.push(location)
+    }
 }
 
 /** Makes a unique string representation of this location. */

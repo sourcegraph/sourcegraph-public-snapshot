@@ -18,7 +18,7 @@ import {
     RemoteDumpReferenceCursor,
     SameDumpReferenceCursor,
 } from './cursor'
-import { InternalLocation, deduplicateLocations } from './location'
+import { InternalLocation } from './location'
 
 /**
  * A wrapper around code intelligence operations. This class deals with logic that spans
@@ -462,11 +462,8 @@ export class Backend {
         }
         const { dump, database } = dumpAndDatabase
 
-        // First get all LSIF reference result locations for the given position. Note that
-        // these results are already deduplicated.
-        let locations = (await database.references(cursor.path, cursor.position, ctx)).map(loc =>
-            locationFromDatabase(dump.root, loc)
-        )
+        // First get all LSIF reference result locations for the given position.
+        const locationSet = await database.references(cursor.path, cursor.position, ctx)
 
         // Search the references table of the current dump. This search is necessary, but may be
         // un-intuitive. A 'Find References' operation on a reference should also return references
@@ -480,26 +477,19 @@ export class Backend {
                 ctx
             )
 
-            if (locations.length > 0) {
-                // We shouldn't have inserted many duplicate rows in the references table for the
-                // same moniker (but I'm a bit afraid _not_ to deduplicate here, so there we are).
-                const mapped = deduplicateLocations(monikerLocations).map(loc => locationFromDatabase(dump.root, loc))
-
-                // Concat and deduplicate the union. We do this frequently so that we do not
-                // gain large amounts of duplicates that artificially expand the list at the
-                // end of the function.
-                locations = deduplicateLocations(locations.concat(mapped))
+            for (const location of monikerLocations) {
+                locationSet.push(location)
             }
         }
 
         // Get the page's slice of results
-        const slicedLocations = locations.slice(cursor.skipResults, cursor.skipResults + limit)
+        const slicedLocations = locationSet.locations.slice(cursor.skipResults, cursor.skipResults + limit)
         const newOffset = cursor.skipResults + limit
         const newCursor = { ...cursor, skipResults: cursor.skipResults + limit }
 
         return {
-            locations: slicedLocations,
-            newCursor: newOffset < locations.length ? newCursor : undefined,
+            locations: slicedLocations.map(loc => locationFromDatabase(dump.root, loc)),
+            newCursor: newOffset < locationSet.locations.length ? newCursor : undefined,
         }
     }
 
