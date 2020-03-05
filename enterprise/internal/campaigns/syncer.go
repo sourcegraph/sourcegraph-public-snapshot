@@ -92,10 +92,7 @@ func (s *ChangesetSyncer) Run() {
 			// Remove item, we need to get it again as it could have moved
 			// due to a high priority item arriving
 			s.mu.Lock()
-			i, ok := s.queue.index[next.changesetID]
-			if ok {
-				heap.Remove(s.queue, i)
-			}
+			s.queue.Remove(next.changesetID)
 			s.mu.Unlock()
 		case <-s.priorityNotify:
 			timer.Stop()
@@ -476,6 +473,13 @@ func (pq *changesetPriorityQueue) Get(id int64) (scheduledSync, bool) {
 func (pq *changesetPriorityQueue) Reschedule(ss []scheduledSync) {
 	for i := range ss {
 		pq.Upsert(ss[i])
+	}
+}
+
+func (pq *changesetPriorityQueue) Remove(id int64) {
+	i, ok := pq.index[id]
+	if ok {
+		heap.Remove(pq, i)
 	}
 }
 
