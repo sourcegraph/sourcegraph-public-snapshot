@@ -20,7 +20,7 @@ After this process, Sourcegraph's data will be stored in Docker volumes instead 
 While this process will migrate your core data (including user accounts, configuration, repository-metadata, etc.), the new Docker Compose deployment will need to regenerate all the other derived data:
 
 * Repositories will be re-cloned
-* Search indexes are recreated
+* Search indexes will be rebuilt from scratch
 
 This derived data may take awhile to regenerate if you have a lot of repositories.
 
