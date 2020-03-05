@@ -24,9 +24,10 @@ type ChangesetSyncer struct {
 	// Note that it involves a DB query but no communication with codehosts
 	ComputeScheduleInterval time.Duration
 
-	priorityNotify chan []int64
-	mtx            sync.Mutex
-	queue          *changesetPriorityQueue
+	priorityNotify chan struct{}
+
+	mtx   sync.Mutex
+	queue *changesetPriorityQueue
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -38,76 +39,66 @@ func (s *ChangesetSyncer) Run() {
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
 	}
-	s.priorityNotify = make(chan []int64)
+	s.priorityNotify = make(chan struct{})
 	s.queue = newChangesetPriorityQueue()
+	// How often to refresh the schedule
+	scheduleTicker := time.NewTicker(scheduleInterval)
 
 	// Get initial schedule
 	if sched, err := s.computeSchedule(ctx); err != nil {
 		// Non fatal as we'll try again later in the main loop
 		log15.Error("Computing schedule", "err", err)
 	} else {
+		s.mtx.Lock()
 		s.queue.Reschedule(sched)
+		s.mtx.Unlock()
 	}
 
-	// How often to refresh the schedule
-	scheduleTicker := time.NewTicker(scheduleInterval)
-
-	var (
-		next      *syncSchedule
-		ok        bool
-		timerChan <-chan time.Time
-		timer     *time.Timer
-	)
+	var next syncSchedule
+	var ok bool
 
 	for {
+		timer := new(time.Timer)
+
 		s.mtx.Lock()
-		if s.queue.Len() > 0 {
-			next, ok = heap.Pop(s.queue).(*syncSchedule)
-		}
+		next, ok = s.queue.Peek()
 		s.mtx.Unlock()
 
 		if ok {
-			if timer != nil {
-				timer.Stop()
+			var d time.Duration
+			if next.priority != priorityHigh {
+				d = time.Until(next.nextSync)
 			}
-			if next.priority == priorityHigh {
-				timer = time.NewTimer(0)
-			} else {
-				timer = time.NewTimer(time.Until(next.nextSync))
-			}
-			timerChan = timer.C
+			timer = time.NewTimer(d)
 		}
 
 		select {
 		case <-scheduleTicker.C:
-			sched, err := s.computeSchedule(ctx)
+			timer.Stop()
+			schedule, err := s.computeSchedule(ctx)
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
 			s.mtx.Lock()
-			s.queue.Reschedule(sched)
+			s.queue.Reschedule(schedule)
 			s.mtx.Unlock()
-		case <-timerChan:
+		case <-timer.C:
 			err := s.SyncChangesetByID(ctx, next.changesetID)
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
+				// We'll continue and remove it as it'll get retried on next schedule
 			}
-		case ids := <-s.priorityNotify:
-			if next == nil {
-				continue
-			}
-			// We need to handle the currently popped item if it was in the slice
-			for _, id := range ids {
-				if next.changesetID == id {
-					next.priority = priorityHigh
-					break
-				}
-			}
-			// We need to push the item back into the heap for the next iteration
+			// Remove item, we need to get it again as it could have moved
+			// due to a high priority item arriving
 			s.mtx.Lock()
-			heap.Push(s.queue, next)
+			i, ok := s.queue.index[next.changesetID]
+			if ok {
+				heap.Remove(s.queue, i)
+			}
 			s.mtx.Unlock()
+		case <-s.priorityNotify:
+			timer.Stop()
 		}
 	}
 }
@@ -121,9 +112,10 @@ var (
 func nextSync(h campaigns.ChangesetSyncHeuristics) time.Time {
 	lastSync := h.UpdatedAt
 	var lastChange time.Time
-	// When we perform a sync, event timestamps are all updated.
+	// When we perform a sync, event timestamps are all updated even if nothing has changed.
 	// We should fall back to h.ExternalUpdated if the diff is small
-	if diff := h.LatestEvent.Sub(lastSync); !h.LatestEvent.IsZero() && diff < minSyncDelay {
+	// TODO: This is a workaround for related to this: https://github.com/sourcegraph/sourcegraph/pull/8771
+	if diff := h.LatestEvent.Sub(lastSync); !h.LatestEvent.IsZero() && absDuration(diff) < minSyncDelay {
 		lastChange = h.ExternalUpdatedAt
 	} else {
 		lastChange = maxTime(h.ExternalUpdatedAt, h.LatestEvent)
@@ -145,6 +137,13 @@ func maxTime(a, b time.Time) time.Time {
 		return a
 	}
 	return b
+}
+
+func absDuration(d time.Duration) time.Duration {
+	if d >= 0 {
+		return d
+	}
+	return -1 * d
 }
 
 func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, error) {
@@ -175,6 +174,7 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 	if s.queue == nil {
 		return errors.New("background syncing not initialised")
 	}
+
 	for _, id := range ids {
 		item, ok := s.queue.Get(id)
 		if !ok {
@@ -185,7 +185,7 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 	}
 
 	select {
-	case s.priorityNotify <- ids:
+	case s.priorityNotify <- struct{}{}:
 	default:
 	}
 
@@ -378,13 +378,13 @@ type syncSchedule struct {
 // It is not safe for concurrent use so callers should protect it with
 // a mutex
 type changesetPriorityQueue struct {
-	items []*syncSchedule
+	items []syncSchedule
 	index map[int64]int // changesetID -> index
 }
 
 func newChangesetPriorityQueue() *changesetPriorityQueue {
 	q := &changesetPriorityQueue{
-		items: make([]*syncSchedule, 0),
+		items: make([]syncSchedule, 0),
 		index: make(map[int64]int),
 	}
 	heap.Init(q)
@@ -415,46 +415,53 @@ func (pq *changesetPriorityQueue) Swap(i, j int) {
 	pq.index[pq.items[j].changesetID] = j
 }
 
-// Push is here to implement the Heap interface, please use Upsert instead
+// Push is here to implement the Heap interface, please use Upsert
 func (pq *changesetPriorityQueue) Push(x interface{}) {
 	n := len(pq.items)
-	item := x.(*syncSchedule)
+	item := x.(syncSchedule)
 	pq.index[item.changesetID] = n
 	pq.items = append(pq.items, item)
 }
 
+// Pop is not to be used directly, use heap.Pop(pq)
 func (pq *changesetPriorityQueue) Pop() interface{} {
 	old := pq.items
 	n := len(old)
 	item := old[n-1]
-	old[n-1] = nil // avoid memory leak
 	delete(pq.index, item.changesetID)
 	pq.items = old[0 : n-1]
 	return item
 }
 
+// Peek fetches the highest priority item without removing it
+func (pq *changesetPriorityQueue) Peek() (syncSchedule, bool) {
+	if len(pq.items) == 0 {
+		return syncSchedule{}, false
+	}
+	return pq.items[0], true
+}
+
 // Upsert modifies at item if it exists or adds a new item
 // NOTE: If an existing item is high priority, it will not be changed back
 // to normal. This allows high priority items to stay that way reschedules
-func (pq *changesetPriorityQueue) Upsert(s *syncSchedule) {
+func (pq *changesetPriorityQueue) Upsert(s syncSchedule) {
 	i, ok := pq.index[s.changesetID]
 	if !ok {
 		heap.Push(pq, s)
 		return
 	}
-	item := pq.items[i]
-	oldPriority := item.priority
-	*item = *s
+	oldPriority := pq.items[i].priority
+	pq.items[i] = s
 	if oldPriority == priorityHigh {
-		item.priority = priorityHigh
+		pq.items[i].priority = priorityHigh
 	}
 	heap.Fix(pq, i)
 }
 
-func (pq *changesetPriorityQueue) Get(id int64) (*syncSchedule, bool) {
+func (pq *changesetPriorityQueue) Get(id int64) (syncSchedule, bool) {
 	i, ok := pq.index[id]
 	if !ok {
-		return nil, false
+		return syncSchedule{}, false
 	}
 	item := pq.items[i]
 	return item, true
@@ -462,7 +469,7 @@ func (pq *changesetPriorityQueue) Get(id int64) (*syncSchedule, bool) {
 
 func (pq *changesetPriorityQueue) Reschedule(ss []syncSchedule) {
 	for i := range ss {
-		pq.Upsert(&ss[i])
+		pq.Upsert(ss[i])
 	}
 }
 
