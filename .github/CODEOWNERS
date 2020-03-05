@@ -177,10 +177,6 @@ tslint.config.js @sourcegraph/web
 /migrations/ @sourcegraph/core-services
 /schema/ @sourcegraph/core-services
 
-# Symbols
-/cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel
-/enterprise/cmd/frontend/internal/symbols @sourcegraph/code-intel
-
 # Search and code mod
 */search/**/* @sourcegraph/core-services
 /cmd/frontend/internal/pkg/search @sourcegraph/core-services
@@ -190,6 +186,10 @@ tslint.config.js @sourcegraph/web
 /cmd/symbols/ @sourcegraph/core-services
 /internal/search/ @sourcegraph/core-services
 /internal/symbols/ @sourcegraph/core-services
+
+# Symbols
+/cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel
+/enterprise/cmd/frontend/internal/symbols @sourcegraph/code-intel
 
 # Saved searches
 /web/src/SavedQuery.tsx @attfarhan
