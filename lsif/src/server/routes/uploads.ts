@@ -46,10 +46,12 @@ export function createUploadRouter(
         visibleAtTip?: boolean
     }
 
+    type UploadResponse = pgModels.LsifUpload
+
     router.get(
         '/uploads/:id([0-9]+)',
         wrap(
-            async (req: express.Request, res: express.Response<pgModels.LsifUpload>): Promise<void> => {
+            async (req: express.Request, res: express.Response<UploadResponse>): Promise<void> => {
                 const upload = await uploadManager.getUpload(parseInt(req.params.id, 10))
                 if (upload) {
                     res.send(upload)
@@ -91,6 +93,11 @@ export function createUploadRouter(
         )
     )
 
+    interface UploadsResponse {
+        uploads: pgModels.LsifUpload[]
+        totalCount: number
+    }
+
     router.get(
         '/uploads/repository/:id([0-9]+)',
         validation.validationMiddleware([
@@ -101,10 +108,7 @@ export function createUploadRouter(
             validation.validateOffset,
         ]),
         wrap(
-            async (
-                req: express.Request,
-                res: express.Response<{ uploads: pgModels.LsifUpload[]; totalCount: number }>
-            ): Promise<void> => {
+            async (req: express.Request, res: express.Response<UploadsResponse>): Promise<void> => {
                 const { query, state, visibleAtTip }: UploadsQueryArgs = req.query
                 const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_UPLOAD_PAGE_SIZE)
                 const { uploads, totalCount } = await uploadManager.getUploads(
