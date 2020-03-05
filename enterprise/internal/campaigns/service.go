@@ -326,7 +326,8 @@ func RunChangesetJob(
 	})
 	if err != nil {
 		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
-			return errors.Errorf("creating commit from patch for repo %q: %q (command: %q)", diffErr.RepositoryName, diffErr.InternalError, diffErr.Command)
+			return errors.Errorf("creating commit from patch for repo %q: %q (command: %q, output: %q)",
+				diffErr.RepositoryName, diffErr.InternalError, diffErr.Command, diffErr.CombinedOutput)
 		}
 		return err
 	}
