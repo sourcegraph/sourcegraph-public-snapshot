@@ -7,7 +7,7 @@ import * as validation from '../middleware/validation'
 import express from 'express'
 import * as uuid from 'uuid'
 import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
-import { Backend, ReferencePaginationCursor } from '../backend/backend'
+import { Backend } from '../backend/backend'
 import { encodeCursor } from '../pagination/cursor'
 import { Logger } from 'winston'
 import { nextLink } from '../pagination/link'
@@ -19,6 +19,7 @@ import { extractLimitOffset } from '../pagination/limit-offset'
 import { UploadManager } from '../../shared/store/uploads'
 import { readGzippedJsonElementsFromFile } from '../../shared/input'
 import * as lsif from 'lsif-protocol'
+import { ReferencePaginationCursor } from '../backend/cursor'
 import { LsifUpload } from '../../shared/models/pg'
 
 const pipeline = promisify(_pipeline)
@@ -234,7 +235,7 @@ export function createLsifRouter(
                 }>
             ): Promise<void> => {
                 const { repositoryId, commit, path, line, character, uploadId, cursor }: ReferencesQueryArgs = req.query
-                const { limit } = extractLimitOffset(req.query, settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
+                const { limit } = extractLimitOffset(req.query, settings.DEFAULT_REFERENCES_PAGE_SIZE)
                 const ctx = createTracingContext(req, { repositoryId, commit, path })
 
                 const result = await backend.references(
@@ -243,6 +244,7 @@ export function createLsifRouter(
                     path,
                     { line, character },
                     { limit, cursor },
+                    constants.DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT,
                     uploadId,
                     ctx
                 )
@@ -250,8 +252,8 @@ export function createLsifRouter(
                     throw Object.assign(new Error('LSIF upload not found'), { status: 404 })
                 }
 
-                const { locations, cursor: endCursor } = result
-                const encodedCursor = encodeCursor<ReferencePaginationCursor>(endCursor)
+                const { locations, newCursor } = result
+                const encodedCursor = encodeCursor<ReferencePaginationCursor>(newCursor)
                 if (encodedCursor) {
                     res.set('Link', nextLink(req, { limit, cursor: encodedCursor }))
                 }
