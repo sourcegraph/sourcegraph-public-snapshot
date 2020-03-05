@@ -140,6 +140,12 @@ func configureRepos(logger *log.Logger, root string) []string {
 			return nil
 		}
 
+		// We recurse into bare repositories to find subprojects. Prevent
+		// recursing into .git
+		if filepath.Base(path) == ".git" {
+			return filepath.SkipDir
+		}
+
 		// Check whether a particular directory is a repository or not.
 		//
 		// A directory which also is a repository (have .git folder inside it)
