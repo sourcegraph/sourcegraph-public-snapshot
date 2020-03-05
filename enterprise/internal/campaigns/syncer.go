@@ -54,7 +54,7 @@ func (s *ChangesetSyncer) Run() {
 		s.mtx.Unlock()
 	}
 
-	var next syncSchedule
+	var next scheduledSync
 	var ok bool
 
 	for {
@@ -146,17 +146,17 @@ func absDuration(d time.Duration) time.Duration {
 	return -1 * d
 }
 
-func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, error) {
+func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync, error) {
 	hs, err := s.Store.ListChangesetSyncData(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changeset sync data")
 	}
 
-	ss := make([]syncSchedule, len(hs))
+	ss := make([]scheduledSync, len(hs))
 	for i := range hs {
 		nextSync := nextSync(hs[i])
 
-		ss[i] = syncSchedule{
+		ss[i] = scheduledSync{
 			changesetID: hs[i].ChangesetID,
 			nextSync:    nextSync,
 		}
@@ -181,7 +181,7 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 			// Item has been recently synced and removed or we have an invalid id
 			// We have no way of telling the difference without making a DB call so
 			// add a new item anyway which will just lead to a harmless error later
-			item = syncSchedule{
+			item = scheduledSync{
 				changesetID: id,
 				nextSync:    time.Time{},
 			}
@@ -375,7 +375,7 @@ func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all 
 	return all, err
 }
 
-type syncSchedule struct {
+type scheduledSync struct {
 	changesetID int64
 	nextSync    time.Time
 	priority    priority
@@ -386,13 +386,13 @@ type syncSchedule struct {
 // It is not safe for concurrent use so callers should protect it with
 // a mutex
 type changesetPriorityQueue struct {
-	items []syncSchedule
+	items []scheduledSync
 	index map[int64]int // changesetID -> index
 }
 
 func newChangesetPriorityQueue() *changesetPriorityQueue {
 	q := &changesetPriorityQueue{
-		items: make([]syncSchedule, 0),
+		items: make([]scheduledSync, 0),
 		index: make(map[int64]int),
 	}
 	heap.Init(q)
@@ -426,7 +426,7 @@ func (pq *changesetPriorityQueue) Swap(i, j int) {
 // Push is here to implement the Heap interface, please use Upsert
 func (pq *changesetPriorityQueue) Push(x interface{}) {
 	n := len(pq.items)
-	item := x.(syncSchedule)
+	item := x.(scheduledSync)
 	pq.index[item.changesetID] = n
 	pq.items = append(pq.items, item)
 }
@@ -440,9 +440,9 @@ func (pq *changesetPriorityQueue) Pop() interface{} {
 }
 
 // Peek fetches the highest priority item without removing it
-func (pq *changesetPriorityQueue) Peek() (syncSchedule, bool) {
+func (pq *changesetPriorityQueue) Peek() (scheduledSync, bool) {
 	if len(pq.items) == 0 {
-		return syncSchedule{}, false
+		return scheduledSync{}, false
 	}
 	return pq.items[0], true
 }
@@ -450,7 +450,7 @@ func (pq *changesetPriorityQueue) Peek() (syncSchedule, bool) {
 // Upsert modifies at item if it exists or adds a new item
 // NOTE: If an existing item is high priority, it will not be changed back
 // to normal. This allows high priority items to stay that way through reschedules
-func (pq *changesetPriorityQueue) Upsert(s syncSchedule) {
+func (pq *changesetPriorityQueue) Upsert(s scheduledSync) {
 	i, ok := pq.index[s.changesetID]
 	if !ok {
 		heap.Push(pq, s)
@@ -464,16 +464,16 @@ func (pq *changesetPriorityQueue) Upsert(s syncSchedule) {
 	heap.Fix(pq, i)
 }
 
-func (pq *changesetPriorityQueue) Get(id int64) (syncSchedule, bool) {
+func (pq *changesetPriorityQueue) Get(id int64) (scheduledSync, bool) {
 	i, ok := pq.index[id]
 	if !ok {
-		return syncSchedule{}, false
+		return scheduledSync{}, false
 	}
 	item := pq.items[i]
 	return item, true
 }
 
-func (pq *changesetPriorityQueue) Reschedule(ss []syncSchedule) {
+func (pq *changesetPriorityQueue) Reschedule(ss []scheduledSync) {
 	for i := range ss {
 		pq.Upsert(ss[i])
 	}

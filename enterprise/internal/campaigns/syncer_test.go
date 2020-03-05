@@ -86,7 +86,7 @@ func TestChangesetPriorityQueue(t *testing.T) {
 	now := time.Now()
 	q := newChangesetPriorityQueue()
 
-	items := []syncSchedule{
+	items := []scheduledSync{
 		{
 			changesetID: 1,
 			nextSync:    now,
@@ -119,14 +119,14 @@ func TestChangesetPriorityQueue(t *testing.T) {
 	}
 
 	// Set item to high priority
-	q.Upsert(syncSchedule{
+	q.Upsert(scheduledSync{
 		changesetID: 4,
 		nextSync:    now.Add(-2 * time.Hour),
 		priority:    priorityHigh,
 	})
 
 	// Can't reduce priority of existing item
-	q.Upsert(syncSchedule{
+	q.Upsert(scheduledSync{
 		changesetID: 4,
 		nextSync:    now.Add(-2 * time.Hour),
 		priority:    priorityNormal,
@@ -142,7 +142,7 @@ func TestChangesetPriorityQueue(t *testing.T) {
 		if !ok {
 			t.Fatalf("Queue should not be empty")
 		}
-		item := heap.Pop(q).(syncSchedule)
+		item := heap.Pop(q).(scheduledSync)
 		if peeked.changesetID != item.changesetID {
 			t.Fatalf("Peeked and Popped item should have the same id")
 		}
