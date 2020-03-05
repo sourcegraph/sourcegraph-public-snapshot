@@ -91,6 +91,8 @@ Follow your cloud provider's installation guide to create the new Docker Compose
 * [Install Sourcegraph with Docker Compose on Google Cloud](../../install/docker-compose/google_cloud.md)
 * [Install Sourcegraph with Docker Compose on DigitalOcean](../../install/docker-compose/digitalocean.md)
 
+Once you have finished the above, come back here for directions on how to copy over the database from your old `sourcegraph/server` instance.
+
 ### Restore database backup to the Docker Compose instance
 
 #### Prepare the Postgres instance
