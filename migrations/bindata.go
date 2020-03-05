@@ -78,8 +78,10 @@
 // 1528395654_add_external_updated_at_to_changesets.up.sql (224B)
 // 1528395655_repo_drop_enabled.down.sql (84B)
 // 1528395655_repo_drop_enabled.up.sql (65B)
-// 1528395656_perms_table_drop_provider.down.sql (1.121kB)
-// 1528395656_perms_table_drop_provider.up.sql (732B)
+// 1528395656_add_not_null_constraint_to_campaign_description.down.sql (79B)
+// 1528395656_add_not_null_constraint_to_campaign_description.up.sql (143B)
+// 1528395657_add_not_null_constraint_to_campaign_job_description.down.sql (83B)
+// 1528395657_add_not_null_constraint_to_campaign_job_description.up.sql (151B)
 
 package migrations
 
@@ -1708,43 +1710,83 @@ func _1528395655_repo_drop_enabledUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395656_perms_table_drop_providerDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x92\xcd\x6e\x9b\x40\x14\x85\xf7\x3c\xc5\xd9\xa5\x95\x70\x5f\x00\x75\x81\x6d\x52\x21\x61\x48\xcd\x20\x65\x67\xe1\xe1\xb6\x9e\x06\xcf\xd0\xf9\x21\x4a\x9f\xbe\x02\x9a\xd0\x80\x55\x63\x95\x15\x12\xf7\x3b\xf7\xe3\xcc\xac\xa3\x2f\x71\x1a\x78\xde\x6a\x85\x7b\x51\xd7\x10\x12\x6d\x59\x3b\x32\xf8\xa6\x34\xb4\x7a\x36\x28\x0d\xd6\xc2\x1e\x1d\x7f\x22\x8b\x9c\x74\x4b\x1a\xa5\xb3\xa7\x5f\x68\xb4\x6a\x45\x45\xda\xef\x70\xa9\xc0\x9d\xb1\xea\x4c\xda\xe0\x49\xaa\x67\x89\x53\xd9\x12\x9c\xa1\x0a\xb9\x72\x9a\xd3\x77\x5d\x36\xa7\x09\x8b\x17\xb2\x9f\xbc\x30\x61\xd1\x1e\x2c\x5c\x27\x51\x07\xe8\x43\x43\xfa\x2c\x8c\x11\x4a\x1a\x84\xdb\x2d\x36\x59\x52\xec\xd2\x91\x62\xd1\x23\x0b\xbc\xe2\x61\x1b\xb2\x0b\x44\x1e\xb1\x71\xf4\x33\xee\x8e\xaf\xfe\x83\xfe\x5d\x70\x65\x61\xff\x71\xba\xb2\x0b\x4d\x33\x86\xb4\x48\x92\xc0\x7b\x97\xa0\xa9\x51\xb7\x29\xcf\x88\xdb\x94\xe7\x0b\x97\x28\xaf\x56\xd8\x13\xd7\x54\x5a\x82\x93\xe2\xa7\x23\x70\x25\x8d\xd5\xa5\x90\x16\x56\x41\x48\x5e\xbb\x8a\xc6\x00\xae\x6a\x77\x96\xff\x3e\x1f\x0f\x00\xb6\xfb\xec\x01\x9b\x2c\xcd\xd9\x3e\x8c\x53\x86\xf8\x1e\xd1\x63\x9c\xb3\x7c\x36\xde\xbf\x1f\xd4\xf1\x07\x71\x7b\x18\x2c\xfc\xff\x89\x78\x75\x7d\x97\x35\xf4\xff\x16\x75\x4b\x40\xcf\x77\x4f\x91\xc6\x5f\x8b\x08\x1f\x7a\x58\x54\x3e\xc6\x00\x1f\x7f\x58\xfb\xd2\x90\xff\x56\xd7\xc7\x2b\xd7\xe2\xca\x6f\x4e\xc7\x07\xcb\x65\x15\x5d\x66\x97\x74\xb3\x88\x9c\x95\xd2\x53\xd3\x52\xfe\xee\x61\x93\xed\x76\x31\x0b\xbc\xdf\x01\x00\x00\xff\xff\xbc\x73\xfd\xf9\x61\x04\x00\x00")
+var __1528395656_add_not_null_constraint_to_campaign_descriptionDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\x56\x80\x88\x3a\xfb\xfb\x84\xfa\xfa\x29\xa4\xa4\x16\x27\x17\x65\x16\x94\x64\xe6\xe7\x29\xb8\x04\xf9\x07\x28\xf8\xf9\x87\x28\xf8\x85\xfa\xf8\x58\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\xf0\x13\xd8\xc0\x4f\x00\x00\x00")
 
-func _1528395656_perms_table_drop_providerDownSqlBytes() ([]byte, error) {
+func _1528395656_add_not_null_constraint_to_campaign_descriptionDownSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395656_perms_table_drop_providerDownSql,
-		"1528395656_perms_table_drop_provider.down.sql",
+		__1528395656_add_not_null_constraint_to_campaign_descriptionDownSql,
+		"1528395656_add_not_null_constraint_to_campaign_description.down.sql",
 	)
 }
 
-func _1528395656_perms_table_drop_providerDownSql() (*asset, error) {
-	bytes, err := _1528395656_perms_table_drop_providerDownSqlBytes()
+func _1528395656_add_not_null_constraint_to_campaign_descriptionDownSql() (*asset, error) {
+	bytes, err := _1528395656_add_not_null_constraint_to_campaign_descriptionDownSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395656_perms_table_drop_provider.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf2, 0x8b, 0xd4, 0xf5, 0x5c, 0xbc, 0x56, 0xf, 0xaf, 0x2e, 0xf0, 0x93, 0x85, 0x9d, 0x8f, 0x7d, 0x6, 0x22, 0x51, 0x41, 0x54, 0xf4, 0xf0, 0x8, 0xf9, 0xb7, 0x4f, 0xe3, 0xa9, 0x55, 0x6d, 0x32}}
+	info := bindataFileInfo{name: "1528395656_add_not_null_constraint_to_campaign_description.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x85, 0xd4, 0x9e, 0xc9, 0xd5, 0x83, 0x4d, 0x9d, 0x59, 0x2a, 0xa9, 0x6b, 0x23, 0xd, 0xfb, 0xf9, 0xe1, 0x87, 0x5a, 0x1f, 0x37, 0xba, 0x2f, 0xab, 0xec, 0xd4, 0x7f, 0x40, 0xda, 0x0, 0x60, 0xac}}
 	return a, nil
 }
 
-var __1528395656_perms_table_drop_providerUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x92\xcb\x4e\xeb\x30\x14\x45\xe7\xfe\x8a\x3d\xbc\x95\xd2\xfb\x03\x19\xa5\x4d\x40\x96\xf2\x80\xc4\x91\x98\x45\x25\x39\x12\x46\x8d\x1d\xfc\xa8\xe0\xef\x11\x29\x81\x96\x42\x44\x84\x47\x1e\xec\xb5\x7d\xbc\x74\x36\xc9\x35\xcf\x43\xc6\xd6\x6b\x94\xd4\x1a\xda\x39\x82\x57\xf2\xc9\x13\x5a\xad\xac\x33\x3b\xa9\x1c\x9c\x06\x3d\xb7\x7b\xdf\x11\x06\xa3\x0f\xb2\x23\x83\x56\xef\x7d\xaf\xfe\xb3\x28\x15\x49\x09\x11\x6d\xd2\x04\xde\x92\x69\x06\x32\xbd\xb4\x56\x6a\x65\x19\x00\xc4\x65\x71\x83\x6d\x91\x57\xa2\x8c\x78\x2e\xc0\xaf\x90\xdc\xf1\x4a\x54\x17\xf1\xf1\xde\xe8\xfb\x47\x6a\x5d\x33\x3d\xd4\x1c\xc7\x09\xfe\xd2\x75\x5a\x11\xc5\xf1\x69\xc3\x2f\xb8\x11\x7b\x3b\x75\xce\x6f\xeb\x04\xff\x46\x46\x76\x01\x3e\xb9\x00\xef\x88\x7b\x19\x68\x15\xb2\x33\x2d\x86\x06\xbd\x40\xcb\xd7\xf8\x71\xa4\x85\x3e\xbe\x2f\x99\x11\x31\x07\x5c\x18\x18\xc3\xe7\x06\x56\xd3\x16\xf5\xfa\x40\x70\x0f\x0b\x57\x65\xfa\x4a\x5a\x67\xf9\x07\x19\xce\x6a\xfc\x01\x61\xdb\x22\xcb\xb8\x08\xd9\x6b\x00\x00\x00\xff\xff\xd3\xba\x17\x72\xdc\x02\x00\x00")
+var __1528395656_add_not_null_constraint_to_campaign_descriptionUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\x56\x08\x76\x0d\x51\x48\x49\x2d\x4e\x2e\xca\x2c\x28\xc9\xcc\xcf\x53\xb0\x55\x50\x57\x57\x08\xf7\x70\x0d\x72\x45\x11\xf6\x0c\x56\xf0\x0b\xf5\xf1\xb1\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x41\x36\x05\x22\xea\xec\xef\x13\xea\xeb\x87\xa2\x0f\x64\xbc\x9f\x7f\x08\x54\x33\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\x00\xa5\x8c\xe6\x8f\x00\x00\x00")
 
-func _1528395656_perms_table_drop_providerUpSqlBytes() ([]byte, error) {
+func _1528395656_add_not_null_constraint_to_campaign_descriptionUpSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395656_perms_table_drop_providerUpSql,
-		"1528395656_perms_table_drop_provider.up.sql",
+		__1528395656_add_not_null_constraint_to_campaign_descriptionUpSql,
+		"1528395656_add_not_null_constraint_to_campaign_description.up.sql",
 	)
 }
 
-func _1528395656_perms_table_drop_providerUpSql() (*asset, error) {
-	bytes, err := _1528395656_perms_table_drop_providerUpSqlBytes()
+func _1528395656_add_not_null_constraint_to_campaign_descriptionUpSql() (*asset, error) {
+	bytes, err := _1528395656_add_not_null_constraint_to_campaign_descriptionUpSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395656_perms_table_drop_provider.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa1, 0x96, 0xef, 0x94, 0xe7, 0x68, 0x8b, 0x66, 0x6b, 0x38, 0x7b, 0xb7, 0xeb, 0x81, 0x67, 0x7e, 0xf1, 0xe1, 0xf2, 0x3f, 0x56, 0x20, 0x45, 0x16, 0xdf, 0x98, 0xa6, 0x3e, 0x5b, 0xfc, 0x84, 0x67}}
+	info := bindataFileInfo{name: "1528395656_add_not_null_constraint_to_campaign_description.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xdc, 0xe9, 0xb6, 0x31, 0xc7, 0x66, 0x6a, 0xad, 0x92, 0x51, 0xb, 0x7, 0x2e, 0x32, 0x80, 0x83, 0x31, 0x61, 0xfb, 0xbb, 0x8a, 0x7a, 0x63, 0xb7, 0xef, 0xcb, 0x79, 0xfa, 0xe, 0x85, 0xec, 0x59}}
+	return a, nil
+}
+
+var __1528395657_add_not_null_constraint_to_campaign_job_descriptionDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x56\x80\xc8\x38\xfb\xfb\x84\xfa\xfa\x29\xa4\xa4\x16\x27\x17\x65\x16\x94\x64\xe6\xe7\x29\xb8\x04\xf9\x07\x28\xf8\xf9\x87\x28\xf8\x85\xfa\xf8\x58\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x81\x9a\x7b\xaa\x53\x00\x00\x00")
+
+func _1528395657_add_not_null_constraint_to_campaign_job_descriptionDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395657_add_not_null_constraint_to_campaign_job_descriptionDownSql,
+		"1528395657_add_not_null_constraint_to_campaign_job_description.down.sql",
+	)
+}
+
+func _1528395657_add_not_null_constraint_to_campaign_job_descriptionDownSql() (*asset, error) {
+	bytes, err := _1528395657_add_not_null_constraint_to_campaign_job_descriptionDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395657_add_not_null_constraint_to_campaign_job_description.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x14, 0xa5, 0x50, 0x47, 0x71, 0xca, 0x68, 0x9f, 0x6e, 0x47, 0x6f, 0x9b, 0xa4, 0x87, 0xb7, 0x89, 0x88, 0xd4, 0x38, 0x95, 0x56, 0xb8, 0x21, 0xc2, 0x36, 0x25, 0xa4, 0xa, 0x7, 0x42, 0xa0, 0x7b}}
+	return a, nil
+}
+
+var __1528395657_add_not_null_constraint_to_campaign_job_descriptionUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x56\x08\x76\x0d\x51\x48\x49\x2d\x4e\x2e\xca\x2c\x28\xc9\xcc\xcf\x53\xb0\x55\x50\x57\x57\x08\xf7\x70\x0d\x72\x45\x11\xf6\x0c\x56\xf0\x0b\xf5\xf1\xb1\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x41\x37\x09\x22\xe3\xec\xef\x13\xea\xeb\x87\xa2\x17\x64\x85\x9f\x7f\x08\xd4\x00\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\x3e\xcd\x1d\xd8\x97\x00\x00\x00")
+
+func _1528395657_add_not_null_constraint_to_campaign_job_descriptionUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395657_add_not_null_constraint_to_campaign_job_descriptionUpSql,
+		"1528395657_add_not_null_constraint_to_campaign_job_description.up.sql",
+	)
+}
+
+func _1528395657_add_not_null_constraint_to_campaign_job_descriptionUpSql() (*asset, error) {
+	bytes, err := _1528395657_add_not_null_constraint_to_campaign_job_descriptionUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395657_add_not_null_constraint_to_campaign_job_description.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x29, 0x23, 0xc4, 0x0, 0x9b, 0x49, 0xdf, 0x5f, 0x1b, 0x6c, 0x59, 0x23, 0xbc, 0xb7, 0x20, 0x4f, 0xd8, 0x16, 0x9c, 0x8a, 0x54, 0x96, 0x9f, 0x53, 0xfc, 0x13, 0x65, 0x7b, 0xe2, 0xfe, 0xc6, 0xf4}}
 	return a, nil
 }
 
@@ -1839,86 +1881,88 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"1528395617_squashed_migrations.down.sql":                          _1528395617_squashed_migrationsDownSql,
-	"1528395617_squashed_migrations.up.sql":                            _1528395617_squashed_migrationsUpSql,
-	"1528395618_add_delete_cascade_to_changeset_jobs.down.sql":         _1528395618_add_delete_cascade_to_changeset_jobsDownSql,
-	"1528395618_add_delete_cascade_to_changeset_jobs.up.sql":           _1528395618_add_delete_cascade_to_changeset_jobsUpSql,
-	"1528395619_remove_unused_indexes.down.sql":                        _1528395619_remove_unused_indexesDownSql,
-	"1528395619_remove_unused_indexes.up.sql":                          _1528395619_remove_unused_indexesUpSql,
-	"1528395620_add_description_to_campaign_jobs.down.sql":             _1528395620_add_description_to_campaign_jobsDownSql,
-	"1528395620_add_description_to_campaign_jobs.up.sql":               _1528395620_add_description_to_campaign_jobsUpSql,
-	"1528395621_add_delete_cascade_to_campaign_jobs.down.sql":          _1528395621_add_delete_cascade_to_campaign_jobsDownSql,
-	"1528395621_add_delete_cascade_to_campaign_jobs.up.sql":            _1528395621_add_delete_cascade_to_campaign_jobsUpSql,
-	"1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql":   _1528395622_add_more_delete_cascades_to_changeset_jobsDownSql,
-	"1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql":     _1528395622_add_more_delete_cascades_to_changeset_jobsUpSql,
-	"1528395623_add_canceled_at_to_campaign_plan.down.sql":             _1528395623_add_canceled_at_to_campaign_planDownSql,
-	"1528395623_add_canceled_at_to_campaign_plan.up.sql":               _1528395623_add_canceled_at_to_campaign_planUpSql,
-	"1528395624_add_closed_at_to_campaigns.down.sql":                   _1528395624_add_closed_at_to_campaignsDownSql,
-	"1528395624_add_closed_at_to_campaigns.up.sql":                     _1528395624_add_closed_at_to_campaignsUpSql,
-	"1528395625_lsif_uploads.down.sql":                                 _1528395625_lsif_uploadsDownSql,
-	"1528395625_lsif_uploads.up.sql":                                   _1528395625_lsif_uploadsUpSql,
-	"1528395626_create_explicit_repo_permissions_tables.down.sql":      _1528395626_create_explicit_repo_permissions_tablesDownSql,
-	"1528395626_create_explicit_repo_permissions_tables.up.sql":        _1528395626_create_explicit_repo_permissions_tablesUpSql,
-	"1528395627_add_external_deleted_at_to_changesets.down.sql":        _1528395627_add_external_deleted_at_to_changesetsDownSql,
-	"1528395627_add_external_deleted_at_to_changesets.up.sql":          _1528395627_add_external_deleted_at_to_changesetsUpSql,
-	"1528395628_reset_changeset_external_deleted_at.down.sql":          _1528395628_reset_changeset_external_deleted_atDownSql,
-	"1528395628_reset_changeset_external_deleted_at.up.sql":            _1528395628_reset_changeset_external_deleted_atUpSql,
-	"1528395629_add_published_at_to_campaigns.down.sql":                _1528395629_add_published_at_to_campaignsDownSql,
-	"1528395629_add_published_at_to_campaigns.up.sql":                  _1528395629_add_published_at_to_campaignsUpSql,
-	"1528395630_repo_external_always.down.sql":                         _1528395630_repo_external_alwaysDownSql,
-	"1528395630_repo_external_always.up.sql":                           _1528395630_repo_external_alwaysUpSql,
-	"1528395631_reset_changeset_external_deleted_at.down.sql":          _1528395631_reset_changeset_external_deleted_atDownSql,
-	"1528395631_reset_changeset_external_deleted_at.up.sql":            _1528395631_reset_changeset_external_deleted_atUpSql,
-	"1528395632_drop_closest_dump.down.sql":                            _1528395632_drop_closest_dumpDownSql,
-	"1528395632_drop_closest_dump.up.sql":                              _1528395632_drop_closest_dumpUpSql,
-	"1528395633_drop_repo_deleted_at_unused.down.sql":                  _1528395633_drop_repo_deleted_at_unusedDownSql,
-	"1528395633_drop_repo_deleted_at_unused.up.sql":                    _1528395633_drop_repo_deleted_at_unusedUpSql,
-	"1528395634_lsif_unify_dumps_and_uploads.down.sql":                 _1528395634_lsif_unify_dumps_and_uploadsDownSql,
-	"1528395634_lsif_unify_dumps_and_uploads.up.sql":                   _1528395634_lsif_unify_dumps_and_uploadsUpSql,
-	"1528395635_check_campaign_name_not_blank.down.sql":                _1528395635_check_campaign_name_not_blankDownSql,
-	"1528395635_check_campaign_name_not_blank.up.sql":                  _1528395635_check_campaign_name_not_blankUpSql,
-	"1528395636_add_published_at_to_changeset_jobs.down.sql":           _1528395636_add_published_at_to_changeset_jobsDownSql,
-	"1528395636_add_published_at_to_changeset_jobs.up.sql":             _1528395636_add_published_at_to_changeset_jobsUpSql,
-	"1528395637_lsif_repository_ids.down.sql":                          _1528395637_lsif_repository_idsDownSql,
-	"1528395637_lsif_repository_ids.up.sql":                            _1528395637_lsif_repository_idsUpSql,
-	"1528395638_remove_published_at_from_changeset_jobs.down.sql":      _1528395638_remove_published_at_from_changeset_jobsDownSql,
-	"1528395638_remove_published_at_from_changeset_jobs.up.sql":        _1528395638_remove_published_at_from_changeset_jobsUpSql,
-	"1528395639_create_a8n_job_indexes.down.sql":                       _1528395639_create_a8n_job_indexesDownSql,
-	"1528395639_create_a8n_job_indexes.up.sql":                         _1528395639_create_a8n_job_indexesUpSql,
-	"1528395640_drop_repository_name_at_upload.down.sql":               _1528395640_drop_repository_name_at_uploadDownSql,
-	"1528395640_drop_repository_name_at_upload.up.sql":                 _1528395640_drop_repository_name_at_uploadUpSql,
-	"1528395641_remove_published_at_from_campaign.down.sql":            _1528395641_remove_published_at_from_campaignDownSql,
-	"1528395641_remove_published_at_from_campaign.up.sql":              _1528395641_remove_published_at_from_campaignUpSql,
-	"1528395642_add_user_id_to_campaign_plan.down.sql":                 _1528395642_add_user_id_to_campaign_planDownSql,
-	"1528395642_add_user_id_to_campaign_plan.up.sql":                   _1528395642_add_user_id_to_campaign_planUpSql,
-	"1528395643_create_indexes_on_event_logs.down.sql":                 _1528395643_create_indexes_on_event_logsDownSql,
-	"1528395643_create_indexes_on_event_logs.up.sql":                   _1528395643_create_indexes_on_event_logsUpSql,
-	"1528395644_remove_default_from_event_logs_timestamp.down.sql":     _1528395644_remove_default_from_event_logs_timestampDownSql,
-	"1528395644_remove_default_from_event_logs_timestamp.up.sql":       _1528395644_remove_default_from_event_logs_timestampUpSql,
-	"1528395645_event_logs_json_arguments.down.sql":                    _1528395645_event_logs_json_argumentsDownSql,
-	"1528395645_event_logs_json_arguments.up.sql":                      _1528395645_event_logs_json_argumentsUpSql,
-	"1528395646_add_last_verification_sent_at_to_user_emails.down.sql": _1528395646_add_last_verification_sent_at_to_user_emailsDownSql,
-	"1528395646_add_last_verification_sent_at_to_user_emails.up.sql":   _1528395646_add_last_verification_sent_at_to_user_emailsUpSql,
-	"1528395647_remove_label_events_from_changeset_events.down.sql":    _1528395647_remove_label_events_from_changeset_eventsDownSql,
-	"1528395647_remove_label_events_from_changeset_events.up.sql":      _1528395647_remove_label_events_from_changeset_eventsUpSql,
-	"1528395648_add_external_branch_to_changesets.down.sql":            _1528395648_add_external_branch_to_changesetsDownSql,
-	"1528395648_add_external_branch_to_changesets.up.sql":              _1528395648_add_external_branch_to_changesetsUpSql,
-	"1528395649_add_campaign_branch.down.sql":                          _1528395649_add_campaign_branchDownSql,
-	"1528395649_add_campaign_branch.up.sql":                            _1528395649_add_campaign_branchUpSql,
-	"1528395650_add_versions_table.down.sql":                           _1528395650_add_versions_tableDownSql,
-	"1528395650_add_versions_table.up.sql":                             _1528395650_add_versions_tableUpSql,
-	"1528395651_event_logs_remove_empty_url_check.down.sql":            _1528395651_event_logs_remove_empty_url_checkDownSql,
-	"1528395651_event_logs_remove_empty_url_check.up.sql":              _1528395651_event_logs_remove_empty_url_checkUpSql,
-	"1528395652_add_lsif_indexer.down.sql":                             _1528395652_add_lsif_indexerDownSql,
-	"1528395652_add_lsif_indexer.up.sql":                               _1528395652_add_lsif_indexerUpSql,
-	"1528395653_repo_normalize_visibility_metadata.down.sql":           _1528395653_repo_normalize_visibility_metadataDownSql,
-	"1528395653_repo_normalize_visibility_metadata.up.sql":             _1528395653_repo_normalize_visibility_metadataUpSql,
-	"1528395654_add_external_updated_at_to_changesets.down.sql":        _1528395654_add_external_updated_at_to_changesetsDownSql,
-	"1528395654_add_external_updated_at_to_changesets.up.sql":          _1528395654_add_external_updated_at_to_changesetsUpSql,
-	"1528395655_repo_drop_enabled.down.sql":                            _1528395655_repo_drop_enabledDownSql,
-	"1528395655_repo_drop_enabled.up.sql":                              _1528395655_repo_drop_enabledUpSql,
-	"1528395656_perms_table_drop_provider.down.sql":                    _1528395656_perms_table_drop_providerDownSql,
-	"1528395656_perms_table_drop_provider.up.sql":                      _1528395656_perms_table_drop_providerUpSql,
+	"1528395617_squashed_migrations.down.sql":                                 _1528395617_squashed_migrationsDownSql,
+	"1528395617_squashed_migrations.up.sql":                                   _1528395617_squashed_migrationsUpSql,
+	"1528395618_add_delete_cascade_to_changeset_jobs.down.sql":                _1528395618_add_delete_cascade_to_changeset_jobsDownSql,
+	"1528395618_add_delete_cascade_to_changeset_jobs.up.sql":                  _1528395618_add_delete_cascade_to_changeset_jobsUpSql,
+	"1528395619_remove_unused_indexes.down.sql":                               _1528395619_remove_unused_indexesDownSql,
+	"1528395619_remove_unused_indexes.up.sql":                                 _1528395619_remove_unused_indexesUpSql,
+	"1528395620_add_description_to_campaign_jobs.down.sql":                    _1528395620_add_description_to_campaign_jobsDownSql,
+	"1528395620_add_description_to_campaign_jobs.up.sql":                      _1528395620_add_description_to_campaign_jobsUpSql,
+	"1528395621_add_delete_cascade_to_campaign_jobs.down.sql":                 _1528395621_add_delete_cascade_to_campaign_jobsDownSql,
+	"1528395621_add_delete_cascade_to_campaign_jobs.up.sql":                   _1528395621_add_delete_cascade_to_campaign_jobsUpSql,
+	"1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql":          _1528395622_add_more_delete_cascades_to_changeset_jobsDownSql,
+	"1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql":            _1528395622_add_more_delete_cascades_to_changeset_jobsUpSql,
+	"1528395623_add_canceled_at_to_campaign_plan.down.sql":                    _1528395623_add_canceled_at_to_campaign_planDownSql,
+	"1528395623_add_canceled_at_to_campaign_plan.up.sql":                      _1528395623_add_canceled_at_to_campaign_planUpSql,
+	"1528395624_add_closed_at_to_campaigns.down.sql":                          _1528395624_add_closed_at_to_campaignsDownSql,
+	"1528395624_add_closed_at_to_campaigns.up.sql":                            _1528395624_add_closed_at_to_campaignsUpSql,
+	"1528395625_lsif_uploads.down.sql":                                        _1528395625_lsif_uploadsDownSql,
+	"1528395625_lsif_uploads.up.sql":                                          _1528395625_lsif_uploadsUpSql,
+	"1528395626_create_explicit_repo_permissions_tables.down.sql":             _1528395626_create_explicit_repo_permissions_tablesDownSql,
+	"1528395626_create_explicit_repo_permissions_tables.up.sql":               _1528395626_create_explicit_repo_permissions_tablesUpSql,
+	"1528395627_add_external_deleted_at_to_changesets.down.sql":               _1528395627_add_external_deleted_at_to_changesetsDownSql,
+	"1528395627_add_external_deleted_at_to_changesets.up.sql":                 _1528395627_add_external_deleted_at_to_changesetsUpSql,
+	"1528395628_reset_changeset_external_deleted_at.down.sql":                 _1528395628_reset_changeset_external_deleted_atDownSql,
+	"1528395628_reset_changeset_external_deleted_at.up.sql":                   _1528395628_reset_changeset_external_deleted_atUpSql,
+	"1528395629_add_published_at_to_campaigns.down.sql":                       _1528395629_add_published_at_to_campaignsDownSql,
+	"1528395629_add_published_at_to_campaigns.up.sql":                         _1528395629_add_published_at_to_campaignsUpSql,
+	"1528395630_repo_external_always.down.sql":                                _1528395630_repo_external_alwaysDownSql,
+	"1528395630_repo_external_always.up.sql":                                  _1528395630_repo_external_alwaysUpSql,
+	"1528395631_reset_changeset_external_deleted_at.down.sql":                 _1528395631_reset_changeset_external_deleted_atDownSql,
+	"1528395631_reset_changeset_external_deleted_at.up.sql":                   _1528395631_reset_changeset_external_deleted_atUpSql,
+	"1528395632_drop_closest_dump.down.sql":                                   _1528395632_drop_closest_dumpDownSql,
+	"1528395632_drop_closest_dump.up.sql":                                     _1528395632_drop_closest_dumpUpSql,
+	"1528395633_drop_repo_deleted_at_unused.down.sql":                         _1528395633_drop_repo_deleted_at_unusedDownSql,
+	"1528395633_drop_repo_deleted_at_unused.up.sql":                           _1528395633_drop_repo_deleted_at_unusedUpSql,
+	"1528395634_lsif_unify_dumps_and_uploads.down.sql":                        _1528395634_lsif_unify_dumps_and_uploadsDownSql,
+	"1528395634_lsif_unify_dumps_and_uploads.up.sql":                          _1528395634_lsif_unify_dumps_and_uploadsUpSql,
+	"1528395635_check_campaign_name_not_blank.down.sql":                       _1528395635_check_campaign_name_not_blankDownSql,
+	"1528395635_check_campaign_name_not_blank.up.sql":                         _1528395635_check_campaign_name_not_blankUpSql,
+	"1528395636_add_published_at_to_changeset_jobs.down.sql":                  _1528395636_add_published_at_to_changeset_jobsDownSql,
+	"1528395636_add_published_at_to_changeset_jobs.up.sql":                    _1528395636_add_published_at_to_changeset_jobsUpSql,
+	"1528395637_lsif_repository_ids.down.sql":                                 _1528395637_lsif_repository_idsDownSql,
+	"1528395637_lsif_repository_ids.up.sql":                                   _1528395637_lsif_repository_idsUpSql,
+	"1528395638_remove_published_at_from_changeset_jobs.down.sql":             _1528395638_remove_published_at_from_changeset_jobsDownSql,
+	"1528395638_remove_published_at_from_changeset_jobs.up.sql":               _1528395638_remove_published_at_from_changeset_jobsUpSql,
+	"1528395639_create_a8n_job_indexes.down.sql":                              _1528395639_create_a8n_job_indexesDownSql,
+	"1528395639_create_a8n_job_indexes.up.sql":                                _1528395639_create_a8n_job_indexesUpSql,
+	"1528395640_drop_repository_name_at_upload.down.sql":                      _1528395640_drop_repository_name_at_uploadDownSql,
+	"1528395640_drop_repository_name_at_upload.up.sql":                        _1528395640_drop_repository_name_at_uploadUpSql,
+	"1528395641_remove_published_at_from_campaign.down.sql":                   _1528395641_remove_published_at_from_campaignDownSql,
+	"1528395641_remove_published_at_from_campaign.up.sql":                     _1528395641_remove_published_at_from_campaignUpSql,
+	"1528395642_add_user_id_to_campaign_plan.down.sql":                        _1528395642_add_user_id_to_campaign_planDownSql,
+	"1528395642_add_user_id_to_campaign_plan.up.sql":                          _1528395642_add_user_id_to_campaign_planUpSql,
+	"1528395643_create_indexes_on_event_logs.down.sql":                        _1528395643_create_indexes_on_event_logsDownSql,
+	"1528395643_create_indexes_on_event_logs.up.sql":                          _1528395643_create_indexes_on_event_logsUpSql,
+	"1528395644_remove_default_from_event_logs_timestamp.down.sql":            _1528395644_remove_default_from_event_logs_timestampDownSql,
+	"1528395644_remove_default_from_event_logs_timestamp.up.sql":              _1528395644_remove_default_from_event_logs_timestampUpSql,
+	"1528395645_event_logs_json_arguments.down.sql":                           _1528395645_event_logs_json_argumentsDownSql,
+	"1528395645_event_logs_json_arguments.up.sql":                             _1528395645_event_logs_json_argumentsUpSql,
+	"1528395646_add_last_verification_sent_at_to_user_emails.down.sql":        _1528395646_add_last_verification_sent_at_to_user_emailsDownSql,
+	"1528395646_add_last_verification_sent_at_to_user_emails.up.sql":          _1528395646_add_last_verification_sent_at_to_user_emailsUpSql,
+	"1528395647_remove_label_events_from_changeset_events.down.sql":           _1528395647_remove_label_events_from_changeset_eventsDownSql,
+	"1528395647_remove_label_events_from_changeset_events.up.sql":             _1528395647_remove_label_events_from_changeset_eventsUpSql,
+	"1528395648_add_external_branch_to_changesets.down.sql":                   _1528395648_add_external_branch_to_changesetsDownSql,
+	"1528395648_add_external_branch_to_changesets.up.sql":                     _1528395648_add_external_branch_to_changesetsUpSql,
+	"1528395649_add_campaign_branch.down.sql":                                 _1528395649_add_campaign_branchDownSql,
+	"1528395649_add_campaign_branch.up.sql":                                   _1528395649_add_campaign_branchUpSql,
+	"1528395650_add_versions_table.down.sql":                                  _1528395650_add_versions_tableDownSql,
+	"1528395650_add_versions_table.up.sql":                                    _1528395650_add_versions_tableUpSql,
+	"1528395651_event_logs_remove_empty_url_check.down.sql":                   _1528395651_event_logs_remove_empty_url_checkDownSql,
+	"1528395651_event_logs_remove_empty_url_check.up.sql":                     _1528395651_event_logs_remove_empty_url_checkUpSql,
+	"1528395652_add_lsif_indexer.down.sql":                                    _1528395652_add_lsif_indexerDownSql,
+	"1528395652_add_lsif_indexer.up.sql":                                      _1528395652_add_lsif_indexerUpSql,
+	"1528395653_repo_normalize_visibility_metadata.down.sql":                  _1528395653_repo_normalize_visibility_metadataDownSql,
+	"1528395653_repo_normalize_visibility_metadata.up.sql":                    _1528395653_repo_normalize_visibility_metadataUpSql,
+	"1528395654_add_external_updated_at_to_changesets.down.sql":               _1528395654_add_external_updated_at_to_changesetsDownSql,
+	"1528395654_add_external_updated_at_to_changesets.up.sql":                 _1528395654_add_external_updated_at_to_changesetsUpSql,
+	"1528395655_repo_drop_enabled.down.sql":                                   _1528395655_repo_drop_enabledDownSql,
+	"1528395655_repo_drop_enabled.up.sql":                                     _1528395655_repo_drop_enabledUpSql,
+	"1528395656_add_not_null_constraint_to_campaign_description.down.sql":     _1528395656_add_not_null_constraint_to_campaign_descriptionDownSql,
+	"1528395656_add_not_null_constraint_to_campaign_description.up.sql":       _1528395656_add_not_null_constraint_to_campaign_descriptionUpSql,
+	"1528395657_add_not_null_constraint_to_campaign_job_description.down.sql": _1528395657_add_not_null_constraint_to_campaign_job_descriptionDownSql,
+	"1528395657_add_not_null_constraint_to_campaign_job_description.up.sql":   _1528395657_add_not_null_constraint_to_campaign_job_descriptionUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1962,86 +2006,88 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"1528395617_squashed_migrations.down.sql":                          {_1528395617_squashed_migrationsDownSql, map[string]*bintree{}},
-	"1528395617_squashed_migrations.up.sql":                            {_1528395617_squashed_migrationsUpSql, map[string]*bintree{}},
-	"1528395618_add_delete_cascade_to_changeset_jobs.down.sql":         {_1528395618_add_delete_cascade_to_changeset_jobsDownSql, map[string]*bintree{}},
-	"1528395618_add_delete_cascade_to_changeset_jobs.up.sql":           {_1528395618_add_delete_cascade_to_changeset_jobsUpSql, map[string]*bintree{}},
-	"1528395619_remove_unused_indexes.down.sql":                        {_1528395619_remove_unused_indexesDownSql, map[string]*bintree{}},
-	"1528395619_remove_unused_indexes.up.sql":                          {_1528395619_remove_unused_indexesUpSql, map[string]*bintree{}},
-	"1528395620_add_description_to_campaign_jobs.down.sql":             {_1528395620_add_description_to_campaign_jobsDownSql, map[string]*bintree{}},
-	"1528395620_add_description_to_campaign_jobs.up.sql":               {_1528395620_add_description_to_campaign_jobsUpSql, map[string]*bintree{}},
-	"1528395621_add_delete_cascade_to_campaign_jobs.down.sql":          {_1528395621_add_delete_cascade_to_campaign_jobsDownSql, map[string]*bintree{}},
-	"1528395621_add_delete_cascade_to_campaign_jobs.up.sql":            {_1528395621_add_delete_cascade_to_campaign_jobsUpSql, map[string]*bintree{}},
-	"1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql":   {_1528395622_add_more_delete_cascades_to_changeset_jobsDownSql, map[string]*bintree{}},
-	"1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql":     {_1528395622_add_more_delete_cascades_to_changeset_jobsUpSql, map[string]*bintree{}},
-	"1528395623_add_canceled_at_to_campaign_plan.down.sql":             {_1528395623_add_canceled_at_to_campaign_planDownSql, map[string]*bintree{}},
-	"1528395623_add_canceled_at_to_campaign_plan.up.sql":               {_1528395623_add_canceled_at_to_campaign_planUpSql, map[string]*bintree{}},
-	"1528395624_add_closed_at_to_campaigns.down.sql":                   {_1528395624_add_closed_at_to_campaignsDownSql, map[string]*bintree{}},
-	"1528395624_add_closed_at_to_campaigns.up.sql":                     {_1528395624_add_closed_at_to_campaignsUpSql, map[string]*bintree{}},
-	"1528395625_lsif_uploads.down.sql":                                 {_1528395625_lsif_uploadsDownSql, map[string]*bintree{}},
-	"1528395625_lsif_uploads.up.sql":                                   {_1528395625_lsif_uploadsUpSql, map[string]*bintree{}},
-	"1528395626_create_explicit_repo_permissions_tables.down.sql":      {_1528395626_create_explicit_repo_permissions_tablesDownSql, map[string]*bintree{}},
-	"1528395626_create_explicit_repo_permissions_tables.up.sql":        {_1528395626_create_explicit_repo_permissions_tablesUpSql, map[string]*bintree{}},
-	"1528395627_add_external_deleted_at_to_changesets.down.sql":        {_1528395627_add_external_deleted_at_to_changesetsDownSql, map[string]*bintree{}},
-	"1528395627_add_external_deleted_at_to_changesets.up.sql":          {_1528395627_add_external_deleted_at_to_changesetsUpSql, map[string]*bintree{}},
-	"1528395628_reset_changeset_external_deleted_at.down.sql":          {_1528395628_reset_changeset_external_deleted_atDownSql, map[string]*bintree{}},
-	"1528395628_reset_changeset_external_deleted_at.up.sql":            {_1528395628_reset_changeset_external_deleted_atUpSql, map[string]*bintree{}},
-	"1528395629_add_published_at_to_campaigns.down.sql":                {_1528395629_add_published_at_to_campaignsDownSql, map[string]*bintree{}},
-	"1528395629_add_published_at_to_campaigns.up.sql":                  {_1528395629_add_published_at_to_campaignsUpSql, map[string]*bintree{}},
-	"1528395630_repo_external_always.down.sql":                         {_1528395630_repo_external_alwaysDownSql, map[string]*bintree{}},
-	"1528395630_repo_external_always.up.sql":                           {_1528395630_repo_external_alwaysUpSql, map[string]*bintree{}},
-	"1528395631_reset_changeset_external_deleted_at.down.sql":          {_1528395631_reset_changeset_external_deleted_atDownSql, map[string]*bintree{}},
-	"1528395631_reset_changeset_external_deleted_at.up.sql":            {_1528395631_reset_changeset_external_deleted_atUpSql, map[string]*bintree{}},
-	"1528395632_drop_closest_dump.down.sql":                            {_1528395632_drop_closest_dumpDownSql, map[string]*bintree{}},
-	"1528395632_drop_closest_dump.up.sql":                              {_1528395632_drop_closest_dumpUpSql, map[string]*bintree{}},
-	"1528395633_drop_repo_deleted_at_unused.down.sql":                  {_1528395633_drop_repo_deleted_at_unusedDownSql, map[string]*bintree{}},
-	"1528395633_drop_repo_deleted_at_unused.up.sql":                    {_1528395633_drop_repo_deleted_at_unusedUpSql, map[string]*bintree{}},
-	"1528395634_lsif_unify_dumps_and_uploads.down.sql":                 {_1528395634_lsif_unify_dumps_and_uploadsDownSql, map[string]*bintree{}},
-	"1528395634_lsif_unify_dumps_and_uploads.up.sql":                   {_1528395634_lsif_unify_dumps_and_uploadsUpSql, map[string]*bintree{}},
-	"1528395635_check_campaign_name_not_blank.down.sql":                {_1528395635_check_campaign_name_not_blankDownSql, map[string]*bintree{}},
-	"1528395635_check_campaign_name_not_blank.up.sql":                  {_1528395635_check_campaign_name_not_blankUpSql, map[string]*bintree{}},
-	"1528395636_add_published_at_to_changeset_jobs.down.sql":           {_1528395636_add_published_at_to_changeset_jobsDownSql, map[string]*bintree{}},
-	"1528395636_add_published_at_to_changeset_jobs.up.sql":             {_1528395636_add_published_at_to_changeset_jobsUpSql, map[string]*bintree{}},
-	"1528395637_lsif_repository_ids.down.sql":                          {_1528395637_lsif_repository_idsDownSql, map[string]*bintree{}},
-	"1528395637_lsif_repository_ids.up.sql":                            {_1528395637_lsif_repository_idsUpSql, map[string]*bintree{}},
-	"1528395638_remove_published_at_from_changeset_jobs.down.sql":      {_1528395638_remove_published_at_from_changeset_jobsDownSql, map[string]*bintree{}},
-	"1528395638_remove_published_at_from_changeset_jobs.up.sql":        {_1528395638_remove_published_at_from_changeset_jobsUpSql, map[string]*bintree{}},
-	"1528395639_create_a8n_job_indexes.down.sql":                       {_1528395639_create_a8n_job_indexesDownSql, map[string]*bintree{}},
-	"1528395639_create_a8n_job_indexes.up.sql":                         {_1528395639_create_a8n_job_indexesUpSql, map[string]*bintree{}},
-	"1528395640_drop_repository_name_at_upload.down.sql":               {_1528395640_drop_repository_name_at_uploadDownSql, map[string]*bintree{}},
-	"1528395640_drop_repository_name_at_upload.up.sql":                 {_1528395640_drop_repository_name_at_uploadUpSql, map[string]*bintree{}},
-	"1528395641_remove_published_at_from_campaign.down.sql":            {_1528395641_remove_published_at_from_campaignDownSql, map[string]*bintree{}},
-	"1528395641_remove_published_at_from_campaign.up.sql":              {_1528395641_remove_published_at_from_campaignUpSql, map[string]*bintree{}},
-	"1528395642_add_user_id_to_campaign_plan.down.sql":                 {_1528395642_add_user_id_to_campaign_planDownSql, map[string]*bintree{}},
-	"1528395642_add_user_id_to_campaign_plan.up.sql":                   {_1528395642_add_user_id_to_campaign_planUpSql, map[string]*bintree{}},
-	"1528395643_create_indexes_on_event_logs.down.sql":                 {_1528395643_create_indexes_on_event_logsDownSql, map[string]*bintree{}},
-	"1528395643_create_indexes_on_event_logs.up.sql":                   {_1528395643_create_indexes_on_event_logsUpSql, map[string]*bintree{}},
-	"1528395644_remove_default_from_event_logs_timestamp.down.sql":     {_1528395644_remove_default_from_event_logs_timestampDownSql, map[string]*bintree{}},
-	"1528395644_remove_default_from_event_logs_timestamp.up.sql":       {_1528395644_remove_default_from_event_logs_timestampUpSql, map[string]*bintree{}},
-	"1528395645_event_logs_json_arguments.down.sql":                    {_1528395645_event_logs_json_argumentsDownSql, map[string]*bintree{}},
-	"1528395645_event_logs_json_arguments.up.sql":                      {_1528395645_event_logs_json_argumentsUpSql, map[string]*bintree{}},
-	"1528395646_add_last_verification_sent_at_to_user_emails.down.sql": {_1528395646_add_last_verification_sent_at_to_user_emailsDownSql, map[string]*bintree{}},
-	"1528395646_add_last_verification_sent_at_to_user_emails.up.sql":   {_1528395646_add_last_verification_sent_at_to_user_emailsUpSql, map[string]*bintree{}},
-	"1528395647_remove_label_events_from_changeset_events.down.sql":    {_1528395647_remove_label_events_from_changeset_eventsDownSql, map[string]*bintree{}},
-	"1528395647_remove_label_events_from_changeset_events.up.sql":      {_1528395647_remove_label_events_from_changeset_eventsUpSql, map[string]*bintree{}},
-	"1528395648_add_external_branch_to_changesets.down.sql":            {_1528395648_add_external_branch_to_changesetsDownSql, map[string]*bintree{}},
-	"1528395648_add_external_branch_to_changesets.up.sql":              {_1528395648_add_external_branch_to_changesetsUpSql, map[string]*bintree{}},
-	"1528395649_add_campaign_branch.down.sql":                          {_1528395649_add_campaign_branchDownSql, map[string]*bintree{}},
-	"1528395649_add_campaign_branch.up.sql":                            {_1528395649_add_campaign_branchUpSql, map[string]*bintree{}},
-	"1528395650_add_versions_table.down.sql":                           {_1528395650_add_versions_tableDownSql, map[string]*bintree{}},
-	"1528395650_add_versions_table.up.sql":                             {_1528395650_add_versions_tableUpSql, map[string]*bintree{}},
-	"1528395651_event_logs_remove_empty_url_check.down.sql":            {_1528395651_event_logs_remove_empty_url_checkDownSql, map[string]*bintree{}},
-	"1528395651_event_logs_remove_empty_url_check.up.sql":              {_1528395651_event_logs_remove_empty_url_checkUpSql, map[string]*bintree{}},
-	"1528395652_add_lsif_indexer.down.sql":                             {_1528395652_add_lsif_indexerDownSql, map[string]*bintree{}},
-	"1528395652_add_lsif_indexer.up.sql":                               {_1528395652_add_lsif_indexerUpSql, map[string]*bintree{}},
-	"1528395653_repo_normalize_visibility_metadata.down.sql":           {_1528395653_repo_normalize_visibility_metadataDownSql, map[string]*bintree{}},
-	"1528395653_repo_normalize_visibility_metadata.up.sql":             {_1528395653_repo_normalize_visibility_metadataUpSql, map[string]*bintree{}},
-	"1528395654_add_external_updated_at_to_changesets.down.sql":        {_1528395654_add_external_updated_at_to_changesetsDownSql, map[string]*bintree{}},
-	"1528395654_add_external_updated_at_to_changesets.up.sql":          {_1528395654_add_external_updated_at_to_changesetsUpSql, map[string]*bintree{}},
-	"1528395655_repo_drop_enabled.down.sql":                            {_1528395655_repo_drop_enabledDownSql, map[string]*bintree{}},
-	"1528395655_repo_drop_enabled.up.sql":                              {_1528395655_repo_drop_enabledUpSql, map[string]*bintree{}},
-	"1528395656_perms_table_drop_provider.down.sql":                    {_1528395656_perms_table_drop_providerDownSql, map[string]*bintree{}},
-	"1528395656_perms_table_drop_provider.up.sql":                      {_1528395656_perms_table_drop_providerUpSql, map[string]*bintree{}},
+	"1528395617_squashed_migrations.down.sql":                                 {_1528395617_squashed_migrationsDownSql, map[string]*bintree{}},
+	"1528395617_squashed_migrations.up.sql":                                   {_1528395617_squashed_migrationsUpSql, map[string]*bintree{}},
+	"1528395618_add_delete_cascade_to_changeset_jobs.down.sql":                {_1528395618_add_delete_cascade_to_changeset_jobsDownSql, map[string]*bintree{}},
+	"1528395618_add_delete_cascade_to_changeset_jobs.up.sql":                  {_1528395618_add_delete_cascade_to_changeset_jobsUpSql, map[string]*bintree{}},
+	"1528395619_remove_unused_indexes.down.sql":                               {_1528395619_remove_unused_indexesDownSql, map[string]*bintree{}},
+	"1528395619_remove_unused_indexes.up.sql":                                 {_1528395619_remove_unused_indexesUpSql, map[string]*bintree{}},
+	"1528395620_add_description_to_campaign_jobs.down.sql":                    {_1528395620_add_description_to_campaign_jobsDownSql, map[string]*bintree{}},
+	"1528395620_add_description_to_campaign_jobs.up.sql":                      {_1528395620_add_description_to_campaign_jobsUpSql, map[string]*bintree{}},
+	"1528395621_add_delete_cascade_to_campaign_jobs.down.sql":                 {_1528395621_add_delete_cascade_to_campaign_jobsDownSql, map[string]*bintree{}},
+	"1528395621_add_delete_cascade_to_campaign_jobs.up.sql":                   {_1528395621_add_delete_cascade_to_campaign_jobsUpSql, map[string]*bintree{}},
+	"1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql":          {_1528395622_add_more_delete_cascades_to_changeset_jobsDownSql, map[string]*bintree{}},
+	"1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql":            {_1528395622_add_more_delete_cascades_to_changeset_jobsUpSql, map[string]*bintree{}},
+	"1528395623_add_canceled_at_to_campaign_plan.down.sql":                    {_1528395623_add_canceled_at_to_campaign_planDownSql, map[string]*bintree{}},
+	"1528395623_add_canceled_at_to_campaign_plan.up.sql":                      {_1528395623_add_canceled_at_to_campaign_planUpSql, map[string]*bintree{}},
+	"1528395624_add_closed_at_to_campaigns.down.sql":                          {_1528395624_add_closed_at_to_campaignsDownSql, map[string]*bintree{}},
+	"1528395624_add_closed_at_to_campaigns.up.sql":                            {_1528395624_add_closed_at_to_campaignsUpSql, map[string]*bintree{}},
+	"1528395625_lsif_uploads.down.sql":                                        {_1528395625_lsif_uploadsDownSql, map[string]*bintree{}},
+	"1528395625_lsif_uploads.up.sql":                                          {_1528395625_lsif_uploadsUpSql, map[string]*bintree{}},
+	"1528395626_create_explicit_repo_permissions_tables.down.sql":             {_1528395626_create_explicit_repo_permissions_tablesDownSql, map[string]*bintree{}},
+	"1528395626_create_explicit_repo_permissions_tables.up.sql":               {_1528395626_create_explicit_repo_permissions_tablesUpSql, map[string]*bintree{}},
+	"1528395627_add_external_deleted_at_to_changesets.down.sql":               {_1528395627_add_external_deleted_at_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395627_add_external_deleted_at_to_changesets.up.sql":                 {_1528395627_add_external_deleted_at_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395628_reset_changeset_external_deleted_at.down.sql":                 {_1528395628_reset_changeset_external_deleted_atDownSql, map[string]*bintree{}},
+	"1528395628_reset_changeset_external_deleted_at.up.sql":                   {_1528395628_reset_changeset_external_deleted_atUpSql, map[string]*bintree{}},
+	"1528395629_add_published_at_to_campaigns.down.sql":                       {_1528395629_add_published_at_to_campaignsDownSql, map[string]*bintree{}},
+	"1528395629_add_published_at_to_campaigns.up.sql":                         {_1528395629_add_published_at_to_campaignsUpSql, map[string]*bintree{}},
+	"1528395630_repo_external_always.down.sql":                                {_1528395630_repo_external_alwaysDownSql, map[string]*bintree{}},
+	"1528395630_repo_external_always.up.sql":                                  {_1528395630_repo_external_alwaysUpSql, map[string]*bintree{}},
+	"1528395631_reset_changeset_external_deleted_at.down.sql":                 {_1528395631_reset_changeset_external_deleted_atDownSql, map[string]*bintree{}},
+	"1528395631_reset_changeset_external_deleted_at.up.sql":                   {_1528395631_reset_changeset_external_deleted_atUpSql, map[string]*bintree{}},
+	"1528395632_drop_closest_dump.down.sql":                                   {_1528395632_drop_closest_dumpDownSql, map[string]*bintree{}},
+	"1528395632_drop_closest_dump.up.sql":                                     {_1528395632_drop_closest_dumpUpSql, map[string]*bintree{}},
+	"1528395633_drop_repo_deleted_at_unused.down.sql":                         {_1528395633_drop_repo_deleted_at_unusedDownSql, map[string]*bintree{}},
+	"1528395633_drop_repo_deleted_at_unused.up.sql":                           {_1528395633_drop_repo_deleted_at_unusedUpSql, map[string]*bintree{}},
+	"1528395634_lsif_unify_dumps_and_uploads.down.sql":                        {_1528395634_lsif_unify_dumps_and_uploadsDownSql, map[string]*bintree{}},
+	"1528395634_lsif_unify_dumps_and_uploads.up.sql":                          {_1528395634_lsif_unify_dumps_and_uploadsUpSql, map[string]*bintree{}},
+	"1528395635_check_campaign_name_not_blank.down.sql":                       {_1528395635_check_campaign_name_not_blankDownSql, map[string]*bintree{}},
+	"1528395635_check_campaign_name_not_blank.up.sql":                         {_1528395635_check_campaign_name_not_blankUpSql, map[string]*bintree{}},
+	"1528395636_add_published_at_to_changeset_jobs.down.sql":                  {_1528395636_add_published_at_to_changeset_jobsDownSql, map[string]*bintree{}},
+	"1528395636_add_published_at_to_changeset_jobs.up.sql":                    {_1528395636_add_published_at_to_changeset_jobsUpSql, map[string]*bintree{}},
+	"1528395637_lsif_repository_ids.down.sql":                                 {_1528395637_lsif_repository_idsDownSql, map[string]*bintree{}},
+	"1528395637_lsif_repository_ids.up.sql":                                   {_1528395637_lsif_repository_idsUpSql, map[string]*bintree{}},
+	"1528395638_remove_published_at_from_changeset_jobs.down.sql":             {_1528395638_remove_published_at_from_changeset_jobsDownSql, map[string]*bintree{}},
+	"1528395638_remove_published_at_from_changeset_jobs.up.sql":               {_1528395638_remove_published_at_from_changeset_jobsUpSql, map[string]*bintree{}},
+	"1528395639_create_a8n_job_indexes.down.sql":                              {_1528395639_create_a8n_job_indexesDownSql, map[string]*bintree{}},
+	"1528395639_create_a8n_job_indexes.up.sql":                                {_1528395639_create_a8n_job_indexesUpSql, map[string]*bintree{}},
+	"1528395640_drop_repository_name_at_upload.down.sql":                      {_1528395640_drop_repository_name_at_uploadDownSql, map[string]*bintree{}},
+	"1528395640_drop_repository_name_at_upload.up.sql":                        {_1528395640_drop_repository_name_at_uploadUpSql, map[string]*bintree{}},
+	"1528395641_remove_published_at_from_campaign.down.sql":                   {_1528395641_remove_published_at_from_campaignDownSql, map[string]*bintree{}},
+	"1528395641_remove_published_at_from_campaign.up.sql":                     {_1528395641_remove_published_at_from_campaignUpSql, map[string]*bintree{}},
+	"1528395642_add_user_id_to_campaign_plan.down.sql":                        {_1528395642_add_user_id_to_campaign_planDownSql, map[string]*bintree{}},
+	"1528395642_add_user_id_to_campaign_plan.up.sql":                          {_1528395642_add_user_id_to_campaign_planUpSql, map[string]*bintree{}},
+	"1528395643_create_indexes_on_event_logs.down.sql":                        {_1528395643_create_indexes_on_event_logsDownSql, map[string]*bintree{}},
+	"1528395643_create_indexes_on_event_logs.up.sql":                          {_1528395643_create_indexes_on_event_logsUpSql, map[string]*bintree{}},
+	"1528395644_remove_default_from_event_logs_timestamp.down.sql":            {_1528395644_remove_default_from_event_logs_timestampDownSql, map[string]*bintree{}},
+	"1528395644_remove_default_from_event_logs_timestamp.up.sql":              {_1528395644_remove_default_from_event_logs_timestampUpSql, map[string]*bintree{}},
+	"1528395645_event_logs_json_arguments.down.sql":                           {_1528395645_event_logs_json_argumentsDownSql, map[string]*bintree{}},
+	"1528395645_event_logs_json_arguments.up.sql":                             {_1528395645_event_logs_json_argumentsUpSql, map[string]*bintree{}},
+	"1528395646_add_last_verification_sent_at_to_user_emails.down.sql":        {_1528395646_add_last_verification_sent_at_to_user_emailsDownSql, map[string]*bintree{}},
+	"1528395646_add_last_verification_sent_at_to_user_emails.up.sql":          {_1528395646_add_last_verification_sent_at_to_user_emailsUpSql, map[string]*bintree{}},
+	"1528395647_remove_label_events_from_changeset_events.down.sql":           {_1528395647_remove_label_events_from_changeset_eventsDownSql, map[string]*bintree{}},
+	"1528395647_remove_label_events_from_changeset_events.up.sql":             {_1528395647_remove_label_events_from_changeset_eventsUpSql, map[string]*bintree{}},
+	"1528395648_add_external_branch_to_changesets.down.sql":                   {_1528395648_add_external_branch_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395648_add_external_branch_to_changesets.up.sql":                     {_1528395648_add_external_branch_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395649_add_campaign_branch.down.sql":                                 {_1528395649_add_campaign_branchDownSql, map[string]*bintree{}},
+	"1528395649_add_campaign_branch.up.sql":                                   {_1528395649_add_campaign_branchUpSql, map[string]*bintree{}},
+	"1528395650_add_versions_table.down.sql":                                  {_1528395650_add_versions_tableDownSql, map[string]*bintree{}},
+	"1528395650_add_versions_table.up.sql":                                    {_1528395650_add_versions_tableUpSql, map[string]*bintree{}},
+	"1528395651_event_logs_remove_empty_url_check.down.sql":                   {_1528395651_event_logs_remove_empty_url_checkDownSql, map[string]*bintree{}},
+	"1528395651_event_logs_remove_empty_url_check.up.sql":                     {_1528395651_event_logs_remove_empty_url_checkUpSql, map[string]*bintree{}},
+	"1528395652_add_lsif_indexer.down.sql":                                    {_1528395652_add_lsif_indexerDownSql, map[string]*bintree{}},
+	"1528395652_add_lsif_indexer.up.sql":                                      {_1528395652_add_lsif_indexerUpSql, map[string]*bintree{}},
+	"1528395653_repo_normalize_visibility_metadata.down.sql":                  {_1528395653_repo_normalize_visibility_metadataDownSql, map[string]*bintree{}},
+	"1528395653_repo_normalize_visibility_metadata.up.sql":                    {_1528395653_repo_normalize_visibility_metadataUpSql, map[string]*bintree{}},
+	"1528395654_add_external_updated_at_to_changesets.down.sql":               {_1528395654_add_external_updated_at_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395654_add_external_updated_at_to_changesets.up.sql":                 {_1528395654_add_external_updated_at_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395655_repo_drop_enabled.down.sql":                                   {_1528395655_repo_drop_enabledDownSql, map[string]*bintree{}},
+	"1528395655_repo_drop_enabled.up.sql":                                     {_1528395655_repo_drop_enabledUpSql, map[string]*bintree{}},
+	"1528395656_add_not_null_constraint_to_campaign_description.down.sql":     {_1528395656_add_not_null_constraint_to_campaign_descriptionDownSql, map[string]*bintree{}},
+	"1528395656_add_not_null_constraint_to_campaign_description.up.sql":       {_1528395656_add_not_null_constraint_to_campaign_descriptionUpSql, map[string]*bintree{}},
+	"1528395657_add_not_null_constraint_to_campaign_job_description.down.sql": {_1528395657_add_not_null_constraint_to_campaign_job_descriptionDownSql, map[string]*bintree{}},
+	"1528395657_add_not_null_constraint_to_campaign_job_description.up.sql":   {_1528395657_add_not_null_constraint_to_campaign_job_descriptionUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

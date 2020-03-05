@@ -42,7 +42,7 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyVal
             throw new Error(
                 `error thrown while executing extension ${JSON.stringify(
                     extensionID
-                )} bundle (in importScripts of ${bundleURL}): ${err}`
+                )} bundle (in importScripts of ${bundleURL}): ${String(err)}`
             )
         }
         const extensionExports = self.module.exports
@@ -82,8 +82,9 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyVal
                 error = asError(error)
                 throw Object.assign(
                     new Error(
-                        `error during extension ${JSON.stringify(extensionID)} activate function: ${error.stack ||
-                            error}`
+                        `error during extension ${JSON.stringify(extensionID)} activate function: ${String(
+                            error.stack || error
+                        )}`
                     ),
                     { error }
                 )

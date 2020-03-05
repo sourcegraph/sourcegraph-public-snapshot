@@ -36,7 +36,7 @@ Foreign-key constraints:
  created_at       | timestamp with time zone | not null default now()
  updated_at       | timestamp with time zone | not null default now()
  base_ref         | text                     | not null
- description      | text                     | 
+ description      | text                     | not null
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE
@@ -82,7 +82,7 @@ Referenced by:
 -------------------+--------------------------+--------------------------------------------------------
  id                | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
  name              | text                     | not null
- description       | text                     | 
+ description       | text                     | not null
  author_id         | integer                  | not null
  namespace_user_id | integer                  | 
  namespace_org_id  | integer                  | 

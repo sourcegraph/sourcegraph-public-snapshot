@@ -62,7 +62,7 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
         <li className="nav-item e2e-search-result-tab">
             <NavLink
                 to={{ pathname: '/search', search: builtURLQuery }}
-                className={`nav-link e2e-search-result-tab-${type}`}
+                className={`nav-link e2e-search-result-tab-${String(type)}`}
                 activeClassName="active e2e-search-result-tab--active"
                 isActive={isActiveFunc}
             >

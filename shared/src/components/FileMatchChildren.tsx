@@ -106,7 +106,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 <Link
                     to={symbol.url}
                     className="file-match-children__item e2e-file-match-children-item"
-                    key={`symbol:${symbol.name}${symbol.containerName}${symbol.url}`}
+                    key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                     <code>

@@ -12,35 +12,27 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
   >
     <CampaignActionsBar
       mode="editing"
-      name=""
       onClose={[Function]}
       onDelete={[Function]}
       onEdit={[Function]}
-      onNameChange={[Function]}
       previewingCampaignPlan={false}
     />
-    <div
-      className="card"
-    >
+    <React.Fragment>
+      <h3>
+        Campaign details
+      </h3>
+      <CampaignTitleField
+        className="e2e-campaign-title"
+        disabled={false}
+        onChange={[Function]}
+        value=""
+      />
       <CampaignDescriptionField
         disabled={false}
         onChange={[Function]}
         value=""
       />
-    </div>
-    <p
-      className="ml-1"
-    >
-      <small>
-        <a
-          href="/help/user/markdown"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Markdown supported
-        </a>
-      </small>
-    </p>
+    </React.Fragment>
     <React.Fragment>
       <div
         className="mt-3"
@@ -87,39 +79,28 @@ Array [
         >
           /
         </span>
-        <CampaignTitleField
-          className="w-auto d-inline-block e2e-campaign-title"
-          disabled={false}
-          onChange={[Function]}
-          value=""
-        />
+        <span>
+          New manual campaign
+        </span>
       </h2>
       <span
         className="flex-grow-1 d-flex justify-content-end align-items-center"
       />
     </div>
-    <div
-      className="card"
-    >
-      <CampaignDescriptionField
-        disabled={false}
-        onChange={[Function]}
-        value=""
-      />
-    </div>
-    <p
-      className="ml-1"
-    >
-      <small>
-        <a
-          href="/help/user/markdown"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Markdown supported
-        </a>
-      </small>
-    </p>
+    <h3>
+      Campaign details
+    </h3>
+    <CampaignTitleField
+      className="e2e-campaign-title"
+      disabled={false}
+      onChange={[Function]}
+      value=""
+    />
+    <CampaignDescriptionField
+      disabled={false}
+      onChange={[Function]}
+      value=""
+    />
     <div
       className="form-group mt-3"
     >
@@ -173,7 +154,7 @@ Array [
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mt-3"
+    className="mt-3 mb-2"
   >
     Changesets
   </h3>,
@@ -293,12 +274,9 @@ Array [
         >
           /
         </span>
-        <CampaignTitleField
-          className="w-auto d-inline-block e2e-campaign-title"
-          disabled={false}
-          onChange={[Function]}
-          value="n"
-        />
+        <span>
+          n
+        </span>
       </h2>
       <span
         className="flex-grow-1 d-flex justify-content-end align-items-center"
@@ -319,58 +297,34 @@ Array [
         </button>
       </span>
     </div>
-    <div
-      className="card"
-    >
-      <div
-        className="card-header"
-      >
-        <strong>
-           
-          alice
-        </strong>
-         
-        started 
-        <span
-          className="timestamp"
-          data-tooltip="2020-01-01"
-        >
-          in almost 14 years
-        </span>
-      </div>
-      <CampaignDescriptionField
-        disabled={false}
-        onChange={[Function]}
-        value="d"
-      />
-    </div>
-    <p
-      className="ml-1"
-    >
-      <small>
-        <a
-          href="/help/user/markdown"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Markdown supported
-        </a>
-      </small>
-    </p>
+    <h3>
+      Campaign details
+    </h3>
+    <CampaignTitleField
+      className="e2e-campaign-title"
+      disabled={false}
+      onChange={[Function]}
+      value="n"
+    />
+    <CampaignDescriptionField
+      disabled={false}
+      onChange={[Function]}
+      value="d"
+    />
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mt-3"
+    className="mb-2"
   >
     Progress
   </h3>,
-  <div
-    className="alert alert-info"
-  >
-    Burndown chart will be shown when there is more than 1 day of data.
-  </div>,
+  <p>
+    <em>
+      Burndown chart will be shown when there is more than 1 day of data.
+    </em>
+  </p>,
   <h3
-    className="mt-3"
+    className="mt-3 mb-2"
   >
     Changesets
   </h3>,
@@ -10783,7 +10737,7 @@ Array [
       />
     </div>
     <div
-      className="card"
+      className="card mt-3"
     >
       <div
         className="card-header"
@@ -10818,17 +10772,17 @@ Array [
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mt-3"
+    className="mb-2"
   >
     Progress
   </h3>,
-  <div
-    className="alert alert-info"
-  >
-    Burndown chart will be shown when there is more than 1 day of data.
-  </div>,
+  <p>
+    <em>
+      Burndown chart will be shown when there is more than 1 day of data.
+    </em>
+  </p>,
   <h3
-    className="mt-3"
+    className="mt-3 mb-2"
   >
     Changesets
   </h3>,
@@ -21365,7 +21319,7 @@ Array [
       </span>
     </div>
     <div
-      className="card"
+      className="card mt-3"
     >
       <div
         className="card-header"
@@ -21400,17 +21354,17 @@ Array [
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mt-3"
+    className="mb-2"
   >
     Progress
   </h3>,
-  <div
-    className="alert alert-info"
-  >
-    Burndown chart will be shown when there is more than 1 day of data.
-  </div>,
+  <p>
+    <em>
+      Burndown chart will be shown when there is more than 1 day of data.
+    </em>
+  </p>,
   <h3
-    className="mt-3"
+    className="mt-3 mb-2"
   >
     Changesets
   </h3>,

@@ -188,7 +188,7 @@ function gitserverExec(
             // in that case. Status will be undefined in some of our tests and
             // will be the process exit code (given as a string) otherwise.
             if (status !== undefined && status !== '0') {
-                throw new Error(`Failed to run git command ${['git', ...args].join(' ')}: ${stderr}`)
+                throw new Error(`Failed to run git command ${['git', ...args].join(' ')}: ${String(stderr)}`)
             }
 
             return resp.body

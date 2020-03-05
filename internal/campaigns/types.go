@@ -1242,6 +1242,46 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 		if e.CreatedAt.IsZero() {
 			e.CreatedAt = o.CreatedAt
 		}
+	case *bitbucketserver.Activity:
+		o := o.Metadata.(*bitbucketserver.Activity)
+
+		if e.CreatedDate == 0 {
+			e.CreatedDate = o.CreatedDate
+		}
+
+		if e.User == (bitbucketserver.User{}) {
+			e.User = o.User
+		}
+
+		if e.Action == "" {
+			e.Action = o.Action
+		}
+
+		if e.CommentAction == "" {
+			e.CommentAction = o.CommentAction
+		}
+
+		if e.Comment == nil && o.Comment != nil {
+			e.Comment = o.Comment
+		}
+
+		if len(e.AddedReviewers) == 0 {
+			e.AddedReviewers = o.AddedReviewers
+		}
+
+		if len(e.RemovedReviewers) == 0 {
+			e.RemovedReviewers = o.RemovedReviewers
+		}
+
+		if e.Commit == nil && o.Commit != nil {
+			e.Commit = o.Commit
+		}
+
+	case *github.CheckRun:
+		// TODO: https://github.com/sourcegraph/sourcegraph/issues/8796
+	case *github.CheckSuite:
+		// TODO: https://github.com/sourcegraph/sourcegraph/issues/8796
+
 	default:
 		panic(errors.Errorf("unknown changeset event metadata %T", e))
 	}

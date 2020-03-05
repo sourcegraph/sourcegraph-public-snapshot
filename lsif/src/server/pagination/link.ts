@@ -10,7 +10,9 @@ export function nextLink(
     req: express.Request,
     params: { [name: string]: string | number | boolean | undefined }
 ): string {
-    const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
+    // Requests always have a host header
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const url = new URL(`${req.protocol}://${req.get('host')!}${req.originalUrl}`)
     for (const [key, value] of Object.entries(params)) {
         if (value !== undefined) {
             url.searchParams.set(key, String(value))

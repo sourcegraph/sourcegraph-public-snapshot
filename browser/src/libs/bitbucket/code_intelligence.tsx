@@ -222,6 +222,7 @@ export const bitbucketServerCodeHost: CodeHost = {
         listItemClassName: 'result',
         selectedListItemClassName: 'focused',
         noResultsClassName: 'no-results',
+        iconClassName,
     },
     codeViewToolbarClassProps: {
         className: 'aui-buttons',

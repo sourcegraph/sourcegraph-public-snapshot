@@ -173,7 +173,7 @@ function refsToFileMatch(uri: string, refs: Badged<Location>[]): IFileMatch {
             path: p.filePath || '',
             url: toPrettyBlobURL({ repoName: p.repoName, filePath: p.filePath!, rev: p.commitID || '' }),
             commit: {
-                oid: p.commitID || p.rev,
+                oid: (p.commitID || p.rev)!,
             },
         },
         repository: {

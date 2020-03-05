@@ -18,6 +18,7 @@ import { Config, getConfig } from '../../../shared/src/e2e/config'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { asError } from '../../../shared/src/util/errors'
 
 describe('Code intelligence regression test suite', () => {
     const testUsername = 'test-sg-codeintel'
@@ -724,7 +725,7 @@ async function performUpload(
         const tarCommand = ['tar', '-xzf', `${path.basename(filename)}.gz`].join(' ')
         await child_process.exec(tarCommand, { cwd })
     } catch (error) {
-        throw new Error(`Failed to untar test data: ${error}`)
+        throw new Error(`Failed to untar test data: ${asError(error).message}`)
     }
 
     let out!: string
@@ -747,7 +748,9 @@ async function performUpload(
             throw new Error('src-cli is not available on PATH')
         }
 
-        throw new Error(`Failed to upload LSIF data: ${error.stderr || error.stdout || '(no output)'}`)
+        throw new Error(
+            `Failed to upload LSIF data: ${(error.stderr as string) || (error.stdout as string) || '(no output)'}`
+        )
     }
 
     // Extract the status URL
