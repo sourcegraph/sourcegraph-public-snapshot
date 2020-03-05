@@ -77,6 +77,7 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int) 
 		"search.latencies.repo":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Repo },
 		"search.latencies.diff":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Diff },
 		"search.latencies.commit":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Commit },
+		"search.latencies.symbol":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Symbol },
 	}
 
 	for eventName, getEventStatistics := range latenciesByName {
@@ -105,5 +106,6 @@ func newSearchEventPeriod() *types.SearchUsagePeriod {
 		Repo:       &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
 		Diff:       &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
 		Commit:     &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Symbol:     &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
 	}
 }
