@@ -130,6 +130,7 @@ func (d httpDir) Open(name string) (http.File, error) {
 // relative to root.
 func configureRepos(logger *log.Logger, root string) []string {
 	var gitDirs []string
+
 	err := filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			logger.Printf("error encountered on %s: %v", path, fileErr)
@@ -138,11 +139,16 @@ func configureRepos(logger *log.Logger, root string) []string {
 		if !fi.IsDir() {
 			return nil
 		}
-		// stat now to avoid recursing into the rest of path
+
+		// Check whether a particular directory is a repository or not.
+		//
+		// A directory which also is a repository (have .git folder inside it)
+		// will contain nil error. If it does, proceed to configure.
 		gitdir := filepath.Join(path, ".git")
 		if _, err := os.Stat(gitdir); os.IsNotExist(err) {
 			return nil
 		}
+
 		if err := configureOneRepo(logger, gitdir); err != nil {
 			logger.Printf("configuring repo at %s: %v", gitdir, err)
 			return nil
@@ -155,12 +161,28 @@ func configureRepos(logger *log.Logger, root string) []string {
 			logger.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
 		}
 		gitDirs = append(gitDirs, subpath)
-		return filepath.SkipDir
+
+		// Check whether a repository is a bare repository or not.
+		//
+		// If it yields false, which means it is a non-bare repository,
+		// skip the directory so that it will not recurse to the subdirectories.
+		// If it is a bare repository, proceed to recurse.
+		c := exec.Command("git", "rev-parse", "--is-bare-repository")
+		c.Dir = gitdir
+		out, _ := c.CombinedOutput()
+
+		if string(out) == "false\n" {
+			return filepath.SkipDir
+		}
+
+		return nil
 	})
+
 	if err != nil {
 		// Our WalkFunc doesn't return any errors, so neither should filepath.Walk
 		panic(err)
 	}
+
 	return gitDirs
 }
 
