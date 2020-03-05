@@ -639,7 +639,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	pr, ev := h.convertEvent(e)
 	if pr == 0 || ev == nil {
-		log15.Debug("Dropping Bitbucket Server webhook event: %T", e)
+		log15.Debug("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", e))
 		respond(w, http.StatusOK, nil) // Nothing to do
 		return
 	}
