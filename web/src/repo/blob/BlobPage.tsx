@@ -37,7 +37,7 @@ import { RenderedFile } from './RenderedFile'
 import { ThemeProps } from '../../../../shared/src/theme'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
-    return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
+    return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
 }
 
 const fetchBlob = memoizeObservable(
@@ -344,7 +344,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
         const repoNameSplit = this.props.repoName.split('/')
         const repoStr = repoNameSplit.length > 2 ? repoNameSplit.slice(1).join('/') : this.props.repoName
         if (this.props.filePath) {
-            const fileOrDir = this.props.filePath.split('/').pop()
+            const fileOrDir = this.props.filePath.split('/').pop()!
             return `${fileOrDir} - ${repoStr}`
         }
         return `${repoStr}`

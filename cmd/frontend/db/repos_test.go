@@ -90,7 +90,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -131,7 +131,7 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -150,7 +150,7 @@ func TestRepos_Upsert(t *testing.T) {
 		ServiceID:   "ext:test",
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -170,7 +170,7 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 
 	// Rename. Detected by external repo
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 

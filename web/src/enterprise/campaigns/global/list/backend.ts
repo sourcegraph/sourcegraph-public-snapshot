@@ -16,6 +16,7 @@ export const queryCampaigns = ({ first, state }: GQL.ICampaignsOnQueryArguments)
                         url
                         createdAt
                         closedAt
+                        publishedAt
                         changesets {
                             totalCount
                             nodes {

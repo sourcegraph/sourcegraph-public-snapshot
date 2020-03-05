@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/gitchander/permutation"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"golang.org/x/sync/errgroup"
@@ -73,8 +74,8 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 				Provider: authz.ProviderSourcegraph,
 			}
 			err := s.LoadUserPermissions(context.Background(), up)
-			if err != ErrPermsNotFound {
-				t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+			if err != authz.ErrPermsNotFound {
+				t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 			}
 			equal(t, "IDs", 0, len(bitmapToArray(up.IDs)))
 		})
@@ -190,8 +191,8 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 				Provider: authz.ProviderSourcegraph,
 			}
 			err := s.LoadRepoPermissions(context.Background(), rp)
-			if err != ErrPermsNotFound {
-				t.Fatalf("err: want %q but got %q", ErrPermsNotFound, err)
+			if err != authz.ErrPermsNotFound {
+				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
 			}
 			equal(t, "rp.UserIDs", 0, len(bitmapToArray(rp.UserIDs)))
 		})
@@ -264,6 +265,164 @@ func checkRegularPermsTable(s *PermsStore, sql string, expects map[int32][]uint3
 	}
 
 	return nil
+}
+
+func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
+	tests := []struct {
+		name            string
+		updates         []*authz.UserPermissions
+		expectUserPerms map[int32][]uint32 // user_id -> object_ids
+		expectRepoPerms map[int32][]uint32 // repo_id -> user_ids
+	}{
+		{
+			name: "empty",
+			updates: []*authz.UserPermissions{
+				{
+					UserID:   1,
+					Perm:     authz.Read,
+					Provider: authz.ProviderSourcegraph,
+				},
+			},
+		},
+		{
+			name: "add",
+			updates: []*authz.UserPermissions{
+				{
+					UserID:   1,
+					Perm:     authz.Read,
+					IDs:      toBitmap(1),
+					Provider: authz.ProviderSourcegraph,
+				},
+				{
+					UserID:   2,
+					Perm:     authz.Read,
+					IDs:      toBitmap(1, 2),
+					Provider: authz.ProviderSourcegraph,
+				},
+				{
+					UserID:   3,
+					Perm:     authz.Read,
+					IDs:      toBitmap(3, 4),
+					Provider: authz.ProviderSourcegraph,
+				},
+			},
+			expectUserPerms: map[int32][]uint32{
+				1: {1},
+				2: {1, 2},
+				3: {3, 4},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {1, 2},
+				2: {2},
+				3: {3},
+				4: {3},
+			},
+		},
+		{
+			name: "add and update",
+			updates: []*authz.UserPermissions{
+				{
+					UserID:   1,
+					Perm:     authz.Read,
+					IDs:      toBitmap(1),
+					Provider: authz.ProviderSourcegraph,
+				},
+				{
+					UserID:   1,
+					Perm:     authz.Read,
+					IDs:      toBitmap(2, 3),
+					Provider: authz.ProviderSourcegraph,
+				},
+				{
+					UserID:   2,
+					Perm:     authz.Read,
+					IDs:      toBitmap(1, 2),
+					Provider: authz.ProviderSourcegraph,
+				},
+				{
+					UserID:   2,
+					Perm:     authz.Read,
+					IDs:      toBitmap(1, 3),
+					Provider: authz.ProviderSourcegraph,
+				},
+			},
+			expectUserPerms: map[int32][]uint32{
+				1: {2, 3},
+				2: {1, 3},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {2},
+				2: {1},
+				3: {1, 2},
+			},
+		},
+		{
+			name: "add and clear",
+			updates: []*authz.UserPermissions{
+				{
+					UserID:   1,
+					Perm:     authz.Read,
+					IDs:      toBitmap(1, 2, 3),
+					Provider: authz.ProviderSourcegraph,
+				},
+				{
+					UserID:   1,
+					Perm:     authz.Read,
+					IDs:      toBitmap(),
+					Provider: authz.ProviderSourcegraph,
+				},
+			},
+			expectUserPerms: map[int32][]uint32{
+				1: {},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {},
+				2: {},
+				3: {},
+			},
+		},
+	}
+
+	return func(t *testing.T) {
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				s := NewPermsStore(db, clock)
+				defer cleanupPermsTables(t, s)
+
+				for _, p := range test.updates {
+					const numOps = 30
+					g, ctx := errgroup.WithContext(context.Background())
+					for i := 0; i < numOps; i++ {
+						g.Go(func() error {
+							tmp := &authz.UserPermissions{
+								UserID:    p.UserID,
+								Perm:      p.Perm,
+								Provider:  p.Provider,
+								UpdatedAt: p.UpdatedAt,
+							}
+							if p.IDs != nil {
+								tmp.IDs = p.IDs.Clone()
+							}
+							return s.SetUserPermissions(ctx, tmp)
+						})
+					}
+					if err := g.Wait(); err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				err := checkRegularPermsTable(s, `SELECT user_id, object_ids FROM user_permissions`, test.expectUserPerms)
+				if err != nil {
+					t.Fatal("user_permissions:", err)
+				}
+
+				err = checkRegularPermsTable(s, `SELECT repo_id, user_ids FROM repo_permissions`, test.expectRepoPerms)
+				if err != nil {
+					t.Fatal("repo_permissions:", err)
+				}
+			})
+		}
+	}
 }
 
 func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
@@ -446,8 +605,8 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 				Type:   authz.PermRepos,
 			}
 			err := s.LoadUserPendingPermissions(context.Background(), up)
-			if err != ErrPermsNotFound {
-				t.Fatalf("err: want %q but got %q", ErrPermsNotFound, err)
+			if err != authz.ErrPermsNotFound {
+				t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
 			}
 			equal(t, "IDs", 0, len(bitmapToArray(up.IDs)))
 		})
@@ -1214,8 +1373,8 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(t *testing.T) {
 			Type:     authz.PermRepos,
 			Provider: authz.ProviderSourcegraph,
 		})
-		if err != ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+		if err != authz.ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 		}
 
 		err = s.LoadUserPermissions(ctx, &authz.UserPermissions{
@@ -1224,8 +1383,8 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(t *testing.T) {
 			Type:     authz.PermRepos,
 			Provider: authz.ProviderBitbucketServer,
 		})
-		if err != ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+		if err != authz.ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 		}
 
 		// Check user=2 shoud not be affected
@@ -1281,8 +1440,8 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(t *testing.
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
 		})
-		if err != ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %v", ErrPermsNotFound, err)
+		if err != authz.ErrPermsNotFound {
+			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 		}
 
 		// Check bob shoud not be affected
@@ -1306,6 +1465,16 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 
 		ctx := context.Background()
 
+		setUserPermissions := func(ctx context.Context, t *testing.T) {
+			if err := s.SetUserPermissions(ctx, &authz.UserPermissions{
+				UserID:   1,
+				Perm:     authz.Read,
+				IDs:      toBitmap(1),
+				Provider: authz.ProviderSourcegraph,
+			}); err != nil {
+				t.Fatal(err)
+			}
+		}
 		setRepoPermissions := func(ctx context.Context, t *testing.T) {
 			if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 				RepoID:   1,
@@ -1335,17 +1504,13 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 			}
 		}
 
-		// Ensure we've run all permutations of ordering of the 3 calls to avoid nondeterminism in
+		// Ensure we've run all permutations of ordering of the 4 calls to avoid nondeterminism in
 		// test coverage stats.
-		funcPerms := [][3]func(context.Context, *testing.T){
-			{setRepoPendingPermissions, grantPendingPermissions, setRepoPermissions},
-			{setRepoPendingPermissions, setRepoPermissions, grantPendingPermissions},
-			{setRepoPermissions, setRepoPendingPermissions, grantPendingPermissions},
-			{setRepoPermissions, grantPendingPermissions, setRepoPendingPermissions},
-			{grantPendingPermissions, setRepoPendingPermissions, setRepoPermissions},
-			{grantPendingPermissions, setRepoPermissions, setRepoPendingPermissions},
+		funcs := []func(context.Context, *testing.T){
+			setRepoPendingPermissions, grantPendingPermissions, setRepoPermissions, setUserPermissions,
 		}
-		for _, funcs := range funcPerms {
+		permutated := permutation.New(permutation.MustAnySlice(funcs))
+		for permutated.Next() {
 			for _, f := range funcs {
 				f(ctx, t)
 			}
@@ -1353,7 +1518,13 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 
 		const numOps = 50
 		var wg sync.WaitGroup
-		wg.Add(3)
+		wg.Add(4)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < numOps; i++ {
+				setUserPermissions(ctx, t)
+			}
+		}()
 		go func() {
 			defer wg.Done()
 			for i := 0; i < numOps; i++ {

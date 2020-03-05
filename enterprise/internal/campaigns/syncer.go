@@ -2,6 +2,8 @@ package campaigns
 
 import (
 	"context"
+	"sort"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -17,39 +19,129 @@ type ChangesetSyncer struct {
 	Store       *Store
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
+	// ComputeScheduleInterval determines how often a new schedule will be computed.
+	// Note that it involves a DB query but no communication with codehosts
+	ComputeScheduleInterval time.Duration
+
+	queue *changesetQueue
 }
 
-// Sync refreshes the metadata of all changesets and updates them in the
-// database
-func (s *ChangesetSyncer) Sync(ctx context.Context) error {
-	cs, err := s.listAllNonDeletedChangesets(ctx)
-	if err != nil {
-		log15.Error("ChangesetSyncer.listAllNonDeletedChangesets", "error", err)
-		return err
+// Run will start the process of changeset syncing. It is long running
+// and is expected to be launched once at startup.
+func (s *ChangesetSyncer) Run() {
+	// TODO: Setup instrumentation here
+	ctx := context.Background()
+	scheduleInterval := s.ComputeScheduleInterval
+	if scheduleInterval == 0 {
+		scheduleInterval = 2 * time.Minute
 	}
 
-	if err := s.SyncChangesets(ctx, cs...); err != nil {
-		log15.Error("ChangesetSyncer", "error", err)
-		return err
+	s.queue = newChangesetQueue(100)
+
+	// Get initial schedule
+	if sched, err := s.computeSchedule(ctx); err != nil {
+		// Non fatal as we'll try again later in the main loop
+		log15.Error("Computing queue", "err", err)
+	} else {
+		s.queue.reschedule(sched)
 	}
-	return nil
+
+	// How often to refresh the schedule
+	scheduleTicker := time.NewTicker(scheduleInterval)
+
+	for {
+		select {
+		case <-scheduleTicker.C:
+			sched, err := s.computeSchedule(ctx)
+			if err != nil {
+				log15.Error("Computing queue", "err", err)
+				continue
+			}
+			s.queue.reschedule(sched)
+		case id := <-s.queue.scheduled:
+			err := s.SyncChangesetByID(ctx, id)
+			if err != nil {
+				log15.Error("Syncing changeset", "err", err)
+			}
+		case id := <-s.queue.priority:
+			err := s.SyncChangesetByID(ctx, id)
+			if err != nil {
+				log15.Error("Syncing changeset", "err", err)
+			}
+		}
+	}
+}
+
+var (
+	minSyncDelay = 2 * time.Minute
+	maxSyncDelay = 8 * time.Hour
+)
+
+// nextSync computes the time we want the next sync to happen.
+func nextSync(h campaigns.ChangesetSyncHeuristics) time.Time {
+	lastSync := h.UpdatedAt
+	lastChange := maxTime(h.ExternalUpdatedAt, h.LatestEvent)
+
+	// Simple linear backoff for now
+	diff := lastSync.Sub(lastChange)
+	if diff > maxSyncDelay {
+		diff = maxSyncDelay
+	}
+	if diff < minSyncDelay {
+		diff = minSyncDelay
+	}
+	return lastSync.Add(diff)
+}
+
+func maxTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
+}
+
+func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, error) {
+	hs, err := s.Store.ListChangesetSyncHeuristics(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "listing changeset heuristics")
+	}
+
+	ss := make([]syncSchedule, len(hs))
+	for i := range hs {
+		nextSync := nextSync(hs[i])
+
+		ss[i] = syncSchedule{
+			changesetID: hs[i].ChangesetID,
+			nextSync:    nextSync,
+		}
+	}
+
+	// This will happen in the db later, for now we'll grab everything and order in code
+	sort.Slice(ss, func(i, j int) bool {
+		return ss[i].nextSync.Before(ss[j].nextSync)
+	})
+
+	return ss, nil
 }
 
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
 // An error indicates that no changesets have been synced
 func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
-	// TODO(ryanslade): For now, we're not actually enqueueing but doing a blocking sync
-	// Change this once we have a proper scheduler in place and we've decided how to deal with
-	// it in places where we currently expect blocking
-	cs, _, err := s.Store.ListChangesets(ctx, ListChangesetsOpts{
-		Limit:          -1,
-		IDs:            ids,
-		WithoutDeleted: true,
+	if s.queue == nil {
+		return errors.New("background syncing not initialised")
+	}
+	return s.queue.enqueuePriority(ids)
+}
+
+// SyncChangesetByID will sync a single changeset given its id
+func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
+	cs, err := s.Store.GetChangeset(ctx, GetChangesetOpts{
+		ID: id,
 	})
 	if err != nil {
 		return err
 	}
-	return s.SyncChangesets(ctx, cs...)
+	return s.SyncChangesets(ctx, cs)
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
@@ -213,6 +305,80 @@ func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all 
 	}
 
 	return all, err
+}
+
+type changesetQueue struct {
+	scheduled chan int64
+	priority  chan int64
+
+	cancel context.CancelFunc
+}
+
+// newChangesetQueue creates a new queue for holding changeset sync instructions in chronological order.
+// The queue also has a high priority channel for items that should be synced ASAP.
+// priorityCapacity specifies the number of items that can be in the priority channel
+// before newly added items will be dropped. The intention is that priority items will
+// be added by a user action so does not need to be particularly large.
+func newChangesetQueue(priorityCapacity int) *changesetQueue {
+	return &changesetQueue{
+		scheduled: make(chan int64),
+		priority:  make(chan int64, priorityCapacity),
+	}
+}
+
+// reschedule replaces the current schedule with a new one and will cancel
+// the old worker routine if it exists.
+func (q *changesetQueue) reschedule(schedule []syncSchedule) {
+	// cancel existing goroutine if running
+	if q.cancel != nil {
+		// cancel closes the done chan on the existing context
+		// which will cause the existing worker routine to exit
+		q.cancel()
+	}
+
+	ctx := context.Background()
+	ctx, q.cancel = context.WithCancel(ctx)
+	go func() {
+		for i := range schedule {
+			// Get most urgent changeset and sleep until it should be synced
+			now := time.Now()
+			nextSync := schedule[i].nextSync
+			d := nextSync.Sub(now)
+			timer := time.NewTimer(d)
+			select {
+			case <-ctx.Done():
+				timer.Stop()
+				return
+			case <-timer.C:
+				// Timer ready, try and send sync instruction
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			case q.scheduled <- schedule[i].changesetID:
+			}
+		}
+	}()
+}
+
+func (q *changesetQueue) enqueuePriority(ids []int64) error {
+	// q.priority will be buffered so that we allow
+	// a fixed depth in the high priority queue and
+	// can perform a non blocking add here
+	for _, id := range ids {
+		select {
+		case q.priority <- id:
+		default:
+			return errors.New("queue capacity for priority syncing reached")
+		}
+	}
+	return nil
+}
+
+type syncSchedule struct {
+	changesetID int64
+	nextSync    time.Time
 }
 
 // A SourceChangesets groups *repos.Changesets together with the

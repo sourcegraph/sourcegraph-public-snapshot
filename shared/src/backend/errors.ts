@@ -36,7 +36,7 @@ export class RevNotFoundError extends Error {
     public readonly name = EREVNOTFOUND
     public readonly code = EREVNOTFOUND
     constructor(rev?: string) {
-        super(`rev ${rev} not found`)
+        super(`rev ${String(rev)} not found`)
     }
 }
 

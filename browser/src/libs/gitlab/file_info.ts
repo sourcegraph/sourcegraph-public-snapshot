@@ -22,7 +22,7 @@ export const resolveFileInfo = (): Observable<FileInfo> => {
     if (!filePath) {
         return throwError(
             new Error(
-                `Unable to determine the file path of the current file because the current URL (window.location ${window.location}) does not have a file path.`
+                `Unable to determine the file path of the current file because the current URL (window.location ${window.location.href}) does not have a file path.`
             )
         )
     }

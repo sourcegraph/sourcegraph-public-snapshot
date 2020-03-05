@@ -114,8 +114,8 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
         return searchType ? `${query} type:${searchType}` : query
     }
 
-    if (match[0] === `type:${searchType}`) {
-        /** Query already contains correct search type */
+    if (searchType !== null && match[0] === `type:${searchType}`) {
+        // Query already contains correct search type
         return query
     }
 

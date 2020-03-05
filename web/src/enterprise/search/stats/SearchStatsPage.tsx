@@ -34,6 +34,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
         e => {
             e.preventDefault()
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string
             history.push({ ...location, search: new URLSearchParams({ q: uncommittedQuery }).toString() })
         },
         [history, location, uncommittedQuery]

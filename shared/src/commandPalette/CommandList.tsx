@@ -48,6 +48,7 @@ export interface CommandListClassProps {
     resultsContainerClassName?: string
     actionItemClassName?: string
     noResultsClassName?: string
+    iconClassName?: string
 }
 
 export interface CommandListProps
@@ -202,8 +203,9 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                                         ref={i === selectedIndex ? this.setSelectedItem : undefined}
                                         title={
                                             <HighlightedMatches
-                                                text={`${item.action.category ? `${item.action.category}: ` : ''}${item
-                                                    .action.title || item.action.command}`}
+                                                text={[item.action.category, item.action.title || item.action.command]
+                                                    .filter(Boolean)
+                                                    .join(': ')}
                                                 pattern={query}
                                             />
                                         }
@@ -295,7 +297,8 @@ export function filterAndRankItems(
             let label = labels[i]
             if (label === undefined) {
                 label = `${item.action.category ? `${item.action.category}: ` : ''}${item.action.title ||
-                    item.action.command}`
+                    item.action.command ||
+                    ''}`
                 labels[i] = label
             }
             if (scores[i] === undefined) {

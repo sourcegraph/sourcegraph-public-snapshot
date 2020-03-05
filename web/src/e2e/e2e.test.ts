@@ -133,11 +133,11 @@ describe('e2e test suite', () => {
             ).jsonValue()
 
             const resp = await got.post('/.api/graphql', {
-                baseUrl: sourcegraphBaseUrl,
+                prefixUrl: sourcegraphBaseUrl,
                 headers: {
                     Authorization: 'token ' + token,
                 },
-                body: {
+                body: JSON.stringify({
                     query: gql`
                         query {
                             currentUser {
@@ -146,11 +146,10 @@ describe('e2e test suite', () => {
                         }
                     `,
                     variables: {},
-                },
-                json: true,
+                }),
             })
 
-            const username = resp.body.data.currentUser.username
+            const username = JSON.parse(resp.body).data.currentUser.username
             expect(username).toBe('test')
 
             await Promise.all([
@@ -164,7 +163,7 @@ describe('e2e test suite', () => {
             ])
 
             await driver.page.waitFor(
-                name => !document.querySelector(`[data-e2e-access-token-description="${name}"]`),
+                (name: string) => !document.querySelector(`[data-e2e-access-token-description="${name}"]`),
                 {},
                 name
             )

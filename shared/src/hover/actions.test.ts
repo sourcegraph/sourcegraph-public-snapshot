@@ -234,13 +234,13 @@ describe('getDefinitionURL', () => {
             const requestGraphQL = <R extends IQuery | IMutation>({
                 variables,
             }: {
-                [key: string]: any
+                variables: any
             }): Observable<SuccessGraphQLResult<R>> =>
                 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                 of({
                     data: {
                         repository: {
-                            uri: `github.com/${variables.repoName}`,
+                            uri: `github.com/${variables.repoName as string}`,
                             mirrorInfo: {
                                 cloned: true,
                             },

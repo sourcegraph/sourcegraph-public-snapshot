@@ -1,9 +1,7 @@
 import express from 'express'
 import promClient from 'prom-client'
 
-/**
- * Create a router containing health endpoint.
- */
+/** Create a router containing health endpoint. */
 export function createMetaRouter(): express.Router {
     const router = express.Router()
     router.get('/ping', (_, res) => res.send('ok'))

@@ -1,13 +1,15 @@
 import * as H from 'history'
 import * as React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
-import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
-import { FileDiffNode } from '../../../components/diff/FileDiffNode'
-import { ThemeProps } from '../../../../../shared/src/theme'
+import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
+import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
+import { ThemeProps } from '../../../../../../shared/src/theme'
 
 export interface FileDiffTabNodeProps extends ThemeProps {
-    node: GQL.IChangesetPlan | GQL.IExternalChangeset
+    node: Pick<GQL.IChangesetPlan | GQL.IExternalChangeset, 'diff'> & {
+        repository: Pick<GQL.IChangesetPlan['repository'] | GQL.IExternalChangeset['repository'], 'name' | 'url'>
+    }
     persistLines?: boolean
     history: H.History
     location: H.Location

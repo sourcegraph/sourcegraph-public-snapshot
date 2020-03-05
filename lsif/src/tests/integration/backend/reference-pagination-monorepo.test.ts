@@ -1,7 +1,6 @@
 import * as util from '../integration-test-util'
 import { lsp } from 'lsif-protocol'
 import { MAX_TRAVERSAL_LIMIT } from '../../../shared/constants'
-import { ReferencePaginationContext } from '../../../server/backend/backend'
 import { extractRepos } from './util'
 
 describe('Backend', () => {
@@ -141,18 +140,18 @@ describe('Backend', () => {
         ]
 
         for (const { commit, defCommit, refs } of testCases) {
-            const fetch = async () =>
-                util.filterNodeModules(
-                    util.mapLocations(
-                        (await backend.references(repositoryId, commit, 'a/src/index.ts', {
-                            line: 0,
-                            character: 17,
-                        })) || { locations: [] }
+            const { locations } = util.filterNodeModules(
+                util.mapLocations(
+                    await util.queryAllReferences(
+                        backend,
+                        repositoryId,
+                        commit,
+                        'a/src/index.ts',
+                        { line: 0, character: 17 },
+                        50
                     )
                 )
-
-            const { locations, cursor } = await fetch()
-            expect(cursor).toBeUndefined()
+            )
 
             expect(locations).toContainEqual(
                 util.createLocation(repositoryId, defCommit, 'a/src/index.ts', 0, 16, 0, 19)
@@ -191,46 +190,50 @@ describe('Backend', () => {
             )
         )
 
-        const fetch = async (paginationContext?: ReferencePaginationContext) =>
+        const fetch = async (
+            limit: number
+        ): Promise<{ locations: lsp.Location[]; pageSizes: number[]; numPages: number }> =>
             util.filterNodeModules(
                 util.mapLocations(
-                    (await backend.references(
+                    await util.queryAllReferences(
+                        backend,
                         repositoryId,
                         c3,
                         'a/src/index.ts',
-                        {
-                            line: 0,
-                            character: 17,
-                        },
-                        paginationContext
-                    )) || { locations: [] }
+                        { line: 0, character: 17 },
+                        limit
+                    )
                 )
             )
 
-        const { locations: locations0, cursor: cursor0 } = await fetch({ limit: 50 }) // all local
-        const { locations: locations1, cursor: cursor1 } = await fetch({ limit: 50, cursor: cursor0 }) // all remote
+        const ensureSizes = (sizes: number[], expectedSize: number): void => {
+            const copy = Array.from(sizes)
+            expect(copy.pop()).toBeLessThanOrEqual(expectedSize)
+            expect(copy.every(v => v === expectedSize)).toBeTruthy()
+        }
 
-        const { locations: locations2, cursor: cursor2 } = await fetch({ limit: 2 }) // b, c
-        const { locations: locations3, cursor: cursor3 } = await fetch({ limit: 2, cursor: cursor2 }) // e
-        const { locations: locations4, cursor: cursor4 } = await fetch({ limit: 2, cursor: cursor3 }) // ext1, ext2
-        const { locations: locations5, cursor: cursor5 } = await fetch({ limit: 2, cursor: cursor4 }) // ext3, ext4
-        const { locations: locations6, cursor: cursor6 } = await fetch({ limit: 2, cursor: cursor5 }) // ext5
+        const { locations: locations1, pageSizes: pageSizes1, numPages: numPages1 } = await fetch(1)
+        const { locations: locations2, pageSizes: pageSizes2, numPages: numPages2 } = await fetch(5)
+        const { locations: locations3, pageSizes: pageSizes3, numPages: numPages3 } = await fetch(100)
 
-        // Ensure paging through sets of results gets us everything
-        expect(locations0).toEqual(locations2.concat(...locations3))
-        expect(locations1).toEqual(locations4.concat(...locations5, ...locations6))
+        // Ensure we have the correct data (order is asserted here)
+        expect(extractRepos(locations1)).toEqual([repositoryId, ids.ext1, ids.ext2, ids.ext3, ids.ext4, ids.ext5])
 
-        // Ensure cursor is not provided at the end of a set of results
-        expect(cursor1).toBeUndefined()
-        expect(cursor6).toBeUndefined()
+        // Ensure we have the same data
+        expect(locations1).toEqual(locations2)
+        expect(locations1).toEqual(locations3)
 
-        // Ensure paging gets us expected results per page
-        expect(extractRepos(locations0)).toEqual([repositoryId])
-        expect(extractRepos(locations1)).toEqual([ids.ext1, ids.ext2, ids.ext3, ids.ext4, ids.ext5])
-        expect(extractRepos(locations2)).toEqual([repositoryId])
-        expect(extractRepos(locations3)).toEqual([repositoryId])
-        expect(extractRepos(locations4)).toEqual([ids.ext1, ids.ext2])
-        expect(extractRepos(locations5)).toEqual([ids.ext3, ids.ext4])
-        expect(extractRepos(locations6)).toEqual([ids.ext5])
+        // Number of results are the same (no additional duplicates)
+        expect(pageSizes1.reduce((a, b) => a + b, 0)).toEqual(pageSizes2.reduce((a, b) => a + b, 0))
+        expect(pageSizes1.reduce((a, b) => a + b, 0)).toEqual(pageSizes3.reduce((a, b) => a + b, 0))
+
+        // Ensure pages are full
+        ensureSizes(pageSizes1, 1)
+        ensureSizes(pageSizes2, 5)
+        ensureSizes(pageSizes3, 100)
+
+        // Ensure num pages decrease with page size
+        expect(numPages1).toBeGreaterThan(numPages2)
+        expect(numPages2).toBeGreaterThan(numPages3)
     })
 })

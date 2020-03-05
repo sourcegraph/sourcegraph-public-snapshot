@@ -36,7 +36,7 @@ func repoNames(repos []*types.Repo) []api.RepoName {
 }
 
 func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
-	op := api.InsertRepoOp{Name: repo.Name, Enabled: true}
+	op := InsertRepoOp{Name: repo.Name}
 
 	if repo.RepoFields != nil {
 		op.Description = repo.Description
@@ -69,6 +69,15 @@ func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 	return err
 }
 
+// InsertRepoOp represents an operation to insert a repository.
+type InsertRepoOp struct {
+	Name         api.RepoName
+	Description  string
+	Fork         bool
+	Archived     bool
+	ExternalRepo api.ExternalRepoSpec
+}
+
 const upsertSQL = `
 WITH upsert AS (
   UPDATE repo
@@ -76,21 +85,20 @@ WITH upsert AS (
     name                  = $1,
     description           = $2,
     fork                  = $3,
-    enabled               = $4,
-    external_id           = NULLIF(BTRIM($5), ''),
-    external_service_type = NULLIF(BTRIM($6), ''),
-    external_service_id   = NULLIF(BTRIM($7), ''),
-    archived              = $9
+    external_id           = NULLIF(BTRIM($4), ''),
+    external_service_type = NULLIF(BTRIM($5), ''),
+    external_service_id   = NULLIF(BTRIM($6), ''),
+    archived              = $8
   WHERE name = $1 OR (
     external_id IS NOT NULL
     AND external_service_type IS NOT NULL
     AND external_service_id IS NOT NULL
+    AND NULLIF(BTRIM($4), '') IS NOT NULL
     AND NULLIF(BTRIM($5), '') IS NOT NULL
     AND NULLIF(BTRIM($6), '') IS NOT NULL
-    AND NULLIF(BTRIM($7), '') IS NOT NULL
-    AND external_id = NULLIF(BTRIM($5), '')
-    AND external_service_type = NULLIF(BTRIM($6), '')
-    AND external_service_id = NULLIF(BTRIM($7), '')
+    AND external_id = NULLIF(BTRIM($4), '')
+    AND external_service_type = NULLIF(BTRIM($5), '')
+    AND external_service_id = NULLIF(BTRIM($6), '')
   )
   RETURNING repo.name
 )
@@ -100,7 +108,6 @@ INSERT INTO repo (
   description,
   fork,
   language,
-  enabled,
   external_id,
   external_service_type,
   external_service_id,
@@ -110,26 +117,22 @@ INSERT INTO repo (
     $1 AS name,
     $2 AS description,
     $3 AS fork,
-    $8 AS language,
-    $4 AS enabled,
-    NULLIF(BTRIM($5), '') AS external_id,
-    NULLIF(BTRIM($6), '') AS external_service_type,
-    NULLIF(BTRIM($7), '') AS external_service_id,
-    $9 AS archived
+    $7 AS language,
+    NULLIF(BTRIM($4), '') AS external_id,
+    NULLIF(BTRIM($5), '') AS external_service_type,
+    NULLIF(BTRIM($6), '') AS external_service_id,
+    $8 AS archived
   WHERE NOT EXISTS (SELECT 1 FROM upsert)
 )`
 
 // Upsert updates the repository if it already exists (keyed on name) and
 // inserts it if it does not.
 //
-// If repo exists, op.Enabled is ignored.
-//
 // Upsert exists for testing purposes only. Repository mutations are managed
 // by repo-updater.
-func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
+func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
 	insert := false
 	language := ""
-	enabled := op.Enabled
 
 	// We optimistically assume the repo is already in the table, so first
 	// check if it is. We then fallback to the upsert functionality. The
@@ -143,9 +146,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		}
 		insert = true // missing
 	} else {
-		enabled = true
 		language = r.Language
-		// Ignore Enabled for deciding to update
 		insert = (op.Description != r.Description) ||
 			(op.Fork != r.Fork) ||
 			(!op.ExternalRepo.Equal(&r.ExternalRepo))
@@ -161,7 +162,6 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		op.Name,
 		op.Description,
 		op.Fork,
-		enabled,
 		op.ExternalRepo.ID,
 		op.ExternalRepo.ServiceType,
 		op.ExternalRepo.ServiceID,
