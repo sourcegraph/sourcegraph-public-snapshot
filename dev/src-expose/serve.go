@@ -145,32 +145,34 @@ func configureRepos(logger *log.Logger, root string) []string {
 		// A directory which also is a repository (have .git folder inside it)
 		// will contain nil error. If it does, proceed to configure.
 		gitdir := filepath.Join(path, ".git")
-		if _, err := os.Stat(gitdir); err == nil {
-			if err := configureOneRepo(logger, gitdir); err != nil {
-				logger.Printf("configuring repo at %s: %v", gitdir, err)
-				return nil
-			}
+		if _, err := os.Stat(gitdir); os.IsNotExist(err) {
+			return nil
+		}
 
-			subpath, err := filepath.Rel(root, path)
-			if err != nil {
-				// According to WalkFunc docs, path is always filepath.Join(root,
-				// subpath). So Rel should always work.
-				logger.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
-			}
-			gitDirs = append(gitDirs, subpath)
+		if err := configureOneRepo(logger, gitdir); err != nil {
+			logger.Printf("configuring repo at %s: %v", gitdir, err)
+			return nil
+		}
 
-			// Check whether a repository is a bare repository or not.
-			//
-			// If it yields false, which means it is a non-bare repository,
-			// skip the directory so that it will not recurse to the subdirectories.
-			// If it is a bare repository, proceed to recurse.
-			c := exec.Command("git", "rev-parse", "--is-bare-repository")
-			c.Dir = gitdir
-			out, _ := c.CombinedOutput()
+		subpath, err := filepath.Rel(root, path)
+		if err != nil {
+			// According to WalkFunc docs, path is always filepath.Join(root,
+			// subpath). So Rel should always work.
+			logger.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
+		}
+		gitDirs = append(gitDirs, subpath)
 
-			if string(out) == "false\n" {
-				return filepath.SkipDir
-			}
+		// Check whether a repository is a bare repository or not.
+		//
+		// If it yields false, which means it is a non-bare repository,
+		// skip the directory so that it will not recurse to the subdirectories.
+		// If it is a bare repository, proceed to recurse.
+		c := exec.Command("git", "rev-parse", "--is-bare-repository")
+		c.Dir = gitdir
+		out, _ := c.CombinedOutput()
+
+		if string(out) == "false\n" {
+			return filepath.SkipDir
 		}
 
 		return nil
