@@ -20,9 +20,7 @@ import { ReferencePaginationCursor } from '../../server/backend/cursor'
 import { isEqual, uniqWith } from 'lodash'
 import { InternalLocation } from '../../server/backend/location'
 
-/**
- * Create a temporary directory with a subdirectory for dbs.
- */
+/** Create a temporary directory with a subdirectory for dbs. */
 export async function createStorageRoot(): Promise<string> {
     const tempPath = await fs.mkdtemp('test-', { encoding: 'utf8' })
     await ensureDirectory(nodepath.join(tempPath, constants.DBS_DIR))
@@ -234,34 +232,22 @@ export async function convertTestData(
  * backend instance.
  */
 export class BackendTestContext {
-    /**
-     * A temporary directory.
-     */
+    /** A temporary directory. */
     private storageRoot?: string
 
-    /**
-     * The Postgres connection
-     */
+    /** The Postgres connection. */
     private connection?: Connection
 
-    /**
-     * A reference to a function that destroys the temporary database.
-     */
+    /** A reference to a function that destroys the temporary database. */
     private cleanup?: () => Promise<void>
 
-    /**
-     * The backend instance.
-     */
+    /** The backend instance. */
     public backend?: Backend
 
-    /**
-     * The dumps manager instance.
-     */
+    /** The dumps manager instance. */
     public dumpManager?: DumpManager
 
-    /**
-     * The dependency manager instance.
-     */
+    /** The dependency manager instance. */
     public dependencyManager?: DependencyManager
 
     /**
@@ -320,9 +306,7 @@ export class BackendTestContext {
         )
     }
 
-    /**
-     * Clean up disk and database resources created for this test.
-     */
+    /** Clean up disk and database resources created for this test. */
     public async teardown(): Promise<void> {
         if (this.storageRoot) {
             await rmfr(this.storageRoot)

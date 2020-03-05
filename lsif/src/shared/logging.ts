@@ -16,14 +16,10 @@ function toLogLevel(value: string): 'debug' | 'info' | 'warn' | 'error' {
     return 'info'
 }
 
-/**
- * The maximum level log message to output.
- */
+/** The maximum level log message to output. */
 const LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error' = toLogLevel((process.env.LOG_LEVEL || 'info').toLowerCase())
 
-/**
- * Create a structured logger.
- */
+/** Create a structured logger. */
 export function createLogger(service: string): Logger {
     const formatTransformer = (info: TransformableInfo): TransformableInfo => {
         const attributes: { [name: string]: unknown } = {}
@@ -60,9 +56,7 @@ export function createLogger(service: string): Logger {
     })
 }
 
-/**
- * Creates a silent logger.
- */
+/** Creates a silent logger. */
 export function createSilentLogger(): Logger {
     return _createLogger({ silent: true })
 }

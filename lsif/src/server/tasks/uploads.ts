@@ -192,9 +192,7 @@ export const cleanFailedUploads = async ({ logger = createSilentLogger() }: Trac
     }
 }
 
-/**
- * Return an async iterable that yields the path of all files in the temp and uploads dir.
- */
+/** Return an async iterable that yields the path of all files in the temp and uploads dir. */
 export async function* candidateFiles(): AsyncIterable<string> {
     for (const directory of [constants.TEMP_DIR, constants.UPLOADS_DIR]) {
         for (const basename of await fs.readdir(path.join(settings.STORAGE_ROOT, directory))) {

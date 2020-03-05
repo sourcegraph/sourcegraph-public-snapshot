@@ -8,9 +8,7 @@ import { Logger } from 'winston'
 import { mustGet, mustGetFromEither } from '../../shared/maps'
 import { relativePath } from './paths'
 
-/**
- * Identifiers of result set vertices.
- */
+/** Identifiers of result set vertices. */
 export type ResultSetId = lsif.Id
 
 /**
@@ -19,24 +17,16 @@ export type ResultSetId = lsif.Id
  * faster queries.
  */
 export interface ResultSetData {
-    /**
-     * The identifier of the definition result attached to this result set.
-     */
+    /** The identifier of the definition result attached to this result set. */
     definitionResultId?: sqliteModels.DefinitionResultId
 
-    /**
-     * The identifier of the reference result attached to this result set.
-     */
+    /** The identifier of the reference result attached to this result set. */
     referenceResultId?: sqliteModels.ReferenceResultId
 
-    /**
-     * The identifier of the hover result attached to this result set.
-     */
+    /** The identifier of the hover result attached to this result set. */
     hoverResultId?: sqliteModels.HoverResultId
 
-    /**
-     * The set of moniker identifiers directly attached to this result set.
-     */
+    /** The set of moniker identifiers directly attached to this result set. */
     monikerIds: Set<sqliteModels.MonikerId>
 }
 
@@ -80,24 +70,16 @@ export class Correlator {
         DefaultMap<sqliteModels.DocumentId, lsif.RangeId[]>
     >()
 
-    /**
-     * A disjoint set of monikers linked by `nextMoniker` edges.
-     */
+    /** A disjoint set of monikers linked by `nextMoniker` edges. */
     public linkedMonikers = new DisjointSet<sqliteModels.MonikerId>()
 
-    /**
-     * A disjoint set of reference results linked by `item` edges.
-     */
+    /** A disjoint set of reference results linked by `item` edges. */
     public linkedReferenceResults = new DisjointSet<sqliteModels.ReferenceResultId>()
 
-    /**
-     * The set of exported moniker identifiers that have package information attached.
-     */
+    /** The set of exported moniker identifiers that have package information attached. */
     public importedMonikers = new Set<sqliteModels.MonikerId>()
 
-    /**
-     * The set of exported moniker identifiers that have package information attached.
-     */
+    /** The set of exported moniker identifiers that have package information attached. */
     public exportedMonikers = new Set<sqliteModels.MonikerId>()
 
     /**
