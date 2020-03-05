@@ -537,8 +537,8 @@ const subsumedMonikers = new Map([
 ])
 
 /**
- * Normalize the set of monikers by filtering and sorting the list based on
- * the moniker kind and scheme values.
+ * Normalize the set of monikers by filtering, sorting, and removing duplicates 
+ * from the list based on the moniker kind and scheme values.
  *
  * @param monikers The list of monikers.
  */
