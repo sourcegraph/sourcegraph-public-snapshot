@@ -565,12 +565,8 @@ export class Backend {
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const getReferences = (): Promise<{
-            references: pgModels.ReferenceModel[]
-            totalCount: number
-            newOffset: number
-        }> =>
-            this.dependencyManager.getSameRepoRemoteReferences({
+        const getPackageReferences = (): ReturnType<DependencyManager['getSameRepoRemotePackageReferences']> =>
+            this.dependencyManager.getSameRepoRemotePackageReferences({
                 repositoryId,
                 commit,
                 scheme: cursor.scheme,
@@ -585,7 +581,7 @@ export class Backend {
         return this.locationsFromRemoteReferences({
             dumpId: cursor.dumpId,
             moniker: { scheme: cursor.scheme, identifier: cursor.identifier },
-            getReferences,
+            getPackageReferences,
             limit,
             cursor,
             ctx,
@@ -612,12 +608,8 @@ export class Backend {
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const getReferences = (): Promise<{
-            references: pgModels.ReferenceModel[]
-            totalCount: number
-            newOffset: number
-        }> =>
-            this.dependencyManager.getReferences({
+        const getPackageReferences = (): ReturnType<DependencyManager['getPackageReferences']> =>
+            this.dependencyManager.getPackageReferences({
                 repositoryId,
                 scheme: cursor.scheme,
                 name: cursor.name,
@@ -631,7 +623,7 @@ export class Backend {
         return this.locationsFromRemoteReferences({
             dumpId: cursor.dumpId,
             moniker: { scheme: cursor.scheme, identifier: cursor.identifier },
-            getReferences,
+            getPackageReferences,
             limit,
             cursor,
             ctx,
@@ -652,7 +644,7 @@ export class Backend {
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<boolean> {
-        const { totalCount: remoteTotalCount } = await this.dependencyManager.getReferences({
+        const { totalCount: remoteTotalCount } = await this.dependencyManager.getPackageReferences({
             ...cursor,
             repositoryId,
             limit: 1,
@@ -671,7 +663,7 @@ export class Backend {
     private async locationsFromRemoteReferences({
         dumpId,
         moniker,
-        getReferences,
+        getPackageReferences,
         limit,
         cursor,
         ctx = {},
@@ -681,7 +673,11 @@ export class Backend {
         /** The target moniker. */
         moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>
         /** A function that retrieves the next batch of references. */
-        getReferences: () => Promise<{ references: pgModels.ReferenceModel[]; newOffset: number; totalCount: number }>
+        getPackageReferences: () => Promise<{
+            packageReferences: pgModels.ReferenceModel[]
+            newOffset: number
+            totalCount: number
+        }>
         /** The maximum number of locations to return on this page. */
         limit: number
         /** The pagination cursor. */
@@ -690,13 +686,13 @@ export class Backend {
         ctx: TracingContext
     }): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
         if (cursor.dumpIds.length === 0) {
-            const { references, newOffset, totalCount } = await getReferences()
+            const { packageReferences, newOffset, totalCount } = await getPackageReferences()
 
             logSpan(ctx, 'package_references', {
-                references: references.map(r => ({ repositoryId: r.dump.repositoryId, commit: r.dump.commit })),
+                references: packageReferences.map(r => ({ repositoryId: r.dump.repositoryId, commit: r.dump.commit })),
             })
 
-            cursor.dumpIds = references.map(r => r.dump.id)
+            cursor.dumpIds = packageReferences.map(r => r.dump.id)
             cursor.skipDumpsWhenBatching = newOffset
             cursor.totalDumpsWhenBatching = totalCount
         }
@@ -757,8 +753,8 @@ export class Backend {
     /**
      * Find the locations attached to the target moniker in the dump where it is defined. If
      * the moniker has attached package information, then query Postgres for the target
-     * package. Open that package's database and query its definitions or references
-     * table for the target moniker (depending on the given model).
+     * package. Open that package's database and query its definitions or references table
+     * for the target moniker (depending on the given model).
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.
