@@ -124,8 +124,7 @@ export class Database {
     }
 
     /**
-     * Return a list of locations that reference the symbol at the given position. The
-     * resulting list of locations does not contain duplicates.
+     * Return a list of unique locations that reference the symbol at the given position.
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
