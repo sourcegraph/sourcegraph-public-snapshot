@@ -64,7 +64,7 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int) 
 		return []*types.SearchUsagePeriod{}, nil
 	}
 
-	activityPeriods := []*types.SearchUsagePeriod{}
+	activityPeriods := make([]*types.SearchUsagePeriod, 0, periods)
 	for i := 0; i < periods; i++ {
 		activityPeriods = append(activityPeriods, newSearchEventPeriod())
 	}
