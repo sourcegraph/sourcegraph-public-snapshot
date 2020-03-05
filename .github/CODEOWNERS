@@ -183,9 +183,6 @@ tslint.config.js @sourcegraph/web
 
 # Search and code mod
 */search/**/* @sourcegraph/code-search
-/cmd/frontend/db/*search* @sourcegraph/code-search
-/cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
-/cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
 /cmd/frontend/internal/pkg/search @sourcegraph/code-search
 /cmd/query-runner/ @sourcegraph/code-search
 /cmd/replacer/ @rvantonder
