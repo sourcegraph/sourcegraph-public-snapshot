@@ -370,9 +370,9 @@ export class Backend {
                                     identifier: moniker.identifier,
                                     name: packageInformation.name,
                                     version: packageInformation.version,
-                                    skipReferences: 0,
-                                    skipDumps: 0,
-                                    skipResults: 0,
+                                    skipDumpsWhenBatching: 0,
+                                    skipDumpsInBatch: 0,
+                                    skipResultsInDump: 0,
                                 }
                             }
                         }
@@ -397,7 +397,13 @@ export class Backend {
                             // If there are no remote consumers of this symbol, do not
                             // make a cursor for the next phase as it would only be a
                             // single empty page.
-                            return { ...cursor, phase: 'remote-repo', skipReferences: 0, skipDumps: 0, skipResults: 0 }
+                            return {
+                                ...cursor,
+                                phase: 'remote-repo',
+                                skipDumpsWhenBatching: 0,
+                                skipDumpsInBatch: 0,
+                                skipResultsInDump: 0,
+                            }
                         }
 
                         return undefined
@@ -566,7 +572,7 @@ export class Backend {
                 version: cursor.version,
                 identifier: cursor.identifier,
                 limit: remoteDumpLimit,
-                offset: cursor.skipReferences,
+                offset: cursor.skipDumpsWhenBatching,
                 ctx,
             })
 
@@ -612,7 +618,7 @@ export class Backend {
                 version: cursor.version,
                 identifier: cursor.identifier,
                 limit: remoteDumpLimit,
-                offset: cursor.skipReferences,
+                offset: cursor.skipDumpsWhenBatching,
                 ctx,
             })
 
@@ -685,7 +691,7 @@ export class Backend {
         })
 
         for (const [i, dump] of dumps.entries()) {
-            if (i < cursor.skipDumps) {
+            if (i < cursor.skipDumpsInBatch) {
                 continue
             }
 
@@ -698,16 +704,21 @@ export class Backend {
             const { locations, count } = await this.createDatabase(dump).monikerResults(
                 sqliteModels.ReferenceModel,
                 moniker,
-                { take: limit, skip: cursor.skipResults },
+                { take: limit, skip: cursor.skipResultsInDump },
                 ctx
             )
 
             if (locations.length > 0) {
-                const newResultOffset = cursor.skipResults + locations.length
+                const newResultOffset = cursor.skipResultsInDump + locations.length
                 const moreDumps = i + 1 < dumps.length
-                const nextCursor = { ...cursor, skipResults: cursor.skipResults + limit }
-                const nextDumpCursor = { ...cursor, skipResults: 0, skipDumps: i + 1 }
-                const nextBatchCursor = { ...cursor, skipResults: 0, skipDumps: 0, skipReferences: newOffset }
+                const nextCursor = { ...cursor, skipResultsInDump: cursor.skipResultsInDump + limit }
+                const nextDumpCursor = { ...cursor, skipDumpsInBatch: i + 1, skipResultsInDump: 0 }
+                const nextBatchCursor = {
+                    ...cursor,
+                    skipDumpsWhenBatching: newOffset,
+                    skipDumpsInBatch: 0,
+                    skipResultsInDump: 0,
+                }
 
                 return {
                     locations: locations.map(loc => locationFromDatabase(dump.root, loc)),
