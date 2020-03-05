@@ -639,7 +639,7 @@ export class Backend {
 
     /**
      * Determine if the moniker and package identified by the pagination cursor has at least one
-     * remote repository. containing that definition. We use this to determine if we should move
+     * remote repository containing that definition. We use this to determine if we should move
      * on to the next phase without doing it unconditionally and yielding an empty last page.
      *
      * @param repositoryId The repository identifier.
