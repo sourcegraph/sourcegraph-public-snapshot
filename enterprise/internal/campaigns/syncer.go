@@ -39,7 +39,7 @@ func (s *ChangesetSyncer) Run() {
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
 	}
-	s.priorityNotify = make(chan struct{})
+	s.priorityNotify = make(chan struct{}, 1)
 	s.queue = newChangesetPriorityQueue()
 	// How often to refresh the schedule
 	scheduleTicker := time.NewTicker(scheduleInterval)
