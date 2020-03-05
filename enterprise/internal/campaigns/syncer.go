@@ -443,7 +443,7 @@ func (pq *changesetPriorityQueue) Peek() (syncSchedule, bool) {
 
 // Upsert modifies at item if it exists or adds a new item
 // NOTE: If an existing item is high priority, it will not be changed back
-// to normal. This allows high priority items to stay that way reschedules
+// to normal. This allows high priority items to stay that way through reschedules
 func (pq *changesetPriorityQueue) Upsert(s syncSchedule) {
 	i, ok := pq.index[s.changesetID]
 	if !ok {
