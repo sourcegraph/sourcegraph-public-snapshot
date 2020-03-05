@@ -3121,10 +3121,10 @@
   resolved "https://registry.npmjs.org/@types/recharts-scale/-/recharts-scale-1.0.0.tgz#348c9220d6d9062c44a9d585d686644a97f7e25d"
   integrity sha512-HR/PrCcxYb2YHviTqH7CMdL1TUhUZLTUKzfrkMhxm1HTa5mg/QtP8XMiuSPz6dZ6wecazAOu8aYZ5DqkNlgHHQ==
 
-"@types/recharts@1.8.6":
-  version "1.8.6"
-  resolved "https://registry.npmjs.org/@types/recharts/-/recharts-1.8.6.tgz#1368e174a21e6b12d1344dba0ae0eea68f8706f0"
-  integrity sha512-UnuLpnXbpyLzxYJ6PuRMBR6K7X0Ih60M/PVaUwT6jtvJXqlVEmU5ABx0etgzG2DkOnYhpHvD9tjOjyrdUKrUPQ==
+"@types/recharts@1.8.7":
+  version "1.8.7"
+  resolved "https://registry.npmjs.org/@types/recharts/-/recharts-1.8.7.tgz#32d78d2ffe05f42477c7335319e387e89abedd04"
+  integrity sha512-3kcjuR4cUeGwQH43FvUzfEs74w2LLtMbBz1NBK3s1J7Hgl8OKDr4AeAUrKitsM+n6eDl9Ne8pqhdxitLFB06IA==
   dependencies:
     "@types/d3-shape" "*"
     "@types/react" "*"
