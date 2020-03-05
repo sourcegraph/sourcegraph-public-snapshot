@@ -13,7 +13,7 @@ Sourcegraph's core data (including user accounts, configuration, repository-meta
 
 ### Storage location change
 
-After this process, Sourcegraph's data will be stored in Docker volumes instead of `~/.sourcegraph/`. For more information, see the cloud-provider documentation referred to in ["Create the new Docker Compose instance"](#create-the-new-docker-compose-instance).
+After migration, Sourcegraph's data will be stored in Docker volumes instead of `~/.sourcegraph/`. For more information, see the cloud-provider documentation referred to in ["Create the new Docker Compose instance"](#create-the-new-docker-compose-instance).
 
 ### Only core data will be migrated
 
