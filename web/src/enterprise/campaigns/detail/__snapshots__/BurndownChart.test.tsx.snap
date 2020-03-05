@@ -1,19 +1,19 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignBurndownChart renders an alert when data for less than 2 days is present 1`] = `
-<div
-  className="alert alert-info"
->
-  Burndown chart will be shown when there is more than 1 day of data.
-</div>
+<p>
+  <em>
+    Burndown chart will be shown when there is more than 1 day of data.
+  </em>
+</p>
 `;
 
 exports[`CampaignBurndownChart renders an alert when no datapoints are in a set of more than 1 day of data 1`] = `
-<div
-  className="alert alert-info"
->
-  Burndown chart will be shown when data is available.
-</div>
+<p>
+  <em>
+    Burndown chart will be shown when data is available.
+  </em>
+</p>
 `;
 
 exports[`CampaignBurndownChart renders the chart 1`] = `

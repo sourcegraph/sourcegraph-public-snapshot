@@ -282,12 +282,12 @@ export class Driver {
         }
 
         // Navigate to the add external service page.
+        console.log('Adding external service of kind', kind)
         await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
-        await (
-            await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
-                visible: true,
-            })
-        ).click()
+        await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
+            visible: true,
+        })
+        await this.page.click(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,

@@ -49,7 +49,7 @@ export function createUploadRouter(
     router.get(
         '/uploads/:id([0-9]+)',
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response<pgModels.LsifUpload>): Promise<void> => {
                 const upload = await uploadManager.getUpload(parseInt(req.params.id, 10))
                 if (upload) {
                     res.send(upload)
@@ -66,7 +66,7 @@ export function createUploadRouter(
     router.delete(
         '/uploads/:id([0-9]+)',
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response<never>): Promise<void> => {
                 const id = parseInt(req.params.id, 10)
                 const ctx = createTracingContext(req, { id })
 
@@ -101,7 +101,10 @@ export function createUploadRouter(
             validation.validateOffset,
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (
+                req: express.Request,
+                res: express.Response<{ uploads: pgModels.LsifUpload[]; totalCount: number }>
+            ): Promise<void> => {
                 const { query, state, visibleAtTip }: UploadsQueryArgs = req.query
                 const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_UPLOAD_PAGE_SIZE)
                 const { uploads, totalCount } = await uploadManager.getUploads(

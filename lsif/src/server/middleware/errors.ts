@@ -15,10 +15,15 @@ export const isApiError = (val: unknown): val is ApiError => typeof val === 'obj
  */
 export const errorHandler = (
     logger: Logger
-): ((error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => void) => (
+): ((
     error: unknown,
     req: express.Request,
-    res: express.Response,
+    res: express.Response<{ message: string }>,
+    next: express.NextFunction
+) => void) => (
+    error: unknown,
+    req: express.Request,
+    res: express.Response<{ message: string }>,
     // Express uses argument length to distinguish middleware and error handlers
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     next: express.NextFunction

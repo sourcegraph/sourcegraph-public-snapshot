@@ -72,15 +72,6 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
             className={className}
             tabs={[
                 {
-                    id: 'diff',
-                    label: (
-                        <span className="e2e-campaign-diff-tab">
-                            Diff <span className="text-success">+{totalAdditions}</span>{' '}
-                            <span className="text-danger">-{totalDeletions}</span>
-                        </span>
-                    ),
-                },
-                {
                     id: 'changesets',
                     label: (
                         <span className="e2e-campaign-changesets-tab">
@@ -89,6 +80,15 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                                 {campaign.changesetPlans.totalCount +
                                     (campaign.__typename === 'Campaign' ? campaign.changesets.totalCount : 0)}
                             </span>
+                        </span>
+                    ),
+                },
+                {
+                    id: 'diff',
+                    label: (
+                        <span className="e2e-campaign-diff-tab">
+                            Diff <span className="text-success">+{totalAdditions}</span>{' '}
+                            <span className="text-danger">-{totalDeletions}</span>
                         </span>
                     ),
                 },

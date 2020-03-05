@@ -72,7 +72,7 @@ You can single-out one test with `test.only`:
 
 Alternatively, you can use `-g` to filter tests: `env ... test-e2e -g "some test name"`.
 
-Run tests selectively with a command like `yarn run test:regression:search`, which runs the tests for search functionality.
+Run tests selectively with a command like `yarn run test:regression:search`, which runs the tests for search functionality. See the test files for the environments and [repositories](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@6569fc255bb4c1c46752c99d828dc52b64785941/-/blob/web/src/regression/search.test.ts#L65-137) that are cloned for tests.
 
 ### Viewing e2e tests live in CI
 

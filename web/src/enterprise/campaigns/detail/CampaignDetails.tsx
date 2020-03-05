@@ -38,6 +38,7 @@ import { CampaignUpdateDiff } from './CampaignUpdateDiff'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { CampaignUpdateSelection } from './CampaignUpdateSelection'
 import { CampaignActionsBar } from './CampaignActionsBar'
+import { CampaignTitleField } from './form/CampaignTitleField'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
 
@@ -195,7 +196,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     }),
                     catchError(error => {
                         setAlertError(asError(error))
-                        return []
+                        return [null]
                     })
                 ),
             [previewCampaignPlans, planID, _fetchCampaignPlanById, changesetUpdates]
@@ -401,57 +402,48 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     onEdit={onEdit}
                     onClose={onClose}
                     onDelete={onDelete}
-                    name={name}
-                    onNameChange={onNameChange}
                 />
                 {alertError && <ErrorAlert error={alertError} />}
-                <div className="card">
-                    {campaign && (
+                {(mode === 'editing' || mode === 'saving') && (
+                    <>
+                        <h3>Campaign details</h3>
+                        <CampaignTitleField
+                            className="e2e-campaign-title"
+                            value={name}
+                            onChange={onNameChange}
+                            disabled={mode === 'saving'}
+                        />
+                        <CampaignDescriptionField
+                            value={description}
+                            onChange={setDescription}
+                            disabled={mode === 'saving'}
+                        />
+                    </>
+                )}
+                {campaign && mode !== 'editing' && mode !== 'saving' && (
+                    <div className="card mt-3">
                         <div className="card-header">
                             <strong>
                                 <UserAvatar user={author} className="icon-inline" /> {author.username}
                             </strong>{' '}
                             started <Timestamp date={campaign.createdAt} />
                         </div>
-                    )}
-                    {mode === 'editing' || mode === 'saving' ? (
-                        <CampaignDescriptionField
-                            value={description}
-                            onChange={setDescription}
-                            disabled={mode === 'saving'}
-                        />
-                    ) : (
-                        campaign && (
-                            <div className="card-body">
-                                <Markdown dangerousInnerHTML={renderMarkdown(campaign.description)}></Markdown>
-                            </div>
-                        )
-                    )}
-                </div>
-                {mode === 'editing' && (
-                    <p className="ml-1">
-                        <small>
-                            <a rel="noopener noreferrer" target="_blank" href="/help/user/markdown">
-                                Markdown supported
-                            </a>
-                        </small>
-                    </p>
+                        <div className="card-body">
+                            <Markdown
+                                dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
+                            ></Markdown>
+                        </div>
+                    </div>
                 )}
                 {campaign && campaignPlan && (
-                    <>
-                        <CampaignUpdateDiff
-                            campaign={campaign}
-                            campaignPlan={campaignPlan}
-                            history={history}
-                            location={location}
-                            isLightTheme={isLightTheme}
-                            className="my-3"
-                        />
-                        <div className="alert alert-info mt-3">
-                            <AlertCircleIcon className="icon-inline" /> You are updating an existing campaign. By
-                            clicking 'Update', all already published changesets will be updated on the codehost.
-                        </div>
-                    </>
+                    <CampaignUpdateDiff
+                        campaign={campaign}
+                        campaignPlan={campaignPlan}
+                        history={history}
+                        location={location}
+                        isLightTheme={isLightTheme}
+                        className="my-3"
+                    />
                 )}
                 {(mode === 'editing' || mode === 'saving') && specifyingBranchAllowed && (
                     <div className="form-group mt-3">
@@ -530,7 +522,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
                     {campaign && !updateMode && (
                         <>
-                            <h3 className="mt-3">Progress</h3>
+                            <h3 className="mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
                                 history={history}
@@ -544,7 +536,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
                     {!updateMode && (
                         <>
-                            <h3 className="mt-3">Changesets</h3>
+                            <h3 className="mt-3 mb-2">Changesets</h3>
                             {(campaign?.changesets.totalCount ?? 0) +
                             (campaignPlan || campaign)!.changesetPlans.totalCount ? (
                                 <CampaignTabs

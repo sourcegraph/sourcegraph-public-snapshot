@@ -1,5 +1,6 @@
 import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
+import * as lsp from 'vscode-languageserver-protocol'
 import * as nodepath from 'path'
 import * as settings from '../settings'
 import * as validation from '../middleware/validation'
@@ -19,6 +20,7 @@ import { UploadManager } from '../../shared/store/uploads'
 import { readGzippedJsonElementsFromFile } from '../../shared/input'
 import * as lsif from 'lsif-protocol'
 import { ReferencePaginationCursor } from '../backend/cursor'
+import { LsifUpload } from '../../shared/models/pg'
 
 const pipeline = promisify(_pipeline)
 
@@ -86,7 +88,7 @@ export function createLsifRouter(
             validation.validateOptionalInt('maxWait'),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response<{ id: number }>): Promise<void> => {
                 const {
                     repositoryId,
                     commit,
@@ -146,7 +148,7 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response<{ uploads: LsifUpload[] }>): Promise<void> => {
                 const { repositoryId, commit, path }: ExistsQueryArgs = req.query
                 const ctx = createTracingContext(req, { repositoryId, commit })
                 const uploads = await backend.exists(repositoryId, commit, path, ctx)
@@ -175,7 +177,12 @@ export function createLsifRouter(
             validation.validateInt('uploadId'),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (
+                req: express.Request,
+                res: express.Response<{
+                    locations: { repositoryId: number; commit: string; path: string; range: lsp.Range }[]
+                }>
+            ): Promise<void> => {
                 const { repositoryId, commit, path, line, character, uploadId }: FilePositionArgs = req.query
                 const ctx = createTracingContext(req, { repositoryId, commit, path })
 
@@ -221,7 +228,12 @@ export function createLsifRouter(
             validation.validateCursor<ReferencePaginationCursor>(),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (
+                req: express.Request,
+                res: express.Response<{
+                    locations: { repositoryId: number; commit: string; path: string; range: lsp.Range }[]
+                }>
+            ): Promise<void> => {
                 const { repositoryId, commit, path, line, character, uploadId, cursor }: ReferencesQueryArgs = req.query
                 const { limit } = extractLimitOffset(req.query, settings.DEFAULT_REFERENCES_PAGE_SIZE)
                 const ctx = createTracingContext(req, { repositoryId, commit, path })
@@ -269,7 +281,10 @@ export function createLsifRouter(
             validation.validateInt('uploadId'),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (
+                req: express.Request,
+                res: express.Response<{ text: string; range: lsp.Range } | null>
+            ): Promise<void> => {
                 const { repositoryId, commit, path, line, character, uploadId }: FilePositionArgs = req.query
                 const ctx = createTracingContext(req, { repositoryId, commit, path })
 

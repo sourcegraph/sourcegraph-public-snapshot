@@ -34,6 +34,11 @@ exports[`CampaignNode renders a campaign node 1`] = `
           11 months
            ago
         </small>
+        <span
+          className="badge badge-info ml-2"
+        >
+          Draft
+        </span>
       </div>
       <div
         className="text-truncate markdown"
