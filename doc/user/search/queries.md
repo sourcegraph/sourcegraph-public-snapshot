@@ -1,19 +1,20 @@
 # Search query syntax
 
+<!-- Search syntax styling overrides -->
 <style>
-tr td:nth-child(1) {
+.markdown-body tr td:nth-child(1) {
   min-width:175px;
 }
 
-tr td:nth-child(3) {
+.markdown-body tr td:nth-child(3) {
   min-width: 250px;
 }
-tr td:nth-child(3) code {
+.markdown-body tr td:nth-child(3) code {
   word-break: break-all;
 }
 
-img {
-  border: 1px solid !important;
+.markdown-body img {
+  border: 1px solid;
   border-radius: 2px;
   width: 18px;
 }

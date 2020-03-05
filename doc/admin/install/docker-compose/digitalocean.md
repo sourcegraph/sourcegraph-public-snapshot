@@ -17,7 +17,7 @@ See ["Store customizations in a fork"](./index.md#optional-recommended-store-cus
 * [Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new).
 
   * Set the operating system to be **Ubuntu 18.04**.
-  * For droplet size: we recommend at least `8` CPU and `32` GB RAM , but you may need more depending on team size and number of repositories.
+  * For droplet size: use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment.
   * (**optional, recommended**) Set up SSH access (Authentication > SSH keys) for convenient access to the droplet.
   * (**optional, recommended**) Check the "Enable backups" checkbox to enable weekly backups of all your data.
 

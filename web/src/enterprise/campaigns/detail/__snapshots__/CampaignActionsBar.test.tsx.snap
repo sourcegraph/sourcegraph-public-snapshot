@@ -22,12 +22,9 @@ exports[`CampaignActionsBar edit mode 1`] = `
     >
       /
     </span>
-    <CampaignTitleField
-      className="w-auto d-inline-block e2e-campaign-title"
-      disabled={false}
-      onChange={[Function]}
-      value="Super campaign"
-    />
+    <span>
+      Super campaign
+    </span>
   </h2>
   <span
     className="flex-grow-1 d-flex justify-content-end align-items-center"
@@ -375,12 +372,9 @@ exports[`CampaignActionsBar mode: saving 1`] = `
     >
       /
     </span>
-    <CampaignTitleField
-      className="w-auto d-inline-block e2e-campaign-title"
-      disabled={true}
-      onChange={[Function]}
-      value="Super campaign"
-    />
+    <span>
+      Super campaign
+    </span>
   </h2>
   <span
     className="flex-grow-1 d-flex justify-content-end align-items-center"
@@ -462,12 +456,9 @@ exports[`CampaignActionsBar processing 1`] = `
     >
       /
     </span>
-    <CampaignTitleField
-      className="w-auto d-inline-block e2e-campaign-title"
-      disabled={false}
-      onChange={[Function]}
-      value="Super campaign"
-    />
+    <span>
+      Super campaign
+    </span>
   </h2>
   <span
     className="flex-grow-1 d-flex justify-content-end align-items-center"

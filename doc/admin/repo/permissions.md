@@ -10,7 +10,7 @@ Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions ar
 
 Prerequisite: [Add GitHub as an authentication provider.](../auth/index.md#github)
 
-Then, [add or edit a GitHub external service](../external_service/github.md#repository-syncing) and include the `authorization` field:
+Then, [add or edit a GitHub connection](../external_service/github.md#repository-syncing) and include the `authorization` field:
 
 ```json
 {
@@ -36,7 +36,7 @@ GitLab permissions can be configured in three ways:
 
 Prerequisite: [Add GitLab as an authentication provider.](../auth/index.md#gitlab)
 
-Then, [add or edit a GitLab external service](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:
+Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:
 
 ```json
 {
@@ -56,7 +56,7 @@ Then, [add or edit a GitLab external service](../external_service/gitlab.md#repo
 Prerequisite: Add the [SAML](../auth/index.md#saml) or [OpenID Connect](../auth/index.md#openid-connect)
 authentication provider you use to sign into GitLab.
 
-Then, [add or edit a GitLab external service](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:
+Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:
 
 ```json
 {
@@ -85,7 +85,7 @@ Prerequisite: Ensure that `http-header` is the *only* authentication provider ty
 Sourcegraph. If this is not the case, then it will be possible for users to escalate privileges,
 because Sourcegraph usernames are mutable.
 
-[Add or edit a GitLab external service](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:
+[Add or edit a GitLab connection](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:
 
 ```json
 {
@@ -102,7 +102,7 @@ because Sourcegraph usernames are mutable.
 
 ## Bitbucket Server
 
-Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its external service configuration.
+Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its configuration.
 
 ### Prerequisites
 
@@ -113,7 +113,7 @@ Enforcing Bitbucket Server permissions can be configured via the `authorization`
 
 ### Setup
 
-This section walks you through the process of setting up an *Application Link between Sourcegraph and Bitbucket Server* and configuring the Bitbucket Server external service with `authorization` settings. It assumes the above prerequisites are met.
+This section walks you through the process of setting up an *Application Link between Sourcegraph and Bitbucket Server* and configuring the Sourcegraph Bitbucket Server configuration with `authorization` settings. It assumes the above prerequisites are met.
 
 As an admin user, go to the "Application Links" page. You can use the sidebar navigation in the admin dashboard, or go directly to [https://bitbucketserver.example.com/plugins/servlet/applinks/listApplicationLinks](https://bitbucketserver.example.com/plugins/servlet/applinks/listApplicationLinks).
 
@@ -159,7 +159,7 @@ Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write y
 
 ---
 
-Go to your Sourcegraph's external services page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server* external service. Click on the *Enforce permissions* quick action on top of the configuration editor. Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field.
+Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server* connection. Click on the *Enforce permissions* quick action on top of the configuration editor. Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field.
 
 <img src="https://imgur.com/ucetesA.png" width="800">
 

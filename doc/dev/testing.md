@@ -59,7 +59,7 @@ env TEST_USER_PASSWORD=test GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
 
 > There's a test token in `../dev-private/enterprise/dev/external-services-config.json`
 
-This will open Chromium, create an external service, clone repositories, and execute the e2e tests.
+This will open Chromium, add a code host, clone repositories, and execute the e2e tests.
 
 You can single-out one test with `test.only`:
 
@@ -72,7 +72,7 @@ You can single-out one test with `test.only`:
 
 Alternatively, you can use `-g` to filter tests: `env ... test-e2e -g "some test name"`.
 
-Run tests selectively with a command like `yarn run test:regression:search`, which runs the tests for search functionality.
+Run tests selectively with a command like `yarn run test:regression:search`, which runs the tests for search functionality. See the test files for the environments and [repositories](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@6569fc255bb4c1c46752c99d828dc52b64785941/-/blob/web/src/regression/search.test.ts#L65-137) that are cloned for tests.
 
 ### Viewing e2e tests live in CI
 
@@ -224,5 +224,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 
 For testing with a single Docker image, run something like
 ```
-IMAGE=sourcegraph/server:3.13.0 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.13.1 ./dev/run-server-image.sh
 ```

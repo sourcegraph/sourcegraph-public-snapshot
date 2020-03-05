@@ -324,6 +324,7 @@ export const githubCodeHost: CodeHost = {
         actionItemClassName:
             'command-palette-action-item--github no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
         noResultsClassName: 'd-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
+        iconClassName,
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--github',
@@ -390,6 +391,9 @@ export const githubCodeHost: CodeHost = {
                 const anchorPath = header.dataset.path
                 if (anchorPath === location.filePath) {
                     const anchorUrl = header.dataset.anchor
+                    if (!anchorUrl) {
+                        throw new Error('.file-header had no data-anchor attribute')
+                    }
                     const url = `${window.location.origin}${window.location.pathname}#${anchorUrl}${
                         location.part === 'base' ? 'L' : 'R'
                     }${location.position ? location.position.line : ''}`

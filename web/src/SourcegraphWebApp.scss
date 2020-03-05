@@ -25,9 +25,6 @@ $grid-gutter-width: 1.5rem;
 
 // No max width except for xl.
 $container-max-widths: (
-    sm: null,
-    md: null,
-    lg: null,
     xl: 1140px,
 );
 
@@ -189,6 +186,10 @@ body,
 
 .flex-1 {
     flex: 1;
+}
+
+.cursor-pointer {
+    cursor: pointer;
 }
 
 // Our simple popovers only need these styles. We don't want the caret or special font sizes from

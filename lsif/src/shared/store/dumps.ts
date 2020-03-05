@@ -9,17 +9,13 @@ import { TableInserter } from '../database/inserter'
 import { visibleDumps, ancestorLineage, bidirectionalLineage } from '../models/queries'
 import { isDefined } from '../util'
 
-/**
- * The insertion metrics for Postgres.
- */
+/** The insertion metrics for Postgres. */
 const insertionMetrics = {
     durationHistogram: sharedMetrics.postgresInsertionDurationHistogram,
     errorsCounter: sharedMetrics.postgresQueryErrorsCounter,
 }
 
-/**
- * A wrapper around the database tables that control dumps and commits.
- */
+/** A wrapper around the database tables that control dumps and commits. */
 export class DumpManager {
     /**
      * Create a new `DumpManager` backed by the given database connection.
@@ -351,25 +347,5 @@ export class DumpManager {
                     .execute()
             })
         )
-    }
-
-    /**
-     * Delete a dump. This removes data from the dumps, packages, and references table, and
-     * deletes the SQLite file from the storage root.
-     *
-     * @param dump The dump to delete.
-     * @param entityManager The EntityManager to use as part of a transaction.
-     */
-    public async deleteDump(
-        dump: pgModels.LsifDump,
-        entityManager: EntityManager = this.connection.createEntityManager()
-    ): Promise<void> {
-        // Do not delete the file on disk directly in case we are part of a larger transaction.
-        // We can afford to wait for the cleanup task to determine that the file is orphaned
-        // when it cannot find a matching row in the database. For more context, see the
-        // `removeDeadDumps` function performed at the start of the `purgeOldDumps` task that
-        // is run on a schedule in the server context.
-
-        await entityManager.getRepository(pgModels.LsifDump).delete(dump.id)
     }
 }

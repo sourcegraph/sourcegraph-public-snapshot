@@ -239,7 +239,7 @@ describe('Search regression test suite', () => {
         test('Global text search for something with more than 1000 results and use "count:1000".', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=.+count:1000')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            await driver.page.addScriptTag({ content: `${getNumResults}` })
+            await driver.page.addScriptTag({ content: getNumResults.toString() })
             await driver.page.waitForFunction(() => getNumResults() !== null)
             await driver.page.waitForFunction(
                 () => {
@@ -322,7 +322,7 @@ describe('Search regression test suite', () => {
         test('Global search for a filename with many results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=file:doc.go')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            await driver.page.addScriptTag({ content: `${getNumResults}` })
+            await driver.page.addScriptTag({ content: getNumResults.toString() })
             await driver.page.waitForFunction(() => getNumResults() !== null)
             await driver.page.waitForFunction(
                 () => {
@@ -335,7 +335,7 @@ describe('Search regression test suite', () => {
         test('Global symbol search with many results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+test+count:100')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            await driver.page.addScriptTag({ content: `${getNumResults}` })
+            await driver.page.addScriptTag({ content: getNumResults.toString() })
             await driver.page.waitForFunction(() => (getNumResults() || 0) >= 100)
         })
         test('Global symbol search with 0 results', async () => {

@@ -369,6 +369,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ExternalID:          fmt.Sprintf("foobar-%d", i),
 						ExternalServiceType: "github",
 						ExternalBranch:      "campaigns/test",
+						ExternalUpdatedAt:   now,
 					}
 
 					changesets = append(changesets, th)
@@ -980,6 +981,38 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				})
 			})
+		})
+
+		t.Run("ListChangesetHeuristics", func(t *testing.T) {
+			// Differs from clock() due to updates higher up
+			externalUpdatedAt := clock().Add(-2 * time.Second)
+			hs, err := s.ListChangesetSyncHeuristics(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []cmpgn.ChangesetSyncHeuristics{
+				{
+					ChangesetID:       2,
+					UpdatedAt:         clock(),
+					LatestEvent:       clock(),
+					ExternalUpdatedAt: externalUpdatedAt,
+				},
+				{
+					ChangesetID:       1,
+					UpdatedAt:         clock(),
+					LatestEvent:       clock(),
+					ExternalUpdatedAt: externalUpdatedAt,
+				},
+				{
+					// No events
+					ChangesetID:       3,
+					UpdatedAt:         clock(),
+					ExternalUpdatedAt: externalUpdatedAt,
+				},
+			}
+			if diff := cmp.Diff(want, hs); diff != "" {
+				t.Fatal(diff)
+			}
 		})
 
 		t.Run("CampaignPlans", func(t *testing.T) {

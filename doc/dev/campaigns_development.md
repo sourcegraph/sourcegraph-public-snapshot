@@ -43,7 +43,7 @@ To use this account, follow these steps:
 
 1. Find the GitHub `sd9` user in 1Password
 2. Copy the Campaigns Testing Token
-3. Change your `dev-private/enterprise/dev/external-services-config.json` to only contain a GitHub external service config with the token, like this:
+3. Change your `dev-private/enterprise/dev/external-services-config.json` to only contain a GitHub config with the token, like this:
 
 ```json
 {

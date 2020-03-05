@@ -3,7 +3,7 @@ import * as React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
-import { FileDiffTabNodeProps, FileDiffTabNode } from '../FileDiffTabNode'
+import { FileDiffTabNodeProps, FileDiffTabNode } from './FileDiffTabNode'
 import { Observable, Subject } from 'rxjs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 
@@ -31,7 +31,15 @@ export const CampaignDiffs: React.FunctionComponent<Props> = ({
     changesetUpdates,
 }) => (
     <div className={className}>
-        <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<FileDiffTabNodeProps, 'node'>>
+        <FilteredConnection<
+            Pick<GQL.IChangesetPlan | GQL.IExternalChangeset, 'diff'> & {
+                repository: Pick<
+                    GQL.IChangesetPlan['repository'] | GQL.IExternalChangeset['repository'],
+                    'name' | 'url'
+                >
+            },
+            Omit<FileDiffTabNodeProps, 'node'>
+        >
             className="mt-2"
             updates={changesetUpdates}
             nodeComponent={FileDiffTabNode}

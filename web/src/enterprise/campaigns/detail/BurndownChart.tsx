@@ -54,12 +54,18 @@ const tooltipItemSorter = (item: TooltipPayload): number => tooltipItemOrder[ite
 export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime }) => {
     if (changesetCountsOverTime.length <= 1) {
         return (
-            <div className="alert alert-info">Burndown chart will be shown when there is more than 1 day of data.</div>
+            <p>
+                <em>Burndown chart will be shown when there is more than 1 day of data.</em>
+            </p>
         )
     }
     const hasEntries = changesetCountsOverTime.some(counts => counts.total > 0)
     if (!hasEntries) {
-        return <div className="alert alert-info">Burndown chart will be shown when data is available.</div>
+        return (
+            <p>
+                <em>Burndown chart will be shown when data is available.</em>
+            </p>
+        )
     }
     return (
         <ResponsiveContainer width="100%" height={300}>

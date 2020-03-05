@@ -1,6 +1,6 @@
 import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapter'
 import { Observable } from 'rxjs'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import { EndpointPair } from '../../../shared/src/platform/context'
 import { isInPage } from '../context'
 import { SourcegraphIntegrationURLs } from './context'

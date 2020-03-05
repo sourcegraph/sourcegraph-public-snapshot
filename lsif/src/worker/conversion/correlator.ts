@@ -1,16 +1,14 @@
 import * as sqliteModels from '../../shared/models/sqlite'
 import * as lsif from 'lsif-protocol'
-import RelateUrl from 'relateurl'
 import { createSilentLogger } from '../../shared/logging'
 import { DefaultMap } from '../../shared/datastructures/default-map'
 import { DisjointSet } from '../../shared/datastructures/disjoint-set'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
 import { Logger } from 'winston'
 import { mustGet, mustGetFromEither } from '../../shared/maps'
+import { relativePath } from './paths'
 
-/**
- * Identifiers of result set vertices.
- */
+/** Identifiers of result set vertices. */
 export type ResultSetId = lsif.Id
 
 /**
@@ -19,24 +17,16 @@ export type ResultSetId = lsif.Id
  * faster queries.
  */
 export interface ResultSetData {
-    /**
-     * The identifier of the definition result attached to this result set.
-     */
+    /** The identifier of the definition result attached to this result set. */
     definitionResultId?: sqliteModels.DefinitionResultId
 
-    /**
-     * The identifier of the reference result attached to this result set.
-     */
+    /** The identifier of the reference result attached to this result set. */
     referenceResultId?: sqliteModels.ReferenceResultId
 
-    /**
-     * The identifier of the hover result attached to this result set.
-     */
+    /** The identifier of the hover result attached to this result set. */
     hoverResultId?: sqliteModels.HoverResultId
 
-    /**
-     * The set of moniker identifiers directly attached to this result set.
-     */
+    /** The set of moniker identifiers directly attached to this result set. */
     monikerIds: Set<sqliteModels.MonikerId>
 }
 
@@ -80,27 +70,25 @@ export class Correlator {
         DefaultMap<sqliteModels.DocumentId, lsif.RangeId[]>
     >()
 
-    /**
-     * A disjoint set of monikers linked by `nextMoniker` edges.
-     */
+    /** A disjoint set of monikers linked by `nextMoniker` edges. */
     public linkedMonikers = new DisjointSet<sqliteModels.MonikerId>()
 
-    /**
-     * A disjoint set of reference results linked by `item` edges.
-     */
+    /** A disjoint set of reference results linked by `item` edges. */
     public linkedReferenceResults = new DisjointSet<sqliteModels.ReferenceResultId>()
 
-    /**
-     * The set of exported moniker identifiers that have package information attached.
-     */
+    /** The set of exported moniker identifiers that have package information attached. */
     public importedMonikers = new Set<sqliteModels.MonikerId>()
 
-    /**
-     * The set of exported moniker identifiers that have package information attached.
-     */
+    /** The set of exported moniker identifiers that have package information attached. */
     public exportedMonikers = new Set<sqliteModels.MonikerId>()
 
-    constructor(private logger: Logger = createSilentLogger()) {}
+    /**
+     * Creates a new Correlator.
+     *
+     * @param dumpRoot The repository-relative root of all files that are in the dump.
+     * @param logger The logger instance.
+     */
+    constructor(private dumpRoot: string = '', private logger: Logger = createSilentLogger()) {}
 
     /**
      * Process a single vertex or edge.
@@ -119,12 +107,7 @@ export class Correlator {
                         throw new Error('No metadata defined.')
                     }
 
-                    const path = RelateUrl.relate(`${this.projectRoot.href}/`, new URL(element.uri).href, {
-                        defaultPorts: {},
-                        output: RelateUrl.PATH_RELATIVE,
-                        removeRootTrailingSlash: false,
-                    })
-
+                    const path = relativePath(this.projectRoot, new URL(element.uri))
                     this.documentPaths.set(element.id, path)
                     this.containsData.set(element.id, new Set<lsif.RangeId>())
                     break
@@ -250,6 +233,19 @@ export class Correlator {
     private handleMetaData(vertex: lsif.MetaData): void {
         this.lsifVersion = vertex.version
         this.projectRoot = new URL(vertex.projectRoot)
+
+        // We assume that the project root in the LSIF dump is either:
+        //
+        //   (1) the root of the LSIF dump, or
+        //   (2) the root of the repository
+        //
+        // These are the common cases and we don't explicitly support
+        // anything else. Here we normalize to (1) by appending the dump
+        // root if it's not already suffixed by it.
+
+        if (this.dumpRoot !== '' && !this.projectRoot.href.endsWith(this.dumpRoot)) {
+            this.projectRoot = new URL(this.dumpRoot, `${this.projectRoot.href}/`)
+        }
     }
 
     //

@@ -8,19 +8,13 @@ import { readEnvInt } from '../settings'
 //
 // See the following link for a bloom calculator: https://hur.st/bloomfilter
 
-/**
- * The number of bits allocated for new bloom filters.
- */
+/** The number of bits allocated for new bloom filters. */
 const BLOOM_FILTER_BITS = readEnvInt('BLOOM_FILTER_BITS', 64 * 1024)
 
-/**
- * The number of hash functions to use to determine if a value is a member of the filter.
- */
+/** The number of hash functions to use to determine if a value is a member of the filter. */
 const BLOOM_FILTER_NUM_HASH_FUNCTIONS = readEnvInt('BLOOM_FILTER_NUM_HASH_FUNCTIONS', 16)
 
-/**
- * A type that describes a the encoded version of a bloom filter.
- */
+/** A type that describes a the encoded version of a bloom filter. */
 export type EncodedBloomFilter = Buffer
 
 /**

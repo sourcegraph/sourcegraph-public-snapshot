@@ -90,7 +90,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(createMetaRouter())
-    app.use(createUploadRouter(uploadManager))
+    app.use(createUploadRouter(dumpManager, uploadManager, logger))
     app.use(createLsifRouter(backend, uploadManager, logger, tracer))
 
     // Error handler must be registered last

@@ -8,6 +8,20 @@ exports[`CampaignTabs renders 1`] = `
   tabs={
     Array [
       Object {
+        "id": "changesets",
+        "label": <span
+          className="e2e-campaign-changesets-tab"
+        >
+          Changesets
+           
+          <span
+            className="badge badge-secondary badge-pill"
+          >
+            0
+          </span>
+        </span>,
+      },
+      Object {
         "id": "diff",
         "label": <span
           className="e2e-campaign-diff-tab"
@@ -24,20 +38,6 @@ exports[`CampaignTabs renders 1`] = `
             className="text-danger"
           >
             -
-            0
-          </span>
-        </span>,
-      },
-      Object {
-        "id": "changesets",
-        "label": <span
-          className="e2e-campaign-changesets-tab"
-        >
-          Changesets
-           
-          <span
-            className="badge badge-secondary badge-pill"
-          >
             0
           </span>
         </span>,

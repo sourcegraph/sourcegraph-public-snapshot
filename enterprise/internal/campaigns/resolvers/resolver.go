@@ -62,6 +62,9 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 
 	changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: changesetID})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -81,6 +84,9 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 
 	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -100,6 +106,9 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 
 	job, err := r.store.GetCampaignJob(ctx, ee.GetCampaignJobOpts{ID: campaignJobID})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -119,6 +128,9 @@ func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphql
 
 	plan, err := r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: planID})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 

@@ -12,7 +12,7 @@ export function mustGet<K, V>(map: Map<K, V>, key: K, elementType: string): V {
         return value
     }
 
-    throw new Error(`Unknown ${elementType} '${key}'.`)
+    throw new Error(`Unknown ${elementType} '${String(key)}'.`)
 }
 
 /**
@@ -38,5 +38,5 @@ export function mustGetFromEither<K1, V1, K2, V2>(
         }
     }
 
-    throw new Error(`Unknown ${elementType} '${key}'.`)
+    throw new Error(`Unknown ${elementType} '${String(key)}'.`)
 }

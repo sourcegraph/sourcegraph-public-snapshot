@@ -231,7 +231,7 @@ describe('code_intelligence', () => {
                                 of({
                                     data: {
                                         repository: {
-                                            name: `github/${variables.rawRepoName}`,
+                                            name: `github/${variables.rawRepoName as string}`,
                                         },
                                     },
                                     errors: undefined,
@@ -386,9 +386,9 @@ describe('code_intelligence', () => {
                 const dom = {
                     getCodeElementFromTarget: (target: HTMLElement) => target.closest('.code-element') as HTMLElement,
                     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number, part?: DiffPart) =>
-                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${part}"] > .code-element`),
+                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${String(part)}"] > .code-element`),
                     getLineElementFromLineNumber: (codeView: HTMLElement, line: number, part?: DiffPart) =>
-                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${part}"]`),
+                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${String(part)}"]`),
                     getLineNumberFromCodeElement: (codeElement: HTMLElement) =>
                         parseInt(codeElement.parentElement!.getAttribute('line')!, 10),
                 }

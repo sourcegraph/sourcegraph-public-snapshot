@@ -1,10 +1,10 @@
 import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
-import * as path from 'path'
+import * as nodepath from 'path'
 import * as uuid from 'uuid'
 import rmfr from 'rmfr'
 import * as pgModels from '../../shared/models/pg'
-import { Backend, ReferencePaginationCursor } from '../../server/backend/backend'
+import { Backend } from '../../server/backend/backend'
 import { child_process } from 'mz'
 import { Connection } from 'typeorm'
 import { connectPostgres } from '../../shared/database/postgres'
@@ -12,18 +12,18 @@ import { convertLsif } from '../../worker/conversion/importer'
 import { dbFilename, ensureDirectory } from '../../shared/paths'
 import { lsp } from 'lsif-protocol'
 import { userInfo } from 'os'
-import { InternalLocation } from '../../server/backend/database'
 import { DumpManager } from '../../shared/store/dumps'
 import { DependencyManager } from '../../shared/store/dependencies'
 import { createSilentLogger } from '../../shared/logging'
 import { PathExistenceChecker } from '../../worker/conversion/existence'
+import { ReferencePaginationCursor } from '../../server/backend/cursor'
+import { isEqual, uniqWith } from 'lodash'
+import { InternalLocation } from '../../server/backend/location'
 
-/**
- * Create a temporary directory with a subdirectory for dbs.
- */
+/** Create a temporary directory with a subdirectory for dbs. */
 export async function createStorageRoot(): Promise<string> {
     const tempPath = await fs.mkdtemp('test-', { encoding: 'utf8' })
-    await ensureDirectory(path.join(tempPath, constants.DBS_DIR))
+    await ensureDirectory(nodepath.join(tempPath, constants.DBS_DIR))
     return tempPath
 }
 
@@ -47,8 +47,8 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
 
     // Determine the path of the migrate script. This will cover the case
     // where `yarn test` is run from within the root or from the lsif directory.
-    // const migrateScriptPath = path.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
-    const migrationsPath = path.join((await fs.exists('migrations')) ? '' : '..', 'migrations')
+    // const migrateScriptPath = nodepath.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
+    const migrationsPath = nodepath.join((await fs.exists('migrations')) ? '' : '..', 'migrations')
 
     // Ensure environment gets passed to child commands
     const env = {
@@ -200,11 +200,18 @@ export async function convertTestData(
 ): Promise<void> {
     // Create a filesystem read stream for the given test file. This will cover
     // the cases where `yarn test` is run from the root or from the lsif directory.
-    const fullFilename = path.join((await fs.exists('lsif')) ? 'lsif' : '', 'src/tests/integration/data', filename)
+    const fullFilename = nodepath.join((await fs.exists('lsif')) ? 'lsif' : '', 'src/tests/integration/data', filename)
 
-    const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
+    const tmp = nodepath.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const pathExistenceChecker = new PathExistenceChecker({ repositoryId, commit, root })
-    const { packages, references } = await convertLsif(fullFilename, tmp, pathExistenceChecker)
+
+    const { packages, references } = await convertLsif({
+        path: fullFilename,
+        root: '',
+        database: tmp,
+        pathExistenceChecker,
+    })
+
     const dump = await insertDump(connection, dumpManager, repositoryId, commit, root, indexer)
     await dependencyManager.addPackagesAndReferences(dump.id, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dump.id))
@@ -225,34 +232,22 @@ export async function convertTestData(
  * backend instance.
  */
 export class BackendTestContext {
-    /**
-     * A temporary directory.
-     */
+    /** A temporary directory. */
     private storageRoot?: string
 
-    /**
-     * The Postgres connection
-     */
+    /** The Postgres connection. */
     private connection?: Connection
 
-    /**
-     * A reference to a function that destroys the temporary database.
-     */
+    /** A reference to a function that destroys the temporary database. */
     private cleanup?: () => Promise<void>
 
-    /**
-     * The backend instance.
-     */
+    /** The backend instance. */
     public backend?: Backend
 
-    /**
-     * The dumps manager instance.
-     */
+    /** The dumps manager instance. */
     public dumpManager?: DumpManager
 
-    /**
-     * The dependency manager instance.
-     */
+    /** The dependency manager instance. */
     public dependencyManager?: DependencyManager
 
     /**
@@ -311,9 +306,7 @@ export class BackendTestContext {
         )
     }
 
-    /**
-     * Clean up disk and database resources created for this test.
-     */
+    /** Clean up disk and database resources created for this test. */
     public async teardown(): Promise<void> {
         if (this.storageRoot) {
             await rmfr(this.storageRoot)
@@ -330,7 +323,7 @@ export class BackendTestContext {
  *
  * @param repositoryId The repository identifier.
  * @param commit The commit.
- * @param documentPath The document path.
+ * @param documentPath The document nodepath.
  * @param startLine The starting line.
  * @param startCharacter The starting character.
  * @param endLine The ending line.
@@ -413,16 +406,63 @@ export function createCommit(base?: number): string {
 /**
  * Remove all node_modules locations from the output of a references result.
  *
- * @param args Parameter bag.
+ * @param resp The input containing a locations array.
  */
-export function filterNodeModules<T>({
-    locations,
-    cursor,
-}: {
-    /** The reference locations. */
-    locations: lsp.Location[]
-    /** The pagination cursor. */
-    cursor?: ReferencePaginationCursor
-}): { locations: lsp.Location[]; cursor?: ReferencePaginationCursor } {
-    return { locations: locations.filter(l => !l.uri.includes('node_modules')), cursor }
+export function filterNodeModules<T extends { locations: lsp.Location[] }>(resp: T): T {
+    return {
+        ...resp,
+        locations: uniqWith(
+            resp.locations.filter(l => !l.uri.includes('node_modules')),
+            isEqual
+        ),
+    }
+}
+
+/**
+ * Query all pages of references from the given backend.
+ *
+ * @param backend The backend instance.
+ * @param repositoryId The repository identifier.
+ * @param commit The commit.
+ * @param path The path of the document to which the position belongs.
+ * @param position The current hover position.
+ * @param limit The page limit.
+ * @param remoteDumpLimit The maximum number of remote dumps to query in one operation.
+ */
+export async function queryAllReferences(
+    backend: Backend,
+    repositoryId: number,
+    commit: string,
+    path: string,
+    position: lsp.Position,
+    limit: number,
+    remoteDumpLimit?: number
+): Promise<{ locations: InternalLocation[]; pageSizes: number[]; numPages: number }> {
+    let locations: InternalLocation[] = []
+    const pageSizes: number[] = []
+    let cursor: ReferencePaginationCursor | undefined
+
+    while (true) {
+        const result = await backend.references(
+            repositoryId,
+            commit,
+            path,
+            position,
+            { limit, cursor },
+            remoteDumpLimit
+        )
+        if (!result) {
+            break
+        }
+
+        locations = locations.concat(result.locations)
+        pageSizes.push(result.locations.length)
+
+        if (!result.newCursor) {
+            break
+        }
+        cursor = result.newCursor
+    }
+
+    return { locations, pageSizes, numPages: pageSizes.length }
 }

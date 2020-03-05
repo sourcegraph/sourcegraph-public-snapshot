@@ -56,8 +56,8 @@ describe('StatusMessagesNavItem', () => {
                 displayName: 'GitHub.com',
                 kind: GQL.ExternalServiceKind.GITHUB,
                 config: '{}',
-                createdAt: new Date(),
-                updatedAt: new Date(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
                 warning: '',
             },
         }

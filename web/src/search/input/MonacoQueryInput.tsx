@@ -1,6 +1,7 @@
 import React from 'react'
 import * as H from 'history'
 import * as Monaco from 'monaco-editor'
+import { noop } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
@@ -125,6 +126,8 @@ function addSouregraphSearchCodeIntelligence(
     return subscriptions
 }
 
+const NOOP_KEYBINDINGS = [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_F, Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter]
+
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
  * syntax highlighting, hovers, completions and diagnostics for search queries.
@@ -242,13 +245,15 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
         if (this.props.autoFocus) {
-            // Focus the editor with cursor at end.
+            // Focus the editor with cursor at end, and reveal that position.
             editor.focus()
-            editor.setPosition({
+            const position = {
                 // +2 as Monaco is 1-indexed, and the cursor should be placed after the query.
                 column: editor.getValue().length + 2,
                 lineNumber: 1,
-            })
+            }
+            editor.setPosition(position)
+            editor.revealPosition(position)
         }
         // Prevent newline insertion in model, and surface query changes with stripped newlines.
         this.subscriptions.add(
@@ -273,16 +278,12 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 })
             )
         )
-        // Prevent inserting newlines.
-        this.subscriptions.add(
-            toUnsubscribable(
-                editor.onKeyDown(e => {
-                    if (e.keyCode === Monaco.KeyCode.Enter) {
-                        e.preventDefault()
-                    }
-                })
-            )
-        )
+
+        // Disable some default Monaco keybindings
+        for (const keybinding of NOOP_KEYBINDINGS) {
+            editor.addCommand(keybinding, noop)
+        }
+
         // Trigger a layout of the Monaco editor when its container gets resized.
         // The Monaco editor doesn't auto-resize with its container:
         // https://github.com/microsoft/monaco-editor/issues/28

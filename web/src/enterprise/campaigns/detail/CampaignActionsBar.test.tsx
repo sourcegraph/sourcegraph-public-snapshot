@@ -29,6 +29,7 @@ describe('CampaignActionsBar', () => {
                             state: BackgroundProcessState.COMPLETED,
                         },
                         viewerCanAdminister: false,
+                        publishedAt: new Date().toISOString(),
                     }}
                 />
             )
@@ -48,6 +49,7 @@ describe('CampaignActionsBar', () => {
                             state: BackgroundProcessState.COMPLETED,
                         },
                         viewerCanAdminister: true,
+                        publishedAt: new Date().toISOString(),
                     }}
                 />
             )
@@ -67,6 +69,7 @@ describe('CampaignActionsBar', () => {
                             state: BackgroundProcessState.COMPLETED,
                         },
                         viewerCanAdminister: true,
+                        publishedAt: new Date().toISOString(),
                     }}
                 />
             )
@@ -86,6 +89,7 @@ describe('CampaignActionsBar', () => {
                             state: BackgroundProcessState.COMPLETED,
                         },
                         viewerCanAdminister: true,
+                        publishedAt: new Date().toISOString(),
                     }}
                 />
             )
@@ -105,6 +109,7 @@ describe('CampaignActionsBar', () => {
                             state: BackgroundProcessState.PROCESSING,
                         },
                         viewerCanAdminister: true,
+                        publishedAt: new Date().toISOString(),
                     }}
                 />
             )
@@ -124,6 +129,7 @@ describe('CampaignActionsBar', () => {
                             state: BackgroundProcessState.COMPLETED,
                         },
                         viewerCanAdminister: true,
+                        publishedAt: new Date().toISOString(),
                     }}
                 />
             )
@@ -143,6 +149,7 @@ describe('CampaignActionsBar', () => {
                             state: BackgroundProcessState.COMPLETED,
                         },
                         viewerCanAdminister: true,
+                        publishedAt: new Date().toISOString(),
                     }}
                 />
             )
@@ -162,6 +169,7 @@ describe('CampaignActionsBar', () => {
                             state: BackgroundProcessState.COMPLETED,
                         },
                         viewerCanAdminister: true,
+                        publishedAt: new Date().toISOString(),
                     }}
                 />
             )

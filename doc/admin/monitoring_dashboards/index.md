@@ -27,7 +27,7 @@ Panels for CPU, memory, open file descriptors, number of goroutines and garbage 
 
 ### repo-updater to external services
 
-Shows traffic to configured external services (code hosts). Dashboard has panels for Github, Gitlab and Bitbucket.
+Shows traffic to configured code hosts. Dashboard has panels for Github, Gitlab and Bitbucket.
 
 ### Searcher
 

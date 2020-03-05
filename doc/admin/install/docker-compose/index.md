@@ -1,5 +1,7 @@
 # Install Sourcegraph with Docker Compose
 
+> NOTE: Deploying Sourcegraph with Docker Compose is a [paid feature](https://about.sourcegraph.com/pricing). [Contact us](https://about.sourcegraph.com/contact/sales) to get a trial license.
+
 | Deployment Type                                          | Suggested for                                       | Setup time | Multi-machine? | Auto healing? | Monitoring? |
 | -------------------------------------------------------- | --------------------------------------------------- | ---------- | -------------- | ------------- | ----------- |
 | [Single-container server](../../install/docker/index.md) | Local testing                                       | 60 seconds | Impossible     | No            | No          |
@@ -45,6 +47,10 @@ git checkout $SOURCEGRAPH_VERSION -b release
 ## Storage
 
 The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount). 
+
+## Resource estimator
+
+Use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment.
 
 ## Cloud installation guides
 

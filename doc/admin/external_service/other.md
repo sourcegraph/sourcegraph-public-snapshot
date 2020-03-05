@@ -1,6 +1,6 @@
 # Other Git repository hosts
 
-Site admins can sync Git repositories on any Git repository host (by Git clone URL) with Sourcegraph so that users can search and navigate the repositories. Use this method only when your repository host is not named as a supported [external service](index.md).
+Site admins can sync Git repositories on any Git repository host (by Git clone URL) with Sourcegraph so that users can search and navigate the repositories. Use this method only when your repository host is not named as a supported [code host](index.md).
 
 To connect generic Git host to Sourcegraph:
 
@@ -61,7 +61,7 @@ Repositories must be listed individually:
 
 Start up a Sourcegraph instance
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.13.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.13.1</code></pre>
 
 Pick a directory you want to export from, then run:
 
@@ -86,7 +86,7 @@ chmod +x src-expose
 }
 ```
 
-Go to Admin > External services > Add external service > Single Git repositories. Input the above configuration. Your directories should now be syncing in Sourcegraph.
+Go to Admin > Manage Repositories > Add repositories > Single Git repositories. Input the above configuration. Your directories should now be syncing in Sourcegraph.
 
 ### Advanced configuration
 

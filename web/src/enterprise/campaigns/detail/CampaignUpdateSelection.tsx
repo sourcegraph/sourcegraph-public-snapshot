@@ -24,7 +24,14 @@ export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ histor
         <FilteredConnection<
             Pick<
                 GQL.ICampaign,
-                'id' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt'
+                | 'id'
+                | 'closedAt'
+                | 'name'
+                | 'description'
+                | 'changesets'
+                | 'changesetPlans'
+                | 'createdAt'
+                | 'publishedAt'
             >,
             Omit<CampaignNodeProps, 'node'>
         >

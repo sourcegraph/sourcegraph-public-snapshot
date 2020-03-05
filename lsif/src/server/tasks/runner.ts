@@ -64,7 +64,14 @@ export function startTasks(
 
     runTask(
         wrapTask('Purging old dumps', ctx =>
-            purgeOldDumps(connection, dumpManager, settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
+            purgeOldDumps(
+                connection,
+                dumpManager,
+                uploadManager,
+                settings.STORAGE_ROOT,
+                settings.DBS_DIR_MAXIMUM_SIZE_BYTES,
+                ctx
+            )
         ),
         settings.PURGE_OLD_DUMPS_INTERVAL
     )

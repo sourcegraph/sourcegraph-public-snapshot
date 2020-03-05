@@ -1,5 +1,7 @@
 # Installing Sourcegraph on a cluster
 
+> NOTE: Deploying Sourcegraph on a cluster is a [paid feature](https://about.sourcegraph.com/pricing). [Contact us](https://about.sourcegraph.com/contact/sales) to get a trial license.
+
 | Deployment Type                                       | Suggested for                                       | Setup time | Multi-machine? | Auto healing? | Monitoring? |
 |-------------------------------------------------------|-----------------------------------------------------|------------|----------------|---------------|-------------|
 | [Single-container server](../install/docker/index.md) | Local testing                                       | 60 seconds | Impossible     | No            | No          |
@@ -9,3 +11,7 @@
 For cluster deployments, we recommend installing Sourcegraph on Kubernetes. See the [deploy-sourcegraph repository](https://github.com/sourcegraph/deploy-sourcegraph) for more information.
 
 If you cannot use Kubernetes or prefer using your own container infrastructure, check out our [pure-Docker deployment reference](https://github.com/sourcegraph/deploy-sourcegraph-docker).
+
+## Resource estimator
+
+Use the [resource estimator](resource_estimator.md) to find a good starting point for your deployment.

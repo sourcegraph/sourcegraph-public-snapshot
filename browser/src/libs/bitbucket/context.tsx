@@ -27,17 +27,19 @@ function getRevSpecFromRevisionSelector(): RevSpec {
     }
     const revisionRefStr = branchNameElement.getAttribute('data-revision-ref')
     let revisionRefInfo: RevisionRefInfo | null = null
-    try {
-        revisionRefInfo = revisionRefStr && JSON.parse(revisionRefStr)
-    } catch (err) {
-        throw new Error(`Could not parse revisionRefStr: ${revisionRefStr}`)
+    if (revisionRefStr) {
+        try {
+            revisionRefInfo = JSON.parse(revisionRefStr)
+        } catch (err) {
+            throw new Error(`Could not parse revisionRefStr: ${revisionRefStr}`)
+        }
     }
     if (revisionRefInfo?.latestCommit) {
         return {
             rev: revisionRefInfo.latestCommit,
         }
     }
-    throw new Error(`revisionRefInfo is empty or has no latestCommit (revisionRefStr: ${revisionRefStr})`)
+    throw new Error(`revisionRefInfo is empty or has no latestCommit (revisionRefStr: ${String(revisionRefStr)})`)
 }
 
 export function getContext(): CodeHostContext {

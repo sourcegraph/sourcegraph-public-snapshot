@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type surveyResponseResolver struct {
@@ -111,7 +112,8 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		IsAuthenticated: actor.IsAuthenticated(),
 		SiteID:          siteid.Get(),
 	}); err != nil {
-		return nil, err
+		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
+		log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
 	}
 
 	return &EmptyResponse{}, nil
