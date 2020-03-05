@@ -280,7 +280,8 @@ export class Database {
 
     /**
      * Return a parsed document that describes the given path. The result of this
-     * method is cached across all database instances.
+     * method is cached across all database instances. If the document is not found
+     * it returns undefined; other errors will throw.
      *
      * @param path The path of the document.
      * @param ctx The tracing context.
