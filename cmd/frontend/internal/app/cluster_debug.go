@@ -28,13 +28,7 @@ type proxyEndpoint struct {
 }
 
 func (pe *proxyEndpoint) String() string {
-	var sb strings.Builder
-
-	sb.WriteString(pe.service)
-	sb.WriteString("-")
-	sb.WriteString(pe.host)
-
-	return sb.String()
+	return fmt.Sprintf("%s-%s", pe.service, pe.host)
 }
 
 type clusterInstrumenter struct {
