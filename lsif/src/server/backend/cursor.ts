@@ -59,7 +59,7 @@ export interface DefinitionMonikersReferenceCursor extends ReferencePaginationCu
     skipResults: number
 }
 
-/** Bookkeeping data for the part of the reference result set that deals with additional dumps. */
+/** Bookkeeping data for the reference results that come from additional (remote) dumps. */
 export interface RemoteDumpReferenceCursor extends ReferencePaginationCursorCommon {
     phase: 'same-repo' | 'remote-repo'
 
