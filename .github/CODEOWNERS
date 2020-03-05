@@ -256,7 +256,6 @@ Dockerfile @sourcegraph/distribution
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
-/dev/fakehub @sourcegraph/core-services
 /dev/repogen @sourcegraph/core-services
 /.vscode @felixfbecker
 /.graphqlconfig @felixfbecker
