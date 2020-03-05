@@ -580,15 +580,9 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if e == nil {
-		log15.Info("Dropping unrecognized Bitbucket Server webhook event")
-		respond(w, http.StatusOK, nil)
-		return
-	}
-
 	pr, ev := h.convertEvent(e)
 	if pr == 0 || ev == nil {
-		log15.Info("Dropping unrecognized Bitbucket Server webhook event")
+		log15.Info("Dropping Bitbucket Server webhook event: %T", e)
 		respond(w, http.StatusOK, nil) // Nothing to do
 		return
 	}
