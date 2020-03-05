@@ -11,7 +11,7 @@ Sourcegraph's core data (including user accounts, configuration, repository-meta
 * This migration can only be done with Sourcegraph `3.13.1` and above (e.g. `sourcegraph/server:3.13.1` and [v3.13.1 (TODO FILL IN RELEASE HERE) Docker Compose](TODO) ).
 * Sourcegraph's core data can only be transferred between deployments that are running the same Sourcegraph version (e.g. `sourcegraph/server:3.13.1` can only transfer its data to `v3.13.1` of the Docker Compose definition). If you're running a version of Sourcegraph server that's older than the Docker Compose deployment version, you **must** upgrade to a newer `sourcegraph/server` version before continuing.
 
-### Storage location
+### Storage location change
 
 After this process, Sourcegraph's data will be stored in Docker volumes instead of `~/.sourcegraph/`. For more information, see the cloud-provider documentation referred to in ["Create the new Docker Compose instance"](#create-the-new-docker-compose-instance).
 
