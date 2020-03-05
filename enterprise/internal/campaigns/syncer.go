@@ -26,7 +26,7 @@ type ChangesetSyncer struct {
 
 	priorityNotify chan struct{}
 
-	mtx   sync.Mutex
+	mu    sync.Mutex
 	queue *changesetPriorityQueue
 }
 
@@ -49,9 +49,9 @@ func (s *ChangesetSyncer) Run() {
 		// Non fatal as we'll try again later in the main loop
 		log15.Error("Computing schedule", "err", err)
 	} else {
-		s.mtx.Lock()
+		s.mu.Lock()
 		s.queue.Reschedule(sched)
-		s.mtx.Unlock()
+		s.mu.Unlock()
 	}
 
 	var next scheduledSync
@@ -60,9 +60,9 @@ func (s *ChangesetSyncer) Run() {
 	for {
 		timer := new(time.Timer)
 
-		s.mtx.Lock()
+		s.mu.Lock()
 		next, ok = s.queue.Peek()
-		s.mtx.Unlock()
+		s.mu.Unlock()
 
 		if ok {
 			var d time.Duration
@@ -80,9 +80,9 @@ func (s *ChangesetSyncer) Run() {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
-			s.mtx.Lock()
+			s.mu.Lock()
 			s.queue.Reschedule(schedule)
-			s.mtx.Unlock()
+			s.mu.Unlock()
 		case <-timer.C:
 			err := s.SyncChangesetByID(ctx, next.changesetID)
 			if err != nil {
@@ -91,12 +91,12 @@ func (s *ChangesetSyncer) Run() {
 			}
 			// Remove item, we need to get it again as it could have moved
 			// due to a high priority item arriving
-			s.mtx.Lock()
+			s.mu.Lock()
 			i, ok := s.queue.index[next.changesetID]
 			if ok {
 				heap.Remove(s.queue, i)
 			}
-			s.mtx.Unlock()
+			s.mu.Unlock()
 		case <-s.priorityNotify:
 			timer.Stop()
 		}
@@ -168,8 +168,8 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
 // An error indicates that no changesets have been synced
 func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	if s.queue == nil {
 		return errors.New("background syncing not initialised")
