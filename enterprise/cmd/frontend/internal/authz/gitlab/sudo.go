@@ -32,8 +32,16 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exter
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	}
-	sudo := strconv.Itoa(int(user.ID))
 
+	client := p.clientProvider.GetPATClient(p.sudoToken, strconv.Itoa(int(user.ID)))
+	return listProjects(ctx, client)
+}
+
+// listProjects is a helper function to request for all private projects that are accessible
+// (20 => Reporter access) by the authenticated or impersonated user in the client. It may
+// return partial but valid results in case of error, and it is up to callers to decide
+// whether to discard.
+func listProjects(ctx context.Context, client *gitlab.Client) ([]string, error) {
 	q := make(url.Values)
 	q.Add("visibility", "private")  // This method is meant to return only private projects
 	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
@@ -45,8 +53,6 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exter
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	projectIDs := make([]string, 0, 100)
-
-	client := p.clientProvider.GetPATClient(p.sudoToken, sudo)
 	for {
 		projects, next, err := client.ListProjects(ctx, nextURL)
 		if err != nil {
