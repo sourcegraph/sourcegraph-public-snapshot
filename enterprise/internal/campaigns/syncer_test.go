@@ -18,12 +18,12 @@ func TestNextSync(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		h    campaigns.ChangesetSyncHeuristics
+		h    campaigns.ChangesetSyncData
 		want time.Time
 	}{
 		{
 			name: "No time passed",
-			h: campaigns.ChangesetSyncHeuristics{
+			h: campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock(),
 			},
@@ -31,7 +31,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Linear backoff",
-			h: campaigns.ChangesetSyncHeuristics{
+			h: campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * time.Hour),
 			},
@@ -39,7 +39,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Use max of ExternalUpdateAt and LatestEvent",
-			h: campaigns.ChangesetSyncHeuristics{
+			h: campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-2 * time.Hour),
 				LatestEvent:       clock().Add(-1 * time.Hour),
@@ -49,7 +49,7 @@ func TestNextSync(t *testing.T) {
 		{
 			// Could happen due to clock skew
 			name: "Future change",
-			h: campaigns.ChangesetSyncHeuristics{
+			h: campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(1 * time.Hour),
 			},
@@ -57,7 +57,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Diff max is capped",
-			h: campaigns.ChangesetSyncHeuristics{
+			h: campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-2 * maxSyncDelay),
 			},
@@ -65,7 +65,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Diff min is capped",
-			h: campaigns.ChangesetSyncHeuristics{
+			h: campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * minSyncDelay / 2),
 			},

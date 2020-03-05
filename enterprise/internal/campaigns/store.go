@@ -547,13 +547,13 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// ListChangesetSyncHeuristics returns sync timing data on all non-externally-deleted changesets.
-func (s *Store) ListChangesetSyncHeuristics(ctx context.Context) ([]campaigns.ChangesetSyncHeuristics, error) {
-	q := listChangesetSyncHeuristicsQuery()
-	results := make([]campaigns.ChangesetSyncHeuristics, 0)
+// ListChangesetSyncData returns sync timing data on all non-externally-deleted changesets.
+func (s *Store) ListChangesetSyncData(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+	q := listChangesetSyncData()
+	results := make([]campaigns.ChangesetSyncData, 0)
 	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var h campaigns.ChangesetSyncHeuristics
-		if err = scanChangesetHeuristics(&h, sc); err != nil {
+		var h campaigns.ChangesetSyncData
+		if err = scanChangesetSyncData(&h, sc); err != nil {
 			return 0, 0, err
 		}
 		results = append(results, h)
@@ -565,7 +565,7 @@ func (s *Store) ListChangesetSyncHeuristics(ctx context.Context) ([]campaigns.Ch
 	return results, nil
 }
 
-func scanChangesetHeuristics(h *campaigns.ChangesetSyncHeuristics, s scanner) error {
+func scanChangesetSyncData(h *campaigns.ChangesetSyncData, s scanner) error {
 	return s.Scan(
 		&h.ChangesetID,
 		&h.UpdatedAt,
@@ -574,7 +574,7 @@ func scanChangesetHeuristics(h *campaigns.ChangesetSyncHeuristics, s scanner) er
 	)
 }
 
-func listChangesetSyncHeuristicsQuery() *sqlf.Query {
+func listChangesetSyncData() *sqlf.Query {
 	return sqlf.Sprintf(`
 SELECT changesets.id,
        changesets.updated_at,

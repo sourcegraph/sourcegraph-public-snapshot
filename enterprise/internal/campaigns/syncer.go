@@ -109,7 +109,7 @@ var (
 )
 
 // nextSync computes the time we want the next sync to happen.
-func nextSync(h campaigns.ChangesetSyncHeuristics) time.Time {
+func nextSync(h campaigns.ChangesetSyncData) time.Time {
 	lastSync := h.UpdatedAt
 	var lastChange time.Time
 	// When we perform a sync, event timestamps are all updated even if nothing has changed.
@@ -147,9 +147,9 @@ func absDuration(d time.Duration) time.Duration {
 }
 
 func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]syncSchedule, error) {
-	hs, err := s.Store.ListChangesetSyncHeuristics(ctx)
+	hs, err := s.Store.ListChangesetSyncData(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "listing changeset heuristics")
+		return nil, errors.Wrap(err, "listing changeset sync data")
 	}
 
 	ss := make([]syncSchedule, len(hs))
