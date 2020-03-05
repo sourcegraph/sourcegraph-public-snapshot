@@ -483,7 +483,7 @@ type priority int
 
 const (
 	priorityNormal priority = iota
-	priorityHigh   priority = iota
+	priorityHigh
 )
 
 // A SourceChangesets groups *repos.Changesets together with the
