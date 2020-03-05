@@ -13,8 +13,12 @@ ALTER TABLE repo_permissions
     ADD CONSTRAINT repo_permissions_perm_unique
         UNIQUE (repo_id, permission);
 
+ALTER TABLE user_permissions ALTER COLUMN provider DROP NOT NULL;
+ALTER TABLE repo_permissions ALTER COLUMN provider DROP NOT NULL;
+
+-- To be done in 3.15:
 -- Remove the provider column.
-ALTER TABLE user_permissions DROP COLUMN provider;
-ALTER TABLE repo_permissions DROP COLUMN provider;
+-- ALTER TABLE user_permissions DROP COLUMN provider;
+-- ALTER TABLE repo_permissions DROP COLUMN provider;
 
 COMMIT;

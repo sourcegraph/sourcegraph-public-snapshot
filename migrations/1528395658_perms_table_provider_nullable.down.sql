@@ -2,11 +2,9 @@ BEGIN;
 
 -- Fill in values for rows as Bitbucket Server authz provider,
 -- no customers known have used Sourcegraph authz provider yet.
-ALTER TABLE user_permissions ADD COLUMN provider TEXT;
 UPDATE user_permissions SET provider = 'bitbucketServer';
 ALTER TABLE user_permissions ALTER COLUMN provider SET NOT NULL;
 
-ALTER TABLE repo_permissions ADD COLUMN provider TEXT;
 UPDATE repo_permissions SET provider = 'bitbucketServer';
 ALTER TABLE repo_permissions ALTER COLUMN provider SET NOT NULL;
 
