@@ -881,7 +881,7 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 			return "", errors.New("ChangesetEvent metadata event not PullRequestReview")
 		}
 
-		s := ChangesetReviewState(review.State)
+		s := ChangesetReviewState(strings.ToUpper(review.State))
 		if !s.Valid() {
 			// Ignore invalid states
 			log15.Warn("invalid review state", "state", review.State)
