@@ -67,10 +67,7 @@ export function parseSearchURL(
     const patternTypeInQuery = parsePatternTypeFromQuery(finalQuery)
     if (patternTypeInQuery) {
         // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
-        finalQuery = replaceRange(finalQuery, {
-            start: patternTypeInQuery.range.start,
-            end: patternTypeInQuery.range.end,
-        })
+        finalQuery = replaceRange(finalQuery, patternTypeInQuery.range)
         patternType = patternTypeInQuery.value as SearchPatternType
     }
 
