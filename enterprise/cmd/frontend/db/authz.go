@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -73,7 +73,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	defer txs.Done(&err)
 
 	for _, bindID := range bindIDs {
-		err = txs.GrantPendingPermissions(ctx, args.UserID, &iauthz.UserPendingPermissions{
+		err = txs.GrantPendingPermissions(ctx, args.UserID, &authz.UserPendingPermissions{
 			BindID: bindID,
 			Perm:   args.Perm,
 			Type:   args.Type,
@@ -86,19 +86,21 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	return nil
 }
 
+// AuthorizedRepos checks if a user is authorized to access repositories in the candidate list,
+// which implements the db.AuthzStore interface.
 func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedReposArgs) ([]*types.Repo, error) {
 	if len(args.Repos) == 0 {
 		return args.Repos, nil
 	}
 
-	p := &iauthz.UserPermissions{
+	p := &authz.UserPermissions{
 		UserID:   args.UserID,
 		Perm:     args.Perm,
 		Type:     args.Type,
 		Provider: args.Provider,
 	}
 	if err := s.store.LoadUserPermissions(ctx, p); err != nil {
-		if err == ErrPermsNotFound {
+		if err == authz.ErrPermsNotFound {
 			return []*types.Repo{}, nil
 		}
 		return nil, err
@@ -110,4 +112,25 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 		filtered[i] = r.Repo
 	}
 	return filtered, nil
+}
+
+// RevokeUserPermissions deletes both effective and pending permissions that could be related to a user,
+// which implements the db.AuthzStore interface. It proactively clean up left-over pending permissions to
+// prevent accidental reuse (i.e. another user with same username or email address(es) but not the same person).
+func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeUserPermissionsArgs) error {
+	txs, err := s.store.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "start transaction")
+	}
+	defer txs.Done(&err)
+
+	if err = txs.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
+		return err
+	}
+
+	bindIDs := append([]string{args.Username}, args.VerifiedEmails...)
+	if err := txs.DeleteAllUserPendingPermissions(ctx, bindIDs); err != nil {
+		return err
+	}
+	return nil
 }

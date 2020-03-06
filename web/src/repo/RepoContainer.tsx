@@ -295,7 +295,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                         {/* eslint-disable react/jsx-no-bind */}
                         {[
                             '',
-                            `@${this.state.rawRev}`, // must exactly match how the rev was encoded in the URL
+                            ...(this.state.rawRev ? [`@${this.state.rawRev}`] : []), // must exactly match how the rev was encoded in the URL
                             '/-/blob',
                             '/-/tree',
                             '/-/commits',

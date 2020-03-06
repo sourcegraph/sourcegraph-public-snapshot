@@ -15,8 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -24,11 +23,9 @@ type Resolver struct {
 	store *edb.PermsStore
 }
 
-var _ graphqlbackend.AuthzResolver = &Resolver{}
-
-func NewResolver() graphqlbackend.AuthzResolver {
+func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		store: edb.NewPermsStore(dbconn.Global, time.Now),
+		store: edb.NewPermsStore(db, clock),
 	}
 }
 
@@ -62,7 +59,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		bindIDSet[bindIDs[i]] = struct{}{}
 	}
 
-	p := &iauthz.RepoPermissions{
+	p := &authz.RepoPermissions{
 		RepoID:   int32(repoID),
 		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
 		UserIDs:  roaring.NewBitmap(),
@@ -142,7 +139,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 
 	var ids *roaring.Bitmap
 	if user != nil {
-		p := &iauthz.UserPermissions{
+		p := &authz.UserPermissions{
 			UserID:   user.ID,
 			Perm:     authz.Read, // Note: We currently only support read for repository permissions.
 			Type:     authz.PermRepos,
@@ -151,7 +148,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		err = r.store.LoadUserPermissions(ctx, p)
 		ids = p.IDs
 	} else {
-		p := &iauthz.UserPendingPermissions{
+		p := &authz.UserPendingPermissions{
 			BindID: bindID,
 			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 			Type:   authz.PermRepos,
@@ -159,11 +156,11 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		err = r.store.LoadUserPendingPermissions(ctx, p)
 		ids = p.IDs
 	}
-	if err != nil && err != edb.ErrPermsNotFound {
+	if err != nil && err != authz.ErrPermsNotFound {
 		return nil, err
 	}
 	// If no row is found, we return an empty list to the consumer.
-	if err == edb.ErrPermsNotFound {
+	if err == authz.ErrPermsNotFound {
 		ids = roaring.NewBitmap()
 	}
 
@@ -198,17 +195,17 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		return nil, err
 	}
 
-	p := &iauthz.RepoPermissions{
+	p := &authz.RepoPermissions{
 		RepoID:   int32(repoID),
 		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
 		Provider: authz.ProviderSourcegraph,
 	}
 	err = r.store.LoadRepoPermissions(ctx, p)
-	if err != nil && err != edb.ErrPermsNotFound {
+	if err != nil && err != authz.ErrPermsNotFound {
 		return nil, err
 	}
 	// If no row is found, we return an empty list to the consumer.
-	if err == edb.ErrPermsNotFound {
+	if err == authz.ErrPermsNotFound {
 		p.UserIDs = roaring.NewBitmap()
 	}
 

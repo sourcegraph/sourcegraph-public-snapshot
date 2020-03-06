@@ -26,15 +26,15 @@ Sourcegraph server is a collection of smaller binaries. The development server, 
 Sourcegraph has the following dependencies:
 
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
-- [Go](https://golang.org/doc/install) (v1.13 or higher)
-- [Node JS](https://nodejs.org/en/download/) (version 8 or 10)
+- [Go](https://golang.org/doc/install) (v1.14 or higher)
+- [Node JS](https://nodejs.org/en/download/) (see current recommended version in [.nvmrc](https://github.com/sourcegraph/sourcegraph/blob/master/.nvmrc))
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v18 or higher)
   - For macOS we recommend using Docker for Mac instead of `docker-machine`
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v11 or higher)
-- [Redis](http://redis.io/) (v3.0.7 or higher)
+- [Redis](http://redis.io/) (v5.0.7 or higher)
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
-- [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
+- [NGINX](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 - [SQLite](https://www.sqlite.org/index.html) tools
 - [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
@@ -52,13 +52,19 @@ The following are two recommendations for installing these dependencies:
     brew cask install docker
     ```
 
-3.  Install Go, Node, PostgreSQL, Redis, Git, nginx, golang-migrate, Comby, and SQLite tools with the following command:
+3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, and SQLite tools with the following command:
 
     ```bash
-    brew install go node yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go nvm yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
     ```
 
-4.  Configure PostgreSQL and Redis to start automatically
+4. Install the current recommended version of Node JS using:
+
+    ```bash
+    nvm install
+    ```
+
+5.  Configure PostgreSQL and Redis to start automatically
 
     ```bash
     brew services start postgresql
@@ -67,7 +73,7 @@ The following are two recommendations for installing these dependencies:
 
     (You can stop them later by calling `stop` instead of `start` above.)
 
-5.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
+6.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
     Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
     ```bash
@@ -75,7 +81,7 @@ The following are two recommendations for installing these dependencies:
     source ~/.bash_profile
     ```
 
-6.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
+7.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
 
 ### Ubuntu
 
@@ -93,9 +99,6 @@ The following are two recommendations for installing these dependencies:
     # Yarn
     curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
     echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-
-    # Node.js
-    curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
     ```
 
 2. Update repositories:
@@ -107,13 +110,19 @@ The following are two recommendations for installing these dependencies:
 3. Install dependencies:
 
     ```bash
-    sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io nodejs yarn
+    sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn
 
     # install golang-migrate (you must move the extracted binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
 
     # install comby (you must move the extracted binary into your $PATH)
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
+
+    # nvm (to manage Node.js)
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.2/install.sh | bash
+
+    # in repo dir: install current recommendend version of Node JS
+    nvm install
     ```
 
 4. Configure startup services

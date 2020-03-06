@@ -177,6 +177,39 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) (*p
 	return &res, nil
 }
 
+// MockEnqueueChangesetSync mocks (*Client).EnqueueChangesetSync for tests.
+var MockEnqueueChangesetSync func(ctx context.Context, ids []int64) error
+
+func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
+	if MockEnqueueChangesetSync != nil {
+		return MockEnqueueChangesetSync(ctx, ids)
+	}
+
+	req := protocol.ChangesetSyncRequest{IDs: ids}
+	resp, err := c.httpPost(ctx, "enqueue-changeset-sync", req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to read response body")
+	}
+
+	var res protocol.ChangesetSyncResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return err
+	}
+
+	if res.Error == "" {
+		return nil
+	}
+	return errors.New(res.Error)
+}
+
 // SyncExternalService requests the given external service to be synced.
 func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error) {
 	req := &protocol.ExternalServiceSyncRequest{ExternalService: svc}
@@ -212,7 +245,7 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 
 // RepoExternalServices requests the external services associated with a
 // repository with the given id.
-func (c *Client) RepoExternalServices(ctx context.Context, id uint32) ([]api.ExternalService, error) {
+func (c *Client) RepoExternalServices(ctx context.Context, id api.RepoID) ([]api.ExternalService, error) {
 	req := protocol.RepoExternalServicesRequest{ID: id}
 	resp, err := c.httpPost(ctx, "repo-external-services", &req)
 	if err != nil {
@@ -237,7 +270,7 @@ func (c *Client) RepoExternalServices(ctx context.Context, id uint32) ([]api.Ext
 
 // ExcludeRepo adds the repository with the given id to all of the
 // external services exclude lists that match its kind.
-func (c *Client) ExcludeRepo(ctx context.Context, id uint32) (*protocol.ExcludeRepoResponse, error) {
+func (c *Client) ExcludeRepo(ctx context.Context, id api.RepoID) (*protocol.ExcludeRepoResponse, error) {
 	if id == 0 {
 		return &protocol.ExcludeRepoResponse{}, nil
 	}

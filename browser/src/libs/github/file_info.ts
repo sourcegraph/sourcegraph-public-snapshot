@@ -30,7 +30,7 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
     try {
         const parsedURL = parseURL()
         if (parsedURL.pageType !== 'blob') {
-            throw new Error(`Current URL does not match a blob url: ${window.location}`)
+            throw new Error(`Current URL does not match a blob url: ${window.location.href}`)
         }
         const { revAndFilePath, rawRepoName } = parsedURL
 
@@ -74,7 +74,7 @@ export const resolveSnippetFileInfo = (codeView: HTMLElement): Observable<FileIn
         const snippetPermalinkURL = new URL((anchors[0] as HTMLAnchorElement).href)
         const parsedURL = parseURL(snippetPermalinkURL)
         if (parsedURL.pageType !== 'blob') {
-            throw new Error(`Snippet URL does not match a blob url: ${snippetPermalinkURL}`)
+            throw new Error(`Snippet URL does not match a blob url: ${snippetPermalinkURL.href}`)
         }
         const { revAndFilePath, rawRepoName } = parsedURL
         if (!revAndFilePath.startsWith(commitID)) {

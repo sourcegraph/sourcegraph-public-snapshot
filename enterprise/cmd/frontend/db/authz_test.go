@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -118,7 +117,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			globals.SetPermissionsUserMapping(test.config)
 
 			for _, update := range test.updates {
-				err := s.store.SetRepoPendingPermissions(ctx, update.bindIDs, &iauthz.RepoPermissions{
+				err := s.store.SetRepoPendingPermissions(ctx, update.bindIDs, &authz.RepoPermissions{
 					RepoID:   update.repoID,
 					Perm:     authz.Read,
 					Provider: authz.ProviderSourcegraph,
@@ -133,7 +132,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			p := &iauthz.UserPermissions{
+			p := &authz.UserPermissions{
 				UserID:   user.ID,
 				Perm:     authz.Read,
 				Type:     authz.PermRepos,
@@ -230,7 +229,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			defer cleanupPermsTables(t, s.store)
 
 			for _, update := range test.updates {
-				err := s.store.SetRepoPermissions(ctx, &iauthz.RepoPermissions{
+				err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 					RepoID:   update.repoID,
 					Perm:     authz.Read,
 					UserIDs:  toBitmap(update.userIDs...),
@@ -248,5 +247,64 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 
 			equal(t, "repos", test.expectRepos, repos)
 		})
+	}
+}
+
+func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	s := NewAuthzStore(dbconn.Global, clock).(*authzStore)
+
+	// Set both effective and pending permissions for a user
+	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
+		RepoID:   1,
+		Perm:     authz.Read,
+		UserIDs:  toBitmap(1),
+		Provider: authz.ProviderSourcegraph,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	bindIDs := []string{"alice", "alice@example.com"}
+	if err := s.store.SetRepoPendingPermissions(ctx, bindIDs, &authz.RepoPermissions{
+		RepoID: 1,
+		Perm:   authz.Read,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Revoke all of them
+	if err := s.RevokeUserPermissions(ctx, &db.RevokeUserPermissionsArgs{
+		UserID:         1,
+		Username:       "alice",
+		VerifiedEmails: []string{"alice@example.com"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// The user should not have any permissions now
+	err := s.store.LoadUserPermissions(ctx, &authz.UserPermissions{
+		UserID:   1,
+		Perm:     authz.Read,
+		Type:     authz.PermRepos,
+		Provider: authz.ProviderSourcegraph,
+	})
+	if err != authz.ErrPermsNotFound {
+		t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
+	}
+
+	for _, bindID := range bindIDs {
+		err = s.store.LoadUserPendingPermissions(ctx, &authz.UserPendingPermissions{
+			BindID: bindID,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		})
+		if err != authz.ErrPermsNotFound {
+			t.Fatalf("[%s] err: want %q but got %v", bindID, authz.ErrPermsNotFound, err)
+		}
 	}
 }

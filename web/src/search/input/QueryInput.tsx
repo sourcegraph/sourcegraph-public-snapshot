@@ -18,7 +18,6 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { Suggestion, SuggestionItem, createSuggestion, fuzzySearchFilters } from './Suggestion'
-import { RegexpToggle } from './RegexpToggle'
 import { PatternTypeProps, CaseSensitivityProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions } from '../searchFilterSuggestions'
@@ -35,9 +34,9 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
-import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
-import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
-import { CaseSensitivityToggle } from './CaseSensitivityToggle'
+import { FiltersToTypeAndValue, FilterType } from '../../../../shared/src/search/interactive/util'
+import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { Toggles } from './toggles/Toggles'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -45,7 +44,7 @@ import { CaseSensitivityToggle } from './CaseSensitivityToggle'
  */
 export const queryUpdates = new Subject<string>()
 
-interface Props extends PatternTypeProps, CaseSensitivityProps {
+interface Props extends PatternTypeProps, CaseSensitivityProps, SettingsCascadeProps {
     location: H.Location
     history: H.History
 
@@ -150,7 +149,12 @@ export class QueryInput extends React.Component<Props, State> {
         // (will be used in next PR to push to queryHistory (undo/redo))
         this.subscriptions.add(this.inputValues.subscribe(queryState => this.props.onChange(queryState)))
 
-        if (!this.props.withoutSuggestions) {
+        const hideSuggestionsSetting =
+            isSettingsValid(props.settingsCascade) &&
+            props.settingsCascade.final &&
+            props.settingsCascade.final['search.hideSuggestions']
+
+        if (!hideSuggestionsSetting && !this.props.withoutSuggestions) {
             // Show suggestions on input change.
             this.subscriptions.add(
                 this.inputValues.subscribe(() => {
@@ -214,8 +218,8 @@ export class QueryInput extends React.Component<Props, State> {
                                     // Only show fuzzy-suggestions that are relevant to the typed filter
                                     if (filterAndValueBeforeCursor?.resolvedFilterType) {
                                         switch (filterAndValueBeforeCursor.resolvedFilterType) {
-                                            case SuggestionTypes.repohasfile:
-                                                return suggestion.type === SuggestionTypes.file
+                                            case FilterType.repohasfile:
+                                                return suggestion.type === FilterType.file
                                             default:
                                                 return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
                                         }
@@ -328,6 +332,7 @@ export class QueryInput extends React.Component<Props, State> {
                         this.focusInputAndPositionCursorAtEnd()
                         const q = new URLSearchParams(props.location.search)
                         q.delete('focus')
+                        // eslint-disable-next-line @typescript-eslint/no-base-to-string
                         this.props.history.replace({ search: q.toString() })
                     })
             )
@@ -354,8 +359,14 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const hideSuggestionsSetting =
+            isSettingsValid(this.props.settingsCascade) &&
+            this.props.settingsCascade.final &&
+            this.props.settingsCascade.final['search.hideSuggestions']
+
         const showSuggestions =
             !this.props.withoutSuggestions &&
+            !hideSuggestionsSetting &&
             this.state.showSuggestions &&
             (this.state.suggestions.values.length > 0 || this.state.loadingSuggestions)
 
@@ -407,7 +418,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     <ul className="query-input2__suggestions e2e-query-suggestions" {...getMenuProps()}>
                                         {this.state.suggestions.values.map((suggestion, index) => {
                                             const isSelected = highlightedIndex === index
-                                            const key = `${index}-${suggestion}`
+                                            const key = `${index}-${suggestion.value}`
                                             return (
                                                 <SuggestionItem
                                                     key={key}
@@ -431,18 +442,12 @@ export class QueryInput extends React.Component<Props, State> {
                                         )}
                                     </ul>
                                 )}
-                                <div className="query-input2__toggle-container">
-                                    <CaseSensitivityToggle
-                                        {...this.props}
-                                        navbarSearchQuery={this.props.value.query}
-                                        filtersInQuery={this.props.filterQuery}
-                                    />
-                                    <RegexpToggle
-                                        {...this.props}
-                                        navbarSearchQuery={this.props.value.query}
-                                        filtersInQuery={this.props.filterQuery}
-                                    />
-                                </div>
+                                <Toggles
+                                    {...this.props}
+                                    navbarSearchQuery={this.props.value.query}
+                                    filtersInQuery={this.props.filterQuery}
+                                    className="query-input2__toggle-container"
+                                />
                             </div>
                         </div>
                     )

@@ -25,11 +25,14 @@ func TestIntegration_PermsStore(t *testing.T) {
 	}{
 		{"PermsStore/LoadUserPermissions", testPermsStore_LoadUserPermissions(db)},
 		{"PermsStore/LoadRepoPermissions", testPermsStore_LoadRepoPermissions(db)},
+		{"PermsStore/SetUserPermissions", testPermsStore_SetUserPermissions(db)},
 		{"PermsStore/SetRepoPermissions", testPermsStore_SetRepoPermissions(db)},
 		{"PermsStore/LoadUserPendingPermissions", testPermsStore_LoadUserPendingPermissions(db)},
 		{"PermsStore/SetRepoPendingPermissions", testPermsStore_SetRepoPendingPermissions(db)},
 		{"PermsStore/ListPendingUsers", testPermsStore_ListPendingUsers(db)},
 		{"PermsStore/GrantPendingPermissions", testPermsStore_GrantPendingPermissions(db)},
+		{"PermsStore/DeleteAllUserPermissions", testPermsStore_DeleteAllUserPermissions(db)},
+		{"PermsStore/DeleteAllUserPendingPermissions", testPermsStore_DeleteAllUserPendingPermissions(db)},
 		{"PermsStore/DatabaseDeadlocks", testPermsStore_DatabaseDeadlocks(db)},
 	} {
 		t.Run(tc.name, tc.test)

@@ -8,10 +8,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -44,7 +46,7 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 	if err != nil {
 		return nil, err
 	}
-	baseURL = NormalizeBaseURL(baseURL)
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
 	if cf == nil {
 		cf = httpcli.NewExternalHTTPClientFactory()
@@ -140,7 +142,7 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 }
 
 // CloseChangeset closes the given *Changeset on the code host and updates the
-// Metadata column in the *a8n.Changeset to the newly closed pull request.
+// Metadata column in the *campaigns.Changeset to the newly closed pull request.
 func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
 	if !ok {
@@ -187,9 +189,21 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 
 		err = s.client.LoadPullRequestActivities(ctx, pr)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "loading pr activities")
 		}
 
+		err = s.client.LoadPullRequestCommits(ctx, pr)
+		if err != nil {
+			return errors.Wrap(err, "loading pr commits")
+		}
+
+		err = s.client.LoadPullRequestBuildStatuses(ctx, pr)
+		if err != nil {
+			return errors.Wrap(err, "loading pr build status")
+		}
+
+		cs[i].Changeset.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
+		cs[i].Changeset.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 		cs[i].Changeset.Metadata = pr
 	}
 
@@ -197,6 +211,31 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 		return ChangesetsNotFoundError{Changesets: notFound}
 	}
 
+	return nil
+}
+
+func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
+	update := &bitbucketserver.UpdatePullRequestInput{
+		PullRequestID: strconv.Itoa(pr.ID),
+		Title:         c.Title,
+		Description:   c.Body,
+		Version:       pr.Version,
+	}
+	update.ToRef.ID = c.BaseRef
+	update.ToRef.Repository.Slug = pr.ToRef.Repository.Slug
+	update.ToRef.Repository.Project.Key = pr.ToRef.Repository.Project.Key
+
+	updated, err := s.client.UpdatePullRequest(ctx, update)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = updated
 	return nil
 }
 
@@ -211,7 +250,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 		// This should never happen
 		panic(errors.Errorf("malformed bitbucket config, invalid URL: %q, error: %s", s.config.Url, err))
 	}
-	host = NormalizeBaseURL(host)
+	host = extsvc.NormalizeBaseURL(host)
 
 	// Name
 	project := "UNKNOWN"
@@ -275,6 +314,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 		Description: repo.Name,
 		Fork:        repo.Origin != nil,
 		Archived:    isArchived,
+		Private:     !repo.Public,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -424,4 +464,8 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 		next = page
 	}
 	return ids, nil
+}
+
+func unixMilliToTime(ms int64) time.Time {
+	return time.Unix(0, ms*int64(time.Millisecond))
 }

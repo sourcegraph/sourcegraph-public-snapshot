@@ -1,22 +1,24 @@
 import React from 'react'
 import * as H from 'history'
 import * as Monaco from 'monaco-editor'
+import { noop } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
 import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
 import { fetchSuggestions } from '../backend'
 import { toArray, map, distinctUntilChanged, publishReplay, refCount } from 'rxjs/operators'
-import { RegexpToggle, RegexpToggleProps } from './RegexpToggle'
-import { CaseSensitivityToggle } from './CaseSensitivityToggle'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { CaseSensitivityProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps } from '..'
+import { Toggles, TogglesProps } from './toggles/Toggles'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 export interface MonacoQueryInputProps
-    extends Omit<RegexpToggleProps, 'navbarSearchQuery'>,
+    extends Omit<TogglesProps, 'navbarSearchQuery'>,
         ThemeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        PatternTypeProps {
     location: H.Location
     history: H.History
     queryState: QueryState
@@ -44,6 +46,7 @@ const toUnsubscribable = (disposable: Monaco.IDisposable): Unsubscribable => ({
 function addSouregraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
+    patternTypes: Observable<SearchPatternType>,
     themeChanges: Observable<Theme>
 ): Subscription {
     const subscriptions = new Subscription()
@@ -54,41 +57,50 @@ function addSouregraphSearchCodeIntelligence(
     // Register themes and handle theme change
     monaco.editor.defineTheme('sourcegraph-dark', {
         base: 'vs-dark',
-        inherit: true,
+        inherit: false,
         colors: {
+            background: '#0E121B',
+            'textLink.activeBackground': '#2a3a51',
             'editor.background': '#0E121B',
-            'editor.foreground': '#ffffff',
+            'editor.foreground': '#f2f4f8',
             'editorCursor.foreground': '#ffffff',
-            'editor.selectionBackground': '#1C7CD650',
-            'editor.selectionHighlightBackground': '#1C7CD625',
-            'editor.inactiveSelectionBackground': '#1C7CD625',
             'editorSuggestWidget.background': '#1c2736',
             'editorSuggestWidget.foreground': '#F2F4F8',
+            'editorSuggestWidget.highlightForeground': '#569cd6',
+            'editorSuggestWidget.selectedBackground': '#2a3a51',
+            'list.hoverBackground': '#2a3a51',
             'editorSuggestWidget.border': '#2b3750',
             'editorHoverWidget.background': '#1c2736',
             'editorHoverWidget.foreground': '#F2F4F8',
             'editorHoverWidget.border': '#2b3750',
         },
-        rules: [],
+        rules: [
+            { token: 'identifier', foreground: '#f2f4f8' },
+            { token: 'keyword', foreground: '#569cd6' },
+        ],
     })
     monaco.editor.defineTheme('sourcegraph-light', {
         base: 'vs',
-        inherit: true,
+        inherit: false,
         colors: {
+            background: '#ffffff',
             'editor.background': '#ffffff',
             'editor.foreground': '#2b3750',
             'editorCursor.foreground': '#2b3750',
-            'editor.selectionBackground': '#1C7CD650',
-            'editor.selectionHighlightBackground': '#1C7CD625',
-            'editor.inactiveSelectionBackground': '#1C7CD625',
             'editorSuggestWidget.background': '#ffffff',
             'editorSuggestWidget.foreground': '#2b3750',
             'editorSuggestWidget.border': '#cad2e2',
+            'editorSuggestWidget.highlightForeground': '#268bd2',
+            'editorSuggestWidget.selectedBackground': '#f2f4f8',
+            'list.hoverBackground': '#f2f4f8',
             'editorHoverWidget.background': '#ffffff',
             'editorHoverWidget.foreground': '#2b3750',
             'editorHoverWidget.border': '#cad2e2',
         },
-        rules: [],
+        rules: [
+            { token: 'identifier', foreground: '#2b3750' },
+            { token: 'keyword', foreground: '#268bd2' },
+        ],
     })
     subscriptions.add(
         themeChanges.subscribe(theme => {
@@ -97,7 +109,9 @@ function addSouregraphSearchCodeIntelligence(
     )
 
     // Register providers
-    const providers = getProviders(searchQueries, (query: string) => fetchSuggestions(query).pipe(toArray()))
+    const providers = getProviders(searchQueries, patternTypes, (query: string) =>
+        fetchSuggestions(query).pipe(toArray())
+    )
     subscriptions.add(toUnsubscribable(monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens)))
     subscriptions.add(toUnsubscribable(monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover)))
     subscriptions.add(
@@ -111,6 +125,8 @@ function addSouregraphSearchCodeIntelligence(
 
     return subscriptions
 }
+
+const NOOP_KEYBINDINGS = [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_F, Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter]
 
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
@@ -129,6 +145,12 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     )
     private themeChanges = this.componentUpdates.pipe(
         map(({ isLightTheme }): Theme => (isLightTheme ? 'sourcegraph-light' : 'sourcegraph-dark')),
+        distinctUntilChanged(),
+        publishReplay(1),
+        refCount()
+    )
+    private patternTypes = this.componentUpdates.pipe(
+        map(({ patternType }) => patternType),
         distinctUntilChanged(),
         publishReplay(1),
         refCount()
@@ -152,7 +174,9 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         const options: Monaco.editor.IEditorOptions = {
             readOnly: false,
             lineNumbers: 'off',
-            lineHeight: 32,
+            lineHeight: 16,
+            // Match the query input's height for suggestion items line height.
+            suggestLineHeight: 34,
             minimap: {
                 enabled: false,
             },
@@ -171,31 +195,30 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             quickSuggestions: false,
             fixedOverflowWidgets: true,
             contextmenu: false,
+            // Display the cursor as a 1px line.
+            cursorStyle: 'line',
+            cursorWidth: 1,
         }
         return (
             <div ref={this.setContainerRef} className="monaco-query-input-container flex-1">
-                <MonacoEditor
-                    id="monaco-query-input"
-                    language={SOURCEGRAPH_SEARCH}
-                    value={this.props.queryState.query}
-                    height={34}
-                    theme="sourcegraph-dark"
-                    editorWillMount={this.editorWillMount}
-                    onEditorCreated={this.onEditorCreated}
-                    options={options}
-                    border={false}
-                ></MonacoEditor>
-                <div className="monaco-query-input-container__toggles">
-                    <CaseSensitivityToggle
-                        {...this.props}
-                        navbarSearchQuery={this.props.queryState.query}
-                    ></CaseSensitivityToggle>
-                    <RegexpToggle
-                        {...this.props}
-                        navbarSearchQuery={this.props.queryState.query}
-                        className="monaco-query-input-container__regexp-toggle"
-                    ></RegexpToggle>
+                <div className="flex-1">
+                    <MonacoEditor
+                        id="monaco-query-input"
+                        language={SOURCEGRAPH_SEARCH}
+                        value={this.props.queryState.query}
+                        height={16}
+                        theme="sourcegraph-dark"
+                        editorWillMount={this.editorWillMount}
+                        onEditorCreated={this.onEditorCreated}
+                        options={options}
+                        border={false}
+                    ></MonacoEditor>
                 </div>
+                <Toggles
+                    {...this.props}
+                    navbarSearchQuery={this.props.queryState.query}
+                    className="monaco-query-input-container__toggle-container"
+                />
             </div>
         )
     }
@@ -215,18 +238,22 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private editorWillMount = (monaco: typeof Monaco): void => {
         // Register themes and code intelligence providers.
-        this.subscriptions.add(addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.themeChanges))
+        this.subscriptions.add(
+            addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, this.themeChanges)
+        )
     }
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
         if (this.props.autoFocus) {
-            // Focus the editor with cursor at end.
+            // Focus the editor with cursor at end, and reveal that position.
             editor.focus()
-            editor.setPosition({
+            const position = {
                 // +2 as Monaco is 1-indexed, and the cursor should be placed after the query.
                 column: editor.getValue().length + 2,
                 lineNumber: 1,
-            })
+            }
+            editor.setPosition(position)
+            editor.revealPosition(position)
         }
         // Prevent newline insertion in model, and surface query changes with stripped newlines.
         this.subscriptions.add(
@@ -251,16 +278,12 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                 })
             )
         )
-        // Prevent inserting newlines.
-        this.subscriptions.add(
-            toUnsubscribable(
-                editor.onKeyDown(e => {
-                    if (e.keyCode === Monaco.KeyCode.Enter) {
-                        e.preventDefault()
-                    }
-                })
-            )
-        )
+
+        // Disable some default Monaco keybindings
+        for (const keybinding of NOOP_KEYBINDINGS) {
+            editor.addCommand(keybinding, noop)
+        }
+
         // Trigger a layout of the Monaco editor when its container gets resized.
         // The Monaco editor doesn't auto-resize with its container:
         // https://github.com/microsoft/monaco-editor/issues/28

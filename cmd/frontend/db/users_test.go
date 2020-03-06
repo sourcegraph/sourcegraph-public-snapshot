@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -89,19 +91,78 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	}
 }
 
-func TestUsers_LimitPasswordLength(t *testing.T) {
+func TestUsers_Create_checkPasswordLength(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	longPassword := strings.Repeat("x", maxPasswordRunes+1)
-	expectedErr := "Passwords may not be more than 256 characters."
+	minPasswordRunes := conf.AuthMinPasswordLength()
+	expErr := fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes)
+	tests := []struct {
+		name     string
+		username string
+		password string
+		enforce  bool
+		expErr   string
+	}{
+		{
+			name:     "below minimum",
+			username: "user1",
+			password: strings.Repeat("x", minPasswordRunes-1),
+			enforce:  true,
+			expErr:   expErr,
+		},
+		{
+			name:     "exceeds maximum",
+			username: "user2",
+			password: strings.Repeat("x", maxPasswordRunes+1),
+			enforce:  true,
+			expErr:   expErr,
+		},
 
-	_, err := Users.Create(ctx, NewUser{Username: "test", Password: longPassword})
-	if pm := errcode.PresentationMessage(err); pm != expectedErr {
-		t.Fatalf("expected error %q; got %q", expectedErr, pm)
+		{
+			name:     "no problem at exact minimum",
+			username: "user3",
+			password: strings.Repeat("x", minPasswordRunes),
+			enforce:  true,
+			expErr:   "",
+		},
+		{
+			name:     "no problem at exact maximum",
+			username: "user4",
+			password: strings.Repeat("x", maxPasswordRunes),
+			enforce:  true,
+			expErr:   "",
+		},
+
+		{
+			name:     "does not enforce and below minimum",
+			username: "user5",
+			password: strings.Repeat("x", minPasswordRunes-1),
+			enforce:  false,
+			expErr:   "",
+		},
+		{
+			name:     "does not enforce and exceeds maximum",
+			username: "user6",
+			password: strings.Repeat("x", maxPasswordRunes+1),
+			enforce:  false,
+			expErr:   "",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := Users.Create(ctx, NewUser{
+				Username:              test.username,
+				Password:              test.password,
+				EnforcePasswordLength: test.enforce,
+			})
+			if pm := errcode.PresentationMessage(err); pm != test.expErr {
+				t.Fatalf("err: want %q but got %q", test.expErr, pm)
+			}
+		})
 	}
 }
 
@@ -484,7 +545,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create a repository to comply with the postgres repo constraint.
-			if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+			if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 				t.Fatal(err)
 			}
 			repo, err := Repos.GetByName(ctx, "myrepo")

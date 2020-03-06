@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -67,9 +66,9 @@ var baseURL = &url.URL{
 	Path:   "/.api/updates",
 }
 
-func getSiteActivityJSON() ([]byte, error) {
+func getAndMarshalSiteActivityJSON(ctx context.Context) (json.RawMessage, error) {
 	days, weeks, months := 2, 1, 1
-	siteActivity, err := usagestats.GetSiteUsageStatistics(context.Background(), &usagestats.SiteUsageStatisticsOptions{
+	siteActivity, err := usagestats.GetSiteUsageStatistics(ctx, &usagestats.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
@@ -77,22 +76,70 @@ func getSiteActivityJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(siteActivity)
+	contents, err := json.Marshal(siteActivity)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(contents), nil
+}
+
+func getAndMarshalCampaignsUsageJSON(ctx context.Context) (json.RawMessage, error) {
+	campaignsUsage, err := usagestats.GetCampaignsUsageStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(campaignsUsage)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(contents), nil
+}
+
+func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, error) {
+	days, weeks, months := 2, 1, 1
+	codeIntelUsage, err := usagestats.GetCodeIntelUsageStatistics(ctx, &usagestats.CodeIntelUsageStatisticsOptions{
+		DayPeriods:            &days,
+		WeekPeriods:           &weeks,
+		MonthPeriods:          &months,
+		IncludeEventCounts:    !conf.Get().DisableNonCriticalTelemetry,
+		IncludeEventLatencies: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(codeIntelUsage)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(contents), nil
+}
+
+func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) {
+	days, weeks, months := 2, 1, 1
+	searchLatency, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
+		DayPeriods:   &days,
+		WeekPeriods:  &weeks,
+		MonthPeriods: &months,
+	})
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(searchLatency)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(contents), nil
 }
 
 func updateURL(ctx context.Context) string {
+	return baseURL.String()
+}
+
+func updateBody(ctx context.Context) (io.Reader, error) {
 	logFunc := log15.Debug
 	if envvar.SourcegraphDotComMode() {
 		logFunc = log15.Warn
 	}
-
-	q := url.Values{}
-	q.Set("version", version.Version())
-	q.Set("site", siteid.Get())
-	q.Set("auth", strings.Join(authProviderTypes(), ","))
-	q.Set("deployType", conf.DeployType())
-	q.Set("hasExtURL", strconv.FormatBool(conf.UsingExternalURL()))
-	q.Set("signup", strconv.FormatBool(conf.IsBuiltinSignupAllowed()))
 
 	// TODO(Dan): migrate this to the new usagestats package.
 	//
@@ -103,45 +150,72 @@ func updateURL(ctx context.Context) string {
 	if err != nil {
 		logFunc("usagestatsdeprecated.GetUsersActiveTodayCount failed", "error", err)
 	}
-	q.Set("u", strconv.Itoa(count))
 	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
 	if err != nil {
 		logFunc("db.Users.Count failed", "error", err)
 	}
-	q.Set("totalUsers", strconv.Itoa(totalUsers))
 	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{})
 	hasRepos := totalRepos > 0
 	if err != nil {
 		logFunc("db.Repos.Count failed", "error", err)
 	}
-	q.Set("repos", strconv.FormatBool(hasRepos))
 	searchOccurred, err := usagestats.HasSearchOccurred()
 	if err != nil {
 		logFunc("usagestats.HasSearchOccurred failed", "error", err)
 	}
-	// Searches only count if repos have been added.
-	q.Set("searched", strconv.FormatBool(hasRepos && searchOccurred))
 	findRefsOccurred, err := usagestats.HasFindRefsOccurred()
 	if err != nil {
 		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
 	}
-	q.Set("refs", strconv.FormatBool(findRefsOccurred))
-	if act, err := getSiteActivityJSON(); err != nil {
-		logFunc("getSiteActivityJSON failed", "error", err)
-	} else {
-		q.Set("act", string(act))
+	act, err := getAndMarshalSiteActivityJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalSiteActivityJSON failed", "error", err)
+	}
+	campaignsUsage, err := getAndMarshalCampaignsUsageJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalCampaignsUsageJSON failed", "error", err)
+	}
+	codeIntelUsage, err := getAndMarshalCodeIntelUsageJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalCodeIntelUsageJSON failed", "error", err)
+	}
+	searchUsage, err := getAndMarshalSearchUsageJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalSearchUsageJSON failed", "error", err)
 	}
 	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
-	q.Set("initAdmin", initAdminEmail)
 	svcs, err := externalServiceKinds(ctx)
 	if err != nil {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
-	q.Set("extsvcs", strings.Join(svcs, ","))
-	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
+
+	contents, err := json.Marshal(&pingRequest{
+		ClientSiteID:         siteid.Get(),
+		DeployType:           conf.DeployType(),
+		ClientVersionString:  version.Version(),
+		AuthProviders:        authProviderTypes(),
+		ExternalServices:     svcs,
+		BuiltinSignupAllowed: conf.IsBuiltinSignupAllowed(),
+		HasExtURL:            conf.UsingExternalURL(),
+		UniqueUsers:          int32(count),
+		Activity:             act,
+		CampaignsUsage:       campaignsUsage,
+		CodeIntelUsage:       codeIntelUsage,
+		SearchUsage:          searchUsage,
+		InitialAdminEmail:    initAdminEmail,
+		TotalUsers:           int32(totalUsers),
+		HasRepos:             hasRepos,
+		EverSearched:         hasRepos && searchOccurred, // Searches only count if repos have been added.
+		EverFindRefs:         findRefsOccurred,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.NewReader(contents), nil
 }
 
 func authProviderTypes() []string {
@@ -169,7 +243,11 @@ func externalServiceKinds(ctx context.Context) ([]string, error) {
 // (returned by Last and IsPending).
 func check(ctx context.Context) (*Status, error) {
 	doCheck := func() (updateVersion string, err error) {
-		resp, err := ctxhttp.Get(ctx, nil, updateURL(ctx))
+		body, err := updateBody(ctx)
+		if err != nil {
+			return "", err
+		}
+		resp, err := ctxhttp.Post(ctx, nil, updateURL(ctx), "application/json", body)
 		if err != nil {
 			return "", err
 		}

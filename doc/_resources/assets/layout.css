@@ -576,7 +576,7 @@ code {
     list-style: none;
 }
 
-.content-nav-section li.selected .badge {
+.content-nav-section li.selected > a >.badge {
     background: var(--body-bg);
     color: var(--primary);
 }

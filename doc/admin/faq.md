@@ -62,6 +62,26 @@ If you are keen for more details on what bare Git repositories are, [check out t
 
 The directories should contain just a few files and directories, namely: HEAD, config, description, hooks, info, objects, packed-refs, refs
 
+## Does Sourcegraph support svn?
+
+For Subversion and other non-Git code hosts, the recommended way to make these accessible in
+Sourcegraph is through [`src-expose`](external_service/other.md#experimental-src-expose).
+
+Alternatively, you can use [`git-svn`](https://git-scm.com/docs/git-svn) or
+[`svg2git`](https://github.com/svn-all-fast-export/svn2git) to convert Subversion repositories to
+Git repositories. Unlike `src-expose`, this will preserve commit history, but is generally much
+slower.
+
+## How do I access Sourcegraph if my authentication provider experiences an outage?
+
+If you are using an external authentication provider and the provider experiences an outage, users
+will be unable to sign into Sourcegraph. A site administrator can configure an alternate sign-in
+method by modifying the `auth.providers` field in site configuration. However, the site
+administrator may themselves be unable to sign in. If this is the case, then a site administrator
+can update the configuration if they have direct `docker exec` or `kubectl exec` access to the
+Sourcegraph instance. Follow the [instructions to update the site config if the web UI is
+inaccessible](config/site_config.md#editing-your-site-configuration-if-you-cannot-access-the-web-ui).
+
 ## Troubleshooting
 
 Content moved to a [dedicated troubleshooting page](troubleshooting.md).

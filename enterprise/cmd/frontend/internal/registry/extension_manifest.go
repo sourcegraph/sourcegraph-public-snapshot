@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"path"
 	"strconv"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -23,44 +22,82 @@ func validateExtensionManifest(text string) error {
 	return jsonc.Unmarshal(text, &o)
 }
 
-// getExtensionManifestWithBundleURL returns the extension manifest as JSON. If there are no
+// getLatestRelease returns the release with the extension manifest as JSON. If there are no
 // releases, it returns a nil manifest. If the manifest has no "url" field itself, a "url" field
 // pointing to the extension's bundle is inserted. It also returns the date that the release was
 // published.
-func getExtensionManifestWithBundleURL(ctx context.Context, extensionID string, registryExtensionID int32, releaseTag string) (manifest *string, publishedAt time.Time, err error) {
+func getLatestRelease(ctx context.Context, extensionID string, registryExtensionID int32, releaseTag string) (*dbRelease, error) {
 	release, err := dbReleases{}.GetLatest(ctx, registryExtensionID, releaseTag, false)
 	if err != nil && !errcode.IsNotFound(err) {
-		return nil, time.Time{}, err
+		return nil, err
 	}
-	if release != nil {
-		// Add URL to bundle if necessary.
-		var o map[string]interface{}
-		if err := jsonc.Unmarshal(release.Manifest, &o); err != nil {
-			return nil, time.Time{}, fmt.Errorf("parsing extension manifest for extension with ID %d (release tag %q): %s", registryExtensionID, releaseTag, err)
-		}
-		if o == nil {
-			o = map[string]interface{}{}
-		}
-		urlStr, _ := o["url"].(string)
-		if urlStr == "" {
-			// Insert "url" field with link to bundle file on this site.
-			bundleURL, err := makeExtensionBundleURL(release.ID, release.CreatedAt.UnixNano(), extensionID)
-			if err != nil {
-				return nil, time.Time{}, err
-			}
-			o["url"] = bundleURL
-			b, err := json.MarshalIndent(o, "", "  ")
-			if err != nil {
-				return nil, time.Time{}, err
-			}
-			release.Manifest = string(b)
-		}
-
-		manifest = &release.Manifest
-		publishedAt = release.CreatedAt
+	if release == nil {
+		return nil, nil
 	}
 
-	return manifest, publishedAt, nil
+	if err := prepReleaseManifest(extensionID, release); err != nil {
+		return nil, fmt.Errorf("parsing extension manifest for extension with ID %d (release tag %q): %s", registryExtensionID, releaseTag, err)
+	}
+
+	return release, nil
+}
+
+// getLatestForBatch returns a map from extension identifiers to the latest DB release
+// with the extension manifest as JSON for that extension. If there are no releases, it
+// returns a nil manifest. If the manifest has no "url" field itself, a "url" field
+// pointing to the extension's bundle is inserted. It also returns the date that the
+// release was published.
+func getLatestForBatch(ctx context.Context, vs []*dbExtension) (map[int32]*dbRelease, error) {
+	var extensionIDs []int32
+	extensionIDMap := map[int32]string{}
+	for _, v := range vs {
+		extensionIDs = append(extensionIDs, v.ID)
+		extensionIDMap[v.ID] = v.NonCanonicalExtensionID
+	}
+	releases, err := dbReleases{}.GetLatestBatch(ctx, extensionIDs, "release", false)
+	if err != nil {
+		return nil, err
+	}
+
+	releasesByExtensionID := map[int32]*dbRelease{}
+	for _, r := range releases {
+		releasesByExtensionID[r.RegistryExtensionID] = r
+	}
+
+	for _, r := range releases {
+		if err := prepReleaseManifest(extensionIDMap[r.RegistryExtensionID], r); err != nil {
+			return nil, fmt.Errorf("parsing extension manifest for extension with ID %d (release tag %q): %s", r.RegistryExtensionID, "release", err)
+		}
+	}
+
+	return releasesByExtensionID, nil
+}
+
+// prepReleaseManifest will set the Manifest field of the release. If the manifest has no "url"
+// field itself, a "url" field pointing to the extension's bundle is inserted. It also returns
+// the date that the release was published.
+func prepReleaseManifest(extensionID string, release *dbRelease) error {
+	// Add URL to bundle if necessary.
+	o := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(release.Manifest), &o); err != nil {
+		return err
+	}
+	urlStr, _ := o["url"].(string)
+	if urlStr == "" {
+		// Insert "url" field with link to bundle file on this site.
+		bundleURL, err := makeExtensionBundleURL(release.ID, release.CreatedAt.UnixNano(), extensionID)
+		if err != nil {
+			return err
+		}
+		o["url"] = bundleURL
+		b, err := json.MarshalIndent(o, "", "  ")
+		if err != nil {
+			return err
+		}
+		release.Manifest = string(b)
+	}
+
+	return nil
 }
 
 var nonLettersDigits = lazyregexp.New(`[^a-zA-Z0-9-]`)

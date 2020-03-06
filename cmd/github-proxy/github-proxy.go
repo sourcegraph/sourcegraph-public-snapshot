@@ -21,7 +21,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -74,22 +73,6 @@ func main() {
 
 	go debugserver.Start()
 
-	var (
-		authenticateRequestMu sync.RWMutex
-		authenticateRequest   func(query url.Values, header http.Header)
-	)
-	conf.Watch(func() {
-		cfg := conf.Get()
-		if clientID, clientSecret := cfg.GithubClientID, cfg.GithubClientSecret; clientID != "" && clientSecret != "" {
-			authenticateRequestMu.Lock()
-			authenticateRequest = func(query url.Values, header http.Header) {
-				query.Set("client_id", clientID)
-				query.Set("client_secret", clientSecret)
-			}
-			authenticateRequestMu.Unlock()
-		}
-	})
-
 	// Use a custom client/transport because GitHub closes keep-alive
 	// connections after 60s. In order to avoid running into EOF errors, we use
 	// a IdleConnTimeout of 30s, so connections are only kept around for <30s
@@ -104,14 +87,6 @@ func main() {
 			if _, found := hopHeaders[k]; !found {
 				h2[k] = v
 			}
-		}
-
-		// Authenticate for higher rate limits.
-		authenticateRequestMu.RLock()
-		authRequest := authenticateRequest
-		authenticateRequestMu.RUnlock()
-		if authRequest != nil {
-			authRequest(q2, h2)
 		}
 
 		req2 := &http.Request{

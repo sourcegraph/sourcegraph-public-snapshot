@@ -24,12 +24,13 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
-	a8nResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/proxy"
 	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
@@ -39,10 +40,14 @@ func main() {
 	initLSIFEndpoints()
 
 	// Connect to the database.
-	if err := dbconn.ConnectToDB(""); err != nil {
-		log.Fatal(err)
+	if err := shared.InitDB(); err != nil {
+		log.Fatalf("FATAL: %v", err)
 	}
-	initAuthz(dbconn.Global)
+
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	initAuthz(dbconn.Global, clock)
 
 	ctx := context.Background()
 	go func() {
@@ -61,20 +66,27 @@ func main() {
 		log.Println("enterprise edition")
 	}
 
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
+	globalState, err := globalstatedb.Get(ctx)
+	if err != nil {
+		log.Fatalf("FATAL: %v", err)
 	}
 
-	a8nStore := a8n.NewStoreWithClock(dbconn.Global, clock)
+	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
 	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	githubWebhook := a8n.NewGitHubWebhook(a8nStore, repositories, clock)
-	bitbucketServerWebhook := a8n.NewBitbucketServerWebhook(a8nStore, repositories, clock)
+	githubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
+
+	bitbucketWebhookName := "sourcegraph-" + globalState.SiteID
+	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(
+		campaignsStore,
+		repositories,
+		clock,
+		bitbucketWebhookName,
+	)
 
 	go bitbucketServerWebhook.Upsert(30 * time.Second)
 
-	go a8n.RunCampaignJobs(ctx, a8nStore, clock, 5*time.Second)
-	go a8n.RunChangesetJobs(ctx, a8nStore, clock, gitserver.DefaultClient, 5*time.Second)
+	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
@@ -115,9 +127,13 @@ func initLicensing() {
 }
 
 func initResolvers() {
-	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
+	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
 	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
-	graphqlbackend.NewAuthzResolver = authzResolvers.NewResolver
+	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
+		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {
+			return time.Now().UTC().Truncate(time.Microsecond)
+		})
+	}
 }
 
 func initLSIFEndpoints() {

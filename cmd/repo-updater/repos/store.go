@@ -37,7 +37,7 @@ type StoreListReposArgs struct {
 	// Names of repos to list. When zero-valued, this is omitted from the predicate set.
 	Names []string
 	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
-	IDs []uint32
+	IDs []api.RepoID
 	// Kinds of repos to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
@@ -59,7 +59,7 @@ type StoreListExternalServicesArgs struct {
 	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
 	IDs []int64
 	// RepoIDs that the listed external services own.
-	RepoIDs []uint32
+	RepoIDs []api.RepoID
 	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
 }
@@ -326,6 +326,7 @@ SELECT
   external_id,
   archived,
   fork,
+  private,
   sources,
   metadata
 FROM repo
@@ -526,7 +527,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
 			var (
 				i  int
-				id uint32
+				id api.RepoID
 			)
 
 			err = sc.Scan(&i, &id)
@@ -554,7 +555,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 
 func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 	type record struct {
-		ID                  uint32          `json:"id"`
+		ID                  api.RepoID      `json:"id"`
 		Name                string          `json:"name"`
 		URI                 *string         `json:"uri,omitempty"`
 		Description         string          `json:"description"`
@@ -567,6 +568,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		ExternalID          *string         `json:"external_id,omitempty"`
 		Archived            bool            `json:"archived"`
 		Fork                bool            `json:"fork"`
+		Private             bool            `json:"private"`
 		Sources             json.RawMessage `json:"sources"`
 		Metadata            json.RawMessage `json:"metadata"`
 	}
@@ -597,6 +599,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
 			Archived:            r.Archived,
 			Fork:                r.Fork,
+			Private:             r.Private,
 			Sources:             sources,
 			Metadata:            metadata,
 		})
@@ -640,6 +643,7 @@ WITH batch AS (
       external_id           text,
       archived              boolean,
       fork                  boolean,
+      private               boolean,
       sources               jsonb,
       metadata              jsonb
     )
@@ -662,6 +666,7 @@ SET
   external_id           = batch.external_id,
   archived              = batch.archived,
   fork                  = batch.fork,
+  private               = batch.private,
   sources               = batch.sources,
   metadata              = batch.metadata
 FROM batch
@@ -698,6 +703,7 @@ INSERT INTO repo (
   external_id,
   archived,
   fork,
+  private,
   sources,
   metadata
 )
@@ -714,6 +720,7 @@ SELECT
   external_id,
   archived,
   fork,
+  private,
   sources,
   metadata
 FROM batch
@@ -814,6 +821,7 @@ func scanRepo(r *Repo, s scanner) error {
 		&dbutil.NullString{S: &r.ExternalRepo.ID},
 		&r.Archived,
 		&r.Fork,
+		&r.Private,
 		&sources,
 		&metadata,
 	)

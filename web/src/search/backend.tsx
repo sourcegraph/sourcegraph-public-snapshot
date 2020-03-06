@@ -427,7 +427,7 @@ export const highlightCode = memoizeObservable(
                 return data.highlightCode
             })
         ),
-    ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${ctx.disableTimeout}:${ctx.isLightTheme}`
+    ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${String(ctx.disableTimeout)}:${String(ctx.isLightTheme)}`
 )
 
 /**

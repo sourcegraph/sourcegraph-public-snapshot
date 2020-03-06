@@ -7,9 +7,11 @@ import { ErrorAlert } from '../../../components/alerts'
 import InformationIcon from 'mdi-react/InformationIcon'
 import { parseISO, isBefore, addMinutes } from 'date-fns'
 
-interface Props {
+export interface CampaignStatusProps {
     campaign:
-        | Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt' | 'changesets'>
+        | (Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
+              changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+          })
         | Pick<GQL.ICampaignPlan, '__typename'>
 
     /** The campaign status. */
@@ -24,7 +26,12 @@ interface Props {
 /**
  * The status of a campaign's jobs, plus its closed state and errors.
  */
-export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, status, onPublish, onRetry }) => {
+export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
+    campaign,
+    status,
+    onPublish,
+    onRetry,
+}) => {
     /* For completed campaigns that have been published, hide the creation complete status 1 day after the time of publication */
     const creationCompletedLongAgo =
         status.state === GQL.BackgroundProcessState.COMPLETED &&
@@ -51,8 +58,8 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
             )}
             {campaign.__typename === 'Campaign' && !campaign.closedAt && !campaign.publishedAt && (
                 <>
-                    <div className="d-flex my-3">
-                        <InformationIcon className="icon-inline text-info mr-1" /> Campaign is a draft.{' '}
+                    <div className="d-flex my-3 alert alert-info">
+                        <InformationIcon className="icon-inline mr-1" /> Campaign is a draft.{' '}
                         {campaign.changesets.totalCount === 0
                             ? 'No changesets have'
                             : 'Only a subset of changesets has'}{' '}
@@ -71,26 +78,27 @@ export const CampaignStatus: React.FunctionComponent<Props> = ({ campaign, statu
                 </div>
             ) : (
                 status.pendingCount + status.completedCount > 0 &&
-                status.state !== GQL.BackgroundProcessState.PROCESSING &&
+                status.state === GQL.BackgroundProcessState.COMPLETED &&
                 !creationCompletedLongAgo && (
                     <div className="d-flex my-3">
-                        {status.state === GQL.BackgroundProcessState.COMPLETED && (
-                            <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />
-                        )}
-                        {status.state === GQL.BackgroundProcessState.ERRORED && (
-                            <AlertCircleIcon className="icon-inline text-danger mr-1" />
-                        )}{' '}
-                        {campaign.__typename === 'Campaign' ? 'Creation' : 'Preview'} {status.state.toLocaleLowerCase()}
+                        <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />{' '}
+                        {campaign.__typename === 'Campaign' ? 'Creation' : 'Preview'} completed
                     </div>
                 )
+            )}
+            {status.state === GQL.BackgroundProcessState.ERRORED && (
+                <div className="mt-3">
+                    <AlertCircleIcon className="icon-inline text-danger mr-1" />
+                    Error creating campaign
+                </div>
             )}
             {status.errors.map((error, i) => (
                 // There is no other suitable key, so:
                 // eslint-disable-next-line react/no-array-index-key
                 <ErrorAlert error={error} className="mt-3" key={i} />
             ))}
-            {status.state === GQL.BackgroundProcessState.ERRORED &&
-                campaign?.__typename === 'Campaign' &&
+            {campaign.__typename === 'Campaign' &&
+                status.state === GQL.BackgroundProcessState.ERRORED &&
                 !campaign.closedAt &&
                 campaign.viewerCanAdminister && (
                     <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>

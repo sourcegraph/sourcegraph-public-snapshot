@@ -1,5 +1,4 @@
 import * as constants from '../shared/constants'
-import * as fs from 'mz/fs'
 import * as metrics from './metrics'
 import * as path from 'path'
 import * as settings from './settings'
@@ -12,7 +11,7 @@ import { createMetaRouter } from './routes/meta'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { createTracer } from '../shared/tracing'
 import { createUploadRouter } from './routes/uploads'
-import { dbFilename, ensureDirectory, idFromFilename } from '../shared/paths'
+import { ensureDirectory } from '../shared/paths'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { errorHandler } from './middleware/errors'
 import { logger as loggingMiddleware } from 'express-winston'
@@ -24,6 +23,7 @@ import { waitForConfiguration } from '../shared/config/config'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
+import { migrate } from './startup-migrations/migration'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -58,9 +58,15 @@ async function main(logger: Logger): Promise<void> {
     const dependencyManager = new DependencyManager(connection)
     const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
-    // Temporary migration
-    // TODO - remove after 3.15
-    await migrateFilenames()
+    // Run any app-level migrations. These migrations usually exist only
+    // for a two-minor-version period in which we clean up old data and
+    // fix outdated assumptions.
+    //
+    // These block the process from starting up until completion. Also
+    // note that if the cleanup is handling an assumption from the last
+    // minor version, there may be instances of that version running
+    // after this migration step completes.
+    await migrate(connection, { logger })
 
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
@@ -84,40 +90,13 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(createMetaRouter())
-    app.use(createUploadRouter(uploadManager))
+    app.use(createUploadRouter(dumpManager, uploadManager, logger))
     app.use(createLsifRouter(backend, uploadManager, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
 
     app.listen(settings.HTTP_PORT, () => logger.debug('LSIF API server listening on', { port: settings.HTTP_PORT }))
-}
-
-/**
- * If it hasn't been done already, migrate from the old pre-3.13 filename format
- * `$ID-$REPO@$COMMIT.lsif.db` to the new format `$ID.lsif.db`.
- */
-async function migrateFilenames(): Promise<void> {
-    const doneFile = path.join(settings.STORAGE_ROOT, 'id-only-based-filenames')
-    if (await fs.exists(doneFile)) {
-        // Already migrated.
-        return
-    }
-
-    for (const basename of await fs.readdir(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))) {
-        const id = idFromFilename(basename)
-        if (!id) {
-            continue
-        }
-
-        await fs.rename(
-            path.join(settings.STORAGE_ROOT, constants.DBS_DIR, basename),
-            dbFilename(settings.STORAGE_ROOT, id)
-        )
-    }
-
-    // Create an empty done file to record that all files have been renamed.
-    await fs.close(await fs.open(doneFile, 'w'))
 }
 
 // Initialize logger

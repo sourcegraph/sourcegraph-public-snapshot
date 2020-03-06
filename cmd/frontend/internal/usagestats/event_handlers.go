@@ -31,7 +31,7 @@ func LogBackendEvent(userID int32, eventName string, argument json.RawMessage) e
 	return LogEvent(context.Background(), Event{
 		EventName:    eventName,
 		UserID:       userID,
-		UserCookieID: "",
+		UserCookieID: "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues
 		URL:          "",
 		Source:       "BACKEND",
 		Argument:     argument,
@@ -44,21 +44,22 @@ func LogEvent(ctx context.Context, args Event) error {
 		return nil
 	}
 	if envvar.SourcegraphDotComMode() {
-		return publishSourcegraphDotComEvent(args)
-	} else {
-		return logLocalEvent(ctx, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument)
+		err := publishSourcegraphDotComEvent(args)
+		if err != nil {
+			return err
+		}
 	}
+	return logLocalEvent(ctx, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument)
 }
 
 type bigQueryEvent struct {
-	EventName       string          `json:"name"`
-	AnonymousUserID string          `json:"anonymous_user_id"`
-	UserID          int             `json:"user_id"`
-	URL             string          `json:"url"`
-	Source          string          `json:"source"`
-	Argument        json.RawMessage `json:"argument,omitempty"`
-	Timestamp       string          `json:"timestamp"`
-	Version         string          `json:"version"`
+	EventName       string `json:"name"`
+	AnonymousUserID string `json:"anonymous_user_id"`
+	UserID          int    `json:"user_id"`
+	URL             string `json:"url"`
+	Source          string `json:"source"`
+	Timestamp       string `json:"timestamp"`
+	Version         string `json:"version"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -75,7 +76,6 @@ func publishSourcegraphDotComEvent(args Event) error {
 		AnonymousUserID: args.UserCookieID,
 		URL:             args.URL,
 		Source:          args.Source,
-		Argument:        args.Argument,
 		Timestamp:       time.Now().UTC().Format(time.RFC3339),
 		Version:         version.Version(),
 	})
@@ -87,7 +87,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 
 // logLocalEvent logs users events.
 func logLocalEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument json.RawMessage) error {
-	if name == "SearchSubmitted" {
+	if name == "SearchResultsQueried" {
 		err := logSiteSearchOccurred()
 		if err != nil {
 			return err

@@ -27,6 +27,7 @@ import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './
 import { commentTextFieldResolver } from './text_fields'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -304,6 +305,13 @@ export const githubCodeHost: CodeHost = {
     },
     check: checkIsGitHub,
     getCommandPaletteMount,
+    notificationClassNames: {
+        [NotificationType.Log]: 'flash',
+        [NotificationType.Success]: 'flash flash-success',
+        [NotificationType.Info]: 'flash',
+        [NotificationType.Warning]: 'flash flash-warn',
+        [NotificationType.Error]: 'flash flash-error',
+    },
     commandPaletteClassProps: {
         buttonClassName: 'Header-link',
         popoverClassName: 'Box',
@@ -316,6 +324,7 @@ export const githubCodeHost: CodeHost = {
         actionItemClassName:
             'command-palette-action-item--github no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
         noResultsClassName: 'd-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
+        iconClassName,
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--github',
@@ -382,6 +391,9 @@ export const githubCodeHost: CodeHost = {
                 const anchorPath = header.dataset.path
                 if (anchorPath === location.filePath) {
                     const anchorUrl = header.dataset.anchor
+                    if (!anchorUrl) {
+                        throw new Error('.file-header had no data-anchor attribute')
+                    }
                     const url = `${window.location.origin}${window.location.pathname}#${anchorUrl}${
                         location.part === 'base' ? 'L' : 'R'
                     }${location.position ? location.position.line : ''}`

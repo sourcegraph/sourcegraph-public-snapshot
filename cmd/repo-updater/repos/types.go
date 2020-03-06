@@ -12,8 +12,8 @@ import (
 	"github.com/goware/urlx"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -31,7 +31,7 @@ type Changeset struct {
 	HeadRef string
 	BaseRef string
 
-	*a8n.Changeset
+	*campaigns.Changeset
 	*Repo
 }
 
@@ -531,7 +531,7 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 // Repo represents a source code repository stored in Sourcegraph.
 type Repo struct {
 	// The internal Sourcegraph repo ID.
-	ID uint32
+	ID api.RepoID
 	// Name is the name for this repository (e.g., "github.com/user/repo"). It
 	// is the same as URI, unless the user configures a non-default
 	// repositoryPathPattern.
@@ -549,6 +549,8 @@ type Repo struct {
 	Fork bool
 	// Archived is whether the repository has been archived.
 	Archived bool
+	// Private is whether the repository is private.
+	Private bool
 	// CreatedAt is when this repository was created on Sourcegraph.
 	CreatedAt time.Time
 	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
@@ -640,6 +642,10 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 
 	if r.Fork != n.Fork {
 		r.Fork, modified = n.Fork, true
+	}
+
+	if r.Private != n.Private {
+		r.Private, modified = n.Private, true
 	}
 
 	if !reflect.DeepEqual(r.Sources, n.Sources) {
@@ -757,8 +763,8 @@ func pick(a *Repo, b *Repo) (keep, discard *Repo) {
 type Repos []*Repo
 
 // IDs returns the list of ids from all Repos.
-func (rs Repos) IDs() []uint32 {
-	ids := make([]uint32, len(rs))
+func (rs Repos) IDs() []api.RepoID {
+	ids := make([]api.RepoID, len(rs))
 	for i := range rs {
 		ids[i] = rs[i].ID
 	}

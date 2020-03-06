@@ -3,6 +3,7 @@
 package query
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
@@ -23,6 +24,7 @@ const (
 	FieldRepoHasFile        = "repohasfile"
 	FieldRepoHasCommitAfter = "repohascommitafter"
 	FieldPatternType        = "patterntype"
+	FieldContent            = "content"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -56,6 +58,7 @@ var (
 			FieldLang:        {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
 			FieldType:        stringFieldType,
 			FieldPatternType: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldContent:     {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 
 			FieldRepoHasFile:        regexpNegatableFieldType,
 			FieldRepoHasCommitAfter: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
@@ -88,11 +91,11 @@ var (
 	}
 )
 
-// A Query is the parsed representation of a search query.
+// A Query is the typechecked representation of a search query.
 type Query struct {
 	conf *types.Config // the typechecker config used to produce this query
 
-	*types.Query // the underlying query
+	types.Fields // the query fields
 }
 
 func Parse(input string) (syntax.ParseTree, error) {
@@ -109,11 +112,11 @@ func Parse(input string) (syntax.ParseTree, error) {
 }
 
 func Check(parseTree syntax.ParseTree) (*Query, error) {
-	checkedQuery, err := conf.Check(parseTree)
+	checkedFields, err := conf.Check(parseTree)
 	if err != nil {
 		return nil, err
 	}
-	return &Query{conf: &conf, Query: checkedQuery}, nil
+	return &Query{conf: &conf, Fields: *checkedFields}, nil
 }
 
 // ParseAndCheck parses and typechecks a search query using the default
@@ -132,6 +135,59 @@ func ParseAndCheck(input string) (*Query, error) {
 	return checkedQuery, err
 }
 
+func processSearchPattern(q *Query) string {
+	var pieces []string
+	for _, v := range q.Values(FieldDefault) {
+		if piece := v.ToString(); piece != "" {
+			pieces = append(pieces, piece)
+		}
+	}
+	return strings.Join(pieces, " ")
+}
+
+type ValidationError struct {
+	Msg string
+}
+
+func (e *ValidationError) Error() string {
+	return e.Msg
+}
+
+// Validate validates legal combinations of fields and search patterns of a
+// successfully parsed query.
+func Validate(q *Query, searchType SearchType) error {
+	if searchType == SearchTypeStructural {
+		if q.Fields[FieldCase] != nil {
+			return errors.New(`the parameter "case:" is not valid for structural search, matching is always case-sensitive`)
+		}
+		if q.Fields[FieldType] != nil && processSearchPattern(q) != "" {
+			return errors.New(`the parameter "type:" is not valid for structural search, search is always performed on file content`)
+		}
+	}
+	return nil
+}
+
+// Process is a top level convenience function for processing a raw string into
+// a validated and type checked query, and the parse tree of the raw string.
+func Process(queryString string, searchType SearchType) (*Query, syntax.ParseTree, error) {
+	parseTree, err := Parse(queryString)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	query, err := Check(parseTree)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = Validate(query, searchType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return query, parseTree, nil
+}
+
 // parseAndCheck is preserved for testing custom Configs only.
 func parseAndCheck(conf *types.Config, input string) (*Query, error) {
 	parseTree, err := syntax.Parse(input)
@@ -148,7 +204,7 @@ func parseAndCheck(conf *types.Config, input string) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Query{conf: conf, Query: checkedQuery}, nil
+	return &Query{conf: conf, Fields: *checkedQuery}, nil
 }
 
 // BoolValue returns the last boolean value (yes/no) for the field. For example, if the query is
@@ -189,7 +245,7 @@ func (q *Query) RegexpPatterns(field string) (values, negatedValues []string) {
 	}
 
 	for _, v := range q.Fields[field] {
-		s := v.Regexp.String()
+		s := v.ToString()
 		if v.Not() {
 			negatedValues = append(negatedValues, s)
 		} else {

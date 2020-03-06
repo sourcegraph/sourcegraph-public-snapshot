@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.11.4"}} {{$previousReleaseVersion := "3.11"}} {{$currentReleaseRevspec := "v3.12.1"}} {{$currentReleaseVersion := "3.12"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.12.7"}} {{$previousReleaseVersion := "3.12"}} {{$currentReleaseRevspec := "v3.13.1"}} {{$currentReleaseVersion := "3.13"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -47,8 +47,9 @@
                 </span>
             </nav>
             <div id="content-nav" class="content-nav">
-                <form class="search-form form-inline mobile-search large-hidden medium-hidden">
-                    <input name="search" class="nav-search form-control" type="search" placeholder="Search docs..." spellcheck="false">
+                <form class="search-form form-inline mobile-search large-hidden medium-hidden" method="get" action="/search">
+                    <input name="q" class="nav-search form-control" type="search" placeholder="Search docs..." spellcheck="false">
+                    <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
                     <button class="btn btn-primary nav-search-button ml-2" type="submit">Search</button>
                 </form>
                 <ul class="content-nav-section expandable">
@@ -90,7 +91,7 @@
                             <li><a href="/user/repository">Repositories</a></li>
                             <li><a href="/user/tour">Sourcegraph tour</a></li>
                             <li><a href="/user/markdown">Sourcegraph-flavored Markdown</a></li>
-                            <li><a href="/user/automation">Automation <span class="badge badge-primary">preview</span></a></li>
+                            <li><a href="/user/campaigns">Campaigns <span class="badge badge-primary">private beta</span></a></li>
                             <li><a href="/user/usage_statistics">Usage statistics</a></li>
                             <li><a href="/user/user_surveys">User surveys</a></li>
                         </ul>
@@ -106,6 +107,7 @@
                     <li class="content-nav-no-hover">
                         <a class="content-nav-section-header" href="/admin">Site admin documentation</a>
                         <ul class="content-nav-section-group">
+                            <li><a href="/admin/privileges">Site admin privileges</a></li>
                             <li><a href="/admin/install">Installing Sourcegraph</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
@@ -117,6 +119,14 @@
                                             <li><a href="/admin/install/docker/google_cloud">Install Sourcegraph with Docker on Google Cloud</a></li>
                                         </ul>
                                     </li>
+                                    <li><a href="/admin/install/docker-compose">Install Sourcegraph with Docker Compose</a></li>
+                                    <li class="content-nav-no-hover" data-sub-section-item="Install Sourcegraph with Docker Compose" )>
+                                        <ul>
+                                            <li><a href="/admin/install/docker-compose/aws">Install Sourcegraph with Docker Compose on AWS</a></li>
+                                            <li><a href="/admin/install/docker-compose/digitalocean">Install Sourcegraph with Docker Compose on DigitalOcean</a></li>
+                                            <li><a href="/admin/install/docker-compose/google_cloud">Install Sourcegraph with Docker Compose on Google Cloud</a></li>
+                                        </ul>
+                                    </li>
                                     <li><a href="/admin/install/cluster">Installing Sourcegraph on a cluster</a></li>
                                 </ul>
                             </li>
@@ -124,6 +134,7 @@
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
                                     <li><a href="/admin/config/site_config">Site configuration</a></li>
+                                    <li><a href="/admin/config/settings">Settings (UI and user-specific customizations)</a></li>
                                     <li><a href="/admin/url">Configuring the external URL</a></li>
                                     <li><a href="/admin/search">Search configuration</a></li>
                                 </ul>
@@ -295,7 +306,7 @@
                     <li class="content-nav-no-hover">
                         <a class="content-nav-section-header" href="/dev">Open source development documentation</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/dev/automation_development">Developing automation</a></li>
+                            <li><a href="/dev/campaigns_development">Developing campaigns</a></li>
                             <li><a href="/dev/graphql_api">Developing the Sourcegraph GraphQL API</a></li>
                             <li><a href="/dev/web_app">Developing the Sourcegraph web app</a></li>
                             <li><a href="/dev/local_development">Getting started with developing Sourcegraph</a></li>

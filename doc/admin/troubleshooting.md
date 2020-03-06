@@ -82,3 +82,7 @@ kubectl cp <podname>:/tmp/sourcegraph-metrics-dump.tgz /tmp/sourcegraph-metrics-
 ```
 
 Again please then upload the `sourcegraph-metrics-dump.tgz` for Sourcegraph support to access it.
+
+### Generating pprof profiles
+
+Please follow [these instructions](pprof.md) to generate pprof profiles.

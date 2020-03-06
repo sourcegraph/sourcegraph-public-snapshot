@@ -64,7 +64,7 @@ func main() {
 			URL:                  "u",
 			Commit:               "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			RewriteSpecification: test.arg,
-			FetchTimeout:         "2000ms",
+			FetchTimeout:         "5000ms",
 		}
 		got, err := doReplace(ts.URL, &req)
 		if err != nil {

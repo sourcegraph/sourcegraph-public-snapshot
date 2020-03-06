@@ -12,7 +12,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -51,7 +51,7 @@ func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time) 
 
 // DefaultHardTTL is the default hard TTL used in the permissions store, after which
 // cached permissions for a given user MUST be updated, and previously cached permissions
-// can no longer be used, resulting in a call to LoadPermissions returning a StalePermissionsError.
+// can no longer be used, resulting in a call to LoadPermissions returning a ErrStalePermissions.
 const DefaultHardTTL = 3 * 24 * time.Hour
 
 // PermissionsUpdateFunc fetches updated permissions from a source of truth,
@@ -118,7 +118,11 @@ func (s *store) UpdatePermissions(
 
 		// No valid permissions available yet or hard TTL expired.
 		if p.UpdatedAt.IsZero() || p.Expired(s.hardTTL, now) {
-			return &StalePermissionsError{UserPermissions: p}
+			return &authz.ErrStalePermissions{
+				UserID: p.UserID,
+				Perm:   p.Perm,
+				Type:   p.Type,
+			}
 		}
 
 		return nil
@@ -129,7 +133,11 @@ func (s *store) UpdatePermissions(
 	case err == nil:
 	case err == errLockNotAvailable:
 		if p.Expired(s.hardTTL, now) {
-			return &StalePermissionsError{UserPermissions: p}
+			return &authz.ErrStalePermissions{
+				UserID: p.UserID,
+				Perm:   p.Perm,
+				Type:   p.Type,
+			}
 		}
 	default:
 		return err
@@ -137,19 +145,6 @@ func (s *store) UpdatePermissions(
 
 	*p = expired
 	return nil
-}
-
-// StalePermissionsError is returned by LoadPermissions when the stored
-// permissions are stale (e.g. the first time a user needs them and they haven't
-// been fetched yet). Callers should pass this error up to the user and show it
-// in the UI.
-type StalePermissionsError struct {
-	*authz.UserPermissions
-}
-
-// Error implements the error interface.
-func (e StalePermissionsError) Error() string {
-	return fmt.Sprintf("%s:%s permissions for user=%d are stale and being updated", e.Perm, e.Type, e.UserID)
 }
 
 var errLockNotAvailable = errors.New("lock not available")

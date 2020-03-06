@@ -1,12 +1,13 @@
 package graphqlbackend
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
 func TestSearchPatternForSuggestion(t *testing.T) {
@@ -20,11 +21,11 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 			Alert: searchAlert{
 				title:       "An alert for regex",
 				description: "An alert for regex",
-				patternType: SearchTypeRegex,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "Some query description",
 						query:       "repo:github.com/sourcegraph/sourcegraph",
+						patternType: query.SearchTypeRegex,
 					},
 				},
 			},
@@ -35,22 +36,22 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 			Alert: searchAlert{
 				title:       "An alert for structural",
 				description: "An alert for structural",
-				patternType: SearchTypeStructural,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "Some query description",
-						query:       "repo:github.com/sourcegraph/sourcegraph patterntype:structural",
+						query:       "repo:github.com/sourcegraph/sourcegraph",
+						patternType: query.SearchTypeStructural,
 					},
 				},
 			},
-			Want: "repo:github.com/sourcegraph/sourcegraph patterntype:structural",
+			Want: "repo:github.com/sourcegraph/sourcegraph patternType:structural",
 		},
 	}
 
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			got := tt.Alert.ProposedQueries()
-			if !reflect.DeepEqual((*got)[0].query, tt.Want) {
+			if !reflect.DeepEqual((*got)[0].Query(), tt.Want) {
 				t.Errorf("got: %s, want: %s", (*got)[0].query, tt.Want)
 			}
 		})
@@ -133,14 +134,59 @@ func TestAddQueryRegexpField(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s, add %s:%s", test.query, test.addField, test.addPattern), func(t *testing.T) {
-			query, err := query.ParseAndCheck(test.query)
+			parseTree, err := query.Parse(test.query)
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := addQueryRegexpField(query, test.addField, test.addPattern)
-			if got := syntax.ExprString(got); got != test.want {
+			got := addRegexpField(parseTree, test.addField, test.addPattern)
+			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
 		})
+	}
+}
+
+func Test_ErrorToAlertStructuralSearch(t *testing.T) {
+	cases := []struct {
+		name           string
+		errors         []error
+		wantErrors     []error
+		wantAlertTitle string
+	}{
+		{
+			name:           "multierr_is_unaffected",
+			errors:         []error{errors.New("some error")},
+			wantErrors:     []error{errors.New("some error")},
+			wantAlertTitle: "",
+		},
+		{
+			name: "surface_friendly_alert_on_oom_err_message",
+			errors: []error{
+				errors.New("some error"),
+				errors.New("Worker_oomed"),
+				errors.New("some other error"),
+			},
+			wantErrors: []error{
+				errors.New("some error"),
+				errors.New("some other error"),
+			},
+			wantAlertTitle: "Structural search needs more memory",
+		},
+	}
+	for _, test := range cases {
+		multiErr := &multierror.Error{
+			Errors:      test.errors,
+			ErrorFormat: multierror.ListFormatFunc,
+		}
+		haveMultiErr, haveAlert := alertForStructuralSearch(multiErr)
+
+		if !reflect.DeepEqual(haveMultiErr.Errors, test.wantErrors) {
+			t.Fatalf("test %s, have errors: %q, want: %q", test.name, haveMultiErr.Errors, test.wantErrors)
+		}
+
+		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
+			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
+		}
+
 	}
 }

@@ -8,9 +8,7 @@ import { logAndTraceCall, logSpan, TracingContext } from '../tracing'
 import { TableInserter } from '../database/inserter'
 import { visibleDumps, bidirectionalLineage } from '../models/queries'
 
-/**
- * The insertion metrics for Postgres.
- */
+/** The insertion metrics for Postgres. */
 const insertionMetrics = {
     durationHistogram: sharedMetrics.postgresInsertionDurationHistogram,
     errorsCounter: sharedMetrics.postgresQueryErrorsCounter,
@@ -21,35 +19,22 @@ const insertionMetrics = {
  * of a project, depending on its use.
  */
 export interface Package {
-    /**
-     * The scheme of the package (e.g. npm, pip).
-     */
+    /** The scheme of the package (e.g. npm, pip). */
     scheme: string
 
-    /**
-     * The name of the package.
-     */
+    /** The name of the package. */
     name: string
 
-    /**
-     * The version of the package.
-     */
+    /** The version of the package. */
     version: string | null
 }
 
-/**
- * Represents a use of a set of symbols from a particular dependent package of
- * a project.
- */
+/** Represents a use of a set of symbols from a particular dependent package of a project. */
 export interface SymbolReferences {
-    /**
-     * The package from which the symbols are imported.
-     */
+    /** The package from which the symbols are imported. */
     package: Package
 
-    /**
-     * The unique identifiers of the symbols imported from the package.
-     */
+    /** The unique identifiers of the symbols imported from the package. */
     identifiers: string[]
 }
 
@@ -90,7 +75,7 @@ export class DependencyManager {
     }
 
     /**
-     * Find all references pointing to the given identifier in the given package. The returned
+     * Find all package references pointing to the given identifier in the given package. The returned
      * results may (but is not likely to) include a repository/commit pair that does not reference
      * the given identifier. See cache.ts for configuration values that tune the bloom filter false
      * positive rates. The total count of matching dumps, that ignores limit and offset, is also
@@ -100,7 +85,7 @@ export class DependencyManager {
      *
      * @param args Parameter bag.
      */
-    public getReferences({
+    public getPackageReferences({
         repositoryId,
         scheme,
         name,
@@ -126,7 +111,7 @@ export class DependencyManager {
         offset: number
         /** The tracing context. */
         ctx?: TracingContext
-    }): Promise<{ references: pgModels.ReferenceModel[]; totalCount: number; newOffset: number }> {
+    }): Promise<{ packageReferences: pgModels.ReferenceModel[]; totalCount: number; newOffset: number }> {
         // We do this inside of a transaction so that we get consistent results from multiple
         // distinct queries: one count query and one or more select queries, depending on the
         // sparsity of the use of the given identifier.
@@ -144,7 +129,7 @@ export class DependencyManager {
             // Get total number of items in this set of results
             const totalCount = await baseQuery.getCount()
 
-            // Construct method to select a page of possible references
+            // Construct method to select a page of possible package references
             const getPage = (pageOffset: number): Promise<pgModels.ReferenceModel[]> =>
                 baseQuery
                     .orderBy('dump.repository_id')
@@ -154,9 +139,9 @@ export class DependencyManager {
                     .getMany()
 
             // Invoke getPage with increasing offsets until we get a page size's worth of
-            // references that actually use the given identifier as indicated by result of
-            // the bloom filter query.
-            const { references, newOffset } = await this.gatherReferences({
+            // package references that actually use the given identifier as indicated by result
+            // of the bloom filter query.
+            const { packageReferences, newOffset } = await this.gatherPackageReferences({
                 getPage,
                 identifier,
                 offset,
@@ -165,20 +150,20 @@ export class DependencyManager {
                 ctx,
             })
 
-            return { references, totalCount, newOffset }
+            return { packageReferences, totalCount, newOffset }
         })
     }
 
     /**
-     * Find all references pointing to the given identifier in the given package within dumps of the
-     * given repository. The returned results may (but is not likely to) include a repository/commit
+     * Find all package references pointing to the given identifier in the given package within dumps of
+     * the given repository. The returned results may (but is not likely to) include a repository/commit
      * pair that does not reference  the given identifier. See cache.ts for configuration values that
      * tune the bloom filter false positive rates. The total count of matching dumps, that ignores limit
      * and offset. is also returned.
      *
      * @param args Parameter bag.
      */
-    public getSameRepoRemoteReferences({
+    public getSameRepoRemotePackageReferences({
         repositoryId,
         commit,
         scheme,
@@ -207,7 +192,7 @@ export class DependencyManager {
         offset: number
         /** The tracing context. */
         ctx?: TracingContext
-    }): Promise<{ references: pgModels.ReferenceModel[]; totalCount: number; newOffset: number }> {
+    }): Promise<{ packageReferences: pgModels.ReferenceModel[]; totalCount: number; newOffset: number }> {
         const visibleIdsQuery = `
             WITH
             ${bidirectionalLineage()},
@@ -251,28 +236,31 @@ export class DependencyManager {
             // Oddly, this comes back as a string value in the result set
             const totalCount = parseInt(rawCount[0].count, 10)
 
-            // Construct method to select a page of possible references. We first perform
-            // the query defined above that returns reference identifiers, then perform a
-            // second query to select the models by id so that we load the relationships.
+            // Construct method to select a page of possible package references. We first
+            // perform the query defined above that returns reference identifiers, then
+            // perform a second query to select the models by id so that we load the
+            // relationships.
             const getPage = async (pageOffset: number): Promise<pgModels.ReferenceModel[]> => {
                 const args = [scheme, name, version, visible_ids, pageOffset, limit]
                 const results = await entityManager.query(referenceIdsQuery, args)
                 const referenceIds = extractIds(results)
-                const references = await entityManager.getRepository(pgModels.ReferenceModel).findByIds(referenceIds)
+                const packageReferences = await entityManager
+                    .getRepository(pgModels.ReferenceModel)
+                    .findByIds(referenceIds)
 
                 // findByIds doesn't return models in the same order as they were requested,
                 // so we need to sort them here before returning.
 
-                const modelsById = new Map(references.map(r => [r.id, r]))
+                const modelsById = new Map(packageReferences.map(r => [r.id, r]))
                 return referenceIds
                     .map(id => modelsById.get(id))
                     .filter(<T>(x: T | undefined): x is T => x !== undefined)
             }
 
             // Invoke getPage with increasing offsets until we get a page size's worth of
-            // references that actually use the given identifier as indicated by result of
-            // the bloom filter query.
-            const { references, newOffset } = await this.gatherReferences({
+            // package references that actually use the given identifier as indicated by
+            // result of the bloom filter query.
+            const { packageReferences, newOffset } = await this.gatherPackageReferences({
                 getPage,
                 identifier,
                 offset,
@@ -281,7 +269,7 @@ export class DependencyManager {
                 ctx,
             })
 
-            return { references, totalCount, newOffset }
+            return { packageReferences, totalCount, newOffset }
         })
     }
 
@@ -291,14 +279,15 @@ export class DependencyManager {
      *
      * @param dumpId The identifier of the newly inserted dump.
      * @param packages The list of packages that this repository defines (scheme, name, and version).
-     * @param references The list of packages that this repository depends on (scheme, name, and version) and the symbols that the package references.
+     * @param symbolReferences The list of packages that this repository depends on (scheme, name, and version)
+     *     and the symbols that the package references.
      * @param ctx The tracing context.
      * @param entityManager The EntityManager to use as part of a transaction.
      */
     public async addPackagesAndReferences(
         dumpId: number,
         packages: Package[],
-        references: SymbolReferences[],
+        symbolReferences: SymbolReferences[],
         ctx: TracingContext = {},
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<void> {
@@ -326,11 +315,11 @@ export class DependencyManager {
                 insertionMetrics
             )
 
-            for (const reference of references) {
+            for (const { package: pkg, identifiers } of symbolReferences) {
                 await referenceInserter.insert({
                     dump_id: dumpId,
-                    filter: await createFilter(reference.identifiers),
-                    ...reference.package,
+                    filter: await createFilter(identifiers),
+                    ...pkg,
                 })
             }
 
@@ -339,14 +328,14 @@ export class DependencyManager {
     }
 
     /**
-     * Select a page of possible results via the `getPage` function and collect the references that include
-     * a use of the given identifier. As the given results may depend on the target package but not import
-     * the given identifier, the remaining set of references may small (or empty). In order to get a full
-     * page of results, we repeat the process until we have the proper number of results.
+     * Select a page of possible results via the `getPage` function and collect the package references that
+     * include a use of the given identifier. As the given results may depend on the target package but not
+     * import the given identifier, the remaining set of package references may small (or empty). In order
+     * to get a full page of results, we repeat the process until we have the proper number of results.
      *
      * @param args Parameter bag.
      */
-    private async gatherReferences({
+    private async gatherPackageReferences({
         getPage,
         identifier,
         offset,
@@ -354,7 +343,7 @@ export class DependencyManager {
         totalCount,
         ctx = {},
     }: {
-        /** The function to invoke to query the next set of references. */
+        /** The function to invoke to query the next set of package references. */
         getPage: (offset: number) => Promise<pgModels.ReferenceModel[]>
         /** The identifier to test. */
         identifier: string
@@ -369,62 +358,65 @@ export class DependencyManager {
         totalCount: number
         /** The tracing context. */
         ctx?: TracingContext
-    }): Promise<{ references: pgModels.ReferenceModel[]; newOffset: number }> {
-        return logAndTraceCall(ctx, 'Gathering references', async ctx => {
+    }): Promise<{ packageReferences: pgModels.ReferenceModel[]; newOffset: number }> {
+        return logAndTraceCall(ctx, 'Gathering package references', async ctx => {
             let numScanned = 0
             let numFetched = 0
             let numFiltered = 0
             let newOffset = offset
-            const references: pgModels.ReferenceModel[] = []
+            const packageReferences: pgModels.ReferenceModel[] = []
 
-            while (references.length < limit && newOffset < totalCount) {
+            while (packageReferences.length < limit && newOffset < totalCount) {
                 // Copy for use in the following anonymous function, otherwise the
                 // re-assignment of newOffset triggers a non-atomic update warning.
                 const localOffset = newOffset
 
-                const page = await logAndTraceCall(ctx, 'Fetching page of references', () => getPage(localOffset))
+                const page = await logAndTraceCall(ctx, 'Fetching page of package references', () =>
+                    getPage(localOffset)
+                )
                 if (page.length === 0) {
                     // Shouldn't happen, but just in case of a bug we
                     // don't want this to throw up into an infinite loop.
                     break
                 }
 
-                const { references: filtered, scanned } = await this.applyBloomFilter(
+                const { packageReferences: filteredPackageReferences, scanned } = await this.applyBloomFilter(
                     page,
                     identifier,
-                    limit - references.length
+                    limit - packageReferences.length
                 )
 
-                for (const reference of filtered) {
-                    references.push(reference)
+                for (const packageReference of filteredPackageReferences) {
+                    packageReferences.push(packageReference)
                 }
 
                 newOffset += scanned
                 numScanned += scanned
                 numFetched += page.length
-                numFiltered += scanned - filtered.length
+                numFiltered += scanned - filteredPackageReferences.length
             }
 
             logSpan(ctx, 'reference_results', { numScanned, numFetched, numFiltered })
-            return { references, newOffset }
+            return { packageReferences, newOffset }
         })
     }
 
     /**
-     * Filter out the references which do not contain the given identifier in their bloom filter. Returns at most
-     * `limit` values in the return array and also the number of references that were checked (left to right).
+     * Filter out the package references which do not contain the given identifier in their bloom filter.
+     * Returns at most `limit` values in the return array and also the number of package references that
+     * were checked (left to right).
      *
-     * @param references The set of references to filter.
+     * @param packageReferences The set of package references to filter.
      * @param identifier The identifier to test.
-     * @param limit The maximum number of references to return.
+     * @param limit The maximum number of package references to return.
      */
     private async applyBloomFilter(
-        references: pgModels.ReferenceModel[],
+        packageReferences: pgModels.ReferenceModel[],
         identifier: string,
         limit: number
-    ): Promise<{ references: pgModels.ReferenceModel[]; scanned: number }> {
+    ): Promise<{ packageReferences: pgModels.ReferenceModel[]; scanned: number }> {
         // Test the bloom filter of each reference model concurrently
-        const keepFlags = await Promise.all(references.map(result => testFilter(result.filter, identifier)))
+        const keepFlags = await Promise.all(packageReferences.map(result => testFilter(result.filter, identifier)))
 
         const filtered = []
         for (const [index, flag] of keepFlags.entries()) {
@@ -432,19 +424,19 @@ export class DependencyManager {
             metrics.bloomFilterEventsCounter.labels(flag ? 'hit' : 'miss').inc()
 
             if (flag) {
-                filtered.push(references[index])
+                filtered.push(packageReferences[index])
 
                 if (filtered.length >= limit) {
                     // We got enough - stop scanning here and return the number of
                     // results we actually went through so we can compute an offset
                     // for the next page of results that don't skip the remainder
                     // of this set of results.
-                    return { references: filtered, scanned: index + 1 }
+                    return { packageReferences: filtered, scanned: index + 1 }
                 }
             }
         }
 
-        // We scanned the entire set of references
-        return { references: filtered, scanned: references.length }
+        // We scanned the entire set of package references
+        return { packageReferences: filtered, scanned: packageReferences.length }
     }
 }

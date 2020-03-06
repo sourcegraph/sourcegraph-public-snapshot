@@ -36,7 +36,7 @@ Foreign-key constraints:
  created_at       | timestamp with time zone | not null default now()
  updated_at       | timestamp with time zone | not null default now()
  base_ref         | text                     | not null
- description      | text                     | 
+ description      | text                     | not null
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE
@@ -82,7 +82,7 @@ Referenced by:
 -------------------+--------------------------+--------------------------------------------------------
  id                | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
  name              | text                     | not null
- description       | text                     | 
+ description       | text                     | not null
  author_id         | integer                  | not null
  namespace_user_id | integer                  | 
  namespace_org_id  | integer                  | 
@@ -91,6 +91,7 @@ Referenced by:
  changeset_ids     | jsonb                    | not null default '{}'::jsonb
  campaign_plan_id  | integer                  | 
  closed_at         | timestamp with time zone | 
+ branch            | text                     | 
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
     "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
@@ -149,6 +150,7 @@ Foreign-key constraints:
  updated_at      | timestamp with time zone | not null default now()
  started_at      | timestamp with time zone | 
  finished_at     | timestamp with time zone | 
+ branch          | text                     | 
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, campaign_job_id)
@@ -176,6 +178,8 @@ Foreign-key constraints:
  external_id           | text                     | not null
  external_service_type | text                     | not null
  external_deleted_at   | timestamp with time zone | 
+ external_branch       | text                     | 
+ external_updated_at   | timestamp with time zone | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -338,7 +342,6 @@ Check constraints:
     "event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
     "event_logs_check_name_not_empty" CHECK (name <> ''::text)
     "event_logs_check_source_not_empty" CHECK (source <> ''::text)
-    "event_logs_check_url_not_empty" CHECK (url <> ''::text)
     "event_logs_check_version_not_empty" CHECK (version <> ''::text)
 
 ```
@@ -444,9 +447,10 @@ Foreign-key constraints:
  finished_at        | timestamp with time zone | 
  tracing_context    | text                     | not null
  repository_id      | integer                  | not null
+ indexer            | text                     | not null
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
-    "lsif_uploads_repository_id_commit_root" UNIQUE, btree (repository_id, commit, root) WHERE state = 'completed'::lsif_upload_state
+    "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
     "lsif_uploads_visible_repository_id_commit" btree (repository_id, commit) WHERE visible_at_tip
@@ -693,12 +697,12 @@ Referenced by:
  external_id           | text                     | 
  external_service_type | text                     | 
  external_service_id   | text                     | 
- enabled               | boolean                  | not null default true
  archived              | boolean                  | not null default false
  uri                   | citext                   | 
  deleted_at            | timestamp with time zone | 
  sources               | jsonb                    | not null default '{}'::jsonb
  metadata              | jsonb                    | not null default '{}'::jsonb
+ private               | boolean                  | not null default false
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
@@ -847,13 +851,14 @@ Foreign-key constraints:
 
 # Table "public.user_emails"
 ```
-      Column       |           Type           |       Modifiers        
--------------------+--------------------------+------------------------
- user_id           | integer                  | not null
- email             | citext                   | not null
- created_at        | timestamp with time zone | not null default now()
- verification_code | text                     | 
- verified_at       | timestamp with time zone | 
+          Column           |           Type           |       Modifiers        
+---------------------------+--------------------------+------------------------
+ user_id                   | integer                  | not null
+ email                     | citext                   | not null
+ created_at                | timestamp with time zone | not null default now()
+ verification_code         | text                     | 
+ verified_at               | timestamp with time zone | 
+ last_verification_sent_at | timestamp with time zone | 
 Indexes:
     "user_emails_no_duplicates_per_user" UNIQUE CONSTRAINT, btree (user_id, email)
     "user_emails_unique_verified_email" EXCLUDE USING btree (email WITH =) WHERE (verified_at IS NOT NULL)
@@ -965,5 +970,17 @@ Referenced by:
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+
+```
+
+# Table "public.versions"
+```
+   Column   |           Type           |       Modifiers        
+------------+--------------------------+------------------------
+ service    | text                     | not null
+ version    | text                     | not null
+ updated_at | timestamp with time zone | not null default now()
+Indexes:
+    "versions_pkey" PRIMARY KEY, btree (service)
 
 ```

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"net/url"
-	"regexp"
 	"regexp/syntax"
 	"strings"
 	"time"
@@ -16,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
@@ -28,18 +26,18 @@ func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 	// arbitrary.
 	k := 1
 	switch {
-	case numRepos <= 500:
-		k = 2
-	case numRepos <= 100:
-		k = 3
-	case numRepos <= 50:
-		k = 5
-	case numRepos <= 25:
-		k = 8
-	case numRepos <= 10:
-		k = 10
 	case numRepos <= 5:
 		k = 100
+	case numRepos <= 10:
+		k = 10
+	case numRepos <= 25:
+		k = 8
+	case numRepos <= 50:
+		k = 5
+	case numRepos <= 100:
+		k = 3
+	case numRepos <= 500:
+		k = 2
 	}
 	if query.FileMatchLimit > defaultMaxSearchResults {
 		k = int(float64(k) * 3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
@@ -49,7 +47,7 @@ func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 
 func zoektSearchOpts(k int, query *search.TextPatternInfo) zoekt.SearchOptions {
 	searchOpts := zoekt.SearchOptions{
-		MaxWallTime:            3 * time.Second,
+		MaxWallTime:            10 * time.Second,
 		ShardMaxMatchCount:     100 * k,
 		TotalMaxMatchCount:     100 * k,
 		ShardMaxImportantMatch: 15 * k,
@@ -379,63 +377,6 @@ func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	return parseRe(pattern, true, queryIsCaseSensitive)
 }
 
-func splitOnHolesPattern() string {
-	word := `\w+`
-	whitespaceAndOptionalWord := `[ ]+(` + word + `)?`
-	holeAnything := `:\[` + word + `\]`
-	holeAlphanum := `:\[\[` + word + `\]\]`
-	holeWithPunctuation := `:\[` + word + `\.\]`
-	holeWithNewline := `:\[` + word + `\\n\]`
-	holeWhitespace := `:\[` + whitespaceAndOptionalWord + `\]`
-	return strings.Join([]string{
-		holeAnything,
-		holeAlphanum,
-		holeWithPunctuation,
-		holeWithNewline,
-		holeWhitespace,
-	}, "|")
-}
-
-var matchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
-
-// Converts comby a structural pattern to a Zoekt regular expression query. It
-// converts whitespace in the pattern so that content across newlines can be
-// matched in the index. As an incomplete approximation, we use the regex
-// pattern .*? to scan ahead.
-// Example:
-// "ParseInt(:[args]) if err != nil" -> "ParseInt(.*)\s+if\s+err!=\s+nil"
-func StructuralPatToRegexpQuery(pattern string) (zoektquery.Q, error) {
-	substrings := matchHoleRegexp.Split(pattern, -1)
-	var children []zoektquery.Q
-	var pieces []string
-	for _, s := range substrings {
-		piece := regexp.QuoteMeta(s)
-		onMatchWhitespace := lazyregexp.New(`[\s]+`)
-		piece = onMatchWhitespace.ReplaceAllLiteralString(piece, `[\s]+`)
-		pieces = append(pieces, piece)
-	}
-
-	if len(pieces) == 0 {
-		return &zoektquery.Const{Value: true}, nil
-	}
-	rs := "(" + strings.Join(pieces, ").*?(") + ")"
-	re, _ := syntax.Parse(rs, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-	children = append(children, &zoektquery.Regexp{
-		Regexp:        re,
-		CaseSensitive: true,
-		Content:       true,
-	})
-	return &zoektquery.And{Children: children}, nil
-}
-
-func StructuralPatToQuery(pattern string) (zoektquery.Q, error) {
-	regexpQuery, err := StructuralPatToRegexpQuery(pattern)
-	if err != nil {
-		return nil, err
-	}
-	return &zoektquery.Or{Children: []zoektquery.Q{regexpQuery}}, nil
-}
-
 func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
@@ -444,11 +385,6 @@ func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery
 	if query.IsRegExp {
 		fileNameOnly := query.PatternMatchesPath && !query.PatternMatchesContent
 		q, err = parseRe(query.Pattern, fileNameOnly, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-	} else if query.IsStructuralPat {
-		q, err = StructuralPatToQuery(query.Pattern)
 		if err != nil {
 			return nil, err
 		}

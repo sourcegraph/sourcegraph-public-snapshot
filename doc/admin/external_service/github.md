@@ -2,15 +2,12 @@
 
 Site admins can sync Git repositories hosted on [GitHub.com](https://github.com) and [GitHub Enterprise](https://enterprise.github.com) with Sourcegraph so that users can search and navigate the repositories.
 
-To set this up, add GitHub as an external service to Sourcegraph:
+To connect GitHub to Sourcegraph:
 
-1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
-1. Enter a **Display name** (using "GitHub" is OK if you only have one GitHub instance).
-1. In the **Kind** menu, select **GitHub**.
-1. Configure the connection to GitHub in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).
-1. Press **Add external service**.
+1. Go to **Site admin > Manage repositories > Add repositories**
+1. Select **GitHub**.
+1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
 
 ## Supported versions
 
@@ -65,12 +62,15 @@ The following [webhook events](https://developer.github.com/webhooks/) are curre
 - Pull requests
 - Pull request reviews
 - Pull request review comments
+- Check runs
+- Check suites
+- Statuses
 
 To set up a organization webhook on GitHub, go to the settings page of your organization. From there, click **Webhooks**, then **Add webhook**.
 
 Fill in your Sourcegraph external URL with `/.api/github-webhooks` as the path and make sure it is publicly available.
 
-The **Content Type** of the webhook should be `application/json`. Generate the secret with `openssl rand -hex 32` and paste it in the respective field. This value is what you need to specify in the external service config.
+The **Content Type** of the webhook should be `application/json`. Generate the secret with `openssl rand -hex 32` and paste it in the respective field. This value is what you need to specify in the GitHub config.
 
 Click on **Enable SSL verification** if you have configured SSL with a valid certificate in your Sourcegraph instance.
 
@@ -78,7 +78,7 @@ Select **the events mentioned above** on the events section, ensure **Active** i
 
 ## Configuration
 
-GitHub external service connections support the following configuration options, which are specified in the JSON editor in the site admin external services area.
+GitHub connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/github.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/github) to see rendered content.</div>
 

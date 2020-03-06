@@ -4,21 +4,18 @@ Site admins can associate Git repositories on [Phabricator](https://phabricator.
 
 > NOTE: Sourcegraph does not support mirroring Phabricator repositories (as it does for repositories on other code hosts).
 
-To set this up, add Phabricator as an external service to Sourcegraph:
+To connect Phabricator to Sourcegraph:
 
-1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
-1. Enter a **Display name** (using "Phabricator" is OK if you only have one Phabricator instance).
-1. In the **Kind** menu, select **Phabricator**.
-1. Configure the connection to Phabricator in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).
-1. Press **Add external service**.
+1. Go to **Site admin > Manage repositories > Add repositories**
+1. Select **Phabricator**.
+1. Configure the connection to Phabricator using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
 
 ## Repository association
 
-Sourcegraph can provide users with links to various Phabricator pages (for files, commits, branches, etc.) if you add Phabricator as an external service (in **Site admin > External services**).
+Sourcegraph can provide users with links to various Phabricator pages (for files, commits, branches, etc.) if you add Phabricator as a connection (in **Site admin > Manage repositories**).
 
-A Phabricator external service configuration consists of the following fields:
+A Phabricator configuration consists of the following fields:
 
 - `url` field that maps to the url of the Phabricator host
 - `token` an optional Conduit API token, which you may generate from the Phabricator web interface. The token is used to fetch the list of repos available on the Phabricator installation

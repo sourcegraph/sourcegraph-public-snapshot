@@ -24,7 +24,8 @@ describe('Windows (integration)', () => {
     })
 
     describe('app.activeWindowChanges', () => {
-        test('reflects changes to the active window', async () => {
+        // Skipped, as sourcegraph.app.activeWindow is always defined.
+        test.skip('reflects changes to the active window', async () => {
             const {
                 services: { editor: editorService, model: modelService },
                 extensionAPI,
@@ -171,7 +172,8 @@ describe('Windows (integration)', () => {
         })
 
         describe('Window#activeViewComponentChanges', () => {
-            test('reflects changes to the active window', async () => {
+            // Skipped, as sourcegraph.app.activeWindow is always defined.
+            test.skip('reflects changes to the active window', async () => {
                 const {
                     services: { editor: editorService, model: modelService },
                     extensionAPI,

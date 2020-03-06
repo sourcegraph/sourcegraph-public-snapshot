@@ -30,6 +30,7 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
 import { Link } from '../../../../shared/src/components/Link'
+import { BrandLogo } from '../../components/branding/BrandLogo'
 
 interface Props
     extends SettingsCascadeProps,
@@ -67,7 +68,7 @@ interface State {
 export class SearchPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        const queryFromUrl = parseSearchURLQuery(props.location.search, props.interactiveSearchMode) || ''
+        const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
         this.state = {
             userQueryState: {
                 query: queryFromUrl,
@@ -82,25 +83,11 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        let logoUrl =
-            `${window.context.assetsRoot}/img/sourcegraph` +
-            (this.props.isLightTheme ? '-light' : '') +
-            '-head-logo.svg'
-        const { branding } = window.context
-        if (branding) {
-            if (this.props.isLightTheme) {
-                if (branding.light && branding.light.logo) {
-                    logoUrl = branding.light.logo
-                }
-            } else if (branding.dark && branding.dark.logo) {
-                logoUrl = branding.dark.logo
-            }
-        }
         const quickLinks = this.getQuickLinks()
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
-                <img className="search-page__logo" src={logoUrl} />
+                <BrandLogo className="search-page__logo" isLightTheme={this.props.isLightTheme} />
                 <div className="search search-page__container">
                     <div className="d-flex flex-row">
                         {this.props.splitSearchModes && this.props.interactiveSearchMode ? (
@@ -109,6 +96,7 @@ export class SearchPage extends React.Component<Props, State> {
                                 navbarSearchState={this.state.userQueryState}
                                 onNavbarQueryChange={this.onUserQueryChange}
                                 toggleSearchMode={this.props.toggleSearchMode}
+                                lowProfile={false}
                             />
                         ) : (
                             <>
@@ -195,7 +183,7 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     private getPageTitle(): string | undefined {
-        const query = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
+        const query = parseSearchURLQuery(this.props.location.search)
         if (query) {
             return `${limitString(this.state.userQueryState.query, 25, true)}`
         }

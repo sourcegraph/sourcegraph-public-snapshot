@@ -2,41 +2,61 @@
 version: 1
 interactions:
 - request:
-    body: '{"query":"\nfragment actor on Actor { avatarUrl, login, url }\nfragment
-      commit on Commit {\n\toid, message, messageHeadline, committedDate, pushedDate,
-      url\n\tcommitter {\n\tavatarUrl, email, name\n\tuser { ...actor }\n\t}\n}\nfragment
-      review on PullRequestReview {\n\tdatabaseId\n\tauthor { ...actor }\n\tauthorAssociation\n\tbody\n\tstate\n\turl\n\tcreatedAt\n\tupdatedAt\n\tcommit
-      { ...commit }\n\tincludesCreatedEdit\n}\nfragment pr on PullRequest {\n\tid,
-      title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid,
-      headRefName, baseRefName\n\tauthor { ...actor }\n\tparticipants(first: 100)
-      { nodes { ...actor } }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
-      {\n\tnodes {\n\t\t__typename\n\t\t... on AssignedEvent {\n\t\tactor { ...actor
-      }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ClosedEvent {\n\t\tactor
-      { ...actor }\n\t\tcreatedAt\n\t\turl\n\t\t}\n\t\t... on IssueComment {\n\t\tdatabaseId\n\t\tauthor
-      { ...actor }\n\t\tauthorAssociation\n\t\tbody\n\t\tcreatedAt\n\t\teditor { ...actor
-      }\n\t\turl\n\t\tupdatedAt\n\t\tincludesCreatedEdit\n\t\tpublishedAt\n\t\t}\n\t\t...
-      on RenamedTitleEvent {\n\t\tactor { ...actor }\n\t\tpreviousTitle\n\t\tcurrentTitle\n\t\tcreatedAt\n\t\t}\n\t\t...
-      on MergedEvent {\n\t\tactor { ...actor }\n\t\tmergeRefName\n\t\turl\n\t\tcommit
-      { ...commit }\n\t\tcreatedAt\n\t\t}\n\t\t... on PullRequestReview {\n\t\t...review\n\t\t}\n\t\t...
-      on PullRequestReviewThread {\n\t\tcomments(last: 100) {\n\t\t\tnodes {\n\t\t\tdatabaseId\n\t\t\tauthor
-      { ...actor }\n\t\t\tauthorAssociation\n\t\t\teditor { ...actor }\n\t\t\tcommit
-      { ...commit }\n\t\t\tbody\n\t\t\tstate\n\t\t\turl\n\t\t\tcreatedAt\n\t\t\tupdatedAt\n\t\t\tincludesCreatedEdit\n\t\t\t}\n\t\t}\n\t\t}\n\t\t...
-      on ReopenedEvent {\n\t\tactor { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on
-      ReviewDismissedEvent {\n\t\tactor { ...actor }\n\t\treview { ...review }\n\t\tdismissalMessage\n\t\tcreatedAt\n\t\t}\n\t\t...
-      on ReviewRequestRemovedEvent {\n\t\tactor { ...actor }\n\t\trequestedReviewer
-      { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
-      { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
-      on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nmutation\tCreatePullRequest($input:CreatePullRequestInput!)
+    body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
+      label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
+      basicCommit on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      10){\n    nodes {\n      id\n      status\n      conclusion\n    }\n  }\n  committedDate\n}\n\nfragment
+      prCommit on PullRequestCommit {\n  commit {\n    ...basicCommit\n  }\n}\n\nfragment
+      review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
+      {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
+      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
+      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
+      {\n      ...prCommit\n    }\n  }\n  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT,
+      CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW,
+      PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT,
+      REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT])
+      {\n    nodes {\n      __typename\n      ... on AssignedEvent {\n        actor
+      {\n          ...actor\n        }\n        assignee {\n          ...actor\n        }\n        createdAt\n      }\n      ...
+      on ClosedEvent {\n        actor {\n          ...actor\n        }\n        createdAt\n        url\n      }\n      ...
+      on IssueComment {\n        databaseId\n        author {\n          ...actor\n        }\n        authorAssociation\n        body\n        createdAt\n        editor
+      {\n          ...actor\n        }\n        url\n        updatedAt\n        includesCreatedEdit\n        publishedAt\n      }\n      ...
+      on RenamedTitleEvent {\n        actor {\n          ...actor\n        }\n        previousTitle\n        currentTitle\n        createdAt\n      }\n      ...
+      on MergedEvent {\n        actor {\n          ...actor\n        }\n        mergeRefName\n        url\n        commit
+      {\n          ...commit\n        }\n        createdAt\n      }\n      ... on
+      PullRequestReview {\n        ...review\n      }\n      ... on PullRequestReviewThread
+      {\n        comments(last: 100) {\n          nodes {\n            databaseId\n            author
+      {\n              ...actor\n            }\n            authorAssociation\n            editor
+      {\n              ...actor\n            }\n            commit {\n              ...commit\n            }\n            body\n            state\n            url\n            createdAt\n            updatedAt\n            includesCreatedEdit\n          }\n        }\n      }\n      ...
+      on ReopenedEvent {\n        actor {\n          ...actor\n        }\n        createdAt\n      }\n      ...
+      on ReviewDismissedEvent {\n        actor {\n          ...actor\n        }\n        review
+      {\n          ...review\n        }\n        dismissalMessage\n        createdAt\n      }\n      ...
+      on ReviewRequestRemovedEvent {\n        actor {\n          ...actor\n        }\n        requestedReviewer
+      {\n          ...actor\n        }\n        requestedTeam: requestedReviewer {\n          ...
+      on Team {\n            name\n            url\n            avatarUrl\n          }\n        }\n        createdAt\n      }\n      ...
+      on ReviewRequestedEvent {\n        actor {\n          ...actor\n        }\n        requestedReviewer
+      {\n          ...actor\n        }\n        requestedTeam: requestedReviewer {\n          ...
+      on Team {\n            name\n            url\n            avatarUrl\n          }\n        }\n        createdAt\n      }\n      ...
+      on UnassignedEvent {\n        actor {\n          ...actor\n        }\n        assignee
+      {\n          ...actor\n        }\n        createdAt\n      }\n      ... on LabeledEvent
+      {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
+      on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
+      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit
+      {\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tCreatePullRequest($input:CreatePullRequestInput!)
       {\n  createPullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"repositoryId":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","baseRefName":"master","headRefName":"always-open-pr","title":"This
       is a test PR","body":"This is the description of the test PR"}}}'
     form: {}
     headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":130,"column":3}],"message":"A
+    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":269,"column":3}],"message":"A
       pull request already exists for sourcegraph:always-open-pr."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -52,7 +72,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 06 Dec 2019 11:02:54 GMT
+      - Wed, 12 Feb 2020 10:50:05 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -62,7 +82,7 @@ interactions:
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
       Vary:
-      - Accept-Encoding
+      - Accept-Encoding, Accept
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -70,47 +90,66 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v4; format=json
+      - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - FF61:3D532:14C44099:18BA54D3:5DEA355D
+      - 114D:40410:1F4E5A4:25E1852:5E43D85C
       X-Oauth-Scopes:
-      - repo
+      - read:org, repo
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
     code: 200
     duration: ""
 - request:
-    body: '{"query":"\nfragment actor on Actor { avatarUrl, login, url }\nfragment
-      commit on Commit {\n\toid, message, messageHeadline, committedDate, pushedDate,
-      url\n\tcommitter {\n\tavatarUrl, email, name\n\tuser { ...actor }\n\t}\n}\nfragment
-      review on PullRequestReview {\n\tdatabaseId\n\tauthor { ...actor }\n\tauthorAssociation\n\tbody\n\tstate\n\turl\n\tcreatedAt\n\tupdatedAt\n\tcommit
-      { ...commit }\n\tincludesCreatedEdit\n}\nfragment pr on PullRequest {\n\tid,
-      title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid,
-      headRefName, baseRefName\n\tauthor { ...actor }\n\tparticipants(first: 100)
-      { nodes { ...actor } }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
-      {\n\tnodes {\n\t\t__typename\n\t\t... on AssignedEvent {\n\t\tactor { ...actor
-      }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ClosedEvent {\n\t\tactor
-      { ...actor }\n\t\tcreatedAt\n\t\turl\n\t\t}\n\t\t... on IssueComment {\n\t\tdatabaseId\n\t\tauthor
-      { ...actor }\n\t\tauthorAssociation\n\t\tbody\n\t\tcreatedAt\n\t\teditor { ...actor
-      }\n\t\turl\n\t\tupdatedAt\n\t\tincludesCreatedEdit\n\t\tpublishedAt\n\t\t}\n\t\t...
-      on RenamedTitleEvent {\n\t\tactor { ...actor }\n\t\tpreviousTitle\n\t\tcurrentTitle\n\t\tcreatedAt\n\t\t}\n\t\t...
-      on MergedEvent {\n\t\tactor { ...actor }\n\t\tmergeRefName\n\t\turl\n\t\tcommit
-      { ...commit }\n\t\tcreatedAt\n\t\t}\n\t\t... on PullRequestReview {\n\t\t...review\n\t\t}\n\t\t...
-      on PullRequestReviewThread {\n\t\tcomments(last: 100) {\n\t\t\tnodes {\n\t\t\tdatabaseId\n\t\t\tauthor
-      { ...actor }\n\t\t\tauthorAssociation\n\t\t\teditor { ...actor }\n\t\t\tcommit
-      { ...commit }\n\t\t\tbody\n\t\t\tstate\n\t\t\turl\n\t\t\tcreatedAt\n\t\t\tupdatedAt\n\t\t\tincludesCreatedEdit\n\t\t\t}\n\t\t}\n\t\t}\n\t\t...
-      on ReopenedEvent {\n\t\tactor { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on
-      ReviewDismissedEvent {\n\t\tactor { ...actor }\n\t\treview { ...review }\n\t\tdismissalMessage\n\t\tcreatedAt\n\t\t}\n\t\t...
-      on ReviewRequestRemovedEvent {\n\t\tactor { ...actor }\n\t\trequestedReviewer
-      { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
-      { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
-      on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nquery
-      {\nrepository(owner: \"sourcegraph\", name: \"automation-testing\") {\npullRequests(baseRefName:
-      \"master\", headRefName: \"always-open-pr\", first: 1, states: OPEN) { \nnodes{
-      ... pr }\n}\n}\n}","variables":null}'
+    body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
+      label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
+      basicCommit on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      10){\n    nodes {\n      id\n      status\n      conclusion\n    }\n  }\n  committedDate\n}\n\nfragment
+      prCommit on PullRequestCommit {\n  commit {\n    ...basicCommit\n  }\n}\n\nfragment
+      review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
+      {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
+      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
+      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
+      {\n      ...prCommit\n    }\n  }\n  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT,
+      CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW,
+      PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT,
+      REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT])
+      {\n    nodes {\n      __typename\n      ... on AssignedEvent {\n        actor
+      {\n          ...actor\n        }\n        assignee {\n          ...actor\n        }\n        createdAt\n      }\n      ...
+      on ClosedEvent {\n        actor {\n          ...actor\n        }\n        createdAt\n        url\n      }\n      ...
+      on IssueComment {\n        databaseId\n        author {\n          ...actor\n        }\n        authorAssociation\n        body\n        createdAt\n        editor
+      {\n          ...actor\n        }\n        url\n        updatedAt\n        includesCreatedEdit\n        publishedAt\n      }\n      ...
+      on RenamedTitleEvent {\n        actor {\n          ...actor\n        }\n        previousTitle\n        currentTitle\n        createdAt\n      }\n      ...
+      on MergedEvent {\n        actor {\n          ...actor\n        }\n        mergeRefName\n        url\n        commit
+      {\n          ...commit\n        }\n        createdAt\n      }\n      ... on
+      PullRequestReview {\n        ...review\n      }\n      ... on PullRequestReviewThread
+      {\n        comments(last: 100) {\n          nodes {\n            databaseId\n            author
+      {\n              ...actor\n            }\n            authorAssociation\n            editor
+      {\n              ...actor\n            }\n            commit {\n              ...commit\n            }\n            body\n            state\n            url\n            createdAt\n            updatedAt\n            includesCreatedEdit\n          }\n        }\n      }\n      ...
+      on ReopenedEvent {\n        actor {\n          ...actor\n        }\n        createdAt\n      }\n      ...
+      on ReviewDismissedEvent {\n        actor {\n          ...actor\n        }\n        review
+      {\n          ...review\n        }\n        dismissalMessage\n        createdAt\n      }\n      ...
+      on ReviewRequestRemovedEvent {\n        actor {\n          ...actor\n        }\n        requestedReviewer
+      {\n          ...actor\n        }\n        requestedTeam: requestedReviewer {\n          ...
+      on Team {\n            name\n            url\n            avatarUrl\n          }\n        }\n        createdAt\n      }\n      ...
+      on ReviewRequestedEvent {\n        actor {\n          ...actor\n        }\n        requestedReviewer
+      {\n          ...actor\n        }\n        requestedTeam: requestedReviewer {\n          ...
+      on Team {\n            name\n            url\n            avatarUrl\n          }\n        }\n        createdAt\n      }\n      ...
+      on UnassignedEvent {\n        actor {\n          ...actor\n        }\n        assignee
+      {\n          ...actor\n        }\n        createdAt\n      }\n      ... on LabeledEvent
+      {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
+      on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
+      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit
+      {\n        ...prCommit\n      }\n    }\n  }\n}\nquery {\nrepository(owner: \"sourcegraph\",
+      name: \"automation-testing\") {\npullRequests(baseRefName: \"master\", headRefName:
+      \"always-open-pr\", first: 1, states: OPEN) { \nnodes{ ... pr }\n}\n}\n}","variables":null}'
     form: {}
     headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
@@ -118,7 +157,7 @@ interactions:
   response:
     body: '{"data":{"repository":{"pullRequests":{"nodes":[{"id":"MDExOlB1bGxSZXF1ZXN0MzM5NzUyNDQy","title":"This
       is a test PR that is always open (keep it open!)","body":"Feel free to ignore
-      this. This is a test PR that is always open.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/1","number":1,"createdAt":"2019-11-12T06:40:21Z","updatedAt":"2019-12-05T07:09:31Z","headRefOid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"always-open-pr","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"timelineItems":{"nodes":[{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:16Z","url":"https://github.com/sourcegraph/automation-testing/pull/1#event-2855920542"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-05T07:09:21Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"This
+      this. This is a test PR that is always open.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/1","number":1,"createdAt":"2019-11-12T06:40:21Z","updatedAt":"2019-12-05T07:09:31Z","headRefOid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"always-open-pr","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODA=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODM=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-12T06:39:23Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"9d04a0d8733dafbb5d75e594a9ec525c49dfc975","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MDk4NjE=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MDk4NjI=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-12T06:38:55Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODA=","status":"QUEUED","conclusion":null},{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODM=","status":"QUEUED","conclusion":null}]},"committedDate":"2019-11-12T06:39:23Z"}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:16Z","url":"https://github.com/sourcegraph/automation-testing/pull/1#event-2855920542"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-05T07:09:21Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"This
       is a test PR that is always open","currentTitle":"This is a test PR that is
       always open (keep it open!)","createdAt":"2019-12-05T07:09:31Z"}]}}]}}}}'
     headers:
@@ -135,7 +174,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 06 Dec 2019 11:02:55 GMT
+      - Wed, 12 Feb 2020 10:50:06 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -145,7 +184,7 @@ interactions:
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
       Vary:
-      - Accept-Encoding
+      - Accept-Encoding, Accept
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -153,11 +192,11 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v4; format=json
+      - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - FF61:3D532:14C4419D:18BA5582:5DEA355E
+      - 114D:40410:1F4E6D6:25E19A1:5E43D85D
       X-Oauth-Scopes:
-      - repo
+      - read:org, repo
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK

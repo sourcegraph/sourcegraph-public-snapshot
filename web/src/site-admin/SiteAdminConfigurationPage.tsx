@@ -332,9 +332,11 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     className="alert alert-warning site-admin-configuration-page__alert site-admin-configuration-page__alert-flex"
                 >
                     Server restart is required for the configuration to take effect.
-                    <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadSite}>
-                        Restart server
-                    </button>
+                    {(this.state.site === undefined || this.state.site?.canReloadSite) && (
+                        <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadSite}>
+                            Restart server
+                        </button>
+                    )}
                 </div>
             )
         }
@@ -408,9 +410,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-configuration-page">
                 <PageTitle title="Configuration - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Site configuration</h2>
-                </div>
+                <h2>Site configuration</h2>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/config/site_config">documentation</Link> for more information.

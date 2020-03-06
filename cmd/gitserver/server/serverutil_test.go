@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestConfigureRemoteGitCommand(t *testing.T) {
@@ -23,6 +21,7 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 	}
 	tests := []struct {
 		input        *exec.Cmd
+		tlsConfig    *tlsConfig
 		expectedEnv  []string
 		expectedArgs []string
 	}{
@@ -43,11 +42,33 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 			// Don't use protocol.version=2 for ls-remote because it hurts perf.
 			expectedArgs: []string{"git", "-c", "credential.helper=", "ls-remote"},
 		},
+
+		// tlsConfig tests
+		{
+			input: exec.Command("git", "ls-remote"),
+			tlsConfig: &tlsConfig{
+				SSLNoVerify: true,
+			},
+			expectedEnv:  append(expectedEnv, "GIT_SSL_NO_VERIFY=true"),
+			expectedArgs: []string{"git", "-c", "credential.helper=", "ls-remote"},
+		},
+		{
+			input: exec.Command("git", "ls-remote"),
+			tlsConfig: &tlsConfig{
+				SSLCAInfo: "/tmp/foo.certs",
+			},
+			expectedEnv:  append(expectedEnv, "GIT_SSL_CAINFO=/tmp/foo.certs"),
+			expectedArgs: []string{"git", "-c", "credential.helper=", "ls-remote"},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(strings.Join(test.input.Args, " "), func(t *testing.T) {
-			configureRemoteGitCommand(test.input, nil)
+			conf := test.tlsConfig
+			if conf == nil {
+				conf = &tlsConfig{}
+			}
+			configureRemoteGitCommand(test.input, conf)
 			if !reflect.DeepEqual(test.input.Env, test.expectedEnv) {
 				t.Errorf("\ngot:  %s\nwant: %s\n", test.input.Env, test.expectedEnv)
 			}
@@ -65,17 +86,14 @@ func TestConfigureRemoteGitCommand_tls(t *testing.T) {
 	}
 
 	cases := []struct {
-		conf *schema.TlsExternal
+		conf *tlsConfig
 		want []string
 	}{{
-		conf: nil,
+		conf: &tlsConfig{},
 		want: nil,
 	}, {
-		conf: &schema.TlsExternal{},
-		want: nil,
-	}, {
-		conf: &schema.TlsExternal{
-			InsecureSkipVerify: true,
+		conf: &tlsConfig{
+			SSLNoVerify: true,
 		},
 		want: []string{
 			"GIT_SSL_NO_VERIFY=true",
@@ -270,41 +288,6 @@ func TestUpdateFileIfDifferent(t *testing.T) {
 	}
 	if update("baz") {
 		t.Fatal("expected update to not update file")
-	}
-}
-
-func TestLogErrors(t *testing.T) {
-	cases := []struct {
-		stderr string
-		logged string
-	}{{
-		stderr: "",
-		logged: "",
-	}, {
-		stderr: "fatal: bad object HEAD\n",
-		logged: "",
-	}, {
-		stderr: "error: packfile .git/objects/pack/pack-a.pack does not match index",
-		logged: "org/repo error: packfile .git/objects/pack/pack-a.pack does not match index\n",
-	}, {
-		stderr: `error: packfile .git/objects/pack/pack-a.pack does not match index
-error: packfile .git/objects/pack/pack-b.pack does not match index
-fatal: bad object HEAD
-`,
-		logged: `org/repo error: packfile .git/objects/pack/pack-a.pack does not match index
-org/repo error: packfile .git/objects/pack/pack-b.pack does not match index
-`,
-	}}
-	for _, c := range cases {
-		var b strings.Builder
-		printf := func(format string, v ...interface{}) {
-			fmt.Fprintf(&b, format, v...)
-		}
-		logErrors(printf, "org/repo", []byte(c.stderr))
-		got := b.String()
-		if got != c.logged {
-			t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(c.logged, got))
-		}
 	}
 }
 

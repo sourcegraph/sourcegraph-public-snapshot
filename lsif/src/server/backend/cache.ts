@@ -4,19 +4,14 @@ import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
 import { createSqliteConnection } from '../../shared/database/sqlite'
+import { Logger } from 'winston'
 
-/**
- * A wrapper around a cache value promise.
- */
+/** A wrapper around a cache value promise. */
 interface CacheEntry<K, V> {
-    /**
-     * The key that can retrieve this cache entry.
-     */
+    /** The key that can retrieve this cache entry. */
     key: K
 
-    /**
-     * The promise that will resolve the cache value.
-     */
+    /** The promise that will resolve the cache value. */
     promise: Promise<V>
 
     /**
@@ -50,13 +45,13 @@ interface CacheMetrics {
      * A metric incremented on each cache insertion and decremented on
      * each cache eviction.
      */
-    sizeGauge: promClient.Gauge
+    sizeGauge: promClient.Gauge<string>
 
     /**
      * A metric incremented on each cache hit, miss, and eviction. A `type`
      * label is applied to differentiate the events.
      */
-    eventsCounter: promClient.Counter
+    eventsCounter: promClient.Counter<string>
 }
 
 /**
@@ -68,19 +63,13 @@ interface CacheMetrics {
  * it is actively being used.
  */
 export class GenericCache<K, V> {
-    /**
-     * A map from from keys to nodes in `lruList`.
-     */
+    /** A map from from keys to nodes in `lruList`. */
     private cache = new Map<K, Yallist.Node<CacheEntry<K, V>>>()
 
-    /**
-     * A linked list of cache entires ordered by last-touch.
-     */
+    /** A linked list of cache entires ordered by last-touch. */
     private lruList = new Yallist<CacheEntry<K, V>>()
 
-    /**
-     * The additive size of the items currently in the cache.
-     */
+    /** The additive size of the items currently in the cache. */
     private size = 0
 
     /**
@@ -100,6 +89,11 @@ export class GenericCache<K, V> {
         private disposeFunction: (value: V) => Promise<void> | void,
         private cacheMetrics: CacheMetrics
     ) {}
+
+    /** Remove all values from the cache. */
+    public async flush(): Promise<void> {
+        await Promise.all(Array.from(this.cache.keys()).map(key => this.bustKey(key)))
+    }
 
     /**
      * Check if `key` exists in the cache. If it does not, create a value
@@ -295,9 +289,7 @@ export class GenericCache<K, V> {
     }
 }
 
-/**
- * A cache of SQLite database connections indexed by database filenames.
- */
+/** A cache of SQLite database connections indexed by database filenames. */
 export class ConnectionCache extends GenericCache<string, Connection> {
     /**
      * Create a new `ConnectionCache` with the given maximum (soft) size for
@@ -324,6 +316,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      *
      * @param database The database filename.
      * @param entities The set of entities to create on a new connection.
+     * @param logger The logger instance.
      * @param callback The function invoke with the SQLite connection.
      */
     public withConnection<T>(
@@ -331,9 +324,10 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         // Decorators are not possible type check
         // eslint-disable-next-line @typescript-eslint/ban-types
         entities: Function[],
+        logger: Logger,
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
-        return this.withValue(database, () => createSqliteConnection(database, entities), callback)
+        return this.withValue(database, () => createSqliteConnection(database, entities, logger), callback)
     }
 
     /**
@@ -342,6 +336,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      *
      * @param database The database filename.
      * @param entities The set of entities to create on a new connection.
+     * @param logger The logger instance.
      * @param callback The function invoke with a SQLite transaction connection.
      */
     public withTransactionalEntityManager<T>(
@@ -349,9 +344,10 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         // Decorators are not possible type check
         // eslint-disable-next-line @typescript-eslint/ban-types
         entities: Function[],
+        logger: Logger,
         callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
-        return this.withConnection(database, entities, connection => connection.transaction(callback))
+        return this.withConnection(database, entities, logger, connection => connection.transaction(callback))
     }
 }
 
@@ -362,20 +358,14 @@ export class ConnectionCache extends GenericCache<string, Connection> {
  * of the in-memory representation.
  */
 export interface EncodedJsonCacheValue<T> {
-    /**
-     * The size of the encoded value.
-     */
+    /** The size of the encoded value. */
     size: number
 
-    /**
-     * The decoded value.
-     */
+    /** The decoded value. */
     data: T
 }
 
-/**
- * A cache of decoded values encoded as JSON and gzipped in a SQLite database.
- */
+/** A cache of decoded values encoded as JSON and gzipped in a SQLite database. */
 class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
     /**
      * Create a new `EncodedJsonCache` with the given maximum (soft) size for
@@ -435,9 +425,7 @@ export class ResultChunkCache extends EncodedJsonCache<string, sqliteModels.Resu
     }
 }
 
-/**
- * Return a promise and a function pair. The promise resolves once the function is called.
- */
+/** Return a promise and a function pair. The promise resolves once the function is called. */
 export function createBarrierPromise(): { wait: Promise<void>; done: () => void } {
     let done!: () => void
     const wait = new Promise<void>(resolve => (done = resolve))

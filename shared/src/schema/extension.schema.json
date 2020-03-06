@@ -35,6 +35,10 @@
           "description": "A URL to the source code for this extension.",
           "type": "string",
           "format": "uri"
+        },
+        "directory": {
+          "description": "The directory within the repository that defines this extension.",
+          "type": "string"
         }
       }
     },

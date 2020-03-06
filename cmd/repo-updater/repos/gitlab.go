@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -43,7 +44,7 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 	if err != nil {
 		return nil, err
 	}
-	baseURL = NormalizeBaseURL(baseURL)
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
 	if cf == nil {
 		cf = httpcli.NewExternalHTTPClientFactory()
@@ -130,6 +131,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
+		Private:      proj.Visibility == "private",
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,

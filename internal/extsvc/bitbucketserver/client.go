@@ -38,7 +38,7 @@ var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of reque
 // The limits chosen here are based on the following logic: Bitbucket Cloud restricts
 // "List all repositories" requests (which are a good portion of our requests) to 1,000/hr,
 // and they restrict "List a user or team's repositories" requests (which are roughly equal
-// to our repository lookup requests) to 1,000/hr. We peform a list repositories request
+// to our repository lookup requests) to 1,000/hr. We perform a list repositories request
 // for every 1000 repositories on Bitbucket every 1m by default, so for someone with 20,000
 // Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
 // repository lookup requests by users. So we use a generous 7,200/hr here until we hear
@@ -410,6 +410,27 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	return c.send(ctx, "GET", path, nil, nil, pr)
 }
 
+type UpdatePullRequestInput struct {
+	PullRequestID string `json:"-"`
+	Version       int    `json:"version"`
+
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	ToRef       Ref    `json:"toRef"`
+}
+
+func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%s",
+		in.ToRef.Repository.Project.Key,
+		in.ToRef.Repository.Slug,
+		in.PullRequestID,
+	)
+
+	pr := &PullRequest{}
+	return pr, c.send(ctx, "PUT", path, nil, in, pr)
+}
+
 // ErrAlreadyExists is returned by Client.CreatePullRequest when a Pull Request
 // for the given FromRef and ToRef already exists.
 type ErrAlreadyExists struct {
@@ -544,6 +565,66 @@ func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest)
 	return nil
 }
 
+func (c *Client) LoadPullRequestCommits(ctx context.Context, pr *PullRequest) (err error) {
+	if pr.ToRef.Repository.Slug == "" {
+		return errors.New("repository slug empty")
+	}
+
+	if pr.ToRef.Repository.Project.Key == "" {
+		return errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/commits",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+		pr.ID,
+	)
+
+	t := &PageToken{Limit: 1000}
+
+	var commits []Commit
+	for t.HasMore() {
+		var page []Commit
+		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
+			return err
+		}
+		commits = append(commits, page...)
+	}
+
+	pr.Commits = commits
+	return nil
+}
+
+func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullRequest) (err error) {
+	if len(pr.Commits) == 0 {
+		return nil
+	}
+
+	var latestCommit Commit
+	for _, c := range pr.Commits {
+		if latestCommit.CommitterTimestamp < c.CommitterTimestamp {
+			latestCommit = c
+		}
+	}
+
+	path := fmt.Sprintf("rest/build-status/1.0/commits/%s", latestCommit.ID)
+
+	t := &PageToken{Limit: 1000}
+
+	var statuses []BuildStatus
+	for t.HasMore() {
+		var page []BuildStatus
+		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
+			return err
+		}
+		statuses = append(statuses, page...)
+	}
+
+	pr.BuildStatuses = statuses
+	return nil
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
@@ -577,7 +658,7 @@ func (c *Client) LabeledRepos(ctx context.Context, pageToken *PageToken, label s
 	return repos, next, err
 }
 
-// RepoIDs fetches a list of repositories that the user token has permission for.
+// RepoIDs fetches a list of repository IDs that the user token has permission for.
 // Permission: ["admin", "read", "write"]
 func (c *Client) RepoIDs(ctx context.Context, permission string) ([]uint32, error) {
 	u := fmt.Sprintf("rest/sourcegraph-admin/1.0/permissions/repositories?permission=%s", permission)
@@ -700,7 +781,10 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		})
 	}
 
-	if result != nil {
+	// handle binary response
+	if s, ok := result.(*[]byte); ok {
+		*s = bs
+	} else if result != nil {
 		return json.Unmarshal(bs, result)
 	}
 
@@ -972,7 +1056,9 @@ type PullRequest struct {
 		} `json:"self"`
 	} `json:"links"`
 
-	Activities []Activity `json:"activities,omitempty"`
+	Activities    []Activity    `json:"activities,omitempty"`
+	Commits       []Commit      `json:"commits,omitempty"`
+	BuildStatuses []BuildStatus `json:"buildstatuses,omitempty"`
 }
 
 // Activity is a union type of all supported pull request activity items.
@@ -997,6 +1083,15 @@ type Activity struct {
 
 // Key is a unique key identifying this activity in the context of its pull request.
 func (a *Activity) Key() string { return strconv.Itoa(a.ID) }
+
+// BuildStatus represents the build status of a commit
+type BuildStatus struct {
+	State       string `json:"state,omitempty"`
+	Key         string `json:"key,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Url         string `json:"url,omitempty"`
+	Description string `json:"description,omitempty"`
+}
 
 // ActivityAction defines the action taken in an Activity.
 type ActivityAction string

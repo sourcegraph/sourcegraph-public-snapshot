@@ -9,14 +9,10 @@ import { Span, Tracer } from 'opentracing'
  * HTTP request or worker upload conversion.
  */
 export interface TracingContext {
-    /**
-     * The current tagged logger instance. Optional for testing.
-     */
+    /** The current tagged logger instance. Optional for testing. */
     logger?: Logger
 
-    /**
-     * The current opentracing span. Optional for testing.
-     */
+    /** The current opentracing span. Optional for testing. */
     span?: Span
 }
 

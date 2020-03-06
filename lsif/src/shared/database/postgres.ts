@@ -8,6 +8,7 @@ import { Logger } from 'winston'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from '../settings'
 import { TlsOptions } from 'tls'
+import { DatabaseLogger } from './logger'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -16,26 +17,18 @@ import { TlsOptions } from 'tls'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395640
+const MINIMUM_MIGRATION_VERSION = 1528395652
 
-/**
- * How many times to try to check the current database migration version on startup.
- */
+/** How many times to try to check the current database migration version on startup. */
 const MAX_SCHEMA_POLL_RETRIES = readEnvInt('MAX_SCHEMA_POLL_RETRIES', 60)
 
-/**
- * How long to wait (in seconds) between queries to check the current database migration version on startup.
- */
+/** How long to wait (in seconds) between queries to check the current database migration version on startup. */
 const SCHEMA_POLL_INTERVAL = readEnvInt('SCHEMA_POLL_INTERVAL', 5)
 
-/**
- * How many times to try to connect to Postgres on startup.
- */
+/** How many times to try to connect to Postgres on startup. */
 const MAX_CONNECTION_RETRIES = readEnvInt('MAX_CONNECTION_RETRIES', 60)
 
-/**
- * How long to wait (in seconds) between Postgres connection attempts.
- */
+/** How long to wait (in seconds) between Postgres connection attempts. */
 const CONNECTION_RETRY_INTERVAL = readEnvInt('CONNECTION_RETRY_INTERVAL', 5)
 
 /**
@@ -89,7 +82,7 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
     return pRetry(
         () => {
             logger.debug('Connecting to Postgres')
-            return connectPostgres(connectionOptions, '')
+            return connectPostgres(connectionOptions, '', logger)
         },
         {
             factor: 1,
@@ -105,16 +98,18 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
  *
  * @param connectionOptions The connection options.
  * @param suffix The database suffix (used for testing).
+ * @param logger The logger instance
  */
 export function connectPostgres(
     connectionOptions: PostgresConnectionCredentialsOptions,
-    suffix: string
+    suffix: string,
+    logger: Logger
 ): Promise<Connection> {
     return _createConnection({
         type: 'postgres',
         name: `lsif${suffix}`,
         entities: pgModels.entities,
-        logging: ['warn', 'error'],
+        logger: new DatabaseLogger(logger),
         maxQueryExecutionTime: 1000,
         ...connectionOptions,
     })

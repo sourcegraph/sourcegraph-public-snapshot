@@ -20,7 +20,7 @@ const SettingsSchemaJSON = `{
         "splitSearchModes": {
           "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": { "pointer": true }
         },
         "searchStats": {
@@ -209,6 +209,12 @@ const SettingsSchemaJSON = `{
         }
       }
     }
+  },
+  "search.hideSuggestions": {
+    "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
+    "type": "boolean",
+    "default": false,
+    "!go": { "pointer": true }
   }
 }
 `

@@ -73,6 +73,10 @@ interface Props {
 
 export class DiscussionsList extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
+        const nodeComponentProps: Pick<DiscussionNodeProps, 'location' | 'withRepo'> = {
+            location: this.props.location,
+            withRepo: this.props.withRepo,
+        }
         return (
             <FilteredDiscussionsConnection
                 className={'discussions-list' + this.props.noFlex ? 'discussions-list--no-flex' : ''}
@@ -82,13 +86,8 @@ export class DiscussionsList extends React.PureComponent<Props> {
                 pluralNoun={this.props.pluralNoun || 'discussions'}
                 queryConnection={this.fetchThreads}
                 nodeComponent={DiscussionNode}
-                nodeComponentProps={
-                    { location: this.props.location, withRepo: this.props.withRepo } as Pick<
-                        DiscussionNodeProps,
-                        'location'
-                    >
-                }
-                updateOnChange={`${this.props.repoID}:${this.props.rev}:${this.props.filePath}`}
+                nodeComponentProps={nodeComponentProps}
+                updateOnChange={`${String(this.props.repoID)}:${String(this.props.rev)}:${String(this.props.filePath)}`}
                 defaultFirst={this.props.defaultFirst || 100}
                 hideSearch={this.props.hideSearch}
                 useURLQuery={false}

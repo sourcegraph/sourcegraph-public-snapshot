@@ -5,22 +5,24 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	rxsyntax "regexp/syntax"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
 type searchAlert struct {
 	prometheusType  string
 	title           string
 	description     string
-	patternType     SearchType
 	proposedQueries []*searchQueryDescription
 }
 
@@ -37,35 +39,77 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	if len(a.proposedQueries) == 0 {
 		return nil
 	}
-	for _, proposedQuery := range a.proposedQueries {
-		if proposedQuery.description != "Remove quotes" {
-			switch a.patternType {
-			case SearchTypeRegex:
-				proposedQuery.query = proposedQuery.query + " patternType:regexp"
-			case SearchTypeLiteral:
-				proposedQuery.query = proposedQuery.query + " patternType:literal"
-			case SearchTypeStructural:
-				// Don't append patternType:structural, it is not erased from the query like
-				// patterntype:regexp and patterntype:literal.
-				// TODO(RVT): Making this consistent requires a change on the UI side.
-			default:
-				panic("unreachable")
-			}
-		}
-	}
 	return &a.proposedQueries
 }
 
-func (r *searchResolver) alertForQuotesInQueryInLiteralMode(ctx context.Context) (*searchAlert, error) {
+// alertForQuery converts errors in the query to search alerts.
+func alertForQuery(queryString string, err error) *searchAlert {
+	switch e := err.(type) {
+	case *syntax.ParseError:
+		return &searchAlert{
+			prometheusType:  "parse_syntax_error",
+			title:           capFirst(e.Msg),
+			description:     "Quoting the query may help if you want a literal match.",
+			proposedQueries: proposedQuotedQueries(queryString),
+		}
+	case *query.ValidationError:
+		return &searchAlert{
+			prometheusType: "validation_error",
+			title:          "Invalid Query",
+			description:    capFirst(e.Msg),
+		}
+	case *querytypes.TypeError:
+		switch e := e.Err.(type) {
+		case *rxsyntax.Error:
+			return &searchAlert{
+				prometheusType:  "typecheck_regex_syntax_error",
+				title:           capFirst(e.Error()),
+				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
+				proposedQueries: proposedQuotedQueries(queryString),
+			}
+		}
+	}
+	return &searchAlert{
+		prometheusType: "generic_invalid_query",
+		title:          "Unable To Process Query",
+		description:    capFirst(err.Error()),
+	}
+}
+
+func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searchResolver) *searchAlert {
+	return &searchAlert{
+		prometheusType: "timed_out",
+		title:          "Timed out while searching",
+		description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(usedTime.String())),
+		proposedQueries: []*searchQueryDescription{
+			{
+				description: "query with longer timeout",
+				query:       fmt.Sprintf("timeout:%v %s", suggestTime, omitQueryField(r.parseTree, query.FieldTimeout)),
+				patternType: r.patternType,
+			},
+		},
+	}
+}
+
+func alertForStalePermissions() *searchAlert {
+	return &searchAlert{
+		prometheusType: "no_resolved_repos__stale_permissions",
+		title:          "Permissions syncing in progress",
+		description:    "Permissions are being synced from your code host, please wait for a minute and try again.",
+	}
+}
+
+func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
 	return &searchAlert{
 		prometheusType: "no_results__suggest_quotes",
 		title:          "No results. Did you mean to use quotes?",
 		description:    "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
 		proposedQueries: []*searchQueryDescription{{
 			description: "Remove quotes",
-			query:       syntax.ExprString(omitQuotes(r.query)),
+			query:       omitQuotes(p),
+			patternType: query.SearchTypeLiteral,
 		}},
-	}, nil
+	}
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
@@ -80,7 +124,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			prometheusType: "no_resolved_repos__no_repositories",
 			title:          "Add repositories or connect repository hosts",
 			description:    "There are no repositories to search. Add an external service connection to your code host.",
-			patternType:    r.patternType,
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
@@ -88,7 +131,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			prometheusType: "no_resolved_repos__repogroup_empty",
 			title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
 			description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
-			patternType:    r.patternType,
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
@@ -96,16 +138,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			prometheusType: "no_resolved_repos__repogroup_none_in_common",
 			title:          "Repository groups have no repositories in common",
 			description:    "No repository exists in all of the specified repository groups.",
-			patternType:    r.patternType,
 		}, nil
 	}
 
 	// TODO(sqs): handle -repo:foo fields.
 
-	withoutRepoFields := omitQueryFields(r, query.FieldRepo)
+	withoutRepoFields := omitQueryField(r.parseTree, query.FieldRepo)
 
 	var a searchAlert
-	a.patternType = r.patternType
 	switch {
 	case len(repoGroupFilters) > 1:
 		// This is a rare case, so don't bother proposing queries.
@@ -123,7 +163,8 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		if len(repos1) > 0 {
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryFields(r, query.FieldRepoGroup),
+				query:       omitQueryField(r.parseTree, query.FieldRepoGroup),
+				patternType: r.patternType,
 			})
 		}
 
@@ -138,12 +179,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       query,
+				patternType: r.patternType,
 			})
 		} else {
 			// Fall back to removing repo filters.
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: "remove repo: filters",
 				query:       withoutRepoFields,
+				patternType: r.patternType,
 			})
 		}
 
@@ -158,13 +201,15 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		if len(repos1) > 0 {
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryFields(r, query.FieldRepoGroup),
+				query:       omitQueryField(r.parseTree, query.FieldRepoGroup),
+				patternType: r.patternType,
 			})
 		}
 
 		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 			description: "remove repo: filters",
 			query:       withoutRepoFields,
+			patternType: r.patternType,
 		})
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
@@ -182,6 +227,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       query,
+				patternType: r.patternType,
 			})
 		}
 
@@ -213,6 +259,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 				a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 					description: "remove repo: filter",
 					query:       withoutRepoFields,
+					patternType: r.patternType,
 				})
 			}
 		}
@@ -225,7 +272,6 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	alert := &searchAlert{
 		prometheusType: "over_repo_limit",
 		title:          "Too many matching repositories",
-		patternType:    r.patternType,
 	}
 
 	if envvar.SourcegraphDotComMode() {
@@ -300,10 +346,11 @@ outer:
 		// add it to the user's query, but be smart. For example, if the user's
 		// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
 		// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-		newExpr := addQueryRegexpField(r.query, query.FieldRepo, repoParentPattern)
+		newExpr := addRegexpField(r.parseTree, query.FieldRepo, repoParentPattern)
 		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 			description: "in repositories under " + repoParent + more,
-			query:       syntax.ExprString(newExpr),
+			query:       newExpr,
+			patternType: r.patternType,
 		})
 	}
 	if len(alert.proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
@@ -318,10 +365,11 @@ outer:
 			if i >= maxReposToPropose {
 				break
 			}
-			newExpr := addQueryRegexpField(r.query, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+			newExpr := addRegexpField(r.parseTree, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
-				query:       syntax.ExprString(newExpr),
+				query:       newExpr,
+				patternType: r.patternType,
 			})
 		}
 	}
@@ -329,7 +377,39 @@ outer:
 	return alert, nil
 }
 
-func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
+// alertForStructuralSearch filters certain errors from multiErr and converts
+// them to an alert. We surface one alert at a time, so for multiple errors only
+// the last converted error will be surfaced in the alert.
+func alertForStructuralSearch(multiErr *multierror.Error) (newMultiErr *multierror.Error, alert *searchAlert) {
+	if multiErr != nil {
+		for _, err := range multiErr.Errors {
+			if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
+				alert = &searchAlert{
+					prometheusType: "structural_search_needs_more_memory",
+					title:          "Structural search needs more memory",
+					description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
+				}
+			} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
+				var msg string
+				if envvar.SourcegraphDotComMode() {
+					msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
+				} else {
+					msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
+				}
+				alert = &searchAlert{
+					prometheusType: "structural_search_on_zero_indexed_repos",
+					title:          "Unindexed repositories with structural search",
+					description:    fmt.Sprintf("Structural search currently only works on indexed repositories. Some of the repositories to search are not indexed, so we can't return results for them. %s", msg),
+				}
+			} else {
+				newMultiErr = multierror.Append(newMultiErr, err)
+			}
+		}
+	}
+	return newMultiErr, alert
+}
+
+func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
 		if len(missingRepoRevs[0].RevSpecs()) == 1 {
@@ -348,36 +428,29 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.Repos
 		prometheusType: "missing_repo_revs",
 		title:          "Some repositories could not be searched",
 		description:    description,
-		patternType:    r.patternType,
 	}
 }
 
-func omitQueryFields(r *searchResolver, field string) string {
-	return syntax.ExprString(omitQueryExprWithField(r.query, field))
-}
-
-func omitQueryExprWithField(query *query.Query, field string) syntax.ParseTree {
-	expr2 := make(syntax.ParseTree, 0, len(query.ParseTree))
-	for _, e := range query.ParseTree {
+func omitQueryField(p syntax.ParseTree, field string) string {
+	omitField := func(e syntax.Expr) *syntax.Expr {
 		if e.Field == field {
-			continue
+			return nil
 		}
-		expr2 = append(expr2, e)
+		return &e
 	}
-	return expr2
+	return syntax.Map(p, omitField).String()
 }
 
-func omitQuotes(query *query.Query) syntax.ParseTree {
-	result := make(syntax.ParseTree, 0, len(query.ParseTree))
-	for _, e := range query.ParseTree {
-		cpy := *e
-		e = &cpy
+func omitQuotes(p syntax.ParseTree) string {
+	omitQuotes := func(e syntax.Expr) *syntax.Expr {
+
 		if e.Field == "" && strings.HasPrefix(e.Value, `"\"`) && strings.HasSuffix(e.Value, `\""`) {
 			e.Value = strings.TrimSuffix(strings.TrimPrefix(e.Value, `"\"`), `\""`)
+			return &e
 		}
-		result = append(result, e)
+		return &e
 	}
-	return result
+	return syntax.Map(p, omitQuotes).String()
 }
 
 // pathParentsByFrequency returns the most common path parents of the given paths.
@@ -402,36 +475,46 @@ func pathParentsByFrequency(paths []string) []string {
 	return parents
 }
 
-// addQueryRegexpField adds a new expr to the query with the given field
+// addRegexpField adds a new expr to the query with the given field
 // and pattern value. The field is assumed to be a regexp.
 //
-// It tries to simplify (avoid redundancy in) the result. For example, given
+// It tries to remove redundancy in the result. For example, given
 // a query like "x:foo", if given a field "x" with pattern "foobar" to add,
 // it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
 // guaranteed to always return the simplest query.
-func addQueryRegexpField(query *query.Query, field, pattern string) syntax.ParseTree {
-	// Copy query expressions.
-	expr := make(syntax.ParseTree, len(query.ParseTree))
-	for i, e := range query.ParseTree {
-		tmp := *e
-		expr[i] = &tmp
-	}
-
+func addRegexpField(p syntax.ParseTree, field, pattern string) string {
 	var added bool
-	for i, e := range expr {
+	addRegexpField := func(e syntax.Expr) *syntax.Expr {
 		if e.Field == field && strings.Contains(pattern, e.Value) {
-			expr[i].Value = pattern
+			e.Value = pattern
 			added = true
-			break
+			return &e
 		}
+		return &e
 	}
-
+	modified := syntax.Map(p, addRegexpField)
 	if !added {
-		expr = append(expr, &syntax.Expr{
+		p = append(p, &syntax.Expr{
 			Field:     field,
 			Value:     pattern,
 			ValueType: syntax.TokenLiteral,
 		})
+		return p.String()
 	}
-	return expr
+	return modified.String()
 }
+
+func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
+	alert := &searchAlert{
+		prometheusType:  a.prometheusType,
+		title:           a.title,
+		description:     a.description,
+		proposedQueries: a.proposedQueries,
+	}
+	return &SearchResultsResolver{alert: alert}, nil
+}
+
+func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
+	return nil, nil
+}
+func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }

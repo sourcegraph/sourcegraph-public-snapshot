@@ -87,6 +87,8 @@ interface ConnectionDisplayProps {
     /** The component displayed when the list of nodes is empty. */
     emptyElement?: JSX.Element
 
+    /** The component displayed when all nodes have been fetched. */
+    totalCountSummaryComponent?: React.ComponentType<{ totalCount: number }>
     /**
      * Set to true when the GraphQL response is expected to emit an `PageInfo.endCursor` value when
      * there is a subsequent page of results. This will request the next page of results and append
@@ -99,8 +101,7 @@ interface ConnectionDisplayProps {
 /**
  * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
  *
- * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
- * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
+ * @template N The node type of the GraphQL connection, such as GQL.IRepository (if the connection is GQL.IRepositoryConnection)
  * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
  */
 interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
@@ -162,6 +163,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
         const HeadComponent = this.props.headComponent
         const FootComponent = this.props.footComponent
+        const TotalCountSummaryComponent = this.props.totalCountSummaryComponent
 
         const hasNextPage = this.props.connection
             ? this.props.connection.pageInfo
@@ -191,12 +193,13 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
 
         let summary: React.ReactFragment | undefined
         if (
-            !this.props.loading &&
             this.props.connection &&
             (!this.props.noSummaryIfAllNodesVisible || this.props.connection.nodes.length === 0 || hasNextPage)
         ) {
             if (totalCount !== null && totalCount > 0) {
-                summary = (
+                summary = TotalCountSummaryComponent ? (
+                    <TotalCountSummaryComponent totalCount={totalCount}></TotalCountSummaryComponent>
+                ) : (
                     <p className="filtered-connection__summary">
                         <small>
                             <span>
@@ -329,6 +332,9 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
 
     /** Called when the queryConnection Observable emits. */
     onUpdate?: (value: C | ErrorLike | undefined) => void
+
+    /** Don't show a loader on a refreshing table when a delay of 250ms on the request has passed */
+    noShowLoaderOnSlowLoad?: boolean
 }
 
 /**
@@ -526,6 +532,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         }
                     ),
                     switchMap(({ query, filter, shouldRefresh, queryCount }) => {
+                        console.log('triggered', shouldRefresh, this.props.noShowLoaderOnSlowLoad)
                         const result = this.props
                             .queryConnection({
                                 // If this is our first query and we were supplied a value for `visible`,
@@ -551,10 +558,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         return (shouldRefresh
                             ? merge(
                                   result,
-                                  of({ connectionOrError: undefined, loading: true }).pipe(
-                                      delay(250),
-                                      takeUntil(result)
-                                  )
+                                  of({
+                                      connectionOrError:
+                                          this.props.noShowLoaderOnSlowLoad === true
+                                              ? this.state.connectionOrError
+                                              : undefined,
+                                      loading: true,
+                                  }).pipe(delay(250), takeUntil(result))
                               )
                             : result
                         ).pipe(map(stateUpdate => ({ shouldRefresh, ...stateUpdate })))
@@ -629,8 +639,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         if (this.props.updates) {
             this.subscriptions.add(
-                this.props.updates.subscribe(c => {
-                    this.setState({ loading: true }, () => refreshRequests.next({ forceRefresh: true }))
+                this.props.updates.subscribe(() => {
+                    this.setState({ loading: this.props.noShowLoaderOnSlowLoad !== true }, () =>
+                        refreshRequests.next({ forceRefresh: true })
+                    )
                 })
             )
         }
@@ -695,6 +707,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (arg.visible !== 0 && arg.visible !== arg.first) {
             q.set('visible', String(arg.visible))
         }
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return q.toString()
     }
 
@@ -786,6 +799,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         onShowMore={this.onClickShowMore}
                         location={this.props.location}
                         emptyElement={this.props.emptyElement}
+                        totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                     />
                 )}
                 {this.state.loading && (
