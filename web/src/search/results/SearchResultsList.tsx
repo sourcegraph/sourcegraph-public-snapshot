@@ -441,11 +441,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                 results.timedout.length === results.repositoriesCount &&
                                                 /* All repositories timed out. */
                                                 this.renderRecommendations(
-                                                    window.context.deployType !== 'cluster'
+                                                    ['dev', 'docker-container'].includes(window.context.deployType)
                                                         ? [
                                                               <>
                                                                   Upgrade to Sourcegraph Enterprise for a highly
-                                                                  scalable Kubernetes cluster deployment option.
+                                                                  scalable Docker Compose or Kubernetes cluster
+                                                                  deployment option.
                                                               </>,
                                                               window.context.likelyDockerOnMac
                                                                   ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
