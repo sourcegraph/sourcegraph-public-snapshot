@@ -349,7 +349,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 	// "archived" label is a convention used at some customers for indicating
 	// a repository is archived (like github's archived state). This is not
 	// returned in the normal repository listing endpoints, so we need to
-	// fetch it seperately.
+	// fetch it separately.
 	archived, err := s.listAllLabeledRepos(ctx, "archived")
 	if err != nil {
 		results <- SourceResult{Source: s, Err: errors.Wrap(err, "failed to list repos with archived label")}
