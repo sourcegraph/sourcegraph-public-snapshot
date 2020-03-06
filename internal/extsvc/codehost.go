@@ -35,8 +35,14 @@ func NewCodeHost(baseURL *url.URL, serviceType string) *CodeHost {
 	}
 }
 
-func IsHostOf(c *CodeHost, repo *api.ExternalRepoSpec) bool {
+// IsHostOfRepo returns true if the repository belongs to given code host.
+func IsHostOfRepo(c *CodeHost, repo *api.ExternalRepoSpec) bool {
 	return c.ServiceID == repo.ServiceID && c.ServiceType == repo.ServiceType
+}
+
+// IsHostOfAccount returns true if the account belongs to given code host.
+func IsHostOfAccount(c *CodeHost, account *ExternalAccount) bool {
+	return c.ServiceID == account.ServiceID && c.ServiceType == account.ServiceType
 }
 
 // NormalizeBaseURL modifies the input and returns a normalized form of the a base URL with insignificant

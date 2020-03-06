@@ -23,6 +23,10 @@ import (
 var _ authz.Provider = (*OAuthAuthzProvider)(nil)
 
 type OAuthAuthzProvider struct {
+	// The token is the access token used for syncing repositories from the code host,
+	// but it may or may not be a sudo-scoped.
+	token string
+
 	clientProvider    *gitlab.ClientProvider
 	clientURL         *url.URL
 	codeHost          *extsvc.CodeHost
@@ -35,6 +39,11 @@ type OAuthAuthzProvider struct {
 type OAuthAuthzProviderOp struct {
 	// BaseURL is the URL of the GitLab instance.
 	BaseURL *url.URL
+
+	// Token is an access token with api scope, it may or may not have sudo scope.
+	//
+	// 🚨 SECURITY: This value contains secret information that must not be shown to non-site-admins.
+	Token string
 
 	// CacheTTL is the TTL of cached permissions lists from the GitLab API.
 	CacheTTL time.Duration
@@ -57,6 +66,8 @@ type OAuthAuthzProviderOp struct {
 
 func newOAuthProvider(op OAuthAuthzProviderOp) *OAuthAuthzProvider {
 	p := &OAuthAuthzProvider{
+		token: op.Token,
+
 		clientProvider:    gitlab.NewClientProvider(op.BaseURL, nil),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, gitlab.ServiceType),
