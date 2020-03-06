@@ -1033,6 +1033,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		commonMu   sync.Mutex
 		multiErr   *multierror.Error
 		multiErrMu sync.Mutex
+		timing     = make(map[string]int32)
+		timingMu   sync.Mutex
 		// fileMatches is a map from git:// URI of the file to FileMatch resolver
 		// to merge multiple results of different types for the same file
 		fileMatches   = make(map[string]*FileMatchResolver)
@@ -1057,6 +1059,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// repos, and removes the diff and commit resultTypes if it is breached.
 	resultTypes, alert = alertOnSearchLimit(resultTypes, &args)
 
+	repoResolveTiming := elapsedMilliseconds(start)
 	searchedFileContentsOrPaths := false
 	for _, resultType := range resultTypes {
 		resultType := resultType // shadow so it doesn't change in the goroutine
@@ -1072,6 +1075,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
+				repoTiming := time.Now()
 				repoResults, repoCommon, err := searchRepositories(ctx, &args, r.maxResults())
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
@@ -1089,6 +1093,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					common.update(*repoCommon)
 					commonMu.Unlock()
 				}
+				timingMu.Lock()
+				timing["repo"] = elapsedMilliseconds(repoTiming)
+				timingMu.Unlock()
 			})
 		case "symbol":
 			wg := waitGroup(len(resultTypes) == 1)
@@ -1096,6 +1103,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
+				symbolTiming := time.Now()
 				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, int(r.maxResults()))
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
@@ -1121,6 +1129,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					common.update(*symbolsCommon)
 					commonMu.Unlock()
 				}
+				timingMu.Lock()
+				timing["symbol"] = elapsedMilliseconds(symbolTiming)
+				timingMu.Unlock()
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths {
@@ -1133,6 +1144,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
+				searchTiming := time.Now()
 				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
@@ -1161,12 +1173,17 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					common.update(*fileCommon)
 					commonMu.Unlock()
 				}
+				timingMu.Lock()
+				timing["file"] = elapsedMilliseconds(searchTiming) // FIXME
+				timingMu.Unlock()
 			})
 		case "diff":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
+
+				diffTiming := time.Now()
 				old := args.PatternInfo
 				patternInfo := &search.CommitPatternInfo{
 					Pattern:                      old.Pattern,
@@ -1200,6 +1217,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					common.update(*diffCommon)
 					commonMu.Unlock()
 				}
+				timingMu.Lock()
+				timing["diff"] = elapsedMilliseconds(diffTiming)
+				timingMu.Unlock()
 			})
 		case "commit":
 			wg := waitGroup(len(resultTypes) == 1)
@@ -1207,6 +1227,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
+				commitTiming := time.Now()
 				old := args.PatternInfo
 				patternInfo := &search.CommitPatternInfo{
 					Pattern:                      old.Pattern,
@@ -1240,6 +1261,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					common.update(*commitCommon)
 					commonMu.Unlock()
 				}
+				timingMu.Lock()
+				timing["commit"] = elapsedMilliseconds(commitTiming)
+				timingMu.Unlock()
 			})
 		case "codemod":
 			wg := waitGroup(true)
@@ -1302,6 +1326,13 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if len(results) > 0 && multiErr != nil {
 		log15.Error("Errors during search", "error", multiErr)
 		multiErr = nil
+	}
+
+	for kind, time := range timing {
+		timing[kind] = time + repoResolveTiming
+	}
+	for kind, time := range timing {
+		log15.Info("Timing", kind, time)
 	}
 
 	if len(resultTypes) == 1 && resultTypes[0] == "repo" {
