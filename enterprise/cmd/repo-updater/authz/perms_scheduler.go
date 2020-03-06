@@ -11,7 +11,8 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// TODO: docstring
+// PermsScheduler is a permissions syncing scheduler that is in charge of
+// keeping permissions up-to-date for users and repositories at best effort.
 type PermsScheduler struct {
 	// The time duration of how often a schedule happens.
 	internal time.Duration
@@ -19,7 +20,7 @@ type PermsScheduler struct {
 	store *store
 }
 
-// TODO: docstring
+// NewPermsScheduler returns a new permissions syncing scheduler.
 func NewPermsScheduler(internal time.Duration, db dbutil.DB) *PermsScheduler {
 	return &PermsScheduler{
 		internal: internal,
@@ -27,7 +28,8 @@ func NewPermsScheduler(internal time.Duration, db dbutil.DB) *PermsScheduler {
 	}
 }
 
-// TODO: docstring
+// scanUsersWithNoPerms returns a list of user IDs who have no permissions found in
+// database.
 func (s *PermsScheduler) scanUsersWithNoPerms(ctx context.Context) ([]int32, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scanUsersWithNoPerms
@@ -38,7 +40,8 @@ WHERE users.id NOT IN
 	return s.store.scanIDs(ctx, q)
 }
 
-// TODO: docstring
+// scanReposWithNoPerms returns a list of repositories IDs that have no permissions
+// found in database.
 func (s *PermsScheduler) scanReposWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scanReposWithNoPerms
@@ -54,7 +57,8 @@ WHERE repo.id NOT IN
 	return toRepoIDs(ids), nil
 }
 
-// TODO: docstring
+// scanUsersWithOldestPerms returns a list of user IDs who have oldest permissions
+// in database and capped results by the limit.
 func (s *PermsScheduler) scanUsersWithOldestPerms(ctx context.Context, limit int) ([]int32, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scanUsersWithOldestPerms
@@ -65,7 +69,8 @@ LIMIT %s
 	return s.store.scanIDs(ctx, q)
 }
 
-// TODO: docstring
+// scanReposWithOldestPerms returns a list of repository IDs that have oldest permissions
+// in database and capped results by the limit.
 func (s *PermsScheduler) scanReposWithOldestPerms(ctx context.Context, limit int) ([]api.RepoID, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scanReposWithOldestPerms
@@ -90,8 +95,7 @@ func toRepoIDs(ids []int32) []api.RepoID {
 	return repoIDs
 }
 
-// TODO: docstring
-// We scan and schedule four sets of results in the following order:
+// schedule does scan and schedule four lists in the following order:
 //   1. Users with no permissions, because they can't do anything meaningful (e.g. not able to search).
 //   2. Private repositories with no permissions, because those can't be viewed by anyone except site admins.
 //   3. Rolling updating user permissions over time from oldest ones.
@@ -145,8 +149,8 @@ func (s *PermsScheduler) schedule(ctx context.Context, syncer *PermsSyncer) erro
 	return nil
 }
 
-// TODO: docstring
-// , this method is blocking and should be called as a goroutine.
+// StartPermsSyncing kicks off the permissions syncing process, this method is blocking
+// and should be called as a goroutine.
 func StartPermsSyncing(ctx context.Context, scheduler *PermsScheduler, syncer *PermsSyncer) {
 	go syncer.Run(ctx)
 
