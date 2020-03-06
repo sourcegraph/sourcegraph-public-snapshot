@@ -555,7 +555,7 @@ export function buildSearchURLQuery(
         searchParams.set('q', fullQuery)
 
         if (caseInQuery.value === 'yes') {
-            fullQuery = replaceRange(fullQuery, { start: caseInQuery.range.start, end: caseInQuery.range.end })
+            fullQuery = replaceRange(fullQuery, caseInQuery.range)
             searchParams.set('case', caseInQuery.value)
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
