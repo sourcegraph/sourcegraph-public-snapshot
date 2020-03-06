@@ -4,6 +4,7 @@ import { SearchPatternType } from '../graphql/schema'
 import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
+import { replaceRange } from './strings'
 
 export interface RepoSpec {
     /**
@@ -540,7 +541,10 @@ export function buildSearchURLQuery(
 
     const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        fullQuery = fullQuery.slice(0, patternTypeInQuery.range.start) + fullQuery.slice(patternTypeInQuery.range.end)
+        fullQuery = replaceRange(fullQuery, {
+            start: patternTypeInQuery.range.start,
+            end: patternTypeInQuery.range.end,
+        })
         searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternTypeInQuery.value)
     } else {
@@ -550,11 +554,11 @@ export function buildSearchURLQuery(
 
     const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
     if (caseInQuery) {
-        fullQuery = fullQuery.slice(0, caseInQuery.range.start) + fullQuery.slice(caseInQuery.range.end)
+        fullQuery = replaceRange(fullQuery, { start: caseInQuery.range.start, end: caseInQuery.range.end })
         searchParams.set('q', fullQuery)
 
         if (caseInQuery.value === 'yes') {
-            fullQuery = fullQuery.slice(0, caseInQuery.range.start) + fullQuery.slice(caseInQuery.range.end)
+            fullQuery = replaceRange(fullQuery, { start: caseInQuery.range.start, end: caseInQuery.range.end })
             searchParams.set('case', caseInQuery.value)
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids

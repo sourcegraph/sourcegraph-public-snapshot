@@ -2,6 +2,7 @@ import { escapeRegExp } from 'lodash'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { parseCaseSensitivityFromQuery, parsePatternTypeFromQuery } from '../../../shared/src/util/url'
+import { replaceRange } from '../../../shared/src/util/strings'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -66,15 +67,17 @@ export function parseSearchURL(
     const patternTypeInQuery = parsePatternTypeFromQuery(finalQuery)
     if (patternTypeInQuery) {
         // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
-        finalQuery =
-            finalQuery.slice(0, patternTypeInQuery.range.start) + finalQuery.slice(patternTypeInQuery.range.end)
+        finalQuery = replaceRange(finalQuery, {
+            start: patternTypeInQuery.range.start,
+            end: patternTypeInQuery.range.end,
+        })
         patternType = patternTypeInQuery.value as SearchPatternType
     }
 
     const caseInQuery = parseCaseSensitivityFromQuery(finalQuery)
     if (caseInQuery) {
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
-        finalQuery = finalQuery.slice(0, caseInQuery.range.start) + finalQuery.slice(caseInQuery.range.end)
+        finalQuery = replaceRange(finalQuery, { start: caseInQuery.range.start, end: caseInQuery.range.end })
 
         if (caseInQuery.value === 'yes') {
             caseSensitive = true
