@@ -551,7 +551,7 @@ export function buildSearchURLQuery(
 
     const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
     if (caseInQuery) {
-        fullQuery = replaceRange(fullQuery, { start: caseInQuery.range.start, end: caseInQuery.range.end })
+        fullQuery = replaceRange(fullQuery, caseInQuery.range.start)
         searchParams.set('q', fullQuery)
 
         if (caseInQuery.value === 'yes') {
