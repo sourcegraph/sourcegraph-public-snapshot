@@ -77,6 +77,7 @@ func (s *ChangesetSyncer) Run() {
 				schedule, err := s.computeSchedule(ctx)
 				if err != nil {
 					log15.Error("Computing queue", "err", err)
+					return
 				}
 				schedules <- schedule
 			}()
