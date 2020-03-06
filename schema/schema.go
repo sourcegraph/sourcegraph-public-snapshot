@@ -483,6 +483,8 @@ type GitHubConnection struct {
 	Url string `json:"url"`
 	// Webhooks description: An array of configurations defining existing GitHub webhooks that send updates back to Sourcegraph.
 	Webhooks []*GitHubWebhook `json:"webhooks,omitempty"`
+	// ExcludeForks description: Will filter out repositories that are forks from being cloned and indexed.
+	ExcludeForks bool
 }
 type GitHubWebhook struct {
 	// Org description: The name of the GitHub organization to which the webhook belongs

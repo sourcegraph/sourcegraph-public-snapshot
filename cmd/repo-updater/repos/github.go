@@ -133,7 +133,7 @@ func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 			results <- SourceResult{Source: s, Err: res.err}
 			continue
 		}
-		if !seen[res.repo.DatabaseID] && !s.excludes(res.repo) {
+		if !seen[res.repo.DatabaseID] && !s.excludes(res.repo) && !s.filtered(res.repo) {
 			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
 			seen[res.repo.DatabaseID] = true
 		}
@@ -322,6 +322,12 @@ func (s *GithubSource) excludes(r *github.Repository) bool {
 		}
 	}
 	return false
+}
+
+// filtered returns whether or not the repo should be filtered. Currently this is only based on whether
+// the repo is a fork.
+func (s *GithubSource) filtered(r *github.Repository) bool {
+	return s.config.ExcludeForks && r.IsFork
 }
 
 // repositoryPager is a function that returns repositories on a given `page`.
