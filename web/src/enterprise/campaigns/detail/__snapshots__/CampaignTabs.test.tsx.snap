@@ -2,7 +2,7 @@
 
 exports[`CampaignTabs renders 1`] = `
 <TabsWithLocalStorageViewStatePersistence
-  className=""
+  className="mb-3"
   storageKey="campaignTab"
   tabClassName="tab-bar__tab--h5like"
   tabs={
