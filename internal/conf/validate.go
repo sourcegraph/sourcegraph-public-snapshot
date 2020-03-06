@@ -273,7 +273,7 @@ func (f jsonLoaderFactory) New(source string) gojsonschema.JSONLoader {
 func MustValidateDefaults() {
 	mustValidate("DevAndTesting", confdefaults.DevAndTesting)
 	mustValidate("DockerContainer", confdefaults.DockerContainer)
-	mustValidate("Kubernetes", confdefaults.Kubernetes)
+	mustValidate("KubernetesOrDockerComposeOrPureDocker", confdefaults.KubernetesOrDockerComposeOrPureDocker)
 }
 
 // mustValidate panics if the configuration does not pass validation.

@@ -52,9 +52,9 @@ var DockerContainer = conftypes.RawUnified{
 }`,
 }
 
-// Kubernetes is the default configuration applied to Kubernetes cluster
-// instances of Sourcegraph.
-var Kubernetes = conftypes.RawUnified{
+// KubernetesOrDockerComposeOrPureDocker is the default configuration
+// applied to Kubernetes, Docker Compose, and pure Docker instances of Sourcegraph.
+var KubernetesOrDockerComposeOrPureDocker = conftypes.RawUnified{
 	Critical: `{}`,
 	Site: `{
 	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)

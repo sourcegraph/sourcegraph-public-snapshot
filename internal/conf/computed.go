@@ -30,7 +30,7 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 	case IsDeployTypeSingleDockerContainer(deployType):
 		return confdefaults.DockerContainer
 	case IsDeployTypeKubernetes(deployType), IsDeployTypeDockerCompose(deployType), IsDeployTypePureDocker(deployType):
-		return confdefaults.Kubernetes
+		return confdefaults.KubernetesOrDockerComposeOrPureDocker
 	default:
 		panic("deploy type did not register default configuration")
 	}
@@ -136,7 +136,7 @@ func CanReadEmail() bool {
 // Deploy type constants. Any changes here should be reflected in the DeployType type declared in web/src/globals.d.ts:
 // https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
 const (
-	DeployKubernetes    = "cluster"
+	DeployKubernetes    = "kubernetes"
 	DeploySingleDocker  = "docker-container"
 	DeployDockerCompose = "docker-compose"
 	DeployPureDocker    = "pure-docker"
@@ -156,11 +156,13 @@ func DeployType() string {
 // IsDeployTypeKubernetes tells if the given deployment type is a Kubernetes
 // cluster (and non-dev, not docker-compose, not pure-docker, and non-single Docker image).
 func IsDeployTypeKubernetes(deployType string) bool {
-	if deployType == "cluster" {
-		// backwards compatibility for older deployments
+	switch deployType {
+	// includes older Kubernetes aliases for backwards compatibility
+	case "k8s", "cluster", DeployKubernetes:
 		return true
 	}
-	return deployType == DeployKubernetes
+
+	return false
 }
 
 // IsDeployTypeDockerCompose tells if the given deployment type is the Docker Compose

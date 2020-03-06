@@ -21,7 +21,7 @@ interface ImmutableUser {
     readonly UID: number
 }
 
-type DeployType = 'cluster' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev'
+type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev'
 
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
