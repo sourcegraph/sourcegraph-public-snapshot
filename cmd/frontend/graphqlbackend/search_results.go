@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -1306,7 +1307,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if len(resultTypes) == 1 && resultTypes[0] == "repo" {
 		durationMs := elapsedMilliseconds(start)
 		logMsg := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
-		usagestats.LogBackendEvent(0, "search.latencies.repo", json.RawMessage(logMsg))
+		if currentUser, err := db.Users.GetByCurrentAuthUser(ctx); err == nil {
+			log15.Info("User", "is", currentUser.ID)
+			usagestats.LogBackendEvent(currentUser.ID, "search.latencies.repo", json.RawMessage(logMsg))
+		}
 		days, weeks, months := 2, 1, 1
 		searchLatency, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
 			DayPeriods:   &days,
@@ -1319,6 +1323,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		log15.Info("log", "struct",
 			fmt.Sprintf("%+v", searchLatency.Daily[0]),
 			fmt.Sprintf("%+v", searchLatency.Daily[0].Repo.EventLatencies),
+			fmt.Sprintf("%+v", searchLatency.Weekly[0]),
+			fmt.Sprintf("%+v", searchLatency.Weekly[0].Repo.EventLatencies),
 		)
 	}
 	sortResults(results)
