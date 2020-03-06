@@ -46,11 +46,11 @@ For the Bitbucket Server plugin to then communicate with the Sourcegraph instanc
 
 Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** to see a list of all configured webhooks and to create a new one.
 
-Sourcegraph automatically creates a global webhook for usage with [Campaigns](../user/campaigns.md) once the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks) is configured in Sourcegraph.
+To configure a webhook on the Sourcegraph side, set the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks). Once that is configured Sourcegraph automatically makes sure in the background that a global webhook for usage with [Campaigns](../user/campaigns.md) is created on the Bitbucket Server instance.
 
 ### Experimental: faster ACL permissions fetching
 
-The plugin also supports an experimental method of faster ACL permissions fetching that aims to improve search speed.
+The plugin also supports an optional, experimental method of faster ACL permissions fetching that aims to improve search speed.
 
 You can enable this feature by setting the [`"plugin.permissions"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#repository-permissions) to `"enabled"`.
 
@@ -89,6 +89,8 @@ The plugin adds a `/webhook` endpoint that accepts `GET`, `POST` and `DELETE` HT
 Once the plugin is installed it registers an asynchronous listener (see [`WebhookListener.java`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/java/com/sourcegraph/webhook/WebhookListener.java)) that listens to `PullRequestEvent`s and `BuildStatusEvent`s. When an event is dispatched to the listener it checks whether a webhook has been registered for the scope and type of the event and if so, it enqueues the sending of a request to the webhook's endpoint in a thread pool. (See [`WebhookListener.handle`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/java/com/sourcegraph/webhook/WebhookListener.java#L62-L76) and [`Dispatcher.java`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/java/com/sourcegraph/webhook/Dispatcher.java).)
 
 In order to persist the configured webhooks across restarts of the Bitbucket Server instance the plugin uses the [Active Objects ORM](https://developer.atlassian.com/server/framework/atlassian-sdk/active-objects/) of the Atlassian SDK. It registers two Active Objects: [`WebhookEntity` and `EventEntity`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/94e4be96b57286429cc543205164586af03e9b9b/src/main/resources/atlassian-plugin.xml#L10-L14).
+
+If Sourcegraph is configured to make use of the Bitbucket Server plugin webhooks (which is done by setting the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks)), it sends a request to the Bitbucket Server instance, every 30 seconds, to make sure that a webhook on the Bitbucket Server instance exists and points to the Sourcegraph instance.
 
 #### Fast permissions fetching
 
