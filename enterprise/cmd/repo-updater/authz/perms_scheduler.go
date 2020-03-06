@@ -40,13 +40,13 @@ WHERE users.id NOT IN
 	return s.store.scanIDs(ctx, q)
 }
 
-// scanReposWithNoPerms returns a list of repositories IDs that have no permissions
-// found in database.
+// scanReposWithNoPerms returns a list of private repositories IDs that have no
+// permissions found in database.
 func (s *PermsScheduler) scanReposWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scanReposWithNoPerms
 SELECT repo.id FROM repo
-WHERE repo.id NOT IN
+WHERE repo.private = TRUE AND repo.id NOT IN
 	(SELECT perms.repo_id FROM repo_permissions AS perms)
 `)
 
