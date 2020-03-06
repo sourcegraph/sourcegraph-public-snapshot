@@ -256,7 +256,7 @@ func (c *ChangesetJob) Clone() *ChangesetJob {
 	return &cc
 }
 
-// SuccessfullyCompleted returns true for jobs that have already succesfully run
+// SuccessfullyCompleted returns true for jobs that have already successfully run
 func (c *ChangesetJob) SuccessfullyCompleted() bool {
 	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
 }

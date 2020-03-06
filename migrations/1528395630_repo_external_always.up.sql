@@ -12,7 +12,7 @@ DELETE FROM repo WHERE ((external_service_type IS NULL) OR (external_service_id 
 
 -- repo_external_service_unique_idx is currently a partial index, we want to
 -- make it a full index. To do that we need to create a full index and only
--- then drop. If we did the other order we could accidently introduce
+-- then drop. If we did the other order we could accidentally introduce
 -- duplicates.
 
 CREATE UNIQUE INDEX IF NOT EXISTS repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);

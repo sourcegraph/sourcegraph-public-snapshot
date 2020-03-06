@@ -43,7 +43,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     distinctUntilChanged(),
                     switchMap(progress =>
                         from(progress || []).pipe(
-                            // Hide progress bar and update message if error occured
+                            // Hide progress bar and update message if error occurred
                             // Merge new progress updates with previous
                             scan<sourcegraph.Progress, Required<sourcegraph.Progress>>(
                                 (current, { message = current.message, percentage = current.percentage }) => ({
