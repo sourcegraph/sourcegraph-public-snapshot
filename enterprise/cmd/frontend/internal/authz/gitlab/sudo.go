@@ -37,8 +37,8 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exter
 }
 
 // listProjects is a helper function to request for all private projects that are accessible
-// (access level: 20 => Reporter access) by the authenticated or impersonated user in the client. It may
-// return partial but valid results in case of error, and it is up to callers to decide
+// (access level: 20 => Reporter access) by the authenticated or impersonated user in the client.
+// It may return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
 func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.ExternalRepoID, error) {
 	q := make(url.Values)
@@ -87,17 +87,26 @@ func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRep
 		return nil, fmt.Errorf("not a code host of the repository: want %+v but have %+v", repo, p.codeHost)
 	}
 
+	client := p.clientProvider.GetPATClient(p.sudoToken, "")
+	return listMembers(ctx, client, repo.ID)
+}
+
+// listMembers is a helper function to request for all users who has read access
+// (access level: 20 => Reporter access) to given project on the code host, including
+// both direct access and inherited from the group membership. It may return partial
+// but valid results in case of error, and it is up to callers to decide whether to
+// discard.
+func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]extsvc.ExternalAccountID, error) {
 	q := make(url.Values)
 	q.Add("per_page", "100") // 100 is the maximum page size
 
 	// The next URL to request for members, and it is reused in the succeeding for loop.
-	nextURL := fmt.Sprintf("projects/%s/members/all?%s", repo.ID, q.Encode())
+	nextURL := fmt.Sprintf("projects/%s/members/all?%s", repoID, q.Encode())
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	userIDs := make([]extsvc.ExternalAccountID, 0, 100)
 
-	client := p.clientProvider.GetPATClient(p.sudoToken, "")
 	for {
 		members, next, err := client.ListMembers(ctx, nextURL)
 		if err != nil {

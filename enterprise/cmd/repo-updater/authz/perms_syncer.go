@@ -143,7 +143,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 
 		for i := range extIDs {
 			repoSpecs = append(repoSpecs, api.ExternalRepoSpec{
-				ID:          extIDs[i],
+				ID:          string(extIDs[i]),
 				ServiceType: fetcher.ServiceType(),
 				ServiceID:   fetcher.ServiceID(),
 			})
@@ -212,12 +212,17 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	// TODO(jchen): Ship the initial design to unblock working on authz providers,
 	// but should revisit the feasibility of using ExternalAccount before final delivery.
 
-	usernames, err := fetcher.FetchRepoPerms(ctx, &repo.ExternalRepo)
+	accountIDs, err := fetcher.FetchRepoPerms(ctx, &repo.ExternalRepo)
 	if err != nil {
 		return errors.Wrap(err, "fetch repository permissions")
 	}
-	if len(usernames) == 0 {
+	if len(accountIDs) == 0 {
 		return nil
+	}
+
+	usernames := make([]string, len(accountIDs))
+	for i := range accountIDs {
+		usernames[i] = string(accountIDs[i])
 	}
 
 	// Get corresponding internal database IDs

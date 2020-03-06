@@ -88,6 +88,7 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 		}
 		return NewOAuthProvider(OAuthAuthzProviderOp{
 			BaseURL:           glURL,
+			Token:             token,
 			CacheTTL:          ttl,
 			MinBatchThreshold: minBatchThreshold,
 			MaxBatchRequests:  maxBatchRequests,
