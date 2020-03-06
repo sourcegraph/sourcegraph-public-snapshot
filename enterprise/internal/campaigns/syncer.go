@@ -190,7 +190,10 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 				c.Changeset.SetDeleted()
 			}
 
-			events = append(events, c.Events()...)
+			csEvents := c.Events()
+			updateExternalState(c.Changeset, csEvents)
+
+			events = append(events, csEvents...)
 			cs = append(cs, c.Changeset)
 		}
 	}
@@ -206,6 +209,18 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 	}
 
 	return tx.UpsertChangesetEvents(ctx, events...)
+}
+
+// updateExternalState will update the external state fields on cs based on the current
+// state of the changeset and associated events
+func updateExternalState(cs *campaigns.Changeset, events []*campaigns.ChangesetEvent) {
+	if state, err := cs.State(); err == nil {
+		cs.ExternalState = state
+	}
+	if state, err := campaigns.ChangesetEvents(events).ReviewState(); err == nil {
+		cs.ExternalReviewState = state
+	}
+	cs.ExternalCheckState = campaigns.ComputeCheckState(cs, events)
 }
 
 // GroupChangesetsBySource returns a slice of SourceChangesets in which the

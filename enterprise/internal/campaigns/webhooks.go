@@ -80,6 +80,14 @@ func (h Webhook) upsertChangesetEvent(
 		event = existing
 	}
 
+	// The webhook may have caused the external state of the changeset to change
+	// so we need to update that too
+	csEvents := append(cs.Events(), event)
+	updateExternalState(cs, csEvents)
+	if err := tx.UpdateChangesets(ctx, cs); err != nil {
+		return err
+	}
+
 	return tx.UpsertChangesetEvents(ctx, event)
 }
 
