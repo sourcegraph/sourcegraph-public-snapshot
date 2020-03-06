@@ -59,7 +59,12 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 }
 
 func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountChangesetsOpts{CampaignID: r.opts.CampaignID}
+	opts := ee.CountChangesetsOpts{
+		CampaignID:          r.opts.CampaignID,
+		ExternalState:       r.opts.ExternalState,
+		ExternalCheckState:  r.opts.ExternalCheckState,
+		ExternalReviewState: r.opts.ExternalReviewState,
+	}
 	count, err := r.store.CountChangesets(ctx, opts)
 	return int32(count), err
 }

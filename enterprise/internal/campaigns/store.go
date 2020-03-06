@@ -480,6 +480,10 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 // counting changesets.
 type CountChangesetsOpts struct {
 	CampaignID int64
+	// Optional filters
+	ExternalState       *campaigns.ChangesetState
+	ExternalReviewState *campaigns.ChangesetReviewState
+	ExternalCheckState  *campaigns.ChangesetCheckState
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -506,6 +510,16 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	if opts.ExternalState != nil {
+		preds = append(preds, sqlf.Sprintf("external_state = %s", *opts.ExternalState))
+	}
+	if opts.ExternalReviewState != nil {
+		preds = append(preds, sqlf.Sprintf("external_review_state = %s", *opts.ExternalReviewState))
+	}
+	if opts.ExternalCheckState != nil {
+		preds = append(preds, sqlf.Sprintf("external_check_state = %s", *opts.ExternalCheckState))
 	}
 
 	return sqlf.Sprintf(countChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
