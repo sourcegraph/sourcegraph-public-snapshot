@@ -184,7 +184,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		{
 			// Cache expired, update called in the background, but stale
-			// permissions are returned immediatelly.
+			// permissions are returned immediately.
 			atomic.AddInt64(&now, int64(ttl))
 			ps, err := load(s)
 			equal(t, "err", err, nil)
