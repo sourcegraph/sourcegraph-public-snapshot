@@ -1,7 +1,6 @@
 package debugproxies
 
 import (
-	"crypto/sha1"
 	"errors"
 	"fmt"
 	"log"
@@ -35,12 +34,12 @@ type ReverseProxyHandler struct {
 }
 
 func (rph *ReverseProxyHandler) AddToRouter(r *mux.Router) {
-	r.Handle("/", adminOnly(http.HandlerFunc(rph.ServeIndex)))
-	r.PathPrefix("/proxies").Handler(http.StripPrefix("/-/debug/proxies", adminOnly(errorutil.Handler(rph.ServeReverseProxy))))
+	r.Handle("/", adminOnly(http.HandlerFunc(rph.serveIndex)))
+	r.PathPrefix("/proxies").Handler(http.StripPrefix("/-/debug/proxies", adminOnly(errorutil.Handler(rph.serveReverseProxy))))
 }
 
-// ServeIndex composes the simple index page with the endpoints sorted by their name.
-func (rph *ReverseProxyHandler) ServeIndex(w http.ResponseWriter, r *http.Request) {
+// serveIndex composes the simple index page with the endpoints sorted by their name.
+func (rph *ReverseProxyHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	rph.RLock()
 	displayNames := make([]string, 0, len(rph.reverseProxies))
 	for displayName := range rph.reverseProxies {
@@ -68,9 +67,9 @@ func stripHash(val string) string {
 	return val[:idx]
 }
 
-// ServeReverseProxy routes the request to the appropriate reverse proxy by splitting the request path and finding
+// serveReverseProxy routes the request to the appropriate reverse proxy by splitting the request path and finding
 // the displayName under which the proxy lives.
-func (rph *ReverseProxyHandler) ServeReverseProxy(w http.ResponseWriter, r *http.Request) error {
+func (rph *ReverseProxyHandler) serveReverseProxy(w http.ResponseWriter, r *http.Request) error {
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 2 {
 		return &errcode.HTTPErr{
@@ -116,10 +115,12 @@ func (rph *ReverseProxyHandler) Populate(peps []Endpoint) {
 
 // Creates a display name from an endpoint suited for using in a URL link.
 func displayNameFromEndpoint(ep Endpoint) string {
-	h := sha1.New()
-	_, _ = h.Write([]byte(ep.Host))
-	bs := h.Sum(nil)
-	return fmt.Sprintf("%s-%x", ep.Service, bs)
+	colonIdx := strings.Index(ep.Host, ":")
+	strippedHost := ep.Host
+	if colonIdx != -1 {
+		strippedHost = strippedHost[:colonIdx]
+	}
+	return fmt.Sprintf("%s-%s", ep.Service, strippedHost)
 }
 
 // reverseProxyFromHost creates a reverse proxy from specified host with the path prefix that will be stripped from
