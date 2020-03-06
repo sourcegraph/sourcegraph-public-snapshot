@@ -21,9 +21,8 @@ import (
 func (p *OAuthAuthzProvider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]string, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
-	} else if account.ServiceType != p.codeHost.ServiceType || account.ServiceID != p.codeHost.ServiceID {
-		return nil, fmt.Errorf("service mismatch: want %q - %q but the account has %q - %q",
-			p.codeHost.ServiceType, p.codeHost.ServiceID, account.ServiceType, account.ServiceID)
+	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
+		return nil, fmt.Errorf("not a code host of the account: want %+v but have %+v", account, p.codeHost)
 	}
 
 	_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)

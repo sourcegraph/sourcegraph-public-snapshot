@@ -23,9 +23,8 @@ import (
 func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]string, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
-	} else if account.ServiceType != p.codeHost.ServiceType || account.ServiceID != p.codeHost.ServiceID {
-		return nil, fmt.Errorf("service mismatch: want %q - %q but the account has %q - %q",
-			p.codeHost.ServiceType, p.codeHost.ServiceID, account.ServiceType, account.ServiceID)
+	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
+		return nil, fmt.Errorf("not a code host of the account: want %+v but have %+v", account, p.codeHost)
 	}
 
 	user, _, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
@@ -77,13 +76,15 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]string, error) 
 // be used as extsvc.ExternalAccount.AccountID. The returned list includes both
 // direct access and inherited from the group membership.
 //
+// This method may return partial but valid results in case of error, and it is up to
+// callers to decide whether to discard.
+//
 // API docs: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
 func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]string, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
-	} else if repo.ServiceType != p.codeHost.ServiceType || repo.ServiceID != p.codeHost.ServiceID {
-		return nil, fmt.Errorf("service mismatch: want %q - %q but the repository has %q - %q",
-			p.codeHost.ServiceType, p.codeHost.ServiceID, repo.ServiceType, repo.ServiceID)
+	} else if !extsvc.IsHostOfRepo(p.codeHost, repo) {
+		return nil, fmt.Errorf("not a code host of the repository: want %+v but have %+v", repo, p.codeHost)
 	}
 
 	q := make(url.Values)
