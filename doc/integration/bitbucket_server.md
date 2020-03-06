@@ -24,7 +24,7 @@ We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github
 
 The plugin also has the optional functionality to enable **faster ACL permission syncing between Sourcegraph and Bitbucket Server** and can add **webhooks with configurable scope to Bitbucket Server**, which are used by and highly recommended for [Campaigns](../user/campaigns.md).
 
-Additionally, activated [Sourcegraph extensions](../extensions) will be able to add information to Bitbucket Server code views and pull requests, such as test coverage data or trace/log information.
+Additionally, activated [Sourcegraph extensions](../extensions/index.md) will be able to add information to Bitbucket Server code views and pull requests, such as test coverage data or trace/log information.
 
 ![Bitbucket Server code intelligence](https://storage.googleapis.com/sourcegraph-assets/bitbucket-code-intel-pr-short.gif)
 
