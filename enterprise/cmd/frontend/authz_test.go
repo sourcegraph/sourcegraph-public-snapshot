@@ -103,6 +103,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthAuthzProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
+						Token:             "asdf",
 						CacheTTL:          48 * time.Hour,
 						MinBatchThreshold: 200,
 						MaxBatchRequests:  300,
@@ -206,6 +207,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthAuthzProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
+						Token:             "asdf",
 						CacheTTL:          3 * time.Hour,
 						MinBatchThreshold: 200,
 						MaxBatchRequests:  300,
@@ -214,6 +216,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthAuthzProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.com"),
+						Token:             "asdf",
 						CacheTTL:          3 * time.Hour,
 						MinBatchThreshold: 200,
 						MaxBatchRequests:  300,
