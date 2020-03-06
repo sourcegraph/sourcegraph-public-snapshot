@@ -74,7 +74,7 @@ export function parseSearchURL(
     const caseInQuery = parseCaseSensitivityFromQuery(finalQuery)
     if (caseInQuery) {
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
-        finalQuery = replaceRange(finalQuery, { start: caseInQuery.range.start, end: caseInQuery.range.end })
+        finalQuery = replaceRange(finalQuery, caseInQuery.range)
 
         if (caseInQuery.value === 'yes') {
             caseSensitive = true
