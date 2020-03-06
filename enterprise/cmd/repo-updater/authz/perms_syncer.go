@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -149,17 +150,17 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 			})
 		}
 	}
-	if len(repoSpecs) == 0 {
-		return nil
-	}
 
-	// Get corresponding internal database IDs
-	rs, err := s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
-		ExternalRepos: repoSpecs,
-		PerPage:       int64(len(repoSpecs)), // We want to get all repositories in one shot
-	})
-	if err != nil {
-		return errors.Wrap(err, "list external repositories")
+	var rs []*repos.Repo
+	if len(repoSpecs) > 0 {
+		// Get corresponding internal database IDs
+		rs, err = s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
+			ExternalRepos: repoSpecs,
+			PerPage:       int64(len(repoSpecs)), // We want to get all repositories in one shot
+		})
+		if err != nil {
+			return errors.Wrap(err, "list external repositories")
+		}
 	}
 
 	// Save permissions to database
@@ -216,26 +217,27 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	if err != nil {
 		return errors.Wrap(err, "fetch repository permissions")
 	}
-	if len(accountIDs) == 0 {
-		return nil
-	}
 
-	usernames := make([]string, len(accountIDs))
-	for i := range accountIDs {
-		usernames[i] = string(accountIDs[i])
-	}
+	bindUsernamesSet := make(map[string]struct{})
+	var users []*types.User
+	if len(accountIDs) > 0 {
+		usernames := make([]string, len(accountIDs))
+		for i := range accountIDs {
+			usernames[i] = string(accountIDs[i])
+		}
 
-	// Get corresponding internal database IDs
-	// TODO(jchen): Remove the use of dbconn.Global().
-	users, err := db.Users.GetByUsernames(ctx, usernames...)
-	if err != nil {
-		return errors.Wrap(err, "get users by usernames")
-	}
+		// Get corresponding internal database IDs
+		// TODO(jchen): Remove the use of dbconn.Global().
+		users, err = db.Users.GetByUsernames(ctx, usernames...)
+		if err != nil {
+			return errors.Wrap(err, "get users by usernames")
+		}
 
-	// Set up set of all usernames that need to be bound to permissions
-	bindUsernamesSet := make(map[string]struct{}, len(usernames))
-	for i := range usernames {
-		bindUsernamesSet[usernames[i]] = struct{}{}
+		// Set up set of all usernames that need to be bound to permissions
+		bindUsernamesSet = make(map[string]struct{}, len(usernames))
+		for i := range usernames {
+			bindUsernamesSet[usernames[i]] = struct{}{}
+		}
 	}
 
 	// Save permissions to database
