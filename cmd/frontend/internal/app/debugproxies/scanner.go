@@ -23,11 +23,51 @@ type Endpoint struct {
 // ScanConsumer is the callback to consume scan results.
 type ScanConsumer func([]Endpoint)
 
+// Declares methods we use with k8s.Client. Useful to plug testing replacements or even logging middleware.
+type kubernetesClient interface {
+	Watch(ctx context.Context, namespace string, r k8s.Resource, options ...k8s.Option) (*k8s.Watcher, error)
+	List(ctx context.Context, namespace string, resp k8s.ResourceList, options ...k8s.Option) error
+	Get(ctx context.Context, namespace, name string, resp k8s.Resource, options ...k8s.Option) error
+	Namespace() string
+}
+
+// "real" implementation that sends calls to the k8s.Client
+type k8sClientImpl struct {
+	client *k8s.Client
+}
+
+func (kci *k8sClientImpl) Watch(ctx context.Context, namespace string, r k8s.Resource, options ...k8s.Option) (*k8s.Watcher, error) {
+	return kci.client.Watch(ctx, namespace, r, options...)
+}
+
+func (kci *k8sClientImpl) List(ctx context.Context, namespace string, resp k8s.ResourceList, options ...k8s.Option) error {
+	return kci.client.List(ctx, namespace, resp, options...)
+}
+
+func (kci *k8sClientImpl) Get(ctx context.Context, namespace, name string, resp k8s.Resource, options ...k8s.Option) error {
+	return kci.client.Get(ctx, namespace, name, resp, options...)
+}
+
+func (kci *k8sClientImpl) Namespace() string {
+	return kci.client.Namespace
+}
+
 // clusterScanner scans the cluster for endpoints belonging to services that have annotation sourcegraph.prometheus/scrape=true.
 // It runs an event loop that reacts to changes to the endpoints set. Everytime there is a change it calls the ScanConsumer.
 type clusterScanner struct {
-	client  *k8s.Client
+	client  kubernetesClient
 	consume ScanConsumer
+}
+
+// Starts a cluster scanner with the specified client and consumer. Does not block.
+func startClusterScannerWithClient(client kubernetesClient, consumer ScanConsumer) error {
+	cs := &clusterScanner{
+		client:  client,
+		consume: consumer,
+	}
+
+	go cs.runEventLoop()
+	return nil
 }
 
 // Starts a cluster scanner with the specified consumer. Does not block.
@@ -37,13 +77,8 @@ func StartClusterScanner(consumer ScanConsumer) error {
 		return err
 	}
 
-	cs := &clusterScanner{
-		client:  client,
-		consume: consumer,
-	}
-
-	go cs.runEventLoop()
-	return nil
+	kci := &k8sClientImpl{client: client}
+	return startClusterScannerWithClient(kci, consumer)
 }
 
 // Runs the k8s.Watch endpoints event loop, and triggers a rescan of cluster when something changes with endpoints.
@@ -60,7 +95,7 @@ func (cs *clusterScanner) runEventLoop() {
 // watchEndpointEvents uses the k8s watch API operation to watch for endpoint events. Spins forever unless an error
 // occurs that would necessitate creating a new watcher. The caller will then call again creating the new watcher.
 func (cs *clusterScanner) watchEndpointEvents() error {
-	watcher, err := cs.client.Watch(context.Background(), cs.client.Namespace, new(corev1.Endpoints))
+	watcher, err := cs.client.Watch(context.Background(), cs.client.Namespace(), new(corev1.Endpoints))
 	if err != nil {
 		return fmt.Errorf("k8s client.Watch error: %w", err)
 	}
@@ -88,7 +123,7 @@ func (cs *clusterScanner) watchEndpointEvents() error {
 func (cs *clusterScanner) scanCluster() {
 	var services corev1.ServiceList
 
-	err := cs.client.List(context.Background(), cs.client.Namespace, &services)
+	err := cs.client.List(context.Background(), cs.client.Namespace(), &services)
 	if err != nil {
 		log15.Error("k8s failed to list services", "error", err)
 		return
@@ -119,7 +154,7 @@ func (cs *clusterScanner) scanCluster() {
 		}
 
 		var endpoints corev1.Endpoints
-		err = cs.client.Get(context.Background(), cs.client.Namespace, svcName, &endpoints)
+		err = cs.client.Get(context.Background(), cs.client.Namespace(), svcName, &endpoints)
 		if err != nil {
 			log15.Error("k8s failed to get endpoints", "error", err)
 			return
