@@ -115,20 +115,7 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, erro
 }
 
 func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) {
-	days, weeks, months := 2, 1, 1
-	searchLatency, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
-		DayPeriods:   &days,
-		WeekPeriods:  &weeks,
-		MonthPeriods: &months,
-	})
-	if err != nil {
-		return nil, err
-	}
-	contents, err := json.Marshal(searchLatency)
-	if err != nil {
-		return nil, err
-	}
-	return json.RawMessage(contents), nil
+	return nil, nil
 }
 
 func updateURL(ctx context.Context) string {
