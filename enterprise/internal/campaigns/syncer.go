@@ -50,8 +50,11 @@ func (s *ChangesetSyncer) Run() {
 		s.queue.Reschedule(sched)
 	}
 
-	var next scheduledSync
-	var ok bool
+	var (
+		next      scheduledSync
+		ok        bool
+		schedules = make(chan []scheduledSync)
+	)
 
 	for {
 		timer := new(time.Timer)
@@ -69,11 +72,16 @@ func (s *ChangesetSyncer) Run() {
 		select {
 		case <-scheduleTicker.C:
 			timer.Stop()
-			schedule, err := s.computeSchedule(ctx)
-			if err != nil {
-				log15.Error("Computing queue", "err", err)
-				continue
-			}
+
+			go func() {
+				schedule, err := s.computeSchedule(ctx)
+				if err != nil {
+					log15.Error("Computing queue", "err", err)
+				}
+				schedules <- schedule
+			}()
+
+		case schedule := <-schedules:
 			s.queue.Reschedule(schedule)
 
 		case <-timer.C:
