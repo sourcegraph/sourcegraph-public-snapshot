@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/src-d/enry/v2"
 
@@ -186,8 +187,12 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
+func elapsedMilliseconds(start time.Time) int32 {
+	return int32(time.Since(start).Nanoseconds() / int64(time.Millisecond))
+}
+
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
-	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
+	return elapsedMilliseconds(sr.start)
 }
 
 // commonFileFilters are common filters used. It is used by DynamicFilters to
@@ -1298,6 +1303,24 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		multiErr = nil
 	}
 
+	if len(resultTypes) == 1 && resultTypes[0] == "repo" {
+		durationMs := elapsedMilliseconds(start)
+		logMsg := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
+		usagestats.LogBackendEvent(0, "search.latencies.repo", json.RawMessage(logMsg))
+		days, weeks, months := 2, 1, 1
+		searchLatency, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
+			DayPeriods:   &days,
+			WeekPeriods:  &weeks,
+			MonthPeriods: &months,
+		})
+		if err != nil {
+			log15.Info("log", "is bad", err.Error())
+		}
+		log15.Info("log", "struct",
+			fmt.Sprintf("%+v", searchLatency.Daily[0]),
+			fmt.Sprintf("%+v", searchLatency.Daily[0].Repo.EventLatencies),
+		)
+	}
 	sortResults(results)
 
 	resultsResolver := SearchResultsResolver{
