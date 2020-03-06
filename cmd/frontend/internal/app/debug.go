@@ -8,23 +8,14 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/ericchiang/k8s"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
-
-func addNoGrafanaHandler(r *mux.Router) {
-	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
-	})
-	r.Handle("/grafana", adminOnly(noGrafana))
-}
 
 func addNoK8sClientHandler(r *mux.Router) {
 	noHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -36,42 +27,40 @@ func addNoK8sClientHandler(r *mux.Router) {
 // addDebugHandlers registers the reverse proxies to each services debug
 // endpoints.
 func addDebugHandlers(r *mux.Router) {
-	if len(debugserver.Services) > 0 {
-		for _, svc := range debugserver.Services {
-			addReverseProxyForService(svc, r)
-		}
-		index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			for _, svc := range debugserver.Services {
-				path := "/"
-				if svc.DefaultPath != "" {
-					path = svc.DefaultPath
-				}
-				fmt.Fprintf(w, `<a href="%s%s">%s</a><br>`, svc.Name, path, svc.Name)
-			}
-			fmt.Fprintf(w, `<a href="headers">headers</a><br>`)
+	addGrafana(r)
 
-			// We do not support cluster deployments yet.
-			if len(debugserver.Services) == 0 {
-				fmt.Fprintf(w, `Instrumentation endpoint proxying for Sourcegraph cluster deployments is not yet available<br>`)
-			}
-		})
-		r.Handle("/", adminOnly(index))
+	var rph debugproxies.ReverseProxyHandler
+
+	if len(debugserver.Services) > 0 {
+		peps := make([]debugproxies.Endpoint, 0, len(debugserver.Services))
+		for _, s := range debugserver.Services {
+			peps = append(peps, debugproxies.Endpoint{
+				Service: s.Name,
+				Host:    s.Host,
+			})
+		}
+		rph.Populate(peps)
 	} else {
-		// TODO(uwedeportivo): check we're in cluster deployment
-		client, err := k8s.NewInClusterClient()
+		err := debugproxies.StartClusterScanner(rph.Populate)
 		if err != nil {
-			log15.Error("failed to create k8s client", "error", err)
+			// we ended up here because cluster is not a k8s cluster
 			addNoK8sClientHandler(r)
 			return
 		}
-
-		ci := newClusterInstrumenter(client)
-
-		r.Handle("/", adminOnly(http.HandlerFunc(ci.ServeIndex)))
-		r.PathPrefix("/cluster").Handler(adminOnly(errorutil.Handler(ci.ServeReverseProxy)))
 	}
 
-	// TODO(uwedeportivo): handle grafana in cluster deployment so no need for env var anymore
+	rph.AddToRouter(r)
+}
+
+func addNoGrafanaHandler(r *mux.Router) {
+	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
+	})
+	r.Handle("/grafana", adminOnly(noGrafana))
+}
+
+// addReverseProxyForService registers a reverse proxy for the specified service.
+func addGrafana(r *mux.Router) {
 	if len(grafanaURLFromEnv) > 0 {
 		grafanaURL, err := url.Parse(grafanaURLFromEnv)
 		if err != nil {
@@ -79,30 +68,21 @@ func addDebugHandlers(r *mux.Router) {
 				grafanaURLFromEnv, err)
 			addNoGrafanaHandler(r)
 		} else {
-			addReverseProxyForService(debugserver.Service{
-				Name:        "grafana",
-				Host:        grafanaURL.Host,
-				DefaultPath: "",
-			}, r)
+			prefix := "/grafana"
+			r.PathPrefix(prefix).Handler(adminOnly(&httputil.ReverseProxy{
+				Director: func(req *http.Request) {
+					req.URL.Scheme = "http"
+					req.URL.Host = grafanaURL.Host
+					if i := strings.Index(req.URL.Path, prefix); i >= 0 {
+						req.URL.Path = req.URL.Path[i+len(prefix):]
+					}
+				},
+				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "grafana"), log.LstdFlags),
+			}))
 		}
 	} else {
 		addNoGrafanaHandler(r)
 	}
-}
-
-// addReverseProxyForService registers a reverse proxy for the specified service.
-func addReverseProxyForService(svc debugserver.Service, r *mux.Router) {
-	prefix := "/" + svc.Name
-	r.PathPrefix(prefix).Handler(adminOnly(&httputil.ReverseProxy{
-		Director: func(req *http.Request) {
-			req.URL.Scheme = "http"
-			req.URL.Host = svc.Host
-			if i := strings.Index(req.URL.Path, prefix); i >= 0 {
-				req.URL.Path = req.URL.Path[i+len(prefix):]
-			}
-		},
-		ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", svc.Name), log.LstdFlags),
-	}))
 }
 
 // adminOnly is a HTTP middleware which only allows requests by admins.
