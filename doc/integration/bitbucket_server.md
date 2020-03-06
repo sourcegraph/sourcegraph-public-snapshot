@@ -22,7 +22,7 @@ Site admins can [configure Sourcegraph to respect Bitbucket Server's repository 
 
 We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) so users don't need to install and configure the browser extension to get code intelligence when browsing code or reviewing pull requests on Bitbucket Server.
 
-The plugin also enables **faster ACL permission syncing between Sourcegraph and Bitbucket Server** and adds **webhooks to Bitbucket Server**, which are used by and highly recommended for [Campaigns](../user/campaigns.md).
+The plugin also has the optional functionality to enable **faster ACL permission syncing between Sourcegraph and Bitbucket Server** and can add **webhooks to Bitbucket Server**, which are used by and highly recommended for [Campaigns](../user/campaigns.md).
 
 ![Bitbucket Server code intelligence](https://storage.googleapis.com/sourcegraph-assets/bitbucket-code-intel-pr-short.gif)
 
