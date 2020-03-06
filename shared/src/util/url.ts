@@ -541,10 +541,7 @@ export function buildSearchURLQuery(
 
     const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        fullQuery = replaceRange(fullQuery, {
-            start: patternTypeInQuery.range.start,
-            end: patternTypeInQuery.range.end,
-        })
+        fullQuery = replaceRange(fullQuery, patternTypeInQuery.range)
         searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternTypeInQuery.value)
     } else {
