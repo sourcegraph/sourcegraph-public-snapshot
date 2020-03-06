@@ -62,9 +62,15 @@ You can find the full source code for the plugin at [github.com/sourcegraph/bitb
 
 #### Native Code Intelligence
 
-The Bitbucket Server plugin provides **native code intelligence** (e.g.: **Jump to Definition** and **Find References** functionality while browsing code or reviewing pull requests) without users having to install the [Sourcegraph browser extension](browser_extension.md).
+The Bitbucket Server plugin provides **native code intelligence** (e.g.: **go-to-definition** and **find-references** functionality while browsing code or reviewing pull requests) without users having to install the [Sourcegraph browser extension](browser_extension.md).
 
 It does that by fetching the required JavaScript code from the configured Sourcegraph instance and injecting it into the HTML that the Bitbucket Server instance serves. See the [`sourcegraph-bitbucket.js`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/resources/js/sourcegraph-bitbucket.js) file for how it does that.
+
+The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension) and adds the same code intelligence functionality to files and pull requests viewed on Bitbucket Server.
+
+To do that plugin talks directly to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucker Server instance.
+
+If it failed to load or talk to the Sourcegraph instance messages are logged to the browser console.
 
 #### Webhooks
 
