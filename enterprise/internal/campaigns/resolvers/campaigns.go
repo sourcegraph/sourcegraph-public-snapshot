@@ -157,18 +157,16 @@ func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.Dat
 func (r *campaignResolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
-) graphqlbackend.ExternalChangesetsConnectionResolver {
-	var limit int
-	if args.First != nil {
-		limit = int(*args.First)
+) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+	opts, err := listChangesetOptsFromArgs(args)
+	if err != nil {
+		return nil, err
 	}
+	opts.CampaignID = r.Campaign.ID
 	return &changesetsConnectionResolver{
 		store: r.store,
-		opts: ee.ListChangesetsOpts{
-			CampaignID: r.Campaign.ID,
-			Limit:      limit,
-		},
-	}
+		opts:  opts,
+	}, nil
 }
 
 func (r *campaignResolver) ChangesetPlans(

@@ -97,7 +97,7 @@ type CampaignsResolver interface {
 
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error)
-	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExternalChangesetsConnectionResolver, error)
+	Changesets(ctx context.Context, args *ListChangesetsArgs) (ExternalChangesetsConnectionResolver, error)
 
 	AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error)
 
@@ -155,7 +155,7 @@ func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExternalChangesetsConnectionResolver, error) {
+func (defaultCampaignsResolver) Changesets(ctx context.Context, args *ListChangesetsArgs) (ExternalChangesetsConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -198,7 +198,7 @@ type CampaignResolver interface {
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
-	Changesets(ctx context.Context, args *ListChangesetsArgs) ExternalChangesetsConnectionResolver
+	Changesets(ctx context.Context, args *ListChangesetsArgs) (ExternalChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
 	Plan(ctx context.Context) (CampaignPlanResolver, error)
