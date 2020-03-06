@@ -81,10 +81,15 @@ export NODE_OPTIONS="--max_old_space_size=4096"
 
 # Make sure chokidar-cli is installed in the background
 printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
-yarn_pid=''
+yarn_root_pid=''
+yarn_lsif_pid=''
 [ -n "${OFFLINE-}" ] || {
     yarn --no-progress &
-    yarn_pid="$!"
+    yarn_root_pid="$!"
+    pushd ./lsif 1> /dev/null
+    yarn --no-progress &
+    yarn_lsif_pid="$!"
+    popd 1> /dev/null
 }
 
 if ! ./dev/go-install.sh; then
@@ -95,9 +100,12 @@ if ! ./dev/go-install.sh; then
 	exit 1
 fi
 
-# Wait for yarn if it is still running
-if [[ -n "$yarn_pid" ]]; then
-    wait "$yarn_pid"
+# Wait for yarns if they are still running
+if [[ -n "$yarn_root_pid" ]]; then
+    wait "$yarn_root_pid"
+fi
+if [[ -n "$yarn_lsif_pid" ]]; then
+    wait "$yarn_lsif_pid"
 fi
 
 # Increase ulimit (not needed on Windows/WSL)
@@ -106,15 +114,12 @@ type ulimit > /dev/null && ulimit -n 10000 || true
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
-# LSIF server
-[ -n "${OFFLINE-}" ] || {
-    pushd ./lsif && yarn --no-progress && popd
-}
-
-# Build once to make sure editor codeintel works
+# Build once in the background to make sure editor codeintel works
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.
-yarn run build-ts || true
+trap 'kill $build_ts_pid; exit' INT
+(yarn run build-ts || true) &
+build_ts_pid="$!"
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
