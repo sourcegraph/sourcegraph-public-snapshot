@@ -117,7 +117,7 @@ func (rph *ReverseProxyHandler) Populate(peps []Endpoint) {
 // Creates a display name from an endpoint suited for using in a URL link.
 func displayNameFromEndpoint(ep Endpoint) string {
 	h := sha1.New()
-	h.Write([]byte(ep.Host))
+	_, _ = h.Write([]byte(ep.Host))
 	bs := h.Sum(nil)
 	return fmt.Sprintf("%s-%x", ep.Service, bs)
 }
