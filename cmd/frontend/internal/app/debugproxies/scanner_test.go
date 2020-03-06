@@ -56,9 +56,7 @@ func TestClusterScan(t *testing.T) {
 
 	consumer := func(seen []Endpoint) {
 		eps = nil
-		for _, ep := range seen {
-			eps = append(eps, ep)
-		}
+		eps = append(eps, seen...)
 	}
 
 	ktc := &k8sTestClient{
