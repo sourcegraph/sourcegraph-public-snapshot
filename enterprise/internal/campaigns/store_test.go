@@ -370,6 +370,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ExternalServiceType: "github",
 						ExternalBranch:      "campaigns/test",
 						ExternalUpdatedAt:   now,
+						ExternalState:       cmpgn.ChangesetStateOpen,
+						ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+						ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
 					}
 
 					changesets = append(changesets, th)
@@ -623,6 +626,81 @@ func testStore(db *sql.DB) func(*testing.T) {
 					if len(have) != 3 {
 						t.Fatalf("have %d changesets. want 3", len(have))
 					}
+				}
+
+				stateOpen := cmpgn.ChangesetStateOpen
+				stateClosed := cmpgn.ChangesetStateClosed
+				stateApproved := cmpgn.ChangesetReviewStateApproved
+				stateChangesRequested := cmpgn.ChangesetReviewStateChangesRequested
+				statePassed := cmpgn.ChangesetCheckStatePassed
+				stateFailed := cmpgn.ChangesetCheckStateFailed
+
+				filterCases := []struct {
+					opts      ListChangesetsOpts
+					wantCount int
+				}{
+					{
+						opts: ListChangesetsOpts{
+							ExternalState: &stateOpen,
+						},
+						wantCount: 3,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalState: &stateClosed,
+						},
+						wantCount: 0,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalReviewState: &stateApproved,
+						},
+						wantCount: 3,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalReviewState: &stateChangesRequested,
+						},
+						wantCount: 0,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalCheckState: &statePassed,
+						},
+						wantCount: 3,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalCheckState: &stateFailed,
+						},
+						wantCount: 0,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalState:      &stateOpen,
+							ExternalCheckState: &stateFailed,
+						},
+						wantCount: 0,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalState:       &stateOpen,
+							ExternalReviewState: &stateChangesRequested,
+						},
+						wantCount: 0,
+					},
+				}
+
+				for _, tc := range filterCases {
+					t.Run("", func(t *testing.T) {
+						have, _, err := s.ListChangesets(ctx, tc.opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+						if len(have) != tc.wantCount {
+							t.Fatalf("have %d changesets. want %d", len(have), tc.wantCount)
+						}
+					})
 				}
 			})
 
