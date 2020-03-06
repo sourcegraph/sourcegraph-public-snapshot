@@ -394,10 +394,15 @@ declare module 'sourcegraph' {
     export interface DocumentFilter {
         /** A language id, such as `typescript` or `*`. */
         language?: string
+
         /** A URI scheme, such as `file` or `untitled`. */
         scheme?: string
+
         /** A glob pattern, such as `*.{ts,js}`. */
         pattern?: string
+
+        /** A base URI (e.g. root URI of a workspace folder) that the document must be within. */
+        baseUri?: URL | string
     }
 
     /**
