@@ -3,7 +3,6 @@ package authz
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/pkg/errors"
@@ -12,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -54,59 +52,63 @@ type PermsFetcher interface {
 }
 
 // NewPermsSyncer returns a new permissions syncing request manager.
-func NewPermsSyncer(fetchers map[string]PermsFetcher, reposStore repos.Store, db dbutil.DB, clock func() time.Time) *PermsSyncer {
+func NewPermsSyncer(fetchers map[string]PermsFetcher, reposStore repos.Store, permsStore *edb.PermsStore) *PermsSyncer {
 	return &PermsSyncer{
 		queue:      newRequestQueue(),
 		fetchers:   fetchers,
 		reposStore: reposStore,
-		permsStore: edb.NewPermsStore(db, clock),
+		permsStore: permsStore,
 	}
 }
 
-// ScheduleUser schedules a new permissions syncing request for given user
+// ScheduleUsers schedules new permissions syncing requests for given users
 // in desired priority.
-func (s *PermsSyncer) ScheduleUser(ctx context.Context, priority Priority, userID int32) error {
-	p := &authz.UserPermissions{
-		UserID: userID,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
-	}
-	err := s.permsStore.LoadUserPermissions(ctx, p)
-	if err != nil && err != authz.ErrPermsNotFound {
-		return errors.Wrap(err, "load user permissions")
-	}
+func (s *PermsSyncer) ScheduleUsers(ctx context.Context, priority Priority, userIDs ...int32) error {
+	for i := range userIDs {
+		p := &authz.UserPermissions{
+			UserID: userIDs[i],
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		}
+		err := s.permsStore.LoadUserPermissions(ctx, p)
+		if err != nil && err != authz.ErrPermsNotFound {
+			return errors.Wrap(err, "load user permissions")
+		}
 
-	// NOTE: It is OK to have p.UpdatedAt with zero value that gets higher priority in the queue.
-	updated := s.queue.enqueue(&requestMeta{
-		priority:    priority,
-		typ:         requestTypeUser,
-		id:          userID,
-		lastUpdated: p.UpdatedAt,
-	})
-	log15.Debug("PermsSyncer.queue.enqueued", "userID", userID, "updated", updated)
+		// NOTE: It is OK to have p.UpdatedAt with zero value that gets higher priority in the queue.
+		updated := s.queue.enqueue(&requestMeta{
+			priority:    priority,
+			typ:         requestTypeUser,
+			id:          userIDs[i],
+			lastUpdated: p.UpdatedAt,
+		})
+		log15.Debug("PermsSyncer.queue.enqueued", "userID", userIDs[i], "updated", updated)
+	}
 	return nil
 }
 
-// ScheduleRepo schedules a new permissions syncing request for given repository
+// ScheduleRepos schedules new permissions syncing requests for given repositories
 // in desired priority.
-func (s *PermsSyncer) ScheduleRepo(ctx context.Context, priority Priority, repoID api.RepoID) error {
-	p := &authz.RepoPermissions{
-		RepoID: int32(repoID),
-		Perm:   authz.Read,
-	}
-	err := s.permsStore.LoadRepoPermissions(ctx, p)
-	if err != nil && err != authz.ErrPermsNotFound {
-		return errors.Wrap(err, "load repo permissions")
-	}
+func (s *PermsSyncer) ScheduleRepos(ctx context.Context, priority Priority, repoIDs ...api.RepoID) error {
+	for i := range repoIDs {
+		p := &authz.RepoPermissions{
+			RepoID: int32(repoIDs[i]),
+			Perm:   authz.Read,
+		}
+		err := s.permsStore.LoadRepoPermissions(ctx, p)
+		if err != nil && err != authz.ErrPermsNotFound {
+			return errors.Wrap(err, "load repo permissions")
+		}
 
-	// NOTE: It is OK to have p.UpdatedAt with zero value that gets higher priority in the queue.
-	updated := s.queue.enqueue(&requestMeta{
-		priority:    priority,
-		typ:         requestTypeRepo,
-		id:          int32(repoID),
-		lastUpdated: p.UpdatedAt,
-	})
-	log15.Debug("PermsSyncer.queue.enqueued", "repoID", repoID, "updated", updated)
+		// NOTE: It is OK to have p.UpdatedAt with zero value that gets higher priority in the queue.
+		updated := s.queue.enqueue(&requestMeta{
+			priority:    priority,
+			typ:         requestTypeRepo,
+			id:          int32(repoIDs[i]),
+			lastUpdated: p.UpdatedAt,
+		})
+		log15.Debug("PermsSyncer.queue.enqueued", "repoID", repoIDs[i], "updated", updated)
+	}
 	return nil
 }
 
@@ -256,7 +258,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 
 // syncPerms processes the permissions syncing request and remove the request from
 // the quque once it is done (independent of success or failure).
-func (s PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) {
+func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error {
 	defer s.queue.remove(request.typ, request.id, true)
 
 	var err error
@@ -269,14 +271,11 @@ func (s PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) {
 		err = fmt.Errorf("unexpected request type: %v", request.typ)
 	}
 
-	if err != nil {
-		log15.Warn("Error syncing permissions", "type", request.typ, "id", request.id, "err", err)
-		return
-	}
+	return err
 }
 
-// RunPermsSyncer starts running the given syncer in the background.
-func RunPermsSyncer(ctx context.Context, syncer *PermsSyncer) {
+// Run starts running the syncer, this method is blocking and should be called as a goroutine.
+func (s *PermsSyncer) Run(ctx context.Context) {
 	log15.Debug("started perms syncer")
 	defer log15.Info("stopped perms syncer")
 
@@ -285,18 +284,22 @@ func RunPermsSyncer(ctx context.Context, syncer *PermsSyncer) {
 	for {
 		select {
 		case <-notifyDequeued:
-		case <-syncer.queue.notifyEnqueue:
+		case <-s.queue.notifyEnqueue:
 		case <-ctx.Done():
 			return
 		}
 
-		request := syncer.queue.acquireNext()
+		request := s.queue.acquireNext()
 		if request == nil {
 			// No waiting request is in the queue
 			continue
 		}
-
-		syncer.syncPerms(ctx, request)
 		notify(notifyDequeued)
+
+		err := s.syncPerms(ctx, request)
+		if err != nil {
+			log15.Warn("Failed to sync permissions", "type", request.typ, "id", request.id, "err", err)
+			continue
+		}
 	}
 }

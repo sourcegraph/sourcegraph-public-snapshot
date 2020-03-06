@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -54,5 +56,14 @@ func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory, serv
 				time.Sleep(2 * time.Minute)
 			}
 		}()
+
+		// Set up background permissions syncing
+		// TODO(jchen): Get a list of authz.Provider that implements the PermsFetcher.
+		permsStore := edb.NewPermsStore(db, func() time.Time {
+			return time.Now().UTC().Truncate(time.Microsecond)
+		})
+		permsSyncer := authz.NewPermsSyncer(nil, repoStore, permsStore)
+		permsScheduler := authz.NewPermsScheduler(10*time.Minute, db)
+		go authz.StartPermsSyncing(ctx, permsScheduler, permsSyncer)
 	})
 }
