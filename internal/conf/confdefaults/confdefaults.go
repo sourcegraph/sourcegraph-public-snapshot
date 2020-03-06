@@ -52,11 +52,11 @@ var DockerContainer = conftypes.RawUnified{
 }`,
 }
 
-// Cluster is the default configuration applied to Cluster instances of
-// Sourcegraph.
-var Cluster = conftypes.RawUnified{
+// Kubernetes is the default configuration applied to Kubernetes cluster
+// instances of Sourcegraph.
+var Kubernetes = conftypes.RawUnified{
 	Critical: `{}`,
-	Site: `{	
+	Site: `{
 	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
 	// This is required to be configured for Sourcegraph to work correctly.
 	// "externalURL": "https://sourcegraph.example.com",

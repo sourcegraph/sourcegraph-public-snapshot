@@ -16,7 +16,7 @@ import (
 func init() {
 	deployType := DeployType()
 	if !IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q. Got: %q", DeployCluster, DeployDockerCompose, DeployPureDocker, DeploySingleDocker, DeployDev, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q. Got: %q", DeployKubernetes, DeployDockerCompose, DeployPureDocker, DeploySingleDocker, DeployDev, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -29,8 +29,8 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.DevAndTesting
 	case IsDeployTypeSingleDockerContainer(deployType):
 		return confdefaults.DockerContainer
-	case IsDeployTypeCluster(deployType), IsDeployTypeDockerCompose(deployType), IsDeployTypePureDocker(deployType):
-		return confdefaults.Cluster
+	case IsDeployTypeKubernetes(deployType), IsDeployTypeDockerCompose(deployType), IsDeployTypePureDocker(deployType):
+		return confdefaults.Kubernetes
 	default:
 		panic("deploy type did not register default configuration")
 	}
@@ -136,7 +136,7 @@ func CanReadEmail() bool {
 // Deploy type constants. Any changes here should be reflected in the DeployType type declared in web/src/globals.d.ts:
 // https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
 const (
-	DeployCluster       = "cluster"
+	DeployKubernetes    = "cluster"
 	DeploySingleDocker  = "docker-container"
 	DeployDockerCompose = "docker-compose"
 	DeployPureDocker    = "pure-docker"
@@ -148,19 +148,19 @@ func DeployType() string {
 	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
 		return e
 	}
-	// Default to Cluster so that every Cluster deployment doesn't need to be
-	// configured with DEPLOY_TYPE.
-	return DeployCluster
+	// Default to Kubernetes cluster so that every Kubernetes c
+	// cluster deployment doesn't need to be configured with DEPLOY_TYPE.
+	return DeployKubernetes
 }
 
-// IsDeployTypeCluster tells if the given deployment type is a cluster (and
-// non-dev, not docker-compose, not pure-docker, and non-single Docker image).
-func IsDeployTypeCluster(deployType string) bool {
-	if deployType == "k8s" {
+// IsDeployTypeKubernetes tells if the given deployment type is a Kubernetes
+// cluster (and non-dev, not docker-compose, not pure-docker, and non-single Docker image).
+func IsDeployTypeKubernetes(deployType string) bool {
+	if deployType == "cluster" {
 		// backwards compatibility for older deployments
 		return true
 	}
-	return deployType == DeployCluster
+	return deployType == DeployKubernetes
 }
 
 // IsDeployTypeDockerCompose tells if the given deployment type is the Docker Compose
@@ -189,7 +189,7 @@ func IsDev(deployType string) bool {
 // IsValidDeployType returns true iff the given deployType is a Kubernetes deployment, a Docker Compose
 // deployment, a pure Docker deployment, a Docker deployment, or a local development environment.
 func IsValidDeployType(deployType string) bool {
-	return IsDeployTypeCluster(deployType) ||
+	return IsDeployTypeKubernetes(deployType) ||
 		IsDeployTypeDockerCompose(deployType) ||
 		IsDeployTypePureDocker(deployType) ||
 		IsDeployTypeSingleDockerContainer(deployType) ||

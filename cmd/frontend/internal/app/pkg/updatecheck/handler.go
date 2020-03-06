@@ -47,7 +47,7 @@ var (
 
 func getLatestRelease(deployType string) build {
 	switch {
-	case conf.IsDeployTypeCluster(deployType):
+	case conf.IsDeployTypeKubernetes(deployType):
 		return latestReleaseKubernetesBuild
 	case conf.IsDeployTypeDockerCompose(deployType), conf.IsDeployTypePureDocker(deployType):
 		return latestReleaseDockerComposeOrPureDocker
