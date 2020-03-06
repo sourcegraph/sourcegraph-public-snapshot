@@ -1174,7 +1174,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					commonMu.Unlock()
 				}
 				timingMu.Lock()
-				timing["file"] = elapsedMilliseconds(searchTiming) // FIXME
+				// Infer the search kind when we log timing info. If a search pattern is empty,
+				// then we could only have searched for file paths. type:path implies a file
+				// result. In all other cases, we check the pattern type of a file content search.
+				if p.Pattern == "" || resultType == "path" {
+					timing["file"] = elapsedMilliseconds(searchTiming)
+				} else {
+					switch {
+					case r.patternType == query.SearchTypeStructural:
+						timing["structural"] = elapsedMilliseconds(searchTiming)
+
+					case r.patternType == query.SearchTypeLiteral:
+						timing["literal"] = elapsedMilliseconds(searchTiming)
+					case r.patternType == query.SearchTypeRegex:
+						timing["regexp"] = elapsedMilliseconds(searchTiming)
+					}
+				}
 				timingMu.Unlock()
 			})
 		case "diff":
@@ -1328,36 +1343,16 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		multiErr = nil
 	}
 
-	for kind, time := range timing {
-		timing[kind] = time + repoResolveTiming
-	}
-	for kind, time := range timing {
-		log15.Info("Timing", kind, time)
+	if currentUser, err := db.Users.GetByCurrentAuthUser(ctx); err == nil {
+		for kind, time := range timing {
+			durationMs := time + repoResolveTiming
+			log15.Debug("Timing", kind, durationMs)
+			value := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
+			eventName := fmt.Sprintf("search.latencies.%s", kind)
+			usagestats.LogBackendEvent(currentUser.ID, eventName, json.RawMessage(value))
+		}
 	}
 
-	if len(resultTypes) == 1 && resultTypes[0] == "repo" {
-		durationMs := elapsedMilliseconds(start)
-		logMsg := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
-		if currentUser, err := db.Users.GetByCurrentAuthUser(ctx); err == nil {
-			log15.Info("User", "is", currentUser.ID)
-			usagestats.LogBackendEvent(currentUser.ID, "search.latencies.repo", json.RawMessage(logMsg))
-		}
-		days, weeks, months := 2, 1, 1
-		searchLatency, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
-			DayPeriods:   &days,
-			WeekPeriods:  &weeks,
-			MonthPeriods: &months,
-		})
-		if err != nil {
-			log15.Info("log", "is bad", err.Error())
-		}
-		log15.Info("log", "struct",
-			fmt.Sprintf("%+v", searchLatency.Daily[0]),
-			fmt.Sprintf("%+v", searchLatency.Daily[0].Repo.EventLatencies),
-			fmt.Sprintf("%+v", searchLatency.Weekly[0]),
-			fmt.Sprintf("%+v", searchLatency.Weekly[0].Repo.EventLatencies),
-		)
-	}
 	sortResults(results)
 
 	resultsResolver := SearchResultsResolver{
