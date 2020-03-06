@@ -2,10 +2,10 @@
 
 Code intelligence provides advanced code navigation and cross-references for your code on Sourcegraph, your code host, and your code review tools:
 
-- Hover tooltips with documentation and type signatures
-- Go-to-definition
-- Find references
-- Symbol search
+- [Hover tooltips with documentation and type signatures](#hover-tooltips-with-documentation-and-type-signatures)
+- [Go to definition](#go-to-definition)
+- [Find references](#find-references)
+- [Symbol search](#symbol-search)
 
 Code intelligence works out of the box with all of the most popular [programming language extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) using our search-based [basic code intelligence](./basic_code_intelligence.md).
 
@@ -23,32 +23,56 @@ By spinning up Sourcegraph, you can get code intelligence:
 - On diffs in your code review tool, via our [integrations](../../integration/index.md)
 - Via the Sourcegraph API (for programmatic access)
 
-## Hover tooltips with documentation and type signatures (using a language server)
-
-<img src="img/hover-tooltip.png" width="500"/>
-
-## Go to definition (using a language server)
-
-<img src="img/go-to-def.gif" width="500"/>
-
-## Find references (using a language server)
-
-<img src="img/find-refs.gif" width="450"/>
-
-## GitHub pull request and file integration (using a language server)
-
-<img src="img/CodeReview.gif" width="450" style="margin-left:0;margin-right:0;"/>
-
-## Symbol search
-
-<img src="img/Symbols.png" width="500"/>
-
-## Symbol sidebar
-
-<img src="img/SymbolSidebar.png" width="500"/>
-
 ## Getting started
 
 - [Set up Sourcegraph](../../admin/install/index.md), then enable the [Sourcegraph extension](../index.md) for each language you want to use.
-- To get code intelligence on your code host and/or code review tool, see the [browser extension documentation](../../integration/browser_extension.md).
+- To add code intelligence to your code host and/or code review tool, see the [browser extension documentation](../../integration/browser_extension.md).
 - Interested in trying it out on public code? See [this sample file](https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go#L37:6$references) on Sourcegraph.com.
+
+## Code intelligence features
+
+### Hover tooltips with documentation and type signatures
+
+TODO: documentation and type signatures
+
+#### Hover tooltips with documentation and type signatures (using a language server)
+
+<img src="img/hover-tooltip.png" width="500"/>
+
+### Go to definition
+
+TODO: What is go to definition
+
+#### Go to definition (using a language server)
+
+<img src="img/go-to-def.gif" width="500"/>
+
+### Find references
+
+When you select 'find references' from the hover tooltip, a panel will be shown at the bottom of the page that lists all of the references found for both precise (LSIF or language server) and basic results (from search heuristics). This panel will separate references by repository, and you can optionally them by file.  
+
+> NOTE: When a particular token returns a large number of references, we truncate the results to < 500 to optimize for browser loading speed. We are planning to improve this in the future with the ability to view it as a search so that users can utilize the powerful filtering of Sourcegraph's search to find the references they are looking for.
+
+#### Find references (using a language server)
+
+<img src="img/find-refs.gif" width="450"/>
+
+### Symbol search
+
+TODO: What is symbol search
+
+#### Symbol search
+
+<img src="img/Symbols.png" width="500"/>
+
+#### Symbol sidebar
+
+<img src="img/SymbolSidebar.png" width="500"/>
+
+## Code intelligence in action
+
+See how code intelligence adds context to your workflow in the example below.
+
+### GitHub pull request and file integration (using a language server)
+
+<img src="img/CodeReview.gif" width="450" style="margin-left:0;margin-right:0;"/>
