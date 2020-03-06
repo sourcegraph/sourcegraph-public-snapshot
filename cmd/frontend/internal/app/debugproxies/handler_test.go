@@ -92,6 +92,6 @@ func TestIndexLinks(t *testing.T) {
 	expectedContent := fmt.Sprintf("<a href=\"proxies/%s/\">%s</a><br>", displayName, displayName)
 
 	if string(body) != expectedContent {
-		t.Errorf("expected /metrics to be passed to reverse proxy, got %s", body)
+		t.Errorf("expected %s, got %s", expectedContent, body)
 	}
 }
