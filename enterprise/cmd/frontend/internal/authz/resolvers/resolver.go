@@ -60,10 +60,9 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	}
 
 	p := &authz.RepoPermissions{
-		RepoID:   int32(repoID),
-		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs:  roaring.NewBitmap(),
-		Provider: authz.ProviderSourcegraph,
+		RepoID:  int32(repoID),
+		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
+		UserIDs: roaring.NewBitmap(),
 	}
 	cfg := globals.PermissionsUserMapping()
 	switch cfg.BindID {
@@ -140,10 +139,9 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	var ids *roaring.Bitmap
 	if user != nil {
 		p := &authz.UserPermissions{
-			UserID:   user.ID,
-			Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-			Type:     authz.PermRepos,
-			Provider: authz.ProviderSourcegraph,
+			UserID: user.ID,
+			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+			Type:   authz.PermRepos,
 		}
 		err = r.store.LoadUserPermissions(ctx, p)
 		ids = p.IDs
@@ -196,9 +194,8 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	}
 
 	p := &authz.RepoPermissions{
-		RepoID:   int32(repoID),
-		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-		Provider: authz.ProviderSourcegraph,
+		RepoID: int32(repoID),
+		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 	}
 	err = r.store.LoadRepoPermissions(ctx, p)
 	if err != nil && err != authz.ErrPermsNotFound {
