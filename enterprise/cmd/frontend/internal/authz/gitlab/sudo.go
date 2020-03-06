@@ -20,7 +20,7 @@ import (
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]string, error) {
+func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -40,7 +40,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exter
 // (access level: 20 => Reporter access) by the authenticated or impersonated user in the client. It may
 // return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
-func listProjects(ctx context.Context, client *gitlab.Client) ([]string, error) {
+func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.ExternalRepoID, error) {
 	q := make(url.Values)
 	q.Add("visibility", "private")  // This method is meant to return only private projects
 	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
@@ -51,7 +51,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]string, error) 
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
-	projectIDs := make([]string, 0, 100)
+	projectIDs := make([]extsvc.ExternalRepoID, 0, 100)
 	for {
 		projects, next, err := client.ListProjects(ctx, nextURL)
 		if err != nil {
@@ -59,7 +59,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]string, error) 
 		}
 
 		for i := range projects {
-			projectIDs = append(projectIDs, strconv.Itoa(projects[i].ID))
+			projectIDs = append(projectIDs, extsvc.ExternalRepoID(strconv.Itoa(projects[i].ID)))
 		}
 
 		if next == nil {
@@ -80,7 +80,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]string, error) 
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
-func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]string, error) {
+func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, repo) {
@@ -95,7 +95,7 @@ func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRep
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
-	userIDs := make([]string, 0, 100)
+	userIDs := make([]extsvc.ExternalAccountID, 0, 100)
 
 	client := p.clientProvider.GetPATClient(p.sudoToken, "")
 	for {
@@ -105,7 +105,7 @@ func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRep
 		}
 
 		for i := range members {
-			userIDs = append(userIDs, strconv.Itoa(int(members[i].ID)))
+			userIDs = append(userIDs, extsvc.ExternalAccountID(strconv.Itoa(int(members[i].ID))))
 		}
 
 		if next == nil {

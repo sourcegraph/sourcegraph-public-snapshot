@@ -49,7 +49,7 @@ type PermsFetcher interface {
 	// Because permissions fetching APIs are often expensive, the implementation should
 	// try to return partial but valid results in case of error, and it is up to callers
 	// to decide whether to discard.
-	FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]string, error)
+	FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error)
 	// FetchRepoPerms returns a list of user IDs (on code host) who have read ccess to
 	// the given repository/project on the code host. The user ID should be the same value
 	// as it would be used as extsvc.ExternalAccount.AccountID. The returned list should
@@ -58,7 +58,7 @@ type PermsFetcher interface {
 	// Because permissions fetching APIs are often expensive, the implementation should
 	// try to return partial but valid results in case of error, and it is up to callers
 	// to decide whether to discard.
-	FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]string, error)
+	FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error)
 }
 
 // NewPermsSyncer returns a new permissions syncing request manager.
