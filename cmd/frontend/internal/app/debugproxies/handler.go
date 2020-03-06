@@ -55,16 +55,8 @@ func (rph *ReverseProxyHandler) serveIndex(w http.ResponseWriter, r *http.Reques
 	sort.Strings(displayNames)
 
 	for _, displayName := range displayNames {
-		fmt.Fprintf(w, `<a href="proxies/%s/">%s</a><br>`, displayName, stripHash(displayName))
+		fmt.Fprintf(w, `<a href="proxies/%s/">%s</a><br>`, displayName, displayName)
 	}
-}
-
-func stripHash(val string) string {
-	idx := strings.LastIndex(val, "-")
-	if idx == -1 {
-		return val
-	}
-	return val[:idx]
 }
 
 // serveReverseProxy routes the request to the appropriate reverse proxy by splitting the request path and finding

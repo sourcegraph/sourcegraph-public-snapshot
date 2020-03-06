@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
@@ -40,13 +41,15 @@ func addDebugHandlers(r *mux.Router) {
 			})
 		}
 		rph.Populate(peps)
-	} else {
+	} else if conf.IsDeployTypeCluster(conf.DeployType()) {
 		err := debugproxies.StartClusterScanner(rph.Populate)
 		if err != nil {
 			// we ended up here because cluster is not a k8s cluster
 			addNoK8sClientHandler(r)
 			return
 		}
+	} else {
+		addNoK8sClientHandler(r)
 	}
 
 	rph.AddToRouter(r)
