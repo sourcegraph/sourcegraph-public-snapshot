@@ -44,21 +44,14 @@ For the Bitbucket Server plugin to then communicate with the Sourcegraph instanc
 
 Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** to see a list of all configured webhooks and to create a new one.
 
-Sourcegraph automatically creates a webhook for usage with [Campaigns](../user/campaigns.md) once the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md) is configured in Sourcegraph.
+Sourcegraph automatically creates a webhook for usage with [Campaigns](../user/campaigns.md) once the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks) is configured in Sourcegraph.
 
 ### Experimental: faster ACL permissions fetching
 
-The plugin also supports an experimental method of faster ACL permissions fetching that aims to improve search speed. You can enable this in the experimental section of the [site configuration](../admin/config/site_config.md):
+The plugin also supports an experimental method of faster ACL permissions fetching that aims to improve search speed.
 
-```json
-{
-  // ...
-  "experimentalFeatures": {
-    "bitbucketServerFastPerm": "enabled"
-  }
-  // ...
-}
-```
+You can enable this feature by setting the [`"plugin.permissions"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#repository-permissions) to `"enabled"`.
+
 The speed improvements are subtle and more noticeable for larger instances with thousands of repositories. This may remove the occasional slow search that has incurred the overhead of refreshing expired permissions information.
 
 ## Browser extension

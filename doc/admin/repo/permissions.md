@@ -169,7 +169,7 @@ Permissions for each user are cached for the configured `ttl` duration (**3h** b
 
 The default `hardTTL` is **3 days**, after which a user's cached permissions must be updated before any user action can be authorized. While the update is happening an error is returned to the user. The default `hardTTL` value was chosen so that it reduces the chances of users being forced to wait for their permissions to be updated after a weekend of inactivity.
 
-There is also an experimental feature that allows for faster permissions fetching that can be enabled via the [Bitbucket Server Sourcegraph plugin](../../../integration/bitbucket_server.md).
+There is also an experimental feature that allows for faster permissions fetching that can be enabled via the [Bitbucket Server plugin](../../../integration/bitbucket_server.md).
 
 ---
 
