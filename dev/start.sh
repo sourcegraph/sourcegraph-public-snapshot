@@ -114,10 +114,12 @@ type ulimit > /dev/null && ulimit -n 10000 || true
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
-# Build once to make sure editor codeintel works
+# Build once in the background to make sure editor codeintel works
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.
-yarn run build-ts || true
+trap 'kill $build_ts_pid; exit' INT
+(yarn run build-ts || true) &
+build_ts_pid="$!"
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
