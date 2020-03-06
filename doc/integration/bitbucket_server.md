@@ -24,6 +24,8 @@ We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github
 
 The plugin also has the optional functionality to enable **faster ACL permission syncing between Sourcegraph and Bitbucket Server** and can add **webhooks with configurable scope to Bitbucket Server**, which are used by and highly recommended for [Campaigns](../user/campaigns.md).
 
+Additionally, activated [Sourcegraph extensions](../extensions) will be able to add information to Bitbucket Server code views and pull requests, such as test coverage data or trace/log information.
+
 ![Bitbucket Server code intelligence](https://storage.googleapis.com/sourcegraph-assets/bitbucket-code-intel-pr-short.gif)
 
 ### Installation and requirements
@@ -66,11 +68,13 @@ The Bitbucket Server plugin provides **native code intelligence** (e.g.: **go-to
 
 It does that by fetching the required JavaScript code from the configured Sourcegraph instance and injecting it into the HTML that the Bitbucket Server instance serves. See the [`sourcegraph-bitbucket.js`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/resources/js/sourcegraph-bitbucket.js) file for how it does that.
 
-The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension) and adds the same code intelligence functionality to files and pull requests viewed on Bitbucket Server.
+The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension), hosted by your Sourcegraph instance, and adds the same code intelligence functionality to files and pull requests viewed on Bitbucket Server.
 
-To do that plugin talks directly to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucker Server instance.
+The code talks directly to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucker Server instance.
 
 If it failed to load or talk to the Sourcegraph instance messages are logged to the browser console.
+
+When the Sourcegraph instance is updated to a newer version, the code that's loaded and injected might also be updated.
 
 #### Webhooks
 
