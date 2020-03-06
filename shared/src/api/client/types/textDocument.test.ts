@@ -51,6 +51,63 @@ describe('score', () => {
         expect(score([{ language: '*' }], 'file:///f.txt', 'l')).toBe(5)
         expect(score([{}], 'file:///f.txt', 'l')).toBe(5)
     })
+
+    describe('matches patterns built from a root URI', () => {
+        test('success case 1: matching nested file with **/**', () => {
+            expect(
+                score(
+                    [
+                        {
+                            pattern: 'git://a.b/c/d?e#**/**',
+                        },
+                    ],
+                    'git://a.b/c/d?e#f/g.txt',
+                    'l'
+                )
+            ).toBe(10)
+        })
+
+        test('success case 2: matching file at root with **', () => {
+            expect(
+                score(
+                    [
+                        {
+                            pattern: 'git://a.b/c/d?e#**',
+                        },
+                    ],
+                    'git://a.b/c/d?e#f.txt',
+                    'l'
+                )
+            ).toBe(10)
+        })
+        test('failing case 1: matching file at root with **/**', () => {
+            expect(
+                score(
+                    [
+                        {
+                            pattern: 'git://a.b/c/d?e#**/**',
+                        },
+                    ],
+                    'git://a.b/c/d?e#f.txt',
+                    'l'
+                )
+            ).toBe(10)
+        })
+
+        test('failing case 2: nested file with **', () => {
+            expect(
+                score(
+                    [
+                        {
+                            pattern: 'git://a.b/c/d?e#**',
+                        },
+                    ],
+                    'git://a.b/c/d?e#f/g.txt',
+                    'l'
+                )
+            ).toBe(10)
+        })
+    })
 })
 
 interface OffsetPositionTestCase {
