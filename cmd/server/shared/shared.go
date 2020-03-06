@@ -175,9 +175,9 @@ func Main() {
 	procDiedAction := goreman.Shutdown
 	if ignore, _ := strconv.ParseBool(os.Getenv("IGNORE_PROCESS_DEATH")); ignore {
 		// IGNORE_PROCESS_DEATH is an escape hatch so that sourcegraph/server
-		// keeps running in the case of a subprocess dieing on startup. An
+		// keeps running in the case of a subprocess dying on startup. An
 		// example use case is connecting to postgres even though frontend is
-		// dieing due to a bad migration.
+		// dying due to a bad migration.
 		procDiedAction = goreman.Ignore
 	}
 
