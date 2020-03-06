@@ -44,7 +44,7 @@ type Server struct {
 		ListCloned(context.Context) ([]string, error)
 	}
 	ChangesetSyncer interface {
-		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
+		EnqueueChangesetSyncs(ctx context.Context, ids []int64)
 	}
 
 	notClonedCountMu        sync.Mutex
@@ -579,12 +579,8 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 		respond(w, http.StatusBadRequest, errors.New("no ids provided"))
 		return
 	}
-	err := s.ChangesetSyncer.EnqueueChangesetSyncs(r.Context(), req.IDs)
-	if err != nil {
-		resp := protocol.ChangesetSyncResponse{Error: err.Error()}
-		respond(w, http.StatusInternalServerError, resp)
-		return
-	}
+
+	s.ChangesetSyncer.EnqueueChangesetSyncs(r.Context(), req.IDs)
 	respond(w, http.StatusOK, nil)
 }
 
