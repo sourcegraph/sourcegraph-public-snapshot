@@ -21,6 +21,7 @@ var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana 
 func addNoK8sClientHandler(r *mux.Router) {
 	noHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Cluster information not available`)
+		fmt.Fprintf(w, `<br><br><a href="headers">headers</a><br>`)
 	})
 	r.Handle("/", adminOnly(noHandler))
 }
