@@ -15,7 +15,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/src-d/enry/v2"
 
@@ -471,6 +473,80 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help:      "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
 }, []string{"status", "alert_type"})
 
+// logSearchLatency records search durations in the event database. This
+// function may only be called after a search result is performed, because it
+// relies on the invariant that query and pattern error checking has already
+// been performed.
+func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32) {
+	var types []string
+	resultTypes, _ := r.query.StringValues(query.FieldType)
+	for _, typ := range resultTypes {
+		switch typ {
+		case "repo", "symbol", "diff", "commit":
+			types = append(types, typ)
+		case "path":
+			// Map type:path to file
+			types = append(types, "file")
+		case "file":
+			switch {
+			case r.patternType == query.SearchTypeStructural:
+				types = append(types, "structural")
+			case r.patternType == query.SearchTypeLiteral:
+				types = append(types, "literal")
+			case r.patternType == query.SearchTypeRegex:
+				types = append(types, "regexp")
+			}
+		}
+	}
+
+	// Don't record composite searches that specify more than one type:.
+	if len(types) > 1 {
+		return
+	}
+
+	options := &getPatternInfoOptions{}
+	if r.patternType == query.SearchTypeStructural {
+		options = &getPatternInfoOptions{performStructuralSearch: true}
+	}
+	if r.patternType == query.SearchTypeLiteral {
+		options = &getPatternInfoOptions{performLiteralSearch: true}
+	}
+	p, _ := r.getPatternInfo(options)
+
+	// If no type: was explicitly specified, infer the result type.
+	if len(types) == 0 {
+		// If a pattern was specified, a content search happened.
+		if p.Pattern != "" {
+			switch {
+			case r.patternType == query.SearchTypeStructural:
+				types = append(types, "structural")
+			case r.patternType == query.SearchTypeLiteral:
+				types = append(types, "literal")
+			case r.patternType == query.SearchTypeRegex:
+				types = append(types, "regexp")
+			}
+		} else if len(r.query.Fields["file"]) > 0 {
+			// No search pattern specified and file: is specified.
+			types = append(types, "file")
+		} else {
+			// No search pattern or file: is specified, assume repo.
+			// This includes accounting for searches of fields that
+			// specify repohasfile: and repohascommitafter:.
+			types = append(types, "repo")
+		}
+	}
+
+	// Only log the time if we successfully resolved one search type.
+	if len(types) == 1 {
+		if currentUser, err := db.Users.GetByCurrentAuthUser(ctx); err == nil {
+			log15.Info("Timing", types[0], durationMs)
+			value := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
+			eventName := fmt.Sprintf("search.latencies.%s", types[0])
+			usagestats.LogBackendEvent(currentUser.ID, eventName, json.RawMessage(value))
+		}
+	}
+}
+
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	// If the request is a paginated one, we handle it separately. See
 	// paginatedResults for more details.
@@ -479,6 +555,8 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	}
 
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
+
+	r.logSearchLatency(ctx, rr.ElapsedMilliseconds())
 
 	// Record what type of response we sent back via Prometheus.
 	var status, alertType string
