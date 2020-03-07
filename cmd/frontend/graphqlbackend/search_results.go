@@ -541,7 +541,10 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 		if currentUser, err := db.Users.GetByCurrentAuthUser(ctx); err == nil {
 			value := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
-			usagestats.LogBackendEvent(currentUser.ID, eventName, json.RawMessage(value))
+			err := usagestats.LogBackendEvent(currentUser.ID, eventName, json.RawMessage(value))
+			if err != nil {
+				log15.Warn("Could not log search latency", "err", err)
+			}
 		}
 	}
 }
