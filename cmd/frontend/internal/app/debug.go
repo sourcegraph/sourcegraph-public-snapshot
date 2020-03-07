@@ -41,7 +41,7 @@ func addDebugHandlers(r *mux.Router) {
 			})
 		}
 		rph.Populate(peps)
-	} else if conf.IsDeployTypeCluster(conf.DeployType()) {
+	} else if conf.IsDeployTypeKubernetes(conf.DeployType()) {
 		err := debugproxies.StartClusterScanner(rph.Populate)
 		if err != nil {
 			// we ended up here because cluster is not a k8s cluster
