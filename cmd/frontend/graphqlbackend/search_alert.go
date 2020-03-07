@@ -112,6 +112,17 @@ func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
 	}
 }
 
+// reposExist returns true if one or more repos resolve. If the attempt
+// returns 0 repos or fails, it returns false. It is a helper function for
+// raising NoResolvedrepos alerts with suggestions when we know the original
+// query does not contain any repos to search.
+func reposExist(ctx context.Context, options resolveRepoOp) bool {
+	if repos, _, _, err := resolveRepositories(ctx, options); err == nil && len(repos) > 0 {
+		return true
+	}
+	return false
+}
+
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
 	repoFilters, minusRepoFilters := r.query.RegexpPatterns(query.FieldRepo)
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
@@ -155,16 +166,13 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) > 1:
 		proposedQueries := []*searchQueryDescription{}
-		repos1, _, _, err := resolveRepositories(ctx, resolveRepoOp{
+		tryRemoveRepoGroup := resolveRepoOp{
 			repoFilters:      repoFilters,
 			minusRepoFilters: minusRepoFilters,
 			onlyForks:        onlyForks,
 			noForks:          noForks,
-		})
-		if err != nil {
-			return nil, err
 		}
-		if len(repos1) > 0 {
+		if reposExist(ctx, tryRemoveRepoGroup) {
 			proposedQueries = []*searchQueryDescription{
 				&searchQueryDescription{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
@@ -175,17 +183,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		}
 
 		unionRepoFilter := unionRegExps(repoFilters)
-		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{
+		tryAnyRepo := resolveRepoOp{
 			repoFilters:      []string{unionRepoFilter},
 			minusRepoFilters: minusRepoFilters,
 			repoGroupFilters: repoGroupFilters,
 			onlyForks:        onlyForks,
 			noForks:          noForks,
-		})
-		if err != nil {
-			return nil, err
 		}
-		if len(repos2) > 0 {
+		if reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
@@ -208,16 +213,13 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) == 1:
 		proposedQueries := []*searchQueryDescription{}
-		repos1, _, _, err := resolveRepositories(ctx, resolveRepoOp{
+		tryRemoveRepoGroup := resolveRepoOp{
 			repoFilters:      repoFilters,
 			minusRepoFilters: minusRepoFilters,
-			noForks:          noForks,
 			onlyForks:        onlyForks,
-		})
-		if err != nil {
-			return nil, err
+			noForks:          noForks,
 		}
-		if len(repos1) > 0 {
+		if reposExist(ctx, tryRemoveRepoGroup) {
 			proposedQueries = []*searchQueryDescription{
 				&searchQueryDescription{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
@@ -241,17 +243,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
 		proposedQueries := []*searchQueryDescription{}
 		unionRepoFilter := unionRegExps(repoFilters)
-		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{
+		tryAnyRepo := resolveRepoOp{
 			repoFilters:      []string{unionRepoFilter},
 			minusRepoFilters: minusRepoFilters,
 			repoGroupFilters: repoGroupFilters,
-			noForks:          noForks,
 			onlyForks:        onlyForks,
-		})
-		if err != nil {
-			return nil, err
+			noForks:          noForks,
 		}
-		if len(repos2) > 0 {
+		if reposExist(ctx, tryAnyRepo) {
 			proposedQueries = []*searchQueryDescription{
 				&searchQueryDescription{
 					description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
