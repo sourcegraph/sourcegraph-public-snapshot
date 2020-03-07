@@ -198,7 +198,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         ) {
             if (totalCount !== null && totalCount > 0) {
                 summary = TotalCountSummaryComponent ? (
-                    <TotalCountSummaryComponent totalCount={totalCount}></TotalCountSummaryComponent>
+                    <TotalCountSummaryComponent totalCount={totalCount} />
                 ) : (
                     <p className="filtered-connection__summary">
                         <small>

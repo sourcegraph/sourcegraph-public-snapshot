@@ -429,9 +429,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             started <Timestamp date={campaign.createdAt} />
                         </div>
                         <div className="card-body">
-                            <Markdown
-                                dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
-                            ></Markdown>
+                            <Markdown dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')} />
                         </div>
                     </div>
                 )}
