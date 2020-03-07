@@ -145,7 +145,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 	withoutRepoFields := omitQueryField(r.parseTree, query.FieldRepo)
 
-	var a searchAlert
 	switch {
 	case len(repoGroupFilters) > 1:
 		// This is a rare case, so don't bother proposing queries.
@@ -307,8 +306,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			proposedQueries: proposedQueries,
 		}, nil
 	}
-
-	return &a, nil
+	// Should be unreachable. Return a generic alert if reached.
+	return &searchAlert{
+		title:       "No repository results.",
+		description: "There are no repositories to search.",
+	}, nil
 }
 
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
