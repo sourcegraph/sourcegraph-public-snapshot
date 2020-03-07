@@ -7,7 +7,7 @@ describe('LicenseExpirationAlert.test.tsx', () => {
     test('expiring soon', () => {
         expect(
             renderer.create(
-                <LicenseExpirationAlert expiresAt={addDays(new Date(), 3)} daysLeft={3}></LicenseExpirationAlert>
+                <LicenseExpirationAlert expiresAt={addDays(new Date(), 3)} daysLeft={3} />
             )
         ).toMatchSnapshot()
     })
@@ -15,7 +15,7 @@ describe('LicenseExpirationAlert.test.tsx', () => {
     test('expired', () => {
         expect(
             renderer.create(
-                <LicenseExpirationAlert expiresAt={subMonths(new Date(), 3)} daysLeft={0}></LicenseExpirationAlert>
+                <LicenseExpirationAlert expiresAt={subMonths(new Date(), 3)} daysLeft={0} />
             )
         ).toMatchSnapshot()
     })

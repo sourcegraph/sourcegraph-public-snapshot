@@ -431,7 +431,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <div className="card-body">
                             <Markdown
                                 dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
-                            ></Markdown>
+                             />
                         </div>
                     </div>
                 )}

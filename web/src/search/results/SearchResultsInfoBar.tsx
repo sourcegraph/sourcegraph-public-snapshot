@@ -87,7 +87,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <div className="search-results-info-bar__row-left">
                     <QuotesInterpretedLiterallyNotice {...props} />
                 </div>
-                <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end"></ul>
+                <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end" />
             </small>
         )}
         {(props.results.timedout.length > 0 ||
