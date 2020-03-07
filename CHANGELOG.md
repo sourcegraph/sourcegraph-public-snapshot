@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Site-Admin/Instrumentation is now available in the Kubernetes cluster deployment [8805](https://github.com/sourcegraph/sourcegraph/pull/8805).
+- Extensions can now specify a `baseUri` in the `DocumentFilter` when registering providers.
 
 ### Changed
 
