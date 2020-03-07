@@ -49,6 +49,7 @@ func (rph *ReverseProxyHandler) serveIndex(w http.ResponseWriter, r *http.Reques
 
 	if len(displayNames) == 0 {
 		fmt.Fprintf(w, `Instrumentation: no endpoints found<br>`)
+		fmt.Fprintf(w, `<br><br><a href="headers">headers</a><br>`)
 		return
 	}
 
@@ -57,6 +58,7 @@ func (rph *ReverseProxyHandler) serveIndex(w http.ResponseWriter, r *http.Reques
 	for _, displayName := range displayNames {
 		fmt.Fprintf(w, `<a href="proxies/%s/">%s</a><br>`, displayName, displayName)
 	}
+	fmt.Fprintf(w, `<br><br><a href="headers">headers</a><br>`)
 }
 
 // serveReverseProxy routes the request to the appropriate reverse proxy by splitting the request path and finding
