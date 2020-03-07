@@ -240,28 +240,37 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		}, nil
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
-		a.title = "Expand your repo: filters to see results"
-		a.description = fmt.Sprintf("No repositories satisfied all of your repo: filters.")
-
+		proposedQueries := []*searchQueryDescription{}
 		unionRepoFilter := unionRegExps(repoFilters)
-		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, noForks: noForks, onlyForks: onlyForks})
+		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{
+			repoFilters:      []string{unionRepoFilter},
+			minusRepoFilters: minusRepoFilters,
+			repoGroupFilters: repoGroupFilters,
+			noForks:          noForks,
+			onlyForks:        onlyForks,
+		})
 		if err != nil {
 			return nil, err
 		}
 		if len(repos2) > 0 {
-			query := withoutRepoFields
-			query += fmt.Sprintf(" repo:%s", unionRepoFilter)
-			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
-				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
-				query:       query,
-				patternType: r.patternType,
-			})
+			proposedQueries = []*searchQueryDescription{
+				&searchQueryDescription{
+					description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
+					query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
+					patternType: r.patternType,
+				},
+			}
 		}
 
-		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
+		proposedQueries = append(proposedQueries, &searchQueryDescription{
 			description: "remove repo: filters",
 			query:       withoutRepoFields,
 		})
+		return &searchAlert{
+			title:           "Expand your repo: filters to see results",
+			description:     fmt.Sprintf("No repositories satisfied all of your repo: filters."),
+			proposedQueries: proposedQueries,
+		}, nil
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
 		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
