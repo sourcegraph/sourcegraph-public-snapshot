@@ -50,14 +50,14 @@ export class SearchNavbarItem extends React.PureComponent<Props> {
                         queryState={this.props.navbarSearchState}
                         onSubmit={this.onSubmit}
                         autoFocus={true}
-                     />
+                    />
                 ) : (
                     <QueryInput
                         {...this.props}
                         value={this.props.navbarSearchState}
                         autoFocus={this.props.location.pathname === '/search' ? 'cursor-at-end' : undefined}
                         hasGlobalQueryBehavior={true}
-                     />
+                    />
                 )}
                 <SearchButton />
             </Form>

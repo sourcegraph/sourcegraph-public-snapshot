@@ -212,7 +212,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                         onEditorCreated={this.onEditorCreated}
                         options={options}
                         border={false}
-                     />
+                    />
                 </div>
                 <Toggles
                     {...this.props}
