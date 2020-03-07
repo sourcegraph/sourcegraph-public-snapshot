@@ -123,7 +123,7 @@ func reposExist(ctx context.Context, options resolveRepoOp) bool {
 	return false
 }
 
-func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
+func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
 	repoFilters, minusRepoFilters := r.query.RegexpPatterns(query.FieldRepo)
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 	fork, _ := r.query.StringValue(query.FieldFork)
@@ -135,21 +135,21 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			prometheusType: "no_resolved_repos__no_repositories",
 			title:          "Add repositories or connect repository hosts",
 			description:    "There are no repositories to search. Add an external service connection to your code host.",
-		}, nil
+		}
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
 		return &searchAlert{
 			prometheusType: "no_resolved_repos__repogroup_empty",
 			title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
 			description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
-		}, nil
+		}
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
 		return &searchAlert{
 			prometheusType: "no_resolved_repos__repogroup_none_in_common",
 			title:          "Repository groups have no repositories in common",
 			description:    "No repository exists in all of the specified repository groups.",
-		}, nil
+		}
 	}
 
 	// TODO(sqs): handle -repo:foo fields.
@@ -162,7 +162,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		return &searchAlert{
 			title:       "Expand your repository filters to see results",
 			description: fmt.Sprintf("No repository exists in all specified groups and satisfies all of your repo: filters."),
-		}, nil
+		}
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) > 1:
 		proposedQueries := []*searchQueryDescription{}
@@ -209,7 +209,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			title:           "Expand your repository filters to see results",
 			description:     fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
 			proposedQueries: proposedQueries,
-		}, nil
+		}
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) == 1:
 		proposedQueries := []*searchQueryDescription{}
@@ -238,7 +238,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			title:           "Expand your repository filters to see results",
 			description:     fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
 			proposedQueries: proposedQueries,
-		}, nil
+		}
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
 		proposedQueries := []*searchQueryDescription{}
@@ -268,7 +268,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			title:           "Expand your repo: filters to see results",
 			description:     fmt.Sprintf("No repositories satisfied all of your repo: filters."),
 			proposedQueries: proposedQueries,
-		}, nil
+		}
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
 		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
@@ -278,13 +278,13 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 					return &searchAlert{
 						title:       "No repositories or code hosts configured",
 						description: "To start searching code, first go to site admin to configure repositories and code hosts.",
-					}, nil
+					}
 
 				} else {
 					return &searchAlert{
 						title:       "No repositories or code hosts configured",
 						description: "To start searching code, ask the site admin to configure and enable repositories.",
-					}, nil
+					}
 				}
 			}
 		}
@@ -303,13 +303,13 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			title:           "No repositories satisfied your repo: filter",
 			description:     "Change your repo: filter to see results",
 			proposedQueries: proposedQueries,
-		}, nil
+		}
 	}
 	// Should be unreachable. Return a generic alert if reached.
 	return &searchAlert{
 		title:       "No repository results.",
 		description: "There are no repositories to search.",
-	}, nil
+	}
 }
 
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
