@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -91,7 +92,7 @@ func TestIndexLinks(t *testing.T) {
 
 	expectedContent := fmt.Sprintf("<a href=\"proxies/%s/\">%s</a><br>", displayName, displayName)
 
-	if string(body) != expectedContent {
+	if !strings.Contains(string(body), expectedContent) {
 		t.Errorf("expected %s, got %s", expectedContent, body)
 	}
 }
