@@ -149,8 +149,10 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 	switch {
 	case len(repoGroupFilters) > 1:
 		// This is a rare case, so don't bother proposing queries.
-		a.title = "Expand your repository filters to see results"
-		a.description = fmt.Sprintf("No repository exists in all specified groups and satisfies all of your repo: filters.")
+		return &searchAlert{
+			title:       "Expand your repository filters to see results",
+			description: fmt.Sprintf("No repository exists in all specified groups and satisfies all of your repo: filters."),
+		}, nil
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) > 1:
 		a.title = "Expand your repository filters to see results"
@@ -238,31 +240,38 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
 		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
-		proposeQueries := true
 		if !envvar.SourcegraphDotComMode() {
 			if needsRepoConfig, err := needsRepositoryConfiguration(ctx); err == nil && needsRepoConfig {
-				proposeQueries = false
-				a.title = "No repositories or code hosts configured"
-				a.description = "To start searching code, "
 				if isSiteAdmin {
-					a.description += "first go to site admin to configure repositories and code hosts."
+					return &searchAlert{
+						title:       "No repositories or code hosts configured",
+						description: "To start searching code, first go to site admin to configure repositories and code hosts.",
+					}, nil
+
 				} else {
-					a.description = "ask the site admin to configure and enable repositories."
+					return &searchAlert{
+						title:       "No repositories or code hosts configured",
+						description: "To start searching code, ask the site admin to configure and enable repositories.",
+					}, nil
 				}
 			}
 		}
 
-		if a.title == "" {
-			a.title = "No repositories satisfied your repo: filter"
-			a.description = "Change your repo: filter to see results"
-			if proposeQueries && strings.TrimSpace(withoutRepoFields) != "" {
-				a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
+		proposedQueries := []*searchQueryDescription{}
+		if strings.TrimSpace(withoutRepoFields) != "" {
+			proposedQueries = []*searchQueryDescription{
+				&searchQueryDescription{
 					description: "remove repo: filter",
 					query:       withoutRepoFields,
 					patternType: r.patternType,
-				})
+				},
 			}
 		}
+		return &searchAlert{
+			title:           "No repositories satisfied your repo: filter",
+			description:     "Change your repo: filter to see results",
+			proposedQueries: proposedQueries,
+		}, nil
 	}
 
 	return &a, nil
