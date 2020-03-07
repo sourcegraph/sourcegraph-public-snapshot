@@ -52,7 +52,7 @@ interface SearchResultsInfoBarProps
 }
 
 /**
- * A notice for when the user is searching literally and has quotes in thier
+ * A notice for when the user is searching literally and has quotes in their
  * query, in which case it is possible that they think their query `"foobar"`
  * will be searching literally for `foobar` (without quotes). This notice
  * informs them that this may be the case to avoid confusion.

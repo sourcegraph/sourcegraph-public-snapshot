@@ -1340,7 +1340,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			for _, m := range test.mockRequestRepoUpdates {
 				mockRequestRepoUpdates <- m
 			}
-			// intentionally don't close the channel so any futher receives just block
+			// intentionally don't close the channel so any further receives just block
 
 			contexts := make(chan context.Context, expectedRequestCount)
 			requestRepoUpdate = func(ctx context.Context, repo *configuredRepo2, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {

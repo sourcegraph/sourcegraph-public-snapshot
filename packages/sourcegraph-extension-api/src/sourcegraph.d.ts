@@ -1215,7 +1215,7 @@ declare module 'sourcegraph' {
          *
          * Multiple transformers can be registered. In that case, all transformations will be applied
          * and the result is a single query that has been altered by all transformers. The order in
-         * which transfomers are applied is not defined.
+         * which transforms are applied is not defined.
          *
          * @param provider A query transformer.
          */
@@ -1247,7 +1247,7 @@ declare module 'sourcegraph' {
          * @param command Identifier of the command to execute.
          * @param rest Parameters passed to the command function.
          * @returns A {@link Promise} that resolves to the result of the given command.
-         * @throws If no command exists wih the given command identifier, an error is thrown.
+         * @throws If no command exists with the given command identifier, an error is thrown.
          */
         export function executeCommand<T = any>(command: string, ...args: any[]): Promise<T>
     }
