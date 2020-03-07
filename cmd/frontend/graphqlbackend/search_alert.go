@@ -155,42 +155,57 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		}, nil
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) > 1:
-		a.title = "Expand your repository filters to see results"
-		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0])
-
-		repos1, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, onlyForks: onlyForks, noForks: noForks})
+		repos1, _, _, err := resolveRepositories(ctx, resolveRepoOp{
+			repoFilters:      repoFilters,
+			minusRepoFilters: minusRepoFilters,
+			onlyForks:        onlyForks,
+			noForks:          noForks,
+		})
 		if err != nil {
 			return nil, err
 		}
+		proposedQueries := []*searchQueryDescription{}
 		if len(repos1) > 0 {
-			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
-				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryField(r.parseTree, query.FieldRepoGroup),
-				patternType: r.patternType,
-			})
+			proposedQueries = []*searchQueryDescription{
+				&searchQueryDescription{
+					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
+					query:       omitQueryField(r.parseTree, query.FieldRepoGroup),
+					patternType: r.patternType,
+				},
+			}
 		}
 
 		unionRepoFilter := unionRegExps(repoFilters)
-		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, onlyForks: onlyForks, noForks: noForks})
+		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{
+			repoFilters:      []string{unionRepoFilter},
+			minusRepoFilters: minusRepoFilters,
+			repoGroupFilters: repoGroupFilters,
+			onlyForks:        onlyForks,
+			noForks:          noForks,
+		})
 		if err != nil {
 			return nil, err
 		}
 		if len(repos2) > 0 {
-			query := withoutRepoFields
-			query += fmt.Sprintf(" repo:%s", unionRepoFilter)
-			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
-				query:       query,
+				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
 				patternType: r.patternType,
 			})
 		} else {
 			// Fall back to removing repo filters.
-			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "remove repo: filters",
 				query:       withoutRepoFields,
 				patternType: r.patternType,
 			})
 		}
+
+		return &searchAlert{
+			title:           "Expand your repository filters to see results",
+			description:     fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+			proposedQueries: proposedQueries,
+		}, nil
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) == 1:
 		a.title = "Expand your repository filters to see results"
