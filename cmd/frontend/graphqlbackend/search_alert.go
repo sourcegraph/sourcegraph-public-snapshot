@@ -221,7 +221,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 		if reposExist(ctx, tryRemoveRepoGroup) {
 			proposedQueries = []*searchQueryDescription{
-				&searchQueryDescription{
+				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
 					query:       omitQueryField(r.parseTree, query.FieldRepoGroup),
 					patternType: r.patternType,
@@ -252,7 +252,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 		if reposExist(ctx, tryAnyRepo) {
 			proposedQueries = []*searchQueryDescription{
-				&searchQueryDescription{
+				{
 					description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 					query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
 					patternType: r.patternType,
@@ -292,7 +292,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		proposedQueries := []*searchQueryDescription{}
 		if strings.TrimSpace(withoutRepoFields) != "" {
 			proposedQueries = []*searchQueryDescription{
-				&searchQueryDescription{
+				{
 					description: "remove repo: filter",
 					query:       withoutRepoFields,
 					patternType: r.patternType,
