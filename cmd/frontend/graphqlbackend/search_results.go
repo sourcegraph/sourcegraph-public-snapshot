@@ -868,7 +868,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 	return ctx, cancel, nil
 }
 
-func (r *searchResolver) determineResultTypes(args search.TextParameters, forceOnlyResultType string) (resultTypes []string, seenResultTypes map[string]struct{}) {
+func (r *searchResolver) determineResultTypes(args search.TextParameters, forceOnlyResultType string) (resultTypes []string) {
 	// Determine which types of results to return.
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
@@ -880,7 +880,6 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 			resultTypes = []string{"file", "path", "repo", "ref"}
 		}
 	}
-	seenResultTypes = make(map[string]struct{}, len(resultTypes))
 	for _, resultType := range resultTypes {
 		if resultType == "file" {
 			args.PatternInfo.PatternMatchesContent = true
@@ -888,7 +887,7 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 			args.PatternInfo.PatternMatchesPath = true
 		}
 	}
-	return resultTypes, seenResultTypes
+	return resultTypes
 }
 
 func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, res *SearchResultsResolver, err error) {
@@ -1015,7 +1014,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 
-	resultTypes, seenResultTypes := r.determineResultTypes(args, forceOnlyResultType)
+	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
 	var (
@@ -1032,7 +1031,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		fileMatches   = make(map[string]*FileMatchResolver)
 		fileMatchesMu sync.Mutex
 		// Alert is a potential alert shown to the user.
-		alert *searchAlert
+		alert           *searchAlert
+		seenResultTypes = make(map[string]struct{})
 	)
 
 	waitGroup := func(required bool) *sync.WaitGroup {
