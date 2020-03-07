@@ -877,7 +877,7 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path", "repo", "ref"}
+			resultTypes = []string{"file", "path", "repo"}
 		}
 	}
 	for _, resultType := range resultTypes {
