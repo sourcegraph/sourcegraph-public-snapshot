@@ -539,7 +539,6 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 	// Only log the time if we successfully resolved one search type.
 	if len(types) == 1 {
 		if currentUser, err := db.Users.GetByCurrentAuthUser(ctx); err == nil {
-			log15.Info("Timing", types[0], durationMs)
 			value := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			usagestats.LogBackendEvent(currentUser.ID, eventName, json.RawMessage(value))
