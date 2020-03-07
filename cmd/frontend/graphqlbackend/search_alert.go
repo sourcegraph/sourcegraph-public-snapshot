@@ -174,7 +174,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 		if reposExist(ctx, tryRemoveRepoGroup) {
 			proposedQueries = []*searchQueryDescription{
-				&searchQueryDescription{
+				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
 					query:       omitQueryField(r.parseTree, query.FieldRepoGroup),
 					patternType: r.patternType,
