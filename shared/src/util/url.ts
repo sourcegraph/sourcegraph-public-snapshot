@@ -56,18 +56,39 @@ interface ComparisonSpec {
     commitRange: string
 }
 
-export interface PositionSpec {
-    /**
-     * a 1-indexed point in the blob
-     */
-    position: Position
+/**
+ * 1-indexed position in a blob.
+ * Positions in URLs are 1-indexed.
+ */
+interface UIPosition {
+    /** 1-indexed line number */
+    line: number
+
+    /** 1-indexed character number */
+    character: number
 }
 
-interface RangeSpec {
+/**
+ * 1-indexed range in a blob.
+ * Ranges in URLs are 1-indexed.
+ */
+interface UIRange {
+    start: UIPosition
+    end: UIPosition
+}
+
+export interface UIPositionSpec {
     /**
-     * a 1-indexed range in the blob
+     * A 1-indexed point in the blob
      */
-    range: Range
+    position: UIPosition
+}
+
+interface UIRangeSpec {
+    /**
+     * A 1-indexed range in the blob
+     */
+    range: UIRange
 }
 
 /**
@@ -110,8 +131,8 @@ export interface ParsedRepoURI
         Partial<ResolvedRevSpec>,
         Partial<FileSpec>,
         Partial<ComparisonSpec>,
-        Partial<PositionSpec>,
-        Partial<RangeSpec> {}
+        Partial<UIPositionSpec>,
+        Partial<UIRangeSpec> {}
 
 /**
  * RepoURI is a URI identifing a repository resource, like
@@ -157,8 +178,8 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
         .split(':')
         .map(decodeURIComponent)
     let filePath: string | undefined
-    let position: Position | undefined
-    let range: Range | undefined
+    let position: UIPosition | undefined
+    let range: UIRange | undefined
     if (fragmentSplit.length === 1) {
         filePath = fragmentSplit[0]
     }
@@ -217,7 +238,7 @@ export interface AbsoluteRepoFilePosition
         RevSpec,
         ResolvedRevSpec,
         FileSpec,
-        PositionSpec,
+        UIPositionSpec,
         Partial<ViewStateSpec>,
         Partial<RenderModeSpec> {}
 
@@ -452,7 +473,7 @@ export function encodeRepoRev(repo: string, rev?: string): string {
 }
 
 export function toPrettyBlobURL(
-    ctx: RepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
+    ctx: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
     return `/${encodeRepoRev(ctx.repoName, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
         ctx

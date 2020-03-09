@@ -1,7 +1,6 @@
 import {
     ContextResolver,
     createHoverifier,
-    DiffPart,
     findPositionsFromEvents,
     Hoverifier,
     HoverState,
@@ -57,12 +56,12 @@ import {
     HoverOverlayClassProps,
 } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { PlatformContextProps, URLToFileContext } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     FileSpec,
-    PositionSpec,
+    UIPositionSpec,
     RawRepoSpec,
     RepoSpec,
     ResolvedRevSpec,
@@ -214,15 +213,17 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      */
     getHoverOverlayMountLocation?: () => string | null
 
-    /** Construct the URL to the specified file. */
+    /**
+     * Construct the URL to the specified file.
+     *
+     * @param sourcegraphURL The URL of the Sourcegraph instance.
+     * @param target The target to build a URL for.
+     * @param context Context information about this invocation.
+     */
     urlToFile?: (
         sourcegraphURL: string,
-        location: RepoSpec &
-            RawRepoSpec &
-            RevSpec &
-            FileSpec &
-            Partial<PositionSpec> &
-            Partial<ViewStateSpec> & { part?: DiffPart }
+        target: RepoSpec & RawRepoSpec & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
+        context: URLToFileContext
     ) => string
 
     notificationClassNames: Record<NotificationType, string>

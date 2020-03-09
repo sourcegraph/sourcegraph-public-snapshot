@@ -46,7 +46,7 @@ export function getHover(
                         provider(params).pipe(
                             catchError(err => {
                                 if (logErrors) {
-                                    console.error(err)
+                                    console.error('Hover provider errored:', err)
                                 }
                                 return [null]
                             })
@@ -55,7 +55,7 @@ export function getHover(
                 )
             ).pipe(
                 map(fromHoverMerged),
-                defaultIfEmpty(null as HoverMerged | null),
+                defaultIfEmpty<HoverMerged | null>(null),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
         )
