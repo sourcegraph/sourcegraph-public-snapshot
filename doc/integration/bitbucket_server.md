@@ -20,11 +20,11 @@ Site admins can [configure Sourcegraph to respect Bitbucket Server's repository 
 
 ## Sourcegraph Bitbucket Server Plugin
 
-We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) so users don't need to install and configure the browser extension to get code intelligence when browsing code or reviewing pull requests on Bitbucket Server.
+We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) which brings the following features to your Bitbucket Server instance:
 
-The plugin also has the optional functionality to enable **faster ACL permission syncing between Sourcegraph and Bitbucket Server** and can add **webhooks with configurable scope to Bitbucket Server**, which are used by and highly recommended for [Campaigns](../user/campaigns.md).
-
-Additionally, activated [Sourcegraph extensions](../extensions/index.md) will be able to add information to Bitbucket Server code views and pull requests, such as test coverage data or trace/log information.
+- **Native code intelligence**: users don't need to install the [Sourcegraph browser extensin](#browser-extension) to get hover tooltips, go-to-definition, find-references, and code search while browsing files and viewing pull requests on Bitbucket Server. Additionally, activated [Sourcegraph extensions](../extensions/index.md) will be able to add information to Bitbucket Server code views and pull requests, such as test coverage data or trace/log information.
+- **Faster ACL permission syncing** between Sourcegraph and Bitbucket Server
+- **Webhooks with configurable scope**, which are used by and highly recommended for usage with [Campaigns](../user/campaigns.md)
 
 ![Bitbucket Server code intelligence](https://storage.googleapis.com/sourcegraph-assets/bitbucket-code-intel-pr-short.gif)
 
@@ -52,11 +52,12 @@ To configure a webhook on the Sourcegraph side, set the [`"plugin.webhooks"` pro
 
 The plugin also supports an optional, experimental method of faster ACL permissions fetching that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
 
-You can enable this feature by setting the [`"plugin.permissions"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#repository-permissions) to `"enabled"`.
+You can enable this feature when [configuring the connection to your Bitbucket Server instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions).
 
 The speed improvements are subtle and more noticeable for larger instances with thousands of repositories. 
 
 To learn how and why this works, read the [fast permissions technical details](#fast-permissions-fetching) section below.
+
 ### Technical Details
 
 This section provides some technical insight into the Bitbucket Server plugin to make it easier to users to decide whether or not to install it on their Bitbucket Server instance.
@@ -65,7 +66,7 @@ You can find the full source code for the plugin at [github.com/sourcegraph/bitb
 
 #### Native Code Intelligence
 
-The Bitbucket Server plugin provides **native code intelligence** (e.g.: **go-to-definition** and **find-references** functionality while browsing code or reviewing pull requests) without users having to install the [Sourcegraph browser extension](browser_extension.md).
+The Bitbucket Server plugin provides **native code intelligence** without users having to install the [Sourcegraph browser extension](browser_extension.md).
 
 It does that by fetching the required JavaScript code from the configured Sourcegraph instance and injecting it into the HTML that the Bitbucket Server instance serves. See the [`sourcegraph-bitbucket.js`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/resources/js/sourcegraph-bitbucket.js) file for how it does that.
 
