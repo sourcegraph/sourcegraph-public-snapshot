@@ -54,7 +54,7 @@ The plugin also supports an optional, experimental method of faster ACL permissi
 
 You can enable this feature by setting the [`"plugin.permissions"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#repository-permissions) to `"enabled"`.
 
-The speed improvements are subtle and more noticeable for larger instances with thousands of repositories. This may remove the occasional slow search that has incurred the overhead of refreshing expired permissions information.
+The speed improvements are subtle and more noticeable for larger instances with thousands of repositories. 
 
 ### Technical Details
 
