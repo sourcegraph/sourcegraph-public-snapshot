@@ -230,9 +230,9 @@ export class Correlator {
      *
      * @param vertex The metadata vertex.
      */
-    private handleMetaData(vertex: lsif.MetaData): void {
-        this.lsifVersion = vertex.version
-        this.projectRoot = new URL(vertex.projectRoot)
+    private handleMetaData({ version, projectRoot }: lsif.MetaData): void {
+        this.lsifVersion = version
+        this.projectRoot = new URL(projectRoot.endsWith('/') ? projectRoot : projectRoot + '/')
 
         // We assume that the project root in the LSIF dump is either:
         //
