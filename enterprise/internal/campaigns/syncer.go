@@ -55,7 +55,8 @@ func (s *ChangesetSyncer) Run() {
 	// NOTE: All mutations of the queue should be done is this loop as operations on the queue
 	// are not safe for concurrent use
 	for {
-		timer := new(time.Timer)
+		var timer *time.Timer
+		var timerChan <-chan time.Time
 		next, ok = s.queue.Peek()
 
 		if ok {
@@ -63,33 +64,37 @@ func (s *ChangesetSyncer) Run() {
 			if next.priority == priorityHigh {
 				// Fire ASAP
 				timer = time.NewTimer(0)
+				timerChan = timer.C
 			} else {
 				// Use scheduled time
 				timer = time.NewTimer(time.Until(next.nextSync))
+				timerChan = timer.C
 			}
 		}
 
 		select {
 		case <-scheduleTicker.C:
-			timer.Stop()
+			if timer != nil {
+				timer.Stop()
+			}
 			schedule, err := s.computeSchedule(ctx)
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
 			s.queue.Upsert(schedule...)
-		case <-timer.C:
+		case <-timerChan:
 			err := s.SyncChangesetByID(ctx, next.changesetID)
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
 				// We'll continue and remove it as it'll get retried on next schedule
 			}
-			// Remove item, we need to get it again as it could have moved
-			// due to a high priority item arriving
+			// Remove item now that it has been processed
 			s.queue.Remove(next.changesetID)
 		case ids := <-s.priorityNotify:
-			timer.Stop()
-
+			if timer != nil {
+				timer.Stop()
+			}
 			for _, id := range ids {
 				item, ok := s.queue.Get(id)
 				if !ok {
