@@ -3,7 +3,6 @@ package campaigns
 import (
 	"container/heap"
 	"context"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -24,10 +23,8 @@ type ChangesetSyncer struct {
 	// Note that it involves a DB query but no communication with codehosts
 	ComputeScheduleInterval time.Duration
 
-	priorityNotify chan struct{}
-
-	mu    sync.Mutex
-	queue *changesetPriorityQueue
+	queue          *changesetPriorityQueue
+	priorityNotify chan []int64
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -39,7 +36,7 @@ func (s *ChangesetSyncer) Run() {
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
 	}
-	s.priorityNotify = make(chan struct{}, 1)
+	s.priorityNotify = make(chan []int64, 500)
 	s.queue = newChangesetPriorityQueue()
 	// How often to refresh the schedule
 	scheduleTicker := time.NewTicker(scheduleInterval)
@@ -49,20 +46,17 @@ func (s *ChangesetSyncer) Run() {
 		// Non fatal as we'll try again later in the main loop
 		log15.Error("Computing schedule", "err", err)
 	} else {
-		s.mu.Lock()
 		s.queue.Upsert(sched...)
-		s.mu.Unlock()
 	}
 
 	var next scheduledSync
 	var ok bool
 
+	// NOTE: All mutations of the queue should be done is this loop as operations on the queue
+	// are not safe for concurrent use
 	for {
 		timer := new(time.Timer)
-
-		s.mu.Lock()
 		next, ok = s.queue.Peek()
-		s.mu.Unlock()
 
 		if ok {
 			// Queue isn't empty
@@ -83,9 +77,7 @@ func (s *ChangesetSyncer) Run() {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
-			s.mu.Lock()
 			s.queue.Upsert(schedule...)
-			s.mu.Unlock()
 		case <-timer.C:
 			err := s.SyncChangesetByID(ctx, next.changesetID)
 			if err != nil {
@@ -94,11 +86,24 @@ func (s *ChangesetSyncer) Run() {
 			}
 			// Remove item, we need to get it again as it could have moved
 			// due to a high priority item arriving
-			s.mu.Lock()
 			s.queue.Remove(next.changesetID)
-			s.mu.Unlock()
-		case <-s.priorityNotify:
+		case ids := <-s.priorityNotify:
 			timer.Stop()
+
+			for _, id := range ids {
+				item, ok := s.queue.Get(id)
+				if !ok {
+					// Item has been recently synced and removed or we have an invalid id
+					// We have no way of telling the difference without making a DB call so
+					// add a new item anyway which will just lead to a harmless error later
+					item = scheduledSync{
+						changesetID: id,
+						nextSync:    time.Time{},
+					}
+				}
+				item.priority = priorityHigh
+				s.queue.Upsert(item)
+			}
 		}
 	}
 }
@@ -169,34 +174,10 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
 // An error indicates that no changesets have been synced
 func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if s.queue == nil {
 		return errors.New("background syncing not initialised")
 	}
-
-	for _, id := range ids {
-		item, ok := s.queue.Get(id)
-		if !ok {
-			// Item has been recently synced and removed or we have an invalid id
-			// We have no way of telling the difference without making a DB call so
-			// add a new item anyway which will just lead to a harmless error later
-			item = scheduledSync{
-				changesetID: id,
-				nextSync:    time.Time{},
-			}
-		}
-		item.priority = priorityHigh
-		s.queue.Upsert(item)
-	}
-
-	// Non blocking send here in order not to hold the mutex and
-	// also because this is likely to have been triggered by a user action
-	select {
-	case s.priorityNotify <- struct{}{}:
-	default:
-	}
+	s.priorityNotify <- ids
 
 	return nil
 }
