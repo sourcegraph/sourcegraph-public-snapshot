@@ -31,11 +31,15 @@ import { migrate } from './startup-migrations/migration'
  * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
+    logger.debug('MJF :: entering main')
+
     // Collect process metrics
     promClient.collectDefaultMetrics({ prefix: 'lsif_' })
 
     // Read configuration from frontend
+    logger.debug('MJF :: fetching configuration')
     const fetchConfiguration = await waitForConfiguration(logger)
+    logger.debug('MJF :: configuration fetched')
 
     // Configure distributed tracing
     const tracer = createTracer('lsif-server', fetchConfiguration())
@@ -46,17 +50,21 @@ async function main(logger: Logger): Promise<void> {
     metrics.resultChunkCacheCapacityGauge.set(settings.RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
+    logger.debug('MJF :: setting up storage roots')
     await ensureDirectory(settings.STORAGE_ROOT)
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
+    logger.debug('MJF :: finished setting up storage roots')
 
     // Create database connection and entity wrapper classes
+    logger.debug('MJF :: connecting to various services')
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const dumpManager = new DumpManager(connection)
     const uploadManager = new UploadManager(connection)
     const dependencyManager = new DependencyManager(connection)
     const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
+    logger.debug('MJF :: services connected')
 
     // Run any app-level migrations. These migrations usually exist only
     // for a two-minor-version period in which we clean up old data and
@@ -66,9 +74,12 @@ async function main(logger: Logger): Promise<void> {
     // note that if the cleanup is handling an assumption from the last
     // minor version, there may be instances of that version running
     // after this migration step completes.
+    logger.debug('MJF :: performing migrations')
     await migrate(connection, { logger })
+    logger.debug('MJF :: migrations complete')
 
     // Start background tasks
+    logger.debug('MJF :: starting background tasks')
     startTasks(connection, dumpManager, uploadManager, logger)
 
     const app = express()
@@ -96,6 +107,7 @@ async function main(logger: Logger): Promise<void> {
     // Error handler must be registered last
     app.use(errorHandler(logger))
 
+    logger.debug('MJF :: starting listener at', {port: settings.HTTP_PORT})
     app.listen(settings.HTTP_PORT, () => logger.debug('LSIF API server listening on', { port: settings.HTTP_PORT }))
 }
 
