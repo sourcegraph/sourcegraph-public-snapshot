@@ -28,11 +28,11 @@ func NewPermsScheduler(interval time.Duration, db dbutil.DB) *PermsScheduler {
 	}
 }
 
-// scanUsersWithNoPerms returns a list of user IDs who have no permissions found in
+// loadUsersWithNoPerms returns a list of user IDs who have no permissions found in
 // database.
-func (s *PermsScheduler) scanUsersWithNoPerms(ctx context.Context) ([]int32, error) {
+func (s *PermsScheduler) loadUsersWithNoPerms(ctx context.Context) ([]int32, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scanUsersWithNoPerms
+-- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.loadUsersWithNoPerms
 SELECT users.id FROM users
 WHERE users.id NOT IN
 	(SELECT perms.user_id FROM user_permissions AS perms)
@@ -40,11 +40,11 @@ WHERE users.id NOT IN
 	return s.store.scanIDs(ctx, q)
 }
 
-// scanReposWithNoPerms returns a list of private repositories IDs that have no
+// loadReposWithNoPerms returns a list of private repositories IDs that have no
 // permissions found in database.
-func (s *PermsScheduler) scanReposWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
+func (s *PermsScheduler) loadReposWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scanReposWithNoPerms
+-- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.loadReposWithNoPerms
 SELECT repo.id FROM repo
 WHERE repo.private = TRUE AND repo.id NOT IN
 	(SELECT perms.repo_id FROM repo_permissions AS perms)
@@ -57,11 +57,11 @@ WHERE repo.private = TRUE AND repo.id NOT IN
 	return toRepoIDs(ids), nil
 }
 
-// scanUsersWithOldestPerms returns a list of user IDs who have oldest permissions
+// loadUsersWithOldestPerms returns a list of user IDs who have oldest permissions
 // in database and capped results by the limit.
-func (s *PermsScheduler) scanUsersWithOldestPerms(ctx context.Context, limit int) ([]int32, error) {
+func (s *PermsScheduler) loadUsersWithOldestPerms(ctx context.Context, limit int) ([]int32, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scanUsersWithOldestPerms
+-- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.loadUsersWithOldestPerms
 SELECT user_id FROM user_permissions
 ORDER BY updated_at ASC
 LIMIT %s
@@ -69,11 +69,11 @@ LIMIT %s
 	return s.store.scanIDs(ctx, q)
 }
 
-// scanReposWithOldestPerms returns a list of repository IDs that have oldest permissions
+// loadReposWithOldestPerms returns a list of repository IDs that have oldest permissions
 // in database and capped results by the limit.
-func (s *PermsScheduler) scanReposWithOldestPerms(ctx context.Context, limit int) ([]api.RepoID, error) {
+func (s *PermsScheduler) loadReposWithOldestPerms(ctx context.Context, limit int) ([]api.RepoID, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scanReposWithOldestPerms
+-- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.loadReposWithOldestPerms
 SELECT repo_id FROM repo_permissions
 ORDER BY updated_at ASC
 LIMIT %s
@@ -101,7 +101,7 @@ func toRepoIDs(ids []int32) []api.RepoID {
 //   3. Rolling updating user permissions over time from oldest ones.
 //   4. Rolling updating repository permissions over time from oldest ones.
 func (s *PermsScheduler) schedule(ctx context.Context, syncer *PermsSyncer) error {
-	userIDs, err := s.scanUsersWithNoPerms(ctx)
+	userIDs, err := s.loadUsersWithNoPerms(ctx)
 	if err != nil {
 		return errors.Wrap(err, "scan users with no permissions")
 	}
@@ -110,7 +110,7 @@ func (s *PermsScheduler) schedule(ctx context.Context, syncer *PermsSyncer) erro
 		return errors.Wrap(err, "schedule requests for users with no permissions")
 	}
 
-	repoIDs, err := s.scanReposWithNoPerms(ctx)
+	repoIDs, err := s.loadReposWithNoPerms(ctx)
 	if err != nil {
 		return errors.Wrap(err, "scan repositories with no permissions")
 	}
@@ -128,7 +128,7 @@ func (s *PermsScheduler) schedule(ctx context.Context, syncer *PermsSyncer) erro
 	// Hard coded both to 100 for now.
 	const threshold = 100
 
-	userIDs, err = s.scanUsersWithOldestPerms(ctx, threshold)
+	userIDs, err = s.loadUsersWithOldestPerms(ctx, threshold)
 	if err != nil {
 		return errors.Wrap(err, "scan users with oldest permissions")
 	}
@@ -137,7 +137,7 @@ func (s *PermsScheduler) schedule(ctx context.Context, syncer *PermsSyncer) erro
 		return errors.Wrap(err, "schedule requests for users with oldest permissions")
 	}
 
-	repoIDs, err = s.scanReposWithOldestPerms(ctx, threshold)
+	repoIDs, err = s.loadReposWithOldestPerms(ctx, threshold)
 	if err != nil {
 		return errors.Wrap(err, "scan repositories with oldest permissions")
 	}
