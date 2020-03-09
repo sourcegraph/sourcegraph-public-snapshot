@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"container/heap"
+	"context"
 	"testing"
 	"time"
 
@@ -155,4 +156,121 @@ func TestChangesetPriorityQueue(t *testing.T) {
 	if q.Len() != 0 {
 		t.Fatalf("Expected %d, got %d", q.Len(), 0)
 	}
+}
+
+func TestSyncerRun(t *testing.T) {
+	t.Run("Sync due", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		now := time.Now()
+		store := MockSyncStore{
+			listChangesetSyncData: func(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+				return []campaigns.ChangesetSyncData{
+					{
+						ChangesetID:       1,
+						UpdatedAt:         now.Add(-24 * time.Hour),
+						LatestEvent:       now.Add(-24 * time.Hour),
+						ExternalUpdatedAt: now.Add(-24 * time.Hour),
+					},
+				}, nil
+			},
+		}
+		syncFunc := func(ctx context.Context, ids int64) error {
+			cancel()
+			return nil
+		}
+		syncer := &ChangesetSyncer{
+			Store:                   store,
+			ComputeScheduleInterval: 10 * time.Minute,
+			syncFunc:                syncFunc,
+		}
+		go syncer.Run(ctx)
+		select {
+		case <-ctx.Done():
+		case <-time.After(50 * time.Millisecond):
+			t.Fatal("Sync should have been triggered")
+		}
+	})
+
+	t.Run("Sync not due", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+		now := time.Now()
+		store := MockSyncStore{
+			listChangesetSyncData: func(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+				return []campaigns.ChangesetSyncData{
+					{
+						ChangesetID:       1,
+						UpdatedAt:         now,
+						LatestEvent:       now,
+						ExternalUpdatedAt: now,
+					},
+				}, nil
+			},
+		}
+		var syncCalled bool
+		syncFunc := func(ctx context.Context, ids int64) error {
+			syncCalled = true
+			return nil
+		}
+		syncer := &ChangesetSyncer{
+			Store:                   store,
+			ComputeScheduleInterval: 10 * time.Minute,
+			syncFunc:                syncFunc,
+		}
+		syncer.Run(ctx)
+		if syncCalled {
+			t.Fatal("Sync should not have been triggered")
+		}
+	})
+
+	t.Run("Priority added", func(t *testing.T) {
+		// Empty schedule but then we add an item
+		ctx, cancel := context.WithCancel(context.Background())
+		store := MockSyncStore{
+			listChangesetSyncData: func(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+				return []campaigns.ChangesetSyncData{}, nil
+			},
+		}
+		syncFunc := func(ctx context.Context, ids int64) error {
+			cancel()
+			return nil
+		}
+		syncer := &ChangesetSyncer{
+			Store:                   store,
+			ComputeScheduleInterval: 10 * time.Minute,
+			syncFunc:                syncFunc,
+			priorityNotify:          make(chan []int64, 1),
+		}
+		syncer.priorityNotify <- []int64{1}
+		go syncer.Run(ctx)
+		select {
+		case <-ctx.Done():
+		case <-time.After(50 * time.Millisecond):
+			t.Fatal("Sync not called")
+		}
+	})
+
+}
+
+type MockSyncStore struct {
+	listChangesetSyncData func(context.Context) ([]campaigns.ChangesetSyncData, error)
+	getChangeset          func(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
+	listChangesets        func(context.Context, ListChangesetsOpts) ([]*campaigns.Changeset, int64, error)
+	transact              func(context.Context) (*Store, error)
+}
+
+func (m MockSyncStore) ListChangesetSyncData(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+	return m.listChangesetSyncData(ctx)
+}
+
+func (m MockSyncStore) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*campaigns.Changeset, error) {
+	return m.getChangeset(ctx, opts)
+}
+
+func (m MockSyncStore) ListChangesets(ctx context.Context, opts ListChangesetsOpts) ([]*campaigns.Changeset, int64, error) {
+	return m.listChangesets(ctx, opts)
+}
+
+func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
+	return m.transact(ctx)
 }

@@ -16,7 +16,7 @@ import (
 // A ChangesetSyncer periodically sync the metadata of the changesets
 // saved in the database
 type ChangesetSyncer struct {
-	Store       *Store
+	Store       SyncStore
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
 	// ComputeScheduleInterval determines how often a new schedule will be computed.
@@ -25,6 +25,16 @@ type ChangesetSyncer struct {
 
 	queue          *changesetPriorityQueue
 	priorityNotify chan []int64
+
+	// Replaceable fo testing
+	syncFunc func(ctx context.Context, id int64) error
+}
+
+type SyncStore interface {
+	ListChangesetSyncData(context.Context) ([]campaigns.ChangesetSyncData, error)
+	GetChangeset(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
+	ListChangesets(context.Context, ListChangesetsOpts) ([]*campaigns.Changeset, int64, error)
+	Transact(context.Context) (*Store, error)
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -35,7 +45,12 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
 	}
-	s.priorityNotify = make(chan []int64, 500)
+	if s.syncFunc == nil {
+		s.syncFunc = s.SyncChangesetByID
+	}
+	if s.priorityNotify == nil {
+		s.priorityNotify = make(chan []int64, 500)
+	}
 	s.queue = newChangesetPriorityQueue()
 	// How often to refresh the schedule
 	scheduleTicker := time.NewTicker(scheduleInterval)
@@ -84,7 +99,7 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 			}
 			s.queue.Upsert(schedule...)
 		case <-timerChan:
-			err := s.SyncChangesetByID(ctx, next.changesetID)
+			err := s.syncFunc(ctx, next.changesetID)
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
 				// We'll continue and remove it as it'll get retried on next schedule
