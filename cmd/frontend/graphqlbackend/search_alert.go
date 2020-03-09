@@ -126,6 +126,8 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 	fork, _ := r.query.StringValue(query.FieldFork)
 	onlyForks, noForks := fork == "only", fork == "no"
+	archived, _ := r.query.StringValue(query.FieldArchived)
+	archivedNotSet := len(archived) == 0
 
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
@@ -249,13 +251,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			noForks:          noForks,
 		}
 		if reposExist(ctx, tryAnyRepo) {
-			proposedQueries = []*searchQueryDescription{
-				{
-					description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
-					query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
-					patternType: r.patternType,
-				},
-			}
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
+				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
+				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
+				patternType: r.patternType,
+			})
 		}
 
 		proposedQueries = append(proposedQueries, &searchQueryDescription{
@@ -288,18 +288,33 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 
 		proposedQueries := []*searchQueryDescription{}
-		if strings.TrimSpace(withoutRepoFields) != "" {
-			proposedQueries = []*searchQueryDescription{
-				{
-					description: "remove repo: filter",
-					query:       withoutRepoFields,
-					patternType: r.patternType,
-				},
+		if archivedNotSet {
+			tryIncludeArchived := resolveRepoOp{
+				repoFilters:      repoFilters,
+				minusRepoFilters: minusRepoFilters,
+				onlyForks:        onlyForks,
+				noForks:          noForks,
+				onlyArchived:     true,
 			}
+			if reposExist(ctx, tryIncludeArchived) {
+				proposedQueries = append(proposedQueries, &searchQueryDescription{
+					description: "include archived repositories in your query.",
+					query:       r.originalQuery + " archived:yes",
+					patternType: r.patternType,
+				})
+			}
+		}
+
+		if strings.TrimSpace(withoutRepoFields) != "" {
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
+				description: "remove repo: filter",
+				query:       withoutRepoFields,
+				patternType: r.patternType,
+			})
 		}
 		return &searchAlert{
 			title:           "No repositories satisfied your repo: filter",
-			description:     "Change your repo: filter to see results",
+			description:     "Modify your repo: filter to see results",
 			proposedQueries: proposedQueries,
 		}
 	}

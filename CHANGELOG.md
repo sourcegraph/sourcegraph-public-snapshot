@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
   New installations starting with the mentioned commit or with 3.14 do not need this migration step.
 - The [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) frontend role has added services as a resource to watch/listen/get.
   This change does not affect the newly-introduced, restricted Kubernetes config files.
+- Archived repositories are excluded from search by default. Adding `archived:yes` includes archived repositories.
 
 ### Fixed
 
