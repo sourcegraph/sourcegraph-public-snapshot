@@ -91,7 +91,7 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
 async function loadConfiguration(logger: Logger): Promise<Configuration> {
     const url = new URL(`http://${settings.SRC_FRONTEND_INTERNAL}/.internal/configuration`).href
     logger.debug('MJF :: loadConfiguration entry', {url: url})
-    const resp = await got(url, { followRedirect: true })
+    const resp = await got.post(url, { followRedirect: true })
     const payload = JSON.parse(resp.body)
     logger.debug('MJF :: loadConfiguration post-POST', {json: payload})
 
