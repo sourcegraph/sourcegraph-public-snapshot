@@ -532,7 +532,6 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         }
                     ),
                     switchMap(({ query, filter, shouldRefresh, queryCount }) => {
-                        console.log('triggered', shouldRefresh, this.props.noShowLoaderOnSlowLoad)
                         const result = this.props
                             .queryConnection({
                                 // If this is our first query and we were supplied a value for `visible`,
