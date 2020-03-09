@@ -4,7 +4,7 @@
 
 set -e
 
-if [ -n "$NO_KEYCLOAK" ]; then
+if [ -z "$USE_KEYCLOAK" ]; then
     echo Not using Keycloak. Keycloak authentication providers will not work.
     exit 0
 fi
