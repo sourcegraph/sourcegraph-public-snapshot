@@ -86,7 +86,7 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 		if idp.Oauth.MaxBatchRequests > 0 {
 			maxBatchRequests = idp.Oauth.MaxBatchRequests
 		}
-		return NewOAuthProvider(OAuthAuthzProviderOp{
+		return NewOAuthProvider(OAuthProviderOp{
 			BaseURL:           glURL,
 			Token:             token,
 			CacheTTL:          ttl,
@@ -127,8 +127,8 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 	}
 }
 
-// NewOAuthProvider is a mockable constructor for new OAuthAuthzProvider instances.
-var NewOAuthProvider = func(op OAuthAuthzProviderOp) authz.Provider {
+// NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
+var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
 	return newOAuthProvider(op)
 }
 
