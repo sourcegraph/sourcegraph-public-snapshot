@@ -14,7 +14,7 @@ import (
 // PermsScheduler is a permissions syncing scheduler that is in charge of
 // keeping permissions up-to-date for users and repositories at best effort.
 type PermsScheduler struct {
-	// The time duration of how often a schedule happens.
+	// The time duration of how often to compute schedule for users and repositories.
 	interval time.Duration
 	// The database interface.
 	db dbutil.DB
