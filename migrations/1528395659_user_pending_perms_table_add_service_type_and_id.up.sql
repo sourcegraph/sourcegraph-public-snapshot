@@ -22,6 +22,6 @@ ALTER TABLE user_pending_permissions
     DROP CONSTRAINT IF EXISTS user_pending_permissions_perm_object_unique,
     DROP CONSTRAINT IF EXISTS user_pending_permissions_service_perm_object_unique,
     ADD CONSTRAINT user_pending_permissions_service_perm_object_unique
-        UNIQUE (service_type, service_id, bind_id, permission, object_type);
+        UNIQUE (service_type, service_id, permission, object_type, bind_id);
 
 COMMIT;

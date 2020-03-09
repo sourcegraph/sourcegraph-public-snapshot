@@ -430,9 +430,9 @@ SELECT id, object_ids, updated_at
 FROM user_pending_permissions
 WHERE service_type = %s
 AND service_id = %s
-and bind_id = %s
 AND permission = %s
 AND object_type = %s
+AND bind_id = %s
 `
 	return sqlf.Sprintf(
 		format+lock,
@@ -1020,9 +1020,9 @@ func deleteUserPendingPermissionsQuery(p *authz.UserPendingPermissions) *sqlf.Qu
 	const format = `
 -- source: enterprise/cmd/frontend/db/perms_store.go:deleteUserPendingPermissionsQuery
 DELETE FROM user_pending_permissions
-WHERE bind_id = %s
-AND permission = %s
+WHERE permission = %s
 AND object_type = %s
+AND bind_id = %s
 `
 
 	return sqlf.Sprintf(

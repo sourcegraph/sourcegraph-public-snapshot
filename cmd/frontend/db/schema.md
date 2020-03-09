@@ -903,7 +903,7 @@ Foreign-key constraints:
  service_type | text                     | not null
  service_id   | text                     | not null
 Indexes:
-    "user_pending_permissions_service_perm_object_unique" UNIQUE CONSTRAINT, btree (service_type, service_id, bind_id, permission, object_type)
+    "user_pending_permissions_service_perm_object_unique" UNIQUE CONSTRAINT, btree (service_type, service_id, permission, object_type, bind_id)
 
 ```
 
