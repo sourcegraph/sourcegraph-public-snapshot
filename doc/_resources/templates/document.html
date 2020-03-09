@@ -357,7 +357,7 @@
     {{if gt (len .Doc.Tree) 0}}
         {{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
             <h3 class="page-nav-title">On this page:</h3>
-            <ul>{{template "doc_nav" .}}</ul>
+            <ul>{{template "doc_nav_nested" .}}</ul>
         {{end}}
     {{end}}
     <a class="nav-edit-button btn btn-outline-secondary btn-sm" target="blank" href="https://github.com/sourcegraph/sourcegraph/edit/master/doc/{{.FilePath}}">Edit this page on GitHub</a>
