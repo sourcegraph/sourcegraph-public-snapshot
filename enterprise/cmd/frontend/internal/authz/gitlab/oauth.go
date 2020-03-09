@@ -18,7 +18,7 @@ import (
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *OAuthAuthzProvider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
+func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -43,7 +43,7 @@ func (p *OAuthAuthzProvider) FetchUserPerms(ctx context.Context, account *extsvc
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
-func (p *OAuthAuthzProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
+func (p *OAuthProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, repo) {

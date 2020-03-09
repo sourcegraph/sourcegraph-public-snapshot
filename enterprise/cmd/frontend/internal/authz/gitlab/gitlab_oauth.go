@@ -20,9 +20,9 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-var _ authz.Provider = (*OAuthAuthzProvider)(nil)
+var _ authz.Provider = (*OAuthProvider)(nil)
 
-type OAuthAuthzProvider struct {
+type OAuthProvider struct {
 	// The token is the access token used for syncing repositories from the code host,
 	// but it may or may not be a sudo-scoped.
 	token string
@@ -36,7 +36,7 @@ type OAuthAuthzProvider struct {
 	maxBatchRequests  int
 }
 
-type OAuthAuthzProviderOp struct {
+type OAuthProviderOp struct {
 	// BaseURL is the URL of the GitLab instance.
 	BaseURL *url.URL
 
@@ -64,8 +64,8 @@ type OAuthAuthzProviderOp struct {
 	MaxBatchRequests int
 }
 
-func newOAuthProvider(op OAuthAuthzProviderOp) *OAuthAuthzProvider {
-	p := &OAuthAuthzProvider{
+func newOAuthProvider(op OAuthProviderOp) *OAuthProvider {
+	p := &OAuthProvider{
 		token: op.Token,
 
 		clientProvider:    gitlab.NewClientProvider(op.BaseURL, nil),
@@ -82,23 +82,23 @@ func newOAuthProvider(op OAuthAuthzProviderOp) *OAuthAuthzProvider {
 	return p
 }
 
-func (p *OAuthAuthzProvider) Validate() (problems []string) {
+func (p *OAuthProvider) Validate() (problems []string) {
 	return nil
 }
 
-func (p *OAuthAuthzProvider) ServiceID() string {
+func (p *OAuthProvider) ServiceID() string {
 	return p.codeHost.ServiceID
 }
 
-func (p *OAuthAuthzProvider) ServiceType() string {
+func (p *OAuthProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *OAuthAuthzProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
+func (p *OAuthProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
 	return nil, nil
 }
 
-func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) (
+func (p *OAuthProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) (
 	[]authz.RepoPerms, error,
 ) {
 	accountID := "" // empty means public / unauthenticated to the code host
@@ -232,7 +232,7 @@ func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.Exte
 // - whether the repository contents are accessible to usr, and
 // - any error encountered in fetching (not including an error due to the repository not being visible);
 //   if the error is non-nil, all other return values should be disregraded
-func (p *OAuthAuthzProvider) fetchProjVis(ctx context.Context, oauthToken string, projID int) (
+func (p *OAuthProvider) fetchProjVis(ctx context.Context, oauthToken string, projID int) (
 	isAccessible bool, vis gitlab.Visibility, isContentAccessible bool, err error,
 ) {
 	proj, err := p.clientProvider.GetOAuthClient(oauthToken).GetProject(ctx, gitlab.GetProjectOp{
@@ -290,7 +290,7 @@ const batchProjVisSize = 100
 
 // fetchProjVisBatch returns the list of repositories best-effort sorted into groups. The visiblity
 // results are valid even if err is non-nil.
-func (p *OAuthAuthzProvider) fetchProjVisBatch(ctx context.Context, oauthToken string, reposByProjID map[int]*types.Repo, op fetchProjectVisibilityBatchOp) (
+func (p *OAuthProvider) fetchProjVisBatch(ctx context.Context, oauthToken string, reposByProjID map[int]*types.Repo, op fetchProjectVisibilityBatchOp) (
 	projIDVisibility map[int]visibilityLevel, err error,
 ) {
 	projIDVisibility = make(map[int]visibilityLevel, len(reposByProjID))

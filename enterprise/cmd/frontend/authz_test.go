@@ -19,7 +19,7 @@ import (
 )
 
 type gitlabAuthzProviderParams struct {
-	OAuthOp gitlab.OAuthAuthzProviderOp
+	OAuthOp gitlab.OAuthProviderOp
 	SudoOp  gitlab.SudoProviderOp
 }
 
@@ -45,7 +45,7 @@ func (m gitlabAuthzProviderParams) ServiceType() string {
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
 func Test_authzProvidersFromConfig(t *testing.T) {
-	gitlab.NewOAuthProvider = func(op gitlab.OAuthAuthzProviderOp) authz.Provider {
+	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{OAuthOp: op}
 	}
@@ -101,7 +101,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthAuthzProviderOp{
+					OAuthOp: gitlab.OAuthProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
 						Token:             "asdf",
 						CacheTTL:          48 * time.Hour,
@@ -205,7 +205,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthAuthzProviderOp{
+					OAuthOp: gitlab.OAuthProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
 						Token:             "asdf",
 						CacheTTL:          3 * time.Hour,
@@ -214,7 +214,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 					},
 				},
 				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthAuthzProviderOp{
+					OAuthOp: gitlab.OAuthProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.com"),
 						Token:             "asdf",
 						CacheTTL:          3 * time.Hour,
