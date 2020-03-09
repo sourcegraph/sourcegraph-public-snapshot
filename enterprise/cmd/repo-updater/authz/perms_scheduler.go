@@ -75,7 +75,7 @@ WHERE users.id NOT IN
 	users := make([]ScheduledUser, len(results))
 	for i := range results {
 		users[i] = ScheduledUser{
-			Priority: PriorityHigh,
+			Priority: PriorityLow,
 			UserID:   results[i].id,
 		}
 	}
@@ -100,7 +100,7 @@ WHERE repo.private = TRUE AND repo.id NOT IN
 	repos := make([]ScheduledRepo, len(results))
 	for i := range results {
 		repos[i] = ScheduledRepo{
-			Priority: PriorityHigh,
+			Priority: PriorityLow,
 			RepoID:   api.RepoID(results[i].id),
 		}
 	}
