@@ -50,7 +50,7 @@ To configure a webhook on the Sourcegraph side, set the [`"plugin.webhooks"` pro
 
 ### Experimental: faster ACL permissions fetching
 
-The plugin also supports an optional, experimental method of faster ACL permissions fetching that aims to improve search speed.
+The plugin also supports an optional, experimental method of faster ACL permissions fetching that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
 
 You can enable this feature by setting the [`"plugin.permissions"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#repository-permissions) to `"enabled"`.
 
