@@ -29,9 +29,15 @@
                 <span class="content-nav-mobile-button"></span>
                 <span class="breadcrumb-links">
                     {{with .Content}}
-                        {{if eq (len .Breadcrumbs ) 0}}<a href="#">Home</a>{{end}}
+                        {{if eq (len .Breadcrumbs ) 0}}<a href="#">docs</a>{{end}}
                             {{range .Breadcrumbs}}
-                                <a href="{{.URL}}" {{if .IsActive}} class="active" {{end}}>{{.Label}}</a>
+                                <a href="{{.URL}}" {{if .IsActive}} class="active" {{end}}>
+                                  {{if eq .Label "Documentation"}}
+                                  docs
+                                  {{else}}
+                                  {{.Label}}
+                                  {{end}}
+                                </a>
                                 {{if not .IsActive}}/{{end}}
                                 {{end}}
                                 &nbsp;
@@ -52,9 +58,6 @@
                     <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
                     <button class="btn btn-primary nav-search-button ml-2" type="submit">Search</button>
                 </form>
-                <ul class="content-nav-section expandable">
-                    <li><a class="content-nav-section-header" href="/">Home</a></li>
-                </ul>
                 <ul class="content-nav-section expandable" data-nav-section="user">
                     <button class="content-nav-button"></button>
                     <div class="close--icon">
@@ -329,21 +332,6 @@
         {{end}}
         <section class="column large-7 large-push-3 medium-6 medium-push-4 small-12 docs-content-section">
             {{/* Create breadcrumb nav*/}} {{with .Content}}
-
-            <nav id="breadcrumbs" class="breadcrumbs small-hidden">
-                <input type="button" class="content-nav-mobile-state large-hidden medium-hidden" />
-                <span class="content-nav-mobile-button"></span> {{if gt (len .Breadcrumbs ) 0}}
-                <span class="breadcrumb-links">
-                    {{if eq (len .Breadcrumbs ) 0}}
-                        <a href="/" class=" large-hidden medium-hidden active">Documentation</a> &nbsp;
-                    {{end}}
-                    {{range .Breadcrumbs}}
-                        <a href="{{.URL}}" class="{{if .IsActive}}active{{end}}">{{.Label}}</a>
-                        {{if not .IsActive}}/{{end}}
-                    {{end}} &nbsp;
-                    </span>
-                    {{end}}
-            </nav>
             <div class="markdown-body">{{markdown .}}</div>
             {{else}}
             <nav id="breadcrumbs" class="breadcrumbs small-hidden">
