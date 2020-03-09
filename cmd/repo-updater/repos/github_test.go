@@ -701,6 +701,43 @@ func TestGithubSource_ListRepos(t *testing.T) {
 	}
 }
 
+func TestGithubSource_filtered(t *testing.T) {
+	testCases := []struct {
+		name             string
+		ghConfig         *schema.GitHubConnection
+		repo             *github.Repository
+		shouldBeFiltered bool
+	}{
+		{
+			name:             "filter forks - is fork",
+			ghConfig:         &schema.GitHubConnection{ExcludeForks: true},
+			repo:             &github.Repository{IsFork: true},
+			shouldBeFiltered: true,
+		},
+		{
+			name:             "filter forks - not fork",
+			ghConfig:         &schema.GitHubConnection{ExcludeForks: true},
+			repo:             &github.Repository{IsFork: false},
+			shouldBeFiltered: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			svc := &ExternalService{
+				Kind:   "GITHUB",
+				Config: marshalJSON(t, tc.ghConfig),
+			}
+			cf, _ := newClientFactory(t, "filtered repo test")
+			githubSrc, _ := NewGithubSource(svc, cf)
+
+			if githubSrc.filtered(tc.repo) != tc.shouldBeFiltered {
+				t.Fail()
+			}
+		})
+	}
+}
+
 func githubGraphQLFailureMiddleware(cli httpcli.Doer) httpcli.Doer {
 	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
 		if strings.Contains(req.URL.Path, "graphql") {
