@@ -132,6 +132,11 @@
           "default": "3h"
         }
       }
+    },
+    "excludeForks": {
+      "description": "Flag that can be used to filter out forks from being synced and indexed.",
+      "type": "boolean",
+      "default": "false"
     }
   }
 }
