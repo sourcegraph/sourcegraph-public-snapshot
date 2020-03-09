@@ -152,9 +152,9 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         }
 
         // Stay on same page in MR if possible.
-        // TODO this needs to compare rev!
+        // TODO to be entirely correct, this would need to compare the rev of the code view with the target rev.
         const currentPage = getPageInfo()
-        if (currentPage.rawRepoName === target.rawRepoName && context.part) {
+        if (currentPage.rawRepoName === target.rawRepoName && context.part !== undefined) {
             const codeViews = document.querySelectorAll<HTMLElement>(codeViewResolver.selector)
             for (const codeView of codeViews) {
                 const { filePath, baseFilePath } = getFilePathsFromCodeView(codeView)
@@ -166,7 +166,7 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
                     url.hash = codeView.id
                     return url.href
                 }
-                const partSelector = context.part ? { head: '.new_line', base: '.old_line' }[context.part] : ''
+                const partSelector = context.part !== null ? { head: '.new_line', base: '.old_line' }[context.part] : ''
                 const link = codeView.querySelector<HTMLAnchorElement>(
                     `${partSelector} a[data-linenumber="${target.position.line}"]`
                 )

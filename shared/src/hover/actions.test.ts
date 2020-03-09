@@ -20,7 +20,7 @@ import { IMutation, IQuery } from '../graphql/schema'
 import { PlatformContext, URLToFileContext } from '../platform/context'
 import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
 import { resetAllMemoizationCaches } from '../util/memoizeObservable'
-import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, toPrettyBlobURL, ViewStateSpec } from '../util/url'
+import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevSpec, toPrettyBlobURL, ViewStateSpec } from '../util/url'
 import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
 import { HoverContext } from './HoverOverlay'
 
@@ -254,7 +254,7 @@ describe('getDefinitionURL', () => {
                         Partial<RawRepoSpec> &
                         RevSpec &
                         FileSpec &
-                        Partial<PositionSpec> &
+                        Partial<UIPositionSpec> &
                         Partial<ViewStateSpec>
                 ) => ''
             )

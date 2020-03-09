@@ -129,8 +129,9 @@ export function createPlatformContext(
             return blobURL
         },
         urlToFile: ({ rawRepoName, ...target }, context) => {
+            // We don't always resolve the rawRepoName, e.g. if there are multiple definitions.
+            // Construct URL to file on code host, if possible.
             if (rawRepoName && urlToFile) {
-                // Construct URL to file on code host, if possible.
                 return urlToFile(sourcegraphURL, { rawRepoName, ...target }, context)
             }
             // Otherwise fall back to linking to Sourcegraph (with an absolute URL).

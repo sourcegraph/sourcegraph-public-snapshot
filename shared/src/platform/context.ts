@@ -5,7 +5,7 @@ import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
-import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
+import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
 import { DiffPart } from '@sourcegraph/codeintellify'
 
 export interface EndpointPair {
@@ -121,7 +121,7 @@ export interface PlatformContext {
      * @returns The URL to the file with the specified options.
      */
     urlToFile(
-        target: RepoSpec & Partial<RawRepoSpec> & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec>,
+        target: RepoSpec & Partial<RawRepoSpec> & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
         context: URLToFileContext
     ): string
 

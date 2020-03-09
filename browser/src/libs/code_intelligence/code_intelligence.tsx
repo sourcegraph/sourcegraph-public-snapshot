@@ -61,7 +61,7 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     FileSpec,
-    PositionSpec,
+    UIPositionSpec,
     RawRepoSpec,
     RepoSpec,
     ResolvedRevSpec,
@@ -222,7 +222,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      */
     urlToFile?: (
         sourcegraphURL: string,
-        target: RepoSpec & RawRepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec>,
+        target: RepoSpec & RawRepoSpec & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
         context: URLToFileContext
     ) => string
 
