@@ -32,9 +32,7 @@ export const finiteFilters: Record<
     index: {
         default: 'yes',
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
-            assign({
-                type: FilterType.index,
-            })
+            assign({ type: FilterType.index })
         ),
     },
     type: {
