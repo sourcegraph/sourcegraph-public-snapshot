@@ -63,53 +63,30 @@ func NewPermsSyncer(fetchers map[string]PermsFetcher, reposStore repos.Store, pe
 
 // ScheduleUsers schedules new permissions syncing requests for given users
 // in desired priority.
-func (s *PermsSyncer) ScheduleUsers(ctx context.Context, priority Priority, userIDs ...int32) error {
-	for i := range userIDs {
-		p := &authz.UserPermissions{
-			UserID: userIDs[i],
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-		}
-		err := s.permsStore.LoadUserPermissions(ctx, p)
-		if err != nil && err != authz.ErrPermsNotFound {
-			return errors.Wrap(err, "load user permissions")
-		}
-
-		// NOTE: It is OK to have p.UpdatedAt with zero value that gets higher priority in the queue.
+func (s *PermsSyncer) ScheduleUsers(ctx context.Context, users ...ScheduledUser) {
+	for i := range users {
 		updated := s.queue.enqueue(&requestMeta{
-			priority:    priority,
+			priority:    users[i].Priority,
 			typ:         requestTypeUser,
-			id:          userIDs[i],
-			lastUpdated: p.UpdatedAt,
+			id:          users[i].UserID,
+			lastUpdated: users[i].LastUpdatedAt,
 		})
-		log15.Debug("PermsSyncer.queue.enqueued", "userID", userIDs[i], "updated", updated)
+		log15.Debug("PermsSyncer.queue.enqueued", "userID", users[i].UserID, "updated", updated)
 	}
-	return nil
 }
 
 // ScheduleRepos schedules new permissions syncing requests for given repositories
 // in desired priority.
-func (s *PermsSyncer) ScheduleRepos(ctx context.Context, priority Priority, repoIDs ...api.RepoID) error {
-	for i := range repoIDs {
-		p := &authz.RepoPermissions{
-			RepoID: int32(repoIDs[i]),
-			Perm:   authz.Read,
-		}
-		err := s.permsStore.LoadRepoPermissions(ctx, p)
-		if err != nil && err != authz.ErrPermsNotFound {
-			return errors.Wrap(err, "load repo permissions")
-		}
-
-		// NOTE: It is OK to have p.UpdatedAt with zero value that gets higher priority in the queue.
+func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repos ...ScheduledRepo) {
+	for i := range repos {
 		updated := s.queue.enqueue(&requestMeta{
-			priority:    priority,
+			priority:    repos[i].Priority,
 			typ:         requestTypeRepo,
-			id:          int32(repoIDs[i]),
-			lastUpdated: p.UpdatedAt,
+			id:          int32(repos[i].RepoID),
+			lastUpdated: repos[i].LastUpdatedAt,
 		})
-		log15.Debug("PermsSyncer.queue.enqueued", "repoID", repoIDs[i], "updated", updated)
+		log15.Debug("PermsSyncer.queue.enqueued", "repoID", repos[i].RepoID, "updated", updated)
 	}
-	return nil
 }
 
 // syncUserPerms processes permissions syncing request in user-centric way.
