@@ -107,24 +107,23 @@
                     <li class="content-nav-no-hover">
                         <a class="content-nav-section-header" href="/admin">Administration</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/admin/privileges">Site admin privileges</a></li>
                             <li><a href="/admin/install">Installing Sourcegraph</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
                                     <li><a href="/admin/install/docker">Install Sourcegraph with Docker</a></li>
                                     <li class="content-nav-no-hover" data-sub-section-item="Install Sourcegraph with Docker" )>
-                                        <ul>
-                                            <li><a href="/admin/install/docker/aws">Install Sourcegraph with Docker on AWS</a></li>
-                                            <li><a href="/admin/install/docker/digitalocean">Install Sourcegraph with Docker on DigitalOcean</a></li>
-                                            <li><a href="/admin/install/docker/google_cloud">Install Sourcegraph with Docker on Google Cloud</a></li>
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/install/docker/aws">AWS</a></li>
+                                            <li><a href="/admin/install/docker/digitalocean">DigitalOcean</a></li>
+                                            <li><a href="/admin/install/docker/google_cloud">Google Cloud</a></li>
                                         </ul>
                                     </li>
                                     <li><a href="/admin/install/docker-compose">Install Sourcegraph with Docker Compose</a></li>
-                                    <li class="content-nav-no-hover" data-sub-section-item="Install Sourcegraph with Docker Compose" )>
-                                        <ul>
-                                            <li><a href="/admin/install/docker-compose/aws">Install Sourcegraph with Docker Compose on AWS</a></li>
-                                            <li><a href="/admin/install/docker-compose/digitalocean">Install Sourcegraph with Docker Compose on DigitalOcean</a></li>
-                                            <li><a href="/admin/install/docker-compose/google_cloud">Install Sourcegraph with Docker Compose on Google Cloud</a></li>
+                                    <li class="content-nav-no-hover" data-sub-section-item="Install Sourcegraph with Docker Compose">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/install/docker-compose/aws">AWS</a></li>
+                                            <li><a href="/admin/install/docker-compose/digitalocean">DigitalOcean</a></li>
+                                            <li><a href="/admin/install/docker-compose/google_cloud">Google Cloud</a></li>
                                         </ul>
                                     </li>
                                     <li><a href="/admin/install/cluster">Installing Sourcegraph on a cluster</a></li>
@@ -190,6 +189,7 @@
                             <li><a href="/admin/user_data_deletion">User data deletion</a></li>
                             <li><a href="/admin/external_database">Using external databases with Sourcegraph</a></li>
                             <li><a href="/admin/extensions">Sourcegraph extensions and the extension registry</a></li>
+                            <li><a href="/admin/privileges">Site admin privileges</a></li>
                             <li><a href="/admin/faq">Administration FAQ</a></li>
                             <li><a href="/admin/lfaq">Administration LFAQ</a></li>
                             <li><a href="/admin/troubleshooting">Administration troubleshooting</a></li>
@@ -232,8 +232,9 @@
                     <li class="content-nav-no-hover">
                         <a class="content-nav-section-header" href="/extensions">Extensions</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/extensions/principles">Principles of extensibility for Sourcegraph</a></li>
+                            <li><a href="/extensions/usage">Using Sourcegraph extensions</a></li>
                             <li><a href="/extensions/security">Security and privacy of Sourcegraph extensions</a></li>
+                            <li><a href="/extensions/principles">Principles of extensibility for Sourcegraph</a></li>
                             <li><a href="/extensions/authoring">Sourcegraph extension authoring</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
@@ -243,8 +244,8 @@
                                     <li><a href="/extensions/authoring/debugging">Debugging a Sourcegraph extension</a></li>
                                     <li><a href="/extensions/authoring/ux_style_guide">Extension UX style guide</a></li>
                                     <li><a href="/extensions/authoring/tutorials">Extension authoring tutorials</a></li>
-                                    <li class="content-nav-no-hover" data-sub-section-item="Extension authoring tutorials" )>
-                                        <ul>
+                                    <li class="content-nav-no-hover" data-sub-section-item="Extension authoring tutorials">
+                                        <ul class="content-nav-section-subsection">
                                             <li><a href="/extensions/authoring/tutorials/hello_world">Building a "Hello, world!" Sourcegraph extension</a></li>
                                             <li><a href="/extensions/authoring/tutorials/lang_specific_extension_tutorial">Building a language-specific extension tutorial</a></li>
                                             <li><a href="/extensions/authoring/tutorials/button_custom_commands">Sourcegraph extension buttons and custom commands</a></li>
@@ -259,7 +260,6 @@
                                     <li><a href="/extensions/authoring/manifest">Sourcegraph extension manifest - package.json</a></li>
                                 </ul>
                             </li>
-                            <li><a href="/extensions/usage">Using Sourcegraph extensions</a></li>
                         </ul>
                     </li>
                 </ul>
