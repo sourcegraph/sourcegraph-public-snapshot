@@ -4,7 +4,7 @@ import { FilterType } from '../../../../../shared/src/search/interactive/util'
 import { resolveFilter } from '../../../../../shared/src/search/parser/filters'
 
 /** FilterTypes which have a finite number of valid options. */
-export type FiniteFilterType = FilterType.archived | FilterType.fork | FilterType.type
+export type FiniteFilterType = FilterType.archived | FilterType.fork | FilterType.type | FilterType.index
 
 export const finiteFilters: Record<
     FiniteFilterType,
@@ -29,6 +29,14 @@ export const finiteFilters: Record<
             })
         ),
     },
+    index: {
+        default: 'yes',
+        values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
+            assign({
+                type: FilterType.index,
+            })
+        ),
+    },
     type: {
         default: '',
         values: [
@@ -47,7 +55,7 @@ export const finiteFilters: Record<
 }
 
 export const isFiniteFilter = (filter: FilterType): filter is FiniteFilterType =>
-    !!resolveFilter(filter) && ['fork', 'archived', 'type'].includes(filter)
+    !!resolveFilter(filter) && ['fork', 'archived', 'type', 'index'].includes(filter)
 
 export function isTextFilter(filter: FilterType): boolean {
     return !!resolveFilter(filter) && !isFiniteFilter(filter)
@@ -80,4 +88,5 @@ export const FilterTypeToProseNames: Record<FilterType, string> = {
     type: 'Type',
     content: 'Content',
     patterntype: 'Pattern type',
+    index: 'Indexed repos',
 }
