@@ -197,8 +197,13 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 	if s.queue == nil {
 		return errors.New("background syncing not initialised")
 	}
-	s.priorityNotify <- ids
-
+	// The channel below is buffered so we'll usually send without blocking.
+	// It is important not to block here as this method is called from the UI
+	select {
+	case s.priorityNotify <- ids:
+	default:
+		return errors.New("high priority sync capacity reached")
+	}
 	return nil
 }
 
