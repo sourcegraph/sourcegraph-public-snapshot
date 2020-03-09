@@ -34,7 +34,7 @@ type scanResult struct {
 }
 
 // TODO(jchen): Move this to authz.PermsStore.
-func (s *PermsScheduler) scanIDsWithTime(ctx context.Context, q *sqlf.Query) ([]scanResult, error) {
+func (s *PermsScheduler) loadIDsWithTime(ctx context.Context, q *sqlf.Query) ([]scanResult, error) {
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ SELECT users.id, '1970-01-01 00:00:00+00' FROM users
 WHERE users.id NOT IN
 	(SELECT perms.user_id FROM user_permissions AS perms)
 `)
-	results, err := s.scanIDsWithTime(ctx, q)
+	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ WHERE repo.private = TRUE AND repo.id NOT IN
 	(SELECT perms.repo_id FROM repo_permissions AS perms)
 `)
 
-	results, err := s.scanIDsWithTime(ctx, q)
+	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ ORDER BY updated_at ASC
 LIMIT %s
 `, limit)
 
-	results, err := s.scanIDsWithTime(ctx, q)
+	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ ORDER BY updated_at ASC
 LIMIT %s
 `, limit)
 
-	results, err := s.scanIDsWithTime(ctx, q)
+	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
 		return nil, err
 	}
