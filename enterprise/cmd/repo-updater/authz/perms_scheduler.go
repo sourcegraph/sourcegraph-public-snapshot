@@ -226,6 +226,9 @@ func (s *PermsScheduler) schedule(ctx context.Context) (*Schedule, error) {
 // Sync kicks off the permissions syncing process, this method is blocking and
 // should be called as a goroutine.
 func Sync(ctx context.Context, scheduler *PermsScheduler, syncer *PermsSyncer) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	go syncer.Run(ctx)
 
 	log15.Debug("started perms scheduler")
