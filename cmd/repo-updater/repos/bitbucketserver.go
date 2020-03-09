@@ -450,7 +450,10 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 	for next.HasMore() {
 		repos, page, err := s.client.LabeledRepos(ctx, next, label)
 		if err != nil {
-			if bitbucketserver.IsNoSuchLabel(err) {
+			// If the instance doesn't have the label then no repos are
+			// labeled. Older versions of bitbucket do not support labels, so
+			// they too have no labelled repos.
+			if bitbucketserver.IsNoSuchLabel(err) || bitbucketserver.IsNotFound(err) {
 				// treat as empty
 				return ids, nil
 			}
