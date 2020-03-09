@@ -20,10 +20,10 @@ Site admins can [configure Sourcegraph to respect Bitbucket Server's repository 
 
 ## Sourcegraph Bitbucket Server Plugin
 
-We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) which brings the following features to your Bitbucket Server instance:
+We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) which adds the following features to your Bitbucket Server instance:
 
 - **Native code intelligence**: users don't need to install the [Sourcegraph browser extensin](#browser-extension) to get hover tooltips, go-to-definition, find-references, and code search while browsing files and viewing pull requests on Bitbucket Server. Additionally, activated [Sourcegraph extensions](../extensions/index.md) will be able to add information to Bitbucket Server code views and pull requests, such as test coverage data or trace/log information.
-- **Faster ACL permission syncing** between Sourcegraph and Bitbucket Server
+- **Fast permission syncing** between Sourcegraph and Bitbucket Server
 - **Webhooks with configurable scope**, which are used by and highly recommended for usage with [Campaigns](../user/campaigns.md)
 
 ![Bitbucket Server code intelligence](https://storage.googleapis.com/sourcegraph-assets/bitbucket-code-intel-pr-short.gif)
@@ -48,15 +48,15 @@ Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** t
 
 To configure a webhook on the Sourcegraph side, set the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks). Once that is configured Sourcegraph automatically makes sure in the background that a global webhook for usage with [Campaigns](../user/campaigns.md) is created on the Bitbucket Server instance.
 
-### Experimental: faster ACL permissions fetching
+### Experimental: fast permission syncing
 
-The plugin also supports an optional, experimental method of faster ACL permissions fetching that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
+The plugin also supports an optional, experimental method of faster ACL permissions syncing that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
 
 You can enable this feature when [configuring the connection to your Bitbucket Server instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions).
 
 The speed improvements are subtle and more noticeable for larger instances with thousands of repositories. 
 
-To learn how and why this works, read the [fast permissions technical details](#fast-permissions-fetching) section below.
+To learn how and why this works, read the [through technical details of fast permission syncing](#fast-permissions-syncing) below.
 
 ### Technical Details
 
@@ -94,7 +94,7 @@ In order to persist the configured webhooks across restarts of the Bitbucket Ser
 
 If Sourcegraph is configured to make use of the Bitbucket Server plugin webhooks (which is done by setting the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks)), it sends a request to the Bitbucket Server instance, every 30 seconds, to make sure that a webhook on the Bitbucket Server instance exists and points to the Sourcegraph instance.
 
-#### Fast permissions fetching
+#### Fast permission syncing
 
 When Sourcegraph is configured to use [Bitbucket Server's repository permissions](../../admin/repo/permissions.md#bitbucket_server) to control access to repositories on Sourcegraph, it needs to fetch permissions for each user.
 
