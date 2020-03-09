@@ -21,9 +21,9 @@ type PermsScheduler struct {
 }
 
 // NewPermsScheduler returns a new permissions syncing scheduler.
-func NewPermsScheduler(internal time.Duration, db dbutil.DB) *PermsScheduler {
+func NewPermsScheduler(interval time.Duration, db dbutil.DB) *PermsScheduler {
 	return &PermsScheduler{
-		internal: internal,
+		interval: interval,
 		store:    &store{db: db},
 	}
 }
@@ -149,15 +149,15 @@ func (s *PermsScheduler) schedule(ctx context.Context, syncer *PermsSyncer) erro
 	return nil
 }
 
-// StartPermsSyncing kicks off the permissions syncing process, this method is blocking
-// and should be called as a goroutine.
+// Sync kicks off the permissions syncing process, this method is blocking and
+// should be called as a goroutine.
 func Sync(ctx context.Context, scheduler *PermsScheduler, syncer *PermsSyncer) {
 	go syncer.Run(ctx)
 
 	log15.Debug("started perms scheduler")
 	defer log15.Info("stopped perms scheduler")
 
-	ticker := time.NewTicker(scheduler.internal)
+	ticker := time.NewTicker(scheduler.interval)
 	defer ticker.Stop()
 
 	for {
