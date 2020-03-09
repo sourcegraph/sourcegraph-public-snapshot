@@ -42,6 +42,12 @@ For the Bitbucket Server plugin to then communicate with the Sourcegraph instanc
 }
 ```
 
+### Updating
+
+In order to update the plugin, follow the same steps as for installing it, which are described in the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository.
+
+When the Sourcegraph instance connected to the Bitbucket Server plugin is updated, so will the code that's fetched by the plugin to enable native code intelligence. No manual steps required. (See the [Technical Details](#technical-details) section on how this works.)
+
 ### Webhooks
 
 Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** to see a list of all configured webhooks and to create a new one.
