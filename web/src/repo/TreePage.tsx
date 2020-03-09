@@ -30,7 +30,7 @@ import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import { searchQueryForRepoRev, PatternTypeProps, CaseSensitivityProps } from '../search'
+import { searchQueryForRepoRev, PatternTypeProps, CaseSensitivityProps, SmartSearchFieldProps } from '../search'
 import { submitSearch, QueryState } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
@@ -43,6 +43,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { ErrorAlert } from '../components/alerts'
 import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../shared/src/util/strings'
+import { LazyMonacoQueryInput } from '../search/input/LazyMonacoQueryInput'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -139,7 +140,8 @@ interface Props
         EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        SmartSearchFieldProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string
@@ -324,15 +326,27 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 <h3 className="tree-page__section-header">
                                     Search in this {this.props.filePath ? 'tree' : 'repository'}
                                 </h3>
-                                <Form className="tree-page__section-search" onSubmit={this.onSubmit}>
-                                    <QueryInput
-                                        {...this.props}
-                                        value={this.state.queryState}
-                                        onChange={this.onQueryChange}
-                                        prependQueryForSuggestions={this.getQueryPrefix()}
-                                        autoFocus={true}
-                                        placeholder=""
-                                    />
+                                <Form className="tree-page__section-search" onSubmit={this.onFormSubmit}>
+                                    {this.props.smartSearchField ? (
+                                        <LazyMonacoQueryInput
+                                            {...this.props}
+                                            queryState={this.state.queryState}
+                                            onSubmit={this.onSubmit}
+                                            onChange={this.onQueryChange}
+                                            autoFocus={true}
+                                            prependQueryForSuggestions={this.getQueryPrefix()}
+                                        />
+                                    ) : (
+                                        <QueryInput
+                                            {...this.props}
+                                            value={this.state.queryState}
+                                            onChange={this.onQueryChange}
+                                            prependQueryForSuggestions={this.getQueryPrefix()}
+                                            autoFocus={true}
+                                            placeholder=""
+                                        />
+                                    )}
+
                                     <SearchButton />
                                 </Form>
                             </section>
@@ -408,8 +422,12 @@ export class TreePage extends React.PureComponent<Props, State> {
 
     private onQueryChange = (queryState: QueryState): void => this.setState({ queryState })
 
-    private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+    private onFormSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
+        this.onSubmit()
+    }
+
+    private onSubmit = (): void => {
         submitSearch(
             this.props.history,
             this.getQueryPrefix() + this.state.queryState.query,
