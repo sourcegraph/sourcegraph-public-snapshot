@@ -114,13 +114,11 @@ func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
 
 // reposExist returns true if one or more repos resolve. If the attempt
 // returns 0 repos or fails, it returns false. It is a helper function for
-// raising NoResolvedrepos alerts with suggestions when we know the original
+// raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func reposExist(ctx context.Context, options resolveRepoOp) bool {
-	if repos, _, _, err := resolveRepositories(ctx, options); err == nil && len(repos) > 0 {
-		return true
-	}
-	return false
+	repos, _, _, err := resolveRepositories(ctx, options)
+	return err == nil && len(repos) > 0
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
@@ -161,7 +159,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		// This is a rare case, so don't bother proposing queries.
 		return &searchAlert{
 			title:       "Expand your repository filters to see results",
-			description: fmt.Sprintf("No repository exists in all specified groups and satisfies all of your repo: filters."),
+			description: "No repository exists in all specified groups and satisfies all of your repo: filters.",
 		}
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) > 1:
