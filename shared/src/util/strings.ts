@@ -42,8 +42,21 @@ export function dedupeWhitespace(value: string): string {
 
 /**
  * Checkes whether a given string is quoted.
+ *
  * @param value string to check against
  */
 export function isQuoted(value: string): boolean {
     return value.startsWith('"') && value.endsWith('"') && value !== '"'
+}
+
+/**
+ * Replaces a substring within a string.
+ *
+ * @param s Original string
+ * @param start starting index of the substring to be replaced
+ * @param end starting index of the substring to be replaced
+ * @param an optional replacement string
+ */
+export function replaceRange(s: string, { start, end }: { start: number; end: number }, replacement = ''): string {
+    return s.slice(0, start) + replacement + s.slice(end)
 }
