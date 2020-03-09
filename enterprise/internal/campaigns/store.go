@@ -318,9 +318,9 @@ WITH batch AS (
       external_branch       text,
       external_deleted_at   timestamptz,
       external_updated_at   timestamptz,
-      external_state        changeset_external_state,
-      external_review_state changeset_external_review_state,
-      external_check_state  changeset_external_check_state
+      external_state        text,
+      external_review_state text,
+      external_check_state  text
     )
   )
   WITH ORDINALITY
@@ -401,18 +401,6 @@ func (s *Store) createChangesetsQuery(cs []*campaigns.Changeset) (*sqlf.Query, e
 		if c.UpdatedAt.IsZero() {
 			c.UpdatedAt = c.CreatedAt
 		}
-
-		if c.ExternalState == "" {
-			c.ExternalState = campaigns.ChangesetStateUnknown
-		}
-
-		if c.ExternalReviewState == "" {
-			c.ExternalReviewState = campaigns.ChangesetReviewStateUnknown
-		}
-
-		if c.ExternalCheckState == "" {
-			c.ExternalCheckState = campaigns.ChangesetCheckStateUnknown
-		}
 	}
 	return batchChangesetsQuery(createChangesetsQueryFmtstr, cs)
 }
@@ -476,11 +464,25 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 	return sqlf.Sprintf(fmtstr, string(batch)), nil
 }
 
+// DeleteChangeset deletes the Changeset with the given ID.
+func (s *Store) DeleteChangeset(ctx context.Context, id int64) error {
+	q := sqlf.Sprintf(deleteChangesetQueryFmtstr, id)
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	return rows.Close()
+}
+
+var deleteChangesetQueryFmtstr = `
+DELETE FROM changesets WHERE id = %s
+`
+
 // CountChangesetsOpts captures the query options needed for
 // counting changesets.
 type CountChangesetsOpts struct {
-	CampaignID int64
-	// Optional filters
+	CampaignID          int64
 	ExternalState       *campaigns.ChangesetState
 	ExternalReviewState *campaigns.ChangesetReviewState
 	ExternalCheckState  *campaigns.ChangesetCheckState
@@ -638,12 +640,11 @@ GROUP BY changesets.id
 // ListChangesetsOpts captures the query options needed for
 // listing changesets.
 type ListChangesetsOpts struct {
-	Cursor         int64
-	Limit          int
-	CampaignID     int64
-	IDs            []int64
-	WithoutDeleted bool
-	// Optional filters
+	Cursor              int64
+	Limit               int
+	CampaignID          int64
+	IDs                 []int64
+	WithoutDeleted      bool
 	ExternalState       *campaigns.ChangesetState
 	ExternalReviewState *campaigns.ChangesetReviewState
 	ExternalCheckState  *campaigns.ChangesetCheckState

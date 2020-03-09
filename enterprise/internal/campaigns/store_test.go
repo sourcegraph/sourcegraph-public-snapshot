@@ -704,6 +704,46 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
+			t.Run("Null changeset state", func(t *testing.T) {
+				cs := &cmpgn.Changeset{
+					RepoID:              42,
+					CreatedAt:           now,
+					UpdatedAt:           now,
+					Metadata:            githubPR,
+					CampaignIDs:         []int64{1},
+					ExternalID:          fmt.Sprintf("foobar-%d", 42),
+					ExternalServiceType: "github",
+					ExternalBranch:      "campaigns/test",
+					ExternalUpdatedAt:   now,
+					ExternalState:       "",
+					ExternalReviewState: "",
+					ExternalCheckState:  "",
+				}
+
+				err := s.CreateChangesets(ctx, cs)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer s.DeleteChangeset(ctx, cs.ID)
+
+				fromDB, err := s.GetChangeset(ctx, GetChangesetOpts{
+					ID: cs.ID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(cs.ExternalState, fromDB.ExternalState); diff != "" {
+					t.Error(diff)
+				}
+				if diff := cmp.Diff(cs.ExternalReviewState, fromDB.ExternalReviewState); diff != "" {
+					t.Error(diff)
+				}
+				if diff := cmp.Diff(cs.ExternalCheckState, fromDB.ExternalCheckState); diff != "" {
+					t.Error(diff)
+				}
+			})
+
 			t.Run("Get", func(t *testing.T) {
 				t.Run("ByID", func(t *testing.T) {
 					want := changesets[0]

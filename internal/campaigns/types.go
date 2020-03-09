@@ -124,7 +124,6 @@ type ChangesetState string
 
 // ChangesetState constants.
 const (
-	ChangesetStateUnknown ChangesetState = "UNKNOWN"
 	ChangesetStateOpen    ChangesetState = "OPEN"
 	ChangesetStateClosed  ChangesetState = "CLOSED"
 	ChangesetStateMerged  ChangesetState = "MERGED"
@@ -134,8 +133,7 @@ const (
 // Valid returns true if the given Changeset is valid.
 func (s ChangesetState) Valid() bool {
 	switch s {
-	case ChangesetStateUnknown,
-		ChangesetStateOpen,
+	case ChangesetStateOpen,
 		ChangesetStateClosed,
 		ChangesetStateMerged,
 		ChangesetStateDeleted:
@@ -200,7 +198,6 @@ type ChangesetReviewState string
 
 // ChangesetReviewState constants.
 const (
-	ChangesetReviewStateUnknown          ChangesetReviewState = "UNKNOWN"
 	ChangesetReviewStateApproved         ChangesetReviewState = "APPROVED"
 	ChangesetReviewStateChangesRequested ChangesetReviewState = "CHANGES_REQUESTED"
 	ChangesetReviewStatePending          ChangesetReviewState = "PENDING"
@@ -211,8 +208,7 @@ const (
 // Valid returns true if the given Changeset review state is valid.
 func (s ChangesetReviewState) Valid() bool {
 	switch s {
-	case ChangesetReviewStateUnknown,
-		ChangesetReviewStateApproved,
+	case ChangesetReviewStateApproved,
 		ChangesetReviewStateChangesRequested,
 		ChangesetReviewStatePending,
 		ChangesetReviewStateCommented,
