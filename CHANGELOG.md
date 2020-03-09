@@ -35,6 +35,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.13.2 (Unreleased)
+
+### Fixed
+
+- Bitbucket Server older than 5.13 failed to sync since Sourcegraph 3.12. This was due to us querying for the `archived` label, but Bitbucket Server 5.13 does not support labels. [#8883](https://github.com/sourcegraph/sourcegraph/issues/8883)
+
 ## 3.13.1
 
 ### Fixed
