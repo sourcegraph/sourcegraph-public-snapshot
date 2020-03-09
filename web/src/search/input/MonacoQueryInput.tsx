@@ -12,7 +12,7 @@ import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { SearchPatternType, SearchSuggestion } from '../../../../shared/src/graphql/schema'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery'>,
@@ -25,6 +25,12 @@ export interface MonacoQueryInputProps
     onChange: (newState: QueryState) => void
     onSubmit: () => void
     autoFocus?: boolean
+
+    /**
+     * A string that is appended to the query input's query before
+     * fetching suggestions.
+     */
+    prependQueryForSuggestions?: string
 }
 
 const SOURCEGRAPH_SEARCH: 'sourcegraphSearch' = 'sourcegraphSearch'
@@ -47,7 +53,8 @@ function addSouregraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
     patternTypes: Observable<SearchPatternType>,
-    themeChanges: Observable<Theme>
+    themeChanges: Observable<Theme>,
+    fetchSuggestions: (query: string) => Observable<SearchSuggestion>
 ): Subscription {
     const subscriptions = new Subscription()
 
@@ -236,10 +243,19 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         this.props.onSubmit()
     }
 
+    private fetchSuggestions = (query: string): Observable<SearchSuggestion> =>
+        fetchSuggestions(`${this.props.prependQueryForSuggestions ?? ''} ${query}`)
+
     private editorWillMount = (monaco: typeof Monaco): void => {
         // Register themes and code intelligence providers.
         this.subscriptions.add(
-            addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, this.themeChanges)
+            addSouregraphSearchCodeIntelligence(
+                monaco,
+                this.searchQueries,
+                this.patternTypes,
+                this.themeChanges,
+                this.fetchSuggestions
+            )
         )
     }
 
