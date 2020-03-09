@@ -139,7 +139,7 @@ func nextSync(h campaigns.ChangesetSyncData) time.Time {
 	var lastChange time.Time
 	// When we perform a sync, event timestamps are all updated even if nothing has changed.
 	// We should fall back to h.ExternalUpdated if the diff is small
-	// TODO: This is a workaround for related to this: https://github.com/sourcegraph/sourcegraph/pull/8771
+	// TODO: This is a workaround while we try to implement syncing without always updating events. See: https://github.com/sourcegraph/sourcegraph/pull/8771
 	// Once the above issue is fixed we can simply use maxTime(h.ExternalUpdatedAt, h.LatestEvent)
 	if diff := h.LatestEvent.Sub(lastSync); !h.LatestEvent.IsZero() && absDuration(diff) < minSyncDelay {
 		lastChange = h.ExternalUpdatedAt
