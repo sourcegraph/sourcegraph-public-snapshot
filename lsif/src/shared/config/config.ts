@@ -71,7 +71,7 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
     const start = Date.now()
     while (true) {
         try {
-            onChange(await loadConfiguration())
+            onChange(await loadConfiguration(logger))
         } catch (error) {
             // Suppress log messages for errors caused by the frontend being unreachable until we've
             // given the frontend enough time to initialize (in case other services start up before
@@ -88,7 +88,7 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
 }
 
 /** Read configuration from the frontend. */
-async function loadConfiguration(): Promise<Configuration> {
+async function loadConfiguration(logger: Logger): Promise<Configuration> {
     const url = new URL(`http://${settings.SRC_FRONTEND_INTERNAL}/.internal/configuration`).href
     logger.debug('MJF :: loadConfiguration entry', {url: url})
     const resp = await got.post(url, { followRedirect: true })
