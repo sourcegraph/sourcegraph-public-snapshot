@@ -68,7 +68,7 @@ The Bitbucket Server plugin provides **native code intelligence** (e.g.: **go-to
 
 It does that by fetching the required JavaScript code from the configured Sourcegraph instance and injecting it into the HTML that the Bitbucket Server instance serves. See the [`sourcegraph-bitbucket.js`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/resources/js/sourcegraph-bitbucket.js) file for how it does that.
 
-The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension), hosted by your Sourcegraph instance, and adds the same code intelligence functionality to files and pull requests viewed on Bitbucket Server.
+The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension), but hosted by your Sourcegraph instance, and adds the same code intelligence functionality to files and pull requests viewed on Bitbucket Server.
 
 The code talks directly to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucker Server instance.
 
