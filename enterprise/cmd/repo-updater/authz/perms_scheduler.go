@@ -15,7 +15,7 @@ import (
 // keeping permissions up-to-date for users and repositories at best effort.
 type PermsScheduler struct {
 	// The time duration of how often a schedule happens.
-	internal time.Duration
+	interval time.Duration
 	// The database interface.
 	store *store
 }
@@ -151,7 +151,7 @@ func (s *PermsScheduler) schedule(ctx context.Context, syncer *PermsSyncer) erro
 
 // StartPermsSyncing kicks off the permissions syncing process, this method is blocking
 // and should be called as a goroutine.
-func StartPermsSyncing(ctx context.Context, scheduler *PermsScheduler, syncer *PermsSyncer) {
+func Sync(ctx context.Context, scheduler *PermsScheduler, syncer *PermsSyncer) {
 	go syncer.Run(ctx)
 
 	log15.Debug("started perms scheduler")
