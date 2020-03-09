@@ -155,5 +155,4 @@ func TestChangesetPriorityQueue(t *testing.T) {
 	if q.Len() != 0 {
 		t.Fatalf("Expected %d, got %d", q.Len(), 0)
 	}
-
 }

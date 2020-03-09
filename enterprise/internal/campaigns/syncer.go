@@ -29,9 +29,8 @@ type ChangesetSyncer struct {
 
 // Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
-func (s *ChangesetSyncer) Run() {
+func (s *ChangesetSyncer) Run(ctx context.Context) {
 	// TODO: Setup instrumentation here
-	ctx := context.Background()
 	scheduleInterval := s.ComputeScheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
@@ -72,6 +71,8 @@ func (s *ChangesetSyncer) Run() {
 		}
 
 		select {
+		case <-ctx.Done():
+			return
 		case <-scheduleTicker.C:
 			if timer != nil {
 				timer.Stop()
