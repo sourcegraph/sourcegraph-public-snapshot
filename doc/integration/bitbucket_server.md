@@ -56,6 +56,7 @@ You can enable this feature by setting the [`"plugin.permissions"` property in t
 
 The speed improvements are subtle and more noticeable for larger instances with thousands of repositories. 
 
+To learn how and why this works, read the [fast permissions technical details](#fast-permissions-fetching) section below.
 ### Technical Details
 
 This section provides some technical insight into the Bitbucket Server plugin to make it easier to users to decide whether or not to install it on their Bitbucket Server instance.
