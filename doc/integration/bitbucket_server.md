@@ -72,7 +72,7 @@ The code that's injected is the code of the [Sourcegraph browser extension](#bro
 
 The code talks directly to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucker Server instance.
 
-If it failed to load or talk to the Sourcegraph instance messages are logged to the browser console.
+If it failed to load or talk to the Sourcegraph instance, messages are logged to the browser console.
 
 When the Sourcegraph instance is updated to a newer version, the code that's loaded and injected might also be updated.
 
