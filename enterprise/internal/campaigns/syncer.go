@@ -64,12 +64,11 @@ func (s *ChangesetSyncer) Run() {
 			if next.priority == priorityHigh {
 				// Fire ASAP
 				timer = time.NewTimer(0)
-				timerChan = timer.C
 			} else {
 				// Use scheduled time
 				timer = time.NewTimer(time.Until(next.nextSync))
-				timerChan = timer.C
 			}
+			timerChan = timer.C
 		}
 
 		select {
