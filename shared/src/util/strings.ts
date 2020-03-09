@@ -52,7 +52,7 @@ export function isQuoted(value: string): boolean {
 /**
  * Replaces a substring within a string.
  *
- * @param s Origianl string
+ * @param s Original string
  * @param start starting index of the substring to be replace
  * @param end starting index of the substring to be replace
  * @param replacement replacement string, if any
