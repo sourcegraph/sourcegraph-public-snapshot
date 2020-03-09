@@ -46,20 +46,19 @@ name: LSIF
 on:
   - push
 jobs:
-  build:
+  index:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
         uses: sourcegraph/lsif-go-action@master
-        with:
-          verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
 ```
+
+Depending on your code requirements, you may need to add additional steps after checkout but before indexing (installing dependencies, generating indexable assets, etc).
 
 Once that workflow is committed to your repository, you will start to see LSIF workflows in the Actions tab of your repository (e.g. https://github.com/sourcegraph/sourcegraph/actions).
 
