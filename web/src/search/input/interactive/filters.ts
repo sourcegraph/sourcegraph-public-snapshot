@@ -6,6 +6,9 @@ import { resolveFilter } from '../../../../../shared/src/search/parser/filters'
 /** FilterTypes which have a finite number of valid options. */
 export type FiniteFilterType = FilterType.archived | FilterType.fork | FilterType.type | FilterType.index
 
+const withBooleanSuggestions = (type: FiniteFilterType): Suggestion[] =>
+    ['no', 'only', 'yes'].map(value => ({ type, value }))
+
 export const finiteFilters: Record<
     FiniteFilterType,
     {
@@ -15,25 +18,15 @@ export const finiteFilters: Record<
 > = {
     archived: {
         default: 'yes',
-        values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
-            assign({
-                type: FilterType.archived,
-            })
-        ),
+        values: withBooleanSuggestions(FilterType.archived),
     },
     fork: {
         default: 'yes',
-        values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
-            assign({
-                type: FilterType.fork,
-            })
-        ),
+        values: withBooleanSuggestions(FilterType.fork),
     },
     index: {
         default: 'yes',
-        values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
-            assign({ type: FilterType.index })
-        ),
+        values: withBooleanSuggestions(FilterType.index),
     },
     type: {
         default: '',
