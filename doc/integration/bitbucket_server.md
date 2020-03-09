@@ -107,7 +107,7 @@ The lists returned by both endpoints are encoded as [Roaring Bitmaps](https://ro
 
 Since only a single request is required to fetch the complete list of desired IDs and the response contains only IDs, encoded in an efficient binary format, these two endpoints make the fetching of permissions roughly **eight times faster** (measured on an instance with 10000 repositories) than using Bitbucket Server's REST API. (Bitbucket Server admins can further increase the performance of these endpoints by increasing the [`page.max.repositories` property in the Bitbucket Server configuration](https://confluence.atlassian.com/bitbucketserver/bitbucket-server-config-properties-776640155.html#BitbucketServerconfigproperties-Paging).)
 
-The plugin uses `RepositoryService`, `UserManager`, `UserService` and `SecuritySevice` provided by the Atlassian SDK to fetch users or repositories from Bitbucket Server's database. You can see the full code for these two endpoints in [`PermissionRouter.java`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/java/com/sourcegraph/permission/PermissionRouter.java)
+The plugin uses `RepositoryService`, `UserManager`, `UserService` and `SecurityService` provided by the Atlassian SDK to fetch users or repositories from Bitbucket Server's database. You can see the full code for these two endpoints in [`PermissionRouter.java`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/java/com/sourcegraph/permission/PermissionRouter.java)
 
 ## Browser extension
 
