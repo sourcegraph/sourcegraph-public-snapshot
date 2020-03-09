@@ -26,6 +26,7 @@ export interface Configuration {
 export async function waitForConfiguration(logger: Logger): Promise<() => Configuration> {
     let oldConfiguration: Configuration | undefined
 
+    logger.debug('MJF :: waitForConfiguration entry')
     await new Promise<void>(resolve => {
         updateConfiguration(logger, configuration => {
             if (oldConfiguration !== undefined && requireRestart(oldConfiguration, configuration)) {
@@ -66,6 +67,7 @@ function requireRestart(oldConfiguration: Configuration, newConfiguration: Confi
  * @param onChange The callback to invoke each time the configuration is read.
  */
 async function updateConfiguration(logger: Logger, onChange: (configuration: Configuration) => void): Promise<never> {
+    logger.debug('MJF :: updateConfiguration entry')
     const start = Date.now()
     while (true) {
         try {
@@ -88,8 +90,10 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
 /** Read configuration from the frontend. */
 async function loadConfiguration(): Promise<Configuration> {
     const url = new URL(`http://${settings.SRC_FRONTEND_INTERNAL}/.internal/configuration`).href
+    logger.debug('MJF :: loadConfiguration entry', {url: url})
     const resp = await got.post(url, { followRedirect: true })
     const payload = JSON.parse(resp.body)
+    logger.debug('MJF :: loadConfiguration post-POST', {json: payload})
 
     // Already parsed
     const serviceConnections = payload.ServiceConnections
